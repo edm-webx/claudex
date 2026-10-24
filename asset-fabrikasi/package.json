@@ -1,0 +1,14 @@
+{
+  "name": "marti-asset-fabrikasi",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Sabri'nin Büfesi için kodla 3D asset üretimi (three.js 0.160.1, oyunla aynı sürüm)",
+  "type": "module",
+  "scripts": {
+    "vitrin": "npx --yes http-server -p 5180 -c-1 .",
+    "disa-aktar": "node araclar/disa-aktar.cjs .",
+    "kurulum": "npm install && npx playwright install chromium"
+  },
+  "dependencies": { "three": "0.160.1" },
+  "devDependencies": { "playwright": "1.48.2" }
+}

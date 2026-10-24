@@ -1,0 +1,254 @@
+<title>Martı Asset Fabrikası</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito+Sans:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Atölye tezgahı: solda raf (katalog), ortada döner sahne, sağda ayar kartı. Telefonda alt alta. */
+:root {
+  --bg: #eef2f1; --panel: #ffffff; --ink: #1d2b33; --muted: #5c6b72; --line: #d5dedd;
+  --accent: #e2a23b; --accent-ink: #3a2706; --cini: #1f8f8a; --chip: #e4ecea;
+  --stage-top: #cfe6ee; --stage-bot: #f3ede0;
+  --display: 'Fredoka', 'Baloo 2', ui-rounded, system-ui, sans-serif;
+  --body: 'Nunito Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121a1f; --panel: #1a252b; --ink: #e6eeef; --muted: #93a4aa; --line: #2b3a41;
+  --accent: #f0b450; --accent-ink: #2a1a02; --cini: #4cc3bc; --chip: #23323a; --stage-top: #1b2c36; --stage-bot: #2a2620; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #121a1f; --panel: #1a252b; --ink: #e6eeef; --muted: #93a4aa; --line: #2b3a41;
+  --accent: #f0b450; --accent-ink: #2a1a02; --cini: #4cc3bc; --chip: #23323a; --stage-top: #1b2c36; --stage-bot: #2a2620; color-scheme: dark }
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 14px; }
+.app { height: 100%; display: grid; grid-template-rows: auto 1fr; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 12px; gap: 12px; box-sizing: border-box; }
+header { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+h1 { font-family: var(--display); font-weight: 700; font-size: 26px; margin: 0; letter-spacing: .2px; }
+h1 span { color: var(--cini); }
+.sub { color: var(--muted); font-size: 13px; flex: 1 1 260px; min-width: 0; }
+.modlar { display: flex; background: var(--chip); border-radius: 999px; padding: 4px; gap: 4px; }
+.modlar button { border: 0; background: transparent; color: var(--ink); font: 600 14px var(--body); padding: 7px 14px; border-radius: 999px; cursor: pointer; }
+.modlar button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.ana { display: grid; grid-template-columns: 230px 1fr 270px; gap: 12px; min-height: 0; }
+.raf, .ayar { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; overflow: auto; min-height: 0; }
+.raf { padding: 10px; }
+.raf input { width: 100%; box-sizing: border-box; border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 9px; padding: 8px 10px; font: 14px var(--body); }
+.kat { font: 600 11px var(--body); text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); margin: 14px 4px 6px; display: flex; justify-content: space-between; }
+.raf ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.raf li button { width: 100%; text-align: left; border: 0; background: transparent; color: var(--ink); font: 600 14px var(--body); padding: 7px 9px; border-radius: 8px; cursor: pointer; }
+.raf li button:hover { background: var(--chip); }
+.raf li button[aria-current="true"] { background: var(--cini); color: #fff; }
+.sahne { position: relative; border-radius: 16px; overflow: hidden; background: linear-gradient(var(--stage-top), var(--stage-bot)); min-height: 320px; }
+.sahne canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.etiket { position: absolute; left: 12px; top: 12px; background: color-mix(in srgb, var(--panel) 86%, transparent); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; max-width: calc(100% - 24px); box-sizing: border-box; }
+.etiket b { font-family: var(--display); font-size: 18px; font-weight: 600; display: block; }
+.etiket small { color: var(--muted); }
+[hidden] { display: none !important; }
+.yukleniyor { position: absolute; inset: 0; display: grid; place-items: center; font: 600 16px var(--display); color: var(--muted); }
+.ayar { padding: 14px; display: flex; flex-direction: column; gap: 14px; }
+.ayar h2 { font: 600 17px var(--display); margin: 0; }
+.alan { display: grid; grid-template-columns: 1fr 1.3fr; align-items: center; gap: 6px 8px; }
+.alan label { color: var(--muted); font-size: 13px; }
+.alan select, .alan input[type=color] { width: 100%; box-sizing: border-box; border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 8px; padding: 5px 6px; font: 13px var(--body); min-height: 30px; }
+.dugmeler { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn { border: 1px solid var(--line); background: var(--chip); color: var(--ink); font: 600 13px var(--body); padding: 8px 12px; border-radius: 9px; cursor: pointer; }
+.btn.ana-btn { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+.btn:focus-visible, .modlar button:focus-visible, .raf li button:focus-visible { outline: 2px solid var(--cini); outline-offset: 2px; }
+.olcum { font: 500 12px var(--mono); color: var(--muted); display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; font-variant-numeric: tabular-nums; }
+.olcum dd { margin: 0; color: var(--ink); text-align: right; }
+.not { font-size: 12.5px; color: var(--muted); line-height: 1.5; border-top: 1px solid var(--line); padding-top: 10px; }
+.not code { font-family: var(--mono); font-size: 11.5px; background: var(--chip); padding: 1px 5px; border-radius: 5px; }
+@media (max-width: 900px) {
+  .app { height: auto; }
+  .ana { grid-template-columns: 1fr; }
+  .sahne { height: 58vh; order: -1; }
+  .raf { max-height: 260px; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+</style>
+
+<div class="app">
+  <header>
+    <h1>Martı <span>Asset</span> Fabrikası</h1>
+    <div class="sub">Sabri'nin Büfesi için kodla üretilen 3D modeller. Her model tohumla çeşitlenir, oyuna tek satırla girer.</div>
+    <div class="modlar" role="group" aria-label="Görünüm">
+      <button id="mod-sokak" aria-pressed="true">Sokak sahnesi</button>
+      <button id="mod-katalog" aria-pressed="false">Katalog</button>
+    </div>
+  </header>
+  <div class="ana">
+    <nav class="raf" aria-label="Asset listesi">
+      <input id="ara" type="search" placeholder="Ara: otobüs, simit, kedi…" aria-label="Asset ara">
+      <div id="liste"></div>
+    </nav>
+    <div class="sahne" id="sahne">
+      <div class="yukleniyor" id="yuk">Atölye ısınıyor…</div>
+      <div class="etiket" id="etiket" hidden><b id="e-ad"></b><small id="e-alt"></small></div>
+    </div>
+    <aside class="ayar" id="ayar">
+      <h2 id="a-baslik">Sokak sahnesi</h2>
+      <div class="alan" id="secenekler"></div>
+      <div class="dugmeler">
+        <button class="btn ana-btn" id="zar">Zar at (yeni çeşit)</button>
+        <button class="btn" id="gece">Gece</button>
+        <button class="btn" id="don">Döndür: açık</button>
+      </div>
+      <dl class="olcum" id="olcum"></dl>
+      <div class="not" id="not">Otobüs durağa yoldan yanaşır, kapılarını açar. Sahnedeki hareketsiz her şey "pişirilmiş" durumda: yüzlerce parça birkaç çizim çağrısına iner, oyun kasmasın diye. GLB dosyaları proje klasöründe: <code>asset-fabrikasi/glb/</code></div>
+    </aside>
+  </div>
+</div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as T from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { kit, rng, pisir } from './src/kit.js';
+import { KATALOG, KATEGORILER, BUL, uret, KR } from './src/katalog.js';
+import { sokakSahnesi } from './src/sahne.js';
+
+const kap = document.getElementById('sahne');
+const r = new T.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+r.setPixelRatio(Math.min(devicePixelRatio, 2)); r.shadowMap.enabled = true; r.shadowMap.type = T.PCFSoftShadowMap;
+r.toneMapping = T.ACESFilmicToneMapping; r.toneMappingExposure = 1.05; r.outputColorSpace = T.SRGBColorSpace;
+kap.prepend(r.domElement);
+const scene = new T.Scene();
+const pm = new T.PMREMGenerator(r); const envTex = pm.fromScene(new RoomEnvironment(), 0.04).texture; scene.environment = envTex;
+const cam = new T.PerspectiveCamera(40, 1, 0.01, 800);
+const ctl = new OrbitControls(cam, r.domElement); ctl.enableDamping = true; ctl.autoRotate = true; ctl.autoRotateSpeed = 0.8;
+const hemi = new T.HemisphereLight('#dff3ff', '#b59a74', 0.9); scene.add(hemi);
+const gunes = new T.DirectionalLight('#fff1d6', 2.3); gunes.castShadow = true; gunes.shadow.mapSize.set(2048, 2048); gunes.shadow.bias = -0.0004; gunes.shadow.normalBias = 0.02; scene.add(gunes, gunes.target);
+const zemin = new T.Mesh(new T.CircleGeometry(1, 64), new T.MeshStandardMaterial({ color: '#d9d2c3', roughness: 0.95 })); zemin.rotation.x = -Math.PI / 2; zemin.receiveShadow = true; scene.add(zemin);
+
+let mod = 'sokak', secili = 'otobus', tohum = 1, secim = {}, gece = false, aktif = null, k = null, sahneBilgi = null;
+const saat = new T.Clock();
+
+function boyut() { const w = kap.clientWidth, h = kap.clientHeight; r.setSize(w, h, false); cam.aspect = w / h; cam.updateProjectionMatrix(); }
+new ResizeObserver(boyut).observe(kap);
+
+function temizle() { if (aktif) { scene.remove(aktif); aktif = null; } if (k) { k.dispose(); k = null; } sahneBilgi = null; }
+function isikAyarla(merkez, yaricap) {
+  gunes.position.set(merkez.x + yaricap * 0.9, merkez.y + yaricap * 1.6, merkez.z + yaricap * 0.7); gunes.target.position.copy(merkez);
+  const s = gunes.shadow.camera; s.left = s.bottom = -yaricap * 1.3; s.right = s.top = yaricap * 1.3; s.near = 0.1; s.far = yaricap * 5; s.updateProjectionMatrix();
+  gunes.intensity = gece ? 0.25 : 2.3; hemi.intensity = gece ? 0.22 : 0.9; hemi.color.set(gece ? '#6d7fb8' : '#dff3ff');
+  scene.background = null; scene.environment = gece ? null : envTex; r.setClearColor(gece ? '#0f1630' : '#000000', gece ? 1 : 0); r.toneMappingExposure = gece ? 1.25 : 1.05;
+}
+function cerceve(obj, uzak = 1) {
+  const b = new T.Box3().setFromObject(obj), c = b.getCenter(new T.Vector3()), s = b.getSize(new T.Vector3());
+  const R = Math.max(s.x, s.y, s.z) * 0.5 || 1;
+  const d = R / Math.sin(T.MathUtils.degToRad(cam.fov / 2)) * 1.1 * uzak;
+  cam.position.set(c.x + d * 0.62, c.y + d * 0.42, c.z + d * 0.68); cam.near = d / 200; cam.far = d * 20; cam.updateProjectionMatrix();
+  ctl.target.copy(c); ctl.update();
+  zemin.scale.setScalar(Math.max(s.x, s.z) * 1.6 + 0.3); zemin.position.set(c.x, b.min.y - 0.002, c.z); zemin.visible = true;
+  isikAyarla(c, R * 1.2);
+}
+function say(obj) { let mesh = 0, ucgen = 0; obj.traverse(o => { if (o.isMesh) { mesh++; const g = o.geometry; ucgen += (g.index ? g.index.count : g.attributes.position.count) / 3; } }); return { mesh, ucgen: Math.round(ucgen) }; }
+
+function katalogGoster() {
+  temizle(); k = kit();
+  const a = BUL[secili];
+  const g = uret(k, secili, secim, tohum);
+  const once = say(g);
+  pisir(g);
+  const sonra = say(g);
+  scene.add(g); aktif = g; cerceve(g);
+  document.getElementById('a-baslik').textContent = a.ad;
+  document.getElementById('e-ad').textContent = a.ad;
+  document.getElementById('e-alt').textContent = a.kat + ' · tohum ' + tohum;
+  document.getElementById('etiket').hidden = false;
+  const c = g.userData.carpisma;
+  document.getElementById('olcum').innerHTML = `<dt>boyut (m)</dt><dd>${c.w} × ${c.h} × ${c.d}</dd><dt>parça</dt><dd>${once.mesh} → ${sonra.mesh}</dd><dt>üçgen</dt><dd>${sonra.ucgen.toLocaleString('tr-TR')}</dd>`;
+  seceneklerCiz(a);
+}
+
+function sec(lbl, id, deger, liste, fn) {
+  const L = document.createElement('label'); L.htmlFor = id; L.textContent = lbl;
+  const S = document.createElement('select'); S.id = id;
+  liste.forEach(v => { const o = document.createElement('option'); o.value = String(v); o.textContent = String(v).replace(/_/g, ' '); S.append(o); });
+  S.value = String(deger); S.onchange = () => fn(S.value);
+  return [L, S];
+}
+function renkSec(lbl, id, deger, fn) {
+  const L = document.createElement('label'); L.htmlFor = id; L.textContent = lbl;
+  const I = document.createElement('input'); I.type = 'color'; I.id = id; I.value = deger; I.oninput = () => fn(I.value);
+  return [L, I];
+}
+function seceneklerCiz(a) {
+  const kutu = document.getElementById('secenekler'); kutu.innerHTML = '';
+  if (mod !== 'katalog') return;
+  if (a.kat === 'Karakter') {
+    const t = aktif.userData.tarif;
+    const alanlar = [['Saç', 'sac', KR.SACLAR], ['Sakal', 'sakal', KR.SAKALLAR], ['Üst', 'ust', KR.USTLER], ['Alt', 'alt', KR.ALTLAR], ['Ayakkabı', 'ayakkabi', KR.AYAKKABILAR], ['Şapka', 'sapka', KR.SAPKALAR], ['Aksesuar', 'aksesuar', KR.AKSESUAR], ['Gözler', 'goz', KR.GOZLER], ['Ağız', 'agiz', KR.AGIZLAR], ['Gövde', 'govdeTip', ['ince', 'normal', 'iri']]];
+    for (const [l, key, list] of alanlar) kutu.append(...sec(l, 'k-' + key, t[key], list, v => { secim[key] = v; katalogGoster(); }));
+    kutu.append(...sec('Ten', 'k-ten', t.ten, KR.TENLER, v => { secim.ten = v; katalogGoster(); }));
+    kutu.append(...renkSec('Saç rengi', 'k-sacRenk', t.sacRenk, v => { secim.sacRenk = v; katalogGoster(); }));
+    kutu.append(...renkSec('Üst rengi', 'k-ustRenk', t.ustRenk, v => { secim.ustRenk = v; katalogGoster(); }));
+    kutu.append(...renkSec('Alt rengi', 'k-altRenk', t.altRenk, v => { secim.altRenk = v; katalogGoster(); }));
+  } else if (a.secenek) {
+    for (const [key, list] of Object.entries(a.secenek)) kutu.append(...sec(key, 's-' + key, secim[key] ?? list[0], list, v => { secim[key] = v === 'true' ? true : v === 'false' ? false : isNaN(+v) || v.startsWith('#') ? v : +v; katalogGoster(); }));
+  }
+}
+
+function sokakGoster() {
+  temizle(); k = kit();
+  sahneBilgi = sokakSahnesi(k, { tohum, gece });
+  aktif = sahneBilgi.kok; scene.add(aktif);
+  zemin.visible = false;
+  cam.position.set(26, 17, 30); cam.near = 0.1; cam.far = 600; cam.updateProjectionMatrix(); ctl.target.set(0, 2, 0); ctl.update();
+  isikAyarla(new T.Vector3(0, 0, 0), 34);
+  document.getElementById('a-baslik').textContent = 'Sokak sahnesi';
+  document.getElementById('etiket').hidden = false;
+  document.getElementById('e-ad').textContent = 'Martıköy, Çınar Sokağı';
+  document.getElementById('e-alt').textContent = sahneBilgi.adet + ' asset tek sahnede';
+  document.getElementById('secenekler').innerHTML = '';
+}
+
+function listeCiz(filtre = '') {
+  const f = filtre.toLocaleLowerCase('tr');
+  const el = document.getElementById('liste'); el.innerHTML = '';
+  for (const kat of KATEGORILER) {
+    const items = KATALOG.filter(a => a.kat === kat && (!f || a.ad.toLocaleLowerCase('tr').includes(f) || a.id.includes(f)));
+    if (!items.length) continue;
+    const h = document.createElement('div'); h.className = 'kat'; h.innerHTML = `<span>${kat}</span><span>${items.length}</span>`; el.append(h);
+    const ul = document.createElement('ul');
+    for (const a of items) { const li = document.createElement('li'); const b = document.createElement('button'); b.textContent = a.ad; b.setAttribute('aria-current', String(mod === 'katalog' && a.id === secili)); b.onclick = () => { secili = a.id; secim = {}; tohum = 1; modAyarla('katalog'); }; li.append(b); ul.append(li); }
+    el.append(ul);
+  }
+}
+function modAyarla(m) {
+  mod = m;
+  document.getElementById('mod-sokak').setAttribute('aria-pressed', String(m === 'sokak'));
+  document.getElementById('mod-katalog').setAttribute('aria-pressed', String(m === 'katalog'));
+  ctl.autoRotate = donuyor && m === 'katalog';
+  listeCiz(document.getElementById('ara').value);
+  m === 'sokak' ? sokakGoster() : katalogGoster();
+}
+let donuyor = true;
+document.getElementById('mod-sokak').onclick = () => modAyarla('sokak');
+document.getElementById('mod-katalog').onclick = () => modAyarla('katalog');
+document.getElementById('ara').oninput = e => listeCiz(e.target.value);
+document.getElementById('zar').onclick = () => { tohum = Math.floor(Math.random() * 9999) + 1; if (mod === 'katalog' && secili === 'kisi-rastgele') secim = {}; modAyarla(mod); };
+document.getElementById('gece').onclick = e => { gece = !gece; e.target.textContent = gece ? 'Gündüz' : 'Gece'; if (mod === 'sokak') sokakGoster(); else { secim.gece = gece; katalogGoster(); } };
+document.getElementById('don').onclick = e => { donuyor = !donuyor; ctl.autoRotate = donuyor && mod === 'katalog'; e.target.textContent = 'Döndür: ' + (donuyor ? 'açık' : 'kapalı'); };
+
+function dongu() {
+  const dt = Math.min(saat.getDelta(), 0.05), t = saat.elapsedTime;
+  if (sahneBilgi) sahneBilgi.guncelle(dt, t);
+  else if (aktif) {
+    if (aktif.userData.parca?.bacakL) KR.yuru(aktif, t, 0);
+    const p = aktif.userData.parca; if (p?.et) p.et.rotation.y += dt * 0.8; if (p?.direk) p.direk.rotation.y += dt * 2; if (p?.kuyruk) p.kuyruk.rotation.y = Math.sin(t * 2) * 0.3;
+    if (aktif.userData.kapiAc) aktif.userData.kapiAc((Math.sin(t * 0.8) + 1) / 2);
+  }
+  ctl.update(); r.render(scene, cam);
+  if (sahneBilgi && Math.floor(t * 2) !== dongu.s) { dongu.s = Math.floor(t * 2); document.getElementById('olcum').innerHTML = `<dt>çizim çağrısı</dt><dd>${r.info.render.calls}</dd><dt>üçgen</dt><dd>${r.info.render.triangles.toLocaleString('tr-TR')}</dd><dt>FPS</dt><dd>${Math.round(1 / Math.max(dt, 0.001))}</dd>`; }
+  requestAnimationFrame(dongu);
+}
+boyut(); listeCiz();
+try { modAyarla('sokak'); } finally { document.getElementById('yuk').hidden = true; }
+dongu();
+</script>

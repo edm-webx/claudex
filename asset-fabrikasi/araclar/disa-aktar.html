@@ -1,0 +1,33 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body>
+<script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/" } }</script>
+<script type="module">
+// Her asset için: GLB + 320px önizleme PNG. Playwright (araclar/disa-aktar.cjs) çağırır.
+import * as T from 'three';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { kit, pisir } from '../src/kit.js';
+import { KATALOG, uret } from '../src/katalog.js';
+const S = 320;
+const r = new T.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setSize(S, S); r.toneMapping = T.ACESFilmicToneMapping; r.outputColorSpace = T.SRGBColorSpace; r.shadowMap.enabled = true;
+document.body.append(r.domElement);
+const scene = new T.Scene(); scene.background = new T.Color('#e9eef0');
+scene.environment = new T.PMREMGenerator(r).fromScene(new RoomEnvironment(), 0.04).texture;
+scene.add(new T.HemisphereLight('#dff3ff', '#b59a74', 0.9));
+const sun = new T.DirectionalLight('#fff1d6', 2.2); sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024); scene.add(sun, sun.target);
+const cam = new T.PerspectiveCamera(35, 1, 0.01, 1000);
+const yer = new T.Mesh(new T.CircleGeometry(1, 48), new T.ShadowMaterial({ opacity: 0.25 })); yer.rotation.x = -Math.PI / 2; yer.receiveShadow = true; scene.add(yer);
+window.tek = async (id, tohum = 1) => {
+  const k = kit(); const g = uret(k, id, {}, tohum); pisir(g); scene.add(g);
+  const b = new T.Box3().setFromObject(g), c = b.getCenter(new T.Vector3()), s = b.getSize(new T.Vector3()); const R = Math.max(s.x, s.y, s.z) * 0.5;
+  const d = R / Math.sin(T.MathUtils.degToRad(17.5)) * 1.15; cam.position.set(c.x + d * 0.6, c.y + d * 0.4, c.z + d * 0.7); cam.near = d / 100; cam.far = d * 10; cam.updateProjectionMatrix(); cam.lookAt(c);
+  sun.position.set(c.x + R * 2, c.y + R * 4, c.z + R * 2); sun.target.position.copy(c); const sc = sun.shadow.camera; sc.left = sc.bottom = -R * 2; sc.right = sc.top = R * 2; sc.far = R * 10; sc.updateProjectionMatrix();
+  yer.scale.setScalar(R * 3); yer.position.set(c.x, b.min.y, c.z);
+  r.render(scene, cam); const png = r.domElement.toDataURL('image/png');
+  const glb = await new GLTFExporter().parseAsync(g, { binary: true, onlyVisible: true });
+  scene.remove(g); k.dispose();
+  let s64 = ''; const u8 = new Uint8Array(glb); for (let i = 0; i < u8.length; i += 0x8000) s64 += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+  return { png, glb: btoa(s64), boyut: g.userData.carpisma };
+};
+window.liste = KATALOG.map(a => ({ id: a.id, ad: a.ad, kat: a.kat }));
+window.hazir = true;
+</script></body></html>

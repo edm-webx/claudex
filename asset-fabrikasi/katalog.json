@@ -1,0 +1,710 @@
+[
+ {
+  "id": "kisi-sabri",
+  "ad": "Sabri",
+  "kat": "Karakter",
+  "boyut_m": {
+   "w": 0.87,
+   "h": 1.77,
+   "d": 0.57
+  },
+  "glb": "glb/kisi-sabri.glb",
+  "onizleme": "onizleme/kisi-sabri.png"
+ },
+ {
+  "id": "kisi-simitci",
+  "ad": "Simitci",
+  "kat": "Karakter",
+  "boyut_m": {
+   "w": 0.94,
+   "h": 1.9,
+   "d": 0.94
+  },
+  "glb": "glb/kisi-simitci.glb",
+  "onizleme": "onizleme/kisi-simitci.png"
+ },
+ {
+  "id": "kisi-teyze",
+  "ad": "Teyze",
+  "kat": "Karakter",
+  "boyut_m": {
+   "w": 0.8,
+   "h": 1.7,
+   "d": 0.5
+  },
+  "glb": "glb/kisi-teyze.glb",
+  "onizleme": "onizleme/kisi-teyze.png"
+ },
+ {
+  "id": "kisi-kurye",
+  "ad": "Kurye",
+  "kat": "Karakter",
+  "boyut_m": {
+   "w": 0.79,
+   "h": 1.81,
+   "d": 0.62
+  },
+  "glb": "glb/kisi-kurye.glb",
+  "onizleme": "onizleme/kisi-kurye.png"
+ },
+ {
+  "id": "kisi-balikci",
+  "ad": "Balikci",
+  "kat": "Karakter",
+  "boyut_m": {
+   "w": 0.87,
+   "h": 1.78,
+   "d": 0.76
+  },
+  "glb": "glb/kisi-balikci.glb",
+  "onizleme": "onizleme/kisi-balikci.png"
+ },
+ {
+  "id": "kisi-turist",
+  "ad": "Turist",
+  "kat": "Karakter",
+  "boyut_m": {
+   "w": 0.79,
+   "h": 1.83,
+   "d": 0.63
+  },
+  "glb": "glb/kisi-turist.glb",
+  "onizleme": "onizleme/kisi-turist.png"
+ },
+ {
+  "id": "kisi-ogrenci",
+  "ad": "Ogrenci",
+  "kat": "Karakter",
+  "boyut_m": {
+   "w": 0.7,
+   "h": 1.69,
+   "d": 0.68
+  },
+  "glb": "glb/kisi-ogrenci.glb",
+  "onizleme": "onizleme/kisi-ogrenci.png"
+ },
+ {
+  "id": "kisi-taraftar",
+  "ad": "Taraftar",
+  "kat": "Karakter",
+  "boyut_m": {
+   "w": 0.79,
+   "h": 1.88,
+   "d": 0.61
+  },
+  "glb": "glb/kisi-taraftar.glb",
+  "onizleme": "onizleme/kisi-taraftar.png"
+ },
+ {
+  "id": "kisi-asci",
+  "ad": "Asci",
+  "kat": "Karakter",
+  "boyut_m": {
+   "w": 0.79,
+   "h": 2.04,
+   "d": 0.55
+  },
+  "glb": "glb/kisi-asci.glb",
+  "onizleme": "onizleme/kisi-asci.png"
+ },
+ {
+  "id": "kisi-dede",
+  "ad": "Dede",
+  "kat": "Karakter",
+  "boyut_m": {
+   "w": 0.74,
+   "h": 1.65,
+   "d": 0.53
+  },
+  "glb": "glb/kisi-dede.glb",
+  "onizleme": "onizleme/kisi-dede.png"
+ },
+ {
+  "id": "kisi-rastgele",
+  "ad": "Rastgele vatandaş",
+  "kat": "Karakter",
+  "boyut_m": {
+   "w": 0.68,
+   "h": 1.64,
+   "d": 0.51
+  },
+  "glb": "glb/kisi-rastgele.glb",
+  "onizleme": "onizleme/kisi-rastgele.png"
+ },
+ {
+  "id": "otobus",
+  "ad": "Belediye otobüsü",
+  "kat": "Araç",
+  "boyut_m": {
+   "w": 3.3,
+   "h": 3.27,
+   "d": 10.88
+  },
+  "glb": "glb/otobus.glb",
+  "onizleme": "onizleme/otobus.png"
+ },
+ {
+  "id": "dolmus",
+  "ad": "Sarı dolmuş",
+  "kat": "Araç",
+  "boyut_m": {
+   "w": 2.11,
+   "h": 2.25,
+   "d": 5.78
+  },
+  "glb": "glb/dolmus.glb",
+  "onizleme": "onizleme/dolmus.png"
+ },
+ {
+  "id": "taksi",
+  "ad": "Taksi",
+  "kat": "Araç",
+  "boyut_m": {
+   "w": 1.93,
+   "h": 1.59,
+   "d": 4.55
+  },
+  "glb": "glb/taksi.glb",
+  "onizleme": "onizleme/taksi.png"
+ },
+ {
+  "id": "vapur",
+  "ad": "Vapur",
+  "kat": "Araç",
+  "boyut_m": {
+   "w": 6.32,
+   "h": 9.35,
+   "d": 24.1
+  },
+  "glb": "glb/vapur.glb",
+  "onizleme": "onizleme/vapur.png"
+ },
+ {
+  "id": "seyyar",
+  "ad": "Seyyar araba",
+  "kat": "Araç",
+  "boyut_m": {
+   "w": 1.7,
+   "h": 1.2,
+   "d": 0.9
+  },
+  "glb": "glb/seyyar.glb",
+  "onizleme": "onizleme/seyyar.png"
+ },
+ {
+  "id": "motor",
+  "ad": "Kurye motoru",
+  "kat": "Araç",
+  "boyut_m": {
+   "w": 0.6,
+   "h": 1.22,
+   "d": 1.81
+  },
+  "glb": "glb/motor.glb",
+  "onizleme": "onizleme/motor.png"
+ },
+ {
+  "id": "bisiklet",
+  "ad": "Bisiklet",
+  "kat": "Araç",
+  "boyut_m": {
+   "w": 0.5,
+   "h": 0.96,
+   "d": 1.79
+  },
+  "glb": "glb/bisiklet.glb",
+  "onizleme": "onizleme/bisiklet.png"
+ },
+ {
+  "id": "apartman",
+  "ad": "Cumbalı apartman",
+  "kat": "Bina",
+  "boyut_m": {
+   "w": 8,
+   "h": 12,
+   "d": 7
+  },
+  "glb": "glb/apartman.glb",
+  "onizleme": "onizleme/apartman.png"
+ },
+ {
+  "id": "ahsap-ev",
+  "ad": "Ahşap konak",
+  "kat": "Bina",
+  "boyut_m": {
+   "w": 7.8,
+   "h": 9.2,
+   "d": 7.3
+  },
+  "glb": "glb/ahsap-ev.glb",
+  "onizleme": "onizleme/ahsap-ev.png"
+ },
+ {
+  "id": "dukkan",
+  "ad": "Mahalle dükkanı",
+  "kat": "Bina",
+  "boyut_m": {
+   "w": 5,
+   "h": 3.4,
+   "d": 4.5
+  },
+  "glb": "glb/dukkan.glb",
+  "onizleme": "onizleme/dukkan.png"
+ },
+ {
+  "id": "durak",
+  "ad": "Otobüs durağı",
+  "kat": "Bina",
+  "boyut_m": {
+   "w": 3.6,
+   "h": 2.7,
+   "d": 1.6
+  },
+  "glb": "glb/durak.glb",
+  "onizleme": "onizleme/durak.png"
+ },
+ {
+  "id": "kule",
+  "ad": "Martı Kulesi",
+  "kat": "Bina",
+  "boyut_m": {
+   "w": 7.2,
+   "h": 27,
+   "d": 7.2
+  },
+  "glb": "glb/kule.glb",
+  "onizleme": "onizleme/kule.png"
+ },
+ {
+  "id": "sokak-lambasi",
+  "ad": "Sokak lambası",
+  "kat": "Dekor",
+  "boyut_m": {
+   "w": 1.21,
+   "h": 4.31,
+   "d": 0.5
+  },
+  "glb": "glb/sokak-lambasi.glb",
+  "onizleme": "onizleme/sokak-lambasi.png"
+ },
+ {
+  "id": "bank",
+  "ad": "Bank",
+  "kat": "Dekor",
+  "boyut_m": {
+   "w": 1.8,
+   "h": 1.01,
+   "d": 0.64
+  },
+  "glb": "glb/bank.glb",
+  "onizleme": "onizleme/bank.png"
+ },
+ {
+  "id": "cop-kutusu",
+  "ad": "Çöp kutusu",
+  "kat": "Dekor",
+  "boyut_m": {
+   "w": 0.53,
+   "h": 0.86,
+   "d": 0.59
+  },
+  "glb": "glb/cop-kutusu.glb",
+  "onizleme": "onizleme/cop-kutusu.png"
+ },
+ {
+  "id": "cay-masasi",
+  "ad": "Çay bahçesi masası",
+  "kat": "Dekor",
+  "boyut_m": {
+   "w": 1.64,
+   "h": 0.91,
+   "d": 1.64
+  },
+  "glb": "glb/cay-masasi.glb",
+  "onizleme": "onizleme/cay-masasi.png"
+ },
+ {
+  "id": "semaver",
+  "ad": "Semaver",
+  "kat": "Dekor",
+  "boyut_m": {
+   "w": 0.48,
+   "h": 0.95,
+   "d": 0.56
+  },
+  "glb": "glb/semaver.glb",
+  "onizleme": "onizleme/semaver.png"
+ },
+ {
+  "id": "koni",
+  "ad": "Trafik konisi",
+  "kat": "Dekor",
+  "boyut_m": {
+   "w": 0.45,
+   "h": 0.75,
+   "d": 0.45
+  },
+  "glb": "glb/koni.glb",
+  "onizleme": "onizleme/koni.png"
+ },
+ {
+  "id": "saksi",
+  "ad": "Saksı çiçek",
+  "kat": "Dekor",
+  "boyut_m": {
+   "w": 0.5,
+   "h": 0.67,
+   "d": 0.5
+  },
+  "glb": "glb/saksi.glb",
+  "onizleme": "onizleme/saksi.png"
+ },
+ {
+  "id": "cesme",
+  "ad": "Mermer çeşme",
+  "kat": "Dekor",
+  "boyut_m": {
+   "w": 1.8,
+   "h": 2.4,
+   "d": 1.15
+  },
+  "glb": "glb/cesme.glb",
+  "onizleme": "onizleme/cesme.png"
+ },
+ {
+  "id": "reklam",
+  "ad": "Reklam panosu",
+  "kat": "Dekor",
+  "boyut_m": {
+   "w": 4.4,
+   "h": 5.25,
+   "d": 0.68
+  },
+  "glb": "glb/reklam.glb",
+  "onizleme": "onizleme/reklam.png"
+ },
+ {
+  "id": "kedi",
+  "ad": "Sokak kedisi",
+  "kat": "Dekor",
+  "boyut_m": {
+   "w": 0.41,
+   "h": 0.53,
+   "d": 0.49
+  },
+  "glb": "glb/kedi.glb",
+  "onizleme": "onizleme/kedi.png"
+ },
+ {
+  "id": "marti",
+  "ad": "Martı",
+  "kat": "Dekor",
+  "boyut_m": {
+   "w": 0.33,
+   "h": 0.45,
+   "d": 0.61
+  },
+  "glb": "glb/marti.glb",
+  "onizleme": "onizleme/marti.png"
+ },
+ {
+  "id": "simit",
+  "ad": "Simit",
+  "kat": "Yemek",
+  "boyut_m": {
+   "w": 0.15,
+   "h": 0.03,
+   "d": 0.15
+  },
+  "glb": "glb/simit.glb",
+  "onizleme": "onizleme/simit.png"
+ },
+ {
+  "id": "cay",
+  "ad": "Çay bardağı",
+  "kat": "Yemek",
+  "boyut_m": {
+   "w": 0.13,
+   "h": 0.12,
+   "d": 0.13
+  },
+  "glb": "glb/cay.glb",
+  "onizleme": "onizleme/cay.png"
+ },
+ {
+  "id": "doner-ocagi",
+  "ad": "Döner ocağı",
+  "kat": "Yemek",
+  "boyut_m": {
+   "w": 0.7,
+   "h": 1.4,
+   "d": 0.66
+  },
+  "glb": "glb/doner-ocagi.glb",
+  "onizleme": "onizleme/doner-ocagi.png"
+ },
+ {
+  "id": "durum",
+  "ad": "Dürüm",
+  "kat": "Yemek",
+  "boyut_m": {
+   "w": 0.22,
+   "h": 0.06,
+   "d": 0.06
+  },
+  "glb": "glb/durum.glb",
+  "onizleme": "onizleme/durum.png"
+ },
+ {
+  "id": "lahmacun",
+  "ad": "Lahmacun",
+  "kat": "Yemek",
+  "boyut_m": {
+   "w": 0.35,
+   "h": 0.05,
+   "d": 0.35
+  },
+  "glb": "glb/lahmacun.glb",
+  "onizleme": "onizleme/lahmacun.png"
+ },
+ {
+  "id": "balik-ekmek",
+  "ad": "Balık ekmek",
+  "kat": "Yemek",
+  "boyut_m": {
+   "w": 0.27,
+   "h": 0.12,
+   "d": 0.1
+  },
+  "glb": "glb/balik-ekmek.glb",
+  "onizleme": "onizleme/balik-ekmek.png"
+ },
+ {
+  "id": "sosisli",
+  "ad": "Sosisli",
+  "kat": "Yemek",
+  "boyut_m": {
+   "w": 0.21,
+   "h": 0.07,
+   "d": 0.1
+  },
+  "glb": "glb/sosisli.glb",
+  "onizleme": "onizleme/sosisli.png"
+ },
+ {
+  "id": "midye",
+  "ad": "Midye dolma",
+  "kat": "Yemek",
+  "boyut_m": {
+   "w": 0.24,
+   "h": 0.05,
+   "d": 0.24
+  },
+  "glb": "glb/midye.glb",
+  "onizleme": "onizleme/midye.png"
+ },
+ {
+  "id": "kunefe",
+  "ad": "Künefe",
+  "kat": "Yemek",
+  "boyut_m": {
+   "w": 0.18,
+   "h": 0.03,
+   "d": 0.18
+  },
+  "glb": "glb/kunefe.glb",
+  "onizleme": "onizleme/kunefe.png"
+ },
+ {
+  "id": "baklava",
+  "ad": "Baklava tepsisi",
+  "kat": "Yemek",
+  "boyut_m": {
+   "w": 0.35,
+   "h": 0.04,
+   "d": 0.35
+  },
+  "glb": "glb/baklava.glb",
+  "onizleme": "onizleme/baklava.png"
+ },
+ {
+  "id": "pide",
+  "ad": "Kaşarlı pide",
+  "kat": "Yemek",
+  "boyut_m": {
+   "w": 0.37,
+   "h": 0.06,
+   "d": 0.12
+  },
+  "glb": "glb/pide.glb",
+  "onizleme": "onizleme/pide.png"
+ },
+ {
+  "id": "ayran",
+  "ad": "Ayran",
+  "kat": "Yemek",
+  "boyut_m": {
+   "w": 0.08,
+   "h": 0.12,
+   "d": 0.08
+  },
+  "glb": "glb/ayran.glb",
+  "onizleme": "onizleme/ayran.png"
+ },
+ {
+  "id": "turk-kahvesi",
+  "ad": "Türk kahvesi",
+  "kat": "Yemek",
+  "boyut_m": {
+   "w": 0.12,
+   "h": 0.07,
+   "d": 0.12
+  },
+  "glb": "glb/turk-kahvesi.glb",
+  "onizleme": "onizleme/turk-kahvesi.png"
+ },
+ {
+  "id": "sise",
+  "ad": "Şişe içecek",
+  "kat": "Yemek",
+  "boyut_m": {
+   "w": 0.07,
+   "h": 0.24,
+   "d": 0.07
+  },
+  "glb": "glb/sise.glb",
+  "onizleme": "onizleme/sise.png"
+ },
+ {
+  "id": "islak-hamburger",
+  "ad": "Islak hamburger",
+  "kat": "Yemek",
+  "boyut_m": {
+   "w": 0.1,
+   "h": 0.07,
+   "d": 0.1
+  },
+  "glb": "glb/islak-hamburger.glb",
+  "onizleme": "onizleme/islak-hamburger.png"
+ },
+ {
+  "id": "misir",
+  "ad": "Mısır",
+  "kat": "Yemek",
+  "boyut_m": {
+   "w": 0.06,
+   "h": 0.23,
+   "d": 0.06
+  },
+  "glb": "glb/misir.glb",
+  "onizleme": "onizleme/misir.png"
+ },
+ {
+  "id": "cam",
+  "ad": "Çam",
+  "kat": "Doğa",
+  "boyut_m": {
+   "w": 0.5,
+   "h": 5.754147881176323,
+   "d": 0.5
+  },
+  "glb": "glb/cam.glb",
+  "onizleme": "onizleme/cam.png"
+ },
+ {
+  "id": "mese",
+  "ad": "Meşe",
+  "kat": "Doğa",
+  "boyut_m": {
+   "w": 0.6,
+   "h": 5.101659152470529,
+   "d": 0.6
+  },
+  "glb": "glb/mese.glb",
+  "onizleme": "onizleme/mese.png"
+ },
+ {
+  "id": "cinar",
+  "ad": "Ulu çınar",
+  "kat": "Doğa",
+  "boyut_m": {
+   "w": 1.3,
+   "h": 8.2,
+   "d": 1.3
+  },
+  "glb": "glb/cinar.glb",
+  "onizleme": "onizleme/cinar.png"
+ },
+ {
+  "id": "selvi",
+  "ad": "Selvi",
+  "kat": "Doğa",
+  "boyut_m": {
+   "w": 0.4,
+   "h": 7.754147881176323,
+   "d": 0.4
+  },
+  "glb": "glb/selvi.glb",
+  "onizleme": "onizleme/selvi.png"
+ },
+ {
+  "id": "erguvan",
+  "ad": "Erguvan",
+  "kat": "Doğa",
+  "boyut_m": {
+   "w": 2.5,
+   "h": 3.89,
+   "d": 3.05
+  },
+  "glb": "glb/erguvan.glb",
+  "onizleme": "onizleme/erguvan.png"
+ },
+ {
+  "id": "cali",
+  "ad": "Çalı",
+  "kat": "Doğa",
+  "boyut_m": {
+   "w": 1.56,
+   "h": 1.03,
+   "d": 1.28
+  },
+  "glb": "glb/cali.glb",
+  "onizleme": "onizleme/cali.png"
+ },
+ {
+  "id": "kaya",
+  "ad": "Kaya",
+  "kat": "Doğa",
+  "boyut_m": {
+   "w": 1.58,
+   "h": 0.49,
+   "d": 1.03
+  },
+  "glb": "glb/kaya.glb",
+  "onizleme": "onizleme/kaya.png"
+ },
+ {
+  "id": "cicek-tarhi",
+  "ad": "Lale tarhı",
+  "kat": "Doğa",
+  "boyut_m": {
+   "w": 2,
+   "h": 0.71,
+   "d": 1
+  },
+  "glb": "glb/cicek-tarhi.glb",
+  "onizleme": "onizleme/cicek-tarhi.png"
+ },
+ {
+  "id": "mantar",
+  "ad": "Mantar",
+  "kat": "Doğa",
+  "boyut_m": {
+   "w": 0.24,
+   "h": 0.23,
+   "d": 0.24
+  },
+  "glb": "glb/mantar.glb",
+  "onizleme": "onizleme/mantar.png"
+ }
+]
