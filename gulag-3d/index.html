@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>Gulag Kaçışı</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --kagit:#e9dfc6; --kagit2:#d6c8a6; --murekkep:#1d1a16; --kizil:#b3261e; --kizil2:#e0483a;
+  --gece:#070a12; --cam:rgba(10,13,22,.82); --cizgi:rgba(233,223,198,.18); --yazi:#e9dfc6; --soluk:#9c937e; --altin:#e0b25a;
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--gece:#070a12}}
+:root[data-theme="dark"]{--gece:#070a12}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--gece);color:var(--yazi);font-family:"IBM Plex Mono",ui-monospace,monospace;-webkit-user-select:none;user-select:none;touch-action:none}
+canvas#gl{position:fixed;inset:0;width:100vw;height:100vh;display:block}
+.katman{position:fixed;inset:0;pointer-events:none}
+.gizli{display:none!important}
+button{font:inherit;cursor:pointer}
+
+/* vinyet + film tanesi */
+#vinyet{background:radial-gradient(ellipse at 50% 55%,transparent 55%,rgba(0,0,0,.55) 100%)}
+#tehlike{background:radial-gradient(ellipse at 50% 50%,transparent 45%,rgba(200,20,10,.55) 100%);opacity:0;transition:opacity .15s}
+#perde{background:#000;opacity:1;transition:opacity .6s}
+
+/* HUD */
+#hud{padding:max(14px,env(safe-area-inset-top)) 18px 0}
+.ust{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+#sevAd{font-family:Oswald,sans-serif;font-weight:700;letter-spacing:.06em;font-size:20px;text-transform:uppercase;text-shadow:0 2px 8px #000}
+#sevAd small{display:block;font-family:"IBM Plex Mono",monospace;font-weight:400;font-size:11px;letter-spacing:.12em;color:var(--soluk);text-transform:none}
+#goz{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:160px}
+#gozIkon{width:34px;height:20px}
+#gozBar{width:150px;height:5px;background:rgba(255,255,255,.12);border-radius:3px;overflow:hidden}
+#gozDol{height:100%;width:0;background:linear-gradient(90deg,#e0b25a,#e0483a);transition:width .08s}
+#gozYazi{font-size:10px;letter-spacing:.2em;color:var(--soluk);height:12px}
+#env{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:40vw}
+.cip{display:flex;align-items:center;gap:5px;background:var(--cam);border:1px solid var(--cizgi);border-radius:4px;padding:4px 8px;font-size:12px;animation:cipGel .35s ease-out}
+.cip svg{width:16px;height:16px}
+@keyframes cipGel{from{transform:translateY(-6px);opacity:0}}
+#durdurBtn{pointer-events:auto;background:var(--cam);border:1px solid var(--cizgi);color:var(--yazi);width:34px;height:34px;border-radius:4px;margin-left:6px}
+#ipucu{position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--cam);border:1px solid var(--cizgi);padding:7px 14px;border-radius:4px;font-size:13px;white-space:nowrap;transition:opacity .2s}
+#ipucu b{color:var(--altin);font-weight:600;margin-right:6px}
+#bilgi{position:fixed;left:50%;top:22%;transform:translateX(-50%);text-align:center;max-width:min(560px,88vw);font-size:14px;line-height:1.5;background:var(--cam);border-left:3px solid var(--altin);padding:10px 16px;opacity:0;transition:opacity .3s,transform .3s}
+#bilgi.acik{opacity:1;transform:translateX(-50%) translateY(6px)}
+#rehber{position:fixed;left:18px;bottom:calc(22px + env(safe-area-inset-bottom));font-size:11px;color:var(--soluk);letter-spacing:.04em;max-width:40vw}
+
+/* Diyalog */
+#diyalog{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(760px,calc(100vw - 32px));background:linear-gradient(180deg,rgba(14,16,24,.94),rgba(8,9,14,.96));border:1px solid var(--cizgi);border-top:3px solid var(--kizil);padding:14px 18px 16px;pointer-events:auto;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+#dKim{font-family:Oswald,sans-serif;font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:15px;margin-bottom:6px}
+#dYazi{font-size:15px;line-height:1.6;min-height:3.2em}
+#dIleri{position:absolute;right:14px;bottom:10px;font-size:11px;color:var(--soluk);animation:yan 1.2s infinite}
+@keyframes yan{50%{opacity:.3}}
+
+/* Menüler: dosya kartı */
+.ekran{position:fixed;inset:0;display:flex;align-items:center;padding:24px max(24px,6vw);pointer-events:auto}
+#baslik{background:linear-gradient(90deg,rgba(4,6,12,.92) 0%,rgba(4,6,12,.6) 45%,transparent 75%)}
+.dosya{position:relative;max-width:440px}
+.dosya h1{font-family:Oswald,sans-serif;font-weight:700;font-size:clamp(46px,8vw,96px);line-height:.9;margin:0;letter-spacing:.01em;text-transform:uppercase;color:var(--kagit);text-shadow:0 4px 30px rgba(0,0,0,.8)}
+.dosya .alt{font-size:12px;letter-spacing:.32em;color:var(--soluk);margin:14px 0 26px;text-transform:uppercase}
+.damga{position:absolute;right:-30px;top:-14px;transform:rotate(-9deg);border:3px solid var(--kizil2);color:var(--kizil2);font-family:Oswald,sans-serif;font-weight:700;letter-spacing:.2em;padding:2px 10px;font-size:20px;opacity:.85;mix-blend-mode:screen}
+.menu{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.menu button{background:none;border:0;color:var(--kagit);font-family:Oswald,sans-serif;font-weight:500;font-size:22px;letter-spacing:.06em;text-transform:uppercase;padding:6px 0 6px 18px;position:relative;opacity:.72;transition:opacity .15s,padding .15s}
+.menu button::before{content:"";position:absolute;left:0;top:50%;width:8px;height:2px;background:var(--kizil2);transform:scaleX(0);transform-origin:left;transition:transform .15s}
+.menu button:hover,.menu button:focus-visible,.menu button.sec{opacity:1;padding-left:24px;outline:none}
+.menu button:hover::before,.menu button:focus-visible::before,.menu button.sec::before{transform:scaleX(1)}
+.menu button small{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.1em;color:var(--soluk);margin-left:10px;text-transform:none}
+.kontroller{margin-top:30px;font-size:11px;line-height:1.9;color:var(--soluk)}
+.kontroller kbd{font-family:inherit;border:1px solid var(--cizgi);border-bottom-width:2px;border-radius:3px;padding:0 5px;color:var(--yazi)}
+.panel{background:var(--cam);border:1px solid var(--cizgi);padding:22px 24px;min-width:min(380px,88vw);max-width:88vw}
+.panel h2{font-family:Oswald,sans-serif;text-transform:uppercase;letter-spacing:.08em;margin:0 0 16px;font-size:24px}
+.ortala{justify-content:center;background:rgba(3,4,8,.6)}
+.sevListe{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.sevListe button{display:flex;justify-content:space-between;gap:20px;background:rgba(255,255,255,.03);border:1px solid var(--cizgi);color:var(--yazi);padding:10px 12px;text-align:left;font-size:14px}
+.sevListe button:disabled{opacity:.35;cursor:default}
+.sevListe button:not(:disabled):hover{border-color:var(--altin)}
+.ses label{display:grid;grid-template-columns:90px 1fr 40px;align-items:center;gap:10px;font-size:13px;margin:10px 0}
+.ses input{accent-color:var(--kizil2)}
+.geri{margin-top:12px;background:none;border:1px solid var(--cizgi);color:var(--yazi);padding:8px 14px}
+/* Yakalandın / bitti */
+#yakalandi{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+#yakalandi h2{font-family:Oswald,sans-serif;font-size:clamp(48px,10vw,110px);margin:0;color:var(--kizil2);letter-spacing:.06em;text-shadow:0 0 40px rgba(224,72,58,.5);animation:titre .4s}
+#yakalandi p{font-size:15px;margin:8px 0 0;color:var(--kagit)}
+@keyframes titre{0%{transform:scale(1.4);opacity:0}}
+.kart{background:var(--kagit);color:var(--murekkep);padding:26px 30px 22px;min-width:min(380px,88vw);box-shadow:0 30px 80px rgba(0,0,0,.6);transform:rotate(-1deg);position:relative}
+.kart h2{font-family:Oswald,sans-serif;text-transform:uppercase;margin:0 0 4px;font-size:30px;letter-spacing:.04em}
+.kart .alt{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#6a604c;margin-bottom:16px}
+.kart dl{display:grid;grid-template-columns:1fr auto;gap:6px 30px;margin:0 0 18px;font-size:14px}
+.kart dd{margin:0;font-weight:600;text-align:right}
+.kart .damga{right:16px;top:16px;color:var(--kizil);border-color:var(--kizil);mix-blend-mode:multiply}
+.kart button{background:var(--murekkep);color:var(--kagit);border:0;padding:10px 18px;font-family:Oswald,sans-serif;text-transform:uppercase;letter-spacing:.1em;font-size:16px}
+/* Dokunmatik */
+#dokun{position:fixed;left:0;right:0;bottom:0;padding:0 16px calc(16px + env(safe-area-inset-bottom));display:flex;justify-content:space-between;align-items:flex-end;pointer-events:none}
+#dokun .grup{display:flex;gap:10px;pointer-events:auto}
+#dokun button{width:62px;height:62px;border-radius:50%;background:rgba(10,13,22,.55);border:1.5px solid rgba(233,223,198,.3);color:var(--yazi);font-size:20px;touch-action:none}
+#dokun button.kucuk{width:52px;height:52px;font-size:13px;font-weight:600}
+#dokun button.basili{background:rgba(224,178,90,.35)}
+@media (max-width:640px){#sevAd{font-size:16px}#goz{min-width:110px}#gozBar{width:100px}#rehber{display:none}}
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div id="vinyet" class="katman"></div>
+<div id="tehlike" class="katman"></div>
+
+<div id="hud" class="katman gizli">
+  <div class="ust">
+    <div id="sevAd"></div>
+    <div id="goz">
+      <svg id="gozIkon" viewBox="0 0 34 20"><path d="M1 10 Q17 -4 33 10 Q17 24 1 10Z" fill="none" stroke="#e9dfc6" stroke-width="1.6"/><circle id="gozBebek" cx="17" cy="10" r="4" fill="#e9dfc6"/></svg>
+      <div id="gozBar"><div id="gozDol"></div></div>
+      <div id="gozYazi"></div>
+    </div>
+    <div style="display:flex;align-items:flex-start"><div id="env"></div><button id="durdurBtn" aria-label="Duraklat">❚❚</button></div>
+  </div>
+  <div id="ipucu" class="gizli"></div>
+  <div id="bilgi"></div>
+  <div id="rehber"></div>
+</div>
+
+<div id="diyalog" class="gizli"><div id="dKim"></div><div id="dYazi"></div><div id="dIleri">Boşluk / dokun ▸</div></div>
+
+<div id="baslik" class="ekran">
+  <div class="dosya">
+    <div class="damga">KAÇAK</div>
+    <h1>Gulag<br>Kaçışı</h1>
+    <div class="alt">Vorkuta · Ekim 1962</div>
+    <div class="menu" id="anaMenu">
+      <button data-a="yeni">Kaçışa başla</button>
+      <button data-a="devam" id="devamBtn">Devam et <small id="devamYazi"></small></button>
+      <button data-a="seviyeler">Seviyeler</button>
+      <button data-a="ses">Ses</button>
+    </div>
+    <div class="kontroller">
+      <kbd>A</kbd> <kbd>D</kbd> yürü · <kbd>W</kbd>/<kbd>Boşluk</kbd> zıpla · <kbd>S</kbd> eğil, saklan<br>
+      <kbd>E</kbd> kullan · <kbd>F</kbd> sosis at · <kbd>R</kbd> kontrol noktası · <kbd>Esc</kbd> duraklat
+    </div>
+  </div>
+</div>
+
+<div id="seviyeEkran" class="ekran ortala gizli"><div class="panel"><h2>Seviyeler</h2><div class="sevListe" id="sevListe"></div><button class="geri" data-geri>Geri</button></div></div>
+<div id="sesEkran" class="ekran ortala gizli"><div class="panel ses"><h2>Ses</h2>
+  <label>Genel <input type="range" min="0" max="1" step="0.05" data-s="ana"><span></span></label>
+  <label>Müzik <input type="range" min="0" max="1" step="0.05" data-s="muzik"><span></span></label>
+  <label>Efekt <input type="range" min="0" max="1" step="0.05" data-s="efekt"><span></span></label>
+  <button class="geri" data-geri>Geri</button></div></div>
+<div id="durdur" class="ekran ortala gizli"><div class="panel"><h2>Duraklatıldı</h2><div class="menu">
+  <button data-a="surdur">Devam et</button><button data-a="kontrol">Kontrol noktasına dön</button><button data-a="ses">Ses</button><button data-a="anamenu">Ana menü</button></div></div></div>
+
+<div id="yakalandi" class="katman gizli"><h2>YAKALANDIN</h2><p id="yakSebep"></p></div>
+<div id="bitis" class="ekran ortala gizli"><div class="kart"><div class="damga">GEÇTİ</div><h2 id="bAd"></h2><div class="alt" id="bAlt"></div><dl id="bListe"></dl><button id="bDevam">Devam ▸</button></div></div>
+
+<div id="dokun" class="gizli">
+  <div class="grup"><button data-k="sol">◀</button><button data-k="sag">▶</button></div>
+  <div class="grup"><button class="kucuk" data-k="at">Sosis</button><button class="kucuk" data-k="kullan">E</button><button data-k="egil">▼</button><button data-k="zipla">▲</button></div>
+</div>
+<div id="perde" class="katman"></div>
+
+<script src="vendor/three.min.js"></script>
+<script src="js/veri.js"></script>
+<script src="js/ses.js"></script>
+<script src="js/sahne.js"></script>
+<script src="js/oyun.js"></script>
+</body>
+</html>
