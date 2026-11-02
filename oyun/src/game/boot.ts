@@ -784,8 +784,12 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   reg('izgara', (on?: boolean) => { if (on !== undefined) izgaraLook?.set(!!on); return izgaraLook?.get() ?? null; });
   reg('hucre', (name: string) => cellRect(name));
   reg('teleport', (x: number, z: number) => { sim.command({ kind: 'teleport', x, z }); camHold = null; cam.snap(walk.pos); });
-  reg('camera', (o: { x?: number; z?: number; zoom?: number } = {}) => {
+  reg('camera', (o: { x?: number; z?: number; zoom?: number; zoomRaw?: number; yaw?: number; tilt?: number } = {}) => {
     if (o.zoom !== undefined) cam.zoom = o.zoom;
+    const cr = cam as unknown as { zoomRaw?: (z: number) => void; turn(d: number): void; tilt(d: number): void; yaw: number };
+    if (o.zoomRaw !== undefined) cr.zoomRaw?.(o.zoomRaw);
+    if (o.yaw !== undefined) cr.turn(o.yaw - cr.yaw);
+    if (o.tilt !== undefined) cr.tilt(o.tilt);
     if (o.x !== undefined || o.z !== undefined) { camHold = { x: o.x ?? walk.pos.x, z: o.z ?? walk.pos.z }; cam.snap(camHold); }
   });
   reg('input', (x: number | null, z = 0) => input.inject(x === null || x === undefined ? null : { x: Number(x), z: Number(z) }));

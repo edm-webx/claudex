@@ -18,6 +18,7 @@ const easeInOut = (t: number) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 
 export interface MotorCameraRig extends CameraRig {
   /** v2 dist for the current aspect and zoom (metres). */
   distance(): number;
+  zoomRaw(z: number): void;
   tilt(delta: number): void;
   readonly introLeft: number;
   readonly yaw: number;
@@ -54,6 +55,8 @@ export function createCameraRig(deps: CameraDeps): MotorCameraRig {
     get introLeft() { return CAM.intro; },
     get yaw() { return yaw; },
     turn(delta: number) { yaw += delta; },
+    /** dev/screenshot only: zoom without the ZOOM_MAX clamp */
+    zoomRaw(z: number) { CAM.zoom = z; },
     tilt(delta: number) { tiltTo = null; tilt = clamp(tilt + delta, PITCH_MIN - CAM.pitch, PITCH_MAX - CAM.pitch); },
     recenter() { yawTo = Math.round(yaw / (Math.PI * 2)) * Math.PI * 2; tiltTo = 0; },
     follow(t: Vec2) { target.x = t.x; target.z = t.z; },
