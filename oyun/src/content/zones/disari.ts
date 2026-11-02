@@ -50,6 +50,23 @@ function kulube(id: string, color: string, sign: string): Def {
   };
 }
 
+/** Pier-end apartment blocks (2026-11-02): they close the promenade at both ends so the pier reads as the whole map.
+ *  Windows on the +z face and on the pier-facing x face; one solid collider each. */
+function apt(id: string, w: number, d: number, h: number, wall: string, trim: string, face: 1 | -1): Def {
+  const parts: PartDef[] = [box(w, h, d, 0, h / 2, 0, wall, 'wall'), box(w + 0.5, 0.35, d + 0.5, 0, h + 0.17, 0, trim, 'roof'), box(w * 0.4, 1.0, d * 0.4, w * 0.15, h + 0.85, -d * 0.1, '#8d8f93', 'tank')];
+  const fx = face * (w / 2 + 0.03), lit = ['#ffd98a', '#9cc3d6', '#9cc3d6', '#7da4b8'];
+  for (let f = 0; f < Math.floor((h - 3.2) / 3.0); f++) {
+    const y = 3.4 + f * 3.0;
+    for (let c = 0; c < Math.floor(d / 2.0); c++) { const z = -d / 2 + 1.1 + c * 2.0; parts.push(box(0.07, 1.4, 1.0, fx, y, z, lit[(f * 3 + c) % lit.length]), box(0.5, 0.12, 1.5, fx + face * 0.22, y - 0.78, z, trim)); }
+    for (let c = 0; c < Math.floor(w / 2.0); c++) { const x = -w / 2 + 1.1 + c * 2.0; parts.push(box(1.0, 1.4, 0.07, x, y, d / 2 + 0.03, lit[(f * 2 + c + 1) % lit.length]), box(1.5, 0.12, 0.5, x, y - 0.78, d / 2 + 0.22, trim)); }
+  }
+  parts.push(box(0.1, 2.4, 1.8, fx, 1.2, 0, '#4a3a2e', 'door'), box(0.14, 0.3, 4.6, fx, 3.0, 0, trim, 'ledge'));
+  return { id, parts, colliders: [R(w, d)] };
+}
+export function aptPrefabs(): PrefabDef[] {
+  return [apt('mk.apt.e1', 8, 6.4, 20, '#e8cfae', '#b8764f', -1), apt('mk.apt.e2', 8, 6.4, 25, '#d9c3d6', '#8a6a86', -1), apt('mk.apt.w1', 8, 6.4, 23, '#cfe0d4', '#6f8f7a', 1), apt('mk.apt.w2', 8, 6.4, 19, '#f1d6c4', '#b5654a', 1)];
+}
+
 export function disariPrefabs(): PrefabDef[] {
   const defs: Def[] = [];
   const g = (id: string, w: number, d: number, color: string, y = 0.012) => defs.push({ id, parts: [plane(w, d, y, color, 'ground')] });

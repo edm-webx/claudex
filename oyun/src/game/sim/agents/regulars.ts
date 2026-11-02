@@ -12,6 +12,8 @@ import { makeSpecial, freeSpecial, orderDone, orderLeft, queueSide, spawnPoint, 
 
 export interface RegularsSystem extends System { current(): { id: string; state: string; visit: number; need: Record<string, number>; pos: { x: number; z: number } } | null; }
 
+/** 2026-11-02 user: müdavimler (regulars) removed completely, they only caused bugs. Flip to bring them back. */
+const MUDAVIMLER_KAPALI = true;
 export function createRegulars(env: AgentEnv): RegularsSystem {
   const rng = env.rng('regulars');
   let g: Special | null = null, def: RegularDef | null = null, cd = 0;
@@ -25,7 +27,7 @@ export function createRegulars(env: AgentEnv): RegularsSystem {
       if (!g) {
         if (cd > 0) { cd -= dt; return; }
         const h = host.hour();
-        for (const d of REGULARS) {
+        for (const d of MUDAVIMLER_KAPALI ? [] as typeof REGULARS : REGULARS) {
           if (S.day < d.fromDay) continue;
           if (d.needs && !S.owned[d.needs]) continue;
           const alt = !sellable(d.order, S) && !!d.alt && sellable(d.alt, S);

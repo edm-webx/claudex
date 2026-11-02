@@ -325,9 +325,11 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
       };
       let sp: Vec2 | null = null;
       if (sit && c.seat) sp = seatPos(c.seat.table, c.seat.seat);
-      write(c.agent, sit && sp ? sp.x : c.x, sit && sp ? sp.z : c.z, c.rot, sit);
+      // 2026-11-02: seated guests face the table (they used to keep whatever heading they walked in with)
+      const faceTable = (ti: number, q: Vec2) => { const tb = rt.layout.tables[ti]; return tb ? Math.atan2(tb.x - q.x, tb.z - q.z) : c.rot; };
+      write(c.agent, sit && sp ? sp.x : c.x, sit && sp ? sp.z : c.z, sit && sp && c.seat ? faceTable(c.seat.table, sp) : c.rot, sit);
       c.members.forEach((m, i) => {
-        if (sit && c.seat) { const t = rt.tables[c.seat.table]; const free = t.seats.map((s, k) => (s.occ === c.id && k !== c.seat!.seat ? k : -1)).filter(k => k >= 0); const q = free[i] != null ? seatPos(c.seat.table, free[i]) : null; if (q) { write(m, q.x, q.z, c.rot, true); return; } }
+        if (sit && c.seat) { const t = rt.tables[c.seat.table]; const free = t.seats.map((s, k) => (s.occ === c.id && k !== c.seat!.seat ? k : -1)).filter(k => k >= 0); const q = free[i] != null ? seatPos(c.seat.table, free[i]) : null; if (q) { write(m, q.x, q.z, faceTable(c.seat.table, q), true); return; } }
         const sd = (i % 2 ? 1 : -1) * 0.5, bk = -0.45 * (Math.floor(i / 2) + 1);
         write(m, c.x + Math.cos(c.rot) * sd + Math.sin(c.rot) * bk, c.z - Math.sin(c.rot) * sd + Math.cos(c.rot) * bk, c.rot, false);
       });

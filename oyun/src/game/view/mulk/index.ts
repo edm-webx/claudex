@@ -107,7 +107,7 @@ export function createMulkView(d: MulkViewDeps): MulkView {
           g.children[0].position.y = 1.1 + Math.sin(tt * 2.4) * 0.12; g.children[0].rotation.y = tt * 1.3; g.children[1].position.y = 0.06; g.children[1].scale.setScalar(1 + Math.sin(tt * 3) * 0.08);
         }
         for (const [id, g] of clueMeshes) if (!want.has(id)) { clueRoot.remove(g); clueMeshes.delete(id); } }
-      const near = Math.abs(d.hero().x - 268) < 70; root.visible = near;
+      const near = true;   // 2026-11-02: clue markers now live on the pier and at the stadium, so this layer always draws root.visible = near;
       const rl = d.rules(), m = rl ? mulkApi(rl) : null; if (!m || !near) { bankL.hide(); for (const p of plots.values()) p.label.hide(); return; }
       const v = m.view(), md = m.model();
       for (const pv of v.plots) {

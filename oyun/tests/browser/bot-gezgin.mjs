@@ -36,7 +36,7 @@ if (go) { await go.click(); await p.waitForTimeout(800); }
 await p.evaluate(() => window.__marti.step(2));
 if (await p.$('.kl-go')) console.log('uyarı: kulis hâlâ açık');
 const snap = async n => { try { await p.screenshot({ path: join(OUT, n + '.png'), timeout: 60000 }); } catch (e) { await p.waitForTimeout(1500); try { await p.screenshot({ path: join(OUT, n + '.png'), timeout: 60000 }); } catch { find('warn', n, 'ekran görüntüsü alınamadı'); } } };
-const stops = [['iskele-bufe', 0, 0], ['iskele-ferry', -6, 4], ['carsi', 60, 8], ['meydan', 140, 10], ['sahil', 240, 12], ['stadyum-kapi', 404, 13], ['stadyum-saha', 425, 20], ['belgrad-durak', 806, 10], ['belgrad-orman', 840, 20], ['belgrad-derin', 870, 40]];
+const stops = [['iskele-bufe', 0, 0], ['iskele-ferry', -6, 4], ['stadyum-kapi', 404, 13], ['stadyum-saha', 425, 20], ['belgrad-durak', 806, 10], ['belgrad-orman', 840, 20], ['belgrad-derin', 870, 40]];
 for (const [name, x, z] of stops) {
   await p.evaluate(([x, z]) => window.__marti.teleport(x, z), [x, z]);
   await p.evaluate(() => { window.__marti.step(2); for (let i = 0; i < 8; i++) { window.__marti.renderFrames(5, 0.1); window.__marti.step(1); } });

@@ -6,8 +6,8 @@
     "x": 0,
     "z": 0
    },
-   "calls": 138,
-   "tris": 173667,
+   "calls": 139,
+   "tris": 173679,
    "fps": 10.2
   },
   {
@@ -16,8 +16,8 @@
     "x": -6,
     "z": 4
    },
-   "calls": 91,
-   "tris": 179926,
+   "calls": 89,
+   "tris": 176618,
    "fps": 10.1
   },
   {
@@ -26,28 +26,28 @@
     "x": 60,
     "z": 8
    },
-   "calls": 62,
-   "tris": 189469,
+   "calls": 47,
+   "tris": 170894,
    "fps": 10
   },
   {
    "name": "meydan",
    "pos": {
-    "x": 140,
-    "z": 10
+    "x": 7.5,
+    "z": 13.4
    },
-   "calls": 51,
-   "tris": 135249,
+   "calls": 87,
+   "tris": 179212,
    "fps": 10
   },
   {
    "name": "sahil",
    "pos": {
-    "x": 240,
-    "z": 12
+    "x": 7.5,
+    "z": 13.4
    },
-   "calls": 74,
-   "tris": 118632,
+   "calls": 110,
+   "tris": 180718,
    "fps": 10
   },
   {
@@ -56,8 +56,8 @@
     "x": 404,
     "z": 13
    },
-   "calls": 80,
-   "tris": 125940,
+   "calls": 107,
+   "tris": 137226,
    "fps": 10
   },
   {
@@ -66,8 +66,8 @@
     "x": 425,
     "z": 20
    },
-   "calls": 44,
-   "tris": 125906,
+   "calls": 57,
+   "tris": 136710,
    "fps": 10
   },
   {
@@ -76,8 +76,8 @@
     "x": 806,
     "z": 10
    },
-   "calls": 127,
-   "tris": 299791,
+   "calls": 138,
+   "tris": 299961,
    "fps": 10
   },
   {
@@ -86,8 +86,8 @@
     "x": 840,
     "z": 20
    },
-   "calls": 154,
-   "tris": 308581,
+   "calls": 170,
+   "tris": 306677,
    "fps": 10
   },
   {
@@ -96,11 +96,22 @@
     "x": 870,
     "z": 40
    },
-   "calls": 100,
-   "tris": 304837,
+   "calls": 102,
+   "tris": 304041,
    "fps": 10
   }
  ],
  "errors": [],
- "findings": []
+ "findings": [
+  {
+   "sev": "bug",
+   "where": "meydan",
+   "what": "ışınlanma tutmadı: istenen 140, olan 7.5 (bölge duvarı?)"
+  },
+  {
+   "sev": "bug",
+   "where": "sahil",
+   "what": "ışınlanma tutmadı: istenen 240, olan 7.5 (bölge duvarı?)"
+  }
+ ]
 }

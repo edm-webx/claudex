@@ -8,6 +8,7 @@ import * as T from 'three';
 import type { Rules } from '../../sim/state';
 import { mulkApi } from '../../sim/mulk';
 import type { Vec3, ScreenPt } from '../../../engine/api';
+import { KULUP_STANDI } from '../../../content/esya';
 import type { HtmlLabels } from '../../ui/labels';
 
 export interface StadyumViewDeps { scene: T.Scene; labels: HtmlLabels; project(p: Vec3, out: ScreenPt): boolean; rules: () => Rules | null; hero: () => { x: number; z: number }; setSolid?: (r: { x0: number; x1: number; z0: number; z1: number }[]) => void }
@@ -37,6 +38,9 @@ export function createStadyumView(d: StadyumViewDeps): StadyumView {
 
   // ---- dynamic club parts, rebuilt when the club record changes
   const dyn = new T.Group(); root.add(dyn);
+  const pierRoot = new T.Group(); pierRoot.name = 'iskele-kulup-standi'; d.scene.add(pierRoot);   // 2026-11-02: club stand on the pier promenade
+  const pierDyn = new T.Group(); pierRoot.add(pierDyn);
+  const labStand = d.labels.label();
   let key = '#';
   const labGise = d.labels.label(), labOfis = d.labels.label();
 
@@ -89,20 +93,36 @@ export function createStadyumView(d: StadyumViewDeps): StadyumView {
     const ban = new T.Mesh(G(new T.PlaneGeometry(11, 1.1)), new T.MeshStandardMaterial({ map: plate(11, 1.1, c1, c2, arma, name.toUpperCase()), roughness: 0.6, side: T.DoubleSide })); mats.push(ban.material as T.Material);
     ban.position.set(426, 2.5, 33.95); ban.rotation.y = Math.PI; dyn.add(ban);
     const gar = 18; for (let i = 0; i < gar; i++) box(dyn, 0.7, 0.4, 0.06, M(i % 2 ? c1 : c2), 411.5 + i * (29 / gar), 0.3, 29.64);
+    // pier club stand (walkway): ticket window, club-coloured awning, crest plate, league board, trophy shelf
+    pierDyn.clear();
+    { const P = KULUP_STANDI, sg = new T.Group(); sg.position.set(P.x, 0, P.z); pierDyn.add(sg);
+      box(sg, P.w + 0.5, 0.18, P.d + 0.5, M('#b9b4aa'), 0, 0.09, 0);
+      box(sg, P.w, 2.5, P.d, M('#f1ece0'), 0, 1.43, 0);
+      box(sg, P.w, 0.7, P.d + 0.05, M(c1), 0, 0.55, 0);
+      for (let i = 0; i < 9; i++) { const a = box(sg, P.w / 9 + 0.01, 0.12, 1.5, M(i % 2 ? c1 : '#fbfaf6'), -P.w / 2 + (i + 0.5) * (P.w / 9), 2.9, P.d / 2 + 0.55); a.rotation.x = 0.3; }
+      box(sg, P.w + 0.4, 0.22, P.d + 0.4, M(c2), 0, 2.78, 0);
+      box(sg, 1.7, 1.0, 0.08, M('#1b2a40', { transparent: true, opacity: 0.78, roughness: 0.2 }), -1.4, 1.75, P.d / 2 + 0.04);
+      box(sg, 2.0, 0.1, 0.5, M('#8a6a4a'), -1.4, 1.2, P.d / 2 + 0.3);
+      box(sg, 1.5, 1.1, 0.08, new T.MeshStandardMaterial({ map: plate(1.5, 1.1, '#101c3a', '#16284c', '🏆', 'LİG'), roughness: 0.5 }), 1.5, 1.8, P.d / 2 + 0.05);
+      box(sg, P.w - 0.6, 0.9, 0.1, new T.MeshStandardMaterial({ map: plate(P.w - 0.6, 0.9, c1, c2, arma, (t ? name : 'SPOR MARTI').toUpperCase()), roughness: 0.5 }), 0, 3.5, P.d / 2 + 0.35);
+      for (const sx of [-1, 1]) { const pl = new T.Mesh(G(new T.CylinderGeometry(0.05, 0.05, 4.2, 8)), M('#cfd4da')); pl.position.set(sx * (P.w / 2 + 0.2), 2.1, P.d / 2 + 0.2); sg.add(pl); box(sg, 1.0, 0.65, 0.03, M(sx < 0 ? c1 : c2, { side: T.DoubleSide }), sx * (P.w / 2 + 0.7), 3.9, P.d / 2 + 0.2); }
+    }
     paintCrowd(Math.round(SEATS * (t ? Math.max(0.25, doluluk) : 0.08)), c1, c2, !!t);
-    d.setSolid?.([{ x0: OFIS.x - OFIS.w / 2, x1: OFIS.x + OFIS.w / 2, z0: OFIS.z - OFIS.d / 2, z1: OFIS.z + OFIS.d / 2 }, { x0: GISE.x - GISE.w / 2, x1: GISE.x + GISE.w / 2, z0: GISE.z - GISE.d / 2, z1: GISE.z + GISE.d / 2 }]);
+    d.setSolid?.([{ x0: KULUP_STANDI.x - KULUP_STANDI.w / 2, x1: KULUP_STANDI.x + KULUP_STANDI.w / 2, z0: KULUP_STANDI.z - KULUP_STANDI.d / 2, z1: KULUP_STANDI.z + KULUP_STANDI.d / 2 }, { x0: OFIS.x - OFIS.w / 2, x1: OFIS.x + OFIS.w / 2, z0: OFIS.z - OFIS.d / 2, z1: OFIS.z + OFIS.d / 2 }, { x0: GISE.x - GISE.w / 2, x1: GISE.x + GISE.w / 2, z0: GISE.z - GISE.d / 2, z1: GISE.z + GISE.d / 2 }]);
   }
   const put = (lb: ReturnType<HtmlLabels['label']>, x: number, y: number, z: number, html: string) => { at.x = x; at.y = y; at.z = z; if (d.project(at, tmp)) lb.set(tmp.x, tmp.y, html, 'say'); else lb.hide(); };
 
   return {
     update(dt) {
-      const h = d.hero(), near = h.x > 380 && h.x < 465; root.visible = near;
-      if (!near) { labGise.hide(); labOfis.hide(); return; }
+      const h = d.hero(), near = h.x > 380 && h.x < 465, nearPier = h.x < 80; root.visible = near; pierRoot.visible = nearPier;
+      if (!near && !nearPier) { labGise.hide(); labOfis.hide(); labStand.hide(); return; }
       tt += dt;
       const rl = d.rules(), api = rl ? mulkApi(rl) : null, md = api ? api.model() as unknown as { takim: { ad: string; renk: string; renk2?: string; arma?: string } | null; stad: { fiyat: number; tahmin: number; doluluk: number } | null } : null;
       const t = md?.takim ?? null, dol = md?.stad ? (md.stad.doluluk || md.stad.tahmin) : 0;
       const k = t ? [t.ad, t.renk, t.renk2, t.arma, Math.round(dol * 20)].join('|') : 'yok';
       if (k !== key) { key = k; build(t, dol); }
+      if (nearPier) { const ps = md?.stad; if (Math.hypot(h.x - KULUP_STANDI.x, h.z - KULUP_STANDI.z) < 24) put(labStand, KULUP_STANDI.x, 5.2, KULUP_STANDI.z + 1, t ? esc((t.arma || '🛡️') + ' ' + t.ad) + ' · Kulüp Standı' + (ps ? ' · 🎟️ ' + ps.fiyat.toLocaleString('tr') + ' ₺' : '') : '⚽ Spor Martı Kulüp Standı · kulüp kur, bilet al, lig'); else labStand.hide(); }
+      if (!near) { labGise.hide(); labOfis.hide(); return; }
       // crowd sway: seated fans bob and cheer a little
       for (let k2 = 0; k2 < fans; k2++) {
         const i = crowdOrder[k2], s = seat(i), a = Math.sin(tt * 2.2 + sway[i]), up = Math.max(0, Math.sin(tt * 1.1 + sway[i] * 3)) > 0.93 ? 0.25 : 0;
@@ -114,6 +134,6 @@ export function createStadyumView(d: StadyumViewDeps): StadyumView {
       if (Math.hypot(h.x - GISE.x, h.z - GISE.z) < 24) put(labGise, GISE.x, 4.2, GISE.z + 1, st ? '🎟️ BİLET ' + st.fiyat.toLocaleString('tr') + ' ₺ · doluluk %' + Math.round(st.tahmin * 100) : '🎟️ Bilet gişesi (önce kulüp kur)'); else labGise.hide();
       if (Math.hypot(h.x - OFIS.x, h.z - OFIS.z) < 24) put(labOfis, OFIS.x, 6.3, OFIS.z + OFIS.d / 2 + 0.6, t ? esc((t.arma || '🛡️') + ' ' + t.ad) + ' · Kulüp Odası' : '🛡️ Kulüp kurma ofisi · Mülk > Stadyum'); else labOfis.hide();
     },
-    dispose() { root.removeFromParent(); geos.forEach(g => g.dispose()); mats.forEach(m => m.dispose()); texs.forEach(x => x.dispose()); labGise.hide(); labOfis.hide(); },
+    dispose() { root.removeFromParent(); pierRoot.removeFromParent(); labStand.hide(); geos.forEach(g => g.dispose()); mats.forEach(m => m.dispose()); texs.forEach(x => x.dispose()); labGise.hide(); labOfis.hide(); },
   };
 }

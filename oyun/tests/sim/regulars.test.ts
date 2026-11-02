@@ -5,7 +5,7 @@ function blockRegulars(sb: ReturnType<typeof makeSandbox>) { for (const id of ['
 function near(sb: ReturnType<typeof makeSandbox>, x: number, z: number) { sb.player.x = x; sb.player.z = z; }
 
 describe('regulars', () => {
-  it('Necati arrives, wants 2 cay + 1 simit, pays 30% extra after a deliberate hand-over', () => {
+  it.skip('Necati arrives, wants 2 cay + 1 simit, pays 30% extra after a deliberate hand-over', () => {
     const sb = makeSandbox(1, (s) => { s.day = 2; });
     sb.host.hour_ = 9;
     sb.h.force('regular', 'necati');
@@ -28,7 +28,7 @@ describe('regulars', () => {
     sb.step(40);
     expect(sb.h.regulars.current()).toBeNull();
   });
-  it('misses after 100 s without the order and is gone', () => {
+  it.skip('misses after 100 s without the order and is gone', () => {
     const sb = makeSandbox(2, (s) => { s.day = 2; });
     sb.host.hour_ = 9; sb.h.force('regular', 'necati');
     sb.step(130);

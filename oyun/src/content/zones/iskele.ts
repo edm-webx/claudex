@@ -14,8 +14,8 @@ export const ISKELE_PLAYER_START = { x: 0.2, z: -2.6 };
 
 function staticAnchors(): Record<string, AnchorDef> {
   const a: Record<string, AnchorDef> = {
-    'spawn.0': { pos: { x: -60, z: 8.8 }, kind: 'spawn' },
-    'spawn.1': { pos: { x: 60, z: 8.8 }, kind: 'spawn' },
+    'spawn.0': { pos: { x: -50, z: 8.8 }, kind: 'spawn' },
+    'spawn.1': { pos: { x: 50, z: 8.8 }, kind: 'spawn' },
     nextVenue: { pos: { x: NEXT_SIGN.x, z: NEXT_SIGN.z }, rotY: NEXT_SIGN.ry, kind: 'marker' },
     playerStart: { pos: { ...ISKELE_PLAYER_START }, kind: 'spawn' },
   };
@@ -40,12 +40,15 @@ export function iskeleZone(): ZoneDef {
       { id: 'kiosk', prefab: 'iskele.kiosk', pos: { x: 0, z: 0 }, overrides: { stage: 1, renewed: '' } },
       { id: 'ferry', prefab: 'iskele.ferry', pos: { x: 0, z: 0 } },
       { id: 'ferryFar', prefab: 'iskele.ferryFar', pos: { x: 0, z: 0 } },
+      // pier-end apartments close both ends of the promenade (2026-11-02: the pier is the whole map)
+      { id: 'apt-e1', prefab: 'mk.apt.e1', pos: { x: 57.5, z: 5.0 } }, { id: 'apt-e2', prefab: 'mk.apt.e2', pos: { x: 57.5, z: 11.4 } },
+      { id: 'apt-w1', prefab: 'mk.apt.w1', pos: { x: -57.5, z: 5.0 } }, { id: 'apt-w2', prefab: 'mk.apt.w2', pos: { x: -57.5, z: 11.4 } },
       // stools that were inside the v2 kiosk batch (stage 1 counter stool, stage 2 door stool); the view hides the other stage's one
       { id: 'tabure-s1', prefab: 'iskele.tabure-kucuk', pos: { x: 2.95, z: -0.95 } },
       { id: 'tabure-s2', prefab: 'iskele.tabure', pos: { x: -5.0, z: -3.55 } },
     ],
     anchors: staticAnchors(),
-    portals: [{ id: 'iskele>test-sokak', to: 'test-sokak', a: { x: 62, z: 4.85 }, b: { x: 62, z: 13.3 } }],
+    portals: [],
     ambience: { music: 'iskele', loops: ['deniz', 'marti'] },
     dressing: ['tex.cini', 'sky.panorama.day'],
     minState: 'sim',

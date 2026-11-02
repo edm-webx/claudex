@@ -38,7 +38,7 @@ function installGrade(): void {
   const add = () => {
     if (document.getElementById('sb-grade')) return;
     const st = document.createElement('style'); st.id = 'sb-grade';
-    st.textContent = 'canvas{filter:saturate(1.1) contrast(1.05)}#sb-vig{position:fixed;inset:0;pointer-events:none;z-index:5;background:radial-gradient(ellipse at 50% 45%,rgba(0,0,0,0) 58%,rgba(8,16,36,.28) 100%)}';
+    st.textContent = 'canvas{filter:saturate(1.06) contrast(1.04)}#sb-vig{position:fixed;inset:0;pointer-events:none;z-index:5;background:radial-gradient(ellipse at 50% 45%,rgba(0,0,0,0) 66%,rgba(8,16,36,.16) 100%)}';
     document.head.appendChild(st);
     const v = document.createElement('div'); v.id = 'sb-vig'; document.body.appendChild(v);
   };

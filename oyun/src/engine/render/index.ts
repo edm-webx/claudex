@@ -122,7 +122,7 @@ export function createRender(deps: RenderDeps): MotorRender {
       canvasEl = canvas;
       renderer = new T.WebGLRenderer({ canvas, antialias: !!t.antialias, powerPreference: 'high-performance' });
       renderer.outputColorSpace = T.SRGBColorSpace;
-      renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.18;
+      renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.98;
       renderer.shadowMap.type = T.PCFSoftShadowMap;
       renderer.shadowMap.enabled = false;
       wantAA = !!t.antialias;

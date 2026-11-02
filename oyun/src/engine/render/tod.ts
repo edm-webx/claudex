@@ -35,7 +35,8 @@ export function todAt(h: number): Tod {
     o[key] = r;
   }
   const num = (key: 'si' | 'hi' | 'az' | 'el'): number => cr(TOD[i0][key], a[key], b[key], TOD[i3][key], t);
-  o.si = Math.max(0, num('si')); o.hi = Math.max(0, num('hi')); o.az = num('az'); o.el = num('el');
+  // 2026-11-02 user: lighting far too bright/glaring; the whole day is pulled darker and moodier (sun 0.8x, ambient 0.66x)
+  o.si = Math.max(0, num('si')) * 0.8; o.hi = Math.max(0, num('hi')) * 0.66; o.az = num('az'); o.el = num('el');
   o.n = clamp(cr(TOD[i0].n, a.n, b.n, TOD[i3].n, t), 0, 1);
   return o as unknown as Tod;
 }

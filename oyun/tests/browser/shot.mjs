@@ -13,6 +13,7 @@ await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => win
 const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(700); }
 await p.evaluate(t => { const M = window.__marti; if (t) M.setTime(+t); M.step(2); }, flag('time'));
 if (nums.length >= 2) await p.evaluate(([x, z]) => window.__marti.teleport(x, z), nums);
+if (flag('steps')) await p.evaluate(n => { for (let i = 0; i < +n; i++) { window.__marti.step(1); if (i % 20 === 0) window.__marti.renderFrames(1, 0.05); } }, flag('steps'));
 await p.evaluate(() => { for (let i = 0; i < 8; i++) { window.__marti.renderFrames(5, 0.1); window.__marti.step(1); } });
 if (args.includes('--club')) { await p.evaluate(() => { const M = window.__marti; M.force.money(500000); M.teleport(399.5, 12.4); M.step(2); M.command({ kind: 'mulk', op: 'takim', name: 'Boğaz Yıldızları', renk: '#2ec4c4', renk2: '#ff5a4e', arma: '🦅' }); M.step(2); }); if (nums.length >= 2) await p.evaluate(([x, z]) => window.__marti.teleport(x, z), nums); await p.evaluate(() => { for (let i = 0; i < 8; i++) { window.__marti.renderFrames(5, 0.1); window.__marti.step(1); } }); }
 if (flag('tab')) { await p.evaluate(() => { const M = window.__marti; M.force.money(500000); });

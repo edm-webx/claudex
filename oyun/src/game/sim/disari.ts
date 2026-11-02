@@ -399,7 +399,7 @@ export function installDisari(K: Kernel, teleport: (x: number, z: number) => voi
     return {
       here: reg ? reg.id : null, x: p.x, money: S.money, level: S.level, guide: d.guide ? d.guide.name : null, travel: !!travel,
       realm: curRealm(), realms: REALMS.map(r => ({ id: r.id, name: r.name, stop: r.stop.name, here: r.id === curRealm() })),
-      regions: REGIONS.map(r => ({ id: r.id, name: r.name, short: r.short, x0: r.x0, x1: r.x1, color: r.color, blurb: r.blurb, level: r.level, open: isOpen(r) && !!realmOfRegion(r.id), seen: d.seen.includes(r.id),
+      regions: REGIONS.filter(r => realmOfRegion(r.id)).map(r => ({ id: r.id, name: r.name, short: r.short, x0: r.x0, x1: r.x1, color: r.color, blurb: r.blurb, level: r.level, open: isOpen(r) && !!realmOfRegion(r.id), seen: d.seen.includes(r.id),
         realm: realmOfRegion(r.id)?.id || null, bus: (realmOfRegion(r.id)?.id || null) !== curRealm(),
         stop: r.stop.name, stopKnown: knownStop(d, r.id), vapur: !!r.vapur, map: r.map, island: !!r.island, lockLine: realmOfRegion(r.id) ? r.lockLine : 'Şimdilik kapalı. Yakında açılacak!' })),
       places: PLACES.map(pl => {

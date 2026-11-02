@@ -28,9 +28,9 @@ describe('realm + 42B', () => {
   });
   it('walking into the stadium is pushed back at the realm wall', () => {
     const sim = played(1), api = disariApi(sim.rules)!;
-    sim.command({ kind: 'teleport', x: 385, z: 9 }); sim.step(0.5);
-    sim.command({ kind: 'teleport', x: 394, z: 9 }); sim.step(0.5);
-    expect(sim.rules.playerPos.x).toBeLessThan(392);
+    sim.command({ kind: 'teleport', x: 55, z: 9 }); sim.step(0.5);
+    sim.command({ kind: 'teleport', x: 64, z: 9 }); sim.step(0.5);
+    expect(sim.rules.playerPos.x).toBeLessThan(62);
     expect(api.view().realm).toBe('iskele');
   });
   it('the map sends you to the bus stop instead of teleporting across realms', () => {

@@ -306,7 +306,21 @@ export function createMatch(o: MatchOpts = {}) {
     // ball
     if (ball.owner >= 0) {
       const o = pls[ball.owner];
-      ball.x = clamp(o.x + o.fx * 0.6, 0.1, L - 0.1); ball.y = clamp(o.y + o.fy * 0.6, 0.1, WD - 0.1); ball.vx = o.vx; ball.vy = o.vy;
+      // 2026-11-02 (observer finding): a dribbler could never cross the goal line (ball clamped inside, carrier clamped at the wall) and stood
+      // pushing against it forever. The carried ball now follows the real rules: through the mouth = goal, otherwise out (aut/korner/taç).
+      const rbx = o.x + o.fx * 0.6, rby = o.y + o.fy * 0.6;
+      if (!m.restart && (rbx > L - 0.05 || rbx < 0.05 || rby < 0.05 || rby > WD - 0.05)) {
+        ball.lastKicker = ball.owner; ball.lastTouch = o.team; ball.owner = -1; m.pass = null;
+        ball.x = clamp(rbx, -0.2, L + 0.2); ball.y = clamp(rby, 0, WD); ball.vx = ball.vy = 0;
+        if (rbx > L - 0.05 || rbx < 0.05) {
+          const right = rbx > L / 2;
+          if (rby > M0 && rby < M1) { ball.x = right ? L + 0.6 : -0.6; goal(right ? 0 : 1); return; }
+          const att: 0 | 1 = right ? 0 : 1, def: 0 | 1 = right ? 1 : 0;
+          if (o.team === att) setPiece('aut', def, ball.x, ball.y); else setPiece('korner', att, right ? L : 0, ball.y);
+        } else setPiece('tac', o.team === 0 ? 1 : 0, ball.x, rby < WD / 2 ? 0 : WD);
+        return;
+      }
+      ball.x = clamp(rbx, 0.1, L - 0.1); ball.y = clamp(rby, 0.1, WD - 0.1); ball.vx = o.vx; ball.vy = o.vy;
       if (!m.restart) for (let qi = 0; qi < pls.length; qi++) {
         const q = pls[qi]; if (q.team === o.team || q.stun > 0 || q.gk) continue;
         if (Math.hypot(q.x - ball.x, q.y - ball.y) < 0.85) {

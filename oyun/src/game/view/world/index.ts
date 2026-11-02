@@ -24,7 +24,7 @@ import { GREYBOX_PREFABS } from '../../../content/prefabs/common/greybox';
 import { carsiPrefabs } from '../../../content/carsi/street';
 import { iskeleZone, ISKELE_PLAYER_START } from '../../../content/zones/iskele';
 import { testSokakZone } from '../../../content/zones/test-sokak';
-import { registerDisariZones } from '../../../content/zones/disari';
+import { registerDisariZones, aptPrefabs } from '../../../content/zones/disari';
 import { stageLayout, STATION_KINDS, PARTS, TABLE_PADS, PAD_KEYS_FALLBACK, SEAT_H, WATER_Y, local2world, rectAABB, benchSeats, BENCHES, type StageLayout, type P3v, type Obstacle, staticObstacles } from '../../../content/prefabs/iskele/layout';
 import { paintKey } from '../../../content/dekor-katalog';
 import { stationBuilt, tableBuilt, decorBuild, itemGeo, ITEM_HT, moneyGeo, makeMarker, MARKERS, bez, FOOT, DECOR_SIZE } from '../../../content/prefabs/iskele/props';
@@ -76,11 +76,11 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
   defineIskelePrefabs(prefab);
   GREYBOX_PREFABS.forEach(d => { if (!prefab.has(d.id)) prefab.define(d); });
   carsiPrefabs().forEach(d => { if (!prefab.has(d.id)) prefab.define(d); });
+  aptPrefabs().forEach(d => { if (!prefab.has(d.id)) prefab.define(d); });
   ensureKit();
   const ZI = iskeleZone(), ZT = testSokakZone();
   if (!zones.def('iskele')) zones.register(ZI); else zones.replace(ZI);
-  if (!zones.def('test-sokak')) zones.register(ZT);
-  zones.prewarm?.('test-sokak'); // CPU templates now, so streaming it in only clones
+  // 2026-11-02: Çarşı Sokağı is gone from the map (the pier ends in apartments); the zone def stays registered-free so it never streams in
   // 2026-10-24 açık dünya: the Martıköy districts east of Çarşı (sahil, yokuş, meydan, barınak) stream in again
   registerDisariZones(zones as never, prefab as never);
   const STATIC_ANCHORS = { ...ZI.anchors };

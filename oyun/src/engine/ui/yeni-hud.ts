@@ -5,7 +5,7 @@
  * tab with an amber rule. Loaded after every other sheet so it wins; panels keep the porcelain look (skin.ts).
  */
 export const YENI_CSS = `
-#sbui{--glass:rgba(11,19,38,.74);--glass2:rgba(11,19,38,.88);--hair:rgba(255,255,255,.13);--amb:#ffb627;--mint:#6ef2ab}
+#sbui{--glass:rgba(11,19,38,.6);--glass2:rgba(11,19,38,.88);--hair:rgba(255,255,255,.13);--amb:#ffb627;--mint:#6ef2ab}
 #sbui .sb-hud{align-items:flex-start;gap:10px}
 #sbui .sb-lvl{width:66px!important;height:66px!important;border:0!important;box-shadow:0 10px 26px rgba(4,10,24,.5),0 0 0 5px var(--glass)!important;background:conic-gradient(var(--amb) calc(var(--p,0)*1turn),rgba(255,255,255,.16) 0)!important}
 #sbui .sb-lvl-in{width:52px!important;height:52px!important;border:0!important;background:radial-gradient(circle at 30% 22%,#4a6fb8,#12214a)!important;font:900 24px/1 var(--disp)!important;text-shadow:none!important;letter-spacing:-.02em}
@@ -55,8 +55,9 @@ body .hd-sm.done .ck{background:#2fbf71!important;border-color:#2fbf71!important
 /* online strip, chat, skill button */
 body .on-pill{top:12px!important;min-width:0!important;background:rgba(11,19,38,.74)!important;border:1px solid rgba(255,255,255,.13)!important;color:rgba(255,255,255,.78)!important;font:800 11px/1.3 var(--body)!important;letter-spacing:.12em;text-transform:uppercase;padding:5px 14px!important;box-shadow:0 8px 20px rgba(4,10,24,.4)!important;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
 body .on-oda{top:44px!important;min-width:0!important;min-height:30px!important;background:rgba(255,182,39,.95)!important;color:#14213d!important;border:0!important;box-shadow:0 8px 20px rgba(255,182,39,.28)!important;font:900 12px/1 var(--body)!important;letter-spacing:.06em;padding:0 16px!important}
-body .on-log{background:rgba(11,19,38,.62)!important;border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
-body .on-log div{background:rgba(255,255,255,.1)!important;border:0!important;color:#fff!important}
+body .on-log{background:transparent!important;border:0!important;height:auto!important;max-height:84px;justify-content:flex-end;overflow:hidden!important;-webkit-mask-image:linear-gradient(to top,#000 70%,transparent);mask-image:linear-gradient(to top,#000 70%,transparent)}
+body .on-chat{bottom:84px!important;width:min(280px,calc(100vw - 20px))!important}
+body .on-log div{background:rgba(11,19,38,.55)!important;border:0!important;color:#fff!important;font-size:12px!important;padding:2px 8px!important}
 body .on-log div.pm{background:rgba(255,120,190,.28)!important}body .on-log div.sys{background:rgba(67,179,217,.26)!important}
 body .on-top button{background:rgba(11,19,38,.74)!important;color:#fff!important;border:1px solid rgba(255,255,255,.13)!important}
 body .on-in{background:rgba(11,19,38,.74)!important;color:#fff!important;border:1px solid rgba(255,255,255,.18)!important}
