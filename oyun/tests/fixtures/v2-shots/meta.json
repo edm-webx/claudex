@@ -1,0 +1,419 @@
+{
+ "s1-09-noart": {
+  "clock": "09:00",
+  "pos": {
+   "x": 0.2,
+   "z": -2.6
+  },
+  "stage": 1,
+  "calls": 57,
+  "tris": 119488,
+  "geos": 45,
+  "texs": 25,
+  "cam": [
+   0.2,
+   31.82,
+   22.03
+  ],
+  "cats": {
+   "sky": 2,
+   "sea": 1,
+   "other": 21,
+   "dyn": 48,
+   "deck": 3,
+   "stone": 1,
+   "kiosk": 5
+  }
+ },
+ "_at": "2026-10-17T08:36:14.121Z",
+ "s1-13-noart": {
+  "clock": "13:00",
+  "pos": {
+   "x": 0.2,
+   "z": -2.6
+  },
+  "stage": 1,
+  "calls": 57,
+  "tris": 126562,
+  "geos": 47,
+  "texs": 25,
+  "cam": [
+   0.2,
+   31.82,
+   22.03
+  ],
+  "cats": {
+   "sky": 2,
+   "sea": 1,
+   "other": 19,
+   "dyn": 48,
+   "deck": 3,
+   "stone": 1,
+   "kiosk": 5
+  }
+ },
+ "s1-19-noart": {
+  "clock": "19:00",
+  "pos": {
+   "x": 0.2,
+   "z": -2.6
+  },
+  "stage": 1,
+  "calls": 62,
+  "tris": 126600,
+  "geos": 52,
+  "texs": 26,
+  "cam": [
+   0.2,
+   31.82,
+   22.03
+  ],
+  "cats": {
+   "sky": 2,
+   "sea": 1,
+   "other": 19,
+   "dyn": 48,
+   "deck": 3,
+   "stone": 1,
+   "kiosk": 5
+  }
+ },
+ "s1-22-noart": {
+  "clock": "22:00",
+  "pos": {
+   "x": 0.2,
+   "z": -2.6
+  },
+  "stage": 1,
+  "calls": 62,
+  "tris": 126600,
+  "geos": 52,
+  "texs": 26,
+  "cam": [
+   0.2,
+   31.82,
+   22.03
+  ],
+  "cats": {
+   "sky": 2,
+   "sea": 1,
+   "other": 19,
+   "dyn": 48,
+   "deck": 3,
+   "stone": 1,
+   "kiosk": 5
+  }
+ },
+ "s1-09-art": {
+  "clock": "09:00",
+  "pos": {
+   "x": 0.2,
+   "z": -2.6
+  },
+  "stage": 1,
+  "calls": 57,
+  "tris": 119488,
+  "geos": 45,
+  "texs": 25,
+  "cam": [
+   0.2,
+   31.82,
+   22.03
+  ],
+  "cats": {
+   "sky": 2,
+   "sea": 1,
+   "other": 21,
+   "dyn": 48,
+   "deck": 3,
+   "stone": 1,
+   "kiosk": 5
+  }
+ },
+ "s1-13-art": {
+  "clock": "13:00",
+  "pos": {
+   "x": 0.2,
+   "z": -2.6
+  },
+  "stage": 1,
+  "calls": 57,
+  "tris": 126562,
+  "geos": 47,
+  "texs": 25,
+  "cam": [
+   0.2,
+   31.82,
+   22.03
+  ],
+  "cats": {
+   "sky": 2,
+   "sea": 1,
+   "other": 19,
+   "dyn": 48,
+   "deck": 3,
+   "stone": 1,
+   "kiosk": 5
+  }
+ },
+ "s1-19-art": {
+  "clock": "19:00",
+  "pos": {
+   "x": 0.2,
+   "z": -2.6
+  },
+  "stage": 1,
+  "calls": 62,
+  "tris": 126600,
+  "geos": 52,
+  "texs": 26,
+  "cam": [
+   0.2,
+   31.82,
+   22.03
+  ],
+  "cats": {
+   "sky": 2,
+   "sea": 1,
+   "other": 19,
+   "dyn": 48,
+   "deck": 3,
+   "stone": 1,
+   "kiosk": 5
+  }
+ },
+ "s1-22-art": {
+  "clock": "22:00",
+  "pos": {
+   "x": 0.2,
+   "z": -2.6
+  },
+  "stage": 1,
+  "calls": 62,
+  "tris": 126600,
+  "geos": 52,
+  "texs": 26,
+  "cam": [
+   0.2,
+   31.82,
+   22.03
+  ],
+  "cats": {
+   "sky": 2,
+   "sea": 1,
+   "other": 19,
+   "dyn": 48,
+   "deck": 3,
+   "stone": 1,
+   "kiosk": 5
+  }
+ },
+ "s2-09-noart": {
+  "clock": "09:00",
+  "pos": {
+   "x": 0.2,
+   "z": -2.6
+  },
+  "stage": 2,
+  "calls": 49,
+  "tris": 121120,
+  "geos": 44,
+  "texs": 28,
+  "cam": [
+   0.2,
+   31.82,
+   22.03
+  ],
+  "cats": {
+   "sky": 2,
+   "sea": 1,
+   "other": 10,
+   "dyn": 49,
+   "deck": 3,
+   "stone": 1,
+   "kiosk": 5
+  }
+ },
+ "s2-13-noart": {
+  "clock": "13:00",
+  "pos": {
+   "x": 0.2,
+   "z": -2.6
+  },
+  "stage": 2,
+  "calls": 49,
+  "tris": 125066,
+  "geos": 44,
+  "texs": 28,
+  "cam": [
+   0.2,
+   31.82,
+   22.03
+  ],
+  "cats": {
+   "sky": 2,
+   "sea": 1,
+   "other": 10,
+   "dyn": 49,
+   "deck": 3,
+   "stone": 1,
+   "kiosk": 5
+  }
+ },
+ "s2-19-noart": {
+  "clock": "19:00",
+  "pos": {
+   "x": 0.2,
+   "z": -2.6
+  },
+  "stage": 2,
+  "calls": 51,
+  "tris": 125098,
+  "geos": 46,
+  "texs": 28,
+  "cam": [
+   0.2,
+   31.82,
+   22.03
+  ],
+  "cats": {
+   "sky": 2,
+   "sea": 1,
+   "other": 10,
+   "dyn": 49,
+   "deck": 3,
+   "stone": 1,
+   "kiosk": 5
+  }
+ },
+ "s2-22-noart": {
+  "clock": "22:00",
+  "pos": {
+   "x": 0.2,
+   "z": -2.6
+  },
+  "stage": 2,
+  "calls": 51,
+  "tris": 125098,
+  "geos": 46,
+  "texs": 28,
+  "cam": [
+   0.2,
+   31.82,
+   22.03
+  ],
+  "cats": {
+   "sky": 2,
+   "sea": 1,
+   "other": 10,
+   "dyn": 49,
+   "deck": 3,
+   "stone": 1,
+   "kiosk": 5
+  }
+ },
+ "s2-09-art": {
+  "clock": "09:00",
+  "pos": {
+   "x": 0.2,
+   "z": -2.6
+  },
+  "stage": 2,
+  "calls": 49,
+  "tris": 121120,
+  "geos": 44,
+  "texs": 28,
+  "cam": [
+   0.2,
+   31.82,
+   22.03
+  ],
+  "cats": {
+   "sky": 2,
+   "sea": 1,
+   "other": 10,
+   "dyn": 49,
+   "deck": 3,
+   "stone": 1,
+   "kiosk": 5
+  }
+ },
+ "s2-13-art": {
+  "clock": "13:00",
+  "pos": {
+   "x": 0.2,
+   "z": -2.6
+  },
+  "stage": 2,
+  "calls": 49,
+  "tris": 125066,
+  "geos": 44,
+  "texs": 28,
+  "cam": [
+   0.2,
+   31.82,
+   22.03
+  ],
+  "cats": {
+   "sky": 2,
+   "sea": 1,
+   "other": 10,
+   "dyn": 49,
+   "deck": 3,
+   "stone": 1,
+   "kiosk": 5
+  }
+ },
+ "s2-19-art": {
+  "clock": "19:00",
+  "pos": {
+   "x": 0.2,
+   "z": -2.6
+  },
+  "stage": 2,
+  "calls": 51,
+  "tris": 125098,
+  "geos": 46,
+  "texs": 28,
+  "cam": [
+   0.2,
+   31.82,
+   22.03
+  ],
+  "cats": {
+   "sky": 2,
+   "sea": 1,
+   "other": 10,
+   "dyn": 49,
+   "deck": 3,
+   "stone": 1,
+   "kiosk": 5
+  }
+ },
+ "s2-22-art": {
+  "clock": "22:00",
+  "pos": {
+   "x": 0.2,
+   "z": -2.6
+  },
+  "stage": 2,
+  "calls": 51,
+  "tris": 125098,
+  "geos": 46,
+  "texs": 28,
+  "cam": [
+   0.2,
+   31.82,
+   22.03
+  ],
+  "cats": {
+   "sky": 2,
+   "sea": 1,
+   "other": 10,
+   "dyn": 49,
+   "deck": 3,
+   "stone": 1,
+   "kiosk": 5
+  }
+ }
+}

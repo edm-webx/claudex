@@ -1,0 +1,106 @@
+{
+ "stops": [
+  {
+   "name": "iskele-bufe",
+   "pos": {
+    "x": 0,
+    "z": 0
+   },
+   "calls": 138,
+   "tris": 173667,
+   "fps": 10.2
+  },
+  {
+   "name": "iskele-ferry",
+   "pos": {
+    "x": -6,
+    "z": 4
+   },
+   "calls": 91,
+   "tris": 179926,
+   "fps": 10.1
+  },
+  {
+   "name": "carsi",
+   "pos": {
+    "x": 60,
+    "z": 8
+   },
+   "calls": 62,
+   "tris": 189469,
+   "fps": 10
+  },
+  {
+   "name": "meydan",
+   "pos": {
+    "x": 140,
+    "z": 10
+   },
+   "calls": 51,
+   "tris": 135249,
+   "fps": 10
+  },
+  {
+   "name": "sahil",
+   "pos": {
+    "x": 240,
+    "z": 12
+   },
+   "calls": 74,
+   "tris": 118632,
+   "fps": 10
+  },
+  {
+   "name": "stadyum-kapi",
+   "pos": {
+    "x": 404,
+    "z": 13
+   },
+   "calls": 80,
+   "tris": 125940,
+   "fps": 10
+  },
+  {
+   "name": "stadyum-saha",
+   "pos": {
+    "x": 425,
+    "z": 20
+   },
+   "calls": 44,
+   "tris": 125906,
+   "fps": 10
+  },
+  {
+   "name": "belgrad-durak",
+   "pos": {
+    "x": 806,
+    "z": 10
+   },
+   "calls": 127,
+   "tris": 299791,
+   "fps": 10
+  },
+  {
+   "name": "belgrad-orman",
+   "pos": {
+    "x": 840,
+    "z": 20
+   },
+   "calls": 154,
+   "tris": 308581,
+   "fps": 10
+  },
+  {
+   "name": "belgrad-derin",
+   "pos": {
+    "x": 870,
+    "z": 40
+   },
+   "calls": 100,
+   "tris": 304837,
+   "fps": 10
+  }
+ ],
+ "errors": [],
+ "findings": []
+}

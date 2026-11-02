@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>İskele Dünyası</title>
+<!-- Martı Motoru world harness (Builder B): render + zones + pier world view, no sim or characters.
+     Served by the Vite dev server: http://localhost:5173/tests/browser/world.html?tier=dengeli&time=13&stage=1 -->
+<style>
+  html, body { margin: 0; height: 100%; background: #bfe3f7; overflow: hidden; }
+  #c { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script type="module" src="/src/game/view/world/harness.ts"></script>
+</body>
+</html>
