@@ -74,6 +74,7 @@ export function createGiris(deps: { root: HTMLElement; afterLogin: (isNew: boole
 <div class="gr-l">Şifre</div><input class="gr-in" name="sifre" type="password" maxlength="64" autocomplete="${mode === 'kayit' ? 'new-password' : 'current-password'}" placeholder="en az 6 karakter">
 <div class="gr-key" style="display:none"><div class="gr-l">🔑 Anahtar kod</div><input class="gr-in" name="kod" type="password" maxlength="64" autocomplete="off" placeholder="sadece sende olan kod"></div>
 <button class="gr-go" data-go="1">${mode === 'giris' ? 'Giriş yap' : 'Hesabı aç'}</button>
+<button class="gr-guest" data-guest="1">Misafir oyna (hesapsız, bu cihazda kayıtlı)</button>
 <div class="gr-err">${err}</div>
 <div class="gr-note">${supaReady() ? 'E-posta istemiyoruz. Şifreni unutma, kimse göremez.' : 'Hesap sunucusu birazdan bağlanacak, biraz sonra tekrar dene.'}</div></div>`;
       };
