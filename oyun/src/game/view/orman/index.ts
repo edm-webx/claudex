@@ -123,6 +123,20 @@ export function createOrmanView(d: OrmanViewDeps): OrmanView {
   const shrooms = new Map<number, T.Object3D>();
   const shroomOf = (id: string) => { const m = MANTARLAR.find(x => x.id === id) || MANTARLAR[0]; return buildMushroom(kit, m.cap, '#efe6d2', 'zehir' in m && !!m.zehir); };
 
+  // 2026-11-02 forest atmosphere: sun shafts through the canopy, drifting leaves, a green haze while Sabri is inside
+  const shaftTex = kit.paint(64, 256, (g, w, h) => { const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, 'rgba(255,244,200,.0)'); gr.addColorStop(0.25, 'rgba(255,244,200,.75)'); gr.addColorStop(1, 'rgba(255,244,200,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h); const gx = g.createLinearGradient(0, 0, w, 0); gx.addColorStop(0, 'rgba(0,0,0,1)'); gx.addColorStop(0.5, 'rgba(0,0,0,0)'); gx.addColorStop(1, 'rgba(0,0,0,1)'); g.globalCompositeOperation = 'destination-out'; g.fillStyle = gx; g.fillRect(0, 0, w, h); });
+  const shaftM = new T.MeshBasicMaterial({ map: shaftTex, color: '#fff0b8', transparent: true, opacity: 0.0, depthWrite: false, blending: T.AdditiveBlending, side: T.DoubleSide, fog: false });
+  const shaftG = new T.PlaneGeometry(4.2, 15); const shafts: T.Mesh[] = [];
+  for (let i = 0; i < 9; i++) { const m = new T.Mesh(shaftG, shaftM); m.position.set(795 + i * 11 + (i % 3) * 2, 7, 3 + ((i * 7) % 15)); m.rotation.set(0, i * 0.9, 0.32 + (i % 2) * 0.1); m.visible = false; root.add(m); shafts.push(m); }
+  const patchTex = kit.paint(128, 128, (g, w, h) => { const gr = g.createRadialGradient(64, 64, 2, 64, 64, 62); gr.addColorStop(0, 'rgba(255,240,170,.95)'); gr.addColorStop(0.6, 'rgba(255,230,140,.35)'); gr.addColorStop(1, 'rgba(255,230,140,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h); });
+  const patchM = new T.MeshBasicMaterial({ map: patchTex, transparent: true, opacity: 0, depthWrite: false, blending: T.AdditiveBlending, fog: false }); const patchG = new T.PlaneGeometry(1, 1);
+  for (let i = 0; i < 26; i++) { const m = new T.Mesh(patchG, patchM), r = 3 + ((i * 5) % 4) * 1.4; m.rotation.x = -Math.PI / 2; m.position.set(792 + i * 4.1 + ((i * 7) % 5), 0.06, 1 + ((i * 11) % 21)); m.scale.set(r * 1.4, r, 1); m.visible = false; root.add(m); shafts.push(m); }
+  const LEAF_N = 160, leafPos = new Float32Array(LEAF_N * 3), leafGeo = new T.BufferGeometry();
+  for (let i = 0; i < LEAF_N; i++) { leafPos[i * 3] = Math.random() * 40 - 20; leafPos[i * 3 + 1] = Math.random() * 7; leafPos[i * 3 + 2] = Math.random() * 40 - 20; }
+  leafGeo.setAttribute('position', new T.BufferAttribute(leafPos, 3));
+  const leafM = new T.PointsMaterial({ color: '#d9a437', size: 0.2, transparent: true, opacity: 0.9, depthWrite: false, sizeAttenuation: true });
+  const leaves = new T.Points(leafGeo, leafM); leaves.frustumCulled = false; leaves.visible = false; root.add(leaves);
+  let hazeK = 0, baseFog: T.Fog | T.FogExp2 | null = null, hazeFog: T.FogExp2 | null = null;
   let t = 0;
   return {
     update(dt) {
@@ -153,6 +167,16 @@ export function createOrmanView(d: OrmanViewDeps): OrmanView {
         if (sabriH) { sabriH.setPose(SABRI_AT, -0.8); sabriH.setInput({ speed: 0, act: 'sip', mood: 'sad', t }); sabriH.update(dt, 1); } }
       // forest
       const near = p.x > 780 && p.x < 900;
+      { const inForest = near ? 1 : 0; hazeK += (inForest - hazeK) * Math.min(1, dt * 1.5);
+        const vis = hazeK > 0.02; leaves.visible = vis; shafts.forEach(m => { m.visible = vis; });
+        { const day = d.hour() > 6 && d.hour() < 19 ? 1 : 0.25, br = 0.75 + 0.25 * Math.sin(t * 0.7); shaftM.opacity = 0.2 * hazeK * br * day; patchM.opacity = 0.32 * hazeK * br * day; } leafM.opacity = 0.9 * hazeK;
+        if (vis) {
+          leaves.position.set(p.x, 0, p.z); const a = leafGeo.getAttribute('position') as T.BufferAttribute;
+          for (let i = 0; i < LEAF_N; i++) { let y = a.getY(i) - dt * (0.5 + (i % 5) * 0.12), x = a.getX(i) + Math.sin(t * 0.9 + i) * dt * 0.8 + dt * 0.3; const z = a.getZ(i) + Math.cos(t * 0.7 + i * 1.3) * dt * 0.6; if (y < 0) y = 7; a.setXYZ(i, x > 20 ? -20 : x, y, z); }
+          a.needsUpdate = true;
+        }
+        if (d.scene.fog) { if (!baseFog) baseFog = d.scene.fog as T.Fog; }
+        if (baseFog && 'near' in baseFog) { const f = baseFog as T.Fog; if (!hazeFog) hazeFog = null; f.far = (f as unknown as { _far?: number })._far ?? f.far; if (!(f as unknown as { _far?: number })._far) (f as unknown as { _far: number })._far = f.far; f.far = (f as unknown as { _far: number })._far * (1 - 0.45 * hazeK); } }
       if (near && !life) buildLife(); else if (!near && life) dropLife();
       if (life) {
         for (const n of life.npcs) {

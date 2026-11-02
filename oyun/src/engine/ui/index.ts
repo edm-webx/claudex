@@ -16,6 +16,7 @@
 // - setMode('parity'): only the HUD stays; 'hidden': nothing (photo mode).
 import type { Ui, UiDeps, HudPatch, WorldLabel, CenterCard, Notice, Vec3, ScreenPt, UiSettings } from '../api';
 import { CSS, ICONS } from './v2-style';
+import { YENI_CSS } from './yeni-hud';
 
 export const esc = (s: unknown): string => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
@@ -54,7 +55,7 @@ const CENTERED = /(^|\s)(bubble|say|tag|price|full|zz)(\s|$)/;
 export function createUi(deps: UiDeps): Ui {
   const host = deps.root;
   if (!document.getElementById('sbui-style')) {
-    const st = document.createElement('style'); st.id = 'sbui-style'; st.textContent = CSS + EXTRA_CSS;
+    const st = document.createElement('style'); st.id = 'sbui-style'; st.textContent = CSS + EXTRA_CSS + YENI_CSS;
     (document.head || document.documentElement).appendChild(st);
   }
   const root = mk('div'); root.id = 'sbui'; root.setAttribute('lang', 'tr');

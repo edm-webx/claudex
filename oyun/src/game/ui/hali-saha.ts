@@ -11,7 +11,7 @@ import { createHaliSaha3D, type HS3 } from './hali-saha-3d';
 import { createMatch, FORMATIONS } from '../sim/macmotor';
 
 type Cmd = { kind: string; [k: string]: unknown };
-interface MacInfo { team: string; name: string; colors: [string, string]; rival: string; rivalName: string; rivalColors: [string, string] }
+interface MacInfo { team: string; name: string; colors: [string, string]; rival: string; rivalName: string; rivalColors: [string, string]; formasyon?: string }
 export interface HaliSahaDeps { root: HTMLElement; rules: () => { rt: { uiLast: Record<string, unknown> } } | null; command(c: Cmd): void; sfx?(id: string): void; chars?: { makeHero(o: never): unknown } | null; esnaf?: () => Record<string, unknown> | null }
 export interface HaliSahaView { update(): void; dispose(): void }
 
@@ -62,11 +62,11 @@ export function createHaliSaha(deps: HaliSahaDeps): HaliSahaView {
     const resize = () => { dpr = Math.min(2, window.devicePixelRatio || 1); cw = wrap.clientWidth; ch = wrap.clientHeight; cv.width = Math.round(cw * dpr); cv.height = Math.round(ch * dpr); };
     resize(); window.addEventListener('resize', resize);
     let hs3: HS3 | null = null;
-    try { hs3 = createHaliSaha3D({ wrap, chars: deps.chars || null, esnaf: deps.esnaf?.() || null, L, WD, m0: MOUTH0, m1: MOUTH1, colors: t.colors, rival: t.rivalColors }); } catch { hs3 = null; }
+    try { hs3 = createHaliSaha3D({ wrap, chars: deps.chars || null, esnaf: deps.esnaf?.() || null, L, WD, m0: MOUTH0, m1: MOUTH1, colors: t.colors, rival: t.rivalColors, clubName: t.name, rivalName: t.rivalName }); } catch { hs3 = null; }
 
     // ---- state: the match itself lives in sim/macmotor.ts (formation + role AI, stats); this view only draws and feeds input
     const FKEYS = Object.keys(FORMATIONS), seed = (Date.now() & 0xfffff) | 1;
-    const M = createMatch({ seed, human: 0, humanSlot: 3, formations: ['2-2', FKEYS[seed % FKEYS.length] as string], names: [HOME_NAMES, AWAY_NAMES], halfS: HALF_S, skill: [0.6, 0.55 + (seed % 7) * 0.02] });
+    const M = createMatch({ seed, human: 0, humanSlot: 3, formations: [FORMATIONS[t.formasyon || ''] ? (t.formasyon as string) : '2-2', FKEYS[seed % FKEYS.length] as string], names: [HOME_NAMES, AWAY_NAMES], halfS: HALF_S, skill: [0.6, 0.55 + (seed % 7) * 0.02] });
     const pls = M.pls, ball = M.ball, SABRI = 3;
     const colsOf = (team: number) => (team === 0 ? t.colors : t.rivalColors);
     // 2026-10-26 owner: a referee in every match, stepping in on taç / korner / aut.

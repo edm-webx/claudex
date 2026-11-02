@@ -10,6 +10,7 @@
  *   arsa: arsaAl id | arsaKur id tur tip | stokAl id n | yukselt id | evAc id
  *   stadyum (near the gate): bilet | takim name
  */
+import { stadSave, tahminDoluluk, fiyatAyarla, FORMASYONLAR, KAPASITE, FIYAT_MIN, FIYAT_MAX } from './stadyum';
 import type { Kernel } from './state';
 import {
   ESYA_BY_ID, TARIFLER, SANDIK_BY_ID, GUNLUK_HAVUZ, SANDIK_DUSER, BANKA, ARSALAR, ARSA_HAK, arsaKapi, DUKKAN_BY_ID, DUKKAN_MAX_SEVIYE,
@@ -222,7 +223,9 @@ export function installMulk(K: Kernel) {
       case 'gunlukAl': gunlukAl(id); break;
       case 'arsaAl': arsaAl(id); break; case 'arsaKur': arsaKur(id, String(c.tur ?? ''), String(c.tip ?? '')); break;
       case 'stokAl': stokAl(id, n || 10); break; case 'yukselt': yukselt(id); break; case 'evAc': evAc(id); break;
-      case 'bilet': bilet(); break; case 'takim': takim(String(c.name ?? ''), c.renk as string | undefined, c.renk2 as string | undefined, c.arma as string | undefined); break;
+      case 'bilet': bilet(); break;
+      case 'biletFiyat': { const a = arsa(); if (!a.takim) { K.toast('Önce kulüp kurmalısın.', 'info'); break; } fiyatAyarla(stadSave(a as never), n || Number(c.n) || 0); K.saveNow(); break; }
+      case 'formasyon': { const a = arsa(); if (!a.takim) { K.toast('Önce kulüp kurmalısın.', 'info'); break; } const f = FORMASYONLAR.find(x => x.id === String(c.name)); if (f) { stadSave(a as never).formasyon = f.id; K.toast('Diziliş: ' + f.ad, 'good'); K.saveNow(); } break; } case 'takim': takim(String(c.name ?? ''), c.renk as string | undefined, c.renk2 as string | undefined, c.arma as string | undefined); break;
       case 'ver': if (ESYA_BY_ID[id]) give(id, n || 1); break;   // test / admin
       case 'sandikVer': if (SANDIK_BY_ID[id]) giveChest(id, 'yönetici'); break;
       default: return false;
@@ -248,7 +251,7 @@ export function installMulk(K: Kernel) {
         stokMax: p ? DUKKAN_STOK_MAX[p.lv] : 0, yakin: dist(K.playerPos, arsaKapi(x)) < KAPI_MENZIL + 1.5, yukselt: p && p.tur === 'dukkan' && p.lv < DUKKAN_MAX_SEVIYE ? dukkanYukselt(DUKKAN_BY_ID[p.tip], p.lv) : null }; }),
       gizem: (rt.gizem as { model(): unknown } | undefined)?.model() ?? null,
       lig: (rt.lig as { model(): unknown } | undefined)?.model() ?? null,
-      hak: ARSA_HAK, sahip: ownedN(), takim: a.takim, stadyum: { ...STADYUM, yakin: nearGate() },
+      hak: ARSA_HAK, sahip: ownedN(), takim: a.takim, stad: a.takim ? (() => { const s = stadSave(a as never), z = (S.zones.halisaha as { form?: string[] } | undefined)?.form || []; return { ...s, tahmin: tahminDoluluk(s.fiyat, z), kapasite: KAPASITE, min: FIYAT_MIN, max: FIYAT_MAX, formaylar: FORMASYONLAR }; })() : null, stadyum: { ...STADYUM, yakin: nearGate() },
     };
   }
   const api = { handle, view, model, give, have };

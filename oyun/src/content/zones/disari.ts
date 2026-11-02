@@ -145,13 +145,17 @@ export function disariPrefabs(): PrefabDef[] {
   // stadyum: pitch, goals, stands, floodlight towers, halı saha cage
   const pitch: PartDef[] = [plane(30, 18, 0.02, '#4f9e4a', 'grass'), plane(30, 0.12, 0.03, '#f6f6f0'), plane(0.12, 18, 0.03, '#f6f6f0'), plane(0.12, 18, 0.03, '#f6f6f0')];
   pitch[2].pos = [-15, 0.03, 0]; pitch[3].pos = [15, 0.03, 0]; pitch[1].pos = [0, 0.03, -9];
+  for (let k = 0; k < 10; k++) pitch.push({ ...plane(3, 18, 0.022, k % 2 ? '#5aae54' : '#459443'), pos: [-13.5 + k * 3, 0.022, 0] });   // mowing stripes
   pitch.push({ ...plane(30, 0.12, 0.03, '#f6f6f0'), pos: [0, 0.03, 9] }, { ...plane(0.12, 18, 0.031, '#f6f6f0'), pos: [0, 0.031, 0] }, cyl(2.4, 0.02, 2.4, 0, 0.025, 0, '#58a653', 24));
   for (const sx of [-1, 1]) pitch.push(box(0.1, 2.2, 0.1, sx * 15, 1.1, -3.6, '#f6f6f0'), box(0.1, 2.2, 0.1, sx * 15, 1.1, 3.6, '#f6f6f0'), box(0.1, 0.1, 7.3, sx * 15, 2.2, 0, '#f6f6f0'), box(1.6, 2.2, 7.3, sx * 15.8, 1.1, 0, '#e8eef0'));
   defs.push({ id: 'mk.pitch', parts: pitch, colliders: [R(1.8, 7.4, -15.8, 0), R(1.8, 7.4, 15.8, 0)] });
   const stand: PartDef[] = [];
-  for (let r = 0; r < 4; r++) stand.push(box(30, 0.5, 1.0, 0, 0.25 + r * 0.5, r * 1.0, r % 2 ? '#e0533c' : '#2f6f9a'));
-  stand.push(box(30.6, 0.2, 4.6, 0, 3.6, 1.6, '#f6efe1', 'roof'), box(0.2, 3.6, 0.2, -15, 1.8, 3.6, '#7a8a90'), box(0.2, 3.6, 0.2, 15, 1.8, 3.6, '#7a8a90'), box(10, 0.9, 0.1, 0, 4.1, -0.6, '#58b368', 'sign'));
-  defs.push({ id: 'mk.stand', parts: stand, colliders: [R(30, 4.2, 0, 1.6)] });
+  // 2026-11-02: tiers rise AWAY from the pitch (local -z = away after the PI turn), solid steps, back wall and side walls, open to the sky so the crowd shows
+  for (let r = 0; r < 4; r++) stand.push(box(30, (r + 1) * 0.5, 1.0, 0, (r + 1) * 0.25, -r * 1.0, '#cfc8b8'), box(30, 0.07, 1.0, 0, (r + 1) * 0.5 + 0.035, -r * 1.0, r % 2 ? '#e0533c' : '#2f6f9a'));
+  stand.push(box(30.6, 3.4, 0.3, 0, 1.7, -4.15, '#d9d4c7'), box(0.4, 2.4, 4.8, -15.2, 1.2, -1.6, '#cfc8b8'), box(0.4, 2.4, 4.8, 15.2, 1.2, -1.6, '#cfc8b8'), box(10, 0.9, 0.1, 0, 2.9, -3.95, '#58b368', 'sign'));
+  defs.push({ id: 'mk.stand', parts: stand, colliders: [R(30.6, 4.8, 0, -1.6)] });
+  defs.push({ id: 'mk.hedge', parts: [box(30, 0.8, 0.8, 0, 0.4, 0, '#2f6b3a'), ...Array.from({ length: 15 }, (_, i) => sph(0.55, -14 + i * 2, 0.85, 0, i % 2 ? '#3a7d45' : '#2f6b3a', 7))] });
+  defs.push({ id: 'mk.hedgeS', parts: [box(0.8, 0.8, 19, 0, 0.4, 0, '#2f6b3a'), ...Array.from({ length: 9 }, (_, i) => sph(0.55, 0, 0.85, -8.5 + i * 2.1, i % 2 ? '#3a7d45' : '#2f6b3a', 7))] });
   defs.push({ id: 'mk.flood', parts: [box(0.3, 9, 0.3, 0, 4.5, 0, '#7a8a90'), box(2.2, 1.2, 0.3, 0, 9.2, 0, '#3b3b3b'), ...[-0.7, 0, 0.7].flatMap(x => [sph(0.24, x, 9.4, 0.2, '#fff1c0', 7), sph(0.24, x, 8.9, 0.2, '#fff1c0', 7)])], colliders: [R(0.5, 0.5)] });
   const cage: PartDef[] = [plane(14, 9, 0.025, '#3fa34d', 'grass')];
   for (const [w, d, x, z] of [[14, 0.06, 0, -4.5], [14, 0.06, 0, 4.5], [0.06, 9, -7, 0], [0.06, 9, 7, 0]] as number[][]) cage.push({ ...box(w, 3.2, d, x, 1.6, z, '#9fb4bf'), mat: 'glass' });
@@ -325,7 +329,8 @@ export function stadyumZone(): ZoneDef {
   const x0 = 392, x1 = 452, mx = 422;
   const props: PrefabPlacement[] = [P('ground', 'mk.ground.pitchzone', mx, 9), P('pitch', 'mk.pitch', 426, 19.5), P('stand', 'mk.stand', 426, 30.2, Math.PI),
     P('cage0', 'mk.cage', 402, 0.5), P('cage1', 'mk.cage', 418, 0.5), P('cage2', 'mk.cage', 434, 0.5),
-    P('fl0', 'mk.flood', 410, 10.6), P('fl1', 'mk.flood', 442, 10.6), P('bayrak', 'mk.bayrak', 396, 16)];
+    P('fl0', 'mk.flood', 410, 10.6), P('fl1', 'mk.flood', 442, 10.6), P('bayrak', 'mk.bayrak', 396, 16),
+    P('ground2', 'mk.ground.yard', mx, 40), P('hedgeN', 'mk.hedge', 426, 27.6), P('hedgeW', 'mk.hedgeS', 410.6, 19.5), P('hedgeE', 'mk.hedgeS', 441.4, 19.5)];
   for (const x of [400, 412, 424, 436, 448]) props.push(P('lamp' + x, 'ts.lamp', x, 13.6));
   return base('stadyum', -6, 32, props, frame(x0, x1, -6, 32), 'gece', 'tersane');
 }

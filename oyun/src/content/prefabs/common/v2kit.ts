@@ -99,8 +99,8 @@ function buildAtlas(): void {
   region('kepenkNew', 128, 128, '#d8d8d8', (g, w, h) => corr(g, w, h, '#ffffff', '#c9c9c9'));
   region('kepenkWorn', 128, 128, '#a07a62', (g, w, h) => {
     corr(g, w, h, '#b59a86', '#8a6e5c');
-    for (let i = 0; i < 16; i++) { const x = rnd.next() * w; const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, 'rgba(160,80,35,.0)'); gr.addColorStop(0.3 + rnd.next() * 0.4, 'rgba(160,80,35,.75)'); gr.addColorStop(1, 'rgba(120,60,30,.2)'); g.fillStyle = gr; g.fillRect(x, 0, 2 + rnd.next() * 6, h); }
-    speckle(g, w, h, 40, 'rgba(120,55,25,.6)', 1.5, 4);
+    for (let i = 0; i < 10; i++) { const x = rnd.next() * w; const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, 'rgba(150,115,80,.0)'); gr.addColorStop(0.3 + rnd.next() * 0.4, 'rgba(140,105,70,.32)'); gr.addColorStop(1, 'rgba(120,95,70,.08)'); g.fillStyle = gr; g.fillRect(x, 0, 1.5 + rnd.next() * 4, h); }
+    speckle(g, w, h, 30, 'rgba(110,80,55,.45)', 1.5, 3);
   });
   region('sesame', 64, 64, '#c47a35', (g, w, h) => {
     const gr = g.createLinearGradient(0, 0, 0, h); gr.addColorStop(0, '#b56a2c'); gr.addColorStop(0.5, '#cf8a42'); gr.addColorStop(1, '#b56a2c'); g.fillStyle = gr; g.fillRect(0, 0, w, h);

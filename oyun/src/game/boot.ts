@@ -108,6 +108,7 @@ import { createCalisanLook, type CalisanLookView } from './view/world/calisan-lo
 import { createHuyMotion, type HuyMotionView } from './view/chars/huy-motion';
 import { createAltinSimitFx, type AltinSimitFx } from './ui/altin-simit-fx';
 import { createDisariLook, type DisariLookView } from './view/disari';
+import { createStadyumView } from './view/stadyum';
 import { createNightLights } from './view/world/night-lights';
 import { createHedefCard, type HedefCard } from './ui/hedef-card';
 import { createFaz2Hud, type Faz2Hud } from './ui/faz2-hud';
@@ -489,6 +490,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const mulkPanel = playMode && uiReal ? make('mulkPanel', () => createMulkPanel({ root: U.root, rules: () => sim.rules, command, sfx: id => { try { audio?.sfx(id); } catch { /* */ } } })) : null;
   if (mulkPanel) U.root.addEventListener('ui:open', e => { const id = (e as CustomEvent).detail as string; if (id === 'envanter') mulkPanel.open('envanter'); else if (id === 'mulk') mulkPanel.open('mulk'); });
   const mulkView = ACIK_DUNYA && playMode && labels ? make('mulkView', () => createMulkView({ scene, labels, project, rules: () => sim.rules, hero: () => pos, setSolid: r => nav.setSolids('mulk', r) })) : null;
+  const stadyumView = ACIK_DUNYA && playMode && labels ? make('stadyumView', () => createStadyumView({ scene, labels, project, rules: () => sim.rules, hero: () => pos, setSolid: r => nav.setSolids('stadyum-kulup', r) })) : null;
   const bankaRt = () => (sim.rules.rt as unknown as { banka?: { tl: number; esya: Record<string, number>; dirty: boolean } }).banka;
   let bankaT = 0;
   // 16:52 user: 42B bus from the stop across the büfe to Belgrad Ormanı (view/orman, ui/otobus-hud)
@@ -600,6 +602,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (ormanView) guard('ormanView', () => ormanView.update(fdt));
     if (mulkPanel) guard('mulkPanel', () => mulkPanel.update(fdt));
     if (mulkView) guard('mulkView', () => mulkView.update(fdt));
+    if (stadyumView) guard('stadyumView', () => stadyumView.update(fdt));
     if ((bankaT -= fdt) <= 0) { bankaT = 2; const b = bankaRt(); if (b?.dirty && hesap()) { b.dirty = false; void bankaYaz({ tl: b.tl, esya: b.esya }); } }
     if (otobusHud) guard('otobusHud', () => otobusHud.update(fdt));
     if (nightLights) guard('nightLights', () => nightLights.update(pos, sim.clock.hour));

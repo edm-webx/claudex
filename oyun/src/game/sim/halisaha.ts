@@ -8,6 +8,7 @@
  */
 import type { Kernel } from './state';
 import { TEAMS } from '../../content/traits';
+import { stadSave, tahminDoluluk, kapiGeliri } from './stadyum';
 
 export const MAC_GUNU_EVERY = 7;          // one fan day a game week
 export const MAC_GUNU_OFFSET = 3;          // day 3, 10, 17, ...
@@ -64,7 +65,7 @@ export function installHaliSaha(K: Kernel, lig?: { mac(day: number): (MacGunu & 
       if (c.op === 'kabul') {
         const t = rt.uiLast.haliSahaTeklif as MacGunu | undefined; if (!t) return false;
         delete rt.uiLast.haliSahaTeklif;
-        rt.uiLast.haliSahaMac = { ...t }; rt.paused = true; rt.pauseWhy = 'halisaha';
+        rt.uiLast.haliSahaMac = { ...t, formasyon: ((S.zones.arsa as { takim?: unknown; stad?: { formasyon?: string } } | undefined)?.takim ? stadSave(S.zones.arsa as never).formasyon : '2-2') }; rt.paused = true; rt.pauseWhy = 'halisaha';
         K.logEv('haliSaha', { op: 'kabul', team: t.team });
         return true;
       }
@@ -74,6 +75,11 @@ export function installHaliSaha(K: Kernel, lig?: { mac(day: number): (MacGunu & 
         delete rt.uiLast.haliSahaMac; if (rt.pauseWhy === 'halisaha') { rt.paused = false; rt.pauseWhy = ''; }
         const ligOk = t.ligG != null && lig ? lig.sonuc(t.ligG, biz, onlar) : false; void ligOk;
         z.played++; z.goals += biz; recordStats(z, c.ist, biz, onlar);
+        const ar = S.zones.arsa as { takim?: unknown } | undefined;
+        if (ar?.takim && t.ligG != null) {   // gate receipts of the club's own league match
+          const st = stadSave(ar as never), dol = tahminDoluluk(st.fiyat, z.form || [], 55), gel = kapiGeliri(dol, st.fiyat);
+          st.doluluk = dol; st.son = gel; st.gelir += gel; st.maclar++; K.earn(gel); K.toast('🎟️ Kapı geliri: ' + gel.toLocaleString('tr') + ' ₺ (doluluk %' + Math.round(dol * 100) + ')', 'good');
+        }
         K.stat('macOyun'); if (biz > onlar) K.stat('macGalibiyet');
         if (biz > onlar) { z.won++; K.earn(MAC_ODUL.win); S.gold += MAC_ODUL.goldWin; K.toast('Maçı kazandın ' + biz + '-' + onlar + '! Taraftar seni omuzlarda taşıdı.', 'good'); }
         else if (biz === onlar) { z.drawn++; K.earn(MAC_ODUL.draw); S.gold += MAC_ODUL.goldDraw; K.toast('Berabere ' + biz + '-' + onlar + '. Çaylar senden!', 'info'); }

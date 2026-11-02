@@ -11,15 +11,17 @@ interface HeroLike { object: T.Object3D; setPose(p: { x: number; z: number }, r:
 export interface Pl3 { x: number; y: number; vx: number; vy: number; fx: number; fy: number; team: 0 | 1; gk: boolean; stun: number }
 export interface HS3 { render(o: { pls: Pl3[]; ball: { x: number; y: number; vx: number; vy: number; owner: number }; ctrl: number; portrait: boolean; shake: number; dt: number; ref?: { x: number; y: number; vx: number; vy: number; fx: number; fy: number; point: number } }): void; dispose(): void }
 
-const BOARDS = ['KOLAZ', 'MARTIKART', 'AYRANBEY', 'BOĞAZ GAZOZU', "SABRİ'NİN BÜFESİ", 'NARÇİÇEK', 'MARTI SU', 'SPOR MARTI'];
+const BOARDS_BASE = ['KOLAZ', 'MARTIKART', 'AYRANBEY', 'BOĞAZ GAZOZU', "SABRİ'NİN BÜFESİ", 'NARÇİÇEK', 'MARTI SU', 'SPOR MARTI'];
+let BOARDS = BOARDS_BASE;
 const BCOL = ['#e0533c', '#3fb5b0', '#ffd23f', '#7d6bb0'];
 
 export function createHaliSaha3D(o: {
   wrap: HTMLElement; chars: { makeHero(o: never): unknown } | null; esnaf: Record<string, unknown> | null;
-  L: number; WD: number; m0: number; m1: number; colors: [string, string]; rival: [string, string];
+  L: number; WD: number; m0: number; m1: number; colors: [string, string]; rival: [string, string]; clubName?: string; rivalName?: string;
 }): HS3 | null {
   if (!o.chars) return null;
   const { L, WD } = o;
+  BOARDS = o.clubName ? [o.clubName.toUpperCase(), 'MARTIKART', o.rivalName ? o.rivalName.toUpperCase() : 'AYRANBEY', 'BOĞAZ GAZOZU', o.clubName.toUpperCase(), 'NARÇİÇEK', 'MARTI SU', o.clubName.toUpperCase()] : BOARDS_BASE;
   let ren: T.WebGLRenderer;
   try { ren = new T.WebGLRenderer({ antialias: true }); } catch { return null; }
   ren.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));

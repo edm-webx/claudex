@@ -1,6 +1,7 @@
 // Envanter / Banka / Günlük / Mülk / Stadyum paneli (karar paketi G: alt bar Envanter + Mülk, her buton gerçek iş yapar).
 // View only: reads rt.mulk (sim/mulk.ts) and sends { kind: 'mulk', ... }. A floating hint button appears at the bank door, a plot
 // door or the stadium gate and opens the right tab.
+import { FORMATIONS } from '../sim/macmotor';
 import { mulkApi } from '../sim/mulk';
 import { ESYALAR, ESYA_BY_ID, SANDIKLAR, TARIFLER, DUKKAN_TIPLERI, DUKKAN_BY_ID, DUKKAN_STOK_MAX, dukkanMusteri, BANKA } from '../../content/esya';
 
@@ -25,6 +26,7 @@ const CSS = `
 .mp-it b{font:900 15px/1.15 var(--disp)}.mp-it small{font:700 12px/1.25 var(--body);opacity:.75}.mp-ic{font-size:26px;line-height:1}
 .mp-n{align-self:flex-end;font:900 14px var(--disp);background:#3b2a20;color:#fff;border-radius:9px;padding:0 8px;margin-top:-26px}
 .mp-b{min-height:38px;padding:0 12px;border:3px solid #3b2a20;border-radius:11px;background:#fff6e6;font:900 14px var(--disp);color:#3b2a20;cursor:pointer;box-shadow:0 3px 0 #3b2a20}
+.mp-gise{background:#101c3a;color:#fff;border-radius:14px;padding:10px 12px;display:grid;gap:8px}.mp-gr{display:flex;align-items:center;gap:10px}.mp-gr span{font:800 11px var(--body);letter-spacing:.14em;text-transform:uppercase;opacity:.6;flex:1}.mp-gr b{font:900 22px var(--disp);min-width:96px;text-align:center;color:#ffb627}.mp-gise .mp-b{min-height:34px;width:38px;padding:0}.mp-gb{position:relative;height:26px;border-radius:9px;background:rgba(255,255,255,.12);overflow:hidden}.mp-gb i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#2fbf71,#6ef2ab)}.mp-gb u{position:absolute;inset:0;display:grid;place-items:center;text-decoration:none;font:800 12px var(--body);color:#fff;text-shadow:0 1px 3px #000a}.mp-gs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.mp-gs span{background:rgba(255,255,255,.08);border-radius:10px;padding:6px 8px;font:800 10px var(--body);letter-spacing:.08em;text-transform:uppercase;opacity:.95}.mp-gs b{display:block;font:900 15px var(--disp);letter-spacing:0;text-transform:none;color:#6ef2ab;margin-top:3px}.mp-gise small{opacity:.6;font:700 11px var(--body)}.mp-kadro{display:flex;gap:12px;align-items:center;margin:6px 0}.mp-forma{width:74px;height:84px;border-radius:12px 12px 8px 8px;border:3px solid #16233b;position:relative;display:grid;place-items:center;clip-path:polygon(0 18%,22% 0,38% 8%,62% 8%,78% 0,100% 18%,100% 100%,0 100%);flex:none}.mp-forma b{font-size:26px;line-height:1;text-shadow:0 2px 0 #fff8}.mp-forma span{position:absolute;bottom:6px;font:900 15px var(--disp);color:#fff;text-shadow:0 2px 0 #0008}.mp-dz{display:flex;gap:6px;flex-wrap:wrap}.mp-dz .mp-b{min-height:34px;font-size:13px}.mp-sq{display:grid;gap:5px}.mp-pl{display:flex;align-items:center;gap:10px;background:#fff8;border-radius:10px;padding:5px 8px}.mp-pl i{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font:900 14px var(--disp);font-style:normal;border:2px solid #16233b;flex:none}.mp-pl small{display:block;font:700 11px var(--body);opacity:.7}
 .mp-pk{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:8px 0;font:800 12px var(--body)}.mp-pk span{min-width:70px;opacity:.7}.mp-sw{width:30px;height:30px;border-radius:50%;border:3px solid #3b2a20;cursor:pointer;padding:0;font-size:16px;background:#fff6e6}.mp-sw.wide{border-radius:10px}.mp-sw.on{outline:3px solid #ffd23f;outline-offset:1px}.mp-prev{height:54px;border:3px solid #3b2a20;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:30px;margin:6px 0;text-shadow:0 2px 0 #fff8}
 .mp-b.g{background:#8fd06b}.mp-b.y{background:#ffd23f}.mp-b.r{background:#ff8b7a}.mp-b:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
 .mp-row{display:flex;align-items:center;gap:8px;border:3px solid #3b2a20;border-radius:14px;background:#fff;padding:8px 10px;margin-bottom:7px;flex-wrap:wrap}
@@ -100,6 +102,23 @@ ${y ? `<button class="mp-b y" data-a="yukselt" data-id="${a.id}"${Object.entries
     return s;
   }
 
+  /** Ticket booth + squad sheet of the founded club. */
+  function gise(m: M): string {
+    const t = m.takim, g = m.stad, z = (m.lig?.ist || {}) as M, P = (z.players || {}) as Record<string, Record<string, number>>;
+    const c1 = t.renk, c2 = t.renk2 || '#f2c230', dol = Math.round(g.tahmin * 100);
+    const roller: Record<string, string> = { GK: 'Kaleci', DEF: 'Defans', MID: 'Orta saha', FWD: 'Forvet' };
+    const sq = [['Kaleci Nuri', 1], ['Hamdi', 4], ['Cemil', 5], ['SABRİ', 10], ['Tayyar', 9]] as [string, number][];
+    const fm = FORMATIONS[g.formasyon] || FORMATIONS['2-2'];
+    let h = `<h3 style="margin:12px 0 4px;font-size:14px">🎟️ Bilet gişesi</h3><div class="mp-gise">
+<div class="mp-gr"><span>Bilet</span><button class="mp-b" data-a="biletFiyat" data-n="-1">−</button><b>${tl(g.fiyat)}</b><button class="mp-b" data-a="biletFiyat" data-n="1">+</button></div>
+<div class="mp-gb"><i style="width:${dol}%"></i><u>Beklenen doluluk %${dol} · ${Math.round(g.tahmin * g.kapasite)}/${g.kapasite} koltuk</u></div>
+<div class="mp-gs"><span>Son maç<b>${tl(g.son)}</b></span><span>Toplam gelir<b>${tl(g.gelir)}</b></span><span>İç saha maçı<b>${g.maclar}</b></span></div>
+<small>Pahalı bilet = az seyirci. Galibiyet serisi ve güçlü rakip doluluğu artırır. Gelir her lig maçından sonra kasana yazılır.</small></div>`;
+    h += `<h3 style="margin:12px 0 4px;font-size:14px">👕 Kadro ve forma</h3><div class="mp-kadro"><div class="mp-forma" style="background:linear-gradient(90deg,${c1} 50%,${c2} 50%)"><b>${t.arma || '🛡️'}</b><span>10</span></div>
+<div class="mp-dz">${(g.formaylar as M[]).map(f => `<button class="mp-b${f.id === g.formasyon ? ' y' : ''}" data-a="formasyon" data-id="${f.id}" title="${esc(f.not)}">${esc(f.ad)}</button>`).join('')}</div></div>
+<div class="mp-sq">${sq.map(([ad, no], i) => { const r = P[ad] || {}; const rol = fm[i]?.role || 'MID'; return `<div class="mp-pl"><i style="background:${c1};color:${c2}">${no}</i><span><b>${esc(ad)}</b><small>${roller[rol]} · ${r.oyun || 0} maç · ${r.goals || 0} gol · ${r.assists || 0} asist${rol === 'GK' ? ' · ' + (r.saves || 0) + ' kurtarış' : ''}</small></span></div>`; }).join('')}</div>`;
+    return h;
+  }
   const CLUB_COL = ['#e0533c', '#f2c230', '#2ec4c4', '#3a6fb0', '#1f8a70', '#a990dd', '#2b2b38', '#f4f4f4'], CLUB_ARMA = ['🦅', '🐟', '🦁', '⭐', '⚓', '🔥', '🐈', '🥙'];
   const club = { c1: '#e0533c', c2: '#f2c230', arma: '🦅' };
   function stadyum(m: M): string {
@@ -108,6 +127,7 @@ ${y ? `<button class="mp-b y" data-a="yukselt" data-id="${a.id}"${Object.entries
     if (!s.yakin) h += `<div class="mp-note">Stadyum Mahallesi'ne 42B ile git (harita > Stadyum).</div>`;
     h += `<div class="mp-row"><span class="mp-ic">🎟️</span><div><b>Anlık maç · bilet ${tl(s.bilet)}</b><small>Kimse yoksa rakip yapay zeka. 2 yarı.</small></div><button class="mp-b g" data-a="bilet"${s.yakin && m.money >= s.bilet ? '' : ' disabled'}>Bilet al</button></div>`;
     if (m.takim) h += `<div class="mp-row"><span class="mp-ic" style="background:${m.takim.renk};border-radius:12px">${m.takim.arma || '🛡️'}</span><div><b>Kulübün: ${esc(m.takim.ad)}</b><small>Kuruluş: gün ${m.takim.kurulus ?? '?'} · Lig sekmesinde puan durumu ve istatistik.</small></div></div>`;
+    if (m.takim && m.stad) h += gise(m);
     else {
       const sw = (k: 'c1' | 'c2', v: string) => `<button class="mp-sw${club[k] === v ? ' on' : ''}" data-a="kPick" data-k="${k}" data-v="${v}" style="background:${v}" aria-label="${v}"></button>`;
       h += `<div class="mp-row" style="display:block"><div><b>Futbol kulübü kur · ${tl(s.takim)}</b><small>Ad, forma renkleri ve arma. Bir kez seçilir; lig ve istatistikler bu kulüple tutulur.</small></div>
