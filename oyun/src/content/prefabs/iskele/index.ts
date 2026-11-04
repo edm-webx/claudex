@@ -15,6 +15,7 @@ import type { MotorPrefabDef, MotorPrefabSystem, Params } from '../../../engine/
 import { Batch, col, geoc, HP } from '../../../engine/prefab/batch';
 import type { Rect } from '../../../engine/api';
 import { ensureKit, MAT, R, K, radialTex, tileNewTex, tileWornTex } from '../common/v2kit';
+import { UG } from '../../ustgecit';
 import { PIER, WALKABLE, staticObstacles, stageLayout, PARTS, type Obstacle } from './layout';
 import { makeSea, makeSeaMask, makeSkyline, makeBoats } from './scenery';
 import { buildPier, LAMPS } from './pier';
@@ -22,7 +23,7 @@ import { buildKiosk, jobBoardInto, drawSign } from './kiosk';
 import { stationBuilt, meatGeo, spinGeo, tableBuilt, decorBuild, makeFerryMesh, FOOT, DECOR_SIZE } from './props';
 import { rectAABB } from './layout';
 
-export const ISKELE_BOUNDS: Rect = { x0: -62, z0: -14, x1: 62, z1: 14.3 };
+export const ISKELE_BOUNDS: Rect = { x0: -62, z0: -19, x1: 62, z1: 59 };
 
 /** Pilings of the pier (same loops as buildPier), for the sea foam mask without building the pier. */
 export function pilingList(): { x: number; z: number }[] {
@@ -39,7 +40,9 @@ export function waterColliders(): Rect[] {
     { x0: b.x0, x1: p.x0, z0: b.z0, z1: pr.z0 },
     { x0: p.x1, x1: b.x1, z0: b.z0, z1: pr.z0 },
     { x0: p.x0, x1: p.x1, z0: b.z0, z1: p.z0 },
-    { x0: b.x0, x1: b.x1, z0: pr.z1, z1: b.z1 },
+    // the 6-lane road: closed everywhere except the footbridge corridor
+    { x0: b.x0, x1: UG.x - UG.hw, z0: pr.z1, z1: 28.4 },
+    { x0: UG.x + UG.hw, x1: b.x1, z0: pr.z1, z1: 28.4 },
   ];
 }
 

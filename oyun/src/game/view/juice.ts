@@ -203,7 +203,7 @@ export function createJuice(d: JuiceDeps): JuiceView {
   }
 
   // wave spray around the dock pilings
-  const DOCK = { x: 10.75, z: -7.1 };
+  const DOCK = { x: 25.05, z: -7.1 };
   function spray(scale = 1) {
     const x = DOCK.x + (Math.random() - 0.5) * 3, z = DOCK.z + (Math.random() - 0.5) * 2.5;
     play('foamSplash', at3(x, 0.05, z), scale);

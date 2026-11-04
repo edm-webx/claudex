@@ -60,11 +60,11 @@ function apt(id: string, w: number, d: number, h: number, wall: string, trim: st
     for (let c = 0; c < Math.floor(d / 2.0); c++) { const z = -d / 2 + 1.1 + c * 2.0; parts.push(box(0.07, 1.4, 1.0, fx, y, z, lit[(f * 3 + c) % lit.length]), box(0.5, 0.12, 1.5, fx + face * 0.22, y - 0.78, z, trim)); }
     for (let c = 0; c < Math.floor(w / 2.0); c++) { const x = -w / 2 + 1.1 + c * 2.0; parts.push(box(1.0, 1.4, 0.07, x, y, d / 2 + 0.03, lit[(f * 2 + c + 1) % lit.length]), box(1.5, 0.12, 0.5, x, y - 0.78, d / 2 + 0.22, trim)); }
   }
-  parts.push(box(0.1, 2.4, 1.8, fx, 1.2, 0, '#4a3a2e', 'door'), box(0.14, 0.3, 4.6, fx, 3.0, 0, trim, 'ledge'));
+  parts.push(box(0.1, 2.4, 1.8, fx, 1.2, 0, '#4a3a2e', 'door'), box(0.14, 0.3, d + 0.2, fx, 3.0, 0, trim, 'ledge'));
   return { id, parts, colliders: [R(w, d)] };
 }
 export function aptPrefabs(): PrefabDef[] {
-  return [apt('mk.apt.e1', 8, 6.4, 20, '#e8cfae', '#b8764f', -1), apt('mk.apt.e2', 8, 6.4, 25, '#d9c3d6', '#8a6a86', -1), apt('mk.apt.w1', 8, 6.4, 23, '#cfe0d4', '#6f8f7a', 1), apt('mk.apt.w2', 8, 6.4, 19, '#f1d6c4', '#b5654a', 1)];
+  return [apt('mk.apt.e1', 8, 4.2, 20, '#e8cfae', '#b8764f', -1), apt('mk.apt.e2', 8, 4.2, 25, '#d9c3d6', '#8a6a86', -1), apt('mk.apt.w1', 8, 4.2, 23, '#cfe0d4', '#6f8f7a', 1), apt('mk.apt.w2', 8, 4.2, 19, '#f1d6c4', '#b5654a', 1)];
 }
 
 export function disariPrefabs(): PrefabDef[] {

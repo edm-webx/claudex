@@ -20,7 +20,7 @@ export interface DenizLookDeps { root: () => T.Object3D | null; rules: () => Rul
 export interface DenizLookView { update(dt: number): void; debug(): Record<string, unknown>; dispose(): void }
 
 const WY = -1.0, PI = Math.PI, HP = PI / 2;
-const DOOR = { x: 8.1, z: -7.1 }, BOLLARD = { x: 7.75, z: -8.55 };
+const DOOR = { x: 22.4, z: -7.1 }, BOLLARD = { x: 22.05, z: -8.55 };
 const mats = new Map<string, T.Material>();
 const lam = (c: string) => { let m = mats.get('l' + c); if (!m) { m = new T.MeshLambertMaterial({ color: c }); mats.set('l' + c, m); } return m; };
 const glow = (c: string, op = 0.8) => { const k = 'g' + c + op; let m = mats.get(k); if (!m) { m = new T.MeshBasicMaterial({ color: c, transparent: true, opacity: op, depthWrite: false, blending: T.AdditiveBlending }); mats.set(k, m); } return m; };

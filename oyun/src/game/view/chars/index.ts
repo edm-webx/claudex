@@ -20,6 +20,7 @@
  *   (v2 behaviour), others override the face row; LOD B/C use the 4-expression far set.
  * - Every root carries userData.parity = 'dyn' (parity masks) and v2 names (crowd, hero-*, cat-*, dog-*, gull-*, pigeons).
  */
+import { ugY, onUg } from '../../../content/ustgecit';
 import * as T from 'three';
 import { CH } from './v2/chars-v2';
 import * as K from './v2/kit';
@@ -93,7 +94,7 @@ export function createChars(deps: CharsDeps): MotorChars {
     let lastX = NaN, lastZ = NaN, velX = 0, velZ = 0, accX = 0, accZ = 0, sipT = 0;
     const h: MotorHero = {
       object, animator: animator as Animator, rig,
-      setPose(p: Vec2, rotY: number) { object.position.set(p.x, object.position.y, p.z); object.rotation.y = rotY; },
+      setPose(p: Vec2, rotY: number) { object.position.set(p.x, kind === 'hero' && onUg(p.x, p.z) ? ugY(p.x, p.z) : object.position.y, p.z); object.rotation.y = rotY; },
       setInput(i) { Object.assign(inp, i); },
       setState(s) { extra = s; },
       setExpr(e: ExprId, brow?: BrowId) { if (rig.setFace) rig.setFace(EXPR_ORDER.indexOf(e), brow); },

@@ -94,6 +94,7 @@ import { panelModel, panelActions } from './sim/panels';
 import type { AgentsHandle } from './sim/agents';
 import { createFerryLook, type FerryLookView } from './view/world/ferry-look';
 import { createYolLook, type YolLookView } from './view/world/yol-look';
+import { createKarsiLook, type KarsiLookView } from './view/world/karsi-look';
 import { restoranApi } from './sim/restoran';
 import { createIzgaraLook, type IzgaraLookView } from './view/world/izgara-look';
 import { cellRect } from '../content/izgara';
@@ -289,6 +290,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   // ferry kinds + tarife tahtası (ferry-look.ts)
   const ferryLook: FerryLookView | null = playMode && zones ? make('ferryLook', () => createFerryLook({ root: () => zones.root('iskele') ?? null, rules: () => sim.rules })) : null;
 
+  const karsiLook: KarsiLookView | null = playMode && zones ? make('karsiLook', () => createKarsiLook({ root: () => zones.root('iskele') ?? null })) : null;
   const yolLook: YolLookView | null = playMode && zones ? make('yolLook', () => createYolLook({ root: () => zones.root('iskele') ?? null })) : null;
 
   const izgaraLook: IzgaraLookView | null = playMode && uiReal ? make('izgaraLook', () => createIzgaraLook({ scene, host: U.root })) : null;
@@ -585,6 +587,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     guard('world', () => W.update(sim.state, fdt, alpha));
     if (ferryLook) guard('ferryLook', () => ferryLook.update(fdt));
     if (yolLook) guard('yolLook', () => yolLook.update(fdt));
+    if (karsiLook) guard('karsiLook', () => karsiLook.update(fdt));
     if (tipJar) guard('tipJar', () => tipJar.update(fdt));
     if (stantLook) guard('stantLook', () => stantLook.update(fdt));
     if (faz2Hud) guard('faz2Hud', () => faz2Hud.update(fdt));

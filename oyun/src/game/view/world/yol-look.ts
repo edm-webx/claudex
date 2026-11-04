@@ -5,13 +5,15 @@
  * train on a viaduct and a slow ferry on the water line. Pure view: no colliders, not walkable, nav untouched.
  */
 import * as T from 'three';
+import { loadGlb, fitClone } from './glb';
+import { UG, ugY } from '../../../content/ustgecit';
 
 export interface YolLookDeps { root: () => T.Object3D | null }
 export interface YolLookView { update(dt: number): void; dispose(): void }
 
 const Z_WALK = 13.3, Z_KERB = 15.0, LANE = 1.9, ROAD_W = LANE * 6;
 const X0 = -62, X1 = 62;
-const RX = 130;  // road/sidewalk reach well past the pier ends so no vehicle ever pops in or out of view
+const RX = 62;  // road/sidewalk reach well past the pier ends so no vehicle ever pops in or out of view
 const STOP_NAME = 'BETT';
 const STREET_Y = 0.35;
 
@@ -48,6 +50,18 @@ function buildRoad(): T.Group {
   return g;
 }
 
+/** Tunnel blocks closing both road ends: vehicles come out of a dark mouth, nothing pops in view. */
+function buildPortals(): T.Group {
+  const g = new T.Group(); g.name = 'yolTunel';
+  const zc = Z_KERB + ROAD_W / 2, zw = ROAD_W + 4.4;
+  for (const sg of [-1, 1]) {
+    g.add(box(24, 7, zw, lam('#9a9ea4'), sg * (RX + 12), 3.5, zc - 0.5));
+    g.add(box(0.3, 3.6, ROAD_W, lam('#0d0f12'), sg * (RX + 0.01), 1.8, zc));
+    g.add(box(0.5, 0.5, ROAD_W + 0.8, lam('#5b6068'), sg * (RX + 0.1), 3.85, zc));
+  }
+  return g;
+}
+
 function buildBusStop(): T.Group {
   const g = new T.Group(); g.name = 'yolDurak';
   const x = -20, z = Z_WALK + 0.9;
@@ -61,19 +75,40 @@ function buildBusStop(): T.Group {
 
 function buildOverpass(): T.Group {
   const g = new T.Group(); g.name = 'yolUstGecit';
-  const x = 24, zA = Z_WALK + 0.9, zB = Z_KERB + ROAD_W + 1.0, h = 5.2, deckW = 2.2;
-  const zm = (zA + zB) / 2, len = zB - zA;
-  g.add(box(deckW, 0.3, len + 0.6, lam('#7b8189'), x, h, zm));
-  g.add(box(deckW + 0.4, 0.5, len + 0.6, lam('#5b6068'), x, h - 0.4, zm));
-  [-1, 1].forEach(sg => g.add(box(0.08, 0.9, len, lam('#c9ced6'), x + sg * (deckW / 2), h + 0.6, zm)));
-  [zA, zB].forEach(z => {
-    g.add(box(0.5, h, 0.5, lam('#6f747c'), x - 1.2, h / 2, z));
-    g.add(box(0.5, h, 0.5, lam('#6f747c'), x + 1.2, h / 2, z));
-  });
+  const { x, hw, zA, zB, zC, zD, h } = UG, W = hw * 2 + 0.3, steel = lam('#7b8189'), dark = lam('#5b6068'), rail = lam('#c9ced6');
+  const zm = (zB + zC) / 2, len = zC - zB;
+  g.add(box(W, 0.3, len + 0.4, steel, x, h - 0.15, zm));
+  g.add(box(W, 0.45, len, dark, x, h - 0.6, zm));
+  // two flights of steps: every tread is a solid block down to the ground, so nothing floats
+  const N = 14;
+  const flight = (z0: number, z1: number) => {
+    for (let i = 0; i < N; i++) {
+      const za = z0 + (z1 - z0) * i / N, zb = z0 + (z1 - z0) * (i + 1) / N;
+      const top = ugY(x, (za + zb) / 2) || 0.05, th = Math.max(0.12, top);
+      g.add(box(W, th, Math.abs(zb - za) + 0.01, i % 2 ? lam('#8a9097') : lam('#979da4'), x, th / 2, (za + zb) / 2));
+    }
+  };
+  flight(zA, zB); flight(zD, zC);
+  // landing blocks and pillars under the deck
+  for (const z of [zB + 0.6, zC - 0.6]) for (const sg of [-1, 1]) g.add(box(0.45, h - 0.3, 0.45, lam('#6f747c'), x + sg * (hw - 0.1), (h - 0.3) / 2, z));
+  // railings: along the deck and following both flights
+  for (const sg of [-1, 1]) {
+    const rx = x + sg * hw;
+    g.add(box(0.07, 1.0, len + 0.4, rail, rx, h + 0.55, zm));
+    g.add(box(0.07, 0.07, len + 0.4, rail, rx, h + 1.05, zm));
+    for (const [z0, z1] of [[zA, zB], [zD, zC]]) {
+      const dz = z1 - z0, dy = h, L = Math.hypot(dz, dy), ang = Math.atan2(dy, Math.abs(dz)) * Math.sign(dz) * -1;
+      for (const yy of [0.55, 1.05]) { const r = box(0.07, 0.07, L, rail, rx, h / 2 + yy, (z0 + z1) / 2); r.rotation.x = ang; g.add(r); }
+      for (let i = 0; i <= 4; i++) { const t = i / 4, zz = z0 + dz * t; g.add(box(0.06, 0.9, 0.06, rail, rx, ugY(x, zz) + 0.45, zz)); }
+    }
+  }
+  // sign over the stairs
+  const sgn = new T.Mesh(new T.PlaneGeometry(1.8, 0.45), new T.MeshLambertMaterial({ map: signTex('ÜST GEÇİT', '#2b6fb8', '#fbfaf6') }));
+  sgn.position.set(x, h + 1.7, zB + 0.2); g.add(sgn);
   return g;
 }
 
-type Vehicle = { mesh: T.Object3D; lane: number; speed: number; off: number; dir: 1 | -1; kind: 'bus' | 'metro' | 'metrobus' | 'car' };
+type Vehicle = { mesh: T.Object3D; lane: number; speed: number; off: number; dir: 1 | -1; kind: 'bus' | 'metrobus' | 'car' };
 
 const cyl = (rt: number, rb: number, h: number, m: T.Material, x: number, y: number, z: number, axis: 'x' | 'z' = 'z') => { const o = new T.Mesh(new T.CylinderGeometry(rt, rb, h, 14), m); o.rotation.x = axis === 'z' ? Math.PI / 2 : 0; o.position.set(x, y, z); return o; };
 const GLASS = () => lam('#2a3a4c'), TYRE = () => lam('#17181b'), HUB = () => lam('#b9bec6');
@@ -123,31 +158,24 @@ function buildVehicles(): { group: T.Group; list: Vehicle[] } {
   const laneZ = (i: number) => Z_KERB + (i + 0.5) * LANE;
   // lanes: 0,1 east cars, 2 east metrobus, 3 west metrobus, 4,5 west cars. One constant speed per lane + fixed spacing: nothing overlaps or overtakes.
   const LS = [7, 9, 10, 10, 9, 7], SPACE = 36, COLORS = ['#2f9d59', '#ffd23f', '#3f7fd0', '#e0533c', '#f4f2ec', '#8a5fd0', '#2fb5b0'];
+  // Kenney car models replace the box cars once loaded (the box body stays when a file is missing)
+  const CARS = ['taxi', 'sedan', 'suv', 'hatchback-sports', 'van', 'sedan-sports', 'suv-luxury', 'delivery', 'police'];
+  const skin = (g: T.Group, k: number) => { loadGlb('auto/' + CARS[k % CARS.length]).then(src => { if (!src) return; g.clear(); g.add(fitClone(src, 1.9, 4.4, undefined, CAR_YAW)); }); return g; };
   const add = (mesh: T.Object3D, lane: number, off: number, kind: Vehicle['kind']) => { mesh.position.set(X0 - 200, 0, laneZ(lane)); if (lane >= 3) mesh.rotation.y = Math.PI; group.add(mesh); list.push({ mesh, lane, speed: LS[lane], off, dir: lane >= 3 ? -1 : 1, kind }); };
   let ci = 0;
-  for (const lane of [0, 1, 4, 5]) for (let k = 0; k < SPAN_V / SPACE; k++) { const bus = (k + lane) % 3 === 0; add(bus ? busBody(COLORS[ci++ % 3], 8.2, '42B') : carBody(COLORS[ci++ % COLORS.length]), lane, k * SPACE + lane * 7, bus ? 'bus' : 'car'); }
+  for (const lane of [0, 1, 4, 5]) for (let k = 0; k < SPAN_V / SPACE; k++) { const bus = (k + lane) % 3 === 0; add(bus ? busBody(COLORS[ci++ % 3], 8.2, '42B') : skin(carBody(COLORS[ci % COLORS.length]), ci++), lane, k * SPACE + lane * 7, bus ? 'bus' : 'car'); }
   for (const lane of [2, 3]) for (let k = 0; k < 2; k++) add(busBody('#e0533c', 14.5, 'MB'), lane, k * (SPAN_V / 2) + lane * 20, 'metrobus');
-  // metro train on a viaduct behind the far sidewalk
-  const vz = Z_KERB + ROAD_W + 6.0;
-  for (let x = X0 - 100; x <= X1 + 100; x += 12) group.add(box(1.2, 5.6, 1.6, lam('#9a9ea6'), x, 2.8, vz));
-  group.add(box(SPAN_V, 0.5, 3.4, lam('#7b8189'), 0, 5.75, vz));
-  const metro = new T.Group();
-  for (let i = 0; i < 3; i++) {
-    metro.add(box(15, 2.3, 2.7, lam('#2c6fbf'), i * 15.4, 1.35, 0)); metro.add(box(14.2, 0.55, 2.74, GLASS(), i * 15.4, 1.65, 0)); metro.add(box(14.2, 0.2, 2.74, lam('#e9f1fb'), i * 15.4, 0.8, 0));
-  }
-  metro.position.set(X0, 6.0, vz);
-  group.add(metro);
-  list.push({ mesh: metro, lane: -1, speed: 14, off: 0, dir: 1, kind: 'metro' });
   return { group, list };
 }
-const SPAN_V = 320;
+const SPAN_V = 144;
+const CAR_YAW = Math.PI / 2;   // Kenney cars face +z, the lane vehicles face +x
 
 export function createYolLook(d: YolLookDeps): YolLookView {
   const road = buildRoad(), stop = buildBusStop(), bridge = buildOverpass();
   const { group: vehicles, list } = buildVehicles();
   const holder = new T.Group(); holder.name = 'yolKok';
   holder.position.y = STREET_Y;
-  holder.add(road, stop, bridge, vehicles);
+  holder.add(road, stop, bridge, vehicles, buildPortals());
   let t = 0;
   return {
     update(dt) {
@@ -157,7 +185,7 @@ export function createYolLook(d: YolLookDeps): YolLookView {
       t += dt;
       for (const v of list) {
         const p = ((v.off + v.speed * t) % SPAN_V + SPAN_V) % SPAN_V;
-        v.mesh.position.x = v.dir === 1 ? X0 - 95 + p : X1 + 95 - p;
+        v.mesh.position.x = v.dir === 1 ? X0 - 10 + p : X1 + 10 - p;
       }
     },
     dispose() { holder.parent?.remove(holder); },

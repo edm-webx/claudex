@@ -25,6 +25,7 @@ import { carsiPrefabs } from '../../../content/carsi/street';
 import { iskeleZone, ISKELE_PLAYER_START } from '../../../content/zones/iskele';
 import { testSokakZone } from '../../../content/zones/test-sokak';
 import { registerDisariZones, aptPrefabs } from '../../../content/zones/disari';
+import { karsiPrefabs } from '../../../content/zones/karsi';
 import { stageLayout, STATION_KINDS, PARTS, TABLE_PADS, PAD_KEYS_FALLBACK, SEAT_H, WATER_Y, local2world, rectAABB, benchSeats, BENCHES, type StageLayout, type P3v, type Obstacle, staticObstacles } from '../../../content/prefabs/iskele/layout';
 import { paintKey } from '../../../content/dekor-katalog';
 import { stationBuilt, tableBuilt, decorBuild, itemGeo, ITEM_HT, moneyGeo, makeMarker, MARKERS, bez, FOOT, DECOR_SIZE } from '../../../content/prefabs/iskele/props';
@@ -61,10 +62,10 @@ export interface WorldView extends GameView {
   zones: { iskele: ZoneDef; 'test-sokak': ZoneDef };
 }
 
-const DOCK = { x: 10.75, z: -7.1 };
+const DOCK = { x: 25.05, z: -7.1 };
 const V = (x: number, y: number, z: number) => new T.Vector3(x, y, z);
-const PATH_IN = [V(46, 0, -60), V(28, 0, -36), V(10.75, 0, -28), V(10.75, 0, -7.1)];
-const PATH_OUT = [V(10.75, 0, -7.1), V(10.75, 0, -24), V(2, 0, -36), V(-50, 0, -50)];
+const PATH_IN = [V(56, 0, -60), V(40, 0, -36), V(25.05, 0, -28), V(25.05, 0, -7.1)];
+const PATH_OUT = [V(25.05, 0, -7.1), V(25.05, 0, -24), V(12, 0, -36), V(-50, 0, -50)];
 const IN_T = 10, DOCK_T = 25, OUT_T = 16, GANG_T = 1.4, AUTO_AWAY = 40;
 const STEAM_PER = 5, STEAM_MAX = 24, SPK = 120;
 
@@ -77,6 +78,7 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
   GREYBOX_PREFABS.forEach(d => { if (!prefab.has(d.id)) prefab.define(d); });
   carsiPrefabs().forEach(d => { if (!prefab.has(d.id)) prefab.define(d); });
   aptPrefabs().forEach(d => { if (!prefab.has(d.id)) prefab.define(d); });
+  karsiPrefabs().forEach(d => { if (!prefab.has(d.id)) prefab.define(d); });
   ensureKit();
   const ZI = iskeleZone(), ZT = testSokakZone();
   if (!zones.def('iskele')) zones.register(ZI); else zones.replace(ZI);
@@ -241,7 +243,7 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
     L.walkways.forEach((w, i) => w.forEach((v, j) => put('walkways.' + i + '.' + j, v)));
     put('playerStart', L.playerStart, undefined, 'spawn');
     if (L.door) { put('door.outside', L.door.outside, undefined, 'door'); put('door.inside', L.door.inside, undefined, 'door'); }
-    put('ferry.door', { x: 8.1, z: -7.1 }, undefined, 'door'); put('ferry.dock', { x: DOCK.x, z: DOCK.z });
+    put('ferry.door', { x: 22.4, z: -7.1 }, undefined, 'door'); put('ferry.dock', { x: DOCK.x, z: DOCK.z });
     return a;
   }
   function dynObstacles(): Obstacle[] {
@@ -332,7 +334,7 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
   const ferrySubs = new Set<(e: 'horn' | 'dock' | 'leave') => void>();
   const fire = (e: 'horn' | 'dock' | 'leave') => ferrySubs.forEach(cb => { try { cb(e); } catch { /* ignore */ } });
   const ferry: WorldView['ferry'] = {
-    state: 'away', t: 0, auto: true, doorPos: { x: 8.1, z: -7.1 },
+    state: 'away', t: 0, auto: true, doorPos: { x: 22.4, z: -7.1 },
     arrive() { if (ferry.state !== 'away') return false; ferry.state = 'arriving'; ferry.t = 0; if (h.ferry) h.ferry.visible = true; placeFerry(0, false); fire('horn'); return true; },
     onEvent(cb) { ferrySubs.add(cb); return () => { ferrySubs.delete(cb); }; },
   };

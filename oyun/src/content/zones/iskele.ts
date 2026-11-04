@@ -7,6 +7,7 @@
  * with the same names flattened as 'group.key.index'.
  * The portal at x = 62 (promenade end) leads to test-sokak, which continues the promenade eastwards.
  */
+import { karsiProps } from './karsi';
 import type { ZoneDef, AnchorDef } from '../../engine/api';
 import { BENCHES, benchSeats, NEXT_SIGN, SEAT_H } from '../prefabs/iskele/layout';
 
@@ -30,7 +31,7 @@ export function iskeleZone(): ZoneDef {
   return {
     id: 'iskele',
     name: 'İskele',
-    bounds: { x0: -62, z0: -14, x1: 62, z1: 14.3 },
+    bounds: { x0: -62, z0: -19, x1: 62, z1: 59 },
     walk: { cell: 0.5, bake: true },
     props: [
       { id: 'sea', prefab: 'iskele.sea', pos: { x: 0, z: 0 } },
@@ -41,8 +42,9 @@ export function iskeleZone(): ZoneDef {
       { id: 'ferry', prefab: 'iskele.ferry', pos: { x: 0, z: 0 } },
       { id: 'ferryFar', prefab: 'iskele.ferryFar', pos: { x: 0, z: 0 } },
       // pier-end apartments close both ends of the promenade (2026-11-02: the pier is the whole map)
-      { id: 'apt-e1', prefab: 'mk.apt.e1', pos: { x: 57.5, z: 5.0 } }, { id: 'apt-e2', prefab: 'mk.apt.e2', pos: { x: 57.5, z: 11.4 } },
-      { id: 'apt-w1', prefab: 'mk.apt.w1', pos: { x: -57.5, z: 5.0 } }, { id: 'apt-w2', prefab: 'mk.apt.w2', pos: { x: -57.5, z: 11.4 } },
+      { id: 'apt-e1', prefab: 'mk.apt.e1', pos: { x: 57.5, z: 6.8 } }, { id: 'apt-e2', prefab: 'mk.apt.e2', pos: { x: 57.5, z: 11.2 } },
+      { id: 'apt-w1', prefab: 'mk.apt.w1', pos: { x: -57.5, z: 6.8 } }, { id: 'apt-w2', prefab: 'mk.apt.w2', pos: { x: -57.5, z: 11.2 } },
+      ...karsiProps(),
       // stools that were inside the v2 kiosk batch (stage 1 counter stool, stage 2 door stool); the view hides the other stage's one
       { id: 'tabure-s1', prefab: 'iskele.tabure-kucuk', pos: { x: 2.95, z: -0.95 } },
       { id: 'tabure-s2', prefab: 'iskele.tabure', pos: { x: -5.0, z: -3.55 } },

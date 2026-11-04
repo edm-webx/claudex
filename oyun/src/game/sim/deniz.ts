@@ -26,7 +26,7 @@ import { havaApi } from './hava';
 import { fmtMoney, clamp } from './util';
 
 export const DENIZ_KEY = 'deniz';
-const DOOR = { x: 8.1, z: -7.1 };
+const DOOR = { x: 22.4, z: -7.1 };
 
 interface DenizSave {
   ext: string[]; seatOwn: string[]; seats: Record<string, string>; tez: number; pier: string[]; bufe: boolean;

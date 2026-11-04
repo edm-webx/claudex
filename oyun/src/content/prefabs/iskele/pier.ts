@@ -64,8 +64,8 @@ export function buildPier() {
   railLine(A, PIER.x1 - 0.1, PIER.z0 + 0.1, PIER.x1 - 0.1, PIER.z1 - 0.2, (x: number, z: number) => z > GANG.z0 && z < GANG.z1);
   // bollards (babalar) and rope coils
   const bollard = (x?: any, z?: any) => { A.lathe([[0, 0], [0.22, 0], [0.2, 0.08], [0.14, 0.14], [0.13, 0.38], [0.21, 0.44], [0.22, 0.5], [0.14, 0.56], [0, 0.57]], '#33373b', x, 0, z, { seg: 12 }); };
-  [[7.75, -8.55], [7.75, -5.65], [7.6, -12.85], [-9.95, -12.85]].forEach(([x, z]) => bollard(x, z));
-  [[7.35, -9.2], [-9.4, -12.6]].forEach(([x, z]) => { for (let k = 0; k < 3; k++) A.tor(0.26 - k * 0.04, 0.045, '#d8c39a', x, 0.05 + k * 0.08, z, { rx: HP, rs: 5, ts: 16 }); });
+  [[22.05, -8.55], [22.05, -5.65], [21.9, -12.85], [-23.45, -17.5]].forEach(([x, z]) => bollard(x, z));
+  [[21.65, -9.2], [-23.0, -17.0]].forEach(([x, z]) => { for (let k = 0; k < 3; k++) A.tor(0.26 - k * 0.04, 0.045, '#d8c39a', x, 0.05 + k * 0.08, z, { rx: HP, rs: 5, ts: 16 }); });
   // lamps
   [[-10.05, -10.6], [-10.05, -4.2], [-10.05, 2.2], [8.0, -11.4], [8.0, -3.4], [8.0, 2.4]].forEach(([x, z]) => lampPost(A, BU, x, z));
   // benches on the pier
@@ -75,9 +75,9 @@ export function buildPier() {
   [-1.0, 1.0].forEach(lx => A.box(0.1, 2.6, 0.1, K.lamp, lx, 1.3, 0, { r: 0.03 }));
   A.box(2.3, 0.62, 0.08, '#1d5fa8', 0, 2.3, 0, { r: 0.03 }); A.label(2.2, 0.55, R.pierName, 0, 2.3, 0.045);
   A.pop();
-  A.push(mtx(7.75, 0, -4.4, 0, -0.25, 0)); A.box(0.08, 1.5, 0.08, K.lamp, 0, 0.75, 0, { r: 0.02 }); A.box(0.7, 0.55, 0.05, '#1d5fa8', 0, 1.65, 0, { r: 0.02 }); A.label(0.66, 0.5, R.timetable, 0, 1.65, 0.03); A.pop();
+  A.push(mtx(22.05, 0, -4.4, 0, -0.25, 0)); A.box(0.08, 1.5, 0.08, K.lamp, 0, 0.75, 0, { r: 0.02 }); A.box(0.7, 0.55, 0.05, '#1d5fa8', 0, 1.65, 0, { r: 0.02 }); A.label(0.66, 0.5, R.timetable, 0, 1.65, 0.03); A.pop();
   // life rings on the railing, a fisherman's bucket, planters
-  [[-10.32, -1.0, HP], [-1.0, -13.22, 0], [8.22, -10.2, -HP]].forEach(([x, z, ry]) => { A.push(mtx(x, 0.62, z, 0, ry, 0)); for (let k = 0; k < 8; k++) A.tor(0.26, 0.07, k % 2 ? '#fbfaf6' : '#e0533c', 0, 0, 0.05, { arc: TAU / 8, rz: k * TAU / 8, rs: 6, ts: 3 }); A.pop(); });
+  [[-23.8, -1.0, HP], [-1.0, -17.8, 0], [22.52, -10.2, -HP]].forEach(([x, z, ry]) => { A.push(mtx(x, 0.62, z, 0, ry, 0)); for (let k = 0; k < 8; k++) A.tor(0.26, 0.07, k % 2 ? '#fbfaf6' : '#e0533c', 0, 0, 0.05, { arc: TAU / 8, rz: k * TAU / 8, rs: 6, ts: 3 }); A.pop(); });
   A.cyl(0.18, 0.15, 0.3, '#2f6fdb', -1.6, 0.15, -12.9, { seg: 10 }); A.cyl(0.015, 0.015, 2.2, '#7d5638', -1.4, 1.0, -13.0, { rx: -0.45, seg: 4 }); A.cyl(0.015, 0.015, 2.2, '#5a3d28', -1.8, 1.0, -13.0, { rx: -0.5, rz: 0.2, seg: 4 });
   // "Yakında: Vapur Büfesi" sign at the pier end (next venue teaser)
   A.push(mtx(NEXT_SIGN.x, 0, NEXT_SIGN.z, 0, NEXT_SIGN.ry, 0));
@@ -85,7 +85,7 @@ export function buildPier() {
   A.box(2.2, 1.14, 0.08, '#7d5638', 0, 1.62, 0, { r: 0.03 }); A.label(2.08, 1.02, R.soon, 0, 1.62, 0.045);
   A.box(2.3, 0.08, 0.2, '#e0533c', 0, 2.24, 0, { r: 0.03 });
   A.pop();
-  [[-9.75, 3.75], [7.65, 3.75]].forEach(([x, z]) => { A.box(1.1, 0.5, 0.55, '#a8774f', x, 0.25, z, { r: 0.04 }); for (let k = 0; k < 5; k++) A.ico(0.22, k % 2 ? '#6f9e4f' : '#7fae5e', x - 0.4 + k * 0.2, 0.6, z, { d: 0 }); [-0.3, 0, 0.3].forEach((dx, k) => A.sph(0.09, ['#e0533c', '#f2a2b3', '#ffd23f'][k], x + dx, 0.78, z + 0.05, { ws: 6, hs: 4 })); });
+  [[-9.75, 3.75], [22.0, 3.75]].forEach(([x, z]) => { A.box(1.1, 0.5, 0.55, '#a8774f', x, 0.25, z, { r: 0.04 }); for (let k = 0; k < 5; k++) A.ico(0.22, k % 2 ? '#6f9e4f' : '#7fae5e', x - 0.4 + k * 0.2, 0.6, z, { d: 0 }); [-0.3, 0, 0.3].forEach((dx, k) => A.sph(0.09, ['#e0533c', '#f2a2b3', '#ffd23f'][k], x + dx, 0.78, z + 0.05, { ws: 6, hs: 4 })); });
   // promenade: stone pavement, sea wall, railing, lamps, benches, trees, grass beyond
   S.span(-80, 80, -0.32, 0, PIER.z1, 13.5, '#ffffff', { r: 0, world: 4 });
   A.span(-80, PIER.x0, -1.6, -0.3, PIER.z1, PIER.z1 + 0.5, '#a9a094', { r: 0 }); A.span(PIER.x1, 80, -1.6, -0.3, PIER.z1, PIER.z1 + 0.5, '#a9a094', { r: 0 });
@@ -93,14 +93,9 @@ export function buildPier() {
   railLine(A, -62, PIER.z1 + 0.22, PIER.x0 - 0.2, PIER.z1 + 0.22); railLine(A, PIER.x1 + 0.2, PIER.z1 + 0.22, 62, PIER.z1 + 0.22);
   A.span(-80, 80, -0.3, 0.12, 13.5, 14.0, '#bdb3a5', { r: 0.03 });
   F.span(-80, 80, -0.3, 0.05, 14.0, 62, '#9cc47a', { r: 0 });
-  // park behind the promenade: a clipped hedge with gaps, trees and flower beds (seen when the camera pans south)
-  // Faz 2 clipping pass: the 6-lane road (view/world/yol-look.ts, z 13.3..26.4) now runs here, so the hedge is gone
-  // and the park trees / flower beds start beyond the far kerb.
-  { const gr = v2rng(77); for (let i = 0; i < 26; i++) { const x = gr.range(-75, 75), z = gr.range(28.5, 40); if (Math.abs(x) < 3) continue; const s = gr.range(0.9, 1.3); F.cyl(0.12 * s, 0.17 * s, 2.2 * s, '#8a6a4f', x, 1.1 * s, z, { seg: 6 }); [[0, 2.7, 0, 1.3], [0.6, 2.4, 0.3, 1.0], [-0.55, 2.5, -0.2, 1.0], [0.1, 3.3, -0.1, 0.9]].forEach(([a, y, c, r0], k) => F.ico(r0 * s, k % 2 ? '#86b565' : '#6f9e4f', x + a * s, y * s, z + c * s, { d: 0 })); }
-    for (let i = 0; i < 8; i++) { const x = -60 + i * 17 + gr.range(-3, 3), z = gr.range(29, 33); F.cyl(1.3, 1.4, 0.25, '#b8ad9e', x, 0.12, z, { seg: 16 }); for (let k = 0; k < 9; k++) { const a = k / 9 * TAU; F.ico(0.22, ['#e0533c', '#f2a2b3', '#ffd23f', '#ffffff', '#8a6bbf'][k % 5], x + Math.cos(a) * 0.8, 0.38, z + Math.sin(a) * 0.8, { d: 0 }); } F.ico(0.45, '#6f9e4f', x, 0.5, z, { d: 1 }); } }
+  // the far side of the road is built by content/zones/karsi.ts
   for (let x = -58; x <= 58; x += 10) if (x < PIER.x0 - 1 || x > PIER.x1 + 1) lampPost(near(x), BU, x, 5.05);
   [-50, -40, -30, -20, -12, 12, 21, 31, 41, 51].forEach((x, i) => { if (i % 2) bench(near(x), x, 5.95, PI); });
-  for (let x = -54; x <= 54; x += 9) tree(near(x), x + 0.5, 11.6, 0.9 + (Math.abs(x) % 3) * 0.05);
   [[-14, 9.6], [12.5, 9.6]].forEach(([x, z]) => { A.box(2.2, 0.35, 1.0, '#bdb3a5', x, 0.17, z, { r: 0.05 }); for (let k = 0; k < 8; k++) A.ico(0.2, ['#e0533c', '#f2a2b3', '#ffd23f', '#ffffff'][k % 4], x - 0.85 + k * 0.24, 0.42, z + (k % 2 ? 0.2 : -0.2), { d: 0 }); });
   return { A, P, S, BU, F, pilings };
 }

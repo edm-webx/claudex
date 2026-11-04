@@ -1,7 +1,7 @@
 // Owner: Builder A. Runs after `vite build`: writes dist/index.html in page-contract form (MOTOR §1):
 // no doctype/html/head/body, <title> first, base <style>, #app > canvas#c, hidden #fail, classic <script src="game.js">.
 // Copies dist/img/** untouched if present (art atlases). Never deletes dist files other builders' tools wrote.
-import { writeFileSync, existsSync } from 'node:fs';
+import { writeFileSync, existsSync, cpSync } from 'node:fs';
 import { join } from 'node:path';
 
 const dist = 'dist';
@@ -20,4 +20,6 @@ html,body{margin:0;height:100%;overflow:hidden;background:#c6e3f2;touch-action:n
 <script src="game.js"></script>
 `;
 writeFileSync(join(dist, 'index.html'), html);
+// Kenney CC0 models (cars, buildings, trees): public/modeller -> dist/modeller
+if (existsSync('public/modeller')) cpSync('public/modeller', join(dist, 'modeller'), { recursive: true });
 console.log('build-artifact: dist/index.html written');

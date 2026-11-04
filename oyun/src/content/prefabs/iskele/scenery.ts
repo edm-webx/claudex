@@ -11,15 +11,15 @@ const V3 = (x = 0, y = 0, z = 0): T.Vector3 => new T.Vector3(x, y, z);
 void [mtx, geoc, col, mixc, shade, clamp, lerp, easeInOut, PI, TAU, HP, roundBox, K, R, MAT, rnd, v2rng, rrect, fitText, txt, canvasTex, atlasTex, radialTex, WATER_Y, SEAT_H, PIER, BUFE, GANG, WIN_Z, NEXT_SIGN, BENCHES, l2w, rectAABB, V3];
 export type { Obstacle };
 
-export const MASK = { x0: -40, z0: -40, w: 80, h: 80, px: 512 };
+export const MASK = { x0: -72, z0: -40, w: 144, h: 112, px: 1024 };
 export function makeSeaMask(pilings?: any) {
-  const cv = document.createElement('canvas'); cv.width = cv.height = MASK.px;
+  const cv = document.createElement('canvas'); cv.width = MASK.px; cv.height = Math.round(MASK.px * MASK.h / MASK.w);
   const g = cv.getContext('2d')!, s = MASK.px / MASK.w;
   const X = (x: any) => (x - MASK.x0) * s, Z = (z: any) => (z - MASK.z0) * s;
-  g.fillStyle = '#000'; g.fillRect(0, 0, MASK.px, MASK.px);
+  g.fillStyle = '#000'; g.fillRect(0, 0, cv.width, cv.height);
   const shapes = (stroke?: any) => {
     g.beginPath(); g.rect(X(PIER.x0), Z(PIER.z0), (PIER.x1 - PIER.x0) * s, (PIER.z1 - PIER.z0) * s);
-    g.rect(X(-200), Z(PIER.z1 - 0.05), 400 * s, 60 * s);
+    g.rect(X(-62), Z(PIER.z1 - 0.05), 124 * s, (59 - PIER.z1 + 0.05) * s);   // the land: promenade, road and far side (x ±62, z to 59)
     stroke ? g.stroke() : g.fill();
     pilings.forEach((p: any) => { g.beginPath(); g.arc(X(p.x), Z(p.z), 0.32 * s, 0, TAU); stroke ? g.stroke() : g.fill(); });
   };

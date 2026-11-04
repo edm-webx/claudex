@@ -61,7 +61,9 @@ export const SANDIK_DUSER: { stat: string; her: number; sandik: string; ad: stri
 ];
 
 /** The bank building (Mahalle Meydanı) and the plot grid. Bank door / plot doors are the interaction points. */
-export const BANKA = { x: -40, z: 8.0, kapi: { x: -40, z: 11.0 }, w: 6.2, d: 4.6, ad: 'Martı Kasası Bankası' };
+/** Halı saha giriş (karşı yaka, tribünlü saha): bilet ve takım kurma burada da yapılır. */
+export const HALI_SAHA_KAPI = { x: -25.2, z: 45 };
+export const BANKA = { x: 11.7, z: 36.8, kapi: { x: 11.7, z: 41.8 }, w: 10, d: 8.4, ad: 'Martı Kasası Bankası' };
 export interface Arsa { id: string; x: number; z: number; fiyat: number; seviye: number; rotY: number }
 export const ARSALAR: Arsa[] = [
   { id: 'a1', x: 259.5, z: 0.4, fiyat: 60000, seviye: 3, rotY: 0 },
@@ -96,5 +98,4 @@ export const dukkanMusteri = (tip: DukkanTip, lv: number) => tip.musteri * (1 + 
 
 /** stadium (J6): instant match ticket and team founding */
 /** 2026-11-02: the football club stand on the pier promenade (club founding, ticket price, league) */
-export const KULUP_STANDI = { x: 30, z: 8.4, kapi: { x: 30, z: 11.2 }, w: 6, d: 3.2 };
 export const STADYUM = { bilet: 5000, takim: 100000, kapi: { x: 399, z: 12.2 } };

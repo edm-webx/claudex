@@ -144,10 +144,6 @@ export function createHavaLook(d: HavaLookDeps): HavaLookView {
   const trunks: T.InstancedMesh = new T.InstancedMesh(G(new T.CylinderGeometry(0.16, 0.22, 1, 6).translate(0, 0.5, 0)), M(new T.MeshLambertMaterial({ color: '#7a5636' })), 20);
   trunks.frustumCulled = false; trunks.visible = false; pier.add(trunks);
   const crownSpots: [number, number, number, number][] = []; // x y z r
-  for (let x = -54; x <= 54; x += 9) {
-    const s = 0.9 + (Math.abs(x) % 3) * 0.05, tx = x + 0.5, tz = 11.6;
-    for (const [a, y, c, r0] of [[0, 2.7, 0, 1.25], [0.6, 2.4, 0.3, 0.9], [-0.55, 2.5, -0.2, 0.95], [0.1, 3.3, -0.1, 0.85]]) crownSpots.push([tx + a * s, y * s, tz + c * s, r0 * s * 1.06]);
-  }
   let crownSeason = '';
   // table umbrellas
   const tUmb: { g: T.Group; can: T.Mesh }[] = [];

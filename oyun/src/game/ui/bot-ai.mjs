@@ -173,7 +173,7 @@ export const STEPS = [
   { gdd: '08:00', what: 'Rıza işe başlar', ev: 'hire', name: 'Rıza', max: 570 },
   { gdd: '08:00', what: 'Rıza 3 sn izler, devralır', ev: 'takeover', name: 'Rıza', max: 600 },
   { gdd: '09:00', what: 'Vapur penceresi kurulur', ev: 'unlock', key: 'pencere', max: 640 },
-  { gdd: '09:00', what: 'İlk 20 sn pencere telaşı', ev: 'firstWindowSale', max: 760 },
+  { gdd: '09:00', what: 'İlk 20 sn pencere telaşı', ev: 'firstWindowSale', max: 790 },
   { gdd: '10:00', what: 'Martı tezgahta bakar', ev: 'gullStare', max: 680 },
   { gdd: '10:00', what: 'Yürü, uçsun (ya da simidi kapar)', ev: ['gullChased', 'gullSnatch'], max: 700 },
   { gdd: '11:00', what: 'Rıza uyur (Zzz)', ev: 'workerSleep', max: 740 },

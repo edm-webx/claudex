@@ -214,7 +214,7 @@ ${y ? `<button class="mp-b y" data-a="yukselt" data-id="${a.id}"${Object.entries
       const v = m.view();
       // contextual hint at the bank door / a plot door / the stadium gate
       const ht: Tab | null = v.ipucuYakin ? 'defter' : v.stadyumYakin ? 'stadyum' : v.bankaYakin ? 'banka' : v.arsaYakin ? 'mulk' : null;
-      if (ht !== hintTab) { hintTab = ht; hint.style.display = ht && !openNow ? 'block' : 'none'; hint.textContent = ht === 'defter' ? '🔍 İncele' : ht === 'stadyum' ? '⚽ Kulüp standı: kulüp, bilet, lig' : ht === 'banka' ? '🏦 Bankayı aç' : ht === 'mulk' ? '🏠 Arsa / Dükkân' : ''; }
+      if (ht !== hintTab) { hintTab = ht; hint.style.display = ht && !openNow ? 'block' : 'none'; hint.textContent = ht === 'defter' ? '🔍 İncele' : ht === 'stadyum' ? '⚽ Halı saha girişi: kulüp, bilet, lig' : ht === 'banka' ? '🏦 Bankayı aç' : ht === 'mulk' ? '🏠 Arsa / Dükkân' : ''; }
       else if (hintTab) hint.style.display = openNow ? 'none' : 'block';
       if (!openNow) return;
       const mod = m.model(); const k2 = tab + '|' + pickPlot + '|' + JSON.stringify(mod);

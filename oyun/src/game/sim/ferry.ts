@@ -17,7 +17,7 @@ import { havaOf } from './hava';
 /** Ferry gap grows with the kiosk stage (2 h play: a ferry every 84 s felt like a metronome); each wave grows with it. */
 export const ferryGap = (stage: number): [number, number] => (stage <= 1 ? [75, 105] : stage === 2 ? [110, 160] : [150, 230]);
 export const FERRY_T = { arriving: 10, docked: 25, leaving: 16 } as const;
-export const FERRY_DOOR = { x: 8.1, z: -7.1 };
+export const FERRY_DOOR = { x: 22.4, z: -7.1 };
 
 export function installFerry(K: Kernel, cu: ReturnType<typeof installCustomers>, w: { open(): void; close(): void; update(dt: number): void }) {
   const rt = K.rt, S = K.state, f = rt.ferry, rng = K.R.main;

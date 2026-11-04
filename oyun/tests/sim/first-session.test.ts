@@ -74,7 +74,8 @@ describe('economy parity with the v2 bot curve', () => {
       // 2026-10-24 re-baseline: the sim day used to end at 240 s (16:00); with one clock (480 s, 08:00-03:00) the same
       // 240 s marks fall at different hours, so the early curve moved (day 5 stayed within 4 %).
       // 2026-10-24 re-baseline: user asked for a bit faster money (cheaper ingredients, more walk-ins)
-      const FAZ2_CUM: Record<number, number> = { 1: 5432, 3: 18192, 5: 33838 };
+      // 2026-11-04 re-baseline: the pier grew and the ferry berth moved 14 m east (passengers walk further to the window), day 1 measured 7077
+      const FAZ2_CUM: Record<number, number> = { 1: 7077, 3: 18192, 5: 33838 };
       const ref = FAZ2_CUM[d];
       expect(Math.abs(at[d] - ref) / ref, `day ${d}: ${at[d]} vs v2 ${ref}`).toBeLessThanOrEqual(0.15);
     }

@@ -1,3 +1,4 @@
+import { UG } from '../../ustgecit';
 /**
  * İskele geography and per-stage layout (pure data, no three, no DOM): v2 world.js constants, stageLayout(),
  * staticObstacles(), WALKABLE, benches, lamp posts, trophy spots. Ported 1:1 (numbers kept).
@@ -25,7 +26,7 @@ export interface StageLayout {
 }
 const PI = Math.PI, HP = PI / 2;
 export const WATER_Y = -1.0, SEAT_H = 0.45;
-export const PIER = { x0: -10.5, x1: 8.4, z0: -13.4, z1: 4.4 };
+export const PIER = { x0: -24, x1: 22.7, z0: -18, z1: 4.4 };
 export const BUFE = { x0: -4.2, x1: 4.2, z0: -10.6, z1: -4.4 };
 export const GANG = { z0: -8.0, z1: -6.2 };
 export const WIN_Z = -7.1;
@@ -43,7 +44,7 @@ export const BENCHES: { pos: P3v; rotY: number }[] = [
 ];
 export function benchSeats(bn: { pos: P3v; rotY: number }): P3v[] { const c = Math.cos(bn.rotY), s = Math.sin(bn.rotY); return [-0.55, 0, 0.55].map(lx => V3(bn.pos.x + lx * c + 0.05 * s, 0, bn.pos.z - lx * s + 0.05 * c)); }
 /** Pier lamp posts (x, z). */
-export const PIER_LAMPS: [number, number][] = [[-10.05, -10.6], [-10.05, -4.2], [-10.05, 2.2], [8.0, -11.4], [8.0, -3.4], [8.0, 2.4]];
+export const PIER_LAMPS: [number, number][] = [[-10.05, -10.6], [-10.05, -4.2], [-10.05, 2.2], [8.0, -11.4], [8.0, -3.4], [8.0, 2.4], [-23.5, -15], [-23.5, -8], [-23.5, -1], [-23.5, 3.6], [22.2, -15], [22.2, -3.4], [22.2, 3.6], [-16, -17.5], [-5, -17.5], [6, -17.5], [15, -17.5]];
 export const local2world = (x: number, z: number, ry: number, lx: number, lz: number, y = 0): P3v => V3(x + lx * Math.cos(ry) + lz * Math.sin(ry), y, z - lx * Math.sin(ry) + lz * Math.cos(ry));
 export function rectAABB(x: number, z: number, w: number, d: number, ry: number, tag?: string): Obstacle { const c = Math.abs(Math.cos(ry)), s = Math.abs(Math.sin(ry)), hx = (w * c + d * s) / 2, hz = (w * s + d * c) / 2; return { x0: x - hx, x1: x + hx, z0: z - hz, z1: z + hz, tag }; }
 export function trophySpots(stage: number): { x: number; y: number; z: number; s: number }[] {
@@ -112,15 +113,15 @@ export function staticObstacles(): Obstacle[] {
   add(PIER.x0 - 0.4, PIER.x1 + 0.4, PIER.z0 - 0.4, PIER.z0 + 0.2, 'rail');
   add(PIER.x1 - 0.2, PIER.x1 + 0.4, PIER.z0 - 0.4, GANG.z0, 'rail'); add(PIER.x1 - 0.2, PIER.x1 + 0.4, GANG.z1, PIER.z1, 'rail');
   add(-80, PIER.x0, PIER.z1 - 0.4, PIER.z1 + 0.45, 'rail'); add(PIER.x1, 80, PIER.z1 - 0.4, PIER.z1 + 0.45, 'rail');
-  add(-80, 80, 13.3, 14.2, 'rail');
-  [[-10.05, -10.6], [-10.05, -4.2], [-10.05, 2.2], [8.0, -11.4], [8.0, -3.4], [8.0, 2.4]].forEach(([x, z]) => add(x - 0.22, x + 0.22, z - 0.22, z + 0.22, 'lamp'));
+  // road-side rail along the promenade; the footbridge stairs interrupt it
+  add(-80, UG.x - UG.hw, 13.3, 14.2, 'rail'); add(UG.x + UG.hw, 80, 13.3, 14.2, 'rail');
+  PIER_LAMPS.forEach(([x, z]) => add(x - 0.22, x + 0.22, z - 0.22, z + 0.22, 'lamp'));
   for (let x = -58; x <= 58; x += 10) if (x < PIER.x0 - 1 || x > PIER.x1 + 1) add(x - 0.22, x + 0.22, 4.83, 5.27, 'lamp');
-  for (let x = -54; x <= 54; x += 9) add(x + 0.5 - 0.66, x + 0.5 + 0.66, 11.6 - 0.66, 11.6 + 0.66, 'tree');
-  [[7.75, -8.55], [7.75, -5.65], [7.6, -12.85], [-9.95, -12.85]].forEach(([x, z]) => add(x - 0.25, x + 0.25, z - 0.25, z + 0.25, 'bollard'));
+  [[22.05, -8.55], [22.05, -5.65], [21.9, -12.85], [-23.45, -17.5]].forEach(([x, z]) => add(x - 0.25, x + 0.25, z - 0.25, z + 0.25, 'bollard'));
   BENCHES.forEach(b => { const c = Math.cos(b.rotY), s = Math.sin(b.rotY), bx = b.pos.x - 0.28 * s, bz = b.pos.z - 0.28 * c, hx = Math.abs(c) * 0.95 + Math.abs(s) * 0.12, hz = Math.abs(s) * 0.95 + Math.abs(c) * 0.12; add(bx - hx, bx + hx, bz - hz, bz + hz, 'bench'); });
-  [[-9.75, 3.75], [7.65, 3.75]].forEach(([x, z]) => add(x - 0.58, x + 0.58, z - 0.3, z + 0.3, 'prop'));
+  [[-9.75, 3.75], [22.0, 3.75]].forEach(([x, z]) => add(x - 0.58, x + 0.58, z - 0.3, z + 0.3, 'prop'));
   [[-14, 9.6], [12.5, 9.6]].forEach(([x, z]) => add(x - 1.12, x + 1.12, z - 0.52, z + 0.52, 'prop'));
-  add(-10.0, -7.7, 3.6, 3.95, 'prop'); add(7.6, 7.9, -4.55, -4.25, 'prop');
+  add(-10.0, -7.7, 3.6, 3.95, 'prop'); add(21.9, 22.2, -4.55, -4.25, 'prop');
   { const c = Math.cos(NEXT_SIGN.ry), s = Math.sin(NEXT_SIGN.ry), hx = c * 1.0 + s * 0.12, hz = s * 1.0 + c * 0.12; add(NEXT_SIGN.x - hx, NEXT_SIGN.x + hx, NEXT_SIGN.z - hz, NEXT_SIGN.z + hz, 'prop'); }
   add(-1.85, -1.35, -13.15, -12.65, 'prop');
   return o;

@@ -14,7 +14,7 @@ import { stadSave, tahminDoluluk, fiyatAyarla, FORMASYONLAR, KAPASITE, FIYAT_MIN
 import type { Kernel } from './state';
 import {
   ESYA_BY_ID, TARIFLER, SANDIK_BY_ID, GUNLUK_HAVUZ, SANDIK_DUSER, BANKA, ARSALAR, ARSA_HAK, arsaKapi, DUKKAN_BY_ID, DUKKAN_MAX_SEVIYE,
-  DUKKAN_STOK_MAX, dukkanYukselt, dukkanMusteri, STADYUM, KULUP_STANDI, type Arsa,
+  DUKKAN_STOK_MAX, dukkanYukselt, dukkanMusteri, STADYUM, HALI_SAHA_KAPI, type Arsa,
 } from '../../content/esya';
 import { fmtMoney } from './util';
 
@@ -170,9 +170,9 @@ export function installMulk(K: Kernel) {
   }
 
   // ── stadium ──
-  const nearGate = () => dist(K.playerPos, STADYUM.kapi) < 5 || dist(K.playerPos, KULUP_STANDI.kapi) < 4.5;
+  const nearGate = () => dist(K.playerPos, STADYUM.kapi) < 5 || dist(K.playerPos, HALI_SAHA_KAPI) < 4.5;
   function bilet() {
-    if (!nearGate()) { K.toast('Kulüp standına (iskele) ya da stadyum kapısına git, bileti oradan al.', 'info'); return; }
+    if (!nearGate()) { K.toast('Halı saha girişine (karşı yaka) ya da stadyum kapısına git, bileti oradan al.', 'info'); return; }
     if (S.money < STADYUM.bilet) { K.toast('Bilet ' + fmtMoney(STADYUM.bilet) + '.', 'bad'); return; }
     K.spend(STADYUM.bilet); K.toast('🎟️ Bilet alındı! Maç başlıyor.', 'good');
     K.command({ kind: 'halisaha', op: 'teklif' } as never); K.command({ kind: 'halisaha', op: 'kabul' } as never);
@@ -180,7 +180,7 @@ export function installMulk(K: Kernel) {
   const HEX = /^#[0-9a-fA-F]{6}$/, ARMALAR = ['🦅', '🐟', '🦁', '⭐', '⚓', '🔥', '🐈', '🥙'];
   function takim(ad: string, r1?: string, r2?: string, arma?: string) {
     const a = arsa(); if (a.takim) { K.toast('Takımın zaten var: ' + a.takim.ad, 'info'); return; }
-    if (!nearGate()) { K.toast('Takımı iskeledeki kulüp standında ya da stadyum kapısında kurarsın.', 'info'); return; }
+    if (!nearGate()) { K.toast('Takımı halı saha girişinde (karşı yaka) ya da stadyum kapısında kurarsın.', 'info'); return; }
     ad = String(ad || '').replace(/[<>]/g, '').trim().slice(0, 16); if (ad.length < 3) { K.toast('Takım adı en az 3 harf.', 'info'); return; }
     if (S.money < STADYUM.takim) { K.toast('Takım kurmak ' + fmtMoney(STADYUM.takim) + '.', 'bad'); return; }
     K.spend(STADYUM.takim); a.takim = { ad, renk: HEX.test(r1 || '') ? r1! : '#e0533c', renk2: HEX.test(r2 || '') ? r2! : '#f2c230', arma: ARMALAR.includes(arma || '') ? arma : '🦅', kurulus: S.day }; K.toast('⚽ ' + ad + ' kuruldu!', 'good'); K.addXP(60); K.saveNow();
