@@ -13,9 +13,12 @@ const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null
 await p.evaluate(() => { const M = window.__marti; M.setTime(13); M.step(2); M.izgara(true); const u = document.getElementById('sbui'); if (u) u.style.display = 'none'; const v = document.getElementById('sb-vig'); if (v) v.style.display = 'none'; });
 await p.evaluate(() => { const M = window.__marti; for (const x of [50, -50, 0]) { M.teleport(x, 9); for (let k = 0; k < 12; k++) M.renderFrames(3, 0.1); } });
 await p.evaluate(t => window.__marti.camera({ tilt: t }), tilt);
+await p.evaluate(n => { window.__nf = n; }, +(process.env.NF || 40));
+await p.setViewportSize({ width: +(process.env.W || 1440), height: +(process.env.H || 810) });
 const names = ['guney', 'bati', 'kuzey', 'dogu'];
-for (let i = 0; i < 4; i++) {
-  await p.evaluate(([i, z]) => { const M = window.__marti; M.camera({ x: 0, z: 2, zoomRaw: z, yaw: i * Math.PI / 2 }); for (let k = 0; k < 40; k++) M.renderFrames(2, 0.1); }, [i, zr]);
-  await p.waitForTimeout(500); await p.screenshot({ path: join(out, `iskele-iso-${i + 1}-${names[i]}.png`), timeout: 240000 }); console.log('ok', i + 1);
+const only = process.argv[5] ? [+process.argv[5]] : [0, 1, 2, 3];
+for (const i of only) {
+  await p.evaluate(([i, z]) => { const M = window.__marti; M.camera({ x: 0, z: +(window.__cz ?? 2), zoomRaw: z, yaw: i * Math.PI / 2 }); for (let k = 0; k < (window.__nf || 40); k++) M.renderFrames(2, 0.1); }, [i, zr]);
+  await p.waitForTimeout(500); await p.screenshot({ path: join(out, `iskele-iso-${i + 1}-${names[i]}.png`), timeout: 540000 }); console.log('ok', i + 1);
 }
 await b.close(); srv.close();
