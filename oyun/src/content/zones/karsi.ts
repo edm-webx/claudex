@@ -12,7 +12,7 @@ const box = (w: number, h: number, d: number, x: number, y: number, z: number, c
 const cyl = (rt: number, h: number, rb: number, x: number, y: number, z: number, color: string, seg = 14): PartDef => ({ shape: 'cyl', size: [rt, h, rb], pos: [x, y, z], color, segments: seg });
 const plane = (w: number, d: number, y: number, color: string): PartDef => ({ shape: 'plane', size: [w, 0, d], pos: [0, y, 0], color });
 const R = (w: number, d: number, ox = 0, oz = 0): Rect => ({ x0: ox - w / 2, x1: ox + w / 2, z0: oz - d / 2, z1: oz + d / 2 });
-const PAVE = '#d8cbb0', STONE = '#cfc4ad';
+const PAVE = '#c4aa80';
 
 /** A building with windows on the front (+z) and both side faces; the door on `door`. */
 function bld(id: string, w: number, d: number, h: number, wall: string, trim: string, door: '+z' | '-z' | '+x' | '-x', extra: PartDef[] = [], glb = false): Def {
@@ -40,7 +40,7 @@ export function karsiPrefabs(): PrefabDef[] {
   const pave = (id: string, w: number, d: number, color = PAVE) => defs.push({ id, parts: [plane(w, d, 0.07, color)] });
   pave('kr.pave.wide', 124, 3.2); pave('kr.pave.s', 124, 2.2);
   pave('kr.pave.gate', 14, 3.0); pave('kr.pave.e1', 26.6, 3.0); pave('kr.pave.v1', 3.0, 19); pave('kr.pave.v2', 6.3, 16); pave('kr.pave.h2', 25.6, 6);
-  pave('kr.plaza', 18.4, 24.4, '#dccdb0');
+  pave('kr.plaza', 18.4, 24.4, '#c8ad82');
   // tribün blocks: three steps with a crowd-free seat row
   const stand = (id: string, w: number, d: number, axis: 'z' | 'x'): Def => {
     const parts: PartDef[] = [];
@@ -65,14 +65,15 @@ export function karsiPrefabs(): PrefabDef[] {
     cyl(0.9, 0.2, 0.2, 0, 2.15, 0, '#b9ad99', 14), cyl(0.05, 1.4, 0.08, 0, 2.9, 0, '#bfe6f7', 6),
     ...[0, 1, 2, 3, 4, 5].map(i => cyl(0.04, 0.9, 0.06, Math.cos(i * 1.047) * 1.5, 0.95, Math.sin(i * 1.047) * 1.5, '#bfe6f7', 6))], colliders: [R(5.8, 5.8)] });
   defs.push(bench('kr.bench'));
+  defs.push({ id: 'kr.treeblock', parts: [cyl(0.18, 1.2, 0.26, 0, 0.6, 0, '#6b4a2e', 7)], colliders: [R(0.5, 0.5)] });   // the crown is a Kenney model (karsi-look)
   // basketball court with two hoops
   const hoop = (z: number, dir: number): PartDef[] => [cyl(0.07, 3.2, 0.07, 0, 1.6, z, '#3b3b3b', 6), box(1.5, 1.0, 0.08, 0, 3.4, z + dir * 0.2, '#f4f4f0'), cyl(0.28, 0.06, 0.28, 0, 3.0, z + dir * 0.55, '#e0533c', 10)];
   defs.push({ id: 'kr.basket', parts: [box(7.2, 0.06, 10.7, 0, 0.04, 0, '#c8663c'), box(6.8, 0.02, 0.1, 0, 0.09, 0, '#f4f4f0'), cyl(1.1, 0.02, 1.1, 0, 0.09, 0, '#f4f4f0', 20), cyl(1.0, 0.03, 1.0, 0, 0.1, 0, '#c8663c', 20), ...hoop(-5.0, 1), ...hoop(5.0, -1)], colliders: [R(0.4, 0.4, 0, -5.0), R(0.4, 0.4, 0, 5.0)] });
   // buildings
   defs.push(bld('kr.kafe', 7, 9.4, 3.8, '#f1d9b4', '#c2551f', '+x', [box(0.1, 0.9, 3.8, 3.7, 1.6, 0, '#d85a5a'), box(7.5, 0.4, 1.2, 0, 3.9, 5.05, '#c2551f')], true));
-  defs.push(bld('kr.kirtasiye', 7.1, 3.6, 3.6, '#bfd8e8', '#2b6fb8', '+z', [box(3.4, 0.8, 0.08, 0, 3.0, 1.9, '#ffd23f')]));
+  defs.push(bld('kr.kirtasiye', 7.1, 3.6, 3.6, '#bfd8e8', '#2b6fb8', '+z', [box(3.4, 0.8, 0.08, 0, 3.0, 1.9, '#ffd23f')], true));
   defs.push(bld('kr.okul', 18.3, 7.5, 8.0, '#e9c98f', '#a2472f', '+z', [box(0.12, 6, 0.12, 6, 11, 0, '#cfd4da'), box(1.6, 1.0, 0.04, 6.9, 13.5, 0, '#d93a3a')], true));
-  defs.push(bld('kr.kantin', 3.7, 2.8, 3.0, '#f6efe1', '#e0533c', '-x', [box(3.6, 0.15, 1.2, 0, 2.4, 1.9, '#e0533c')]));
+  defs.push(bld('kr.kantin', 3.7, 2.8, 3.0, '#f6efe1', '#e0533c', '-x', [box(3.6, 0.15, 1.2, 0, 2.4, 1.9, '#e0533c')], true));
   defs.push(bld('kr.avm', 16.9, 12.8, 9.5, '#cfd6e6', '#3f4a6b', '-z', [box(10, 1.6, 0.12, 0, 8.2, 6.5, '#e0533c'), box(9, 3.2, 0.12, 0, 2.0, 6.5, '#7fb4d8')], true));
   defs.push(bld('kr.hastane', 16.9, 6.7, 12.0, '#f2f4f6', '#d93a3a', '-z', [...redCross(0, 10.0, 3.5), box(4.4, 2.8, 0.1, 0, 1.4, 3.45, '#7fb4d8')], true));
   defs.push(bld('kr.acil', 3.3, 3.2, 3.6, '#f2f4f6', '#d93a3a', '-x', [...redCross(0, 3.2, 1.65).map(p => ({ ...p, size: [p.size[0] * 0.5, p.size[1] * 0.5, p.size[2]] as [number, number, number] }))]));
@@ -89,7 +90,7 @@ export function karsiPrefabs(): PrefabDef[] {
 }
 
 const P = (id: string, prefab: string, x: number, z: number, rotY?: number): PrefabPlacement => ({ id, prefab, pos: { x, z }, ...(rotY ? { rotY } : {}) });
-const TREES: [number, number][] = [[-59.5, 34], [-59.5, 46], [-59.5, 55], [60.2, 36], [60.2, 46], [60.2, 57], [-44, 58.2], [-28, 58.2], [-10, 58.2], [3, 58.2], [18, 58.2], [34, 58.2], [47, 58.2], [-48, 31], [-30, 31], [-8, 31.5], [10, 31], [34, 31], [52, 31.2]];
+export const KARSI_TREES: [number, number][] = [[-59.5, 34], [-59.5, 46], [-59.5, 55], [60.2, 36], [60.2, 46], [60.2, 57], [-44, 58.2], [-28, 58.2], [-10, 58.2], [3, 58.2], [18, 58.2], [34, 58.2], [47, 58.2], [-48, 31], [-30, 31], [-8, 31.5], [10, 31], [34, 31], [52, 31.2]];
 
 export function karsiProps(): PrefabPlacement[] {
   const out: PrefabPlacement[] = [];
@@ -110,6 +111,6 @@ export function karsiProps(): PrefabPlacement[] {
   out.push(P('kr-avm', 'kr.avm', 20.15, 50.6));
   out.push(P('kr-metro', 'kr.metro', 8.5, 53.8));
   out.push(P('kr-hastane', 'kr.hastane', 46.95, 53.55), P('kr-acil', 'kr.acil', 57.3, 52.0), P('kr-morg', 'kr.morg', 57.3, 55.5), P('kr-ambpark', 'kr.ambpark', 35.4, 53.55));
-  TREES.forEach(([x, z], i) => out.push(P('kr-tree' + i, 'mk.tree', x, z)));
+  KARSI_TREES.forEach(([x, z], i) => out.push(P('kr-tree' + i, 'kr.treeblock', x, z)));
   return out;
 }
