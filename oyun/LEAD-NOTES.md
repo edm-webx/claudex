@@ -1,0 +1,2 @@
+- 18:35 lead: interactions.ts got a 'primed' resume (no re-dwell/ring blink when tray refills while standing still; test tests/unit/input/interactions-primed.test.ts), rtview ring only while filling, audio-map throttles transfer sfx to 1 per 160 ms. Do not revert.
+- 18:39 lead: primed set in interactions.ts (overlapping station/counter no re-dwell), 'pick' event + sfx (stations no longer sound per act tick), test tests/sim/dwell-standing.test.ts. Published v4 to motor link.

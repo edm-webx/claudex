@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Karakter Vitrini</title>
+<!-- Martı Motoru character lineup (Builder C). Same layout as v2 test/chars.html so shots compare 1:1.
+     Served by the Vite dev server: http://localhost:5173/tests/browser/chars.html#heroes
+     Views: heroes, acts, citizens, crowd, animals, gulls (v2) + faces (12 expressions + brows), soa (agents SoA crowd), fx. -->
+<style>
+  html, body { margin: 0; height: 100%; background: #9fd3f5; overflow: hidden; font-family: "Baloo 2", system-ui, sans-serif; }
+  #c { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+  #bar { position: fixed; left: 8px; right: 8px; top: 8px; display: flex; gap: 6px; flex-wrap: wrap; z-index: 2; }
+  #bar button { border: 0; border-radius: 12px; padding: 7px 11px; font: 700 14px system-ui, sans-serif; background: #fff6e6; color: #3b2f2a; box-shadow: 0 2px 0 #d8c6a8; }
+  #bar button.on { background: #e0533c; color: #fff; box-shadow: 0 2px 0 #9a3426; }
+  #bar button.x { display: none; }
+  #info { position: fixed; left: 8px; bottom: 8px; z-index: 2; font: 600 11px/1.3 ui-monospace, monospace; color: #2e2a5a; background: rgba(255,246,230,.85); border-radius: 8px; padding: 4px 7px; }
+  .lab { position: fixed; z-index: 1; transform: translate(-50%, 0); text-align: center; white-space: pre; font: 700 10px/1.15 system-ui, sans-serif; color: #3b2f2a; background: rgba(255,246,230,.88); border-radius: 6px; padding: 1px 5px; pointer-events: none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="bar"></div>
+<div id="info"></div>
+<script type="module" src="/src/game/view/chars/lineup.ts"></script>
+</body>
+</html>
