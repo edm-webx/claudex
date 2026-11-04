@@ -38,7 +38,7 @@ export function createMulkView(d: MulkViewDeps): MulkView {
     box(bank, W + 0.5, 0.28, D + 0.5, '#8a6a4a', 0, 3.5, 0);                    // cornice
     for (const dx of [-2.4, -0.8, 0.8, 2.4]) { cyl(bank, 0.24, 3.0, '#f3ecda', dx, 1.75, D / 2 + 0.55); box(bank, 0.6, 0.15, 0.6, '#cfc3aa', dx, 0.33, D / 2 + 0.55); box(bank, 0.6, 0.15, 0.6, '#cfc3aa', dx, 3.28, D / 2 + 0.55); }
     box(bank, W - 0.4, 0.3, 1.5, '#d8cdb4', 0, 3.45, D / 2 + 0.4);               // porch roof
-    const ped = new T.Mesh(G(new T.CylinderGeometry(1.5, 1.5, W - 0.2, 3)), M('#e8dec8')); ped.rotation.set(0, 0, Math.PI / 2); ped.rotation.order = 'YXZ'; ped.rotation.y = Math.PI / 2; ped.scale.set(1, 1, 0.45); ped.position.set(0, 4.3, D / 2 + 0.3); bank.add(ped);
+    const ped = new T.Mesh(G(new T.CylinderGeometry(1.5, 1.5, W - 0.2, 3)), M('#e8dec8')); ped.rotation.set(0, 0, Math.PI / 2); ped.scale.set(1, 1, 0.45);   // prism along x (2026-11-04: it lay along z, crossing the roof) ped.position.set(0, 4.3, D / 2 + 0.3); bank.add(ped);
     box(bank, 1.4, 2.2, 0.15, '#3b2a20', 0, 1.35, D / 2 + 0.05);                // door
     box(bank, 1.1, 0.12, 0.16, '#c9a23a', 0, 2.5, D / 2 + 0.1);                  // brass trim
     for (const dx of [-2.3, 2.3]) { box(bank, 1.1, 1.3, 0.12, '#2b4a6a', dx, 1.9, D / 2 + 0.03); box(bank, 1.3, 0.1, 0.2, '#c9a23a', dx, 1.2, D / 2 + 0.08); }
