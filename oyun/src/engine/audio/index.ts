@@ -187,6 +187,10 @@ export function createAudio(deps: AudioDeps): MotorAudio {
     woodpecker: o => { for (let i = 0; i < 9; i++) noise(0.02, 0.09, 2200, 3, i * 0.06, o); },
     busStart: o => { tone(55, 1.6, 'sawtooth', 0.06, 30, 0, o); tone(82, 1.4, 'square', 0.025, 40, 0.1, o); noise(0.5, 0.06, 4500, 0.7, 0, o); },
     busDoor: o => { noise(0.6, 0.08, 5200, 0.5, 0, o); tone(420, 0.12, 'square', 0.03, 0, 0.55, o); tone(420, 0.12, 'square', 0.03, 0, 0.75, o); },
+    // karşı yaka morgu (gece): alçak inilti, kapı tıkırtısı, fısıltı
+    moan: o => { tone(78, 1.8, 'sawtooth', 0.05, -22, 0, o); tone(117, 1.6, 'triangle', 0.035, -30, 0.2, o); noise(1.4, 0.03, 380, 0.5, 0.1, o); },
+    knock: o => { [0, 0.34, 0.62].forEach(t => { tone(95, 0.09, 'sine', 0.2, -30, t, o); noise(0.04, 0.09, 700, 1, t, o); }); },
+    whisper: o => { noise(1.2, 0.045, 3400, 1.4, 0, o); noise(0.9, 0.03, 5200, 2, 0.3, o); },
     crowdOoh: o => { noise(0.9, 0.06, 600, 0.6, 0, o); tone(260, 0.8, 'sawtooth', 0.014, -70, 0, o); tone(330, 0.8, 'sawtooth', 0.01, -80, 0.03, o); },
   };
   // distant street-vendor call "ta-ze si-miii-it": voice formants with a long falling last vowel (ses-2)

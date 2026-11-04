@@ -12,7 +12,7 @@ export function loadGlb(name: string): Promise<T.Object3D | null> {
       try {
         const { GLTFLoader } = await import('three/examples/jsm/loaders/GLTFLoader.js');
         const g = await new GLTFLoader().loadAsync('modeller/' + name + '.glb');
-        g.scene.traverse(o => { const m = o as T.Mesh; if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
+        g.scene.traverse(o => { const m = o as T.Mesh; if (m.isMesh) { m.castShadow = false; m.receiveShadow = true; } });
         return g.scene;
       } catch { return null; }
     })();

@@ -32,7 +32,8 @@ export function createCameraRig(deps: CameraDeps): MotorCameraRig {
   const camera = new T.PerspectiveCamera(CAMERA_FOV, deps.aspect || 1, 0.1, 400);
   camera.position.set(0, 18, 14);
   const CAM = { x: 0, z: 0, zoom: 1, intro: 0, pitch: CAMERA_PITCH, photo: false };
-  const target = { x: 0, z: 0 };
+  const target = { x: 0, z: 0, y: 0 };
+  let camY = 0;
   let yaw = 0, yawTo: number | null = null;
   let tilt = 0, tiltTo: number | null = null;
   const PITCH_MIN = 0.3, PITCH_MAX = 1.4;
@@ -59,7 +60,7 @@ export function createCameraRig(deps: CameraDeps): MotorCameraRig {
     zoomRaw(z: number) { CAM.zoom = z; },
     tilt(delta: number) { tiltTo = null; tilt = clamp(tilt + delta, PITCH_MIN - CAM.pitch, PITCH_MAX - CAM.pitch); },
     recenter() { yawTo = Math.round(yaw / (Math.PI * 2)) * Math.PI * 2; tiltTo = 0; },
-    follow(t: Vec2) { target.x = t.x; target.z = t.z; },
+    follow(t: Vec2) { target.x = t.x; target.z = t.z; target.y = (t as { y?: number }).y || 0; },
     snap(t: Vec2) { target.x = t.x; target.z = t.z; CAM.x = t.x; CAM.z = t.z; snapNext = true; },
     pan(at: Vec2, dur?: number) {
       if (pan) pan.resolve();
@@ -84,7 +85,7 @@ export function createCameraRig(deps: CameraDeps): MotorCameraRig {
       }
       const f = snapNext ? 1 : Math.min(1, dt * 4);
       snapNext = false;
-      CAM.x = lerp(CAM.x, tx, f); CAM.z = lerp(CAM.z, tz, f);
+      CAM.x = lerp(CAM.x, tx, f); CAM.z = lerp(CAM.z, tz, f); camY = lerp(camY, target.y, f);   // footbridge: the camera rises with the hero
       let dist = baseDist();
       if (tiltTo !== null) { tilt += (tiltTo - tilt) * (1 - Math.exp(-6 * dt)); if (Math.abs(tilt) < 0.002) { tilt = 0; tiltTo = null; } }
       let pitch = clamp(CAM.pitch + tilt, PITCH_MIN, PITCH_MAX);
@@ -98,8 +99,8 @@ export function createCameraRig(deps: CameraDeps): MotorCameraRig {
         if (Math.abs(yawTo - yaw) < 0.002) { yaw = 0; yawTo = null; }
       }
       const off = Math.cos(pitch) * dist;
-      camera.position.set(CAM.x + Math.sin(yaw) * off, Math.sin(pitch) * dist, CAM.z + 0.4 + Math.cos(yaw) * off);
-      camera.lookAt(CAM.x, 0.6, CAM.z + 0.4);
+      camera.position.set(CAM.x + Math.sin(yaw) * off, Math.sin(pitch) * dist + camY, CAM.z + 0.4 + Math.cos(yaw) * off);
+      camera.lookAt(CAM.x, 0.6 + camY, CAM.z + 0.4);
       camera.updateMatrixWorld();
     },
     focus() { return { x: CAM.x, z: CAM.z }; },

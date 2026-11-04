@@ -89,6 +89,8 @@ export function karsiPrefabs(): PrefabDef[] {
   return defs;
 }
 
+export const KARSI_FOUNTAIN = { x: -3.9, z: 45 };
+export const KARSI_PITCH = { x: -39.4, z: 45.4, w: 25.2, d: 17.8 };
 const P = (id: string, prefab: string, x: number, z: number, rotY?: number): PrefabPlacement => ({ id, prefab, pos: { x, z }, ...(rotY ? { rotY } : {}) });
 export const KARSI_TREES: [number, number][] = [[-59.5, 34], [-59.5, 46], [-59.5, 55], [60.2, 36], [60.2, 46], [60.2, 57], [-44, 58.2], [-28, 58.2], [-10, 58.2], [3, 58.2], [18, 58.2], [34, 58.2], [47, 58.2], [-48, 31], [-30, 31], [-8, 31.5], [10, 31], [34, 31], [52, 31.2]];
 
