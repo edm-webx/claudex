@@ -69,5 +69,5 @@ it('karşı yaka kafe: satın alınca hemen kafe olur, arsa hakkından düşmez,
   for (let i = 0; i < 3; i++) c({ op: 'isciAl', id: 'k1' }); expect(p.isci).toBe(3);
   p.till = 5000; p.stok = 0; sim.step(240);
   expect(p.stok).toBeGreaterThan(0); expect(p.sat).toBeGreaterThan(0);   // workers restocked from the till and the shelf sold
-  expect(m.view().plots.find((x: any) => x.id === 'k1').isci).toBe(3);
+  expect(m.view().plots.find((x: any) => x.id === 'k1')!.isci).toBe(3);
 });

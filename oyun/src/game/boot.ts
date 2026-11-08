@@ -43,7 +43,7 @@ import { createInput } from '../engine/input';
 import { createLoop } from '../engine/loop';
 import { createLogger, angLerp } from '../engine/core';
 import { createRender } from '../engine/render';
-import { setGlbEnv } from './view/world/glb';
+import { setGlbEnv, setGlbNight } from './view/world/glb';
 import { mulkApi } from './sim/mulk';
 import { createDress } from '../engine/dress';
 import { createPrefabs } from '../engine/prefab';
@@ -185,6 +185,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const scene = R.scene;
   const cam = R.camera;
   (R as unknown as { onEnv?: (cb: (t: import('three').Texture | null) => void) => void }).onEnv?.(t => setGlbEnv(t));   // sky reflections on Kenney models
+  (R as unknown as { onTime?: (cb: (t: { n: number }) => void) => void }).onTime?.(t => setGlbNight(t.n));   // building emissive lift fades at night
 
   // ── world + characters
   const prefab: PrefabSystem | null = dress ? make('prefab', () => createPrefabs({ dress, perf: P, log })) : null;
