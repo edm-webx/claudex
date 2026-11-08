@@ -21,6 +21,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 
 export { todAt, phaseAt, TOD } from './tod';
 export type { Tod } from './tod';
@@ -47,6 +48,22 @@ export interface MotorRender extends RenderPipeline {
 }
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
+
+/** Display-space colour grade after OutputPass: saturation, contrast around mid grey, tint, soft vignette. */
+const GRADE = {
+  uniforms: { tDiffuse: { value: null }, uSat: { value: 1.1 }, uCon: { value: 1.06 }, uTint: { value: new T.Vector3(1, 1, 1) }, uVig: { value: 0.2 } },
+  vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float uSat; uniform float uCon; uniform vec3 uTint; uniform float uVig; varying vec2 vUv;
+void main() {
+  vec4 c = texture2D(tDiffuse, vUv); vec3 col = c.rgb;
+  float l = dot(col, vec3(0.2126, 0.7152, 0.0722));
+  col = mix(vec3(l), col, uSat);
+  col = (col - 0.5) * uCon + 0.5;
+  col *= uTint;
+  vec2 d = vUv - 0.5; col *= 1.0 - uVig * smoothstep(0.35, 0.85, length(d * vec2(1.25, 1.0)));
+  gl_FragColor = vec4(clamp(col, 0.0, 1.0), c.a);
+}`,
+};
 
 export function createRender(deps: RenderDeps): MotorRender {
   const scene = new T.Scene();
@@ -87,10 +104,10 @@ export function createRender(deps: RenderDeps): MotorRender {
   const lastInfo: RenderInfo = { calls: 0, tris: 0, geos: 0, texs: 0 };
 
   // post-process (tier flag `bloom`): MSAA half-float target -> bloom -> OutputPass (tone mapping + sRGB)
-  let composer: EffectComposer | null = null, rpass: RenderPass | null = null, bloom: UnrealBloomPass | null = null;
+  let composer: EffectComposer | null = null, rpass: RenderPass | null = null, bloom: UnrealBloomPass | null = null, grade: ShaderPass | null = null;
   function setupPost(t: TierDef) {
     const want = !!(renderer && t.flags && t.flags.bloom);
-    if (!want) { if (composer) { composer.dispose(); composer = null; rpass = null; bloom = null; } return; }
+    if (!want) { if (composer) { composer.dispose(); composer = null; rpass = null; bloom = null; grade = null; } return; }
     if (composer) return;
     const { w, h } = size(), pr = renderer!.getPixelRatio();
     const target = new T.WebGLRenderTarget(Math.round(w * pr), Math.round(h * pr), { type: T.HalfFloatType, samples: t.antialias ? 4 : 0 });
@@ -98,10 +115,18 @@ export function createRender(deps: RenderDeps): MotorRender {
     rpass = new RenderPass(scene, rig.camera); composer.addPass(rpass);
     bloom = new UnrealBloomPass(new T.Vector2(w, h), 0.22, 0.4, 0.92); composer.addPass(bloom);
     composer.addPass(new OutputPass());
+    grade = new ShaderPass(GRADE); composer.addPass(grade);
     composer.setPixelRatio(pr); composer.setSize(w, h);
     tuneBloom();
   }
-  function tuneBloom() { if (!bloom) return; bloom.strength = 0.2 + 0.42 * night; bloom.threshold = 0.93 - 0.3 * night; bloom.radius = 0.38 + 0.12 * night; }
+  function tuneBloom() {
+    if (grade) {   // colour grade follows the day: warm golden hour, cool blue night
+      const u = grade.uniforms, gold = clamp(1 - Math.abs(hour - 18.5) / 2.2, 0, 1) * (1 - night);
+      u.uSat.value = 1.1 - 0.12 * night; u.uCon.value = 1.06 + 0.02 * night;
+      u.uTint.value.set(1 + 0.05 * gold - 0.04 * night, 1 + 0.01 * gold - 0.01 * night, 1 - 0.05 * gold + 0.06 * night);
+      u.uVig.value = 0.2 + 0.12 * night;
+    }
+    if (!bloom) return; bloom.strength = 0.2 + 0.42 * night; bloom.threshold = 0.93 - 0.3 * night; bloom.radius = 0.38 + 0.12 * night; }
 
   // sky environment map (PMREM from the sky dome): reflections on standard materials (Kenney models, metal props)
   let pmrem: T.PMREMGenerator | null = null, envRT: T.WebGLRenderTarget | null = null, envKey = -1;
@@ -194,7 +219,12 @@ export function createRender(deps: RenderDeps): MotorRender {
     setWeather(_w: WeatherState) { /* M5 */ },
     onTime(cb) { timeSubs.add(cb); try { cb(tod, hour); } catch { /* ignore */ } return () => { timeSubs.delete(cb); }; },
     tod: () => tod,
-    setFocus(x: number, z: number) { focus.set(clamp(+x || 0, -12, 12), 0, clamp(+z || 0, -14, 10)); placeSun(); },
+    setFocus(x: number, z: number) {
+      // 2026-11-08: shadows follow the camera over the whole map (far shore too), snapped to the shadow texel grid
+      const sz = (tier && tier.shadowSize) || 1024, ext = sz >= 2048 ? 17 : 15, step = (2 * ext) / sz * 4;
+      const fx = clamp(+x || 0, -70, 70), fz = clamp(+z || 0, -20, 62);
+      focus.set(Math.round(fx / step) * step, 0, Math.round(fz / step) * step); placeSun();
+    },
     frame(sc: T.Scene, cam: T.Camera) {
       if (!renderer || lost) return;
       frameNo++;

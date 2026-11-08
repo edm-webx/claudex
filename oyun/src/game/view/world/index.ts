@@ -322,7 +322,7 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
   zones.onBuilt?.((id) => { if (id === 'iskele') syncDyn(dynDirty); });
 
   /* ---- kiosk overrides ---- */
-  function kioskOverrides() { return { stage, renewed: renewedCsv(), sign: signText, font: signFont }; }
+  function kioskOverrides() { return { stage: Math.min(5, stage), renewed: renewedCsv(), sign: signText, font: signFont }; }
   function applyKiosk() {
     const ov = kioskOverrides();
     // the registered def can be a copy of ZI (editor overrides): update both so the re-bake sees this stage
@@ -495,7 +495,7 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
     zones: { iskele: ZI, 'test-sokak': ZT },
     ferry,
     setStage(n, rn) {
-      stage = clamp(Math.round(+n) || 1, 1, 5);
+      stage = clamp(Math.round(+n) || 1, 1, 10);
       renewed = parseRenewed(rn);
       applyLayout(); applyKiosk(); dynDirty = true; syncDyn();
     },

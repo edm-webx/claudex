@@ -121,7 +121,7 @@ export function createRules(d: RulesDeps): RulesFull {
   K.hiredCount = () => S.workers.length;
   K.hour = () => hourOf(S.dayT);
   // Faz 2: additive and capped (ekonomi2.ts VENUE); the old product of multipliers was the inflation engine
-  K.venueMult = () => Math.min(VENUE.cap, 1 + ((P.TAD_TOTAL[clamp(S.stage, 1, 6) - 1] || 1) - 1) + (P.PLAQUE_X - 1) * (S.plaque || 0) + P.STAR_PCT * (S.stars || 0) + K.siklikBonus());
+  K.venueMult = () => Math.min(VENUE.cap, 1 + ((P.TAD_TOTAL[clamp(S.stage, 1, P.TAD_TOTAL.length) - 1] || 1) - 1) + (P.PLAQUE_X - 1) * (S.plaque || 0) + P.STAR_PCT * (S.stars || 0) + K.siklikBonus());
   K.dirty = () => { dirtyFlag = true; };
   K.saveNow = () => { dirtyFlag = true; };
   K.setTrackedOwner = () => { /* reserved */ };
@@ -329,7 +329,7 @@ export function createRules(d: RulesDeps): RulesFull {
       case 'setHero': if (c.hero === 'sabri' || c.hero === 'sabriye') { S.hero = c.hero; K.saveNow(); } return true;
       case 'resetSave': resetAll(); return true;
       case 'setStage': {
-        S.stage = clamp(Math.round(Number(c.stage)) || 1, 1, 5);
+        S.stage = clamp(Math.round(Number(c.stage)) || 1, 1, 10);
         for (let s = 2; s <= S.stage; s++) (STAGE_TABLES[s] || []).forEach(i => K.setTableBuilt(i, true));
         K.onLayout(); K.refreshSiklik();
         d.bus.emit('stage', { stage: S.stage });
@@ -376,10 +376,11 @@ export function createRules(d: RulesDeps): RulesFull {
         else if (what === 'day') S.day = Math.max(S.day, Number(v) || 1);
         else if (what === 'money') S.money += Number(v) || 0;
         else if (what === 'gold') S.gold += Number(v) || 0;
+        else if (what === 'level') S.level = Math.max(S.level, Number(v) || 1);
         else if (what === 'stars') S.stars = Math.max(S.stars, Number(v) || 0);
         else if (what === 'offline') off.welcome(Number(v) || 0);
         else if (what === 'unlock') { const key = String(v); if (!S.owned[key]) K.unlock(key); }
-        else if (what === 'stage') { const to = clamp(Number(v) || 1, 1, 5); for (let st = S.stage + 1; st <= to; st++) (STAGE_TABLES[st] || []).forEach(i => K.setTableBuilt(i, true)); S.stage = to; K.bus.emit('stage', { stage: to }); K.onLayout(); }
+        else if (what === 'stage') { const to = clamp(Number(v) || 1, 1, 10); for (let st = S.stage + 1; st <= to; st++) (STAGE_TABLES[st] || []).forEach(i => K.setTableBuilt(i, true)); S.stage = to; K.bus.emit('stage', { stage: to }); K.onLayout(); }
         else (rt as unknown as { forceAgent?: (w: string, v?: unknown) => void }).forceAgent?.(what, v);
         return true;
       }

@@ -52,6 +52,8 @@ export function karsiPrefabs(): PrefabDef[] {
       : [box(w, 0.5, d, 0, 0.25, 0, '#9aa0a6'), box(w * 0.7, 1.1, d, 0, 0.8, 0, '#e0674f'), box(w * 0.45, 1.7, d, 0, 1.35, 0, '#c8504a'), box(w * 0.25, 2.3, d, 0, 1.9, 0, '#e0674f')], colliders: [R(w, d)] };
   };
   defs.push(stand('kr.stand.z', 33.7, 3.5, 'z'), stand('kr.stand.x', 3.7, 17.8, 'x'));
+  // halı saha tesis binası (2026-11-08) replaces the west stand: model in view/world/karsi-bina.ts, same footprint
+  defs.push({ id: 'kr.tesis', parts: [box(4.3, 0.12, 18.4, 0, 0.06, 0, '#b9b3a6')], colliders: [R(3.7, 17.8)] });
   // the pitch: green plane with white lines, goals with nets, a low fence is separate (colliders)
   const line = (w: number, d: number, x: number, z: number): PartDef => box(w, 0.02, d, x, 0.1, z, '#f4f4f0');
   const W = 25.2, D = 17.8, lines: PartDef[] = [box(W, 0.06, D, 0, 0.05, 0, '#4f9a4a'), line(W, 0.12, 0, D / 2), line(W, 0.12, 0, -D / 2), line(0.12, D, W / 2, 0), line(0.12, D, -W / 2, 0), line(0.12, D, 0, 0), cyl(2.0, 0.02, 2.0, 0, 0.1, 0, '#f4f4f0', 28), cyl(1.85, 0.03, 1.85, 0, 0.11, 0, '#4f9a4a', 28)];
@@ -78,8 +80,8 @@ export function karsiPrefabs(): PrefabDef[] {
   defs.push(bld('kr.hastane', 16.9, 6.7, 12.0, '#f2f4f6', '#d93a3a', '-z', [...redCross(0, 10.0, 3.5), box(4.4, 2.8, 0.1, 0, 1.4, 3.45, '#7fb4d8')], true));
   defs.push(bld('kr.acil', 3.3, 3.2, 3.6, '#f2f4f6', '#d93a3a', '-x', [], true));     // walls: view/world/karsi-bina.ts
   defs.push(bld('kr.morg', 3.3, 3.2, 3.2, '#c9ced6', '#5b6068', '-x', [], true));
-  defs.push({ id: 'kr.metro', parts: [box(3, 0.3, 5.6, 0, 0.15, 0, '#b9ad99'), box(0.3, 3.2, 5.6, -1.5, 1.6, 0, '#5b6068'), box(0.3, 3.2, 5.6, 1.5, 1.6, 0, '#5b6068'), box(3.4, 0.35, 5.8, 0, 3.4, 0, '#2b6fb8'), box(2.4, 0.04, 3.6, 0, 0.32, 0.4, '#2a2d33'),
-    box(1.2, 1.2, 0.1, 0, 4.3, 2.8, '#e0533c'), box(0.12, 1.0, 0.12, -0.6, 3.9, 2.8, '#5b6068'), box(0.12, 1.0, 0.12, 0.6, 3.9, 2.8, '#5b6068')], colliders: [R(0.3, 5.6, -1.5, 0), R(0.3, 5.6, 1.5, 0), R(3, 0.3, 0, -2.75)] });
+  // metro exit: the model (glass canopy, stairs, totem) is view/world/karsi-bina.ts; colliders stay
+  defs.push({ id: 'kr.metro', parts: [box(3.4, 0.12, 6.0, 0, 0.06, 0, '#b9ad99')], colliders: [R(0.3, 5.6, -1.5, 0), R(0.3, 5.6, 1.5, 0), R(3, 0.3, 0, -2.75)] });
   // ambulance park: paved lot with two parked ambulances
   const amb = (x: number): PartDef[] => [box(2.0, 1.5, 4.6, x, 1.05, 0, '#f4f4f0'), box(2.02, 0.4, 4.6, x, 1.0, 0, '#d93a3a'), box(1.9, 0.9, 1.3, x, 1.2, -2.0, '#9cc3d6'), cyl(0.38, 0.3, 0.38, x - 1.0, 0.38, -1.4, '#17181b', 10), cyl(0.38, 0.3, 0.38, x + 1.0, 0.38, -1.4, '#17181b', 10), cyl(0.38, 0.3, 0.38, x - 1.0, 0.38, 1.4, '#17181b', 10), cyl(0.38, 0.3, 0.38, x + 1.0, 0.38, 1.4, '#17181b', 10), box(0.5, 0.15, 0.3, x, 1.9, -0.5, '#3f7fd0')];
   defs.push({ id: 'kr.ambpark', parts: [plane(6.0, 6.7, 0.07, '#6c6f75')], colliders: [R(2.2, 4.8, -1.5, 0), R(2.2, 4.8, 1.5, 0)] });
@@ -100,7 +102,7 @@ export function karsiProps(): PrefabPlacement[] {
   out.push(P('kr-plaza', 'kr.plaza', -3.8, 44.8), P('kr-pave-gate', 'kr.pave.gate', -19.8, 44.9), P('kr-pave-e1', 'kr.pave.e1', 18.7, 42.6), P('kr-pave-v1', 'kr.pave.v1', 30.5, 47.5), P('kr-pave-v2', 'kr.pave.v2', 8.5, 49), P('kr-pave-h2', 'kr.pave.h2', 45.2, 47.2));
   // halı saha: pitch + three stands + fence with a gate on the east side
   out.push(P('kr-pitch', 'kr.pitch', -39.4, 45.4));
-  out.push(P('kr-stand-n', 'kr.stand.z', -39.2, 34.8, Math.PI), P('kr-stand-s', 'kr.stand.z', -39.2, 55.2), P('kr-stand-w', 'kr.stand.x', -54.1, 45.4, Math.PI));
+  out.push(P('kr-stand-n', 'kr.stand.z', -39.2, 34.8, Math.PI), P('kr-stand-s', 'kr.stand.z', -39.2, 55.2), P('kr-stand-w', 'kr.tesis', -54.1, 45.4));
   out.push(P('kr-fence-gn', 'kr.fence.z7', -26.7, 40.0), P('kr-fence-gs', 'kr.fence.z7', -26.7, 51.0));
   out.push(P('kr-fence-t', 'kr.fence.x12', -45.5, 36.3), P('kr-fence-t2', 'kr.fence.x12', -33.5, 36.3), P('kr-fence-b', 'kr.fence.x12', -45.5, 54.5), P('kr-fence-b2', 'kr.fence.x12', -33.5, 54.5));
   out.push(P('kr-kafe1', 'kr.kafe', -17.5, 37.9), P('kr-kafe2', 'kr.kafe', -17.5, 51.5));

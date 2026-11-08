@@ -2,7 +2,7 @@
 // View only: reads rt.mulk (sim/mulk.ts) and sends { kind: 'mulk', ... }. A floating hint button appears at the bank door, a plot
 // door or the stadium gate and opens the right tab.
 import { FORMATIONS } from '../sim/macmotor';
-import { mulkApi } from '../sim/mulk';
+import { mulkApi, KAFE_ASAMA } from '../sim/mulk';
 import { ESYALAR, ESYA_BY_ID, SANDIKLAR, TARIFLER, DUKKAN_TIPLERI, DUKKAN_BY_ID, DUKKAN_STOK_MAX, dukkanMusteri, BANKA } from '../../content/esya';
 
 interface Deps { root: HTMLElement; rules: () => { rt: unknown } | null; command(c: { kind: string; [k: string]: unknown }): void; sfx?(id: string): void }
@@ -96,7 +96,7 @@ export function createMulkPanel(d: Deps): MulkPanel {
       }
       if (a.tur === 'ev') { s += `<div class="mp-row"><span class="mp-ic">🏠</span><div><b>Evin (Arsa ${a.id.toUpperCase()})</b><small>Oda, mutfak, balkon, teras, kedi köşesi. Kapıya yaklaşıp gir.</small></div><button class="mp-b g" data-a="evAc" data-id="${a.id}"${a.yakin ? '' : ' disabled'}>${a.yakin ? 'Eve gir' : 'Kapıya git'}</button></div>`; continue; }
       const t = DUKKAN_BY_ID[a.tip], y = a.yukselt;
-      s += `<div class="mp-row" style="align-items:flex-start"><span class="mp-ic">${t.ikon}</span><div><b>${a.sabit ? esc(a.ad) : esc(t.ad)} · ${a.lv}. seviye${a.sabit ? '' : ' (Arsa ' + a.id.toUpperCase() + ')'}</b><small>Stok ${a.stok}/${a.stokMax} · ~${Math.round(dukkanMusteri(t, a.lv) * (1 + 0.4 * a.isci))} müşteri/saat · ${a.sat} satış · kasada ${tl(a.till)}${a.isci ? ' · 👷 ' + a.isci + ' işçi (rafı doldurur, saatlik ücret kasadan)' : ''}${a.yakin ? '' : ' (kasayı toplamak için kapıya git)'}</small><div class="mp-bar"><i style="width:${a.stokMax ? a.stok / a.stokMax * 100 : 0}%"></i></div></div>
+      s += `<div class="mp-row" style="align-items:flex-start"><span class="mp-ic">${t.ikon}</span><div><b>${a.sabit ? esc(a.ad) : esc(t.ad)} · ${a.lv}. seviye${a.sabit ? ' · ' + (KAFE_ASAMA[a.lv - 1] || '') : '' }${a.sabit ? '' : ' (Arsa ' + a.id.toUpperCase() + ')'}</b><small>Stok ${a.stok}/${a.stokMax} · ~${Math.round(dukkanMusteri(t, a.lv) * (1 + 0.4 * a.isci))} müşteri/saat · ${a.sat} satış · kasada ${tl(a.till)}${a.isci ? ' · 👷 ' + a.isci + ' işçi (rafı doldurur, saatlik ücret kasadan)' : ''}${a.yakin ? '' : ' (kasayı toplamak için kapıya git)'}</small><div class="mp-bar"><i style="width:${a.stokMax ? a.stok / a.stokMax * 100 : 0}%"></i></div></div>
 <button class="mp-b" data-a="stokAl" data-id="${a.id}" data-n="10"${m.money >= t.maliyet * 10 ? '' : ' disabled'}>+10 stok · ${tl(t.maliyet * 10)}</button><button class="mp-b" data-a="stokAl" data-id="${a.id}" data-n="50"${m.money >= t.maliyet * 10 ? '' : ' disabled'}>+50</button>
 ${a.sabit && a.isci < a.isciMax ? `<button class="mp-b" data-a="isciAl" data-id="${a.id}"${m.money >= a.isciFiyat ? '' : ' disabled'}>👷 İşçi tut · ${tl(a.isciFiyat)}</button>` : ''}${y ? `<button class="mp-b y" data-a="yukselt" data-id="${a.id}"${Object.entries(y.esya).every(([k, v]) => (m.esya[k] || 0) >= (v as number)) && m.money >= y.tl ? '' : ' disabled'}>⬆ ${tl(y.tl)} + ${Object.entries(y.esya).map(([k, v]) => v + ' ' + esc(ESYA_BY_ID[k].ad)).join(' + ')}</button>` : '<span class="mp-chip">En üst seviye</span>'}</div>`;
     }

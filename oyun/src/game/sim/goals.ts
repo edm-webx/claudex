@@ -153,7 +153,7 @@ export function installHedef(r: Rules): HedefApi {
   }
 
   // ───────── tip jar ─────────
-  const jarCap = () => JAR_BASE + JAR_PER_STAGE * clamp(S().stage, 1, 5);
+  const jarCap = () => JAR_BASE + JAR_PER_STAGE * clamp(S().stage, 1, 10);
   function jarCoin(n: number, line?: string): void {
     const g = G();
     if (g.jarDay !== S().day) { g.jarDay = S().day; g.jar = 0; g.jarFull = false; }

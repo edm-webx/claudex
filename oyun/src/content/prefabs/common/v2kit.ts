@@ -8,6 +8,7 @@
  * - Anisotropy 4 everywhere (v2 world.js ran before the renderer existed, so C.canvasTex used 4).
  */
 import * as T from 'three';
+import { zeminDetay, tahtaDoku } from '../../../engine/render/zemin-detay';
 import { Batch, PI, TAU, type UVRect } from '../../../engine/prefab/batch';
 
 type G = CanvasRenderingContext2D;
@@ -312,6 +313,7 @@ export function ensureKit(): void {
   MAT.halo = new T.PointsMaterial({ map: radialTex, vertexColors: true, size: 1.1, sizeAttenuation: true, transparent: true, opacity: 0, depthWrite: false, blending: T.AdditiveBlending });
   MAT.glass = new T.MeshLambertMaterial({ color: '#cfeaf4', transparent: true, opacity: 0.32, depthWrite: false });
   MAT.marker = new T.MeshBasicMaterial({ color: K.yellow, transparent: true, opacity: 0.85, depthWrite: false });
+  zeminDetay(MAT.atlas); zeminDetay(MAT.stone, { force: 1, ds: 0.55 }); tahtaDoku(MAT.plank);
 }
 /** All canvas textures of the kit (zones dispose/re-upload them with the pier). */
 export function kitTextures(): T.Texture[] { return ready ? [atlasTex, plankTex, stoneTex, tileNewTex, tileWornTex, floorTex, radialTex] : []; }

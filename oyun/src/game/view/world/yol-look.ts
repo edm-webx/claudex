@@ -5,6 +5,7 @@
  * train on a viaduct and a slow ferry on the water line. Pure view: no colliders, not walkable, nav untouched.
  */
 import * as T from 'three';
+import { zeminDetay } from '../../../engine/render/zemin-detay';
 import { loadGlb, fitClone } from './glb';
 import { UG, ugY } from '../../../content/ustgecit';
 
@@ -34,10 +35,11 @@ function buildRoad(): T.Group {
   const g = new T.Group(); g.name = 'yolRoad';
   const zc = Z_KERB + ROAD_W / 2;
   // sidewalk and kerb
+  zeminDetay(lam('#c9c1b0'), { force: 1, ds: 0.7 });
   g.add(box(RX * 2, 0.12, Z_KERB - Z_WALK, lam('#c9c1b0'), 0, 0.02, (Z_WALK + Z_KERB) / 2));
   g.add(box(RX * 2, 0.16, 0.25, lam('#8f8778'), 0, 0.06, Z_KERB));
   // carriageway with lane markings
-  g.add(box(RX * 2, 0.08, ROAD_W, lam('#3a3d42'), 0, 0.0, zc));
+  { const am = new T.MeshLambertMaterial({ color: '#56595f' }); zeminDetay(am, { force: 0, ds: 0.85 }); g.add(box(RX * 2, 0.08, ROAD_W, am, 0, 0.0, zc)); }
   for (let i = 1; i < 6; i++) {
     if (i === 2 || i === 4) continue;
     g.add(box(RX * 2, 0.09, 0.12, lam('#e9e4d4'), 0, 0.05, Z_KERB + i * LANE));

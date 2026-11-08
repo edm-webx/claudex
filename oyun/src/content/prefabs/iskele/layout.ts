@@ -53,6 +53,7 @@ export function trophySpots(stage: number): { x: number; y: number; z: number; s
 }
 
 export function stageLayout(stage: number): StageLayout {
+  stage = Math.min(5, stage);   // stages 6-10 grow around the kiosk (view/world/bufe-buyume.ts), the kiosk itself stays at 5
   const s1 = stage === 1, s3 = stage >= 3;
   const L = {} as StageLayout;
   L.stations = s1 ? {

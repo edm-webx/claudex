@@ -175,7 +175,11 @@ function build(s: Spec): T.Group {
   s.extra?.(k, L);
 
   const { wallMat: wm, glassMat: gm, glowMat: lm } = mats();
-  const wallMesh = b.mesh(wm, false, true); grp.add(wallMesh);
+  const wallMesh = b.mesh(wm, true, true); grp.add(wallMesh);
+  {   // contact darkening: walls get darker toward the ground (cheap baked AO, reads as weight on the pavement)
+    const pa = wallMesh.geometry.getAttribute('position'), ca = wallMesh.geometry.getAttribute('color');
+    if (pa && ca) for (let i = 0; i < pa.count; i++) { const y = pa.getY(i), k = 0.7 + 0.3 * Math.min(1, Math.max(0, y / 1.4)); ca.setXYZ(i, ca.getX(i) * k, ca.getY(i) * k, ca.getZ(i) * k); }
+  }
   if (!g.empty) grp.add(g.mesh(gm, false, false));
   if (!n.empty) { const nm = n.mesh(lm, false, false); nm.renderOrder = 2; grp.add(nm); }
   grp.position.set(s.x, 0.12, s.z); grp.rotation.y = YAW[s.front];
@@ -204,7 +208,47 @@ const SPECS: Spec[] = [
     sign: { text: 'MARTI KASASI BANKASI', bg: '#1f3a5f', fg: '#f2c230', w: 6.6 }, win: { w: 1.2, h: 1.8, gap: 0.9, frame: '#c9a23a' }, extra: bankExtras },
   { id: 'morg', x: 57.3, z: 55.5, wx: 3.3, wz: 3.2, front: '-x', floors: 1, fh: 3.1, wall: '#b9bec6', trim: '#5b6068', accent: '#5b6068', ground: 'garage', lit: 0.05, roof: 'flat',
     sign: { text: 'MORG', bg: '#3c4146', fg: '#c9ced6', w: 1.8 }, win: { w: 0.5, h: 0.5, gap: 1.6, frame: '#5b6068' } },
+  // 2026-11-08: halı saha tesis binası (locker rooms + cafeteria, roof tribune facing the pitch) instead of the west stand
+  { id: 'tesis', x: -54.1, z: 45.4, wx: 3.7, wz: 17.8, front: '+x', floors: 2, fh: 2.8, wall: '#eef2f4', trim: '#2f9e5a', accent: '#2f9e5a', ground: 'shop', lit: 0.55, roof: 'flat',
+    sign: { text: 'MARTIKÖY HALI SAHA TESİSLERİ', bg: '#1f6f3f', fg: '#ffffff', w: 9 }, win: { w: 1.1, h: 1.2, gap: 0.8, frame: '#2f9e5a' }, extra: tesisExtras },
 ];
+function tesisExtras(k: Kit, L: Dim) {
+  const { b } = k, fz = L.d / 2;
+  // roof tribune: three stepped rows of seats facing the pitch, rail, two floodlight masts
+  for (let r = 0; r < 3; r++) { const y = L.H + 0.25 + r * 0.42, z = fz - 0.5 - r * 0.85; b.box(L.w - 1.2, 0.42 + r * 0.42, 0.85, '#c9ced6', 0, L.H + (0.42 + r * 0.42) / 2, z, O); for (let i = 0; i < 22; i++) b.box(0.5, 0.32, 0.42, i % 2 ? '#2f9e5a' : '#f4f4f0', -L.w / 2 + 1.0 + i * (L.w - 2) / 21, y + 0.16 + r * 0.0, z + 0.1, O); }
+  b.box(L.w - 0.6, 0.06, 0.06, '#2f9e5a', 0, L.H + 1.0, fz - 0.05, O);
+  for (const sg of [-1, 1]) { b.box(0.22, 6.5, 0.22, '#5b6068', sg * (L.w / 2 - 0.3), L.H + 3.25, -fz + 0.4, O); b.box(1.8, 0.9, 0.3, '#3a3d42', sg * (L.w / 2 - 0.3), L.H + 6.6, -fz + 0.4, O); k.n.box(1.6, 0.7, 0.05, '#fff6d8', sg * (L.w / 2 - 0.3), L.H + 6.6, -fz + 0.58, O); }
+  // locker-room doors with pictograms (blue/red), a vending machine and a ball rack by the cafeteria
+  for (const [u, c] of [[-6.5, '#2b6fb8'], [-4.9, '#d93a3a']] as [number, string][]) { b.box(1.0, 2.1, 0.08, '#e9eef2', u, L.y0 + 1.05, fz + 0.04, O); b.box(0.36, 0.36, 0.02, c, u, L.y0 + 1.75, fz + 0.09, O); }
+  b.box(0.8, 1.8, 0.7, '#e0533c', 6.6, L.y0 + 0.9, fz + 0.4, O); b.box(0.6, 0.9, 0.04, '#9cc3d6', 6.6, L.y0 + 1.2, fz + 0.76, O);
+  b.box(1.4, 0.06, 0.5, '#5b6068', 5.0, L.y0 + 0.5, fz + 0.4, O); for (let i = 0; i < 4; i++) b.sph(0.16, i % 2 ? '#f4f4f0' : '#222', 4.5 + i * 0.33, L.y0 + 0.7, fz + 0.4, { ws: 8, hs: 6 });
+}
+/** Metro exit (Martıköy station): stairs going down between granite walls, glass canopy on a steel frame, M totem. */
+function metroGiris(): T.Group {
+  const grp = new T.Group(); grp.name = 'metro'; grp.position.set(8.5, 0.12, 53.8);
+  const b = new Batch(), g = new Batch(), n = new Batch();
+  for (const sx of [-1, 1]) { b.box(0.3, 1.0, 5.6, '#8e9196', sx * 1.5, 0.5, 0); b.box(0.36, 0.06, 5.7, '#c9ced6', sx * 1.5, 1.03, 0); b.box(0.05, 0.05, 5.4, '#c9ced6', sx * 1.25, 1.0, 0); }
+  b.box(3.3, 1.0, 0.3, '#8e9196', 0, 0.5, -2.75);
+  b.box(2.7, 0.04, 5.2, '#1a1c20', 0, 0.02, 0.1);   // the opening
+  for (let i = 0; i < 12; i++) b.box(2.6, 0.08, 0.36, i % 2 ? '#c9ced6' : '#b9bec4', 0, -0.1 - i * 0.28, 2.5 - i * 0.42);   // steps going down
+  // canopy: steel arches and glass
+  for (let i = 0; i < 4; i++) { const z = -2.5 + i * 1.7; for (const sx of [-1, 1]) b.box(0.1, 3.0, 0.1, '#3a3d42', sx * 1.55, 1.5, z); b.box(3.3, 0.12, 0.12, '#3a3d42', 0, 3.05, z); }
+  g.box(3.4, 0.04, 5.6, '#9cc3d6', 0, 3.15, -0.1);
+  b.box(3.6, 0.5, 0.12, '#2b6fb8', 0, 3.45, 2.85);
+  // totem
+  b.box(0.18, 3.6, 0.18, '#3a3d42', 2.2, 1.8, 2.9); b.box(0.9, 0.9, 0.2, '#2b6fb8', 2.2, 3.9, 2.9);
+  const tc = document.createElement('canvas'); tc.width = 256; tc.height = 128; const x = tc.getContext('2d')!;
+  x.fillStyle = '#2b6fb8'; x.fillRect(0, 0, 256, 128); x.fillStyle = '#fff'; x.font = '900 64px system-ui,sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('M  MARTIKÖY', 128, 66);
+  const tt = new T.CanvasTexture(tc); tt.colorSpace = T.SRGBColorSpace;
+  const sm = new T.MeshStandardMaterial({ map: tt, emissive: '#ffffff', emissiveMap: tt, emissiveIntensity: 0.3 }); signMats.push(sm);
+  const sp = new T.Mesh(new T.PlaneGeometry(3.4, 0.46), sm); sp.position.set(0, 3.45, 2.92); grp.add(sp);
+  const mc = document.createElement('canvas'); mc.width = mc.height = 128; const y = mc.getContext('2d')!; y.fillStyle = '#2b6fb8'; y.fillRect(0, 0, 128, 128); y.fillStyle = '#fff'; y.font = '900 100px system-ui,sans-serif'; y.textAlign = 'center'; y.textBaseline = 'middle'; y.fillText('M', 64, 70);
+  const mt = new T.CanvasTexture(mc); mt.colorSpace = T.SRGBColorSpace; const mm = new T.MeshStandardMaterial({ map: mt, emissive: '#ffffff', emissiveMap: mt, emissiveIntensity: 0.3 }); signMats.push(mm);
+  for (const dz of [0.11, -0.11]) { const m = new T.Mesh(new T.PlaneGeometry(0.82, 0.82), mm); m.position.set(2.2, 3.9, 2.9 + dz); if (dz < 0) m.rotation.y = Math.PI; grp.add(m); }
+  n.box(2.4, 0.05, 0.3, '#fff3d6', 0, 2.98, 0.5);   // canopy light strip
+  const M = mats(); grp.add(b.mesh(M.wallMat, true, true)); grp.add(g.mesh(M.glassMat, false, false)); const nm = n.mesh(M.glowMat, false, false); nm.renderOrder = 2; grp.add(nm);
+  return grp;
+}
 
 function cafeTerrace(k: Kit, L: Dim) {
   const { b } = k, fz = L.d / 2;
@@ -260,7 +304,7 @@ export function createKarsiBina(d: BinaDeps): BinaView {
     update(dt) {
       const root = d.root(); if (!root) return;
       if (holder.parent !== root) root.add(holder);
-      if (!built) { built = true; for (const s of SPECS) holder.add(build(s)); flag = holder.getObjectByName('bayrak') as T.Mesh | null; }
+      if (!built) { built = true; for (const s of SPECS) holder.add(build(s)); holder.add(metroGiris()); flag = holder.getObjectByName('bayrak') as T.Mesh | null; }
       const nk = d.night(); t += dt;
       if (glowMat) glowMat.opacity = Math.min(1, nk * 1.1) * 0.95;
       for (const m of signMats) m.emissiveIntensity = 0.25 + nk * 1.3;

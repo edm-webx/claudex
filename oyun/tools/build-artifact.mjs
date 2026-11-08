@@ -22,4 +22,6 @@ html,body{margin:0;height:100%;overflow:hidden;background:#c6e3f2;touch-action:n
 writeFileSync(join(dist, 'index.html'), html);
 // Kenney CC0 models (cars, buildings, trees): public/modeller -> dist/modeller
 if (existsSync('public/modeller')) cpSync('public/modeller', join(dist, 'modeller'), { recursive: true });
+// Poly Haven CC0 ground textures: public/doku -> dist/doku
+if (existsSync('public/doku')) cpSync('public/doku', join(dist, 'doku'), { recursive: true });
 console.log('build-artifact: dist/index.html written');

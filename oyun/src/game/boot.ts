@@ -99,6 +99,7 @@ import { createYolLook, type YolLookView } from './view/world/yol-look';
 import { ugY, onUg } from '../content/ustgecit';
 import { createKarsiLook, type KarsiLookView } from './view/world/karsi-look';
 import { createKarsiBina, type BinaView } from './view/world/karsi-bina';
+import { createBufeBuyume, type BuyumeView } from './view/world/bufe-buyume';
 import { createKarsiYasam, type YasamView } from './view/world/karsi-yasam';
 import { restoranApi } from './sim/restoran';
 import { createIzgaraLook, type IzgaraLookView } from './view/world/izgara-look';
@@ -131,7 +132,7 @@ export function validateState(s: GameState): string[] {
   const num = (k: 'money' | 'gold' | 'stars' | 'xp') => { if (!Number.isFinite(s[k]) || s[k] < 0) { n.push(`${k} ${s[k]} -> 0`); s[k] = 0; } };
   num('money'); num('gold'); num('stars'); num('xp');
   if (!Number.isFinite(s.day) || s.day < 1) { n.push('day -> 1'); s.day = 1; }
-  if (!Number.isFinite(s.stage) || s.stage < 1 || s.stage > 5) { n.push('stage -> 1'); s.stage = 1; }
+  if (!Number.isFinite(s.stage) || s.stage < 1 || s.stage > 10) { n.push('stage -> 1'); s.stage = 1; }
   if (!s.player || !Number.isFinite(s.player.x) || !Number.isFinite(s.player.z)) { n.push('player reset'); s.player = defaultState().player; }
   return n;
 }
@@ -300,7 +301,8 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
 
   const karsiLook: KarsiLookView | null = playMode && zones ? make('karsiLook', () => createKarsiLook({ root: () => zones.root('iskele') ?? null })) : null;
   const karsiBina: BinaView | null = playMode && zones ? make('karsiBina', () => createKarsiBina({ root: () => zones.root('iskele') ?? null, night: () => nightK })) : null;
-  const karsiYasam: YasamView | null = playMode && zones && chars ? make('karsiYasam', () => createKarsiYasam({ root: () => zones.root('iskele') ?? null, chars, hero: () => walk.pos, hour: () => sim.clock.hour, sfx: id => { try { audio?.sfx(id); } catch { /* */ } }, isci: () => { const m = mulkApi(sim.rules); return m ? m.view().plots.filter(p => p.sabit && p.owned).map(p => ({ id: p.id, n: p.isci })) : []; } })) : null;
+  const bufeBuyume: BuyumeView | null = playMode && zones ? make('bufeBuyume', () => createBufeBuyume({ root: () => zones.root('iskele') ?? null, night: () => nightK, stage: () => sim.state.stage, tadilat: () => { const t = sim.state.tadilat as unknown as { to: number; left: number; total: number } | null; return t ? { to: t.to, p: 1 - t.left / Math.max(1, t.total) } : null; }, takim: () => (sim.state.zones as { arsa?: { takim?: { ad: string; renk: string; renk2?: string } | null } }).arsa?.takim ?? null })) : null;
+  const karsiYasam: YasamView | null = playMode && zones && chars ? make('karsiYasam', () => createKarsiYasam({ root: () => zones.root('iskele') ?? null, chars, hero: () => walk.pos, hour: () => sim.clock.hour, sfx: id => { try { audio?.sfx(id); } catch { /* */ } }, isci: () => { const m = mulkApi(sim.rules); return m ? m.view().plots.filter(p => p.sabit && p.owned).map(p => ({ id: p.id, n: p.isci, lv: p.lv })) : []; } })) : null;
   const yolLook: YolLookView | null = playMode && zones ? make('yolLook', () => createYolLook({ root: () => zones.root('iskele') ?? null })) : null;
 
   const izgaraLook: IzgaraLookView | null = playMode && uiReal ? make('izgaraLook', () => createIzgaraLook({ scene, host: U.root })) : null;
@@ -599,6 +601,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (yolLook) guard('yolLook', () => yolLook.update(fdt));
     if (karsiLook) guard('karsiLook', () => karsiLook.update(fdt));
     if (karsiBina) guard('karsiBina', () => karsiBina.update(fdt));
+    if (bufeBuyume) guard('bufeBuyume', () => bufeBuyume.update(fdt));
     if (karsiYasam) guard('karsiYasam', () => karsiYasam.update(fdt));
     if (tipJar) guard('tipJar', () => tipJar.update(fdt));
     if (stantLook) guard('stantLook', () => stantLook.update(fdt));

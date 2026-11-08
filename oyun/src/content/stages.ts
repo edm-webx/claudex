@@ -8,8 +8,16 @@ const RAW = [
   // 4 and 5 were placeholders in v2; the owner asked for them to be playable (survey: Lokanta, Zincir şube).
   // Costs and crew times are first guesses, tune them with the economy numbers.
   { id: 4, name: 'Camlı iskele lokantası', short: 'Lokanta', mult: 5, cost: 3000000, timeS: 600, req: { stars: 4 } },
-  { id: 5, name: 'Martıköy Genel Merkez', short: 'Zincir şube', mult: 8, cost: 20000000, timeS: 1200, req: { stars: 5 } }
+  { id: 5, name: 'Martıköy Genel Merkez', short: 'Zincir şube', mult: 8, cost: 20000000, timeS: 1200, req: { stars: 5 } },
+  // 2026-11-08 owner: "büfe büyümesi 10. seviyeye kadar gelsin ... en sonunda fine dining". Stages 6-10 grow on the
+  // pier around the kiosk (view/world/bufe-buyume.ts); costs and times come from ekonomi2.ts.
+  { id: 6, name: 'Deniz üstü platform, iskele masaları', short: 'Deniz platformu', mult: 0, cost: 0, timeS: 0, req: { stars: 5 } },
+  { id: 7, name: 'Camlı balık restoranı', short: 'Balık restoranı', mult: 0, cost: 0, timeS: 0, req: { stars: 5 } },
+  { id: 8, name: 'Teraslı Boğaz restoranı', short: 'Boğaz restoranı', mult: 0, cost: 0, timeS: 0, req: { stars: 5 } },
+  { id: 9, name: 'Şefin açık mutfağı', short: 'Şef mutfağı', mult: 0, cost: 0, timeS: 0, req: { stars: 5 } },
+  { id: 10, name: 'Sabri\'nin Sofrası, fine dining', short: 'Fine dining', mult: 0, cost: 0, timeS: 0, req: { stars: 5 } }
 ];
+export const MAX_STAGE = 10;
 // Faz 2: costs, crew time and the (flat) multiplier come from ekonomi2.ts
 export const KIOSK_STAGES: StageDef2[] = RAW.map(s => ({ ...s, stage: s.id, cost: s.id === 1 ? 0 : STAGE_COST[s.id - 1], timeS: STAGE_TIME_S[s.id - 1], mult: STAGE_MULT[s.id - 1] })) as StageDef2[];
 export const RENEW_PARTS = [

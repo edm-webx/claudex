@@ -25,6 +25,8 @@ export interface Env {
   /** last chest result, shown by the panel */
   son: { sandik: string; tl: number; esya: string[]; t: number } | null;
 }
+/** café growth names per level (same idea as the büfe stages) */
+export const KAFE_ASAMA = ['Köşe kafe', 'Kafe', 'Bistro', 'Teraslı bistro', 'Gurme bistro'];
 export interface Plot { tur: 'ev' | 'dukkan' | null; tip: string; lv: number; stok: number; till: number; sat: number; fr: number; isci?: number }
 export interface ArsaSave { plots: Record<string, Plot>; takim: { ad: string; renk: string; renk2?: string; arma?: string; kurulus?: number } | null; lastH: number }
 export interface BankaRt { tl: number; esya: Record<string, number>; dirty: boolean }
@@ -165,7 +167,7 @@ export function installMulk(K: Kernel) {
     for (const m in y.esya) if (have(m) < y.esya[m]) { K.toast('Eksik: ' + Object.entries(y.esya).map(([k, v]) => v + ' ' + nm(k)).join(', ') + ' (envanter / üretim)', 'info'); return; }
     if (S.money < y.tl) { K.toast('Yükseltme ' + fmtMoney(y.tl), 'bad'); return; }
     K.spend(y.tl); for (const m in y.esya) take(m, y.esya[m]); q.p.lv++;
-    K.toast('⬆️ ' + t.ad + ' ' + q.p.lv + '. seviye!', 'good'); K.addXP(40); K.saveNow();
+    K.toast('⬆️ ' + (q.a.sabit === 'kafe' ? (q.a.ad || t.ad) + ' artık ' + KAFE_ASAMA[q.p.lv - 1] + '! Terası büyüdü.' : t.ad + ' ' + q.p.lv + '. seviye!'), 'good'); K.addXP(40); K.saveNow();
   }
   function isciAl(id: string) {
     const q = plotOf(id); if (!q || !q.p || q.p.tur !== 'dukkan') return;

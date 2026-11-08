@@ -779,20 +779,20 @@ function renderKarne(m) {
   } else if (stars >= 5) s += `<div class="sb-card" style="text-align:center;font:900 16px/1.3 var(--disp)">Beş yıldız! Martıköy seninle gurur duyuyor.</div>`;
   return s;
 }
-const STAGES = [['Seyyar Araba', 'cart1'], ['Büfe', 'shop'], ['Çay Bahçesi', 'garden'], ['Lokanta', 'lokanta'], ['Zincir Şube', 'zincir']];
+const STAGES = [['Seyyar Araba', 'cart1'], ['Büfe', 'shop'], ['Çay Bahçesi', 'garden'], ['Lokanta', 'lokanta'], ['Zincir Şube', 'zincir'], ['Deniz Platformu', 'garden'], ['Balık Restoranı', 'lokanta'], ['Boğaz Restoranı', 'lokanta'], ['Şef Mutfağı', 'zincir'], ['Fine Dining', 'zincir']];
 function renderTadilat(m) {
-  const stg = clamp(num(m.stage) ? m.stage : 1, 1, 5);
+  const stg = clamp(num(m.stage) ? m.stage : 1, 1, STAGES.length);
   const names = Array.isArray(m.stages) ? m.stages : null;
   let s = '<div class="sb-card"><div class="sb-ladder">';
   STAGES.forEach((x, i) => {
-    const n = i + 1, soon = n >= 4 && n > stg;
+    const n = i + 1, soon = false;
     s += `<div class="sb-st ${n < stg ? 'done' : n === stg ? 'cur' : ''}${soon ? ' soon' : ''}"><div class="sc">${ICONS[x[1]]}</div><span>${esc(names && names[i] ? names[i] : x[0])}</span>${soon ? '<span class="sb-chip soon">Yakında</span>' : ''}</div>`;
   });
   s += '</div></div>';
   const tLeft = m.timeLeft;
   const working = (num(tLeft) && tLeft > 0) || (typeof tLeft === 'string' && tLeft !== '' && tLeft !== '0');
   const nextSoon = stg >= 3 && !m.nextName ? true : (stg + 1 >= 4 && !m.canStart && !working && m.cost == null);
-  s += `<div class="sb-card sb-tad"><div class="tn">${esc(m.stageName || STAGES[stg - 1][0])}${m.nextName || stg < 5 ? ICONS.arrowR + esc(m.nextName || (STAGES[stg] || [''])[0]) : ''}</div>`;
+  s += `<div class="sb-card sb-tad"><div class="tn">${esc(m.stageName || STAGES[stg - 1][0])}${m.nextName || stg < STAGES.length ? ICONS.arrowR + esc(m.nextName || (STAGES[stg] || [''])[0]) : ''}</div>`;
   if (working) {
     s += `<div class="sb-work">${ICONS.hammer}<div class="sb-grow"><div class="sb-muted">Ustalar çalışıyor, büfe açık kalıyor.</div><b>${esc(timeStr(tLeft))}</b></div></div>`;
     s += btn('Altın Simitle hemen bitir', 'skip', null, 'wide', (m.skipGold != null ? fmt(m.skipGold) + ' Altın Simit' : ''), { icon: 'gold' });
