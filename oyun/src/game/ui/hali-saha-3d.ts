@@ -9,7 +9,7 @@ import { esnafHeroOpts } from '../sim/esnafim';
 
 interface HeroLike { object: T.Object3D; setPose(p: { x: number; z: number }, r: number): void; setInput(i: Record<string, unknown>): void; update(dt: number, a: number): void; dispose(): void }
 export interface Pl3 { x: number; y: number; vx: number; vy: number; fx: number; fy: number; team: 0 | 1; gk: boolean; stun: number }
-export interface HS3 { render(o: { pls: Pl3[]; ball: { x: number; y: number; vx: number; vy: number; owner: number }; ctrl: number; portrait: boolean; shake: number; dt: number; ref?: { x: number; y: number; vx: number; vy: number; fx: number; fy: number; point: number } }): void; dispose(): void }
+export interface HS3 { render(o: { score?: [number, number]; pls: Pl3[]; ball: { x: number; y: number; vx: number; vy: number; owner: number }; ctrl: number; portrait: boolean; shake: number; dt: number; ref?: { x: number; y: number; vx: number; vy: number; fx: number; fy: number; point: number } }): void; dispose(): void }
 
 const BOARDS_BASE = ['KOLAZ', 'MARTIKART', 'AYRANBEY', 'BOĞAZ GAZOZU', "SABRİ'NİN BÜFESİ", 'NARÇİÇEK', 'MARTI SU', 'SPOR MARTI'];
 let BOARDS = BOARDS_BASE;
@@ -94,10 +94,54 @@ export function createHaliSaha3D(o: {
     const top = new T.Mesh(geo(new T.PlaneGeometry(gd, gm1 - gm0)), cageMat(gd * 2, (gm1 - gm0) * 2)); top.rotation.x = -Math.PI / 2; top.position.set(gx + s * gd / 2, gh, (gm0 + gm1) / 2); scene.add(top);
     for (const z of [gm0, gm1]) { const side = new T.Mesh(geo(new T.PlaneGeometry(gd, gh)), cageMat(gd * 2, gh * 2)); side.position.set(gx + s * gd / 2, gh / 2, z); scene.add(side); }
   }
-  // crowd silhouettes behind the far net
-  const crowdM = [mat('#2b3550'), mat('#3a2f4a'), mat('#4a3a30')];
-  for (let k = 0; k < 70; k++) { const b = box(0.5, 0.8 + Math.random() * 0.3, 0.4, crowdM[k % 3], Math.random() * (L + 6) - 3, 1.2 + (k % 3) * 0.7, -2.6 - (k % 3) * 0.9); b.castShadow = false; }
-  for (let k = 0; k < 3; k++) box(L + 8, 0.3, 0.9, mat('#3d4252'), L / 2, 0.6 + k * 0.7, -2.5 - k * 0.9);
+  // 2026-11-08 user: "görseli çevresi taraftarı asla kalitesiz ve dandik duramaz". Real stands: a long main stand behind the far
+  // side and two end stands, concrete tiers with plastic seats, a roof on steel trusses, fans as instanced figures in the two
+  // clubs' colours (home end left, away end right), flags and a big club banner; the crowd bounces and roars on goals.
+  const tierM = mat('#7d828c', { roughness: 0.95 }), seatCols = [o.colors[0], '#d9dde3', o.rival[0]];
+  type Stand = { x0: number; x1: number; z0: number; dz: number; rows: number; rotY: number; side: 'far' | 'w' | 'e' };
+  const stands: Stand[] = [{ x0: -2, x1: L + 2, z0: -2.4, dz: -1, rows: 7, rotY: 0, side: 'far' }];
+  const fanPos: { x: number; y: number; z: number; team: 0 | 1; ph: number }[] = [];
+  for (const st of stands) for (let r = 0; r < st.rows; r++) {
+    const z = st.z0 + st.dz * r * 0.85, y = 0.45 + r * 0.55;
+    box(st.x1 - st.x0, 0.12, 0.85, tierM, (st.x0 + st.x1) / 2, y, z).receiveShadow = true;
+    box(st.x1 - st.x0, y, 0.85, tierM, (st.x0 + st.x1) / 2, y / 2, z).castShadow = false;
+    for (let x = st.x0 + 0.4; x < st.x1 - 0.2; x += 0.62) {
+      const team: 0 | 1 = x < L * 0.45 ? 0 : x > L * 0.55 ? 1 : (Math.random() < 0.5 ? 0 : 1);
+      if (Math.random() < 0.86) fanPos.push({ x: x + (Math.random() - 0.5) * 0.12, y: y + 0.06, z, team, ph: Math.random() * 6 });
+    }
+  }
+  // end stands behind both goals (smaller, steeper)
+  for (const [gx, sgn] of [[-3.2, -1], [L + 3.2, 1]] as const) for (let r = 0; r < 5; r++) {
+    const x = gx + sgn * r * 0.85, y = 0.45 + r * 0.6;
+    box(0.85, 0.12, WD + 2, tierM, x, y, WD / 2); box(0.85, y, WD + 2, tierM, x, y / 2, WD / 2).castShadow = false;
+    for (let z = -0.6; z < WD + 0.6; z += 0.62) if (Math.random() < 0.8 && (z < o.m0 - 1.5 || z > o.m1 + 1.5 || r > 1)) fanPos.push({ x: x + (Math.random() - 0.5) * 0.1, y: y + 0.06, z, team: sgn < 0 ? 0 : 1, ph: Math.random() * 6 });
+  }
+  // roof over the main stand on trusses
+  const roofM = mat('#d6dbe2', { metalness: 0.4, roughness: 0.5 });
+  box(L + 6, 0.15, 7.2, roofM, L / 2, 6.4, -5.2).castShadow = false;
+  for (let x = -2; x <= L + 2; x += 6) { box(0.18, 6.4, 0.18, poleM, x, 3.2, -8.4); box(0.12, 0.12, 7.2, poleM, x, 6.25, -5.2); }
+  // seats under the fans
+  const seatG = geo(new T.BoxGeometry(0.46, 0.32, 0.42)), seatIM = new T.InstancedMesh(seatG, mat('#ffffff'), fanPos.length);
+  // fans: instanced bodies + heads, team coloured; arms up on goals
+  const bodyG = geo(new T.BoxGeometry(0.42, 0.62, 0.3)), headG = geo(new T.SphereGeometry(0.15, 8, 6)), scarfG = geo(new T.BoxGeometry(0.9, 0.08, 0.06));
+  const bodyIM = new T.InstancedMesh(bodyG, mat('#ffffff'), fanPos.length), headIM = new T.InstancedMesh(headG, mat('#ffffff'), fanPos.length), scarfIM = new T.InstancedMesh(scarfG, mat('#ffffff'), fanPos.length);
+  const SKINC = ['#f1c9a5', '#d9a27a', '#b9805a', '#8a5a3c'].map(c => new T.Color(c)), tmpC = new T.Color(), tmpM = new T.Matrix4();
+  fanPos.forEach((f, i) => {
+    const kit = f.team === 0 ? o.colors : o.rival;
+    bodyIM.setColorAt(i, tmpC.set(Math.random() < 0.75 ? kit[0] : Math.random() < 0.5 ? kit[1] : '#3a3d42'));
+    headIM.setColorAt(i, SKINC[i % 4]); scarfIM.setColorAt(i, tmpC.set(kit[i % 2]));
+    seatIM.setColorAt(i, tmpC.set(seatCols[f.team === 0 ? 0 : 2])); tmpM.makeTranslation(f.x, f.y - 0.02, f.z + 0.12 * (f.z < 0 ? -1 : 0)); seatIM.setMatrixAt(i, tmpM);
+  });
+  for (const im of [bodyIM, headIM, scarfIM, seatIM]) { im.castShadow = false; im.receiveShadow = false; scene.add(im); }
+  // flags on the roof edge and a big club banner across the main stand
+  const flagTex = (c1: string, c2: string, txt: string) => { const fc = document.createElement('canvas'); fc.width = 512; fc.height = 96; const f = fc.getContext('2d')!; f.fillStyle = c1; f.fillRect(0, 0, 512, 96); f.fillStyle = c2; f.fillRect(0, 70, 512, 26); f.fillStyle = '#fff'; f.font = '900 52px system-ui,sans-serif'; f.textAlign = 'center'; f.textBaseline = 'middle'; f.fillText(txt, 256, 38, 490); const t = new T.CanvasTexture(fc); t.colorSpace = T.SRGBColorSpace; disp.push(t); return t; };
+  const banner = new T.Mesh(geo(new T.PlaneGeometry(14, 1.6)), mat('#ffffff', { map: flagTex(o.colors[0], o.colors[1], (o.clubName || 'EV SAHİBİ').toLocaleUpperCase('tr-TR')), side: T.DoubleSide }));
+  banner.position.set(L * 0.25, 5.2, -7.6); scene.add(banner);
+  const banner2 = new T.Mesh(geo(new T.PlaneGeometry(12, 1.4)), mat('#ffffff', { map: flagTex(o.rival[0], o.rival[1], (o.rivalName || 'DEPLASMAN').toLocaleUpperCase('tr-TR')), side: T.DoubleSide }));
+  banner2.position.set(L * 0.76, 5.2, -7.6); scene.add(banner2);
+  const flags: T.Mesh[] = [];
+  for (let k = 0; k < 8; k++) { const home = k < 4, fl = new T.Mesh(geo(new T.PlaneGeometry(1.4, 0.9, 6, 1)), mat(home ? o.colors[k % 2] : o.rival[k % 2], { side: T.DoubleSide })); fl.position.set(1 + k * (L - 2) / 7, 7.5, -1.7); box(0.05, 1.4, 0.05, poleM, 1 + k * (L - 2) / 7 - 0.7, 7.1, -1.7); scene.add(fl); flags.push(fl); }
+  let cheer = 0, lastScore = '';
 
   // players: real rigs. Home outfield = colors, home keeper yellow, away keeper dark; Sabri = own esnaf look in our jersey
   const heroes: (HeroLike | null)[] = [];
@@ -149,21 +193,33 @@ export function createHaliSaha3D(o: {
       s.pls.forEach((p, i) => {
         const hh = heroes[i]; if (!hh) return;
         const sp = Math.hypot(p.vx, p.vy);
-        hh.setPose({ x: p.x, z: p.y }, Math.atan2(p.fx, p.fy));
+        hh.setPose({ x: p.x, z: p.y }, Math.atan2(p.fx, p.fy)); hh.object.position.y = 0;   // 2026-11-08: setPose lifts heroes onto the world's overpass (ustgecit) whose x/z overlap this pitch, so players floated
         hh.setInput({ speed: sp, carry: 0, act: p.stun > 0 ? 'idle' : sp > 0.3 ? 'walk' : 'idle', mood: p.stun > 0 ? 'sad' : 'happy', t });
         hh.update(s.dt, 1);
       });
       if (refHero && s.ref) {
         const r = s.ref, sp = Math.hypot(r.vx, r.vy);
-        refHero.setPose({ x: r.x, z: r.y }, Math.atan2(r.fx, r.fy));
+        refHero.setPose({ x: r.x, z: r.y }, Math.atan2(r.fx, r.fy)); refHero.object.position.y = 0;
         refHero.setInput({ speed: sp, carry: 0, act: r.point > 0 ? 'wave' : sp > 0.3 ? 'walk' : 'idle', mood: 'happy', t } as never);
         refHero.update(s.dt, 1);
       }
-      const cp = s.pls[s.ctrl]; if (cp) ring.position.set(cp.x, 0.03, cp.y);
+      const cp = s.pls[s.ctrl]; if (cp) { ring.visible = true; ring.position.set(cp.x, 0.03, cp.y); } else ring.visible = false;
+      // crowd: idle sway, a big jump and scarves up after a goal
+      const sk = s.score ? s.score.join('-') : ''; if (sk !== lastScore) { if (lastScore) cheer = 4; lastScore = sk; }
+      cheer = Math.max(0, cheer - s.dt);
+      const near = (Math.abs(s.ball.x - L / 2) > L * 0.3 ? 0.35 : 0) + cheer;
+      for (let i = 0; i < fanPos.length; i++) {
+        const f = fanPos[i], amp = 0.04 + Math.min(1, near) * 0.22, hop = Math.max(0, Math.sin(t * (cheer > 0 ? 9 : 2.4) + f.ph)) * amp;
+        tmpM.makeTranslation(f.x, f.y + 0.31 + hop, f.z); bodyIM.setMatrixAt(i, tmpM);
+        tmpM.makeTranslation(f.x, f.y + 0.78 + hop, f.z); headIM.setMatrixAt(i, tmpM);
+        tmpM.makeTranslation(f.x, f.y + (cheer > 0 ? 1.15 : 0.58) + hop, f.z); scarfIM.setMatrixAt(i, tmpM);
+      }
+      bodyIM.instanceMatrix.needsUpdate = true; headIM.instanceMatrix.needsUpdate = true; scarfIM.instanceMatrix.needsUpdate = true;
+      for (const fl of flags) { const p = fl.geometry.attributes.position as T.BufferAttribute; for (let i = 0; i < p.count; i++) { const x = p.getX(i) + 0.7; p.setZ(i, Math.sin(t * 4 + x * 3 + fl.position.x) * 0.12 * x); } p.needsUpdate = true; }
       // ball: rolls on the ground, hops a little when kicked
-      if (s.ball.owner === -1 && lastOwner !== -1 && Math.hypot(s.ball.vx, s.ball.vy) > 12) bvz = 3.2;
+      if (s.ball.owner === -1 && lastOwner !== -1 && Math.hypot(s.ball.vx, s.ball.vy) > 19) bvz = 1.6;   // only hard shots lift a little; passes roll on the turf
       lastOwner = s.ball.owner;
-      bvz -= 12 * s.dt; bz += bvz * s.dt; if (bz < 0) { bz = 0; bvz = Math.abs(bvz) > 1.5 ? -bvz * 0.45 : 0; }
+      bvz -= 12 * s.dt; bz += bvz * s.dt; if (bz < 0) { bz = 0; bvz = Math.abs(bvz) > 1.2 ? -bvz * 0.35 : 0; }
       ballM.position.set(s.ball.x, 0.22 + bz, s.ball.y);
       ballM.rotation.z -= s.ball.vx * s.dt / 0.22; ballM.rotation.x += s.ball.vy * s.dt / 0.22;
       bshadow.position.set(s.ball.x, 0.02, s.ball.y);

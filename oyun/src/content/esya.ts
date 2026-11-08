@@ -79,7 +79,42 @@ export const ARSALAR: Arsa[] = [
 export const ARSA_HAK = 3;
 export const arsaKapi = (a: Arsa) => a.kapi ?? { x: a.x, z: a.z + (a.rotY ? -3.0 : 3.0) };
 /** café workers (karşı yaka): hire price grows per worker; each adds +40% customers, restocks from the till, takes an hourly wage */
-export const ISCI_MAX = 3, isciFiyat = (n: number) => 12000 * (n + 1), ISCI_SAAT_UCRET = 60, ISCI_MUSTERI = 0.4;
+export const ISCI_MAX = 3;
+/** 2026-11-08 user: "karşı yakadaki kafeler bizim ilk büfe gibi değil, kendine has yiyecek içecekleri olmak zorunda, gelişim, eşya, işçi".
+ * Each café has its own menu; a level unlocks dishes (lv1 2, lv2 4, lv3 5, lv4 6, lv5 8). Revenue per sale is the menu's average,
+ * every dish past the second brings +8% customers. Cafés hire up to lv+1 workers (max 6). */
+export interface KafeYemek { id: string; ad: string; ikon: string; fiyat: number; maliyet: number }
+export const KAFE_MENU: Record<string, KafeYemek[]> = {
+  k1: [
+    { id: 'turk_kahvesi', ad: 'Türk kahvesi', ikon: '☕', fiyat: 35, maliyet: 9 }, { id: 'demlik_cay', ad: 'Demlik çay', ikon: '🫖', fiyat: 25, maliyet: 5 },
+    { id: 'kasarli_tost', ad: 'Kaşarlı tost', ikon: '🥪', fiyat: 55, maliyet: 18 }, { id: 'su_boregi', ad: 'Su böreği', ikon: '🥧', fiyat: 60, maliyet: 20 },
+    { id: 'filtre', ad: 'Filtre kahve', ikon: '🥤', fiyat: 50, maliyet: 12 }, { id: 'cheesecake', ad: 'Cheesecake', ikon: '🍰', fiyat: 85, maliyet: 28 },
+    { id: 'menemen', ad: 'Menemen', ikon: '🍳', fiyat: 95, maliyet: 30 }, { id: 'serpme', ad: 'Serpme kahvaltı', ikon: '🧺', fiyat: 220, maliyet: 80 },
+  ],
+  k2: [
+    { id: 'limonata', ad: 'Ev limonatası', ikon: '🍋', fiyat: 40, maliyet: 9 }, { id: 'latte', ad: 'Latte', ikon: '☕', fiyat: 60, maliyet: 14 },
+    { id: 'waffle', ad: 'Waffle', ikon: '🧇', fiyat: 110, maliyet: 35 }, { id: 'frappe', ad: 'Frappe', ikon: '🥤', fiyat: 75, maliyet: 18 },
+    { id: 'balik_ekmek', ad: 'Balık ekmek', ikon: '🐟', fiyat: 120, maliyet: 45 }, { id: 'deniz_makarna', ad: 'Deniz mahsullü makarna', ikon: '🍝', fiyat: 190, maliyet: 70 },
+    { id: 'levrek', ad: 'Levrek ızgara', ikon: '🐠', fiyat: 320, maliyet: 130 }, { id: 'sufle', ad: 'Sufle', ikon: '🍫', fiyat: 95, maliyet: 30 },
+  ],
+};
+export const KAFE_MENU_LV = [0, 2, 4, 5, 6, 8];
+export const kafeMenu = (id: string, lv: number) => (KAFE_MENU[id] || []).slice(0, KAFE_MENU_LV[Math.max(0, Math.min(5, lv))] || 2);
+/** Café equipment: bought once per café, each adds customers or price; some show on the terrace (karsi-yasam.ts). */
+export interface KafeEsya { id: string; ad: string; ikon: string; fiyat: number; lv: number; musteri?: number; fiyatK?: number; desc: string }
+export const KAFE_ESYA: KafeEsya[] = [
+  { id: 'espresso', ad: 'Espresso makinesi', ikon: '☕', fiyat: 30000, lv: 1, fiyatK: 0.12, desc: 'Fiyatlar +%12' },
+  { id: 'semsiye', ad: 'Teras şemsiyeleri', ikon: '⛱️', fiyat: 22000, lv: 1, musteri: 0.12, desc: 'Müşteri +%12, terasta görünür' },
+  { id: 'vitrin', ad: 'Soğuk vitrin', ikon: '🧊', fiyat: 45000, lv: 2, musteri: 0.18, desc: 'Müşteri +%18' },
+  { id: 'isik', ad: 'Işık zinciri', ikon: '💡', fiyat: 26000, lv: 2, musteri: 0.1, desc: 'Müşteri +%10, akşam terası parlar' },
+  { id: 'muzik', ad: 'Müzik sistemi', ikon: '🎶', fiyat: 38000, lv: 3, musteri: 0.12, desc: 'Müşteri +%12' },
+  { id: 'saksi', ad: 'Saksı ve çiçekler', ikon: '🪴', fiyat: 18000, lv: 3, musteri: 0.08, desc: 'Müşteri +%8, terasta görünür' },
+  { id: 'soba', ad: 'Teras ısıtıcıları', ikon: '🔥', fiyat: 55000, lv: 4, musteri: 0.15, desc: 'Kışın da dolu: müşteri +%15, terasta görünür' },
+  { id: 'barista', ad: 'Barista ekipmanı', ikon: '🏆', fiyat: 90000, lv: 5, fiyatK: 0.2, desc: 'Fiyatlar +%20' },
+];
+export const KAFE_ESYA_BY_ID: Record<string, KafeEsya> = Object.fromEntries(KAFE_ESYA.map(e => [e.id, e]));
+export const kafeIsciMax = (lv: number) => Math.min(6, lv + 1);
+export const isciFiyat = (n: number) => 12000 * (n + 1), ISCI_SAAT_UCRET = 60, ISCI_MUSTERI = 0.4;
 
 /** shop types (D). One shared engine: stok -> müşteri -> satış -> upgrade. fiyat/maliyet per unit, musteri per game hour at level 1. */
 export interface DukkanTip { id: string; ad: string; ikon: string; renk: string; tabela: string; maliyet: number; fiyat: number; musteri: number; kurulum: number; seviye: number }

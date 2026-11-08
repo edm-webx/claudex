@@ -76,7 +76,7 @@ export function karsiPrefabs(): PrefabDef[] {
   defs.push(bld('kr.kirtasiye', 7.1, 3.6, 3.6, '#bfd8e8', '#2b6fb8', '+z', [box(3.4, 0.8, 0.08, 0, 3.0, 1.9, '#ffd23f')], true));
   defs.push(bld('kr.okul', 18.3, 7.5, 8.0, '#e9c98f', '#a2472f', '+z', [box(0.12, 6, 0.12, 6, 11, 0, '#cfd4da'), box(1.6, 1.0, 0.04, 6.9, 13.5, 0, '#d93a3a')], true));
   defs.push(bld('kr.kantin', 3.7, 2.8, 3.0, '#f6efe1', '#e0533c', '-x', [box(3.6, 0.15, 1.2, 0, 2.4, 1.9, '#e0533c')], true));
-  defs.push(bld('kr.avm', 16.9, 12.8, 9.5, '#cfd6e6', '#3f4a6b', '-z', [box(10, 1.6, 0.12, 0, 8.2, 6.5, '#e0533c'), box(9, 3.2, 0.12, 0, 2.0, 6.5, '#7fb4d8')], true));
+  defs.push(bld('kr.avm', 16.9, 10.6, 9.5, '#cfd6e6', '#3f4a6b', '-z', [box(10, 1.6, 0.12, 0, 8.2, 6.5, '#e0533c'), box(9, 3.2, 0.12, 0, 2.0, 6.5, '#7fb4d8')], true));
   defs.push(bld('kr.hastane', 16.9, 6.7, 12.0, '#f2f4f6', '#d93a3a', '-z', [...redCross(0, 10.0, 3.5), box(4.4, 2.8, 0.1, 0, 1.4, 3.45, '#7fb4d8')], true));
   defs.push(bld('kr.acil', 3.3, 3.2, 3.6, '#f2f4f6', '#d93a3a', '-x', [], true));     // walls: view/world/karsi-bina.ts
   defs.push(bld('kr.morg', 3.3, 3.2, 3.2, '#c9ced6', '#5b6068', '-x', [], true));
@@ -87,6 +87,11 @@ export function karsiPrefabs(): PrefabDef[] {
   defs.push({ id: 'kr.ambpark', parts: [plane(6.0, 6.7, 0.07, '#6c6f75')], colliders: [R(2.2, 4.8, -1.5, 0), R(2.2, 4.8, 1.5, 0)] });
   // fences (visual + collider), long low segments
   const fence = (id: string, w: number, d: number): Def => ({ id, parts: [box(w, 0.9, d, 0, 0.45, 0, '#6f7a85'), box(w, 0.08, d + 0.06, 0, 0.94, 0, '#9aa5b0')], colliders: [R(w, d)] });
+  // 2026-11-08 user: "okulun bahçesi çitsiz korumasız, içinden geçilmemeli": tall school fence (low wall, posts, rails, mesh) closing the yard
+  const cit = (id: string, w: number, d: number): Def => { const n = Math.max(2, Math.round(Math.max(w, d) / 1.5)), parts: PartDef[] = [box(w, 0.45, d, 0, 0.22, 0, '#b9ad99'), box(w + (d > w ? 0.06 : 0), 0.07, d + (w > d ? 0.06 : 0), 0, 2.1, 0, '#3f4a55'), box(w, 0.05, d, 0, 1.3, 0, '#3f4a55'), box(w * 0.999, 1.6, d * 0.999 || 0.02, 0, 1.25, 0, '#7f8b96')];
+    for (let i = 0; i <= n; i++) { const t = i / n - 0.5; parts.push(box(0.09, 2.2, 0.09, w > d ? t * w : 0, 1.1, w > d ? 0 : t * d, '#2f3740')); }
+    return { id, parts, colliders: [R(w, d)] }; };
+  defs.push(cit('kr.cit.x10', 10, 0.12), cit('kr.cit.x5', 5, 0.12), cit('kr.cit.x8', 7.4, 0.12), cit('kr.cit.z11', 0.12, 11));
   defs.push(fence('kr.fence.x10', 10, 0.22), fence('kr.fence.x8', 8, 0.22), fence('kr.fence.x12', 12, 0.22), fence('kr.fence.z7', 0.22, 7), fence('kr.fence.z11', 0.22, 11));
   return defs;
 }
@@ -111,8 +116,8 @@ export function karsiProps(): PrefabPlacement[] {
   out.push(P('kr-kirtasiye', 'kr.kirtasiye', 28, 35.2));
   out.push(P('kr-basket', 'kr.basket', 36, 38.9));
   out.push(P('kr-okul', 'kr.okul', 48.85, 37.25), P('kr-kantin', 'kr.kantin', 56.15, 42.8));
-  out.push(P('kr-fence-sc1', 'kr.fence.x10', 37.5, 44.4), P('kr-fence-sc2', 'kr.fence.x10', 52.5, 44.4), P('kr-fence-sc3', 'kr.fence.z11', 58.2, 38.9));
-  out.push(P('kr-avm', 'kr.avm', 20.15, 50.6));
+  out.push(P('kr-fence-sc1', 'kr.cit.x10', 37.5, 44.4), P('kr-fence-sc2', 'kr.cit.x10', 52.5, 44.4), P('kr-fence-sc3', 'kr.cit.z11', 58.2, 38.9), P('kr-fence-gate', 'kr.cit.x5', 45, 44.4), P('kr-fence-sc4', 'kr.cit.z11', 32.5, 38.9), P('kr-fence-sc5', 'kr.cit.x8', 36.1, 33.4));
+  out.push(P('kr-avm', 'kr.avm', 20.15, 51.8)   /* 2026-11-08 user: bank/AVM touched; AVM shallower and pushed south, 5.7 m gap */);
   out.push(P('kr-metro', 'kr.metro', 8.5, 53.8));
   out.push(P('kr-hastane', 'kr.hastane', 46.95, 53.55), P('kr-acil', 'kr.acil', 57.3, 52.0), P('kr-morg', 'kr.morg', 57.3, 55.5), P('kr-ambpark', 'kr.ambpark', 35.4, 53.55));
   KARSI_TREES.forEach(([x, z], i) => out.push(P('kr-tree' + i, 'kr.treeblock', x, z)));

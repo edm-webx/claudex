@@ -122,11 +122,11 @@ export function createRender(deps: RenderDeps): MotorRender {
   function tuneBloom() {
     if (grade) {   // colour grade follows the day: warm golden hour, cool blue night
       const u = grade.uniforms, gold = clamp(1 - Math.abs(hour - 18.5) / 2.2, 0, 1) * (1 - night);
-      u.uSat.value = 1.1 - 0.12 * night; u.uCon.value = 1.06 + 0.02 * night;
+      u.uSat.value = 1.06 - 0.1 * night; u.uCon.value = 1.03;
       u.uTint.value.set(1 + 0.05 * gold - 0.04 * night, 1 + 0.01 * gold - 0.01 * night, 1 - 0.05 * gold + 0.06 * night);
       u.uVig.value = 0.2 + 0.12 * night;
     }
-    if (!bloom) return; bloom.strength = 0.2 + 0.42 * night; bloom.threshold = 0.93 - 0.3 * night; bloom.radius = 0.38 + 0.12 * night; }
+    if (!bloom) return; bloom.strength = 0.1 + 0.22 * night; bloom.threshold = 0.97 - 0.12 * night; bloom.radius = 0.3 + 0.08 * night; }   // 2026-11-08 user: glare made in-game text unreadable
 
   // sky environment map (PMREM from the sky dome): reflections on standard materials (Kenney models, metal props)
   let pmrem: T.PMREMGenerator | null = null, envRT: T.WebGLRenderTarget | null = null, envKey = -1;

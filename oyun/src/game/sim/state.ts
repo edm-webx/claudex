@@ -114,6 +114,8 @@ export interface Rules {
   toast(text: string, kind?: 'good' | 'bad' | 'info'): void;
   /** Money straight into the player's pocket (window, gurme, kapkaç caught): adds to today/week/total and income window. */
   earn(v: number, at?: Vec2): void;
+  /** 2026-11-08: prize / bet payout that is not a side-income faucet, so it skips the daily bonus cap (match prizes were cut to 250 ₺). */
+  earnTam?(v: number): void;
   /** `1 + ...` venue multiplier (stage, plaque, stars, şıklık). */
   venueMult(): number;
   /** Hour of day 8..24. */

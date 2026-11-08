@@ -14,6 +14,8 @@ export interface Stats { goals: number; assists: number; shots: number; onTarget
 export interface Pl {
   x: number; y: number; vx: number; vy: number; fx: number; fy: number; team: 0 | 1; gk: boolean; role: Role; ax: number; ay: number;
   name: string; num: number; stun: number; kickCd: number; think: number; tx: number; ty: number; spd: number; sk: Skill; st: Stats; hold: number;
+  /** 2026-11-08: dribble burst (s left) and its cooldown; during a burst the carrier runs faster, knocks the ball longer and shrugs off tackles. */
+  boost: number; cd2: number;
 }
 export interface Ball { x: number; y: number; vx: number; vy: number; owner: number; lastTouch: 0 | 1; lastKicker: number }
 export type Ev = { k: 'sfx'; id: string } | { k: 'banner'; text: string; t: number } | { k: 'goal'; team: 0 | 1; scorer: number } | { k: 'end' } | { k: 'shake'; t: number };
@@ -40,7 +42,7 @@ export function createMatch(o: MatchOpts = {}) {
       const j = () => clamp(base + (R() - 0.5) * 0.24, 0.25, 0.95);
       const ax = team === 0 ? s.x : 1 - s.x, x = ax * L, y = s.y * WD;
       pls.push({ x, y, vx: 0, vy: 0, fx: team === 0 ? 1 : -1, fy: 0, team, gk: i === 0, role: s.role, ax: s.x, ay: s.y, name: names[team][i] || ('Oyuncu' + i), num: i === 0 ? 1 : [0, 4, 5, 10, 9][i] + (team ? -1 : 0),
-        stun: 0, kickCd: 0, think: R() * 0.2, tx: x, ty: y, spd: 6, hold: 0, sk: { flair: R(), pace: j(), pass: j(), shoot: j(), tackle: j(), vision: j(), gk: j() }, st: emptySt() });
+        stun: 0, kickCd: 0, think: R() * 0.2, tx: x, ty: y, spd: 6, hold: 0, boost: 0, cd2: 0, sk: { flair: R(), pace: j(), pass: j(), shoot: j(), tackle: j(), vision: j(), gk: j() }, st: emptySt() });
     });
   }
   const ball: Ball = { x: L / 2, y: WD / 2, vx: 0, vy: 0, owner: -1, lastTouch: 0, lastKicker: -1 };
@@ -120,6 +122,7 @@ export function createMatch(o: MatchOpts = {}) {
     p.tx = tx; p.ty = ty; p.spd = 5.3 + p.sk.pace * 1.2 - (press < 1.5 ? 0.4 : 0);
     p.think -= dt; if (p.think > 0 || p.kickCd > 0 || (m.restart && m.restart.taker === i && m.restart.t < 0.6)) return;
     p.think = 0.18 + R() * 0.3 * (1.3 - p.sk.vision * 0.5);
+    if (press < 1.7 && p.cd2 <= 0 && R() < 0.12 + p.sk.flair * 0.25) { p.boost = 0.45; p.cd2 = 2.2; }   // AI dribblers use the burst too
     const shotV = xg(p), [mate, ps] = passOption(p);
     const carry = 0.9 + p.sk.flair * 1.3 - (press < 1.6 ? 1.6 : 0) - (press < 2.6 ? 0.5 : 0) + (press > 3.5 ? 1.0 : 0) + (dGoal < 9 ? 0.6 : 0) + R() * 0.9 + (p.hold > 3 ? -1.5 : 0);
     if (m.restart && m.restart.taker === i) {   // set piece: look, then play it
@@ -154,15 +157,21 @@ export function createMatch(o: MatchOpts = {}) {
         if (p.role === 'FWD' && phase === 'atk') ax = Math.max(ax, 0.62 + (bp - 0.5) * 0.2);
         return [team === 0 ? ax * L : (1 - ax) * L, ay * WD];
       };
-      // goalkeeper
+      // goalkeeper (2026-11-08 rewrite, user: "rakip kaleci hala futbolcuyu takip ediyor"): the keeper no longer mirrors the carrier
+      // across the pitch. He stands on the bisector of the ball-to-goal angle a short way off his line, reacts with a small lag,
+      // only steps out (max 2.6 m, inside his box) to narrow a close one-on-one, and only rushes a loose ball inside his own box.
       for (const p of mates) if (p.gk && !isHuman(pls.indexOf(p))) {
-        const og = ownX(team), bx = ball.x, by = ball.y;
-        const dBall = Math.hypot(bx - og, by - WD / 2), line = clamp(1.3 + dBall * 0.07, 1.3, 3.2);
-        p.tx = og + dir * line; p.ty = clamp(WD / 2 + (by - WD / 2) * clamp(line / Math.max(Math.abs(bx - og), 1), 0, 1) * 1.4, M0 + 0.2, M1 - 0.2); p.spd = 5.8;
+        const og = ownX(team), bx = ball.x, by = ball.y, depth = Math.abs(bx - og);
+        const carrier = holder && holder.team !== team ? holder : null;
+        let line = 0.8;
+        if (carrier && depth < 9 && Math.abs(by - WD / 2) < 6) line = clamp(0.8 + (9 - depth) * 0.22, 0.8, 2.6);
+        const k = line / Math.max(depth, line + 0.5), ideal = WD / 2 + (by - WD / 2) * k;
+        p.tx = og + dir * line; p.ty = clamp(ideal, M0 + 0.15, M1 - 0.15); p.spd = 4.6 + p.sk.gk * 1.2;
         if (ball.owner < 0) {
-          const towards = (team === 0 ? ball.vx < -3 : ball.vx > 3) && Math.abs(ball.x - og) < 16;
-          if (towards) { const tt = (og + dir * 1.0 - ball.x) / (ball.vx || 1e-6); if (tt > 0) p.ty = clamp(ball.y + ball.vy * tt, M0 - 0.7, M1 + 0.7); p.tx = og + dir * 1.0; p.spd = 7.2; }
-          else if (Math.abs(ball.x - og) < 6 && Math.hypot(ball.vx, ball.vy) < 6 && eta(p, ball.x, ball.y) < Math.min(...opps.filter(o => !o.gk).map(o => eta(o, ball.x, ball.y)))) { p.tx = ball.x; p.ty = ball.y; p.spd = 6.5; }
+          const towards = (team === 0 ? ball.vx < -3 : ball.vx > 3) && depth < 16;
+          const inBox = depth < 5.5 && Math.abs(by - WD / 2) < 5;
+          if (towards && m.shot && m.shot.t < 2.85) { const tt = (og + dir * 0.8 - ball.x) / (ball.vx || 1e-6); if (tt > 0) p.ty = clamp(ball.y + ball.vy * tt, M0 - 0.5, M1 + 0.5); p.tx = og + dir * 0.8; p.spd = 6.2 + p.sk.gk * 1.4; }
+          else if (inBox && Math.hypot(ball.vx, ball.vy) < 7 && eta(p, ball.x, ball.y) < Math.min(...opps.filter(o => !o.gk).map(o => eta(o, ball.x, ball.y))) - 0.1) { p.tx = ball.x; p.ty = ball.y; p.spd = 6.5; }
         }
       }
       if (phase === 'atk') {
@@ -236,22 +245,47 @@ export function createMatch(o: MatchOpts = {}) {
     after(2.1, () => { if (!m.over) kickoff(team === 0 ? 1 : 0); });
   }
 
-  /** Player action for the human-controlled side (UI maps ŞUT/PAS). */
-  function act(a: 'sut' | 'pas') {
+  /**
+   * Player action for the human-controlled side (UI maps ŞUT / PAS / ÇALIM). 2026-11-08 rework (user: "pas atma şut çalım kullanışsız"):
+   * - ŞUT: hold to charge (power 0..1). Aim = the corner the stick points to (up/down), else the corner away from the keeper.
+   *   Low power is placed and accurate, full power is fast but sprays. Without the ball ŞUT is a tackle (KAP) with a short recovery.
+   * - PAS: tap = ground pass to the mate the stick points at (led onto his run); hold = through ball into the space ahead of him.
+   *   Without the ball PAS switches to the mate nearest the ball.
+   * - ÇALIM: with the ball a 0.5 s burst (faster, longer touch, tackles bounce off), 1.4 s cooldown; without it a short sprint.
+   */
+  function act(a: 'sut' | 'pas' | 'calim', power = 0.5, uzun = false) {
     if (m.over || m.freeze > 0 || human === null) return;
     if (m.restart && m.restart.kind === 'tac' && ball.owner === m.ctrl) a = 'pas';
-    const p = pls[m.ctrl], { ix, iy } = m.input, dir = dirOf(p.team);
+    const p = pls[m.ctrl], { ix, iy } = m.input, dir = dirOf(p.team), mv = Math.hypot(ix, iy) > 0.25;
+    power = clamp(power, 0, 1);
+    if (a === 'calim') { if (p.cd2 <= 0) { p.boost = ball.owner === m.ctrl ? 0.5 : 0.35; p.cd2 = ball.owner === m.ctrl ? 1.4 : 1.0; if (mv) { p.fx = ix / Math.hypot(ix, iy); p.fy = iy / Math.hypot(ix, iy); } sfx('puff'); } return; }
     if (ball.owner === m.ctrl) {
-      if (a === 'sut') { const aim = WD / 2 + clamp(iy * 2.2, -1.7, 1.7) + (R() - 0.5) * 1.2; let dx = goalX(p.team) + dir * 0.5 - p.x, dy = aim - p.y; if (ix * dir < -0.5) { dx = ix; dy = iy; } kick(p, dx, dy, 20 + R() * 3, 'sut'); }
-      else {
-        const mv = Math.hypot(ix, iy) > 0.2, fx = mv ? ix : p.fx, fy = mv ? iy : p.fy, [q] = passOption(p, fx, fy, true);
-        if (q) { const tx = q.x + q.vx * 0.35, ty = q.y + q.vy * 0.35, d = len(tx - p.x, ty - p.y); kick(p, tx - p.x, ty - p.y, clamp(d * 1.5 + 6, 9, 18), 'pas', pls.indexOf(q)); m.ctrl = pls.indexOf(q); } else kick(p, fx, fy, 12, 'pas');
+      if (a === 'sut') {
+        if (ix * dir < -0.5 && Math.abs(ix) > Math.abs(iy)) { kick(p, ix, iy, 16 + power * 8, 'sut'); return; }   // facing away: clear it
+        const gx = goalX(p.team), keeper = pls.find(q => q.gk && q.team !== p.team)!, half = (M1 - M0) / 2;
+        const side = Math.abs(iy) > 0.25 ? Math.sign(iy) : (keeper.y > WD / 2 ? -1 : 1);
+        const press = nearestOpp(p), dGoal = Math.hypot(gx - p.x, WD / 2 - p.y);
+        const aim = WD / 2 + side * (half - 0.4) + (R() - 0.5) * (0.5 + power * power * 2.6 * (1.2 - p.sk.shoot * 0.6) + dGoal * 0.1 + (press < 1.4 ? 1.2 : 0));
+        kick(p, gx + dir * 0.5 - p.x, aim - p.y, 13 + power * 13, 'sut');
+      } else {
+        const fx = mv ? ix : p.fx, fy = mv ? iy : p.fy, [q] = passOption(p, fx, fy, true);
+        if (q) {
+          let tx = q.x + q.vx * 0.45, ty = q.y + q.vy * 0.45;
+          if (uzun) { tx = clamp(q.x + dir * 4 + q.vx * 0.5, 1, L - 1); ty = clamp(q.y + q.vy * 0.5, 1, WD - 1); }
+          const d = len(tx - p.x, ty - p.y);
+          kick(p, tx - p.x, ty - p.y, clamp(d * (uzun ? 1.25 : 1.6) + 5, 8, uzun ? 17 : 19), 'pas', pls.indexOf(q)); m.ctrl = pls.indexOf(q); m.switchT = 1.0;
+        } else kick(p, fx, fy, uzun ? 15 : 11, 'pas');
       }
     } else if (a === 'pas') {
       let bi = m.ctrl, bd = 1e9; pls.forEach((q, i) => { if (q.team === human && !q.gk && i !== m.ctrl) { const d = Math.hypot(q.x - ball.x, q.y - ball.y); if (d < bd) { bd = d; bi = i; } } }); m.ctrl = bi; m.switchT = 1.2;
-    } else {
-      p.vx += (ball.x - p.x) * 3; p.vy += (ball.y - p.y) * 3;
-      if (ball.owner >= 0 && pls[ball.owner].team !== human && Math.hypot(ball.x - p.x, ball.y - p.y) < 1.6 && R() < 0.6) { pls[ball.owner].stun = 0.7; take(m.ctrl, true); sfx('kick'); }
+    } else if (p.kickCd <= 0) {
+      const d = Math.hypot(ball.x - p.x, ball.y - p.y); p.kickCd = 0.45;
+      p.vx += (ball.x - p.x) / (d || 1) * 4; p.vy += (ball.y - p.y) / (d || 1) * 4;
+      const o = ball.owner >= 0 ? pls[ball.owner] : null;
+      if (o && o.team !== human && d < 1.7) {
+        if (o.boost <= 0 && R() < 0.45 + p.sk.tackle * 0.3 - (d - 0.8) * 0.25) { o.stun = 0.7; take(m.ctrl, true); sfx('kick'); }
+        else p.stun = 0.25;   // missed: a short stumble, so spamming KAP doesn't work
+      }
     }
   }
 
@@ -285,14 +319,25 @@ export function createMatch(o: MatchOpts = {}) {
     }
     m.planT -= dt; if (m.planT <= 0) { m.planT = 0.12 + R() * 0.06; plan(); }
     pls.forEach((p, i) => {
-      p.kickCd = Math.max(0, p.kickCd - dt);
+      p.kickCd = Math.max(0, p.kickCd - dt); p.cd2 = Math.max(0, p.cd2 - dt); p.boost = Math.max(0, p.boost - dt);
+      const bm = p.boost > 0 ? 1.4 : 1;
       if (p.stun > 0) { p.stun -= dt; p.vx *= 0.9; p.vy *= 0.9; }
       else if (m.restart && m.restart.taker === i) { p.vx = 0; p.vy = 0; if (!isHuman(i)) carrierAI(p, i, dt); }
-      else if (isHuman(i)) { const spd = ball.owner === i ? 6.4 : 7.0; p.vx += (m.input.ix * spd - p.vx) * Math.min(1, dt * 10); p.vy += (m.input.iy * spd - p.vy) * Math.min(1, dt * 10); }
+      else if (isHuman(i)) {
+        let ix = m.input.ix, iy = m.input.iy;
+        // 2026-11-08: a pass to the human side used to stop dead at the receiver unless the player steered him; with the stick idle
+        // the controlled receiver now runs onto the ball by himself.
+        if (Math.hypot(ix, iy) < 0.3 && ball.owner < 0 && m.pass && m.pass.team === p.team) {
+          const lt = clamp(Math.hypot(ball.x - p.x, ball.y - p.y) / 9, 0, 0.8), dx = ball.x + ball.vx * lt - p.x, dy = ball.y + ball.vy * lt - p.y, d = Math.hypot(dx, dy);
+          if (d > 0.3) { ix = dx / d; iy = dy / d; }
+        }
+        if (p.boost > 0 && Math.hypot(ix, iy) < 0.3) { ix = p.fx; iy = p.fy; }
+        const spd = (ball.owner === i ? 6.7 : 7.1) * bm; p.vx += (ix * spd - p.vx) * Math.min(1, dt * 10); p.vy += (iy * spd - p.vy) * Math.min(1, dt * 10);
+      }
       else {
         if (ball.owner === i && !p.gk) carrierAI(p, i, dt);
         else if (ball.owner === i && p.gk) { p.tx = p.x; p.ty = p.y; p.spd = 0; p.think -= dt; if (p.think <= 0 && p.kickCd <= 0) { const [q] = passOption(p); if (q) kick(p, q.x - p.x, q.y - p.y, clamp(len(q.x - p.x, q.y - p.y) * 1.4 + 6, 10, 18), 'pas', pls.indexOf(q)); else kick(p, dirOf(p.team), 0, 13, 'pas'); } }
-        const dx = p.tx - p.x, dy = p.ty - p.y, d = Math.hypot(dx, dy), want = d > 0.15 ? Math.min(p.spd, d * 3) : 0;
+        const dx = p.tx - p.x, dy = p.ty - p.y, d = Math.hypot(dx, dy), want = d > 0.15 ? Math.min(p.spd * bm, d * 3) : 0;
         p.vx += ((d > 0 ? dx / d * want : 0) - p.vx) * Math.min(1, dt * 7); p.vy += ((d > 0 ? dy / d * want : 0) - p.vy) * Math.min(1, dt * 7);
       }
       const ox = p.x, oy = p.y;
@@ -308,7 +353,7 @@ export function createMatch(o: MatchOpts = {}) {
       const o = pls[ball.owner];
       // 2026-11-02 (observer finding): a dribbler could never cross the goal line (ball clamped inside, carrier clamped at the wall) and stood
       // pushing against it forever. The carried ball now follows the real rules: through the mouth = goal, otherwise out (aut/korner/taç).
-      const rbx = o.x + o.fx * 0.6, rby = o.y + o.fy * 0.6;
+      const reachB = o.boost > 0 ? 1.0 : 0.6, rbx = o.x + o.fx * reachB, rby = o.y + o.fy * reachB;
       if (!m.restart && (rbx > L - 0.05 || rbx < 0.05 || rby < 0.05 || rby > WD - 0.05)) {
         ball.lastKicker = ball.owner; ball.lastTouch = o.team; ball.owner = -1; m.pass = null;
         ball.x = clamp(rbx, -0.2, L + 0.2); ball.y = clamp(rby, 0, WD); ball.vx = ball.vy = 0;
@@ -321,7 +366,7 @@ export function createMatch(o: MatchOpts = {}) {
         return;
       }
       ball.x = clamp(rbx, 0.1, L - 0.1); ball.y = clamp(rby, 0.1, WD - 0.1); ball.vx = o.vx; ball.vy = o.vy;
-      if (!m.restart) for (let qi = 0; qi < pls.length; qi++) {
+      if (!m.restart && o.boost <= 0) for (let qi = 0; qi < pls.length; qi++) {
         const q = pls[qi]; if (q.team === o.team || q.stun > 0 || q.gk) continue;
         if (Math.hypot(q.x - ball.x, q.y - ball.y) < 0.85) {
           const humanCarries = human !== null && o.team === human && ball.owner === m.ctrl, rate = (humanCarries ? 1.3 : 2.4) * (0.6 + q.sk.tackle * 0.8) * (1.15 - o.sk.pace * 0.3);
@@ -345,7 +390,7 @@ export function createMatch(o: MatchOpts = {}) {
         const d = Math.hypot(p.x - ball.x, p.y - ball.y), reach = p.gk ? 1.25 : 0.75;
         if (d >= reach) continue;
         if (p.gk && bs > 11 && m.shot && m.shot.team !== p.team) {   // a real shot on the keeper: catch or parry by speed and skill
-          const sv = clamp(0.93 - (bs - 12) * 0.03 + (p.sk.gk - 0.5) * 0.35, 0.25, 0.95);
+          const sv = clamp(0.97 - (bs - 12) * 0.03 + (p.sk.gk - 0.5) * 0.35 - Math.max(0, d - 0.55) * 0.55, 0.15, 0.95);   // far from his body = harder
           if (R() > sv) { ball.vx = R() < 0.35 ? ball.vx * 0.5 : -ball.vx * 0.3 + (R() - 0.5) * 6; ball.vy = (R() - 0.5) * 9; p.kickCd = 0.4; p.st.saves++; m.shot = null; ball.lastTouch = p.team; sfx('post'); sfx('crowdOoh'); break; }
           sfx('crowdOoh');
         }

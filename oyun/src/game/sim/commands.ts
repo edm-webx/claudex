@@ -44,7 +44,7 @@ export type SimCmd =
   | { kind: 'gizem'; op: string }   // 2026-10-30 ana hikaye (sim/gizem.ts)
   | { kind: 'mulk'; op: string; id?: string; n?: number; tur?: string; tip?: string; name?: string; renk?: string; renk2?: string; arma?: string }   // 2026-10-27 envanter, banka, arsa, sandık (sim/mulk.ts)
   | { kind: 'esnafim'; op: 'set' | 'done' | 'open'; data?: Record<string, unknown> }   // 2026-10-24 kendi esnafın (sim/esnafim.ts)
-  | { kind: 'halisaha'; op: 'kabul' | 'red' | 'sonuc' | 'teklif'; biz?: number; onlar?: number; ist?: unknown }   // maç günü + halı saha (sim/halisaha.ts)
+  | { kind: 'halisaha'; op: 'kabul' | 'red' | 'sonuc' | 'teklif' | 'izle' | 'izleSonuc'; biz?: number; onlar?: number; ist?: unknown; bahis?: string | null; n?: number }   // maç günü + halı saha (sim/halisaha.ts)
   | { kind: 'zemin'; op: 'temizle' | 'desen'; value?: string }   // survey 2026-10-24: zemin (sim/zemin.ts)   // survey 2026-10-24: kıyafet dolabı (sim/kiyafet.ts)
   | { kind: 'startTadilat' }
   | { kind: 'startTadilatSelf' }

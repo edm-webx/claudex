@@ -18,7 +18,7 @@ import { streakStep, streakMult } from './streak';
 import { setHit } from './sets';
 import { yatirimFx } from './yatirim';
 
-export function installEconomy(K: Kernel, addMoneyTo: (pile: MoneyStack[], v: number) => void): { sales: SalesApi; settleSale(c: Customer | null, items: Item[], opts?: { direct?: boolean; at?: Vec2 }): number; tipMult(): number; earn(v: number, at?: Vec2): void; incomePerMin(): number } {
+export function installEconomy(K: Kernel, addMoneyTo: (pile: MoneyStack[], v: number) => void): { sales: SalesApi; settleSale(c: Customer | null, items: Item[], opts?: { direct?: boolean; at?: Vec2 }): number; tipMult(): number; earn(v: number, at?: Vec2): void; earnTam(v: number): void; incomePerMin(): number } {
   const rt = K.rt, S = K.state;
   const itemValue = (it: Item): number => price(it.type, it.tier || S.tiers[it.type] || 1) * (it.priceX || 1);
   const pay = (v: number) => {
@@ -87,6 +87,6 @@ export function installEconomy(K: Kernel, addMoneyTo: (pile: MoneyStack[], v: nu
     const span = Math.min(180, Math.max(30, S.playT));
     return sum / (span / 60);
   };
-  return { sales: { settle: (items, o) => settleSale(null, items, o), itemValue }, settleSale, tipMult, earn, incomePerMin };
+  return { sales: { settle: (items, o) => settleSale(null, items, o), itemValue }, settleSale, tipMult, earn, earnTam: (v: number) => { v = Math.max(0, Math.round(v)); if (v) pay(v); }, incomePerMin };
   void r1; void TIP_FRAC;
 }

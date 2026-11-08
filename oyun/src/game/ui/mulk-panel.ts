@@ -3,7 +3,7 @@
 // door or the stadium gate and opens the right tab.
 import { FORMATIONS } from '../sim/macmotor';
 import { mulkApi, KAFE_ASAMA } from '../sim/mulk';
-import { ESYALAR, ESYA_BY_ID, SANDIKLAR, TARIFLER, DUKKAN_TIPLERI, DUKKAN_BY_ID, DUKKAN_STOK_MAX, dukkanMusteri, BANKA } from '../../content/esya';
+import { ESYALAR, ESYA_BY_ID, SANDIKLAR, TARIFLER, DUKKAN_TIPLERI, DUKKAN_BY_ID, DUKKAN_STOK_MAX, dukkanMusteri, BANKA, KAFE_ESYA } from '../../content/esya';
 
 interface Deps { root: HTMLElement; rules: () => { rt: unknown } | null; command(c: { kind: string; [k: string]: unknown }): void; sfx?(id: string): void }
 export interface MulkPanel { update(dt: number): void; open(tab?: Tab): void; close(): void; dispose(): void }
@@ -96,9 +96,16 @@ export function createMulkPanel(d: Deps): MulkPanel {
       }
       if (a.tur === 'ev') { s += `<div class="mp-row"><span class="mp-ic">🏠</span><div><b>Evin (Arsa ${a.id.toUpperCase()})</b><small>Oda, mutfak, balkon, teras, kedi köşesi. Kapıya yaklaşıp gir.</small></div><button class="mp-b g" data-a="evAc" data-id="${a.id}"${a.yakin ? '' : ' disabled'}>${a.yakin ? 'Eve gir' : 'Kapıya git'}</button></div>`; continue; }
       const t = DUKKAN_BY_ID[a.tip], y = a.yukselt;
-      s += `<div class="mp-row" style="align-items:flex-start"><span class="mp-ic">${t.ikon}</span><div><b>${a.sabit ? esc(a.ad) : esc(t.ad)} · ${a.lv}. seviye${a.sabit ? ' · ' + (KAFE_ASAMA[a.lv - 1] || '') : '' }${a.sabit ? '' : ' (Arsa ' + a.id.toUpperCase() + ')'}</b><small>Stok ${a.stok}/${a.stokMax} · ~${Math.round(dukkanMusteri(t, a.lv) * (1 + 0.4 * a.isci))} müşteri/saat · ${a.sat} satış · kasada ${tl(a.till)}${a.isci ? ' · 👷 ' + a.isci + ' işçi (rafı doldurur, saatlik ücret kasadan)' : ''}${a.yakin ? '' : ' (kasayı toplamak için kapıya git)'}</small><div class="mp-bar"><i style="width:${a.stokMax ? a.stok / a.stokMax * 100 : 0}%"></i></div></div>
-<button class="mp-b" data-a="stokAl" data-id="${a.id}" data-n="10"${m.money >= t.maliyet * 10 ? '' : ' disabled'}>+10 stok · ${tl(t.maliyet * 10)}</button><button class="mp-b" data-a="stokAl" data-id="${a.id}" data-n="50"${m.money >= t.maliyet * 10 ? '' : ' disabled'}>+50</button>
+      s += `<div class="mp-row" style="align-items:flex-start"><span class="mp-ic">${t.ikon}</span><div><b>${a.sabit ? esc(a.ad) : esc(t.ad)} · ${a.lv}. seviye${a.sabit ? ' · ' + (KAFE_ASAMA[a.lv - 1] || '') : '' }${a.sabit ? '' : ' (Arsa ' + a.id.toUpperCase() + ')'}</b><small>Stok ${a.stok}/${a.stokMax} · ~${a.musteriSaat || Math.round(dukkanMusteri(t, a.lv) * (1 + 0.4 * a.isci))} müşteri/saat · ${a.sat} satış · kasada ${tl(a.till)}${a.isci ? ' · 👷 ' + a.isci + ' işçi (rafı doldurur, saatlik ücret kasadan)' : ''}${a.yakin ? '' : ' (kasayı toplamak için kapıya git)'}</small><div class="mp-bar"><i style="width:${a.stokMax ? a.stok / a.stokMax * 100 : 0}%"></i></div></div>
+<button class="mp-b" data-a="stokAl" data-id="${a.id}" data-n="10"${m.money >= (a.birim || t.maliyet) * 10 ? '' : ' disabled'}>+10 stok · ${tl((a.birim || t.maliyet) * 10)}</button><button class="mp-b" data-a="stokAl" data-id="${a.id}" data-n="50"${m.money >= (a.birim || t.maliyet) * 10 ? '' : ' disabled'}>+50</button>
 ${a.sabit && a.isci < a.isciMax ? `<button class="mp-b" data-a="isciAl" data-id="${a.id}"${m.money >= a.isciFiyat ? '' : ' disabled'}>👷 İşçi tut · ${tl(a.isciFiyat)}</button>` : ''}${y ? `<button class="mp-b y" data-a="yukselt" data-id="${a.id}"${Object.entries(y.esya).every(([k, v]) => (m.esya[k] || 0) >= (v as number)) && m.money >= y.tl ? '' : ' disabled'}>⬆ ${tl(y.tl)} + ${Object.entries(y.esya).map(([k, v]) => v + ' ' + esc(ESYA_BY_ID[k].ad)).join(' + ')}</button>` : '<span class="mp-chip">En üst seviye</span>'}</div>`;
+      if (a.sabit) {   // 2026-11-08: the café's own menu, next dishes, equipment
+        const own = new Set<string>(a.kesya || []);
+        s += `<div class="mp-row" style="display:block;margin-top:-4px"><small><b>Menü</b> ${(a.menu || []).map((x: { ikon: string; ad: string; fiyat: number }) => `<span class="mp-chip">${x.ikon} ${esc(x.ad)} ${tl(x.fiyat)}</span>`).join(' ')}</small>
+${(a.menuSonraki || []).length ? `<small style="display:block;margin-top:4px;opacity:.75">Sonraki seviyede: ${(a.menuSonraki as { ikon: string; ad: string }[]).map(x => x.ikon + ' ' + esc(x.ad)).join(', ')}</small>` : ''}
+<div class="mp-grid" style="margin-top:6px">${KAFE_ESYA.map(e => own.has(e.id) ? `<div class="mp-it"><span class="mp-ic">${e.ikon}</span><b>${esc(e.ad)}</b><small>✓ ${esc(e.desc)}</small></div>` : `<div class="mp-it"><span class="mp-ic">${e.ikon}</span><b>${esc(e.ad)}</b><small>${esc(e.desc)}${a.lv < e.lv ? ' · 🔒 ' + e.lv + '. seviye' : ''}</small><button class="mp-b g" data-a="kafeEsya" data-id="${a.id}" data-e="${e.id}"${a.lv < e.lv || m.money < e.fiyat ? ' disabled' : ''}>${tl(e.fiyat)}</button></div>`).join('')}</div>
+<small style="display:block;margin-top:4px">👷 İşçi ${a.isci}/${a.isciMax} (seviye arttıkça daha çok işçi çalışır)</small></div>`;
+      }
     }
     void DUKKAN_STOK_MAX;
     return s;
@@ -123,11 +130,19 @@ ${a.sabit && a.isci < a.isciMax ? `<button class="mp-b" data-a="isciAl" data-id=
   }
   const CLUB_COL = ['#e0533c', '#f2c230', '#2ec4c4', '#3a6fb0', '#1f8a70', '#a990dd', '#2b2b38', '#f4f4f4'], CLUB_ARMA = ['🦅', '🐟', '🦁', '⭐', '⚓', '🔥', '🐈', '🥙'];
   const club = { c1: '#e0533c', c2: '#f2c230', arma: '🦅' };
+  const bet = { k: '1', n: 500 };
   function stadyum(m: M): string {
     const s = m.stadyum;
     let h = `<div class="mp-row"><span class="mp-ic" style="font-size:34px">🧢</span><div><b>Maç Koordinatörü</b><small>Karşı yakada halı saha girişinde durur: bilet satar, kulübünü kurar, lig fikstürünü ve puan tablosunu anlatır (Lig sekmesi). Galibiyet sandık getirir.</small></div></div>`;
     if (!s.yakin) h += `<div class="mp-note">Koordinatöre git: üst geçitten karşıya geç, halı saha girişi (tribünlü saha).</div>`;
-    h += `<div class="mp-row"><span class="mp-ic">🎟️</span><div><b>Anlık maç · bilet ${tl(s.bilet)}</b><small>Kimse yoksa rakip yapay zeka. 2 yarı.</small></div><button class="mp-b g" data-a="bilet"${s.yakin && m.money >= s.bilet ? '' : ' disabled'}>Bilet al</button></div>`;
+    if (m.takim) h += `<div class="mp-row"><span class="mp-ic">⚽</span><div><b>Kulüp maçı · bilet yok</b><small>${esc(m.takim.ad)} sıradaki lig maçına çıkar: galibiyet +3 puan ve 6.000 ₺, beraberlik +1 puan, kapı geliri kasana.</small></div><button class="mp-b g" data-a="bilet"${s.yakin ? '' : ' disabled'}>Sahaya çık</button></div>`;
+    else h += `<div class="mp-row"><span class="mp-ic">🎟️</span><div><b>Anlık maç · bilet ${tl(s.bilet)}</b><small>Kimse yoksa rakip yapay zeka. 2 yarı. Kulüp kurarsan maçlar kulübün adıyla lige sayılır.</small></div><button class="mp-b g" data-a="bilet"${s.yakin && m.money >= s.bilet ? '' : ' disabled'}>Bilet al</button></div>`;
+    // 2026-11-08: watch a match from the stands and put a small bet on it
+    const stk = [100, 500, 1000, 5000], bb = (k: string, l: string) => `<button class="mp-b${bet.k === k ? ' y' : ''}" data-a="betK" data-v="${k}">${l}</button>`;
+    h += `<div class="mp-row" style="display:block"><div><b>📣 Tribünden izle · küçük bahis</b><small>Mahalle takımlarının maçını izle. Tahminin tutarsa bahis × oran kadar kazanırsın.</small></div>
+<div class="mp-pk"><span>Tahmin</span>${bb('1', 'Ev sahibi')}${bb('X', 'Berabere')}${bb('2', 'Deplasman')}${bb('', 'Bahissiz')}</div>
+<div class="mp-pk"><span>Bahis</span>${stk.map(v => `<button class="mp-b${bet.n === v ? ' y' : ''}" data-a="betN" data-v="${v}">${tl(v)}</button>`).join('')}</div>
+<button class="mp-b g" data-a="izle"${s.yakin && (!bet.k || m.money >= bet.n) ? '' : ' disabled'}>Tribüne geç</button></div>`;
     if (m.takim) h += `<div class="mp-row"><span class="mp-ic" style="background:${m.takim.renk};border-radius:12px">${m.takim.arma || '🛡️'}</span><div><b>Kulübün: ${esc(m.takim.ad)}</b><small>Kuruluş: gün ${m.takim.kurulus ?? '?'} · Lig sekmesinde puan durumu ve istatistik.</small></div></div>`;
     if (m.takim && m.stad) h += gise(m);
     else {
@@ -203,7 +218,11 @@ ${a.sabit && a.isci < a.isciMax ? `<button class="mp-b" data-a="isciAl" data-id=
     if (a === 'kPick') { const k = el.dataset.k as 'c1' | 'c2' | 'arma'; club[k] = el.dataset.v!; key = ''; return; }
     if (a === 'takim') { cmd({ op: 'takim', name: (bg.querySelector('input[data-f="takim"]') as HTMLInputElement).value, renk: club.c1, renk2: club.c2, arma: club.arma }); return; }
     if (a === 'evAc') { cmd({ op: 'evAc', id }); api.close(); return; }
+    if (a === 'kafeEsya') { cmd({ op: 'kafeEsya', id, e: el.dataset.e }); return; }
     if (a === 'bilet') { cmd({ op: 'bilet' }); api.close(); return; }
+    if (a === 'betK') { bet.k = el.dataset.v || ''; key = ''; return; }
+    if (a === 'betN') { bet.n = Number(el.dataset.v) || 500; key = ''; return; }
+    if (a === 'izle') { cmd({ op: 'izle', bahis: bet.k || null, n: bet.k ? bet.n : 0 }); api.close(); return; }
     if (a) cmd({ op: a, id, n });
   });
 

@@ -198,7 +198,7 @@ const SPECS: Spec[] = [
     sign: { text: 'MARTIKÖY İLKOKULU', bg: '#fbf3e4', fg: '#a2472f', w: 8.4 }, win: { w: 1.5, h: 1.7, gap: 0.8, frame: '#fbfaf6' }, extra: schoolExtras },
   { id: 'kantin', x: 56.15, z: 42.8, wx: 3.7, wz: 2.8, front: '-x', floors: 1, fh: 3.0, wall: '#f6efe1', trim: '#e0533c', accent: '#e0533c', ground: 'hatch', lit: 0.5, roof: 'tile',
     sign: { text: 'KANTİN', bg: '#e0533c', fg: '#ffffff', w: 2.4 }, win: { w: 0.8, h: 0.9, gap: 0.8, frame: '#fbfaf6' } },
-  { id: 'avm', x: 20.15, z: 50.6, wx: 16.9, wz: 12.8, front: '-z', floors: 3, fh: 3.6, wall: '#d7dde8', trim: '#3f4a6b', accent: '#e0533c', ground: 'shop', lit: 0.8, roof: 'flat', curtain: true,
+  { id: 'avm', x: 20.15, z: 51.8, wx: 16.9, wz: 10.6, front: '-z', floors: 3, fh: 3.6, wall: '#d7dde8', trim: '#3f4a6b', accent: '#e0533c', ground: 'shop', lit: 0.8, roof: 'flat', curtain: true,
     sign: { text: 'MARTI AVM', bg: '#e0533c', fg: '#ffffff', w: 8.0 }, win: { w: 2.2, h: 2.2, gap: 0.6, frame: '#3f4a6b' }, extra: mallExtras },
   { id: 'hastane', x: 46.95, z: 53.55, wx: 16.9, wz: 6.7, front: '-z', floors: 4, fh: 3.0, wall: '#f2f4f6', trim: '#9aa5b0', accent: '#d93a3a', ground: 'entrance', lit: 0.65, roof: 'flat',
     sign: { text: 'DEVLET HASTANESİ', bg: '#ffffff', fg: '#d93a3a', w: 8.0 }, win: { w: 1.3, h: 1.5, gap: 0.7, frame: '#9fb9d0' }, extra: hospitalExtras },
@@ -307,7 +307,7 @@ export function createKarsiBina(d: BinaDeps): BinaView {
       if (!built) { built = true; for (const s of SPECS) holder.add(build(s)); holder.add(metroGiris()); flag = holder.getObjectByName('bayrak') as T.Mesh | null; }
       const nk = d.night(); t += dt;
       if (glowMat) glowMat.opacity = Math.min(1, nk * 1.1) * 0.95;
-      for (const m of signMats) m.emissiveIntensity = 0.25 + nk * 1.3;
+      for (const m of signMats) m.emissiveIntensity = 0.25 + nk * 0.5;
       if (flag) { const p = flag.geometry.attributes.position as T.BufferAttribute; for (let i = 0; i < p.count; i++) { const x = p.getX(i) + 0.9; p.setZ(i, Math.sin(t * 3.2 + x * 2.4) * 0.12 * x); } p.needsUpdate = true; }
     },
     dispose() { holder.parent?.remove(holder); },

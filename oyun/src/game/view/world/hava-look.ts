@@ -164,7 +164,7 @@ export function createHavaLook(d: HavaLookDeps): HavaLookView {
   const ringMat = M(new T.MeshBasicMaterial({ color: '#ffd23f', transparent: true, opacity: 0.8, depthWrite: false }));
   const ring = new T.Mesh(G(new T.RingGeometry(1.1, 1.35, 28)), ringMat); ring.rotation.x = -Math.PI / 2; ring.visible = false; ring.renderOrder = 4; pier.add(ring);
   // seasonal cart (corner by the east lamp)
-  const cart = new T.Group(); cart.position.set(6.9, 0, 3.35); cart.rotation.y = -Math.PI / 2; pier.add(cart);
+  const cart = new T.Group(); cart.position.set(6.9, 0, 3.35); cart.rotation.y = -Math.PI / 2; cart.visible = false; pier.add(cart);   // 2026-11-08 user: seasonal cart removed from the pier (seasonal extras still sell over the counter)
   const cartBody = new T.Mesh(G(new T.BoxGeometry(0.95, 0.55, 0.55)), lam('#c98a52')); cartBody.position.y = 0.55; cart.add(cartBody);
   const wheelGeo = G(new T.CylinderGeometry(0.17, 0.17, 0.05, 10)); wheelGeo.rotateX(Math.PI / 2);
   [-0.33, 0.33].forEach(x => { const w = new T.Mesh(wheelGeo, lam('#3b2a20')); w.position.set(x, 0.17, 0.3); cart.add(w); });

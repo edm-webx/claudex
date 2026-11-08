@@ -43,6 +43,17 @@ export function installLig(K: Kernel) {
     return { team: KULUP.id, name: KULUP.ad, colors: KULUP.renk, rival: r.id, rivalName: r.ad, rivalColors: r.renk, ligG: g };
   }
 
+  /** 2026-11-08: the club's next unplayed league fixture from `day` on (ticket matches at the gate play it early, so the points count). */
+  function siradaki(day: number) {
+    syncKulup(); const l = z();
+    for (let g = Math.max(l.fin, turOfDay(day)); g < l.fin + SEZON_TUR; g++) {
+      const f = fixture(g); if (!f || l.oynanan[`${f.s}-${f.k}`]) continue;
+      const r = LIG_BY_ID[f.rakip];
+      return { team: KULUP.id, name: KULUP.ad, colors: KULUP.renk, rival: r.id, rivalName: r.ad, rivalColors: r.renk, ligG: g, hafta: f.k + 1, bolum: LIG_ADI[f.bolum] };
+    }
+    return null;
+  }
+
   function sezonSonu(s: number) {
     const l = z(), ms = l.maclar.filter(m => m.s === s), tb = [0, 1].map(b => tablo(uyeler(l.bolum, b), ms.filter(m => l.bolum[m.ev] === b)));
     const mine = l.bolum[KULUP.id] ?? 1, row = tb[mine].findIndex(r => r.id === KULUP.id);
@@ -95,7 +106,7 @@ export function installLig(K: Kernel) {
       benimMaclar: l.maclar.filter(m => m.ev === KULUP.id || m.dep === KULUP.id).slice(-6).map(m => ({ ev: ad(m.ev), dep: ad(m.dep), eg: m.eg, dg: m.dg, k: m.k + 1 })),
     };
   }
-  const api = { fixture, mac, sonuc, model, turKapat };
+  const api = { fixture, mac, siradaki, sonuc, model, turKapat };
   rt.lig = api;
   return api;
 }

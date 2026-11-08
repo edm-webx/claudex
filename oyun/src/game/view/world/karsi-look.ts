@@ -11,7 +11,7 @@ export interface KarsiLookView { update(dt: number): void; dispose(): void }
 
 // model, centre x/z, footprint w×d, height (undefined = proportional), yaw
 const BUILDINGS: [string, number, number, number, number, number | undefined, number, string?][] = [
-  ['bina/building-e', 20.15, 50.6, 16.9, 12.8, 9.5, 0, '#ffe2bc'],      // AVM
+  ['bina/building-e', 20.15, 51.8, 16.9, 10.6, 9.5, 0, '#ffe2bc'],      // AVM
   ['bina/building-k', 46.95, 53.55, 16.9, 6.7, 12.0, 0, '#fff0f0'],     // hastane
   ['bina/building-k', 48.85, 37.25, 18.3, 7.5, 7.8, 0, '#ffd4a8'],
   ['bina/building-a', 28, 35.2, 7.1, 3.6, 3.6, 0, '#c4deff'],     // kırtasiye

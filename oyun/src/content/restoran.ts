@@ -46,7 +46,7 @@ export const TUM_STANTLAR: StantDef[] = [
   { id: 'waffle', name: 'Waffle arabası', short: 'WAFFLE', desc: 'Çikolata, muz, renkli şeker. Ortaköy değil ama yakışır.', stage: 5, cost: 260000, price: 160, maliyet: 0.35, stock: 16, chance: 0.12, hours: [14, 24], look: 'waffle', spot: 11, color: '#d35400' },
 ];
 /** 2026-10-25 user: only the chestnut and corn carts stay for now (the rest crowded the pier and block the road); the others come back later as stations INSIDE the restaurant. */
-export const AKTIF_STANT = ['kestane', 'misir'];
+export const AKTIF_STANT: string[] = [];   // 2026-11-08 user: "kestane ve mısır arabasını komple kaldır"
 export const STANTLAR: StantDef[] = TUM_STANTLAR.filter(d => AKTIF_STANT.includes(d.id));
 /** Stand places in front of the büfe (stage >= 2 layout; x, z, rotY). Kept clear of the queue, door and window line. */
 export const STANT_SPOTS: [number, number, number][] = [[2.15, -3.75, 0], [3.65, -3.75, 0], [-1.75, -3.75, 0], [5.35, -2.4, -Math.PI / 2], [-5.4, 4.0, Math.PI], [4.6, 4.0, Math.PI],

@@ -26,6 +26,7 @@ import { iskeleZone, ISKELE_PLAYER_START } from '../../../content/zones/iskele';
 import { testSokakZone } from '../../../content/zones/test-sokak';
 import { registerDisariZones, aptPrefabs } from '../../../content/zones/disari';
 import { karsiPrefabs } from '../../../content/zones/karsi';
+import { buyumeEngel } from './bufe-buyume';
 import { stageLayout, STATION_KINDS, PARTS, TABLE_PADS, PAD_KEYS_FALLBACK, SEAT_H, WATER_Y, local2world, rectAABB, benchSeats, BENCHES, type StageLayout, type P3v, type Obstacle, staticObstacles } from '../../../content/prefabs/iskele/layout';
 import { paintKey } from '../../../content/dekor-katalog';
 import { stationBuilt, tableBuilt, decorBuild, itemGeo, ITEM_HT, moneyGeo, makeMarker, MARKERS, bez, FOOT, DECOR_SIZE } from '../../../content/prefabs/iskele/props';
@@ -262,6 +263,7 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
     // owned stands (midye, ıslak hamburger...) are solid too: the 1.1 x 0.65 m table, turned with the stand
     for (const sv of standsOwned) { const side = Math.abs(Math.sin(sv.ry)) > 0.5; const hx = side ? 0.4 : 0.6, hz = side ? 0.6 : 0.4; out.push({ x0: sv.x - hx, x1: sv.x + hx, z0: sv.z - hz, z1: sv.z + hz, tag: 'stant' }); }
     if (stage >= 2 && winOwned) out.push({ x0: W.x - 0.62, x1: W.x - 0.36, z0: W.z - 0.78, z1: W.z + 0.78, tag: 'window' });
+    out.push(...buyumeEngel(stage));   // 2026-11-08: the business grows over the pier wings (bufe-buyume.ts)
     return out;
   }
 
@@ -408,8 +410,8 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
     if (h.clouds && tod) (h.clouds.material as T.MeshBasicMaterial).color.copy(mixc('#ffffff', tod.hor, 0.35)).multiplyScalar(1 - n * 0.62);
     if (h.sign) {
       // tabela seviyesi (sim/tabela.ts): lit tiers glow in their colour at night, the LED pano also by day
-      const sm = h.sign.material as T.MeshLambertMaterial, base = renewed.tabela ? 1.5 : stage === 1 ? 0 : 0.22;
-      sm.emissiveIntensity = n * (signTier >= 2 ? 2.4 : signTier === 1 ? Math.max(base, 1.4) : base) + (signTier >= 3 ? 0.45 : 0);
+      const sm = h.sign.material as T.MeshLambertMaterial, base = renewed.tabela ? 0.7 : stage === 1 ? 0 : 0.22;
+      sm.emissiveIntensity = Math.min(0.85, n * (signTier >= 2 ? 0.8 : signTier === 1 ? Math.max(base, 0.6) : base) + (signTier >= 3 ? 0.25 : 0));   // 2026-11-08: capped so the lettering stays readable under bloom
       if (signTier >= 1 && sm.emissive) sm.emissive.set(signRenk);
     }
     if (h.ferryGlow) h.ferryGlow.visible = n > 0.05;

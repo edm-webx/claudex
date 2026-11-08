@@ -14,6 +14,7 @@ import { installTabela } from './tabela';
 import { installMantar } from './mantar';
 import { installMulk } from './mulk';
 import { installLig } from './lig';
+import { installSalon } from './salon';
 import { installGizem } from './gizem';
 import { installYetenek } from './yetenek';
 import { installZemin } from './zemin';
@@ -145,7 +146,7 @@ export function createRules(d: RulesDeps): RulesFull {
   const mo = installMoney(K);
   K.moneyApi = mo.api;
   const ec = installEconomy(K, mo.addMoneyTo);
-  K.salesApi = ec.sales; K.earn = ec.earn; K.incomePerMin = ec.incomePerMin;
+  K.salesApi = ec.sales; K.earn = ec.earn; K.earnTam = ec.earnTam; K.incomePerMin = ec.incomePerMin;
   const cu = installCustomers(K, ec.tipMult, mo.addMoneyTo, (c, items) => ec.settleSale(c, items));
   K.orderLeft = cu.orderLeft;
   const win = installWindow(K, cu, (c, items, o) => ec.settleSale(c, items, o));
@@ -180,6 +181,7 @@ export function createRules(d: RulesDeps): RulesFull {
   const yetenekM = installYetenek(K);
   const zeminM = installZemin(K);
   const ligM = installLig(K);
+  installSalon(K);   // 2026-11-08 pier-wing seating income from stage 3
   const gizemM = installGizem(K);
   const haliSahaM = installHaliSaha(K, ligM as never); // maç günü + halı saha (user 2026-10-24)
   const restoranM = installRestoran(K, cu, (c, items) => ec.settleSale(c, items), mo.addMoneyTo); // Faz 2: stantlar + adisyon
@@ -347,7 +349,7 @@ export function createRules(d: RulesDeps): RulesFull {
       case 'mulk': return mulkM.handle(c as never);
       case 'gizem': return gizemM.handle(c as never);
       case 'esnafim': esnafimM.run({ op: String(c.op), data: c.data as Record<string, unknown> | undefined }); return true;
-      case 'halisaha': haliSahaM.run({ op: String(c.op), biz: (c as { biz?: unknown }).biz, onlar: (c as { onlar?: unknown }).onlar, ist: (c as { ist?: unknown }).ist }); return true;
+      case 'halisaha': haliSahaM.run({ op: String(c.op), biz: (c as { biz?: unknown }).biz, onlar: (c as { onlar?: unknown }).onlar, ist: (c as { ist?: unknown }).ist, bahis: (c as { bahis?: unknown }).bahis, n: (c as { n?: unknown }).n }); return true;
       case 'zemin': zeminM.run({ op: String(c.op), value: c.value }); return true;
       case 'startTadilat': K.startTadilat(false); return true;
       case 'startTadilatSelf': K.startTadilat(false, true); return true;

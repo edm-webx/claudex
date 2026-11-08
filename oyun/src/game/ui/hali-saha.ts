@@ -11,7 +11,8 @@ import { createHaliSaha3D, type HS3 } from './hali-saha-3d';
 import { createMatch, FORMATIONS } from '../sim/macmotor';
 
 type Cmd = { kind: string; [k: string]: unknown };
-interface MacInfo { team: string; name: string; colors: [string, string]; rival: string; rivalName: string; rivalColors: [string, string]; formasyon?: string }
+interface Izle { seed: number; s0: number; s1: number; f: [string, string]; oran: Record<string, number>; bahis: '1' | 'X' | '2' | null; n: number; halfS: number }
+interface MacInfo { iz?: Izle; team: string; name: string; colors: [string, string]; rival: string; rivalName: string; rivalColors: [string, string]; formasyon?: string }
 export interface HaliSahaDeps { root: HTMLElement; rules: () => { rt: { uiLast: Record<string, unknown> } } | null; command(c: Cmd): void; sfx?(id: string): void; chars?: { makeHero(o: never): unknown } | null; esnaf?: () => Record<string, unknown> | null }
 export interface HaliSahaView { update(): void; dispose(): void }
 
@@ -65,8 +66,10 @@ export function createHaliSaha(deps: HaliSahaDeps): HaliSahaView {
     try { hs3 = createHaliSaha3D({ wrap, chars: deps.chars || null, esnaf: deps.esnaf?.() || null, L, WD, m0: MOUTH0, m1: MOUTH1, colors: t.colors, rival: t.rivalColors, clubName: t.name, rivalName: t.rivalName }); } catch { hs3 = null; }
 
     // ---- state: the match itself lives in sim/macmotor.ts (formation + role AI, stats); this view only draws and feeds input
-    const FKEYS = Object.keys(FORMATIONS), seed = (Date.now() & 0xfffff) | 1;
-    const M = createMatch({ seed, human: 0, humanSlot: 3, formations: [FORMATIONS[t.formasyon || ''] ? (t.formasyon as string) : '2-2', FKEYS[seed % FKEYS.length] as string], names: [HOME_NAMES, AWAY_NAMES], halfS: HALF_S, skill: [0.6, 0.55 + (seed % 7) * 0.02] });
+    const FKEYS = Object.keys(FORMATIONS), seed = (Date.now() & 0xfffff) | 1, iz = t.iz || null, HALF = iz ? iz.halfS : HALF_S;
+    let speed = 1, acc = 0;
+    // 2026-11-08 spectator mode: AI vs AI from the sim's seed with fixed 1/60 steps, so the replay matches the result the sim settled the bet on.
+    const M = iz ? createMatch({ seed: iz.seed, human: null, halfS: iz.halfS, skill: [iz.s0, iz.s1], formations: iz.f, names: [HOME_NAMES, AWAY_NAMES] }) : createMatch({ seed, human: 0, humanSlot: 3, formations: [FORMATIONS[t.formasyon || ''] ? (t.formasyon as string) : '2-2', FKEYS[seed % FKEYS.length] as string], names: [HOME_NAMES, AWAY_NAMES], halfS: HALF_S, skill: [0.6, 0.55 + (seed % 7) * 0.02] });
     const pls = M.pls, ball = M.ball, SABRI = 3;
     const colsOf = (team: number) => (team === 0 ? t.colors : t.rivalColors);
     // 2026-10-26 owner: a referee in every match, stepping in on taç / korner / aut.
@@ -76,25 +79,37 @@ export function createHaliSaha(deps: HaliSahaDeps): HaliSahaView {
 
     // ---- input
     const keys: Record<string, boolean> = {};
+    // 2026-11-08: ŞUT and PAS charge while held (şut power / ara pas), ÇALIM is a dribble burst. Keys: Space/J şut, K pas, L/E/Shift çalım.
+    let charge: { a: 'sut' | 'pas'; t0: number; id: number } | null = null;
+    const press = (a: 'sut' | 'pas', id = -1) => { if (M.ball.owner !== M.ctrl || M.freeze > 0) { act(a); return; } charge = { a, t0: performance.now(), id }; };
+    const release = (a: 'sut' | 'pas') => {
+      if (!charge || charge.a !== a) return; const h = (performance.now() - charge.t0) / 1000; charge = null;
+      if (M.ball.owner !== M.ctrl) return;
+      if (a === 'sut') M.act('sut', clamp(h / 0.8, 0.15, 1)); else M.act('pas', 0.5, h > 0.3);
+    };
     const onKey = (e: KeyboardEvent, on: boolean) => {
       const k = e.key.toLowerCase(); keys[k] = on;
-      if (on && (k === ' ' || k === 'j')) { act('sut'); e.preventDefault(); }
-      if (on && (k === 'k' || k === 'shift')) { act('pas'); e.preventDefault(); }
+      if (k === ' ' || k === 'j') { if (on && !e.repeat) press('sut'); else if (!on) release('sut'); e.preventDefault(); }
+      if (k === 'k') { if (on && !e.repeat) press('pas'); else if (!on) release('pas'); e.preventDefault(); }
+      if (on && !e.repeat && (k === 'l' || k === 'e' || k === 'shift')) { M.act('calim'); e.preventDefault(); }
     };
     const kd = (e: KeyboardEvent) => onKey(e, true), ku = (e: KeyboardEvent) => onKey(e, false);
     window.addEventListener('keydown', kd); window.addEventListener('keyup', ku);
     let joy: { id: number; ox: number; oy: number; x: number; y: number } | null = null;
-    const btnRect = () => { const s = Math.min(cw, ch); const r = Math.max(38, s * 0.085); return { sut: { x: cw - r * 1.6, y: ch - r * 1.7, r: r * 1.15 }, pas: { x: cw - r * 3.9, y: ch - r * 1.15, r: r * 0.9 }, end: { x: cw - 34, y: 34, r: 22 } }; };
+    const btnRect = () => { const s = Math.min(cw, ch); const r = Math.max(38, s * 0.085); return { sut: { x: cw - r * 1.6, y: ch - r * 1.7, r: r * 1.15 }, pas: { x: cw - r * 3.9, y: ch - r * 1.15, r: r * 0.9 }, calim: { x: cw - r * 3.3, y: ch - r * 3.5, r: r * 0.78 }, end: { x: cw - 34, y: 34, r: 22 } }; };
     const hit = (b: { x: number; y: number; r: number }, x: number, y: number) => Math.hypot(x - b.x, y - b.y) <= b.r * 1.15;
     const onDown = (e: PointerEvent) => {
       const r = wrap.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top, B = btnRect();
+      if (iz && !M.over && hit(B.end, x, y)) { speed = speed === 1 ? 3 : speed === 3 ? 12 : 1; return; }
       if (M.over) { if (resultBtn && x > resultBtn.x && x < resultBtn.x + resultBtn.w && y > resultBtn.y && y < resultBtn.y + resultBtn.h) finish(); return; }
-      if (hit(B.sut, x, y)) { act('sut'); return; }
-      if (hit(B.pas, x, y)) { act('pas'); return; }
+      if (iz) return;
+      if (hit(B.sut, x, y)) { press('sut', e.pointerId); return; }
+      if (hit(B.pas, x, y)) { press('pas', e.pointerId); return; }
+      if (hit(B.calim, x, y)) { M.act('calim'); return; }
       if (!joy && x < cw * 0.6) { joy = { id: e.pointerId, ox: x, oy: y, x, y }; try { wrap.setPointerCapture(e.pointerId); } catch { /* */ } }
     };
     const onMove = (e: PointerEvent) => { if (joy && e.pointerId === joy.id) { const r = wrap.getBoundingClientRect(); joy.x = e.clientX - r.left; joy.y = e.clientY - r.top; } };
-    const onUp = (e: PointerEvent) => { if (joy && e.pointerId === joy.id) joy = null; };
+    const onUp = (e: PointerEvent) => { if (joy && e.pointerId === joy.id) joy = null; if (charge && charge.id === e.pointerId) release(charge.a); };
     wrap.addEventListener('pointerdown', onDown); wrap.addEventListener('pointermove', onMove); wrap.addEventListener('pointerup', onUp); wrap.addEventListener('pointercancel', onUp);
 
     // screen <-> field (portrait screens turn the pitch so we attack upward)
@@ -118,6 +133,7 @@ export function createHaliSaha(deps: HaliSahaDeps): HaliSahaView {
     // ---- simulation glue
     const act = (k: 'sut' | 'pas') => M.act(k);
     function step(dt: number) {
+      if (charge && charge.a === 'sut' && performance.now() - charge.t0 > 1000) release('sut');   // full power fires by itself
       if (shake > 0) shake = Math.max(0, shake - dt);
       const [ix, iy] = inputVec(); M.input.ix = ix; M.input.iy = iy;
       M.step(dt);
@@ -138,7 +154,7 @@ export function createHaliSaha(deps: HaliSahaDeps): HaliSahaView {
       g.setTransform(dpr, 0, 0, dpr, 0, 0);
       const sh = shake > 0 ? (Math.random() - 0.5) * shake * 18 : 0;
       g.translate(sh, sh * 0.6);
-      if (hs3) { g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height); hs3.render({ pls, ball, ctrl: M.ctrl, portrait, shake, dt: lastDt, ref }); }
+      if (hs3) { g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height); hs3.render({ score: M.score, pls, ball, ctrl: iz ? -1 : M.ctrl, portrait, shake, dt: lastDt, ref }); }
       else {
       g.fillStyle = '#183f24'; g.fillRect(-20, -20, cw + 40, ch + 40);
       // walls + ad boards
@@ -211,15 +227,29 @@ export function createHaliSaha(deps: HaliSahaDeps): HaliSahaView {
       g.fillStyle = t.colors[0]; g.fillRect(sbX + 10, 21, 18, 18); g.fillStyle = t.rivalColors[0]; g.fillRect(sbX + sbW - 28, 21, 18, 18);
       g.fillStyle = '#3b2a20'; g.textAlign = 'left'; g.fillText(t.name, sbX + 34, 31, sbW * 0.3); g.textAlign = 'right'; g.fillText(t.rivalName, sbX + sbW - 34, 31, sbW * 0.3);
       g.textAlign = 'center'; g.font = '900 24px system-ui,sans-serif'; g.fillText(M.score[0] + ' - ' + M.score[1], cw / 2, 27);
-      const left = Math.max(0, HALF_S * M.half - M.clock), mm = Math.floor(left / 60), ss = Math.floor(left % 60);
+      const left = Math.max(0, HALF * M.half - M.clock), mm = Math.floor(left / 60), ss = Math.floor(left % 60);
       g.font = '800 11px system-ui,sans-serif'; g.fillText(M.half + '. YARI  ' + mm + ':' + String(ss).padStart(2, '0'), cw / 2, 46);
       // controls
       const B = btnRect();
       const own = ball.owner === M.ctrl;
       const btn = (b: { x: number; y: number; r: number }, label: string, col: string) => { g.fillStyle = col; g.strokeStyle = '#3b2a20'; g.lineWidth = 4; g.beginPath(); g.arc(b.x, b.y, b.r, 0, Math.PI * 2); g.fill(); g.stroke(); g.fillStyle = '#3b2a20'; g.font = `900 ${Math.round(b.r * 0.42)}px system-ui,sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(label, b.x, b.y); };
-      if (!M.over) { btn(B.sut, own ? 'ŞUT' : 'KAP', own ? '#ffd23f' : '#f2a2b3'); btn(B.pas, own ? 'PAS' : 'DEĞİŞ', '#bfe6ff'); }
+      if (iz && !M.over) {
+        btn(B.end, speed === 1 ? '▶' : speed === 3 ? '⏩' : '⏭', '#fdf3e1');
+        const bt = iz.bahis ? 'Bahsin: ' + (iz.bahis === '1' ? t.name : iz.bahis === '2' ? t.rivalName : 'Berabere') + ' · ' + iz.n.toLocaleString('tr') + ' ₺ × ' + iz.oran[iz.bahis] : 'Seyirci modu';
+        g.font = '800 14px system-ui,sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; const tw = g.measureText(bt).width + 28;
+        g.fillStyle = 'rgba(20,16,12,.72)'; rrect(cw / 2 - tw / 2, 60, tw, 28, 12); g.fill(); g.fillStyle = '#ffd23f'; g.fillText(bt, cw / 2, 74);
+      }
+      if (!M.over && !iz) {
+        btn(B.sut, own ? 'ŞUT' : 'KAP', own ? '#ffd23f' : '#f2a2b3'); btn(B.pas, own ? 'PAS' : 'DEĞİŞ', '#bfe6ff');
+        const cp = pls[M.ctrl]; btn(B.calim, own ? 'ÇALIM' : 'KOŞ', cp.cd2 > 0 ? '#c9c1b0' : '#a8e6a1');
+        if (charge) {   // power ring: green -> red
+          const h = Math.min(1, (performance.now() - charge.t0) / (charge.a === 'sut' ? 800 : 300)), b = charge.a === 'sut' ? B.sut : B.pas;
+          g.strokeStyle = charge.a === 'pas' ? (h >= 1 ? '#3fb5b0' : '#fff') : `hsl(${120 - h * 120},85%,50%)`; g.lineWidth = 8; g.beginPath(); g.arc(b.x, b.y, b.r + 8, -Math.PI / 2, -Math.PI / 2 + h * Math.PI * 2); g.stroke();
+          if (charge.a === 'pas' && h >= 1) { g.fillStyle = '#fff'; g.font = '900 13px system-ui,sans-serif'; g.textAlign = 'center'; g.fillText('ARA PAS', b.x, b.y - b.r - 18); }
+        }
+      }
       if (joy) { const m = Math.max(14, Math.min(cw, ch) * 0.09); g.strokeStyle = 'rgba(255,255,255,.6)'; g.lineWidth = 3; g.beginPath(); g.arc(joy.ox, joy.oy, m, 0, Math.PI * 2); g.stroke(); const dx = joy.x - joy.ox, dy = joy.y - joy.oy, d = Math.hypot(dx, dy), k = d > m ? m / d : 1; g.fillStyle = 'rgba(255,255,255,.75)'; g.beginPath(); g.arc(joy.ox + dx * k, joy.oy + dy * k, m * 0.42, 0, Math.PI * 2); g.fill(); }
-      else if (M.clock < 6 && !M.over) { g.fillStyle = 'rgba(255,255,255,.85)'; g.font = '800 14px system-ui,sans-serif'; g.textAlign = 'left'; g.fillText(portrait ? 'Sol alta dokun, sürükle: koş' : 'Sola dokun, sürükle (ya da WASD): koş', 16, ch - 26); }
+      else if (M.clock < 6 && !M.over && !iz) { g.fillStyle = 'rgba(255,255,255,.85)'; g.font = '800 14px system-ui,sans-serif'; g.textAlign = 'left'; g.fillText(portrait ? 'Sürükle: koş · ŞUT basılı tut: güç · PAS basılı: ara pas' : 'WASD koş · Boşluk basılı: şut gücü · K pas (basılı: ara pas) · L/Shift çalım', 16, ch - 26); }
       // M.banner
       if (M.bannerT > 0 && !M.over) {
         const a = Math.min(1, M.bannerT * 2); g.globalAlpha = a; g.font = `900 ${Math.min(64, cw * 0.11)}px system-ui,sans-serif`; g.textAlign = 'center'; g.textBaseline = 'middle';
@@ -231,10 +261,11 @@ export function createHaliSaha(deps: HaliSahaDeps): HaliSahaView {
         g.fillStyle = 'rgba(6,12,20,.6)'; g.fillRect(0, 0, cw, ch);
         const w = Math.min(360, cw - 32), h = 360, x = (cw - w) / 2, y = (ch - h) / 2;
         g.fillStyle = '#fdf3e1'; g.strokeStyle = '#3b2a20'; g.lineWidth = 4; rrect(x, y, w, h, 20); g.fill(); g.stroke();
-        const res = M.score[0] > M.score[1] ? 'Kazandın!' : M.score[0] === M.score[1] ? 'Berabere' : 'Kaybettin';
+        const r3 = M.score[0] > M.score[1] ? '1' : M.score[0] === M.score[1] ? 'X' : '2';
+        const res = iz ? (iz.bahis ? (iz.bahis === r3 ? 'Bahis tuttu! +' + Math.round(iz.n * iz.oran[iz.bahis]).toLocaleString('tr') + ' ₺' : 'Bahis yattı') : 'Maç bitti') : M.score[0] > M.score[1] ? 'Kazandın!' : M.score[0] === M.score[1] ? 'Berabere' : 'Kaybettin';
         g.fillStyle = '#3b2a20'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '900 30px system-ui,sans-serif'; g.fillText(res, cw / 2, y + 42);
         g.font = '900 40px system-ui,sans-serif'; g.fillText(M.score[0] + ' - ' + M.score[1], cw / 2, y + 92);
-        g.font = '700 14px system-ui,sans-serif'; g.fillText(t.name + ' & Sabri  vs  ' + t.rivalName, cw / 2, y + 128, w - 20);
+        g.font = '700 14px system-ui,sans-serif'; g.fillText(t.name + (iz ? '' : ' & Sabri') + '  vs  ' + t.rivalName, cw / 2, y + 128, w - 20);
         { const a = M.teamStats(0), b = M.teamStats(1), rows: [string, string, string][] = [['Şut', a.shots + ' (' + a.onTarget + ')', b.shots + ' (' + b.onTarget + ')'], ['Topla oynama', a.possession + '%', b.possession + '%'], ['Pas isabeti', (a.passes ? Math.round(a.passesOk / a.passes * 100) : 0) + '%', (b.passes ? Math.round(b.passesOk / b.passes * 100) : 0) + '%'], ['Kurtarış', '' + a.saves, '' + b.saves], ['Korner', '' + a.corners, '' + b.corners], ['Top çalma', '' + a.tackles, '' + b.tackles]];
           g.font = '800 14px system-ui,sans-serif'; rows.forEach((r, k) => { const yy = y + 152 + k * 22; g.textAlign = 'left'; g.fillText(r[1], x + 28, yy); g.textAlign = 'center'; g.fillStyle = '#7a5a46'; g.fillText(r[0], cw / 2, yy); g.fillStyle = '#3b2a20'; g.textAlign = 'right'; g.fillText(r[2], x + w - 28, yy); }); }
         resultBtn = { x: x + 24, y: y + h - 74, w: w - 48, h: 54 };
@@ -243,11 +274,15 @@ export function createHaliSaha(deps: HaliSahaDeps): HaliSahaView {
       }
     }
     let raf = 0, last = performance.now(), closed = false, lastDt = 1 / 60;
-    const loop = (now: number) => { if (closed) return; const dt = Math.min(0.05, (now - last) / 1000); last = now; lastDt = dt; step(dt); draw(); raf = requestAnimationFrame(loop); };
+    const loop = (now: number) => {
+      if (closed) return; const dt = Math.min(0.05, (now - last) / 1000); last = now; lastDt = dt;
+      if (iz) { acc += dt * speed; let n = 0; while (acc >= 1 / 60 && n < 400) { step(1 / 60); acc -= 1 / 60; n++; } } else step(dt);
+      draw(); raf = requestAnimationFrame(loop);
+    };
     raf = requestAnimationFrame(loop);
     const keyEnter = (e: KeyboardEvent) => { if (M.over && (e.key === 'Enter' || e.key === ' ')) finish(); };
     window.addEventListener('keydown', keyEnter);
-    function finish() { if (closed) return; sfx('pop'); deps.command({ kind: 'halisaha', op: 'sonuc', biz: M.score[0], onlar: M.score[1], ist: { takim: [M.teamStats(0), M.teamStats(1)], oyuncu: M.pls.filter(p => p.team === 0).map(p => ({ ad: p.name, rol: p.role, ...p.st })) } }); close(); }
+    function finish() { if (closed) return; sfx('pop'); if (iz) { deps.command({ kind: 'halisaha', op: 'izleSonuc' }); close(); return; } deps.command({ kind: 'halisaha', op: 'sonuc', biz: M.score[0], onlar: M.score[1], ist: { takim: [M.teamStats(0), M.teamStats(1)], oyuncu: M.pls.filter(p => p.team === 0).map(p => ({ ad: p.name, rol: p.role, ...p.st })) } }); close(); }
     function close() { closed = true; cancelAnimationFrame(raf); window.removeEventListener('resize', resize); window.removeEventListener('keydown', kd); window.removeEventListener('keyup', ku); window.removeEventListener('keydown', keyEnter); hs3?.dispose(); wrap.remove(); }
     (wrap as unknown as { __hs: unknown }).__hs = { state: () => ({ score: M.score, clock: M.clock, half: M.half, over: M.over, ctrl: M.ctrl, ball: { ...ball }, stats: [M.teamStats(0), M.teamStats(1)] }), act, finish, ff: (sec: number) => { for (let k = 0; k < sec * 60; k++) step(1 / 60); } };
     return { close };
@@ -259,8 +294,10 @@ export function createHaliSaha(deps: HaliSahaDeps): HaliSahaView {
       const of = r.rt.uiLast.haliSahaTeklif as MacInfo | undefined, mac = r.rt.uiLast.haliSahaMac as MacInfo | undefined;
       const ok = of ? of.team + of.rival : '';
       if (ok !== offerKey) { offerKey = ok; if (of) showOffer(of); else { offerEl?.remove(); offerEl = null; } }
-      const mk = mac ? mac.team + mac.rival : '';
-      if (mk !== gameKey) { gameKey = mk; game?.close(); game = mac ? startGame(mac) : null; }
+      const izl = r.rt.uiLast.haliSahaIzle as (MacInfo & Izle) | undefined;
+      const mac2 = mac || (izl ? { ...izl, iz: izl } : undefined);
+      const mk = mac2 ? mac2.team + mac2.rival + (izl ? izl.seed : '') : '';
+      if (mk !== gameKey) { gameKey = mk; game?.close(); game = mac2 ? startGame(mac2) : null; }
     },
     dispose() { offerEl?.remove(); game?.close(); st.remove(); },
   };

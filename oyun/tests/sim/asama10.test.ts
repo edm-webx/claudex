@@ -14,5 +14,16 @@ it('stages run 1..10 with rising cost, time and arrival; stage 10 survives a set
   sim.command({ kind: 'setStage', stage: 5 }); sim.step(1);
   sim.state.stars = 5; sim.state.money = 20_000_000; sim.command({ kind: 'startTadilat' }); sim.step(1);
   expect((sim.state.tadilat as any)?.to).toBe(6);
-  expect(sim.state.money).toBe(20_000_000 - KIOSK_STAGES[5].cost!);
+  const m = sim.state.money - (20_000_000 - KIOSK_STAGES[5].cost!); expect(m).toBeGreaterThanOrEqual(0); expect(m).toBeLessThan(5000);   // + a little salon income
+});
+import { salonOf } from '../../src/game/sim/salon';
+import { buyumeEngel } from '../../src/game/view/world/bufe-buyume';
+it('pier wings: salon income and staff grow every stage from 3; growth stays on the pier and off the ferry corridor', () => {
+  for (let s = 4; s <= 10; s++) { expect(salonOf(s).mis * salonOf(s).adisyon).toBeGreaterThan(salonOf(s - 1).mis * salonOf(s - 1).adisyon); expect(salonOf(s).ekip).toBeGreaterThan(salonOf(s - 1).ekip); }
+  for (let s = 2; s <= 10; s++) for (const r of buyumeEngel(s)) {
+    expect(r.x0).toBeGreaterThan(-24); expect(r.x1).toBeLessThan(22.7); expect(r.z0).toBeGreaterThan(-18); expect(r.z1).toBeLessThan(4.4);
+    const ferry = r.x1 > 8.6 && r.z1 > -9.2 && r.z0 < -4.8; expect(ferry).toBe(false);
+    const inner = r.x1 > -10.3 && r.x0 < 8.3; expect(inner).toBe(false);   // the kiosk area and walkways stay free
+  }
+  expect(buyumeEngel(10).length).toBeGreaterThan(buyumeEngel(5).length);
 });

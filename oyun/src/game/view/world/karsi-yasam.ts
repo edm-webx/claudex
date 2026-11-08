@@ -11,7 +11,7 @@ import { createMatch, L as ML, WD as MW } from '../../sim/macmotor';
 import { KARSI_FOUNTAIN, KARSI_PITCH } from '../../../content/zones/karsi';
 import { ARSALAR, arsaKapi } from '../../../content/esya';
 
-export interface YasamDeps { root: () => T.Object3D | null; chars: Chars | null; hero: () => { x: number; z: number }; hour: () => number; sfx: (id: string) => void; /** hired café workers per owned fixed plot (sim/mulk) */ isci?: () => { id: string; n: number; lv?: number }[] }
+export interface YasamDeps { root: () => T.Object3D | null; chars: Chars | null; hero: () => { x: number; z: number }; hour: () => number; sfx: (id: string) => void; /** hired café workers per owned fixed plot (sim/mulk) */ isci?: () => { id: string; n: number; lv?: number; esya?: string[] }[] }
 export interface YasamView { update(dt: number): void; dispose(): void }
 
 type H = { object: T.Object3D; setPose(p: { x: number; z: number }, r: number): void; setInput(i: Record<string, unknown>): void; update(dt: number, a: number): void };
@@ -49,13 +49,13 @@ export function createKarsiYasam(d: YasamDeps): YasamView {
   }
   /** café terrace grows with the café level (2026-11-08 owner: kafeler "aynı mantıkla işletilmeli", like the büfe stages):
    *  lv1 2 tables, lv2 4, lv3 + pergola awning, lv4 6 + planters, lv5 8 + string lights and a gold "BİSTRO" frame. */
-  const teras = new Map<string, { lv: number; g: T.Group }>();
+  const teras = new Map<string, { lv: string; g: T.Group }>();
   function syncTeras() {
     if (!d.isci) return;
-    const lvs = new Map(d.isci().map(x => [x.id, x.lv || 1]));
+    const lvs = new Map(d.isci().map(x => [x.id, x.lv || 1])), es = new Map(d.isci().map(x => [x.id, new Set(x.esya || [])]));
     for (const a of ARSALAR) {
-      if (!a.sabit) continue; const lv = lvs.get(a.id) || 0, cur = teras.get(a.id);
-      if (cur && cur.lv === lv) continue;
+      if (!a.sabit) continue; const lv = lvs.get(a.id) || 0, cur = teras.get(a.id), has = es.get(a.id) || new Set<string>(), key = lv + ':' + [...has].sort().join(',');
+      if (cur && cur.lv === key) continue;
       if (cur) { cur.g.removeFromParent(); cur.g.traverse(o => { const m = o as T.Mesh; m.geometry?.dispose(); }); teras.delete(a.id); }
       if (!lv) continue;
       const g = new T.Group(), k = arsaKapi(a), UMB = ['#e0533c', '#2f7fb3', '#2f9e8f', '#ffd23f'];
@@ -65,20 +65,25 @@ export function createKarsiYasam(d: YasamDeps): YasamView {
         const x = k.x + 1.0 + col * 1.7 + row * 0.0, z = k.z + side * (1.7 + row * 1.6);
         bx(0.08, 0.72, 0.08, '#3a3d42', x, 0.36, z, g); const top = new T.Mesh(new T.CylinderGeometry(0.4, 0.4, 0.05, 14), lam(lv >= 5 ? '#fbfaf6' : '#d6aa78')); top.position.set(x, 0.74, z); g.add(top);
         for (const s2 of [-1, 1]) bx(0.34, 0.45, 0.34, lv >= 5 ? '#6b1f2a' : '#7d5638', x + s2 * 0.55, 0.23, z, g);
-        if (lv < 3) { bx(0.03, 2.1, 0.03, '#f4f2ec', x, 1.05, z, g); const u = new T.Mesh(new T.ConeGeometry(1.0, 0.4, 8), lam(UMB[i % 4])); u.position.set(x, 2.25, z); g.add(u); }
+        if (lv < 3 || has.has('semsiye')) { bx(0.03, 2.1, 0.03, '#f4f2ec', x, 1.05, z, g); const u = new T.Mesh(new T.ConeGeometry(1.0, 0.4, 8), lam(UMB[i % 4])); u.position.set(x, 2.25, z); g.add(u); }
       }
       if (lv >= 3) {   // pergola awning over the terrace
         const x0 = k.x + 0.5, x1 = k.x + 3.6, z0 = k.z - 4.2, z1 = k.z + 4.2;
         for (const [x, z] of [[x0, z0], [x1, z0], [x0, z1], [x1, z1], [x1, k.z - 1.0], [x1, k.z + 1.0]]) bx(0.12, 2.6, 0.12, '#5a4330', x, 1.3, z, g);
         for (let i = 0; i < 8; i++) { const st = new T.Mesh(new T.BoxGeometry(x1 - x0 + 0.3, 0.04, (z1 - z0) / 8), lam(i % 2 ? '#fbfaf6' : '#e0533c')); st.position.set((x0 + x1) / 2, 2.62, z0 + (i + 0.5) * (z1 - z0) / 8); g.add(st); }
       }
-      if (lv >= 4) for (const z of [k.z - 4.4, k.z + 4.4]) { bx(0.6, 0.5, 0.6, '#f4f2ec', k.x + 2.0, 0.25, z, g); const p = new T.Mesh(new T.SphereGeometry(0.45, 8, 6), lam('#3f7a34')); p.position.set(k.x + 2.0, 0.85, z); g.add(p); }
-      if (lv >= 5) {
+      if (lv >= 4 || has.has('saksi')) for (const z of [k.z - 4.4, k.z + 4.4]) { bx(0.6, 0.5, 0.6, '#f4f2ec', k.x + 2.0, 0.25, z, g); const p = new T.Mesh(new T.SphereGeometry(0.45, 8, 6), lam('#3f7a34')); p.position.set(k.x + 2.0, 0.85, z); g.add(p); }
+      if (has.has('soba')) for (const z of [k.z - 2.6, k.z + 2.6]) {   // patio heaters
+        bx(0.5, 0.08, 0.5, '#3a3d42', k.x + 3.1, 0.04, z, g); const pole = new T.Mesh(new T.CylinderGeometry(0.05, 0.07, 2.1, 8), lam('#9aa5b0')); pole.position.set(k.x + 3.1, 1.05, z); g.add(pole);
+        const hd = new T.Mesh(new T.ConeGeometry(0.42, 0.3, 12), lam('#9aa5b0')); hd.position.set(k.x + 3.1, 2.2, z); g.add(hd);
+        const fl = new T.Mesh(new T.CylinderGeometry(0.12, 0.12, 0.25, 10), new T.MeshBasicMaterial({ color: '#ff8a3a' })); fl.position.set(k.x + 3.1, 1.95, z); g.add(fl);
+      }
+      if (lv >= 5 || has.has('isik')) {
         const bulbs = new T.MeshBasicMaterial({ color: '#ffd890' });
         for (let i = 0; i <= 12; i++) { const z = k.z - 4.2 + i * 0.7, b = new T.Mesh(new T.SphereGeometry(0.06, 6, 4), bulbs); b.position.set(k.x + 3.6, 2.45 - Math.sin(i / 12 * Math.PI) * 0.3, z); g.add(b); }
-        bx(0.1, 0.1, 3.0, '#c9a24a', k.x + 0.25, 3.3, k.z, g);
+        if (lv >= 5) bx(0.1, 0.1, 3.0, '#c9a24a', k.x + 0.25, 3.3, k.z, g);
       }
-      holder.add(g); teras.set(a.id, { lv, g });
+      holder.add(g); teras.set(a.id, { lv: key, g });
     }
   }
   const lam = (c: string) => new T.MeshLambertMaterial({ color: c });
