@@ -90,7 +90,7 @@ export function createRender(deps: RenderDeps): MotorRender {
   let composer: EffectComposer | null = null, rpass: RenderPass | null = null, bloom: UnrealBloomPass | null = null;
   function setupPost(t: TierDef) {
     const want = !!(renderer && t.flags && t.flags.bloom);
-    if (!want) { if (composer) { composer.dispose(); composer = null; rpass = null; bloom = null; renderer!.info.autoReset = true; } return; }
+    if (!want) { if (composer) { composer.dispose(); composer = null; rpass = null; bloom = null; } return; }
     if (composer) return;
     const { w, h } = size(), pr = renderer!.getPixelRatio();
     const target = new T.WebGLRenderTarget(Math.round(w * pr), Math.round(h * pr), { type: T.HalfFloatType, samples: t.antialias ? 4 : 0 });
@@ -99,7 +99,6 @@ export function createRender(deps: RenderDeps): MotorRender {
     bloom = new UnrealBloomPass(new T.Vector2(w, h), 0.22, 0.4, 0.92); composer.addPass(bloom);
     composer.addPass(new OutputPass());
     composer.setPixelRatio(pr); composer.setSize(w, h);
-    renderer!.info.autoReset = false;   // info covers the whole composer frame (reset by hand in frame())
     tuneBloom();
   }
   function tuneBloom() { if (!bloom) return; bloom.strength = 0.2 + 0.42 * night; bloom.threshold = 0.93 - 0.3 * night; bloom.radius = 0.38 + 0.12 * night; }
@@ -201,7 +200,8 @@ export function createRender(deps: RenderDeps): MotorRender {
       frameNo++;
       if (frameNo % 10 === 1) { const f = rig.focus(); api.setFocus(f.x, f.z); }
       if (frameNo % 30 === 2 || !envRT) refreshEnv();
-      const draw = () => { if (composer && rpass) { renderer!.info.reset(); rpass.scene = sc; rpass.camera = cam; composer.render(); } else renderer!.render(sc, cam); };
+      renderer.info.autoReset = false; renderer.info.reset();   // info() = everything drawn for this frame (composer passes, shadow pass)
+      const draw = () => { if (composer && rpass) { rpass.scene = sc; rpass.camera = cam; composer.render(); } else renderer!.render(sc, cam); };
       if (deps.perf) deps.perf.time('render.draw', draw); else draw();
       const ri = renderer.info;
       lastInfo.calls = ri.render.calls; lastInfo.tris = ri.render.triangles;
