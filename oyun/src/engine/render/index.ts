@@ -17,6 +17,10 @@ import type { RenderPipeline, RenderDeps, TierDef, Season, WeatherState, RenderI
 import { createCameraRig, type MotorCameraRig } from '../camera';
 import { makeSky } from './sky';
 import { todAt, phaseAt, type Tod } from './tod';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 
 export { todAt, phaseAt, TOD } from './tod';
 export type { Tod } from './tod';
@@ -37,6 +41,9 @@ export interface MotorRender extends RenderPipeline {
   setFocus(x: number, z: number): void;
   readonly frameNo: number;
   readonly lost: boolean;
+  /** Sky-based environment map (PMREM, refreshed every half game hour); null before the renderer exists. */
+  onEnv(cb: (tex: T.Texture | null) => void): Disposer;
+  readonly bloomOn: boolean;
 }
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
@@ -79,6 +86,36 @@ export function createRender(deps: RenderDeps): MotorRender {
   let loseExt: { loseContext(): void; restoreContext(): void } | null = null;
   const lastInfo: RenderInfo = { calls: 0, tris: 0, geos: 0, texs: 0 };
 
+  // post-process (tier flag `bloom`): MSAA half-float target -> bloom -> OutputPass (tone mapping + sRGB)
+  let composer: EffectComposer | null = null, rpass: RenderPass | null = null, bloom: UnrealBloomPass | null = null;
+  function setupPost(t: TierDef) {
+    const want = !!(renderer && t.flags && t.flags.bloom);
+    if (!want) { if (composer) { composer.dispose(); composer = null; rpass = null; bloom = null; } return; }
+    if (composer) return;
+    const { w, h } = size(), pr = renderer!.getPixelRatio();
+    const target = new T.WebGLRenderTarget(Math.round(w * pr), Math.round(h * pr), { type: T.HalfFloatType, samples: t.antialias ? 4 : 0 });
+    composer = new EffectComposer(renderer!, target);
+    rpass = new RenderPass(scene, rig.camera); composer.addPass(rpass);
+    bloom = new UnrealBloomPass(new T.Vector2(w, h), 0.22, 0.4, 0.92); composer.addPass(bloom);
+    composer.addPass(new OutputPass());
+    composer.setPixelRatio(pr); composer.setSize(w, h);
+    tuneBloom();
+  }
+  function tuneBloom() { if (!bloom) return; bloom.strength = 0.2 + 0.42 * night; bloom.threshold = 0.93 - 0.3 * night; bloom.radius = 0.38 + 0.12 * night; }
+
+  // sky environment map (PMREM from the sky dome): reflections on standard materials (Kenney models, metal props)
+  let pmrem: T.PMREMGenerator | null = null, envRT: T.WebGLRenderTarget | null = null, envKey = -1;
+  const envSubs = new Set<(t: T.Texture | null) => void>();
+  function refreshEnv() {
+    if (!renderer) return;
+    const key = Math.round(hour * 2); if (key === envKey && envRT) return; envKey = key;
+    pmrem ||= new T.PMREMGenerator(renderer);
+    const s = new T.Scene(); s.add(new T.Mesh(sky.geometry, sky.material));
+    const old = envRT; envRT = pmrem.fromScene(s, 0.02);
+    envSubs.forEach(cb => { try { cb(envRT!.texture); } catch (err) { deps.log?.warn('[render] env cb', err); } });
+    if (old) old.dispose();
+  }
+
   // screen-space pick list (no mesh raycast)
   const picks = new Map<string, { p: T.Vector3; r: number }>();
   const _v = new T.Vector3(), _v2 = new T.Vector3();
@@ -117,6 +154,8 @@ export function createRender(deps: RenderDeps): MotorRender {
     get frameNo() { return frameNo; },
     get lost() { return lost; },
     sun, hemi, sky,
+    get bloomOn() { return !!composer; },
+    onEnv(cb) { envSubs.add(cb); try { cb(envRT ? envRT.texture : null); } catch { /* ignore */ } return () => { envSubs.delete(cb); }; },
     init(canvas: HTMLCanvasElement, t: TierDef) {
       if (renderer && canvasEl === canvas) { api.setTier(t); return; }
       canvasEl = canvas;
@@ -136,6 +175,7 @@ export function createRender(deps: RenderDeps): MotorRender {
       if (wantAA !== null && !!t.antialias !== wantAA) deps.log?.info('[render] antialias change applies on next load');
       applyShadows(t);
       if (renderer) renderer.setPixelRatio(Math.min((typeof window !== 'undefined' && window.devicePixelRatio) || 1, t.pixelRatio));
+      setupPost(t);
       api.resize();
     },
     setTime(h: number, _season?: Season) {
@@ -148,6 +188,7 @@ export function createRender(deps: RenderDeps): MotorRender {
       sun.color.copy(tod.sun); sun.intensity = tod.si;
       hemi.color.copy(tod.hs); hemi.groundColor.copy(tod.hg); hemi.intensity = tod.hi;
       (scene.fog as T.Fog).color.copy(tod.fog);
+      tuneBloom();
       timeSubs.forEach(cb => { try { cb(tod, hour); } catch (err) { deps.log?.warn('[render] time cb', err); } });
     },
     setWeather(_w: WeatherState) { /* M5 */ },
@@ -158,7 +199,8 @@ export function createRender(deps: RenderDeps): MotorRender {
       if (!renderer || lost) return;
       frameNo++;
       if (frameNo % 10 === 1) { const f = rig.focus(); api.setFocus(f.x, f.z); }
-      const draw = () => renderer!.render(sc, cam);
+      if (frameNo % 30 === 2 || !envRT) refreshEnv();
+      const draw = () => { if (composer && rpass) { rpass.scene = sc; rpass.camera = cam; composer.render(); } else renderer!.render(sc, cam); };
       if (deps.perf) deps.perf.time('render.draw', draw); else draw();
       const ri = renderer.info;
       lastInfo.calls = ri.render.calls; lastInfo.tris = ri.render.triangles;
@@ -171,6 +213,7 @@ export function createRender(deps: RenderDeps): MotorRender {
     resize() {
       const { w, h } = size();
       if (renderer) renderer.setSize(w, h, false);
+      if (composer && renderer) { composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(w, h); }
       rig.setAspect(w / h);
     },
     registerPick(id: string, p: Vec3, radius: number) {

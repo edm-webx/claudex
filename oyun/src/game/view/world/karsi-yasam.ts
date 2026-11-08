@@ -9,8 +9,9 @@ import type { Chars } from '../../../engine/api';
 import * as K from '../chars/v2/kit';
 import { createMatch, L as ML, WD as MW } from '../../sim/macmotor';
 import { KARSI_FOUNTAIN, KARSI_PITCH } from '../../../content/zones/karsi';
+import { ARSALAR, arsaKapi } from '../../../content/esya';
 
-export interface YasamDeps { root: () => T.Object3D | null; chars: Chars | null; hero: () => { x: number; z: number }; hour: () => number; sfx: (id: string) => void }
+export interface YasamDeps { root: () => T.Object3D | null; chars: Chars | null; hero: () => { x: number; z: number }; hour: () => number; sfx: (id: string) => void; /** hired café workers per owned fixed plot (sim/mulk) */ isci?: () => { id: string; n: number }[] }
 export interface YasamView { update(dt: number): void; dispose(): void }
 
 type H = { object: T.Object3D; setPose(p: { x: number; z: number }, r: number): void; setInput(i: Record<string, unknown>): void; update(dt: number, a: number): void };
@@ -32,6 +33,19 @@ export function createKarsiYasam(d: YasamDeps): YasamView {
   const holder = new T.Group(); holder.name = 'karsiYasam';
   const actors: Actor[] = [];
   let built = false, tt = 0;
+  let mkH: ((type: string, seed: number, over?: Record<string, unknown>) => H | null) | null = null, addA: ((h: H | null, x: number, z: number, o?: Partial<Actor>) => void) | null = null;
+  const kafeIsci = new Map<string, Actor[]>(); let isciT = 0;
+  /** café workers: one waiter per hired worker in front of the café door (pouring tea, greeting) */
+  function syncIsci() {
+    if (!d.isci || !mkH || !addA) return;
+    const want = new Map(d.isci().map(x => [x.id, x.n]));
+    for (const a of ARSALAR) {
+      if (!a.sabit) continue; const n = want.get(a.id) || 0, cur = kafeIsci.get(a.id) || [];
+      while (cur.length > n) { const w = cur.pop()!; w.h.object.removeFromParent(); const i = actors.indexOf(w); if (i >= 0) actors.splice(i, 1); }
+      while (cur.length < n) { const i = cur.length, k = arsaKapi(a); const h = mkH(['universiteli', 'plaza', 'teyze'][i % 3], 700 + a.id.charCodeAt(1) * 10 + i, { hat: 'cap' }); if (!h) break; addA(h, k.x - 0.6 - i * 0.2, k.z - 1.3 + i * 1.3, { act: i === 0 ? 'pour' : 'perform', yaw: Math.PI / 2 }); cur.push(actors[actors.length - 1]); }
+      kafeIsci.set(a.id, cur);
+    }
+  }
   const lam = (c: string) => new T.MeshLambertMaterial({ color: c });
   const bx = (w: number, h: number, dd: number, c: string, x: number, y: number, z: number, p: T.Object3D = holder) => { const m = new T.Mesh(new T.BoxGeometry(w, h, dd), lam(c)); m.position.set(x, y, z); p.add(m); return m; };
 
@@ -77,6 +91,7 @@ export function createKarsiYasam(d: YasamDeps): YasamView {
       try { const look = (d.chars as unknown as { v2: { randomLook(t: string, r: unknown): Record<string, unknown> } }).v2.randomLook(type, K.rng(seed)); const h = d.chars!.makeHero({ ...look, ...over } as never) as unknown as H; holder.add(h.object); h.object.visible = true; return h; } catch { return null; }
     };
     const add = (h: H | null, x: number, z: number, o: Partial<Actor> = {}) => { if (!h) return; const a: Actor = { h, x, z, yaw: 0, speed: 0, act: 'idle', pi: 0, wait: 0, sp: 1.1, y: 0, ...o }; actors.push(a); h.setPose({ x, z }, a.yaw); h.object.position.y = a.y; };
+    mkH = mk; addA = add;
     // okul: öğrenciler bahçede dolaşır, öğretmenler konuşur
     const YARD: [number, number][] = [[35, 42.6], [40, 42.2], [46, 42.8], [52, 42.4], [44, 44.0], [36, 38]];
     for (let i = 0; i < 8; i++) { const p = YARD.slice().sort(() => Math.random() - 0.5); add(mk('okul', 100 + i), p[0][0], p[0][1], { path: p, sp: rnd(0.9, 1.6), act: 'idle' }); }
@@ -180,6 +195,7 @@ export function createKarsiYasam(d: YasamDeps): YasamView {
       { if (night && (hour >= 22 || hour < 5.5)) { morgLight.visible = Math.sin(tt * 23) * Math.sin(tt * 7.3) > -0.15; (morgLight.material as T.MeshLambertMaterial).color.set(Math.random() < 0.08 ? '#ffffff' : '#ff2a1a');
           morgT -= dt; if (morgT <= 0 && Math.hypot(h.x - 57, h.z - 55) < 40) { morgT = rnd(7, 16); morgShadow.visible = true; d.sfx(Math.random() < 0.5 ? 'moan' : Math.random() < 0.5 ? 'knock' : 'whisper'); setTimeout(() => { morgShadow.visible = false; }, 1400); }
           if (morgShadow.visible) morgShadow.position.z = 55.5 + Math.sin(tt * 3) * 0.5; } else { morgLight.visible = false; morgShadow.visible = false; } }
+      if ((isciT -= dt) <= 0) { isciT = 1.0; syncIsci(); }
       stepActors(dt); stepMatch(dt, Math.hypot(h.x + 39, h.z - 45) < 45);
       if (crowd) { const goalT = match ? match.bannerT : 0; cb.forEach((c, i) => { tmp.position.set(c.x, c.y + Math.max(0, Math.sin(tt * (goalT > 0 ? 9 : 2.2) + c.ph)) * (goalT > 0 ? 0.35 : 0.06), c.z); tmp.updateMatrix(); crowd!.setMatrixAt(i, tmp.matrix); }); crowd.instanceMatrix.needsUpdate = true; }
     },

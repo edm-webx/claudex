@@ -14,8 +14,8 @@ import type { Quality, QualityDeps, QualitySetting, TierDef, TierName, Disposer 
 const ORDER: TierName[] = ['akici', 'dengeli', 'sahane'];
 export const TIER_TABLE: Readonly<Record<TierName, TierDef>> = Object.freeze({
   akici: { name: 'akici', label: 'Akıcı', crowd: 25, gullsNear: 4, gullsFar: 12, pigeons: 8, pixelRatio: 0.85, antialias: false, shadows: false, shadowSize: 0, fps: 30, particles: 120, buildBudgetMs: 3, maxLiveZones: 2, heroes: 12, flags: {} },
-  dengeli: { name: 'dengeli', label: 'Dengeli', crowd: 50, gullsNear: 8, gullsFar: 24, pigeons: 16, pixelRatio: 1.25, antialias: true, shadows: true, shadowSize: 1024, fps: 60, particles: 400, buildBudgetMs: 4, maxLiveZones: 3, heroes: 16, flags: {} },
-  sahane: { name: 'sahane', label: 'Şahane', crowd: 90, gullsNear: 16, gullsFar: 40, pigeons: 30, pixelRatio: 2.0, antialias: true, shadows: true, shadowSize: 2048, fps: 60, particles: 1000, buildBudgetMs: 6, maxLiveZones: 4, heroes: 16, flags: { softShadows: true } },
+  dengeli: { name: 'dengeli', label: 'Dengeli', crowd: 50, gullsNear: 8, gullsFar: 24, pigeons: 16, pixelRatio: 1.25, antialias: true, shadows: true, shadowSize: 1024, fps: 60, particles: 400, buildBudgetMs: 4, maxLiveZones: 3, heroes: 16, flags: { bloom: true } },
+  sahane: { name: 'sahane', label: 'Şahane', crowd: 90, gullsNear: 16, gullsFar: 40, pigeons: 30, pixelRatio: 2.0, antialias: true, shadows: true, shadowSize: 2048, fps: 60, particles: 1000, buildBudgetMs: 6, maxLiveZones: 4, heroes: 16, flags: { softShadows: true, bloom: true } },
 } satisfies Record<TierName, TierDef>);
 
 export function guessTier(memoryGB: number, cores: number): TierName {

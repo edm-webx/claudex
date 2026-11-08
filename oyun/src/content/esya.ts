@@ -64,16 +64,22 @@ export const SANDIK_DUSER: { stat: string; her: number; sandik: string; ad: stri
 /** Halı saha giriş (karşı yaka, tribünlü saha): bilet ve takım kurma burada da yapılır. */
 export const HALI_SAHA_KAPI = { x: -25.2, z: 45 };
 export const BANKA = { x: 11.7, z: 36.8, kapi: { x: 11.7, z: 41.8 }, w: 10, d: 8.4, ad: 'Martı Kasası Bankası' };
-export interface Arsa { id: string; x: number; z: number; fiyat: number; seviye: number; rotY: number }
+/** sabit: a fixed building on the map (karşı yaka kafeler): buying the plot opens that shop at once; kapi = interaction point. */
+export interface Arsa { id: string; x: number; z: number; fiyat: number; seviye: number; rotY: number; sabit?: string; kapi?: { x: number; z: number }; ad?: string }
 export const ARSALAR: Arsa[] = [
   { id: 'a1', x: 259.5, z: 0.4, fiyat: 60000, seviye: 3, rotY: 0 },
   { id: 'a2', x: 266.2, z: 0.4, fiyat: 150000, seviye: 5, rotY: 0 },
   { id: 'a3', x: 272.9, z: 0.4, fiyat: 350000, seviye: 8, rotY: 0 },
   { id: 'a4', x: 279.6, z: 0.4, fiyat: 800000, seviye: 11, rotY: 0 },
   { id: 'a5', x: 284.5, z: 18.2, fiyat: 1800000, seviye: 14, rotY: Math.PI },
+  // karşı yaka kafeler (Kenney building-c at these spots, karsi-look.ts); door faces the square (+x)
+  { id: 'k1', x: -17.5, z: 37.9, fiyat: 90000, seviye: 2, rotY: Math.PI / 2, sabit: 'kafe', kapi: { x: -11.8, z: 37.9 }, ad: 'Meydan Kafe' },
+  { id: 'k2', x: -17.5, z: 51.5, fiyat: 120000, seviye: 3, rotY: Math.PI / 2, sabit: 'kafe', kapi: { x: -11.8, z: 51.5 }, ad: 'Sahil Kafe' },
 ];
 export const ARSA_HAK = 3;
-export const arsaKapi = (a: Arsa) => ({ x: a.x, z: a.z + (a.rotY ? -3.0 : 3.0) });
+export const arsaKapi = (a: Arsa) => a.kapi ?? { x: a.x, z: a.z + (a.rotY ? -3.0 : 3.0) };
+/** café workers (karşı yaka): hire price grows per worker; each adds +40% customers, restocks from the till, takes an hourly wage */
+export const ISCI_MAX = 3, isciFiyat = (n: number) => 12000 * (n + 1), ISCI_SAAT_UCRET = 60, ISCI_MUSTERI = 0.4;
 
 /** shop types (D). One shared engine: stok -> müşteri -> satış -> upgrade. fiyat/maliyet per unit, musteri per game hour at level 1. */
 export interface DukkanTip { id: string; ad: string; ikon: string; renk: string; tabela: string; maliyet: number; fiyat: number; musteri: number; kurulum: number; seviye: number }
@@ -86,6 +92,7 @@ export const DUKKAN_TIPLERI: DukkanTip[] = [
   { id: 'cay_ocagi', ad: 'Çay Ocağı', ikon: '🍵', renk: '#b07a48', tabela: 'ÇAY OCAĞI', maliyet: 3, fiyat: 8, musteri: 8, kurulum: 25000, seviye: 2 },
   { id: 'spor', ad: 'Spor Malzeme', ikon: '⚽', renk: '#3fa35a', tabela: 'SPOR', maliyet: 25, fiyat: 55, musteri: 2, kurulum: 90000, seviye: 8 },
   { id: 'fan', ad: 'Fan Shop', ikon: '🧣', renk: '#ffd23f', tabela: 'FAN SHOP', maliyet: 18, fiyat: 42, musteri: 3, kurulum: 80000, seviye: 7 },
+  { id: 'kafe', ad: 'Kafe', ikon: '☕', renk: '#b07a48', tabela: 'KAFE', maliyet: 9, fiyat: 24, musteri: 6, kurulum: 45000, seviye: 2 },
 ];
 export const DUKKAN_BY_ID: Record<string, DukkanTip> = Object.fromEntries(DUKKAN_TIPLERI.map(t => [t.id, t]));
 export const DUKKAN_MAX_SEVIYE = 5;

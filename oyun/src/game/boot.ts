@@ -43,6 +43,8 @@ import { createInput } from '../engine/input';
 import { createLoop } from '../engine/loop';
 import { createLogger, angLerp } from '../engine/core';
 import { createRender } from '../engine/render';
+import { setGlbEnv } from './view/world/glb';
+import { mulkApi } from './sim/mulk';
 import { createDress } from '../engine/dress';
 import { createPrefabs } from '../engine/prefab';
 import { createZones } from '../engine/zones';
@@ -182,6 +184,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const R: RenderPipeline = render;
   const scene = R.scene;
   const cam = R.camera;
+  (R as unknown as { onEnv?: (cb: (t: import('three').Texture | null) => void) => void }).onEnv?.(t => setGlbEnv(t));   // sky reflections on Kenney models
 
   // ── world + characters
   const prefab: PrefabSystem | null = dress ? make('prefab', () => createPrefabs({ dress, perf: P, log })) : null;
@@ -293,7 +296,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const ferryLook: FerryLookView | null = playMode && zones ? make('ferryLook', () => createFerryLook({ root: () => zones.root('iskele') ?? null, rules: () => sim.rules })) : null;
 
   const karsiLook: KarsiLookView | null = playMode && zones ? make('karsiLook', () => createKarsiLook({ root: () => zones.root('iskele') ?? null })) : null;
-  const karsiYasam: YasamView | null = playMode && zones && chars ? make('karsiYasam', () => createKarsiYasam({ root: () => zones.root('iskele') ?? null, chars, hero: () => walk.pos, hour: () => sim.clock.hour, sfx: id => { try { audio?.sfx(id); } catch { /* */ } } })) : null;
+  const karsiYasam: YasamView | null = playMode && zones && chars ? make('karsiYasam', () => createKarsiYasam({ root: () => zones.root('iskele') ?? null, chars, hero: () => walk.pos, hour: () => sim.clock.hour, sfx: id => { try { audio?.sfx(id); } catch { /* */ } }, isci: () => { const m = mulkApi(sim.rules); return m ? m.view().plots.filter(p => p.sabit && p.owned).map(p => ({ id: p.id, n: p.isci })) : []; } })) : null;
   const yolLook: YolLookView | null = playMode && zones ? make('yolLook', () => createYolLook({ root: () => zones.root('iskele') ?? null })) : null;
 
   const izgaraLook: IzgaraLookView | null = playMode && uiReal ? make('izgaraLook', () => createIzgaraLook({ scene, host: U.root })) : null;

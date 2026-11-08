@@ -53,6 +53,7 @@ export function createMulkView(d: MulkViewDeps): MulkView {
   const plots = new Map<string, PlotG>();
   for (const a of ARSALAR) {
     const g = new T.Group(); g.position.set(a.x, 0, a.z); g.rotation.y = a.rotY; root.add(g);
+    if (a.sabit) { const dyn = new T.Group(); g.add(dyn); plots.set(a.id, { g, dyn, key: '#', label: d.labels.label(), sign: '' }); continue; }
     box(g, 6.2, 0.1, 4.6, '#cfc4a8', 0, 0.05, 0);
     for (const [x, z] of [[-3.1, -2.3], [3.1, -2.3], [-3.1, 2.3], [3.1, 2.3], [0, -2.3], [-3.1, 0], [3.1, 0]]) box(g, 0.14, 0.9, 0.14, '#7d5638', x, 0.5, z);
     for (const z of [-2.3, 2.3]) for (const y of [0.45, 0.75]) box(g, 6.2, 0.07, 0.07, '#9a6a42', 0, y, z);
@@ -113,21 +114,21 @@ export function createMulkView(d: MulkViewDeps): MulkView {
       for (const pv of v.plots) {
         const p = plots.get(pv.id)!, mp = md.arsa.find(x => x.id === pv.id)!;
         const k = [pv.owned, pv.tur, pv.tip, pv.lv, Math.ceil(12 * mp.stok / (DUKKAN_STOK_MAX[pv.lv] || 1))].join('|');
-        if (k !== p.key) { p.key = k; build(p, pv, mp.stok); }
+        if (k !== p.key) { p.key = k; if (!pv.sabit) build(p, pv, mp.stok); }
       }
       if (Math.hypot(d.hero().x - BANKA.x, d.hero().z - BANKA.z) < 26) put(bankL, BANKA.x, 4.8, BANKA.z + BANKA.d / 2 + 0.7, '🏦 ' + esc(BANKA.ad)); else bankL.hide();
       for (const pv of v.plots) {
         const p = plots.get(pv.id)!, a = ARSALAR.find(x => x.id === pv.id)!, mp = md.arsa.find(x => x.id === pv.id)!;
         if (Math.hypot(d.hero().x - a.x, d.hero().z - a.z) > 20) { p.label.hide(); continue; }
         const t = pv.tur === 'dukkan' ? DUKKAN_BY_ID[pv.tip] : null;
-        const txt = !pv.owned ? '🏗️ SATILIK · ' + Math.round(mp.fiyat / 1000) + 'K ₺' + (md.level < mp.seviye ? ' · 🔒 ' + mp.seviye + '. sv' : '') : !pv.tur ? 'Boş arsa' : pv.tur === 'ev' ? '🏠 Evin' : (t ? t.ikon + ' ' + t.tabela : '') + (pv.till > 0 ? ' · 💰 ' + pv.till : '');
-        put(p.label, a.x, 4.2 + (pv.tur ? 0.6 : -1.2), a.z + (a.rotY ? -1.8 : 1.8), esc(txt));
+        const txt = !pv.owned ? (a.sabit ? '☕ ' + (a.ad || 'Kafe') + ' · SATILIK · ' : '🏗️ SATILIK · ') + Math.round(mp.fiyat / 1000) + 'K ₺' + (md.level < mp.seviye ? ' · 🔒 ' + mp.seviye + '. sv' : '') : !pv.tur ? 'Boş arsa' : pv.tur === 'ev' ? '🏠 Evin' : (a.sabit ? '☕ ' + (a.ad || '') : (t ? t.ikon + ' ' + t.tabela : '')) + (pv.isci ? ' · 👷 ' + pv.isci : '') + (pv.till > 0 ? ' · 💰 ' + pv.till : '');
+        if (a.kapi) put(p.label, a.kapi.x - 1.2, 4.6, a.kapi.z, esc(txt)); else put(p.label, a.x, 4.2 + (pv.tur ? 0.6 : -1.2), a.z + (a.rotY ? -1.8 : 1.8), esc(txt));
       }
       // solid walls: bank body and every built plot
       if ((solidT -= dt) <= 0 && d.setSolid) {
         solidT = 0.5;
         const rects = [{ x0: BANKA.x - BANKA.w / 2, x1: BANKA.x + BANKA.w / 2, z0: BANKA.z - BANKA.d / 2, z1: BANKA.z + BANKA.d / 2 }];
-        for (const pv of v.plots) if (pv.tur) { const a = ARSALAR.find(x => x.id === pv.id)!; const s = a.rotY ? -1 : 1; rects.push({ x0: a.x - 2.6, x1: a.x + 2.6, z0: a.z - 2.2 - (s > 0 ? 0 : 0), z1: a.z + 0.9 }); if (a.rotY) { rects[rects.length - 1].z0 = a.z - 0.9; rects[rects.length - 1].z1 = a.z + 2.2; } }
+        for (const pv of v.plots) if (pv.tur && !pv.sabit) { const a = ARSALAR.find(x => x.id === pv.id)!; const s = a.rotY ? -1 : 1; rects.push({ x0: a.x - 2.6, x1: a.x + 2.6, z0: a.z - 2.2 - (s > 0 ? 0 : 0), z1: a.z + 0.9 }); if (a.rotY) { rects[rects.length - 1].z0 = a.z - 0.9; rects[rects.length - 1].z1 = a.z + 2.2; } }
         const k = JSON.stringify(rects); if (k !== solidKey) { solidKey = k; d.setSolid(rects); }
       }
     },

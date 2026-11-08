@@ -10,7 +10,7 @@ await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengel
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 60000 });
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
 const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(700); }
-await p.evaluate(() => { const M = window.__marti; M.setTime(13); M.step(2); M.izgara(true); const u = document.getElementById('sbui'); if (u) u.style.display = 'none'; const v = document.getElementById('sb-vig'); if (v) v.style.display = 'none'; });
+await p.evaluate((tm) => { const M = window.__marti; M.setTime(tm); M.step(2); M.izgara(true); const u = document.getElementById('sbui'); if (u) u.style.display = 'none'; const v = document.getElementById('sb-vig'); if (v) v.style.display = 'none'; }, +(process.env.TIME || 13));
 await p.evaluate(() => { const M = window.__marti; for (const [x, z] of [[50, 40], [-40, 45], [10, 45], [24, 20], [0, 9]]) { M.teleport(x, z); for (let k = 0; k < 12; k++) M.renderFrames(3, 0.1); } });
 await p.waitForTimeout(+(process.env.WAIT || 500)); await p.evaluate(t => window.__marti.camera({ tilt: t }), tilt);
 await p.evaluate(([n,cx,cz]) => { window.__nf = n; window.__cx = cx; window.__cz = cz; }, [+(process.env.NF || 40), +(process.env.CX || 0), +(process.env.CZ || 2)]);
