@@ -202,7 +202,11 @@ function buildSponsor(tk: { ad: string; renk: string; renk2?: string }, stage: n
 }
 /** Seasonal decor by the real date: national-day flag bunting (23 Nisan, 19 Mayıs, 30 Ağustos, 29 Ekim weeks),
  *  tulips in April (İstanbul lale zamanı), New Year lights and a tree in late December / early January. */
+let zorla = '';
+/** admin preview: '' = calendar, 'yok' = off, or a decor id. Returns the current override. */
+export function mevsimZorla(k?: string): string { if (k !== undefined) zorla = k; return zorla; }
 export function mevsim(d = new Date()): 'bayrak' | 'lale' | 'yilbasi' | null {
+  if (zorla) return zorla === 'yok' ? null : zorla as 'bayrak';
   const m = d.getMonth() + 1, day = d.getDate(), near = (mm: number, dd: number) => m === mm && Math.abs(day - dd) <= 3;
   if (near(4, 23) || near(5, 19) || near(8, 30) || near(10, 29) || (m === 11 && day <= 1)) return 'bayrak';
   if ((m === 12 && day >= 20) || (m === 1 && day <= 6)) return 'yilbasi';

@@ -376,6 +376,7 @@ export function createRules(d: RulesDeps): RulesFull {
         else if (what === 'day') S.day = Math.max(S.day, Number(v) || 1);
         else if (what === 'money') S.money += Number(v) || 0;
         else if (what === 'gold') S.gold += Number(v) || 0;
+        else if (what === 'tadilatBitir') { const t = S.tadilat as unknown as { left: number } | null; if (t) t.left = 0; }
         else if (what === 'level') S.level = Math.max(S.level, Number(v) || 1);
         else if (what === 'stars') S.stars = Math.max(S.stars, Number(v) || 0);
         else if (what === 'offline') off.welcome(Number(v) || 0);

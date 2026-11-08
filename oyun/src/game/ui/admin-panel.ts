@@ -13,6 +13,9 @@ interface Deps {
   /** sim command (setTime, freezeTime, force ...) and a few direct state edits for the admin's own game */
   setMoney: (n: number) => void; setGold: (n: number) => void; resetMe: () => void; editor: () => void; izgara: () => boolean; stands: () => { id: string; name: string; owned: boolean; x: number; z: number }[];
   command: (c: Record<string, unknown>) => void; setLevel: (n: number) => void; setMuted: (m: boolean) => void; allPadKeys: () => string[];
+  /** 2026-11-08 İşletme sekmesi: büfe aşaması, tadilat, kafeler, kulüp, mevsim süsü */
+  isletme?: () => { stage: number; tadilat: { to: number; left: number } | null; money: number; gold: number; level: number; stars: number; kafeler: { id: string; ad: string; lv: number; isci: number }[]; takim: string | null; mevsim: string };
+  setMevsim?: (k: string) => void;
 }
 
 const CSS = `
@@ -20,6 +23,11 @@ const CSS = `
 .ad-p{position:fixed;right:10px;bottom:334px;z-index:61;pointer-events:auto;width:min(360px,calc(100vw - 20px));max-height:calc(100vh - 350px);overflow:auto;background:#fdf3e1;color:#3b2a20;border:4px solid #3b2a20;border-radius:18px;box-shadow:0 6px 0 #3b2a20;padding:10px;font:700 14px/1.3 var(--body);display:none}
 .ad-p.on{display:block}
 .ad-h{font:900 18px var(--disp);margin:0 0 6px}
+.ad-top{position:sticky;top:-12px;z-index:2;background:#fdf3e1;margin:-12px -12px 6px;padding:10px 12px 4px;border-bottom:3px solid #3b2a20}
+.ad-top .ad-x{float:right;min-height:30px;min-width:30px}
+.ad-stat{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:8px}.ad-stat div{border:2px solid #3b2a20;border-radius:9px;background:#fff;padding:3px 6px;font:800 12px var(--body)}.ad-stat b{display:block;font:900 14px var(--disp)}
+.ad-b.cur{background:#ffd23f;outline:3px solid #e0533c}
+@media (min-width:900px){.ad-p{width:440px;max-height:calc(100vh - 120px);bottom:70px;right:70px}}
 .ad-tabs{display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap}
 .ad-t{flex:1;min-height:38px;border:3px solid #3b2a20;border-radius:10px;background:#fff6e6;font:900 13px var(--disp);color:#3b2a20;cursor:pointer;padding:0 4px}.ad-t.on{background:#ffd23f}
 .ad-row{display:flex;align-items:center;gap:6px;border:2px solid #3b2a20;border-radius:10px;background:#fff;padding:5px 8px;margin-bottom:5px}
@@ -41,7 +49,7 @@ export function createAdminPanel(d: Deps): AdminPanelView {
   const st = document.createElement('style'); st.textContent = CSS; d.root.appendChild(st);
   let fab: HTMLButtonElement | null = null, panel: HTMLDivElement | null = null;
   let stSel = '';
-  let tab: 'oy' | 'ara' | 'ben' | 'arac' | 'dunya' | 'duyuru' | 'liste' | 'log' = 'oy', sel: { id: string; ad: string; peer?: AdminPeer } | null = null, found: { id: string; ad: string }[] = [], msg = '', arm = '', names = new Map<string, string>();
+  let tab: 'oy' | 'ara' | 'isl' | 'ben' | 'arac' | 'dunya' | 'duyuru' | 'liste' | 'log' = ((): 'oy' => { try { return (localStorage.getItem('ad-tab') as 'oy') || 'oy'; } catch { return 'oy'; } })(), sel: { id: string; ad: string; peer?: AdminPeer } | null = null, found: { id: string; ad: string }[] = [], msg = '', arm = '', names = new Map<string, string>();
   // oturum logu (2026-10-27): kişi listesi > kişinin kayıtları > tek kayıt
   let logs: LogSatir[] | null = [], logT = 0, logUid = '', logId = 0, logTur = '', logAdminToo = false;
   let frozen = false, pollT = 3, susT = 1, namesT = 0, listT = 0, lists: { yasaklar: Satir[]; susturmalar: Satir[] } = { yasaklar: [], susturmalar: [] };
@@ -58,6 +66,7 @@ export function createAdminPanel(d: Deps): AdminPanelView {
     fab.onclick = () => { panel!.classList.toggle('on'); namesT = 0; listT = 0; paint(); };
     for (const ev of ['pointerdown', 'wheel', 'keydown', 'keyup'] as const) panel.addEventListener(ev, e => e.stopPropagation(), { passive: true } as never);
     panel.addEventListener('click', onClick);
+    window.addEventListener('keydown', e => { if (e.key === 'Escape' && panel?.classList.contains('on')) { panel.classList.remove('on'); } });
     paint();
   }
 
@@ -77,17 +86,29 @@ ${sel.peer ? `<button class="ad-b" data-a="tp-to">Yanına git</button><button cl
     const ps = d.peers();
     if (tab === 'oy') return (ps.length ? ps.map(p => rowOf(p.uid, names.get(p.uid) || p.hn || p.ad, p.ad, p)).join('') : '<div class="ad-row"><b>Şu an başka oyuncu yok.</b></div>') + selBlock();
     if (tab === 'ara') return `<input class="ad-in" data-f="ara" placeholder="Kullanıcı adı ara (çevrimdışı da bulur)"><button class="ad-b" data-a="ara">Ara</button><div style="margin-top:6px">${found.map(f => rowOf(f.id, f.ad, '')).join('')}</div>` + selBlock();
+    if (tab === 'isl') {
+      const m = d.isletme?.(); if (!m) return '<small>Oyun yüklenmedi.</small>';
+      const NAMES = ['Seyyar', 'Büfe', 'Çay bahçesi', 'Lokanta', 'Zincir şube', 'Deniz platformu', 'Balık restoranı', 'Boğaz restoranı', 'Şef mutfağı', 'Fine dining'];
+      const KA = ['Yok', 'Köşe kafe', 'Kafe', 'Bistro', 'Teraslı bistro', 'Gurme bistro'];
+      return `<div class="ad-stat"><div>Para<b>${Math.round(m.money).toLocaleString('tr')} ₺</b></div><div>Altın<b>${m.gold}</b></div><div>Seviye<b>${m.level} · ${m.stars}★</b></div></div>
+<div class="ad-h">Büfe aşaması <small>(şu an ${m.stage}: ${NAMES[m.stage - 1] || ''})</small></div><div class="ad-tabs">${NAMES.map((n, i) => `<button class="ad-b${m.stage === i + 1 ? ' cur' : ''}" data-a="stage" data-n="${i + 1}" title="${n}">${i + 1}. ${n}</button>`).join('')}</div>
+<div class="ad-tabs">${m.tadilat ? `<button class="ad-b grn" data-a="tadBitir">🔨 Tadilatı bitir (${m.tadilat.to}. aşama, ${Math.ceil(m.tadilat.left)} sn kaldı)</button>` : `<button class="ad-b" data-a="tadBaslat">🔨 Sonraki tadilatı başlat (bedava)</button>`}<button class="ad-b" data-a="git" data-n="-31" data-z="-4">🍽 Restorana git</button></div>
+<div class="ad-h" style="margin-top:8px">Karşı yaka kafeleri</div>${m.kafeler.map(k => `<div class="ad-row"><b>${esc(k.ad)}</b><small>${KA[k.lv] || ''}${k.isci ? ' · 👷' + k.isci : ''}</small></div><div class="ad-tabs">${[0, 1, 2, 3, 4, 5].map(l => `<button class="ad-b${k.lv === l ? ' cur' : ''}" data-a="kafeLv" data-id="${k.id}" data-n="${l}">${l ? l : 'Sat'}</button>`).join('')}<button class="ad-b" data-a="kafeIsci" data-id="${k.id}">👷 +1 işçi</button></div>`).join('')}
+<div class="ad-h" style="margin-top:8px">Kulüp</div><div class="ad-row"><b>${m.takim ? esc(m.takim) : 'Kulüp yok'}</b><small>${m.takim && m.stage >= 3 ? 'sponsor afişleri açık' : m.takim ? 'sponsorluk 3. aşamada' : ''}</small></div>${m.takim ? '' : '<input class="ad-in" data-f="takim" maxlength="16" placeholder="Kulüp adı"><button class="ad-b grn" data-a="takimKur">⚽ Kulüp kur (bedava)</button>'}
+<div class="ad-h" style="margin-top:8px">Süsleme önizleme <small>(şu an: ${esc(m.mevsim || 'takvim')})</small></div><div class="ad-tabs">${[['', 'Takvime göre'], ['bayrak', '🇹🇷 Bayram'], ['lale', '🌷 Lale'], ['yilbasi', '🎄 Yılbaşı'], ['yok', 'Kapalı']].map(([k, l]) => `<button class="ad-b${(m.mevsim || '') === k ? ' cur' : ''}" data-a="mevsim" data-n="${k}">${l}</button>`).join('')}</div>`;
+    }
     if (tab === 'ben') return `<div class="ad-h">Para (kendine)</div><div class="ad-tabs"><button class="ad-b grn" data-a="sm" data-n="10000">+10K</button><button class="ad-b grn" data-a="sm" data-n="1000000">+1M</button><button class="ad-b grn" data-a="sm" data-n="1000000000">+1B</button><button class="ad-b red" data-a="sm" data-n="-10000">-10K</button><button class="ad-b red" data-a="sm0">Parayı sıfırla</button></div>
 <input class="ad-in" data-f="tam" inputmode="numeric" placeholder="Tam değer (ayarlamak için)"><div class="ad-tabs"><button class="ad-b" data-a="set-para">Parayı şuna ayarla</button><button class="ad-b" data-a="set-altin">Altını şuna ayarla</button><button class="ad-b red${armed('resetMe') ? ' arm' : ''}" data-a="resetMe">${armed('resetMe') ? 'Emin misin? Kendi ilerlemen silinir' : 'Kendi ilerlemeni sil'}</button></div>
 <input class="ad-in" data-f="miktar" inputmode="numeric" placeholder="Özel miktar (eksi yazarsan siler)"><button class="ad-b grn" data-a="sm-x">₺ ekle / sil</button>
 <div class="ad-h" style="margin-top:8px">Altın simit</div><div class="ad-tabs"><button class="ad-b grn" data-a="sg" data-n="100">+100</button><button class="ad-b grn" data-a="sg" data-n="10000">+10K</button><button class="ad-b red" data-a="sg" data-n="-100">-100</button></div>
 <div class="ad-h" style="margin-top:8px">Seviye</div><input class="ad-in" data-f="seviye" inputmode="numeric" placeholder="Seviye (1-99)"><button class="ad-b" data-a="lvl">Seviyeyi ayarla</button>`;
     if (tab === 'arac') return `<div class="ad-h">Işınlan</div><div class="ad-tabs">${REGIONS.filter(r => !r.island).map(r => `<button class="ad-b" data-a="git" data-n="${r.stop.x}" data-z="${r.stop.z}">${esc(r.short)}</button>`).join('')}</div>
-<div class="ad-h" style="margin-top:8px">Kendi oyunun (sadece sende değişir)</div><div class="ad-tabs">${[1, 2, 3, 4, 5].map(n => `<button class="ad-b" data-a="stage" data-n="${n}">Aşama ${n}</button>`).join('')}<button class="ad-b grn" data-a="hepsiniAc">Bütün kareleri aç</button><button class="ad-b" data-a="yildiz">5 yıldız</button><button class="ad-b" data-a="gunbitir">Günü bitir</button><button class="ad-b" data-a="hepsiLvl">Seviye 99</button></div>
+<div class="ad-tabs">${([['🏪 Büfe', 0, -2], ['🍽 Restoran', -31, -4], ['🌉 Üst geçit', 24, 7.6], ['☕ Meydan Kafe', -11.8, 37.9], ['⚓ Sahil Kafe', -11.8, 51.5], ['⚽ Halı saha', -25.2, 45], ['🏦 Banka', 11.7, 42], ['🛍 AVM', 20.15, 44.5], ['Ⓜ Metro', 8.5, 58], ['🏥 Hastane', 46.95, 47.5], ['🏫 Okul', 48.85, 42.5]] as [string, number, number][]).map(([l, x, z]) => `<button class="ad-b" data-a="git" data-n="${x}" data-z="${z}">${l}</button>`).join('')}</div>
+<div class="ad-h" style="margin-top:8px">Kendi oyunun (sadece sende değişir)</div><div class="ad-tabs">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => `<button class="ad-b" data-a="stage" data-n="${n}">Aşama ${n}</button>`).join('')}<button class="ad-b grn" data-a="hepsiniAc">Bütün kareleri aç</button><button class="ad-b" data-a="yildiz">5 yıldız</button><button class="ad-b" data-a="gunbitir">Günü bitir</button><button class="ad-b" data-a="hepsiLvl">Seviye 99</button></div>
 <div class="ad-h" style="margin-top:8px">Standları taşı (kalıcı)</div><div class="ad-tabs">${d.stands().map(t => `<button class="ad-b${stSel === t.id ? ' grn' : ''}" data-a="stSec" data-id="${t.id}">${esc(t.name)}</button>`).join('')}</div>${stSel ? `<div class="ad-tabs"><button class="ad-b" data-a="stGit" data-dx="-0.5" data-dz="0">◀</button><button class="ad-b" data-a="stGit" data-dx="0" data-dz="-0.5">▲</button><button class="ad-b" data-a="stGit" data-dx="0" data-dz="0.5">▼</button><button class="ad-b" data-a="stGit" data-dx="0.5" data-dz="0">▶</button><button class="ad-b" data-a="stGit" data-dry="-1.5708">⟲</button><button class="ad-b" data-a="stGit" data-dry="1.5708">⟳</button></div>` : '<small>Önce bir stand seç, sonra oklarla taşı.</small>'}
-<div class="ad-h" style="margin-top:8px">Olay çağır</div><div class="ad-tabs"><button class="ad-b" data-a="olay" data-n="ferry">Vapur</button><button class="ad-b" data-a="olay" data-n="gull">Martı</button><button class="ad-b" data-a="olay" data-n="regular">Müdavim</button><button class="ad-b" data-a="olay" data-n="vip">Gurme VIP</button><button class="ad-b" data-a="olay" data-n="kapkac">Kapkaççı</button><button class="ad-b" data-a="olay" data-n="sleep">Uyuyan işçi</button></div>
+<div class="ad-h" style="margin-top:8px">Olay çağır</div><div class="ad-tabs"><button class="ad-b" data-a="olay" data-n="ferry">Vapur</button><button class="ad-b" data-a="olay" data-n="gull">Martı</button><button class="ad-b" data-a="olay" data-n="vip">Gurme VIP</button><button class="ad-b" data-a="olay" data-n="kapkac">Kapkaççı</button><button class="ad-b" data-a="olay" data-n="sleep">Uyuyan işçi</button></div>
 <div class="ad-h" style="margin-top:8px">Herkes (oyundaki herkes)</div><div class="ad-tabs"><button class="ad-b grn" data-a="herkesAltin">Herkese +50 altın</button><button class="ad-b" data-a="herkesPara2">Herkese +1M ₺</button><button class="ad-b red${armed('herkesAt') ? ' arm' : ''}" data-a="herkesAt">${armed('herkesAt') ? 'Emin misin?' : 'Herkesi at'}</button></div>`;
-    if (tab === 'dunya') return `<div class="ad-h">Zaman</div><div class="ad-tabs">${[6, 8, 12, 18, 22].map(h => `<button class="ad-b" data-a="saat" data-n="${h}">${h}:00</button>`).join('')}<button class="ad-b" data-a="dondur">Zamanı dondur/aç</button></div>
+    if (tab === 'dunya') return `<div class="ad-h">Zaman</div><div class="ad-tabs">${[8, 12, 17, 19, 21, 23].map(h => `<button class="ad-b" data-a="saat" data-n="${h}">${h}:00</button>`).join('')}<button class="ad-b" data-a="dondur">Zamanı dondur/aç</button></div>
 <div class="ad-h" style="margin-top:8px">Oyun</div><div class="ad-tabs"><button class="ad-b" data-a="sesKapat">Sesi kapat</button><button class="ad-b" data-a="sesAc">Sesi aç</button></div>
 <div class="ad-h" style="margin-top:8px">Nesneleri taşı</div><div class="ad-tabs"><button class="ad-b grn" data-a="editorAc">🧱 Düzenleyiciyi aç/kapat</button><button class="ad-b" data-a="izgaraAc">🔲 Izgarayı aç/kapat</button></div>
 <div class="ad-h" style="margin-top:8px">Herkese (oyundaki herkes)</div><div class="ad-tabs"><button class="ad-b grn" data-a="herkesPara">Herkese +10K ₺</button><button class="ad-b" data-a="herkesCek">Herkesi yanıma çek</button></div>`;
@@ -129,7 +150,7 @@ ${sel.peer ? `<button class="ad-b" data-a="tp-to">Yanına git</button><button cl
     const keep: Record<string, string> = {}; panel.querySelectorAll<HTMLInputElement>('input[data-f]').forEach(i => { keep[i.dataset.f!] = i.value; });
     const act = document.activeElement as HTMLInputElement | null, focus = act?.dataset?.f;
     const T = (k: typeof tab, l: string) => `<button class="ad-t${tab === k ? ' on' : ''}" data-tab="${k}">${l}</button>`;
-    panel.innerHTML = `<div class="ad-h">🛠 Yönetici</div><div class="ad-tabs">${T('oy', 'Oyuncular')}${T('ara', 'Ara')}${T('ben', 'Ben')}${T('arac', 'Araçlar')}${T('dunya', 'Dünya')}${T('duyuru', 'Duyuru')}${T('liste', 'Ban/Sus')}${T('log', '📜 Log')}</div>${body()}<div class="ad-msg">${esc(msg)}</div>`;
+    panel.innerHTML = `<div class="ad-top"><button class="ad-b ad-x" data-a="kapat" title="Kapat (Esc)">✕</button><div class="ad-h">🛠 Yönetici</div><div class="ad-tabs">${T('oy', '👥 Oyuncular')}${T('ara', '🔎 Ara')}${T('isl', '🏪 İşletme')}${T('ben', '💰 Ben')}${T('arac', '🧰 Araçlar')}${T('dunya', '🌍 Dünya')}${T('duyuru', '📢 Duyuru')}${T('liste', '⛔ Ban/Sus')}${T('log', '📜 Log')}</div></div>${body()}<div class="ad-msg">${esc(msg)}</div>`;
     panel.querySelectorAll<HTMLInputElement>('input[data-f]').forEach(i => { if (keep[i.dataset.f!] !== undefined) i.value = keep[i.dataset.f!]; });
     if (focus) { const i = panel.querySelector<HTMLInputElement>(`input[data-f="${focus}"]`); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }
   }
@@ -138,9 +159,16 @@ ${sel.peer ? `<button class="ad-b" data-a="tp-to">Yanına git</button><button cl
 
   function onClick(e: Event) {
     const el = (e.target as HTMLElement).closest('button') as HTMLButtonElement | null; if (!el) return;
-    if (el.dataset.tab) { tab = el.dataset.tab as typeof tab; arm = ''; msg = ''; paint(); return; }
+    if (el.dataset.tab) { tab = el.dataset.tab as typeof tab; try { localStorage.setItem('ad-tab', tab); } catch { /* */ } arm = ''; msg = ''; paint(); return; }
     if (el.dataset.sel) { sel = { id: el.dataset.sel, ad: el.dataset.ad || '?', peer: d.peers().find(p => p.uid === el.dataset.sel) }; arm = ''; msg = ''; paint(); return; }
     const a = el.dataset.a; if (!a) return;
+    if (a === 'kapat') { panel!.classList.remove('on'); return; }
+    if (a === 'tadBitir') { d.command({ kind: 'force', what: 'tadilatBitir' }); say('✓ Tadilat bitiyor.'); return; }
+    if (a === 'tadBaslat') { d.command({ kind: 'force', what: 'stars', value: 5 }); const m = d.isletme?.(); if (m) d.addMoney(1e10); d.command({ kind: 'startTadilat' }); say('✓ Tadilat başladı (vinç ve işçiler restoran alanında).'); return; }
+    if (a === 'kafeLv') { d.command({ kind: 'mulk', op: 'adminKafe', id: el.dataset.id, n: Number(el.dataset.n) }); say('✓ Kafe ayarlandı.'); setTimeout(paint, 50); return; }
+    if (a === 'kafeIsci') { d.command({ kind: 'mulk', op: 'adminIsci', id: el.dataset.id }); say('✓ İşçi eklendi.'); setTimeout(paint, 50); return; }
+    if (a === 'takimKur') { const t = val('takim'); if (t.length < 3) { say('⚠ En az 3 harf.'); return; } d.command({ kind: 'mulk', op: 'adminTakim', name: t }); say('✓ Kulüp kuruldu.'); setTimeout(paint, 50); return; }
+    if (a === 'mevsim') { d.setMevsim?.(el.dataset.n || ''); say('✓ Süsleme değişti.'); setTimeout(paint, 50); return; }
     if (a === 'logTur') { logTur = el.dataset.n || ''; logId = 0; paint(); return; }
     if (a === 'logYenile') { logT = 0; say('Yenileniyor...'); return; }
     if (a === 'logBen') { logAdminToo = !logAdminToo; paint(); return; }
@@ -166,7 +194,7 @@ ${sel.peer ? `<button class="ad-b" data-a="tp-to">Yanına git</button><button cl
     if (a === 'sg') { d.addGold(Number(el.dataset.n)); say('✓ Altın simit değişti.'); return; }
     if (a === 'sm-x') { const n = Math.floor(Number(val('miktar'))); if (Number.isFinite(n) && n !== 0 && Math.abs(n) <= 1e12) { d.addMoney(n); say('✓ Para değişti.'); } else say('⚠ Geçerli bir sayı yaz.'); return; }
     if (a === 'lvl') { const n = Math.floor(Number(val('seviye'))); if (n >= 1 && n <= 99) { d.setLevel(n); say('✓ Seviye ' + n + '.'); } else say('⚠ 1-99 arası yaz.'); return; }
-    if (a === 'stage') { d.command({ kind: 'force', what: 'stage', value: Number(el.dataset.n) }); say('✓ Aşama ' + el.dataset.n + '.'); return; }
+    if (a === 'stage') { d.command({ kind: 'force', what: 'stage', value: Number(el.dataset.n) }); say('✓ Aşama ' + el.dataset.n + '.'); setTimeout(paint, 50); return; }
     if (a === 'saat') { d.command({ kind: 'setTime', hour: Number(el.dataset.n) }); say('✓ Saat ' + el.dataset.n + ':00.'); return; }
     if (a === 'dondur') { frozen = !frozen; d.command({ kind: 'freezeTime', on: frozen }); say(frozen ? '✓ Zaman donduruldu.' : '✓ Zaman akıyor.'); return; }
     if (a === 'gunbitir') { d.command({ kind: 'force', what: 'endDay' }); say('✓ Gün bitiyor.'); return; }

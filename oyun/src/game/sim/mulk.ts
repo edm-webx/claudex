@@ -240,6 +240,10 @@ export function installMulk(K: Kernel) {
       case 'arsaAl': arsaAl(id); break; case 'arsaKur': arsaKur(id, String(c.tur ?? ''), String(c.tip ?? '')); break;
       case 'stokAl': stokAl(id, n || 10); break; case 'yukselt': yukselt(id); break; case 'evAc': evAc(id); break; case 'isciAl': isciAl(id); break;
       case 'bilet': bilet(); break;
+      // yönetici paneli (2026-11-08): kafe seviyesi / işçi / kulüp, kapı ve para şartı yok
+      case 'adminKafe': { const q = plotOf(id); if (!q || !q.a.sabit) break; const lv = Math.max(0, Math.min(DUKKAN_MAX_SEVIYE, Math.round(n || 0))); if (!lv) delete arsa().plots[id]; else { q.p ? (q.p.lv = lv) : (arsa().plots[id] = { tur: 'dukkan', tip: q.a.sabit, lv, stok: 60, till: 0, sat: 0, fr: 0, isci: 0 }); } K.saveNow(); break; }
+      case 'adminIsci': { const q = plotOf(id); if (q?.p && q.a.sabit) { q.p.isci = Math.min(ISCI_MAX, flo(q.p.isci) + 1); K.saveNow(); } break; }
+      case 'adminTakim': { const a = arsa(); if (!a.takim) { a.takim = { ad: String(c.name ?? '').replace(/[<>]/g, '').trim().slice(0, 16) || 'Martıköy Spor', renk: '#2f7fb3', renk2: '#ffd23f', kurulus: S.day }; K.saveNow(); } break; }
       case 'biletFiyat': { const a = arsa(); if (!a.takim) { K.toast('Önce kulüp kurmalısın.', 'info'); break; } fiyatAyarla(stadSave(a as never), n || Number(c.n) || 0); K.saveNow(); break; }
       case 'formasyon': { const a = arsa(); if (!a.takim) { K.toast('Önce kulüp kurmalısın.', 'info'); break; } const f = FORMASYONLAR.find(x => x.id === String(c.name)); if (f) { stadSave(a as never).formasyon = f.id; K.toast('Diziliş: ' + f.ad, 'good'); K.saveNow(); } break; } case 'takim': takim(String(c.name ?? ''), c.renk as string | undefined, c.renk2 as string | undefined, c.arma as string | undefined); break;
       case 'ver': if (ESYA_BY_ID[id]) give(id, n || 1); break;   // test / admin
