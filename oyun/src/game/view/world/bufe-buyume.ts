@@ -167,7 +167,7 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
   if (stage >= 3) {
     const r = stage >= 5 ? WT : { ...WT, z0: -9.4, z1: -0.6 };
     deck(r);
-    WT_TABLES.slice(0, wtN(stage)).forEach(([x, z], i) => table(x, z, fine ? '#f4f2ec' : UMB[i % UMB.length], stage < 5 || i % 2 === 0 || stage >= 10, fine, (i * 5 + stage) % 4, i + 3));
+    WT_TABLES.slice(0, wtN(stage)).forEach(([x, z], i) => table(x, z, fine ? '#f4f2ec' : UMB[i % UMB.length], stage < 5 || z < -4.4 || x > WT.x1 - 1.5, fine, (i * 5 + stage) % 4, i + 3)   /* no umbrellas under the pergola */);
     // çay ocağı: counter, semaver, tulip glasses, awning
     const ox = WT.x0 + 0.8; b.box(1.2, 1.0, 2.6, fine ? '#2a2a30' : '#8a5a3a', ox, 0.62, -7.7); b.box(1.3, 0.06, 2.7, '#e9e0c8', ox, 1.15, -7.7);
     b.cyl(0.24, 0.3, 0.7, '#c9a23a', ox, 1.53, -8.4, { seg: 14 }); b.cyl(0.1, 0.16, 0.25, '#c9a23a', ox, 2.0, -8.4, { seg: 10 });
@@ -215,7 +215,7 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
     walker('chef', [[kx - 0.8, kz + 0.75], [kx + 0.8, kz + 0.75]], 13, 0.5); walker('chef', [[kx + 0.6, kz + 0.75], [kx - 1.0, kz + 0.75]], 15, 0.4);
     // arcade over the customer walkway behind the kiosk (posts on the sea side only, so the path stays free)
     for (let x = -11.0; x <= 8.5; x += 3.9) b.box(0.14, 3.2, 0.14, frame, x, 1.72, -13.3);
-    b.box(19.8, 0.1, 2.6, fine ? '#1f2a44' : '#2f7fb3', -1.25, 3.3, -12.05); b.box(19.8, 0.22, 0.12, accent, -1.25, 3.25, -10.8);
+    for (let i = 0; i < 26; i++) b.box(0.16, 0.1, 2.6, wood, -11.0 + i * 0.78, 3.3, -12.05); b.box(19.8, 0.14, 0.14, frame, -1.25, 3.22, -13.3); b.box(19.8, 0.22, 0.12, accent, -1.25, 3.25, -10.8);   // slatted arcade roof
     for (let x = -10.5; x <= 8.0; x += 1.5) lit.sph(0.07, '#ffe6b0', x, 3.12, -12.0, { ws: 6, hs: 4 });
     // rooftop sign over the kiosk
     sign(fine ? 'SABRİ\'NİN SOFRASI' : 'SABRİ\'NİN BÜFESİ · 1987', 0, 5.4, -7.6, 7.0, 0, fine ? '#14192a' : '#e0533c', fine ? '#e8c76a' : '#fff6e6');

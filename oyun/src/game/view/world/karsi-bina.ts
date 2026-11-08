@@ -12,7 +12,7 @@ import { Batch, mtx } from '../../../engine/prefab/batch';
 import { v2rng } from '../../../content/prefabs/common/v2kit';
 import { useSkyEnv } from './glb';
 
-export interface BinaDeps { root: () => T.Object3D | null; night: () => number }
+export interface BinaDeps { root: () => T.Object3D | null; night: () => number; /** 2026-11-08 user: "3rd person burada pek yaramıyor": buildings between the camera and the player fade out */ camera?: () => T.Camera | null; hero?: () => { x: number; z: number } }
 export interface BinaView { update(dt: number): void; dispose(): void }
 
 type Front = '+z' | '-z' | '+x' | '-x';
@@ -299,12 +299,27 @@ function hospitalExtras(k: Kit, L: Dim) {
 
 export function createKarsiBina(d: BinaDeps): BinaView {
   const holder = new T.Group(); holder.name = 'karsiBina';
-  let built = false, t = 0, flag: T.Mesh | null = null;
+  let built = false, t = 0, flag: T.Mesh | null = null; const fades: { s: Spec; ms: T.Material[]; op: number }[] = [];
   return {
     update(dt) {
       const root = d.root(); if (!root) return;
       if (holder.parent !== root) root.add(holder);
-      if (!built) { built = true; for (const s of SPECS) holder.add(build(s)); holder.add(metroGiris()); flag = holder.getObjectByName('bayrak') as T.Mesh | null; }
+      if (!built) {
+        built = true; for (const s of SPECS) { const g = build(s); holder.add(g); const ms: T.Material[] = []; g.traverse(o => { const m = o as T.Mesh; if (m.isMesh && m.material && !Array.isArray(m.material) && m.material !== glowMat) { const orig = m.material as T.Material, c = orig.clone(); m.material = c; ms.push(c); const si = signMats.indexOf(orig as T.MeshStandardMaterial); if (si >= 0) signMats[si] = c as T.MeshStandardMaterial; } }); fades.push({ s, ms, op: 1 }); }
+        holder.add(metroGiris()); flag = holder.getObjectByName('bayrak') as T.Mesh | null;
+      }
+      const camO = d.camera?.() ?? null, hp = d.hero?.();
+      if (camO && hp) {   // fade buildings whose footprint the camera->player sight line crosses (and that rise above it)
+        const c = camO.position;
+        for (const f of fades) {
+          const s = f.s, hx = s.wx / 2 + 0.3, hz = s.wz / 2 + 0.3, inside = Math.abs(hp.x - s.x) < hx && Math.abs(hp.z - s.z) < hz;
+          let hit = false;
+          if (!inside) for (let k = 1; k < 12 && !hit; k++) { const tt = k / 12, x = hp.x + (c.x - hp.x) * tt, z = hp.z + (c.z - hp.z) * tt, y = 1.2 + (c.y - 1.2) * tt; if (Math.abs(x - s.x) < hx && Math.abs(z - s.z) < hz && y < s.floors * s.fh + 1.2) hit = true; }
+          const want = hit ? 0.22 : 1; if (Math.abs(f.op - want) < 0.01 && f.op === want) continue;
+          f.op += (want - f.op) * Math.min(1, dt * 8); if (Math.abs(f.op - want) < 0.02) f.op = want;
+          for (const m of f.ms) { const tr = f.op < 0.99; if (m.transparent !== tr || (m as T.Material & { _baseT?: boolean })._baseT === undefined) { (m as T.Material & { _baseT?: boolean })._baseT ??= m.transparent; } m.transparent = tr || !!(m as T.Material & { _baseT?: boolean })._baseT; m.opacity = f.op * ((m as T.Material & { _baseO?: number })._baseO ??= m.opacity); m.depthWrite = !tr; m.needsUpdate = true; }
+        }
+      }
       const nk = d.night(); t += dt;
       if (glowMat) glowMat.opacity = Math.min(1, nk * 1.1) * 0.95;
       for (const m of signMats) m.emissiveIntensity = 0.25 + nk * 0.5;
