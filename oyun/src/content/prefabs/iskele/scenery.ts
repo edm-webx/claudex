@@ -179,13 +179,6 @@ export function makeSkyline() {
       for (let k = 0; k < pts.length - 1; k++) { const [z0, y0] = pts[k], [z1, y1] = pts[k + 1]; const l = Math.hypot(z1 - z0, y1 - y0); b.box(0.25, 0.25, l, '#e8e2d8', tx, (y0 + y1) / 2, (z0 + z1) / 2, { r: 0, rx: -Math.atan2(y1 - y0, z1 - z0) }); if (k % 2 === 0 && y0 > 13) b.box(0.08, y0 - 12.4, 0.08, '#e8e2d8', tx, 12.2 + (y0 - 12.4) / 2, z0, { r: 0 }); wb.box(0.3, 0.3, 0.3, '#fff0c0', tx, y0, z0, { r: 0 }); }
     });
     b.pop(); wb.pop(); }
-  // Martıköy village behind the park (wide and intro shots)
-  for (let x = -96; x <= 96; x += r.range(5.5, 8.5)) {
-    const w = r.range(4.5, 7), h = r.range(5, 11), d = r.range(5, 7), z = r.range(40, 46), c = r.pick(houseCols);
-    b.box(w, h, d, c, x, h / 2, z, { r: 0.06 });
-    b.cone(Math.max(w, d) * 0.74, 1.6, '#c8693e', x, h + 0.8, z, { seg: 4, ry: PI / 4, sx: w / Math.max(w, d), sz: d / Math.max(w, d) });
-    for (let fy = 1.8; fy < h - 0.8; fy += 2.4) for (let k = -1; k <= 1; k++) { if (r.chance(0.35)) continue; wb.plane(0.7, 0.9, '#ffd890', x + k * w * 0.3, fy, z - d / 2 - 0.02, { ry: PI }); b.plane(0.7, 0.9, '#7f9bb0', x + k * w * 0.3, fy, z - d / 2 - 0.01, { ry: PI }); }
-  }
   // clouds
   for (let i = 0; i < 9; i++) {
     const x = r.range(-170, 170), y = r.range(30, 62), z = -150 + r.range(-12, 18) + x * x * 0.0006, s = r.range(5, 11);
