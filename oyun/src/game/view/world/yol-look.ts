@@ -90,7 +90,10 @@ function buildOverpass(): T.Group {
   };
   flight(zA, zB); flight(zD, zC);
   // landing blocks and pillars under the deck
-  for (const z of [zB + 0.6, zC - 0.6]) for (const sg of [-1, 1]) g.add(box(0.45, h - 0.3, 0.45, lam('#6f747c'), x + sg * (hw - 0.1), (h - 0.3) / 2, z));
+  // pillars only on the sidewalks and on the two metrobus medians (z = kerb + 2/4 lanes), never in a lane
+  for (const z of [zB + 0.2, Z_KERB + 2 * LANE, Z_KERB + 4 * LANE, zC - 0.2]) for (const sg of [-1, 1]) g.add(box(0.3, h - 0.75, 0.3, lam('#6f747c'), x + sg * (hw - 0.1), (h - 0.75) / 2, z));
+  // girders under the deck edges + a light strip so it reads as a bridge from the street
+  for (const sg of [-1, 1]) g.add(box(0.18, 0.5, len, dark, x + sg * (hw + 0.05), h - 0.55, zm));
   // railings: along the deck and following both flights
   for (const sg of [-1, 1]) {
     const rx = x + sg * hw;

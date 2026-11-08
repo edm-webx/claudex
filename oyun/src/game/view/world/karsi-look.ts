@@ -25,7 +25,8 @@ export function createKarsiLook(d: KarsiLookDeps): KarsiLookView {
   let started = false;
   const start = () => {
     started = true;
-    BUILDINGS.forEach(async ([name, x, z, w, dd, h, yaw, tint]) => {
+    // 2026-11-08: buildings are procedural models now (karsi-bina.ts); the Kenney list stays for reference only
+    if (false as boolean) BUILDINGS.forEach(async ([name, x, z, w, dd, h, yaw, tint]) => {
       const src = await loadGlb(name); if (!src) return;
       const swap = Math.abs(yaw) > 1;     // yawed models swap their footprint axes
       const g = fitClone(src, swap ? dd : w, swap ? w : dd, h, yaw, tint); g.position.set(x, 0.12, z); holder.add(g);

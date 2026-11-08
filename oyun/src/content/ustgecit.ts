@@ -1,5 +1,7 @@
 /** Pedestrian footbridge over the road (x = UG.x). One source for the view (stairs, deck) and the hero height. */
-export const UG = { x: 24, hw: 1.15, zA: 12.2, zB: 18.2, zC: 23.2, zD: 29.2, h: 4.2 };
+/* 2026-11-08: the deck spans the whole carriageway (kerb z 15.0 .. far kerb 26.4) so no stair or pillar stands in a lane;
+   the south flight lands on the promenade, the north flight on the far-side pavement. */
+export const UG = { x: 24, hw: 1.15, zA: 8.4, zB: 14.6, zC: 26.8, zD: 33.0, h: 4.4 };
 /** Walking surface height at (x, z): 0 off the bridge, a stair ramp on each flight, flat on the deck. */
 export function ugY(x: number, z: number): number {
   if (Math.abs(x - UG.x) > UG.hw + 0.2 || z <= UG.zA || z >= UG.zD) return 0;

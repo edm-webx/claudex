@@ -16,7 +16,7 @@ const PAVE = '#c4aa80';
 
 /** A building with windows on the front (+z) and both side faces; the door on `door`. */
 function bld(id: string, w: number, d: number, h: number, wall: string, trim: string, door: '+z' | '-z' | '+x' | '-x', extra: PartDef[] = [], glb = false): Def {
-  if (glb) return { id, parts: [box(w + 0.6, 0.12, d + 0.6, 0, 0.06, 0, '#b9b3a6', 'base'), ...extra], colliders: [R(w, d)] };   // the walls are a Kenney model (view/world/karsi-look.ts)
+  if (glb) { void extra; return { id, parts: [box(w + 0.6, 0.12, d + 0.6, 0, 0.06, 0, '#b9b3a6', 'base')], colliders: [R(w, d)] }; }   // the whole building is a model (view/world/karsi-bina.ts)
   const parts: PartDef[] = [box(w, h, d, 0, h / 2, 0, wall, 'wall'), box(w + 0.5, 0.35, d + 0.5, 0, h + 0.17, 0, trim, 'roof')];
   const floors = Math.max(1, Math.floor((h - 1.2) / 3.0)), glass = '#9cc3d6';
   for (let f = 0; f < floors; f++) {
@@ -76,8 +76,8 @@ export function karsiPrefabs(): PrefabDef[] {
   defs.push(bld('kr.kantin', 3.7, 2.8, 3.0, '#f6efe1', '#e0533c', '-x', [box(3.6, 0.15, 1.2, 0, 2.4, 1.9, '#e0533c')], true));
   defs.push(bld('kr.avm', 16.9, 12.8, 9.5, '#cfd6e6', '#3f4a6b', '-z', [box(10, 1.6, 0.12, 0, 8.2, 6.5, '#e0533c'), box(9, 3.2, 0.12, 0, 2.0, 6.5, '#7fb4d8')], true));
   defs.push(bld('kr.hastane', 16.9, 6.7, 12.0, '#f2f4f6', '#d93a3a', '-z', [...redCross(0, 10.0, 3.5), box(4.4, 2.8, 0.1, 0, 1.4, 3.45, '#7fb4d8')], true));
-  defs.push(bld('kr.acil', 3.3, 3.2, 3.6, '#f2f4f6', '#d93a3a', '-x', [...redCross(0, 3.2, 1.65).map(p => ({ ...p, size: [p.size[0] * 0.5, p.size[1] * 0.5, p.size[2]] as [number, number, number] }))]));
-  defs.push(bld('kr.morg', 3.3, 3.2, 3.2, '#c9ced6', '#5b6068', '-x'));
+  defs.push(bld('kr.acil', 3.3, 3.2, 3.6, '#f2f4f6', '#d93a3a', '-x', [], true));     // walls: view/world/karsi-bina.ts
+  defs.push(bld('kr.morg', 3.3, 3.2, 3.2, '#c9ced6', '#5b6068', '-x', [], true));
   defs.push({ id: 'kr.metro', parts: [box(3, 0.3, 5.6, 0, 0.15, 0, '#b9ad99'), box(0.3, 3.2, 5.6, -1.5, 1.6, 0, '#5b6068'), box(0.3, 3.2, 5.6, 1.5, 1.6, 0, '#5b6068'), box(3.4, 0.35, 5.8, 0, 3.4, 0, '#2b6fb8'), box(2.4, 0.04, 3.6, 0, 0.32, 0.4, '#2a2d33'),
     box(1.2, 1.2, 0.1, 0, 4.3, 2.8, '#e0533c'), box(0.12, 1.0, 0.12, -0.6, 3.9, 2.8, '#5b6068'), box(0.12, 1.0, 0.12, 0.6, 3.9, 2.8, '#5b6068')], colliders: [R(0.3, 5.6, -1.5, 0), R(0.3, 5.6, 1.5, 0), R(3, 0.3, 0, -2.75)] });
   // ambulance park: paved lot with two parked ambulances

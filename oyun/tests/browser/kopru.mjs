@@ -14,7 +14,7 @@ await p.evaluate(() => { const M = window.__marti; M.setTime(13); M.step(2); });
 const walk = async (x, z, ix, iz, n, dt) => { await p.evaluate(([x, z]) => window.__marti.teleport(x, z), [x, z]); const out = [];
   for (let i = 0; i < n; i++) { await p.evaluate(([ix, iz, dt]) => { const M = window.__marti; M.input(ix, iz); M.step(dt); M.renderFrames(1, 0.05); }, [ix, iz, dt]); const h = await p.evaluate(() => { const M = window.__marti; const s = M.state(); return { x: s.pos.x, z: s.pos.z }; }); out.push(h); }
   await p.evaluate(() => window.__marti.input(null)); return out; };
-const a = await walk(24, 11.0, 0, 1, 40, 0.5); console.log('bridge south->north', JSON.stringify(a.filter((_, i) => i % 4 === 3)));
+const a = await walk(24, 7.6, 0, 1, 52, 0.5); console.log('bridge south->north', JSON.stringify(a.filter((_, i) => i % 4 === 3)));
 const bb = await walk(10, 11.0, 0, 1, 12, 0.5); console.log('off-bridge (must stop at road)', JSON.stringify(bb.slice(-1)));
 const cc = await walk(-39, 30, 0, 1, 20, 0.5); console.log('pitch fence', JSON.stringify(cc.slice(-1)));
 const dd = await walk(-20, 45, -1, 0, 20, 0.5); console.log('gate -> pitch', JSON.stringify(dd.slice(-1)));

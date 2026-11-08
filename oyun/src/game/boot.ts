@@ -98,6 +98,7 @@ import { createFerryLook, type FerryLookView } from './view/world/ferry-look';
 import { createYolLook, type YolLookView } from './view/world/yol-look';
 import { ugY, onUg } from '../content/ustgecit';
 import { createKarsiLook, type KarsiLookView } from './view/world/karsi-look';
+import { createKarsiBina, type BinaView } from './view/world/karsi-bina';
 import { createKarsiYasam, type YasamView } from './view/world/karsi-yasam';
 import { restoranApi } from './sim/restoran';
 import { createIzgaraLook, type IzgaraLookView } from './view/world/izgara-look';
@@ -185,7 +186,8 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const scene = R.scene;
   const cam = R.camera;
   (R as unknown as { onEnv?: (cb: (t: import('three').Texture | null) => void) => void }).onEnv?.(t => setGlbEnv(t));   // sky reflections on Kenney models
-  (R as unknown as { onTime?: (cb: (t: { n: number }) => void) => void }).onTime?.(t => setGlbNight(t.n));   // building emissive lift fades at night
+  let nightK = 0;
+  (R as unknown as { onTime?: (cb: (t: { n: number }) => void) => void }).onTime?.(t => { setGlbNight(t.n); nightK = t.n; });   // building emissive lift fades at night
 
   // ── world + characters
   const prefab: PrefabSystem | null = dress ? make('prefab', () => createPrefabs({ dress, perf: P, log })) : null;
@@ -297,6 +299,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const ferryLook: FerryLookView | null = playMode && zones ? make('ferryLook', () => createFerryLook({ root: () => zones.root('iskele') ?? null, rules: () => sim.rules })) : null;
 
   const karsiLook: KarsiLookView | null = playMode && zones ? make('karsiLook', () => createKarsiLook({ root: () => zones.root('iskele') ?? null })) : null;
+  const karsiBina: BinaView | null = playMode && zones ? make('karsiBina', () => createKarsiBina({ root: () => zones.root('iskele') ?? null, night: () => nightK })) : null;
   const karsiYasam: YasamView | null = playMode && zones && chars ? make('karsiYasam', () => createKarsiYasam({ root: () => zones.root('iskele') ?? null, chars, hero: () => walk.pos, hour: () => sim.clock.hour, sfx: id => { try { audio?.sfx(id); } catch { /* */ } }, isci: () => { const m = mulkApi(sim.rules); return m ? m.view().plots.filter(p => p.sabit && p.owned).map(p => ({ id: p.id, n: p.isci })) : []; } })) : null;
   const yolLook: YolLookView | null = playMode && zones ? make('yolLook', () => createYolLook({ root: () => zones.root('iskele') ?? null })) : null;
 
@@ -595,6 +598,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (ferryLook) guard('ferryLook', () => ferryLook.update(fdt));
     if (yolLook) guard('yolLook', () => yolLook.update(fdt));
     if (karsiLook) guard('karsiLook', () => karsiLook.update(fdt));
+    if (karsiBina) guard('karsiBina', () => karsiBina.update(fdt));
     if (karsiYasam) guard('karsiYasam', () => karsiYasam.update(fdt));
     if (tipJar) guard('tipJar', () => tipJar.update(fdt));
     if (stantLook) guard('stantLook', () => stantLook.update(fdt));

@@ -18,6 +18,11 @@ function envReg(m: T.MeshStandardMaterial, kind: EnvKind) {
   m.envMapIntensity = glossy ? 0.7 : 0.35; m.roughness = Math.min(m.roughness, glossy ? 0.42 : 0.85); if (glossy) m.metalness = Math.max(m.metalness, 0.15);
   if (envTex) { m.envMap = envTex; m.needsUpdate = true; } envMats.add(m);
 }
+/** Let a non-GLB material (procedural buildings) pick up the same sky reflections. */
+export function useSkyEnv(m: T.MeshStandardMaterial, kind: 'matte' | 'glass') {
+  if (kind === 'glass') { m.envMapIntensity = 1.15; envMats.add(m); if (envTex) { m.envMap = envTex; m.needsUpdate = true; } return; }
+  envReg(m, 'matte');
+}
 export function loadGlb(name: string): Promise<T.Object3D | null> {
   let p = cache.get(name);
   if (!p) {

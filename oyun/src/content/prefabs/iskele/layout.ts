@@ -115,6 +115,8 @@ export function staticObstacles(): Obstacle[] {
   add(-80, PIER.x0, PIER.z1 - 0.4, PIER.z1 + 0.45, 'rail'); add(PIER.x1, 80, PIER.z1 - 0.4, PIER.z1 + 0.45, 'rail');
   // road-side rail along the promenade; the footbridge stairs interrupt it
   add(-80, UG.x - UG.hw, 13.3, 14.2, 'rail'); add(UG.x + UG.hw, 80, 13.3, 14.2, 'rail');
+  // stair side walls: the flights are entered only from their foot (south foot on the promenade, north foot on the far pavement)
+  for (const sg of [-1, 1]) { const x0 = UG.x + sg * (UG.hw + 0.05), x1 = UG.x + sg * (UG.hw + 0.45); add(Math.min(x0, x1), Math.max(x0, x1), UG.zA + 0.6, 14.2, 'rail'); add(Math.min(x0, x1), Math.max(x0, x1), 28.4, UG.zD - 0.6, 'rail'); }
   PIER_LAMPS.forEach(([x, z]) => add(x - 0.22, x + 0.22, z - 0.22, z + 0.22, 'lamp'));
   for (let x = -58; x <= 58; x += 10) if (x < PIER.x0 - 1 || x > PIER.x1 + 1) add(x - 0.22, x + 0.22, 4.83, 5.27, 'lamp');
   [[22.05, -8.55], [22.05, -5.65], [21.9, -12.85], [-23.45, -17.5]].forEach(([x, z]) => add(x - 0.25, x + 0.25, z - 0.25, z + 0.25, 'bollard'));

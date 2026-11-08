@@ -30,8 +30,9 @@ export function createMulkView(d: MulkViewDeps): MulkView {
   const put = (lb: HtmlLabel, x: number, y: number, z: number, html: string) => { at.x = x; at.y = y; at.z = z; if (d.project(at, tmp)) lb.set(tmp.x, tmp.y, html, 'say'); else lb.hide(); };
 
   /* ---- bank ---- */
+  // 2026-11-08: the bank building itself is a detailed model in view/world/karsi-bina.ts; this group stays empty
   const bank = new T.Group(); bank.position.set(BANKA.x, 0, BANKA.z); root.add(bank);
-  {
+  if (false as boolean) {
     const W = BANKA.w, D = BANKA.d;
     box(bank, W + 0.8, 0.25, D + 0.9, '#b9ad99', 0, 0.12, 0.2);                 // plinth
     box(bank, W, 3.1, D, '#e4d9c0', 0, 1.8, 0);                                 // body
