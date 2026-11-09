@@ -22,6 +22,7 @@ export function installGider(r: Rules): { last(): GiderModel | null } {
     last = { kira, fatura, malzeme: Math.round(t.cost || 0), satis, paid };
     const dc = (r.rt.uiLast as Record<string, unknown>).dayCard as Record<string, unknown> | undefined;
     if (dc) dc.gider = last;
+    (r.rt.uiLast as Record<string, unknown>).giderSon = { ...last, day: S.day };
     if (paid > 0) r.toast('Gün sonu: kira ' + fmtTL(kira) + ', fatura ' + fmtTL(fatura) + ' ödendi.', 'info');
   });
   return { last: () => last };

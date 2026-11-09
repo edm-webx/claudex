@@ -86,13 +86,14 @@ export function installKarne(K: Kernel) {
       const sol = K.slowSolution(link, link === 'production' || link === 'transport' ? 'doner' : undefined) as { cost?: number; info?: boolean };
       if (sol && sol.cost && !sol.info) fix = { label: cp.fix, cost: sol.cost };
     }
+    const maas = Math.round(S.workers.reduce((a, w) => a + ((w as { paidToday?: number }).paidToday || 0), 0)), ekip = S.workers.length;
     S.workers.forEach(w => { (w as { paidToday?: number }).paidToday = 0; if (T0.angry < 3) w.morale = Math.min(100, (w.morale || 70) + 5); });
     // survey 2026-10-24 (reversed): at 03:00 the screen fades and the gün sonu card shows the day's ciro; the next
     // day starts behind it (morning) and the sim waits until the player presses "Yeni güne başla".
     void complaint; void fix;
     const best = rt.dayHistory.reduce((m, d) => Math.max(m, d.earned), 0);
     if ((rt as unknown as { gunSonuCard?: boolean }).gunSonuCard) {
-    rt.uiLast.gunSonu = { day, earned: Math.round(T0.earned), customers: T0.customers, angry: T0.angry, money: Math.round(S.money), record: Math.round(T0.earned) > best && day > 1 };
+    rt.uiLast.gunSonu = { day, earned: Math.round(T0.earned), customers: T0.customers, angry: T0.angry, money: Math.round(S.money), record: Math.round(T0.earned) > best && day > 1, maas, ekip };
     rt.paused = true; rt.pauseWhy = 'gunSonu';
     }
     K.logEv('dayEnd', { day, customers: T0.customers, earned: Math.round(T0.earned), angry: T0.angry, money: Math.round(S.money), link });
