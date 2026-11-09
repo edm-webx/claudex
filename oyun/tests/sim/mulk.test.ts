@@ -88,3 +88,13 @@ it('kafe: the player brews at the espresso machine (wait-and-take) and picks a t
   c({ op: 'tema', id: 'k1', e: 'deniz' }); expect(p.tema).toBe('deniz');
   const m0 = S.money; c({ op: 'tema', id: 'k1', e: 'retro' }); expect(S.money).toBe(m0 - 15000);
 });
+it('banka: kredi çekilir, limit seviyeye bağlı, gün dönünce faiz borca eklenir, ödenir', () => {
+  const { sim, S, c } = mk();
+  sim.command({ kind: 'teleport', x: BANKA.kapi.x, z: BANKA.kapi.z });
+  S.money = 0; c({ op: 'krediAl', n: 10000 });
+  const k = S.zones.arsa.kredi; expect(k.borc).toBe(10000); expect(S.money).toBe(10000);
+  c({ op: 'krediAl', n: 1e9 }); expect(k.borc).toBeLessThan(1e6);
+  const b0 = k.borc; k.gun = S.day - 1; S.zones.envanter.gunluk.gun = -1; sim.step(1);
+  expect(k.borc).toBeGreaterThan(b0);
+  S.money = 1e7; c({ op: 'krediOde', n: 1e9 }); expect(k.borc).toBe(0);
+});
