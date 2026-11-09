@@ -426,7 +426,7 @@ export function createAudio(deps: AudioDeps): MotorAudio {
         }
         const buf = sample('sfx.' + id);
         if (buf) { playBuffer(buf, out, 1, opts?.pitch ?? 1); return; }
-        if (playId(id, out, opts?.pitch ?? 1)) return;
+        if (id !== 'coin' && id !== 'cash' && id !== 'buy' && playId(id, out, opts?.pitch ?? 1)) return;   // money sounds: always the soft habituating synth, never the bright bank patches
         (SFX[id] || SFX.pop)(out);
       } catch { /* never throw from audio */ }
     },

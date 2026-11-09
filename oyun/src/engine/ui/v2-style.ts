@@ -171,7 +171,7 @@ position:fixed;inset:0;pointer-events:none;z-index:10;overflow:hidden;font-famil
 .sb-lab.tap{pointer-events:auto;cursor:pointer}
 .sb-lab>div{position:absolute;left:0;top:0;transform:translate(calc(-50% + var(--dx,0px)),-100%)}
 .sb-lab>.slow,.sb-lab>.icon,.sb-lab>.ring,.sb-lab>.hearts{transform:translate(-50%,-50%)}
-.sb-lab .bubble{background:var(--paper);border:2.5px solid var(--ink);border-radius:16px;padding:4px 8px 5px;box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;gap:2px;margin-bottom:18px;width:max-content;max-width:150px;font:800 11px/1.15 var(--body);text-align:center;color:var(--ink);animation:sb-in .22s cubic-bezier(.3,1.6,.5,1)}
+.sb-lab .bubble{background:var(--paper);border:2.5px solid var(--ink);border-radius:16px;padding:4px 8px 5px;box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;gap:2px;margin-bottom:18px;width:max-content;max-width:150px;font:800 13px/1.15 var(--body);text-align:center;color:var(--ink);animation:sb-in .22s cubic-bezier(.3,1.6,.5,1)}
 .sb-lab .bubble::before,.sb-lab .bubble::after{content:"";position:absolute;border:2.5px solid var(--ink);background:var(--paper);border-radius:50%}
 .sb-lab .bubble::before{width:12px;height:12px;left:calc(50% - 9px - var(--dx,0px));bottom:-13px}
 .sb-lab .bubble::after{width:7px;height:7px;left:calc(50% - 13px - var(--dx,0px));bottom:-21px}
@@ -196,10 +196,10 @@ position:fixed;inset:0;pointer-events:none;z-index:10;overflow:hidden;font-famil
 .sb-lab .say{margin-bottom:12px;background:var(--ink);color:var(--cream);border-radius:14px;padding:6px 11px 7px;font:800 12px/1.15 var(--body);width:max-content;max-width:190px;text-align:center;box-shadow:0 3px 0 rgba(0,0,0,.25);animation:sb-in .2s ease-out}
 .sb-lab .say::after{content:"";position:absolute;left:calc(50% - var(--dx,0px));bottom:-7px;width:12px;height:12px;background:var(--ink);transform:translateX(-50%) rotate(45deg);border-radius:2px}
 .sb-lab .say b{color:var(--yellow)}
-.sb-lab .tag{white-space:nowrap;text-align:center;font:800 11px/1.1 var(--body);color:#fff;text-shadow:0 1px 0 var(--ink),1px 0 0 var(--ink),-1px 0 0 var(--ink),0 -1px 0 var(--ink),0 2px 3px rgba(0,0,0,.6)}
+.sb-lab .tag{white-space:nowrap;text-align:center;font:800 13px/1.1 var(--body);color:#fff;text-shadow:0 1px 0 var(--ink),1px 0 0 var(--ink),-1px 0 0 var(--ink),0 -1px 0 var(--ink),0 2px 3px rgba(0,0,0,.6)}
 .sb-lab .tag b{display:block;font:900 12px/1.05 var(--disp);color:var(--yellow)}
 .sb-lab .price{display:flex;flex-direction:column;align-items:center;gap:2px;margin-bottom:4px}
-.sb-lab .price .pt{font:900 11px/1 var(--disp);color:#fff;background:var(--ink);padding:3px 7px 2px;border-radius:7px;letter-spacing:.03em;white-space:nowrap}
+.sb-lab .price .pt{font:900 13px/1 var(--disp);color:#fff;background:var(--ink);padding:3px 7px 2px;border-radius:7px;letter-spacing:.03em;white-space:nowrap}
 .sb-lab .price .pv{display:flex;align-items:center;gap:3px;background:var(--yellow);border:2.5px solid var(--ink);border-radius:12px;padding:2px 9px 2px 3px;font:900 14px/1 var(--disp);box-shadow:var(--shadow);white-space:nowrap;font-variant-numeric:tabular-nums}
 .sb-lab .price .pv svg{width:22px;height:22px}
 .sb-lab .price.cant .pv{background:#efe6d6;color:#8a7a6a}
@@ -210,7 +210,7 @@ position:fixed;inset:0;pointer-events:none;z-index:10;overflow:hidden;font-famil
 .sb-lab .icon svg{width:26px;height:26px}
 @keyframes sb-bob{50%{translate:0 -4px}}
 .sb-lab .ring{width:40px;height:40px;border-radius:50%;background:conic-gradient(var(--yellow) calc(var(--p,0) * 1turn),rgba(59,42,32,.4) 0);-webkit-mask:radial-gradient(circle,transparent 11px,#000 12px);mask:radial-gradient(circle,transparent 11px,#000 12px)}
-.sb-lab .full{font:900 11px/1 var(--disp);color:var(--ink);padding:4px 8px 3px;border-radius:8px;border:2.5px solid var(--ink);letter-spacing:.06em;background:repeating-linear-gradient(-45deg,var(--yellow) 0 6px,#ffe78a 6px 12px);white-space:nowrap;margin-bottom:4px}
+.sb-lab .full{font:900 13px/1 var(--disp);color:var(--ink);padding:4px 8px 3px;border-radius:8px;border:2.5px solid var(--ink);letter-spacing:.06em;background:repeating-linear-gradient(-45deg,var(--yellow) 0 6px,#ffe78a 6px 12px);white-space:nowrap;margin-bottom:4px}
 .sb-lab .zz{font:900 19px/1 var(--disp);color:#2f7fb3;text-shadow:0 2px 0 #fff,0 0 3px #fff;white-space:nowrap;animation:sb-zz 1.6s ease-in-out infinite;margin-bottom:4px}
 @keyframes sb-zz{0%{opacity:.4;translate:-4px 4px}50%{opacity:1}100%{opacity:.4;translate:6px -6px}}
 .sb-lab .hearts{width:60px;height:60px}

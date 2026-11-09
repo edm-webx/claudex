@@ -59,7 +59,11 @@ export function createAgentsView(deps: AgentsViewDeps): AgentsView {
       if (a.kind === 'cat') { h = chars.makeCat(rig); animal = true; }
       else if (a.kind === 'dog') { h = chars.makeDog(rig); animal = true; }
       else if (a.kind === 'gull' || a.kind === 'parrot') { h = chars.makeGull(rig); animal = true; }
-      else { rig.look = resolveLook(chars, rig.look as Record<string, unknown> | undefined); h = chars.makeHero(rig as never); }
+      else {
+        let lk = resolveLook(chars, rig.look as Record<string, unknown> | undefined);
+        if (a.kind === 'worker' && lk) { const o = { ...lk }; for (const k of ['top', 'topStyle', 'sleeves', 'vest', 'bowtie', 'bottom', 'bottomStyle', 'hat', 'hatColor', 'apron', 'back', 'props', 'accent']) delete o[k]; lk = o; }   // hired staff wear their ROLE uniform, only the person (face, hair, skin) comes from the candidate
+        rig.look = lk; h = chars.makeHero(rig as never);
+      }
     } catch (e) { return null; }
     h.object.position.set(a.x, a.y, a.z);
     let bag: T.Object3D | undefined;

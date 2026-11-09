@@ -30,7 +30,7 @@ export const YENI_CSS = `
 #sbui .sb-streak{background:linear-gradient(90deg,#ff5a4e,#ff8a3d)!important;border:0!important;box-shadow:0 8px 20px rgba(255,90,78,.4)!important}
 /* dock */
 #sbui .sb-bar{background:var(--glass2)!important;border:1px solid var(--hair)!important;border-radius:22px!important;box-shadow:0 18px 40px rgba(4,10,24,.55),inset 0 1px 0 rgba(255,255,255,.08)!important;backdrop-filter:blur(18px) saturate(1.3);-webkit-backdrop-filter:blur(18px) saturate(1.3);padding:6px!important;gap:2px!important;max-width:600px!important}
-#sbui .sb-bi{height:60px!important;border-radius:16px!important;color:rgba(255,255,255,.72)!important;font:800 9.5px/1 var(--body)!important;letter-spacing:.12em!important;text-transform:uppercase;gap:5px!important;transition:background .18s,color .18s,transform .18s}
+#sbui .sb-bi{height:60px!important;border-radius:16px!important;color:rgba(255,255,255,.72)!important;font:800 11.5px/1 var(--body)!important;letter-spacing:.12em!important;text-transform:uppercase;gap:5px!important;transition:background .18s,color .18s,transform .18s}
 #sbui .sb-bi span{opacity:.9}
 #sbui .sb-bi svg{width:30px!important;height:30px!important;filter:drop-shadow(0 3px 4px rgba(0,0,0,.5))}
 #sbui .sb-bi:hover{background:rgba(255,255,255,.07)!important;color:#fff!important}

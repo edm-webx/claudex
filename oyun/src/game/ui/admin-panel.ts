@@ -19,8 +19,8 @@ interface Deps {
 }
 
 const CSS = `
-.ad-fab{position:fixed;right:10px;top:calc(env(safe-area-inset-top,0px) + 300px);z-index:60;pointer-events:auto;width:48px;height:48px;border-radius:50%;border:3px solid #3b2a20;background:#ffd23f;box-shadow:0 4px 0 #3b2a20;font-size:22px;cursor:pointer}
-.ad-p{position:fixed;right:66px;top:calc(env(safe-area-inset-top,0px) + 300px);z-index:61;pointer-events:auto;width:min(380px,calc(100vw - 80px));max-height:calc(100vh - 320px);overflow:auto;background:#fdf3e1;color:#3b2a20;border:4px solid #3b2a20;border-radius:18px;box-shadow:0 6px 0 #3b2a20;padding:10px;font:700 14px/1.3 var(--body);display:none}
+.ad-fab{position:fixed;right:120px;top:calc(env(safe-area-inset-top,0px) + 12px);z-index:60;pointer-events:auto;width:42px;height:42px;border-radius:50%;border:3px solid #3b2a20;background:#ffd23f;box-shadow:0 4px 0 #3b2a20;font-size:22px;cursor:pointer}
+.ad-p{position:fixed;right:10px;top:calc(env(safe-area-inset-top,0px) + 62px);z-index:61;pointer-events:auto;width:min(380px,calc(100vw - 20px));max-height:calc(100vh - 80px);overflow:auto;background:#fdf3e1;color:#3b2a20;border:4px solid #3b2a20;border-radius:18px;box-shadow:0 6px 0 #3b2a20;padding:10px;font:700 14px/1.3 var(--body);display:none}
 .ad-p.on{display:block}
 .ad-h{font:900 18px var(--disp);margin:0 0 6px}
 .ad-top{position:sticky;top:-12px;z-index:2;background:#fdf3e1;margin:-12px -12px 6px;padding:10px 12px 4px;border-bottom:3px solid #3b2a20}

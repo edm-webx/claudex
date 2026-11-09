@@ -9,7 +9,7 @@ export interface HaritaHudDeps { root: HTMLElement; rules: () => Rules | null; c
 export interface HaritaHud { update(dt: number): void; dispose(): void }
 
 const CSS = `
-.mk-mini{position:absolute;left:calc(var(--sl,0px) + 10px);top:calc(var(--hudb,64px) + 50px);width:168px;height:70px;border:3px solid #3b2a20;border-radius:14px;background:#f7ecd2;box-shadow:0 3px 0 #3b2a20;z-index:28;pointer-events:auto;overflow:hidden;cursor:pointer;transition:opacity .3s,transform .3s}
+.mk-mini{position:absolute;left:calc(var(--sl,0px) + 10px);top:calc(var(--hudb,64px) + 104px);width:168px;height:70px;border:3px solid #3b2a20;border-radius:14px;background:#f7ecd2;box-shadow:0 3px 0 #3b2a20;z-index:28;pointer-events:auto;overflow:hidden;cursor:pointer;transition:opacity .3s,transform .3s}
 .mk-mini.off{opacity:0;transform:translateY(-8px);pointer-events:none}
 .mk-mini canvas{display:block;width:100%;height:100%}
 .mk-mini b{position:absolute;left:6px;top:3px;font:900 11px/1 var(--disp,system-ui);color:#7a4a12;pointer-events:none}

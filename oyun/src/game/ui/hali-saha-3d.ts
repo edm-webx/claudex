@@ -26,7 +26,7 @@ export function createHaliSaha3D(o: {
   try { ren = new T.WebGLRenderer({ antialias: true }); } catch { return null; }
   ren.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
   ren.shadowMap.enabled = true; ren.shadowMap.type = T.PCFSoftShadowMap;
-  ren.outputColorSpace = T.SRGBColorSpace;
+  ren.outputColorSpace = T.SRGBColorSpace; ren.toneMapping = T.ACESFilmicToneMapping; ren.toneMappingExposure = 0.85;   // same filmic grade as the main scene: floodlights must not blow out
   const cv = ren.domElement; cv.style.cssText = 'position:absolute;inset:0;width:100%;height:100%';
   o.wrap.insertBefore(cv, o.wrap.firstChild);
   const scene = new T.Scene(); scene.background = new T.Color('#16233a'); scene.fog = new T.Fog('#16233a', 45, 95);
@@ -37,8 +37,8 @@ export function createHaliSaha3D(o: {
   const box = (w: number, h: number, d: number, m: T.Material, x: number, y: number, z: number) => { const b = new T.Mesh(geo(new T.BoxGeometry(w, h, d)), m); b.position.set(x, y, z); b.castShadow = true; b.receiveShadow = true; scene.add(b); return b; };
 
   // lights: night match under floodlights
-  scene.add(new T.HemisphereLight('#cfe2ff', '#2a3a22', 1.1));
-  const sun = new T.DirectionalLight('#fff4dc', 2.2); sun.position.set(L * 0.35, 30, WD + 12); sun.target.position.set(L / 2, 0, WD / 2);
+  scene.add(new T.HemisphereLight('#cfe2ff', '#2a3a22', 0.7));
+  const sun = new T.DirectionalLight('#fff4dc', 1.5); sun.position.set(L * 0.35, 30, WD + 12); sun.target.position.set(L / 2, 0, WD / 2);
   sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024);
   Object.assign(sun.shadow.camera, { left: -26, right: 26, top: 16, bottom: -16, near: 5, far: 80 }); sun.shadow.camera.updateProjectionMatrix();
   scene.add(sun, sun.target);

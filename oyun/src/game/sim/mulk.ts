@@ -17,7 +17,7 @@ import {
   DUKKAN_STOK_MAX, dukkanYukselt, dukkanMusteri, STADYUM, HALI_SAHA_KAPI, ISCI_MAX, isciFiyat, kafeMenu, kafeIsciMax, ISCI_SAAT_UCRET, ISCI_MUSTERI, type Arsa,
   isletmeOf, isletmeEsya, SALON_ESYA, SALON_ESYA_BY_ID,
 } from '../../content/esya';
-import { icOfArsa, icIcinde, bankaGise, IC_BY_ID, icDim, icWorld } from '../../content/ic-mekan';
+import { IC_CANLI, icOfArsa, icIcinde, bankaGise, IC_BY_ID, icDim, icWorld } from '../../content/ic-mekan';
 import { OKUL_KELIME, OKUL_SINAV } from '../../content/okul';
 import { AVM_URUN, AVM_BY_ID } from '../../content/avm';
 import { KT_URUN, KT_BY_ID, KT_MUSTERI, KT_SABIR } from '../../content/kirtasiye';
@@ -360,7 +360,7 @@ export function installMulk(K: Kernel) {
           const ucret = isci * ISCI_SAAT_UCRET * dh; if (p.till >= ucret) p.till -= ucret;      // wages come out of the till
           const max = DUKKAN_STOK_MAX[p.lv]; if (p.stok < max * 0.25 && p.till >= t.maliyet * 10) { const n = Math.min(max - Math.floor(p.stok), Math.floor(p.till * 0.6 / t.maliyet)); if (n > 0) { p.till -= n * t.maliyet; p.stok += n; } }
         }
-        if (ar.sabit && kafeHost.live && dh > 0) {   // live room sim: customers walk in and get served by the player / hired workers
+        if (ar.sabit && kafeHost.live && IC_CANLI.includes(ar.id) && dh > 0) {   // live room sim: customers walk in and get served by the player / hired workers
           if (p.stok > 0) { p.fr += dukkanMusteri(t, p.lv) * ek.musK * (1 + ISCI_MUSTERI * isci) * dh; const n = Math.floor(p.fr); p.fr -= n; if (n > 0) kafeHost.pending[ar.id] = Math.min(6, (kafeHost.pending[ar.id] || 0) + n); }
         } else if (dh > 0 && p.stok > 0) {
           p.fr += dukkanMusteri(t, p.lv) * ek.musK * (1 + ISCI_MUSTERI * isci) * dh; const n = Math.min(Math.floor(p.fr), p.stok); p.fr -= Math.floor(p.fr);

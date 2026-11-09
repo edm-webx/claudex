@@ -114,7 +114,7 @@ export function installHaliSaha(K: Kernel, lig?: { mac(day: number): (MacGunu & 
       }
       if (c.op === 'sonuc') {
         const t = rt.uiLast.haliSahaMac as MacGunu | undefined; if (!t) return false;
-        const biz = Math.max(0, Math.round(Number(c.biz) || 0)), onlar = Math.max(0, Math.round(Number(c.onlar) || 0));
+        const biz = Math.min(30, Math.max(0, Math.round(Number(c.biz) || 0))), onlar = Math.min(30, Math.max(0, Math.round(Number(c.onlar) || 0)));
         delete rt.uiLast.haliSahaMac; if (rt.pauseWhy === 'halisaha') { rt.paused = false; rt.pauseWhy = ''; }
         const ligOk = t.ligG != null && lig ? lig.sonuc(t.ligG, biz, onlar) : false; void ligOk;
         z.played++; z.goals += biz; recordStats(z, c.ist, biz, onlar);

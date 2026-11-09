@@ -58,7 +58,7 @@ export const STANT_STAND_D = 0.85;
 export const ADISYON = {
   fromStage: 3,
   /** share of new customers that come for table service, by kiosk stage (index stage-1) */
-  share: [0, 0, 0.2, 0.3, 0.4],   // 2026-11-09 user: seated customers must not cycle so fast the player gives up (calmer)
+  share: [0, 0, 0.2, 0.3, 0.4, 0.45, 0.5, 0.55, 0.55, 0.6],   // 2026-11-09 user: seated customers must not cycle so fast the player gives up (calmer)
   orderDelay: 4,          // s after sitting before the ticket prints
   patience: 150,          // s for the whole ticket
   maxOpen: 3,             // open tickets at once

@@ -30,6 +30,8 @@ export const IC_MEKANLAR: IcMekan[] = [
   { id: 'salonE', ad: 'Balık lokantası', tur: 'balik', x: 15.6, z: -13.9, wx: 12, wz: 6.6, kapi: '+z', salon: 'E', h: 3.4 },
 ];
 export const IC_BY_ID: Record<string, IcMekan> = Object.fromEntries(IC_MEKANLAR.map(m => [m.id, m]));
+/** business rooms run by the live room sim (sim/agents/kafe.ts): real guests + real workers, no props */
+export const IC_CANLI = ['k1', 'k2', 'k4', 'k5', 'k6'];
 export const icOfArsa = (arsa: string) => IC_MEKANLAR.find(m => m.arsa === arsa);
 
 const YAW: Record<Yon, number> = { '+z': 0, '+x': Math.PI / 2, '-z': Math.PI, '-x': -Math.PI / 2 };

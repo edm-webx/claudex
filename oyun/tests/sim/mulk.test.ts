@@ -100,6 +100,17 @@ it('kafe: müşteriler içeri gelir, hired worker ve oyuncu servis eder, para ka
   c({ op: 'tema', id: 'k1', e: 'deniz' }); expect(p.tema).toBe('deniz');
   const m0 = S.money; c({ op: 'tema', id: 'k1', e: 'retro' }); expect(S.money).toBe(m0 - 15000);
 });
+it('canlı oda: kantin, AVM lokantası ve tesis kafeteryası da gerçek müşteri + işçiyle para kazanır (k4-k6)', () => {
+  for (const id of ['k4', 'k5', 'k6']) {
+    const { sim, S, c } = mk();
+    S.level = 40; S.money = 5e7;
+    c({ op: 'arsaAl', id });
+    const p = S.zones.arsa.plots[id], h = sim.rules.rt.kafeHost;
+    expect(p, id).toBeTruthy(); p.isci = 2; p.stok = 50;
+    for (let i = 0; i < 900; i++) { sim.step(0.1); h.pending[id] = Math.max(h.pending[id] || 0, 1); }
+    expect(p.sat, id).toBeGreaterThan(2);
+  }
+});
 it('banka: kredi çekilir, limit seviyeye bağlı, gün dönünce faiz borca eklenir, ödenir', () => {
   const { sim, S, c } = mk();
   sim.command({ kind: 'teleport', x: BANKA.kapi.x, z: BANKA.kapi.z });

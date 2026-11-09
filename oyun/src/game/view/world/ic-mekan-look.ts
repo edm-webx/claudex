@@ -9,7 +9,7 @@
 import * as T from 'three';
 import { mutfakEsya, mutfakCelik } from '../../../content/mutfak';
 import { Batch, mtx } from '../../../engine/prefab/batch';
-import { IC_MEKANLAR, icLayout, icDim, icYaw, icIcinde, type IcMekan, type IcItem } from '../../../content/ic-mekan';
+import { IC_CANLI, IC_MEKANLAR, icLayout, icDim, icYaw, icIcinde, type IcMekan, type IcItem } from '../../../content/ic-mekan';
 import { useSkyEnv } from './glb';
 
 export interface IcDeps {
@@ -171,7 +171,7 @@ const F: Record<string, Fn> = {
   semaverDev: (c) => { c.b.box(0.8, 0.8, 0.8, '#5a3b2a', 0, 0.4, 0); c.b.cyl(0.28, 0.34, 0.9, '#b87333', 0, 1.25, 0, { seg: 16 }); c.b.cyl(0.12, 0.22, 0.25, '#b87333', 0, 1.82, 0, { seg: 14 }); c.b.cyl(0.14, 0.12, 0.2, '#7a2a1d', 0, 2.04, 0, { seg: 12 }); c.b.cyl(0.03, 0.03, 0.2, '#c9a23a', 0, 1.0, 0.35, { rx: HP, seg: 6 }); for (let i = 0; i < 8; i++) c.b.cyl(0.025, 0.02, 0.07, '#b0281e', -0.3 + (i % 4) * 0.2, 0.84, 0.25 + Math.floor(i / 4) * 0.08, { seg: 6 }); },
   firinK: (c, it) => { const { b, l } = c; b.box(it.w, 0.9, it.d, '#5b6068', 0, 0.45, 0); b.box(it.w * 0.8, 0.45, it.d * 0.75, '#c9ced6', 0, 1.15, 0); c.g.box(it.w * 0.5, 0.25, 0.02, '#ffcf8a', -0.05, 1.15, it.d * 0.38); l.box(it.w * 0.46, 0.2, 0.01, '#ffb866', -0.05, 1.15, it.d * 0.37); },
   meyve: (c, it) => { c.b.box(it.w, 0.8, it.d, '#6f9e4f', 0, 0.4, 0); for (let i = 0; i < 9; i++) c.b.sph(0.07, ['#e0533c', '#ffd23f', '#49b96a', '#ff8a3a'][i % 4], -it.w / 2 + 0.15 + (i % 3) * 0.3, 0.86, -0.15 + Math.floor(i / 3) * 0.15, { ws: 6, hs: 5 }); },
-  masaK: (c, it) => { const { b } = c; b.box(it.w, 0.05, it.d, '#e0533c', 0, 0.74, 0); for (const s of [-1, 1]) { b.box(0.05, 0.72, it.d - 0.1, '#5b6068', s * (it.w / 2 - 0.1), 0.36, 0); b.box(it.w, 0.04, 0.3, '#5b6068', 0, 0.44, s * (it.d / 2 + 0.25)); } const p = person('student', c.seed + Math.round(it.u * 9), true); p.position.set(-0.3, 0, it.d / 2 + 0.3); p.rotation.y = Math.PI; c.grp.userData.cur.add(p); },
+  masaK: (c, it) => { const { b } = c; b.box(it.w, 0.05, it.d, '#e0533c', 0, 0.74, 0); for (const s of [-1, 1]) { b.box(0.05, 0.72, it.d - 0.1, '#5b6068', s * (it.w / 2 - 0.1), 0.36, 0); b.box(it.w, 0.04, 0.3, '#5b6068', 0, 0.44, s * (it.d / 2 + 0.25)); } if (!c.grp.userData.live) { const p = person('student', c.seed + Math.round(it.u * 9), true); p.position.set(-0.3, 0, it.d / 2 + 0.3); p.rotation.y = Math.PI; c.grp.userData.cur.add(p); } },
   ekran: (c, it) => { c.b.box(it.w + 0.08, it.w * 0.58 + 0.08, 0.06, '#111', 0, it.y || 2.0, 0); const mm = new T.MeshBasicMaterial({ color: '#2a8fd0' }); const s = new T.Mesh(new T.PlaneGeometry(it.w, it.w * 0.58), mm); s.position.set(0, it.y || 2.0, 0.035); c.grp.userData.curItem.add(s); c.an.screens.push(mm); },
   izgara: (c, it) => F.mangal(c, it),
   // AVM
@@ -280,7 +280,7 @@ function buildRoom(m: IcMekan, own: { lv: number; isci: number; esya: string[]; 
   const has = new Set(m.salon ? salonEsya : m.mutfak ? mutfakEsya(stage) : own?.esya || []);
   const items = icLayout(m), occ = own ? Math.min(0.9, 0.35 + 0.12 * own.lv) : m.salon ? (fine ? 0.85 : 0.65) : 0.4;
   let ti = 0;
-  const live = !!own && (m.tur === 'kafe' || m.tur === 'bistro');   // café/bistro: guests and staff are real actors (agents/kafe.ts), not props
+  const live = !!own && !!m.arsa && IC_CANLI.includes(m.arsa); grp.userData.live = live;   // café/bistro: guests and staff are real actors (agents/kafe.ts), not props
   for (const it of items) {
     if (it.esya && !has.has(it.esya)) continue;
     if (it.k === 'masaK' || it.k === 'masa2' || it.k === 'masa4') ti++;

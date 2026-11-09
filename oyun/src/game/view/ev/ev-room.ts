@@ -74,8 +74,8 @@ export function createEvRoom(deps: EvRoomDeps): EvRoomView {
       renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
     } catch (e) { console.warn('[ev-room] no webgl', e); renderer = null; }
     scene = new T.Scene();
-    scene.add(new T.HemisphereLight('#fff4e0', '#7a5a40', 1.9));
-    const sun = new T.DirectionalLight('#fff1d6', 1.8); sun.position.set(4, 8, 6); scene.add(sun);
+    scene.add(new T.HemisphereLight('#fff4e0', '#7a5a40', 1.1));
+    const sun = new T.DirectionalLight('#fff1d6', 1.2); sun.position.set(4, 8, 6); scene.add(sun);
     cam = new T.OrthographicCamera(-4, 4, 3, -3, 0.1, 60);
     cam.position.set(7, 6.5, 8); cam.lookAt(0, 0.8, 0);
     roomKey = ''; uiKey = '';

@@ -6,7 +6,7 @@ const srv = createServer((req, res) => { const p = new URL(req.url, 'http://x').
 await new Promise(r => srv.listen(0, '127.0.0.1', r));
 const b = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 const p = await (await b.newContext({ viewport: { width: 1280, height: 720 } })).newPage(); p.on('console', m => { if (/error/i.test(m.type() + m.text())) console.log('[c]', m.text().slice(0, 300)); });
-await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengeli&seed=3&stage=${process.env.STAGE || 10}${process.env.TEMA ? "&tema=1" : ""}${process.env.LIVE ? "&live=1" : ""}`);
+await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengeli&seed=3&stage=${process.env.STAGE || 10}${process.env.TEMA ? "&tema=1" : ""}${process.env.LIVE ? "&live=1" : ""}${process.env.ZR ? "&zr=" + process.env.ZR : ""}`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 60000 });
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
 const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(700); }

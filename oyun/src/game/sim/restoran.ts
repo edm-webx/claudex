@@ -281,7 +281,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     }
   }
   function wantMasa(): boolean {
-    if (!FAZ2_UI || !active() || tickets.length >= ADISYON.maxOpen) return false;
+    if (!FAZ2_UI || !active() || tickets.length >= ADISYON.maxOpen + Math.max(0, Math.floor(((S.stage || 1) - 4) / 2))) return false;
     const sh = (ADISYON.share[(S.stage || 1) - 1] ?? 0) + Math.max(0, G().servis - 3) * SERVIS.sharePerStar;
     if (rng.next() >= sh) return false;
     return freeTable() >= 0;
