@@ -588,6 +588,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
 
   // frame trace for smoothness tests: hooks.trace(true) records [time, heroX, heroZ, camX, camZ] per render, trace(false) returns it
   let synthT: number | null = null;
+  let warmPend = -1;
   let tracing = false; let traceBuf: number[][] = [];
   const renderFrame = (fdt: number, alpha: number) => {
     const t0 = platform.clock.now();
@@ -679,6 +680,9 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (hedefCard) guard('hedefCard', () => hedefCard.update(fdt));
     if (audioMap) guard('audioMap', () => audioMap.update());
     if (juice) guard('juice', () => juice.update(fdt));
+    // 2026-11-09 Chrome freeze: when streamed zones finish building, ask three to compile their shaders in parallel
+    // (KHR_parallel_shader_compile) before they are drawn, instead of a blocking compile on first sight
+    if (zones) { const pend = zones.pending(); if (pend === 0 && warmPend !== 0) { const ren = R.renderer as unknown as { compileAsync?: (s: unknown, c: unknown) => Promise<unknown> } | null; ren?.compileAsync?.(scene, cam.camera)?.catch(() => { /* ignore */ }); } warmPend = pend; }
     guard('render', () => P.time('render', () => R.frame(scene, cam.camera, alpha)));
     if (tracing) traceBuf.push([synthT ?? t0, pos.x, pos.z, cam.camera.position.x, cam.camera.position.z]);
     const ms = platform.clock.now() - t0;

@@ -40,8 +40,11 @@ export function createNightLights(o: { scene: T.Scene; zones: ZoneManager | null
   function update(focus: Vec2, hour: number): void {
     const t = todAt(hour);
     const k = Math.max(0, Math.min(1, (t.n ?? 0)));
-    if (k !== n) { n = k; for (const l of lights) l.visible = n > 0.02; }
-    if (n <= 0.02) return;
+    // lights stay visible (intensity 0 by day): toggling visibility changes the light count, and three then recompiles
+    // every lit material at dusk and dawn (2026-11-09 Chrome freeze root cause, twice per 10-minute game day)
+    if (k <= 0.02 && n <= 0.02) return;
+    n = k;
+    if (n <= 0.02) { for (const l of lights) l.intensity = 0; return; }
     pickT -= 1 / 60;
     if (pickT <= 0 || lights[0].userData.i == null) {
       pickT = 0.4;

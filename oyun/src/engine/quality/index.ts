@@ -32,6 +32,7 @@ export function createQuality(deps: QualityDeps): Quality {
   let saved: { setting?: QualitySetting; autoTier?: TierName | null } = {};
   try { saved = JSON.parse(p.storage.get(KEY) || '{}') || {}; } catch { saved = {}; }
   let setting: QualitySetting = saved.setting && (saved.setting === 'auto' || ORDER.includes(saved.setting)) ? saved.setting : 'auto';
+  let downThisSession = false;
   let autoTier: TierName | null = saved.autoTier && ORDER.includes(saved.autoTier) ? saved.autoTier : null;
   const guess = () => guessTier(p.device.memoryGB, p.device.cores);
   let cur: TierName = p.params.tier ?? (setting !== 'auto' ? setting : autoTier ?? guess());
@@ -74,9 +75,12 @@ export function createQuality(deps: QualityDeps): Quality {
       if (buckets.length >= 10) {
         const avg = buckets.reduce((a, b) => a + b, 0) / buckets.length;
         const i = ORDER.indexOf(cur);
-        if (avg > target * 1.5 && i > 0) { lastChange = t; autoTier = ORDER[i - 1]; persist(); apply(autoTier, 'auto'); return; }
+        if (avg > target * 1.5 && i > 0) { lastChange = t; downThisSession = true; autoTier = ORDER[i - 1]; persist(); apply(autoTier, 'auto'); return; }
       }
-      if (calm >= 120 && cur !== 'sahane') { lastChange = t; autoTier = ORDER[ORDER.indexOf(cur) + 1]; persist(); apply(autoTier, 'auto'); }
+      // 2026-11-09 Chrome freeze: auto mode used to step back up after 120 calm seconds; a tier change toggles shadows,
+      // which recompiles every material (multi-second freeze), then the heavier tier missed its target and stepped down
+      // again: a freeze loop. Auto mode now only steps down within a session (the user can still pick a tier by hand).
+      if (calm >= 120 && cur !== 'sahane' && !downThisSession) { lastChange = t; autoTier = ORDER[ORDER.indexOf(cur) + 1]; persist(); apply(autoTier, 'auto'); }
     },
     batterySaver(on) {
       if (battery === on) return;

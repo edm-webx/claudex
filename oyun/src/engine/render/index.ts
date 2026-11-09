@@ -185,6 +185,10 @@ export function createRender(deps: RenderDeps): MotorRender {
       if (renderer && canvasEl === canvas) { api.setTier(t); return; }
       canvasEl = canvas;
       renderer = new T.WebGLRenderer({ canvas, antialias: !!t.antialias, powerPreference: 'high-performance' });
+      // 2026-11-09 Chrome freeze root cause: with checkShaderErrors on, three calls getProgramInfoLog for every new
+      // program right after linking, which blocks the main thread until the GPU process finishes compiling (no parallel
+      // compile). On Windows/ANGLE that was seconds per new area. Errors are only checked in dev builds now.
+      renderer.debug.checkShaderErrors = !!(import.meta as { env?: { DEV?: boolean } }).env?.DEV;
       renderer.outputColorSpace = T.SRGBColorSpace;
       renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.98;
       renderer.shadowMap.type = T.PCFSoftShadowMap;
@@ -239,7 +243,7 @@ export function createRender(deps: RenderDeps): MotorRender {
     },
     info() {
       if (renderer) { lastInfo.geos = renderer.info.memory.geometries; lastInfo.texs = renderer.info.memory.textures; }
-      return { ...lastInfo };
+      return { ...lastInfo, programs: renderer ? ((renderer.info as { programs?: unknown[] }).programs?.length ?? 0) : 0, programNames: renderer ? ((renderer.info as { programs?: { name: string; cacheKey: string }[] }).programs || []).map(p => p.name + '|' + p.cacheKey.length) : [] };
     },
     resize() {
       const { w, h } = size();
