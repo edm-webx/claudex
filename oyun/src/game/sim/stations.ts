@@ -4,6 +4,7 @@
  * station depth (0.8 m) because the exact depth lives in B's three-based station model (error below the 0.85 m radius).
  * Dwell rule: `station.<k>` interactable at the stand-at point, dwell 0.4 s, then a transfer every 0.18 s.
  */
+import { mutfakEtki } from '../../content/mutfak';
 import type { Vec2, Interactable } from '../../engine/api';
 import { yetenekFxOf } from './yetenek';
 import { DWELL_DEFAULTS } from '../../engine/api';
@@ -39,7 +40,7 @@ export function installStations(K: Kernel): { api: StationApi; register(): void;
     return r;
   };
   /** Sabri'nin Evi: rested Sabri works a bit faster in the morning (rt.restBoost, capped, set by dekor-ev.ts). */
-  const restX = () => (1 + Math.min(0.1, Math.max(0, (rt as unknown as { restBoost?: number }).restBoost || 0))) * (1 + yetenekFxOf(rt).station);   // + class skill (yetenek.ts)
+  const restX = () => (1 + Math.min(0.1, Math.max(0, (rt as unknown as { restBoost?: number }).restBoost || 0))) * (1 + yetenekFxOf(rt).station) * (1 + mutfakEtki(S.workers).hiz);   // + class skill (yetenek.ts)
   const carryCount = (p: ProductId) => rt.carry.reduce((n, it) => n + (it.type === p ? 1 : 0), 0);
   const newItem = (p: ProductId, extra?: Partial<Item>): Item => ({ type: p, tier: S.tiers[p] || 1, ...extra });
   const onPick = (it: Item) => {

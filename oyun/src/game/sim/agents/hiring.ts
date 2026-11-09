@@ -13,6 +13,7 @@ import { TRAITS, TRAIT_IDS, TEAMS } from '../../../content/traits';
 import { LEGENDS, ABOUT, STORY_LEGENDS, type LegendDef } from '../../../content/workers';
 import { NAMES, MEMLEKET } from '../../../content/names';
 import { LINES } from '../../../content/lines';
+import { MUTFAK_ROL_BY_ID, mutfakSlot } from '../../../content/mutfak';
 
 export interface JobCard {
   id: string; name: string; role: string; roleLabel: string; traitId: string;
@@ -41,12 +42,14 @@ const traitCard = (id: string) => { const t = TRAITS[id] || TRAITS.hamarat; retu
 
 export function roleOpen(s: GameState, host: HiringHost, role: string): boolean {
   const r = ROLES[role]; if (!r) return false;
+  if (MUTFAK_ROL_BY_ID[role]) return s.workers.filter((w) => w.role === role).length < mutfakSlot(role, s.stage || 1);
   if (r.station && !host.stationBuilt(r.station)) return false;
   if (role === 'temizlik' && host.tablesBuilt() < 2) return false;
   return s.workers.filter((w) => w.role === role).length < (ROLE_SLOTS[role] || 1);
 }
 export function roleWhy(s: GameState, host: HiringHost, role: string): string {
   const r = ROLES[role]; if (!r) return 'Bu iş şu an yok.';
+  if (MUTFAK_ROL_BY_ID[role]) return (s.stage || 1) < MUTFAK_ROL_BY_ID[role].stage ? 'Büfe ' + MUTFAK_ROL_BY_ID[role].stage + '. aşamaya gelince mutfağa alınır.' : r.label + ' kadrosu dolu.';
   if (r.station && !host.stationBuilt(r.station)) return 'Önce ' + host.padLabel(r.station).toLocaleLowerCase('tr') + ' açılmalı.';
   if (role === 'temizlik' && host.tablesBuilt() < 2) return 'Önce iki masa kur.';
   return r.label + ' kadrosu dolu.';

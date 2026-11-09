@@ -23,7 +23,8 @@ it('pier wings: salon income and staff grow every stage from 3; growth stays on 
   for (let s = 2; s <= 10; s++) for (const r of buyumeEngel(s)) {
     expect(r.x0).toBeGreaterThan(-24); expect(r.x1).toBeLessThan(22.7); expect(r.z0).toBeGreaterThan(-18); expect(r.z1).toBeLessThan(4.4);
     const ferry = r.x1 > 8.6 && r.z1 > -9.2 && r.z0 < -4.8; expect(ferry).toBe(false);
-    const inner = r.x1 > -10.3 && r.x0 < 8.3; expect(inner).toBe(false);   // the kiosk area and walkways stay free
+    if (r.tag === 'buyume-bufemutfak') expect(r.z1).toBeLessThanOrEqual(-12.9);   // 2026-11-09 büfe mutfağı sits behind the covered walkway
+    else { const inner = r.x1 > -10.3 && r.x0 < 8.3; expect(inner).toBe(false); }   // the kiosk area and walkways stay free
   }
   expect(buyumeEngel(10).length).toBeGreaterThan(buyumeEngel(5).length);
 });

@@ -7,8 +7,8 @@
  * Items with `esya` show only when that equipment is bought (never solid, so the static walk grid stays valid).
  */
 export type Yon = '+x' | '-x' | '+z' | '-z';
-export type IcTur = 'kafe' | 'bistro' | 'kirtasiye' | 'okul' | 'lokanta' | 'kafeterya' | 'banka' | 'hastane' | 'acil' | 'morg' | 'kahvalti' | 'balik';
-export interface IcMekan { id: string; ad: string; tur: IcTur; x: number; z: number; wx: number; wz: number; kapi: Yon; arsa?: string; bina?: string; salon?: 'W' | 'E'; h: number }
+export type IcTur = 'kafe' | 'bistro' | 'kirtasiye' | 'okul' | 'lokanta' | 'kafeterya' | 'banka' | 'hastane' | 'acil' | 'morg' | 'kahvalti' | 'balik' | 'mutfak';
+export interface IcMekan { id: string; ad: string; tur: IcTur; x: number; z: number; wx: number; wz: number; kapi: Yon; arsa?: string; bina?: string; salon?: 'W' | 'E'; mutfak?: boolean; h: number }
 export interface IcItem { k: string; u: number; v: number; w: number; d: number; ry?: number; solid?: boolean; esya?: string; y?: number; txt?: string; c?: string }
 export interface Rect { x0: number; x1: number; z0: number; z1: number }
 
@@ -25,6 +25,8 @@ export const IC_MEKANLAR: IcMekan[] = [
   { id: 'morg', ad: 'Morg', tur: 'morg', x: 57.3, z: 55.5, wx: 3.3, wz: 3.2, kapi: '-x', bina: 'morg', h: 3.1 },
   // büfe salonları on the pier (view/world/bufe-buyume.ts WB / EB), door on the promenade side
   { id: 'salonW', ad: 'Kahvaltı salonu', tur: 'kahvalti', x: -17.6, z: -13.9, wx: 10.8, wz: 6.6, kapi: '+z', salon: 'W', h: 3.4 },
+  // Sabri'nin mutfağı: behind the covered walkway behind the kiosk, door on the walkway side (view/world/bufe-buyume.ts shell)
+  { id: 'mutfak', ad: 'Sabri Mutfağı', tur: 'mutfak', x: 0, z: -15.2, wx: 18, wz: 4.4, kapi: '+z', mutfak: true, h: 3.4 },
   { id: 'salonE', ad: 'Balık lokantası', tur: 'balik', x: 15.6, z: -13.9, wx: 12, wz: 6.6, kapi: '+z', salon: 'E', h: 3.4 },
 ];
 export const IC_BY_ID: Record<string, IcMekan> = Object.fromEntries(IC_MEKANLAR.map(m => [m.id, m]));
@@ -167,12 +169,26 @@ function morgLayout(W: number, D: number): IcItem[] {
 }
 
 const cache = new Map<string, IcItem[]>();
+/** Kitchen (door frame): cooking line on the back wall, prep line in front, pass at the right end; every station is `esya` = its id */
+function mutfakLayout(W: number, D: number): IcItem[] {
+  const bv = -D / 2 + 0.55, fv = D / 2 - 0.55;
+  const st = (k: string, esya: string, u: number, w: number, v = bv, o: Partial<IcItem> = {}) => it(k, u, v, w, 0.9, { esya, ...o });
+  return [
+    st('sogukOda', 'soguk_oda', -8.1, 1.4), st('ocakK', 'ocak', -6.3, 1.6), st('ocakK', 'ocak2', -4.5, 1.6), st('izgaraK', 'izgara', -2.7, 1.6), st('izgaraK', 'izgara2', -0.9, 1.6),
+    st('fritoz', 'fritoz', 0.8, 1.2), st('tasFirin', 'tas_firin', 2.7, 1.8), st('doner', 'doner', 4.5, 1.1), st('tatliVitrin', 'tatli', 5.9, 1.2), st('pass', 'pass', 7.8, 2.0),
+    st('bulasik', 'bulasik', -7.2, 2.0, fv), st('salata', 'salata', -4.6, 1.6, fv), st('mezeDolap', 'meze', -2.6, 1.4, fv), st('cayBar', 'cay_bar', 6.5, 1.6, fv),
+    st('sefMasa', 'sef_masa', 0, 2.8, 0.1),
+    it('davlumbaz', -4.0, bv, 9.0, 1.0, { esya: 'ocak' }), it('asiliTava', -1.0, -D / 2 + 0.1, 16, 0.2), it('kds', 7.8, -D / 2 + 0.1, 1.9, 0.1),
+    it('hazirlik', -3.4, 0.1, 2.4, 0.7, { solid: true }), it('hazirlik', 3.9, 0.1, 2.4, 0.7, { solid: true }),
+  ];
+}
+
 export function icLayout(m: IcMekan): IcItem[] {
   let o = cache.get(m.id); if (o) return o;
   const { W, D } = icDim(m);
   o = m.tur === 'kafe' ? kafeLayout(W, D, false) : m.tur === 'bistro' ? kafeLayout(W, D, true) : m.tur === 'kirtasiye' ? kirtasiyeLayout(W, D) : m.tur === 'okul' ? okulLayout(W, D)
     : m.tur === 'lokanta' ? avmLayout(W, D) : m.tur === 'kafeterya' ? kafeteryaLayout(W, D) : m.tur === 'banka' ? bankaLayout(W, D) : m.tur === 'hastane' ? hastaneLayout(W, D)
-    : m.tur === 'kahvalti' ? kahvaltiLayout(W, D) : m.tur === 'balik' ? balikLayout(W, D) : m.tur === 'acil' ? acilLayout(W, D) : morgLayout(W, D);
+    : m.tur === 'mutfak' ? mutfakLayout(W, D) : m.tur === 'kahvalti' ? kahvaltiLayout(W, D) : m.tur === 'balik' ? balikLayout(W, D) : m.tur === 'acil' ? acilLayout(W, D) : morgLayout(W, D);
   cache.set(m.id, o); return o;
 }
 

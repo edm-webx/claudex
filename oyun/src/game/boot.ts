@@ -104,6 +104,8 @@ import { ARSALAR } from '../content/esya';
 import { createKarsiYasam, type YasamView } from './view/world/karsi-yasam';
 import { createIcMekan, type IcView } from './view/world/ic-mekan-look';
 import { restoranApi } from './sim/restoran';
+import { MUTFAK_ROL_BY_ID } from '../content/mutfak';
+import { rankOf } from '../content/ranks';
 import { createIzgaraLook, type IzgaraLookView } from './view/world/izgara-look';
 import { cellRect } from '../content/izgara';
 import { createDekorLook, type DekorLookView } from './view/world/dekor-look';
@@ -307,7 +309,8 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   // 2026-11-09 "her binaya girilebilmeli": interiors of every far-side building and the büfe halls
   const icMekan: IcView | null = playMode && zones ? make('icMekan', () => createIcMekan({ root: () => zones.root('iskele') ?? null, hero: () => walk.pos, night: () => nightK,
     isletme: () => { const m = mulkApi(sim.rules), o: Record<string, { lv: number; isci: number; esya: string[] }> = {}; if (m) for (const p of m.view().plots) if (p.sabit && p.owned) o[p.id] = { lv: p.lv, isci: p.isci, esya: (p as { esya?: string[] }).esya || [] }; return o; },
-    salon: () => ({ stage: sim.state.stage || 1, esya: ((sim.state.zones as { salon?: { esya?: string[] } }).salon?.esya) || [] }) })) : null;
+    salon: () => ({ stage: sim.state.stage || 1, esya: ((sim.state.zones as { salon?: { esya?: string[] } }).salon?.esya) || [] }),
+    mutfak: () => ({ ekip: sim.state.workers.filter(w => MUTFAK_ROL_BY_ID[w.role]).map(w => ({ rol: w.role, rank: rankOf(w.xp || 0) })), kds: (restoranApi(sim.rules)?.view().tickets || []).slice(0, 6).map(k => '#' + k.no + '  Masa ' + (k.table + 1) + ' · ' + k.items.filter(i => i.left).map(i => i.left + '× ' + i.name).join(', ')) }) })) : null;
   const karsiYasam: YasamView | null = playMode && zones && chars ? make('karsiYasam', () => createKarsiYasam({ root: () => zones.root('iskele') ?? null, chars, hero: () => walk.pos, hour: () => sim.clock.hour, sfx: id => { try { audio?.sfx(id); } catch { /* */ } }, isci: () => { const m = mulkApi(sim.rules); return m ? m.view().plots.filter(p => p.sabit && p.owned).map(p => ({ id: p.id, n: p.isci, lv: p.lv, esya: (p as { esya?: string[] }).esya || [] })) : []; } })) : null;
   const yolLook: YolLookView | null = playMode && zones ? make('yolLook', () => createYolLook({ root: () => zones.root('iskele') ?? null })) : null;
 

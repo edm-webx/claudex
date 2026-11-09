@@ -49,6 +49,7 @@ export function buyumeEngel(stage: number): { x0: number; x1: number; z0: number
   // 2026-11-09 "her yere girilebilmeli": the halls are rooms with a door on the promenade side (content/ic-mekan.ts)
   if (stage >= 6) icColliders(IC_BY_ID.salonW).forEach(r => add(r.x0, r.x1, r.z0, r.z1, 'buyume-salon'));
   if (stage >= 7) icColliders(IC_BY_ID.salonE).forEach(r => add(r.x0, r.x1, r.z0, r.z1, 'buyume-salon'));
+  if (stage >= 3) icColliders(IC_BY_ID.mutfak).forEach(r => add(r.x0, r.x1, r.z0, r.z1, 'buyume-bufemutfak'));   // 2026-11-09 büfe mutfağı
   if (stage >= 9) add(ET.x1 - 3.0, ET.x1, -3.6, -2.4, 'buyume-mutfak');
   return o;
 }
@@ -205,6 +206,28 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
     lights([[-10.3, 3.7], [-5.0, 3.9], [0.0, 4.0], [4.6, 3.9], [7.9, 3.7]], 3.4);
     walker('waiter', [[-14.0, -2.0], [-18.4, -2.0], [-18.4, 2.2], [-14.0, 2.2]], 7, 0.85);
   }
+  let catK: { g: T.Group; b: Batch; gl: Batch; lit: Batch; wm: Batch } | null = null;
+  /* 3+: büfe mutfağı shell behind the covered walkway (interior: view/world/ic-mekan-look.ts, door on the walkway side).
+     Walls + roof live in 'cati-K' and hide while the player is inside; the only opening to the street is the pass window. */
+  if (stage >= 3) {
+    const steel = stage >= 7, wallC = fine ? '#1f2a44' : steel ? '#b9c2ca' : '#e9dcc0', bandC = fine ? '#c9a24a' : steel ? '#5b6068' : '#3f7f64', roofC = fine ? '#14192a' : steel ? '#7d858d' : '#8b5a3c';
+    const cat = { g: new T.Group(), b: new Batch(), gl: new Batch(), lit: new Batch(), wm: new Batch() }; cat.g.name = 'cati-K'; catis.push(cat); catK = cat;
+    const k = IC_BY_ID.mutfak, X0 = k.x - k.wx / 2, X1 = k.x + k.wx / 2, Z0 = k.z - k.wz / 2, Z1 = k.z + k.wz / 2, Hh = 3.0, kb = cat.b;
+    kb.box(k.wx, Hh, 0.25, wallC, k.x, Hh / 2, Z0 + 0.125); kb.box(0.25, Hh, k.wz, wallC, X0 + 0.125, Hh / 2, k.z); kb.box(0.25, Hh, k.wz, wallC, X1 - 0.125, Hh / 2, k.z);
+    for (const s2 of [-1, 1]) kb.box((k.wx / 2 - 0.85), Hh, 0.25, wallC, k.x + s2 * (0.85 + (k.wx / 2 - 0.85) / 2), Hh / 2, Z1 - 0.125);
+    kb.box(1.7, Hh - 2.4, 0.25, wallC, k.x, 2.4 + (Hh - 2.4) / 2, Z1 - 0.125);
+    kb.box(k.wx + 0.1, 0.3, 0.06, bandC, k.x, 0.95, Z1 + 0.02); kb.box(k.wx + 0.3, 0.22, k.wz + 0.3, roofC, k.x, Hh + 0.11, k.z); kb.box(k.wx + 0.4, 0.3, 0.12, bandC, k.x, Hh + 0.3, Z1 + 0.16);
+    if (stage >= 4) for (const cxm of [-5.4, -1.8, 2.7]) { kb.cyl(0.32, 0.36, 1.1, steel ? '#9aa2ab' : '#6b5a4a', cxm, Hh + 0.85, k.z - 0.6, { seg: 8 }); kb.cyl(0.4, 0.4, 0.1, '#33373b', cxm, Hh + 1.45, k.z - 0.6, { seg: 8 }); }
+    // pass window: glowing opening + serving ledge with plates and a bell, small awning
+    const wx = k.x + 6.9; cat.gl.box(2.0, 0.9, 0.04, '#a9d6ec', wx, 1.5, Z1 + 0.04); cat.lit.box(1.9, 0.8, 0.02, '#ffcf8a', wx, 1.5, Z1 - 0.03);
+    kb.box(2.4, 0.08, 0.5, steel ? '#e9eef2' : '#a8794e', wx, 1.0, Z1 + 0.25); kb.box(2.3, 0.07, 0.07, bandC, wx, 1.95, Z1 + 0.05); kb.box(2.5, 0.06, 0.7, accent, wx, 2.2, Z1 + 0.35, { rx: 0.35 });
+    for (let i = 0; i < 3; i++) kb.cyl(0.17, 0.17, 0.03, '#ffffff', wx - 0.7 + i * 0.45, 1.06, Z1 + 0.28, { seg: 12 });
+    kb.cyl(0.06, 0.07, 0.05, '#c9a24a', wx + 0.9, 1.07, Z1 + 0.25, { seg: 8 });
+    kb.box(1.9, 0.07, 0.5, accent, k.x, 2.75, Z1 + 0.3, { rx: 0.25 });   // door canopy
+    sign(fine ? 'SABRİ\'NİN MUTFAĞI' : 'SABRİ MUTFAĞI', k.x, Hh + 0.62, Z1 + 0.24, 3.6);
+    glowAt(k.x, Z1 + 0.9, 2.4); glowAt(wx, Z1 + 0.9, 1.6);
+    void X0; void X1;
+  }
   /* 6: west hall: Kahvaltı salonu */
   if (stage >= 6) { hall(WB, 1, fine ? 'SABRİ\'NİN SOFRASI · SALON' : stage >= 8 ? 'SABRİ KAHVALTI & MEZE' : 'SABRİ KAHVALTI SALONU', stage >= 8, '#ffcf8a'); walker('waiter', [[-21.5, -9.9], [-13.0, -9.9], [-13.0, -8.0], [-21.0, -8.0]], 9, 1.0); }
   /* 7: east hall: Balık lokantası */
@@ -222,7 +245,7 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
     walker('chef', [[kx - 0.8, kz + 0.75], [kx + 0.8, kz + 0.75]], 13, 0.5); walker('chef', [[kx + 0.6, kz + 0.75], [kx - 1.0, kz + 0.75]], 15, 0.4);
     // arcade over the customer walkway behind the kiosk (posts on the sea side only, so the path stays free)
     for (let x = -11.0; x <= 8.5; x += 3.9) b.box(0.14, 3.2, 0.14, frame, x, 1.72, -13.3);
-    for (let i = 0; i < 26; i++) b.box(0.16, 0.1, 2.6, wood, -11.0 + i * 0.78, 3.3, -12.05); b.box(19.8, 0.14, 0.14, frame, -1.25, 3.22, -13.3); b.box(19.8, 0.22, 0.12, accent, -1.25, 3.25, -10.8);   // slatted arcade roof
+    { const ab = (catK ?? { b }).b; for (let i = 0; i < 26; i++) ab.box(0.16, 0.1, 2.6, wood, -11.0 + i * 0.78, 3.3, -12.05); ab.box(19.8, 0.14, 0.14, frame, -1.25, 3.22, -13.3); } b.box(19.8, 0.22, 0.12, accent, -1.25, 3.25, -10.8);   // slatted arcade roof (slats hide with the kitchen roof)
     for (let x = -10.5; x <= 8.0; x += 1.5) lit.sph(0.07, '#ffe6b0', x, 3.12, -12.0, { ws: 6, hs: 4 });
     // rooftop sign over the kiosk
     sign(fine ? 'SABRİ\'NİN SOFRASI' : 'SABRİ\'NİN BÜFESİ · 1987', 0, 5.4, -7.6, 7.0, 0, fine ? '#14192a' : '#e0533c', fine ? '#e8c76a' : '#fff6e6');
@@ -365,7 +388,7 @@ export function createBufeBuyume(deps: BuyumeDeps): BuyumeView {
       if (mk !== mevKey || (mev && mev.parent !== root)) { if (mev) { mev.removeFromParent(); mev = null; } mevKey = mk; if (mk) { mev = buildMevsim(mk as 'bayrak'); root.add(mev); } }
       if (!grp) return;
       const hp = deps.hero?.();
-      if (hp) for (const [nm, m] of [['cati-W', IC_BY_ID.salonW], ['cati-E', IC_BY_ID.salonE]] as const) { const o = grp.getObjectByName(nm); if (o) o.visible = !icIcinde(m, hp, 0.2); }
+      if (hp) for (const [nm, m] of [['cati-W', IC_BY_ID.salonW], ['cati-E', IC_BY_ID.salonE], ['cati-K', IC_BY_ID.mutfak]] as const) { const o = grp.getObjectByName(nm); if (o) o.visible = !icIcinde(m, hp, 0.2); }
       const n = deps.night();
       const M = mats(); M.glow.color.setScalar(0.55 + 0.45 * n); M.pool.opacity = 0.75 * n; M.warm.opacity = 0.35 * n;
       for (const s of signMats) s.emissiveIntensity = 0.25 + n * 0.5;

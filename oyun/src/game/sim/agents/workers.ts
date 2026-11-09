@@ -309,7 +309,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
         const same = S.workers.find((w) => w.id === rt.w.id);
         if (same) rt.w = same; else remove(rt);
       }
-      for (const w of S.workers) if (!rows.some((r) => r.w.id === w.id)) spawn(w, S, first);
+      for (const w of S.workers) if (!ROLES[w.role]?.mutfak && !rows.some((r) => r.w.id === w.id)) spawn(w, S, first);   // kitchen crew works inside the mutfak room (view/world/ic-mekan-look.ts)
       first = false;
       for (const rt of rows) {
         rt.a.sayT -= dt; if (rt.a.sayT <= 0) { rt.a.say = ''; rt.a.sayT = 0; }

@@ -10,6 +10,7 @@
  * Hooks used by customers.ts: rt.restoran.wantMasa() (spawner), .impulse(c) (after a counter sale).
  * Views/UI read restoranApi(rules).view().
  */
+import { mutfakEtki } from '../../content/mutfak';
 import { ADISYON, ADISYON_LINES, SERVIS, STANTLAR, STANT_SPOTS, STANT_STAND_D, type StantDef, FAZ2_UI } from '../../content/restoran';
 import { PRODUCTS } from '../../content/products';
 import type { Vec2 } from '../../engine/api';
@@ -100,7 +101,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     const value = settle(c, c.items.slice());
     let tipF = ADISYON.tip[ADISYON.tip.length - 1][1];
     for (const [u, f] of ADISYON.tip) if (used <= u) { tipF = f; break; }
-    let tip = Math.round(value * tipF);
+    let tip = Math.round(value * tipF * (1 + mutfakEtki(S.workers).bahsis));
     if (c.n >= 2 && rng.next() < ADISYON.fightChance) { tip *= 2; cu.say(c, rng.pick(ADISYON_LINES.fight), 2.5); K.stat('hesapKavgasi'); }
     else if (rng.next() < 0.1) cu.say(c, rng.pick(ADISYON_LINES.served), 2);
     const tb = rt.tables[t.table];

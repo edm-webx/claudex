@@ -44,7 +44,7 @@ export const BENCHES: { pos: P3v; rotY: number }[] = [
 ];
 export function benchSeats(bn: { pos: P3v; rotY: number }): P3v[] { const c = Math.cos(bn.rotY), s = Math.sin(bn.rotY); return [-0.55, 0, 0.55].map(lx => V3(bn.pos.x + lx * c + 0.05 * s, 0, bn.pos.z - lx * s + 0.05 * c)); }
 /** Pier lamp posts (x, z). */
-export const PIER_LAMPS: [number, number][] = [[-10.05, -10.6], [-10.05, -4.2], [-10.05, 2.2], [8.0, -11.4], [8.0, -3.4], [8.0, 2.4], [-23.5, -15], [-23.5, -8], [-23.5, -1], [-23.5, 3.6], [22.2, -15], [22.2, -3.4], [22.2, 3.6], [-16, -17.5], [-5, -17.5], [6, -17.5], [15, -17.5]];
+export const PIER_LAMPS: [number, number][] = [[-10.05, -10.6], [-10.05, -4.2], [-10.05, 2.2], [8.0, -11.4], [8.0, -3.4], [8.0, 2.4], [-23.5, -15], [-23.5, -8], [-23.5, -1], [-23.5, 3.6], [22.2, -15], [22.2, -3.4], [22.2, 3.6], [-16, -17.5], [15, -17.5]];   // 2026-11-09: the two lamps at x -5 / 6 stand inside the büfe mutfağı wall
 export const local2world = (x: number, z: number, ry: number, lx: number, lz: number, y = 0): P3v => V3(x + lx * Math.cos(ry) + lz * Math.sin(ry), y, z - lx * Math.sin(ry) + lz * Math.cos(ry));
 export function rectAABB(x: number, z: number, w: number, d: number, ry: number, tag?: string): Obstacle { const c = Math.abs(Math.cos(ry)), s = Math.abs(Math.sin(ry)), hx = (w * c + d * s) / 2, hz = (w * s + d * c) / 2; return { x0: x - hx, x1: x + hx, z0: z - hz, z1: z + hz, tag }; }
 export function trophySpots(stage: number): { x: number; y: number; z: number; s: number }[] {
