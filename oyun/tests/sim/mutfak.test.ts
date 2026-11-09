@@ -1,10 +1,11 @@
 // 2026-11-09 survey: büfe mutfağı: stations unlock with the stage, kitchen roles open by stage + slots, they work inside the room
-// (never as world actors) and speed the stations / raise tips.
+// (real walking actors inside the room) and speed the stations / raise tips.
 import { it, expect } from 'vitest';
 import { played } from './m1-helpers';
 import { mutfakEsya, mutfakSlot, mutfakEtki, MUTFAK_ISTASYON } from '../../src/content/mutfak';
 import { roleOpen } from '../../src/game/sim/agents/hiring';
-import { IC_BY_ID, icColliders } from '../../src/content/ic-mekan';
+import { makeSandbox, addWorker } from './agents-harness';
+import { IC_BY_ID, icColliders, icIcinde } from '../../src/content/ic-mekan';
 
 it('stations unlock by stage and fill the room (15 at stage 10)', () => {
   expect(mutfakEsya(2)).toEqual([]); expect(mutfakEsya(3).sort()).toEqual(['cay_bar', 'ocak', 'pass']);
@@ -19,7 +20,22 @@ it('kitchen roles: locked below their stage, slots grow, the crew helps', () => 
   S.stage = 3; expect(roleOpen(S, host, 'asci')).toBe(true); S.workers.push({ id: 99, name: 'Ali', role: 'asci', xp: 0, morale: 70, traits: ['hamarat'] });
   expect(roleOpen(S, host, 'asci')).toBe(false);   // one slot at stage 3
   sim.step(2);
-  expect(sim.h?.workers?.rows?.().some((r: any) => r.role === 'asci') ?? false).toBe(false);   // not a world actor
   expect(mutfakEtki([{ role: 'asci', xp: 0 }]).hiz).toBeGreaterThan(0); expect(mutfakEtki([{ role: 'kasiyer', xp: 0 }]).bahsis).toBeGreaterThan(0);
   expect(mutfakEtki([{ role: 'sef', xp: 25000 }]).hiz).toBeGreaterThan(mutfakEtki([{ role: 'sef', xp: 0 }]).hiz);
+});
+
+it('a hired cook is a real actor: walks into the room, claims a ticket item, cooks it and puts the plate on the pass', () => {
+  const sb = makeSandbox(1); sb.step(0.2);
+  const plates: string[] = [];
+  let claimed = 0;
+  sb.host.kitchenClaim = () => (claimed++ === 0 ? 'doner' : null);
+  sb.host.kitchenDone = (_w: number, ok: boolean) => { if (ok) plates.push('doner'); };
+  addWorker(sb, 'asci', 'hamarat');
+  sb.step(1);
+  const r0 = sb.h.workers.rows()[0]; expect(r0.role).toBe('asci');
+  sb.step(30);
+  const r = sb.h.workers.rows()[0];
+  expect(icIcinde(IC_BY_ID.mutfak, r, 0)).toBe(true);   // inside the kitchen room, a world actor
+  expect(plates.length).toBe(1);
+  expect(sb.state.workers[0].xp).toBeGreaterThan(0);
 });

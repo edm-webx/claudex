@@ -41,6 +41,8 @@ export function hostFromRules(r: Rules): AgentHost {
     garsonClaim: (w, n) => restoranApi(r)?.garsonClaim?.(w, n) ?? [],
     garsonOpen: (w) => restoranApi(r)?.garsonOpen?.(w) ?? [],
     garsonDone: (w, id) => restoranApi(r)?.garsonDone?.(w, id) ?? false,
+    kitchenClaim: (w) => restoranApi(r)?.kitchenClaim?.(w) ?? null,
+    kitchenDone: (w, ok) => restoranApi(r)?.kitchenDone?.(w, ok),
     playerHas: (p) => r.carry.count(p) > 0,
     playerTake: (p) => r.carry.takeFromPlayer(p),
     settle: (items, at) => r.salesApi.settle(items, { direct: true, at }),

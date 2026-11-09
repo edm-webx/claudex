@@ -35,6 +35,8 @@ export interface RestoranApi {
   garsonClaim?(wid: number, n: number): { id: number; p: ProductId; x: number; z: number }[];
   garsonOpen?(wid: number): { id: number; p: ProductId; x: number; z: number }[];
   garsonDone?(wid: number, id: number): boolean;
+  kitchenClaim?(wid: number): ProductId | null;
+  kitchenDone?(wid: number, ok: boolean): void;
 }
 type Cu = { leave(c: Customer, angry: boolean): void; say(c: Customer, t: string, s?: number): void; seatPos(t: number, s: number): Vec2 | null };
 
@@ -55,6 +57,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
   // plates a garson carries from the pass to a table; unclaimed or stuck plates are delivered by the old abstract rule after a while
   type Job = { id: number; ticket: Ticket; p: ProductId; item: Item; t: number; wid: number };
   const jobs: Job[] = []; let jobId = 1;
+  const cooking: { wid: number; ticket: Ticket; p: ProductId; t: number }[] = [];   // plates a kitchen cook is making for a ticket
   const active = () => (S.stage || 1) >= ADISYON.fromStage;
   // 2026-10-25 user: stands can be moved in the editor; the moved place is part of the save (cloud), so it stays after teleporting away and back
   const spot = (d: StantDef) => { const o = G().pos?.[d.id]; if (o && Number.isFinite(o.x) && Number.isFinite(o.z)) return { x: o.x, z: o.z, ry: Number(o.ry) || 0 }; const s = STANT_SPOTS[d.spot % STANT_SPOTS.length]; return { x: s[0], z: s[1], ry: s[2] }; };
@@ -237,6 +240,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
       t.t += dt;
       if (t.t >= t.max) fail(t, c);
     }
+    for (let i = cooking.length - 1; i >= 0; i--) { cooking[i].t += dt; if (cooking[i].t > 40 || !tickets.includes(cooking[i].ticket)) cooking.splice(i, 1); }
     // garsons carry plates from the pass (counter stock) to the tables: a job is a plate taken off the counter, a garson walks it over
     const g = S.workers.filter(w => w.role === 'garson').length;
     for (let i = jobs.length - 1; i >= 0; i--) {
@@ -277,6 +281,19 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
       const out: { id: number; p: ProductId; x: number; z: number }[] = [];
       for (const j of jobs) { if (out.length >= n) break; if (j.wid && j.wid !== wid) continue; j.wid = wid; const tb = rt.layout.tables[j.ticket.table]; if (tb) out.push({ id: j.id, p: j.p, x: tb.x, z: tb.z }); }
       return out;
+    },
+    kitchenClaim(wid) {
+      if (cooking.some(c => c.wid === wid)) return null;
+      for (const t of tickets) for (const p of Object.keys(t.want) as ProductId[]) {
+        const left = (t.want[p] || 0) - jobs.filter(j => j.ticket === t && j.p === p).length - cooking.filter(c => c.ticket === t && c.p === p).length;
+        if (left > 0) { cooking.push({ wid, ticket: t, p, t: 0 }); return p; }
+      }
+      return null;
+    },
+    kitchenDone(wid, ok) {
+      const i = cooking.findIndex(c => c.wid === wid); if (i < 0) return;
+      const c = cooking.splice(i, 1)[0];
+      if (ok && tickets.includes(c.ticket)) { const b = (rt.counter[c.p] ||= []); if (b.length < 8) b.push({ type: c.p, tier: S.tiers[c.p] || 1 } as Item); }
     },
     garsonOpen(wid) { return jobs.filter(j => j.wid === wid).map(j => { const tb = rt.layout.tables[j.ticket.table]; return { id: j.id, p: j.p, x: tb?.x ?? 0, z: tb?.z ?? 0 }; }); },
     garsonDone(wid, id) {

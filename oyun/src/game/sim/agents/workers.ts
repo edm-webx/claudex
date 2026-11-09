@@ -15,6 +15,7 @@ import { Walker, near2, side } from './move';
 import { traitFx, traitId, workerSpeed, moraleOf } from './traits';
 import type { AgentEnv } from './env';
 import { zeminSave } from '../zemin';
+import { IC_BY_ID, icWorld, icDim } from '../../../content/ic-mekan';
 
 interface WRt {
   w: WorkerSave; a: Actor; wk: Walker; st: ProductId | null;
@@ -55,7 +56,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
   function spawn(w: WorkerSave, S: GameState, instant: boolean): WRt {
     const role = ROLES[w.role];
     const st = (role && role.station ? role.station : null) as ProductId | null;
-    const start = book.get('jobCorner');
+    const km = !!role?.mutfak, start = km ? icWorld(IC_BY_ID.mutfak, 0, icDim(IC_BY_ID.mutfak).D / 2 + 0.8) : book.get('jobCorner');
     const seed = (w.id * 977) % 10007;
     const a = reg.add('worker', String(w.id), { kind: 'worker', role: w.role, look: (w as { look?: unknown }).look, seed }, start,
       { role: w.role, trait: traitId(w), name: w.name, rank: rankOf(w.xp || 0), rarity: w.rarity });
@@ -66,6 +67,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
     const fx = traitFx(w);
     if (fx.sleep) rt.nextSleep = S.tut.rizaSleep ? S.playT + rng.range(80, 100) : Math.max(660, S.playT + 60);
     rows.push(rt);
+    if (km) { rt.state = 'kArrive'; if (instant) { const [u, v] = kIdlePost(rt), q = icWorld(IC_BY_ID.mutfak, u, v); a.x = a.px = q.x; a.z = a.pz = q.z; rt.state = 'kBack'; } return rt; }
     if (instant) {
       const h = home(rt, S); a.x = a.px = h.x; a.z = a.pz = h.z;
       rt.state = st ? 'work' : 'idle';
@@ -262,9 +264,61 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
     }
     rt.state = 'idle';
   }
+
+  // ---- kitchen crew (survey 2026-11-09): real hired actors inside the mutfak room, no nav (the room is an open floor) ----
+  const KM = IC_BY_ID.mutfak, KD = icDim(KM);
+  const kw = (u: number, v: number): Vec2 => icWorld(KM, u, v);
+  const ROW = -KD.D / 2 + 1.5;   // aisle in front of the back-row stations
+  const KPOST: Record<ProductId, [number, number]> = { doner: [4.5, ROW], cay: [6.5, KD.D / 2 - 1.3], ayran: [6.5, KD.D / 2 - 1.3], simit: [2.7, ROW], tost: [-2.7, ROW], gazoz: [-8.1, ROW] };
+  const kIdlePost = (rt: WRt): [number, number] => {
+    const i = rows.filter((x) => x.w.role === rt.w.role).indexOf(rt);
+    if (rt.w.role === 'bulasikci') return [-7.2 + i * 1.2, KD.D / 2 - 1.3];
+    if (rt.w.role === 'kasiyer') return [7.8 - i * 1.2, ROW];
+    if (rt.w.role === 'sef') return [i * 1.8, -0.3];
+    return [-6.3 + i * 1.8, ROW];
+  };
+  /** straight moves along the aisle: first to the aisle, then along it, then to the target */
+  function kGo(rt: WRt, u: number, v: number) {
+    const cur = rt.a, here = { x: cur.x, z: cur.z }, to = kw(u, v), wp: Vec2[] = [];
+    const aisle = (uu: number) => kw(uu, ROW);
+    const dv = Math.abs(here.z - KM.z - ROW);   // the room faces +z: v = z - room z
+    const fromU = here.x - KM.x;
+    if (dv > 0.25) wp.push(aisle(fromU));
+    wp.push(aisle(u)); wp.push(to);
+    rt.wk.path = wp; rt.wk.goal = to;
+  }
+  function kitchenWork(rt: WRt, S: GameState, dt: number) {
+    const a = rt.a, role = rt.w.role, speed = 2.1 * (1 + 0.04 * rankOf(rt.w.xp || 0));
+    const walking = rt.wk.walk(dt, speed);
+    if (walking) { a.act = a.carry.length ? 'carry' : 'walk'; return; }
+    a.speed = 0;
+    switch (rt.state) {
+      case 'kArrive': { const [u, v] = kIdlePost(rt); kGo(rt, u, v); rt.state = 'kBack'; return; }
+      case 'kBack': rt.state = 'kIdle'; rt.t = 0; a.rot = Math.PI; a.act = role === 'bulasikci' ? 'wipe' : 'idle'; return;
+      case 'kIdle': {
+        if (role === 'asci' || role === 'komi') {
+          if (rt.t > 0.6 && host.kitchenClaim) { const p = host.kitchenClaim(rt.w.id); if (p) { rt.jobKey = p; const [u, v] = KPOST[p] || [0, ROW]; kGo(rt, u, v); rt.state = 'kCook'; rt.t = 0; rt.loadT = 0; return; } rt.t = 0.2; }
+        } else if (role === 'sef' && rt.t > 8) { const u = (rng.next() - 0.5) * 12; kGo(rt, u, -0.3); rt.t = 0; }
+        else if (role === 'kasiyer' && rt.t > 14) { a.rot = Math.PI; rt.t = 0; }
+        a.act = role === 'bulasikci' ? 'wipe' : 'idle'; return;
+      }
+      case 'kCook': {   // wait-and-take: no burning, no quality; chef + rank shorten it
+        a.act = 'cut'; rt.loadT += dt;
+        const need = 4.5 / (1 + 0.12 * rankOf(rt.w.xp || 0) + 0.25 * S.workers.filter((x) => x.role === 'sef').length);
+        if (rt.loadT >= need) { a.carry.push({ type: rt.jobKey as ProductId, tier: 1 } as CarryItem); const [u, v] = [7.0, ROW]; kGo(rt, u, v); rt.state = 'kPass'; rt.t = 0; }
+        return;
+      }
+      case 'kPass': {
+        a.carry.length = 0; host.kitchenDone?.(rt.w.id, true); rt.w.xp = (rt.w.xp || 0) + 1; checkRank(rt);
+        const [u, v] = kIdlePost(rt); kGo(rt, u, v); rt.state = 'kBack'; return;
+      }
+      default: rt.state = 'kArrive';
+    }
+  }
   const posted = new Set<number>();   // Faz 2: workers currently at the ferry window
   function update(rt: WRt, S: GameState, dt: number, pl: Vec2) {
     const w = rt.w, fx = traitFx(w), a = rt.a;
+    if (ROLES[w.role]?.mutfak) { rt.t += dt; kitchenWork(rt, S, dt); return; }
     rt.t += dt; rt.boostT -= dt; rt.moraleCd -= dt; rt.pauseT -= dt;
     a.mood = rt.state === 'sleep' ? 'asleep' : 'ok';
     if (rt.state !== 'sleep' && near2(pl, a, 1.6)) {
@@ -328,7 +382,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
         const same = S.workers.find((w) => w.id === rt.w.id);
         if (same) rt.w = same; else remove(rt);
       }
-      for (const w of S.workers) if (!ROLES[w.role]?.mutfak && !rows.some((r) => r.w.id === w.id)) spawn(w, S, first);   // kitchen crew works inside the mutfak room (view/world/ic-mekan-look.ts)
+      for (const w of S.workers) if (!rows.some((r) => r.w.id === w.id)) spawn(w, S, first);
       first = false;
       for (const rt of rows) {
         rt.a.sayT -= dt; if (rt.a.sayT <= 0) { rt.a.say = ''; rt.a.sayT = 0; }

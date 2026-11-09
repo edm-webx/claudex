@@ -302,20 +302,6 @@ function buildRoom(m: IcMekan, own: { lv: number; isci: number; esya: string[] }
     const waiters = m.salon ? (fine ? 2 : 1) : own && own.isci >= 2 ? Math.min(2, own.isci - 1) : 0;
     for (let i = 0; i < waiters; i++) { const p = person('staff', ctx.seed + 50 + i, false); cur.add(p); const yv = ctr.v + ctr.d / 2 + 0.9; an.walkers.push({ o: p, p: [[-W / 2 + 1.2, yv], [W / 2 - 1.2, yv], [W / 2 - 1.2, D / 2 - 1.4], [-W / 2 + 1.2, D / 2 - 1.4]], t: i * 2, sp: 0.8 }); }
   }
-  // kitchen crew: hired staff stand at their stations and work (content/mutfak.ts)
-  if (m.mutfak) {
-    const POST: Record<string, [number, number, number][]> = {   // [u, v, rotY]
-      asci: [[-6.3, -0.75, Math.PI], [-2.7, -0.75, Math.PI], [0.8, -0.75, Math.PI], [2.7, -0.75, Math.PI], [-4.5, -0.75, Math.PI]],
-      bulasikci: [[-7.2, 0.8, 0], [-6.0, 0.8, 0]], kasiyer: [[7.8, -0.75, Math.PI], [6.6, -0.75, Math.PI], [5.4, -0.75, Math.PI]], sef: [[0, -0.55, 0], [1.8, -0.55, Math.PI]],
-    };
-    const used: Record<string, number> = {};
-    ekip.forEach((e, i) => {
-      if (e.rol === 'komi') { const p = person('chef', ctx.seed + 70 + i, false); cur.add(p); an.walkers.push({ o: p, p: [[-3.4, 0.7], [3.9, 0.7], [7.0, 0.3], [-3.4, 0.7]], t: i, sp: 0.7 }); return; }
-      const arr = POST[e.rol]; if (!arr) return; const k = used[e.rol] = (used[e.rol] || 0) + 1, post = arr[(k - 1) % arr.length];
-      const p = person(e.rol === 'kasiyer' ? 'clerk' : e.rol === 'bulasikci' ? 'staff' : 'chef', ctx.seed + 90 + i * 5, false, e.rol === 'bulasikci' ? '#1d4f86' : '#1d1d1d'); p.position.set(post[0], 0, post[1]); p.rotation.y = post[2]; cur.add(p); an.bob.push(p);
-      if (e.rank >= 4 && e.rol !== 'kasiyer') part(p, BOX, '#c9a24a', 0, 1.0, 0.14, 0.08, 0.2, 0.02);   // rank sash from level 5
-    });
-  }
   if (m.tur === 'morg') an.flick.push(grp);
   const M = mats();
   if (!wb.empty) { const wm = wb.mesh(M.wall, false, true); grp.add(wm); }

@@ -450,6 +450,11 @@ const ROLE_LOOK: any = {
   garson: { top: '#fbfbf8', topStyle: 'shirt', sleeves: 'long', vest: '#2b2b30', bowtie: '#e0533c', bottom: '#2b2b30', apron: '#2b2b30' },
   tost: { top: '#f0d35a', sleeves: 'short', apron: '#e0533c', hat: 'bandana', hatColor: '#e0533c', bottom: '#3f5878' },
   temizlik: { top: '#7fb8d8', topStyle: 'overall', sleeves: 'short', bottom: '#7fb8d8', hat: 'cap', hatColor: '#3f8fc9', gloves: '#f2d24a', shoes: '#3d4a5c' },
+  asci: { top: '#fbfbf8', topStyle: 'shirt', sleeves: 'long', apron: '#f2f2ee', hat: 'paper', bottom: '#2d2d33' },
+  komi: { top: '#fbfbf8', sleeves: 'short', apron: '#d9d9d4', hat: 'bandana', hatColor: '#3f5878', bottom: '#2d2d33' },
+  bulasikci: { top: '#3f6fa8', sleeves: 'short', apron: '#2b4c75', bottom: '#2d2d33', gloves: '#f2d24a' },
+  kasiyer: { top: '#fbfbf8', topStyle: 'shirt', sleeves: 'long', vest: '#7a2430', bottom: '#2b2b30' },
+  sef: { top: '#fbfbf8', topStyle: 'shirt', sleeves: 'long', apron: '#ffffff', hat: 'paper', bottom: '#1d1d1d' },
   kurye: { top: '#3fb5b0', topStyle: 'jacket', accent: '#3fb5b0', sleeves: 'long', bottom: '#2f3a4a', hat: 'helmet', hatColor: '#3fb5b0', courierBox: true }
 };
 
