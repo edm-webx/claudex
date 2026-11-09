@@ -22,7 +22,7 @@ export const mutfakEsya = (stage: number): string[] => (stage < MUTFAK_MIN_STAGE
 export const mutfakCelik = (stage: number) => stage >= 7;
 
 /** Kitchen staff roles (ROLES in content/ranks.ts carry `mutfak: true`): label, hire price base, slots by büfe stage */
-export interface MutfakRol { id: string; label: string; base: number; stage: number; slots: number[]; etki: string }
+export interface MutfakRol { id: string; label: string; base: number; stage: number; slots: number[]; etki: string; /** works out front (salon/pier), not in the kitchen */ on?: boolean }
 const S = (...a: number[]) => a;   // slots for stages 1..10
 export const MUTFAK_ROL: MutfakRol[] = [
   { id: 'asci', label: 'Aşçı', base: 2600, stage: 3, slots: S(0, 0, 1, 1, 2, 2, 3, 3, 4, 5), etki: 'Sipariş hazırlama hızı' },
@@ -30,6 +30,13 @@ export const MUTFAK_ROL: MutfakRol[] = [
   { id: 'bulasikci', label: 'Bulaşıkçı', base: 1500, stage: 5, slots: S(0, 0, 0, 0, 1, 1, 1, 2, 2, 2), etki: 'Tabak yığılmaz, mutfak hızına küçük katkı' },
   { id: 'kasiyer', label: 'Kasiyer', base: 2300, stage: 3, slots: S(0, 0, 1, 1, 1, 2, 2, 2, 3, 3), etki: 'Bahşiş ve hesap hızı' },
   { id: 'sef', label: 'Şef', base: 7000, stage: 7, slots: S(0, 0, 0, 0, 0, 0, 1, 1, 1, 2), etki: 'Tüm mutfağı hızlandırır' },
+  // survey 2026-11-09: front-of-house roles
+  { id: 'guvenlik', label: 'Güvenlik', base: 2400, stage: 4, slots: S(0, 0, 0, 1, 1, 1, 1, 2, 2, 2), etki: 'Kapkaççı yaklaşamaz', on: true },
+  { id: 'muzisyen', label: 'Müzisyen', base: 2000, stage: 4, slots: S(0, 0, 0, 1, 1, 1, 1, 1, 2, 2), etki: 'Canlı müzik: bahşiş artar', on: true },
+  { id: 'hostes', label: 'Hostes', base: 2200, stage: 5, slots: S(0, 0, 0, 0, 1, 1, 1, 2, 2, 2), etki: 'Masaya karşılama: bahşiş artar', on: true },
+  { id: 'barista', label: 'Barista', base: 2500, stage: 5, slots: S(0, 0, 0, 0, 1, 1, 1, 1, 2, 2), etki: 'Çay-kahve tarafını hızlandırır', on: true },
+  { id: 'mudur', label: 'Müdür', base: 9000, stage: 6, slots: S(0, 0, 0, 0, 0, 1, 1, 1, 1, 1), etki: 'Sen yokken işi çevirir: herkes biraz hızlı', on: true },
+  { id: 'vale', label: 'Vale', base: 1800, stage: 8, slots: S(0, 0, 0, 0, 0, 0, 0, 1, 1, 2), etki: 'Arabalı müşteri: bahşiş artar', on: true },
 ];
 export const MUTFAK_ROL_BY_ID: Record<string, MutfakRol> = Object.fromEntries(MUTFAK_ROL.map(r => [r.id, r]));
 export const mutfakSlot = (rol: string, stage: number): number => { const r = MUTFAK_ROL_BY_ID[rol]; return r && stage >= r.stage ? r.slots[Math.max(0, Math.min(9, stage - 1))] : 0; };
@@ -41,6 +48,8 @@ export function mutfakEtki(workers: { role: string; xp?: number }[]): { hiz: num
     const k = RANKS[rankOf(w.xp || 0)].x;
     if (w.role === 'asci') hiz += 0.05 * k; else if (w.role === 'komi') hiz += 0.025 * k; else if (w.role === 'sef') hiz += 0.08 * k; else if (w.role === 'bulasikci') hiz += 0.02 * k;
     else if (w.role === 'kasiyer') bahsis += 0.06 * k;
+    else if (w.role === 'hostes') bahsis += 0.04 * k; else if (w.role === 'muzisyen' || w.role === 'vale') bahsis += 0.03 * k;
+    else if (w.role === 'barista') hiz += 0.03 * k; else if (w.role === 'mudur') { hiz += 0.03 * k; bahsis += 0.02 * k; }
   }
   return { hiz: Math.min(0.6, hiz), bahsis: Math.min(0.5, bahsis) };
 }

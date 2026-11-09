@@ -39,3 +39,12 @@ it('a hired cook is a real actor: walks into the room, claims a ticket item, coo
   expect(plates.length).toBe(1);
   expect(sb.state.workers[0].xp).toBeGreaterThan(0);
 });
+it('front roles (güvenlik, müzisyen, hostes...) walk to their posts out front and help', () => {
+  const sb = makeSandbox(1); sb.step(0.2);
+  addWorker(sb, 'guvenlik', 'hamarat'); addWorker(sb, 'muzisyen', 'hamarat');
+  sb.step(25);
+  const rows = sb.h.workers.rows();
+  expect(rows.every((r: any) => r.state === 'front')).toBe(true);
+  expect(mutfakEtki([{ role: 'muzisyen', xp: 0 }]).bahsis).toBeGreaterThan(0);
+  expect(mutfakSlot('guvenlik', 3)).toBe(0); expect(mutfakSlot('guvenlik', 4)).toBe(1);
+});

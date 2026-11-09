@@ -36,6 +36,10 @@ export interface WorkersSystem extends System {
   forceSleep(workerId: number): void;
 }
 
+const FRONT_LINES: Record<string, string[]> = {
+  guvenlik: ['Gözüm kasada.', 'Burada kapkaç yok.', 'Sıraya lütfen.'], muzisyen: ['Bir türkü de sizin için!', 'Boğaz’da akşam olur...', 'Alkışlar!'],
+  hostes: ['Hoş geldiniz, buyurun masanız!', 'Kaç kişisiniz?'], barista: ['Köpüğü tam kıvamında.', 'Demli çay geliyor!'], mudur: ['Herkes yerine!', 'Bugün rekor kıracağız.'], vale: ['Anahtarınız bende.', 'Arabanız hazır!'],
+};
 export function createWorkers(env: AgentEnv): WorkersSystem {
   const rows: WRt[] = [];
   let first = true;
@@ -50,6 +54,12 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
     if (rt.w.role === 'garson') {
       const i = rows.filter((x) => x.w.role === 'garson').indexOf(rt);
       return side(book.get('counter.standAt'), 1.3 + i * 0.7, 0.1);
+    }
+    if (ROLES[rt.w.role]?.on) {   // front-of-house posts around the counter
+      const c = book.get('counter.standAt'), i = rows.filter((x) => x.w.role === rt.w.role).indexOf(rt);
+      const o: Record<string, [number, number]> = { guvenlik: [4.2, 3.2], muzisyen: [-5.5, 4.2], hostes: [2.6, 4.4], barista: [-2.2, 0.4], mudur: [1.2, 1.8], vale: [7.5, 6.5] };
+      const [dx, dz] = o[rt.w.role] || [0, 3];
+      return { x: c.x + dx + i * 1.1, z: c.z + dz };
     }
     return book.get('jobCorner');
   }
@@ -70,7 +80,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
     if (km) { rt.state = 'kArrive'; if (instant) { const [u, v] = kIdlePost(rt), q = icWorld(IC_BY_ID.mutfak, u, v); a.x = a.px = q.x; a.z = a.pz = q.z; rt.state = 'kBack'; } return rt; }
     if (instant) {
       const h = home(rt, S); a.x = a.px = h.x; a.z = a.pz = h.z;
-      rt.state = st ? 'work' : 'idle';
+      rt.state = role?.on ? 'front' : st ? 'work' : 'idle';
     } else {
       const h = home(rt, S);
       rt.wk.goTo(st ? side(h, 0.9, 0.35) : h);
@@ -347,11 +357,17 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
       case 'watch':
         rt.wk.face(pl, dt); a.act = 'idle';
         if (rt.t >= 3) {
-          rt.state = rt.st ? 'work' : 'idle'; rt.t = 0; say(rt, LINES.workers.takeover, 2.5);
+          rt.state = ROLES[w.role]?.on ? 'front' : rt.st ? 'work' : 'idle'; rt.t = 0; say(rt, LINES.workers.takeover, 2.5); if (ROLES[w.role]?.on) rt.wk.goTo(home(rt, S));
           rt.wk.goTo(home(rt, S)); emit('takeover', { name: w.name });
         }
         break;
       case 'work': stationWork(rt, S, dt); break;
+      case 'front': {   // front roles: stand at the post, small idle life; their effect is in content/mutfak.ts (mutfakEtki) and kapkac.ts
+        if (rt.wk.walk(dt, 2.2)) { a.act = 'walk'; break; }
+        a.act = w.role === 'muzisyen' ? 'cheer' : w.role === 'barista' ? 'pour' : 'idle';
+        if (rt.t > 9) { rt.t = 0; if (rng.chance(0.35)) say(rt, rng.pick(FRONT_LINES[w.role] || ['Hoş geldiniz!']), 2.2); }
+        break;
+      }
       case 'sleep':
         a.act = 'sleep'; a.speed = 0;
         if (near2(pl, a, 1.4)) wake(rt, S, true);

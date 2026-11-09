@@ -48,7 +48,9 @@ export const ROLES: Record<string, RoleDef> = {
   }
 };
 // 2026-11-09 survey: kitchen crew (content/mutfak.ts holds the stage/slot rules; they work inside the büfe mutfağı room)
-for (const [id, label, base] of [['asci', 'Aşçı', 2600], ['komi', 'Komi (aşçı yardımcısı)', 1700], ['bulasikci', 'Bulaşıkçı', 1500], ['kasiyer', 'Kasiyer', 2300], ['sef', 'Şef', 7000]] as [string, string, number][]) ROLES[id] = { id, label, station: null, act: 'cut', base, mutfak: true };
+for (const [id, label, base, on] of [['asci', 'Aşçı', 2600], ['komi', 'Komi (aşçı yardımcısı)', 1700], ['bulasikci', 'Bulaşıkçı', 1500], ['kasiyer', 'Kasiyer', 2300], ['sef', 'Şef', 7000],
+  ['guvenlik', 'Güvenlik', 2400, 1], ['muzisyen', 'Müzisyen', 2000, 1], ['hostes', 'Hostes', 2200, 1], ['barista', 'Barista', 2500, 1], ['mudur', 'Müdür', 9000, 1], ['vale', 'Vale', 1800, 1]] as [string, string, number, number?][])
+  ROLES[id] = { id, label, station: null, act: 'cut', base, mutfak: !on, on: !!on };   // stage/slot rules: content/mutfak.ts (front roles work out front)
 export const ROLE_IDS: string[] = Object.keys(ROLES);
 export const ROLE_SLOTS: Record<string, number> = {
   "doner": 1,

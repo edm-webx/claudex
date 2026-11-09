@@ -41,9 +41,9 @@ export function createKapkac(env: AgentEnv): KapkacSystem {
       k.t += dt; a.sayT -= dt; if (a.sayT <= 0) { a.say = ''; a.sayT = 0; }
       if (k.state === 'approach') {
         a.act = 'walk'; a.mood = 'ok';
-        if (env.shared.dogDuty && near2(a, pile, 3.2)) {
+        if ((env.shared.dogDuty || S.workers.some((w) => w.role === 'guvenlik')) && near2(a, pile, 3.2)) {
           env.shared.dogBark = 1.5; say(a, KAPKAC.turned, 3); host.stat('karamelTurned'); env.emit('karamelTurned');
-          host.toast('Torbacı havladı, kapkaççı kaçtı!', 'good'); k.state = 'flee'; k.wk.goTo(farthestSpawn(env, a)); return;
+          host.toast(env.shared.dogDuty ? 'Torbacı havladı, kapkaççı kaçtı!' : 'Güvenlik fark etti, kapkaççı kaçtı!', 'good'); k.state = 'flee'; k.wk.goTo(farthestSpawn(env, a)); return;
         }
         if (!k.wk.walk(dt, 2.0)) { k.state = 'grab'; k.t = 0; a.act = 'grab'; }
         return;

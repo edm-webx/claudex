@@ -455,6 +455,12 @@ const ROLE_LOOK: any = {
   bulasikci: { top: '#3f6fa8', sleeves: 'short', apron: '#2b4c75', bottom: '#2d2d33', gloves: '#f2d24a' },
   kasiyer: { top: '#fbfbf8', topStyle: 'shirt', sleeves: 'long', vest: '#7a2430', bottom: '#2b2b30' },
   sef: { top: '#fbfbf8', topStyle: 'shirt', sleeves: 'long', apron: '#ffffff', hat: 'paper', bottom: '#1d1d1d' },
+  guvenlik: { top: '#1d1d22', topStyle: 'jacket', sleeves: 'long', bottom: '#1d1d22', hat: 'cap', hatColor: '#1d1d22' },
+  muzisyen: { top: '#8c2f39', topStyle: 'shirt', sleeves: 'long', vest: '#2b2b30', bottom: '#2f3a4a', hat: 'bandana', hatColor: '#d9822b' },
+  hostes: { top: '#fbfbf8', topStyle: 'shirt', sleeves: 'long', vest: '#1d4f86', bottom: '#1d4f86' },
+  barista: { top: '#2b2b30', sleeves: 'short', apron: '#7a3b1c', bottom: '#2b2b30', hat: 'cap', hatColor: '#7a3b1c' },
+  mudur: { top: '#f4f4f2', topStyle: 'suit', sleeves: 'long', vest: '#2b2b30', bottom: '#2b2b30', bowtie: '#c9a24a' },
+  vale: { top: '#7a2430', topStyle: 'jacket', sleeves: 'long', bottom: '#1d1d22', hat: 'cap', hatColor: '#7a2430' },
   kurye: { top: '#3fb5b0', topStyle: 'jacket', accent: '#3fb5b0', sleeves: 'long', bottom: '#2f3a4a', hat: 'helmet', hatColor: '#3fb5b0', courierBox: true }
 };
 
