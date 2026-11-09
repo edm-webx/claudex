@@ -118,6 +118,7 @@ ${a.sabit && a.isci < a.isciMax ? `<button class="mp-b" data-a="isciAl" data-id=
         s += `<div class="mp-row" style="display:block;margin-top:-4px"><small><b>Menü</b> ${(a.menu || []).map((x: { ikon: string; ad: string; fiyat: number }) => `<span class="mp-chip">${x.ikon} ${esc(x.ad)} ${tl(x.fiyat)}</span>`).join(' ')}</small>
 ${(a.menuSonraki || []).length ? `<small style="display:block;margin-top:4px;opacity:.75">Sonraki seviyede: ${(a.menuSonraki as { ikon: string; ad: string }[]).map(x => x.ikon + ' ' + esc(x.ad)).join(', ')}</small>` : ''}
 <div class="mp-sec" style="margin:8px 0 4px">Aletler <small>(alınca içeride görünür)</small></div><div class="mp-grid" style="margin-top:6px">${(a.aletler as M[]).map(e => own.has(e.id) ? `<div class="mp-it"><span class="mp-ic">${e.ikon}</span><b>${esc(e.ad)}</b><small>✓ ${esc(e.desc)}</small></div>` : `<div class="mp-it"><span class="mp-ic">${e.ikon}</span><b>${esc(e.ad)}</b><small>${esc(e.desc)}${a.lv < e.lv ? ' · 🔒 ' + e.lv + '. seviye' : ''}</small><button class="mp-b g" data-a="kafeEsya" data-id="${a.id}" data-e="${e.id}"${a.lv < e.lv || m.money < e.fiyat ? ' disabled' : ''}>${tl(e.fiyat)}</button></div>`).join('')}</div>
+<div class="mp-sec" style="margin:8px 0 4px">Tema <small>(ilki bedava, sonra 15.000 ₺) · tezgahtaki makinenin önünde dur: kahveyi sen yaparsın</small></div><div>${[['retro', 'Retro'], ['modern', 'Modern'], ['bohem', 'Bohem'], ['deniz', 'Deniz']].map(([k, ad]) => `<button class="mp-b${a.tema === k ? ' g' : ''}" data-a="tema" data-id="${a.id}" data-e="${k}"${a.tema === k ? ' disabled' : ''}>${a.tema === k ? '✓ ' : ''}${ad}</button>`).join('')}</div>
 <small style="display:block;margin-top:4px">👷 İşçi ${a.isci}/${a.isciMax} (seviye arttıkça daha çok işçi çalışır)</small></div>`;
       }
     }
@@ -233,6 +234,7 @@ ${(a.menuSonraki || []).length ? `<small style="display:block;margin-top:4px;opa
     if (a === 'takim') { cmd({ op: 'takim', name: (bg.querySelector('input[data-f="takim"]') as HTMLInputElement).value, renk: club.c1, renk2: club.c2, arma: club.arma }); return; }
     if (a === 'evAc') { cmd({ op: 'evAc', id }); api.close(); return; }
     if (a === 'kafeEsya') { cmd({ op: 'kafeEsya', id, e: el.dataset.e }); return; }
+    if (a === 'tema') { cmd({ op: 'tema', id, e: el.dataset.e }); return; }
     if (a === 'salonEsya') { cmd({ op: 'salonEsya', e: el.dataset.e }); return; }
     if (a === 'bilet') { cmd({ op: 'bilet' }); api.close(); return; }
     if (a === 'betK') { bet.k = el.dataset.v || ''; key = ''; return; }

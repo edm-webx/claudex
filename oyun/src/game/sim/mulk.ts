@@ -17,7 +17,8 @@ import {
   DUKKAN_STOK_MAX, dukkanYukselt, dukkanMusteri, STADYUM, HALI_SAHA_KAPI, ISCI_MAX, isciFiyat, kafeMenu, kafeIsciMax, ISCI_SAAT_UCRET, ISCI_MUSTERI, type Arsa,
   isletmeOf, isletmeEsya, SALON_ESYA, SALON_ESYA_BY_ID,
 } from '../../content/esya';
-import { icOfArsa, icIcinde, bankaGise, IC_BY_ID } from '../../content/ic-mekan';
+import { icOfArsa, icIcinde, bankaGise, IC_BY_ID, icDim, icWorld } from '../../content/ic-mekan';
+export const KAFE_TEMA: Record<string, string> = { retro: 'Retro', modern: 'Modern', bohem: 'Bohem', deniz: 'Deniz' };
 import { fmtMoney } from './util';
 import { salonOf, salonKat } from './salon';
 
@@ -30,7 +31,7 @@ export interface Env {
 }
 /** café growth names per level (same idea as the büfe stages) */
 export const KAFE_ASAMA = ['Köşe kafe', 'Kafe', 'Bistro', 'Teraslı bistro', 'Gurme bistro'];
-export interface Plot { tur: 'ev' | 'dukkan' | null; tip: string; lv: number; stok: number; till: number; sat: number; fr: number; isci?: number; esya?: string[] }
+export interface Plot { tur: 'ev' | 'dukkan' | null; tip: string; lv: number; stok: number; till: number; sat: number; fr: number; isci?: number; esya?: string[]; tema?: string }
 export interface ArsaSave { plots: Record<string, Plot>; takim: { ad: string; renk: string; renk2?: string; arma?: string; kurulus?: number } | null; lastH: number }
 export interface BankaRt { tl: number; esya: Record<string, number>; dirty: boolean }
 
@@ -147,6 +148,31 @@ export function installMulk(K: Kernel) {
     if (q.p.lv < d.lv) { K.toast(d.ad + ' için ' + (q.a.ad || 'işletme') + ' ' + d.lv + '. seviye olmalı.', 'info'); return; }
     if (S.money < d.fiyat) { K.toast(d.ad + ' ' + fmtMoney(d.fiyat) + '.', 'bad'); return; }
     K.spend(d.fiyat); own.push(e); K.toast(d.ikon + ' ' + d.ad + ' kuruldu: ' + d.desc, 'good'); K.addXP(15); K.saveNow();
+  }
+  // survey 2026-11-09: café theme (retro / modern / bohem / deniz) repaints the room; the player brews at the espresso machine (wait-and-take)
+  function tema(id: string, e: string) {
+    const q = plotOf(id); if (!q || !q.p || !q.a.sabit || !KAFE_TEMA[e]) return;
+    if (q.p.tema === e) return; const fiyat = q.p.tema ? 15000 : 0;
+    if (S.money < fiyat) { K.toast('Tema değiştirmek ' + fmtMoney(fiyat) + '.', 'bad'); return; }
+    if (fiyat) K.spend(fiyat); q.p.tema = e; K.toast('🎨 ' + (q.a.ad || 'Kafe') + ': ' + KAFE_TEMA[e] + ' tema', 'good'); K.saveNow();
+  }
+  for (const [mid, list] of [['kafe1', [['espresso', -2.7, '☕ Espresso']]], ['kafe2', [['kahve', -2.7, '☕ Filtre kahve'], ['waffle', -0.5, '🧇 Waffle']]]] as [string, [string, number, string][]][]) {
+    const m = IC_BY_ID[mid]; if (!m || !m.arsa) continue;
+    const D = icDim(m).D;
+    for (const [k, u, ad] of list) {
+      const brew = k === 'waffle' ? 4 : 2.6;
+      K.interactions.register({
+        id: 'kafeYap.' + mid + '.' + k, pos: icWorld(m, u, -D / 2 + 1.2 + 0.85), radius: 0.8, kind: 'station', dwell: brew, interval: brew,
+        canAct: () => !!arsa().plots[m.arsa!],
+        act: () => {
+          const ar = ARSALAR.find(x => x.id === m.arsa), p = arsa().plots[m.arsa!]; if (!ar || !p) return 'done';
+          const v = Math.round(ekon(ar, p).fiyat * 1.4);   // the boss's own cup sells a bit above the menu average
+          p.till += v; p.sat += 1; K.addXP(2); K.stat('kahveYap');
+          K.toast(ad + ' hazır: +' + fmtMoney(v) + ' kasaya', 'good');
+          return 'continue';
+        },
+      });
+    }
   }
   const plotOf = (id: string): { a: Arsa; p: Plot | undefined } | null => { const a = ARSALAR.find(x => x.id === id); return a ? { a, p: arsa().plots[id] } : null; };
   /** at the door, or anywhere inside the business (2026-11-09: every building is enterable) */
@@ -271,7 +297,7 @@ export function installMulk(K: Kernel) {
       case 'tlYatir': case 'tlCek': case 'esyaYatir': case 'esyaCek': bankaOp(op, id, n); break;
       case 'gunlukAl': gunlukAl(id); break;
       case 'arsaAl': arsaAl(id); break; case 'arsaKur': arsaKur(id, String(c.tur ?? ''), String(c.tip ?? '')); break;
-      case 'stokAl': stokAl(id, n || 10); break; case 'yukselt': yukselt(id); break; case 'evAc': evAc(id); break; case 'isciAl': isciAl(id); break; case 'kafeEsya': kafeEsya(id, String(c.e ?? '')); break; case 'salonEsya': salonEsya(String(c.e ?? id)); break;
+      case 'stokAl': stokAl(id, n || 10); break; case 'yukselt': yukselt(id); break; case 'evAc': evAc(id); break; case 'isciAl': isciAl(id); break; case 'kafeEsya': kafeEsya(id, String(c.e ?? '')); break; case 'tema': tema(id, String(c.e ?? '')); break; case 'salonEsya': salonEsya(String(c.e ?? id)); break;
       case 'bilet': bilet(); break;
       case 'izle': if (!nearGate()) { K.toast('Maçı izlemek için halı saha girişine git.', 'info'); break; } K.command({ kind: 'halisaha', op: 'izle', bahis: c.bahis, n: Number(c.n) || 0 } as never); break;
       // yönetici paneli (2026-11-08): kafe seviyesi / işçi / kulüp, kapı ve para şartı yok
@@ -292,7 +318,7 @@ export function installMulk(K: Kernel) {
     return {
       bankaYakin: nearBank(), kapiYakin: ARSALAR.find(x => a.plots[x.id] && yakin(x, 1.5))?.id || null,
       arsaYakin: ARSALAR.find(x => yakin(x, 1.5))?.id || null, salonYakin: salonYakin(), stadyumYakin: nearGate(), ipucuYakin: (rt.gizem as { view(): { yakin: string | null } } | undefined)?.view().yakin ?? null,
-      plots: ARSALAR.map(x => ({ id: x.id, x: x.x, z: x.z, rotY: x.rotY, sabit: x.sabit || '', tur: a.plots[x.id]?.tur ?? null, tip: a.plots[x.id]?.tip || '', lv: a.plots[x.id]?.lv || 0, owned: !!a.plots[x.id], till: Math.floor(a.plots[x.id]?.till || 0), isci: flo(a.plots[x.id]?.isci), esya: a.plots[x.id]?.esya || [] })),
+      plots: ARSALAR.map(x => ({ id: x.id, x: x.x, z: x.z, rotY: x.rotY, sabit: x.sabit || '', tur: a.plots[x.id]?.tur ?? null, tip: a.plots[x.id]?.tip || '', lv: a.plots[x.id]?.lv || 0, owned: !!a.plots[x.id], till: Math.floor(a.plots[x.id]?.till || 0), isci: flo(a.plots[x.id]?.isci), esya: a.plots[x.id]?.esya || [], tema: a.plots[x.id]?.tema || '' })),
     };
   }
   function model() {
@@ -301,7 +327,7 @@ export function installMulk(K: Kernel) {
       money: S.money, gold: S.gold, level: S.level, esya: { ...e.esya }, sandik: { ...e.sandik }, sans: e.sans, acilan: e.acilan, son: e.son,
       banka: { tl: b.tl, esya: { ...b.esya }, yakin: nearBank() },
       gunluk: e.gunluk.liste.map(h => ({ ...h })), gunlukSandik: e.gunluk.sandikAlindi,
-      arsa: ARSALAR.map(x => { const p = a.plots[x.id]; return { id: x.id, ad: x.ad || '', sabit: x.sabit || '', fiyat: x.fiyat, seviye: x.seviye, owned: !!p, tur: p?.tur ?? null, tip: p?.tip || '', lv: p?.lv || 0, stok: Math.floor(p?.stok || 0), till: Math.floor(p?.till || 0), sat: Math.floor(p?.sat || 0), isci: flo(p?.isci), isciMax: isciMaxOf(x, p), isciFiyat: isciFiyat(flo(p?.isci)), menu: p && x.sabit ? ekon(x, p).menu : [], birim: p && p.tur === 'dukkan' ? Math.round(ekon(x, p).maliyet) : 0, menuSonraki: p && x.sabit ? kafeMenu(x.id, Math.min(5, p.lv + 1)).slice(kafeMenu(x.id, p.lv).length) : [], kesya: p && x.sabit ? (p.esya || []) : [], musteriSaat: p && p.tur === 'dukkan' ? Math.round(dukkanMusteri(DUKKAN_BY_ID[p.tip], p.lv) * ekon(x, p).musK * (1 + ISCI_MUSTERI * flo(p.isci))) : 0,
+      arsa: ARSALAR.map(x => { const p = a.plots[x.id]; return { id: x.id, ad: x.ad || '', sabit: x.sabit || '', fiyat: x.fiyat, seviye: x.seviye, owned: !!p, tur: p?.tur ?? null, tip: p?.tip || '', lv: p?.lv || 0, stok: Math.floor(p?.stok || 0), till: Math.floor(p?.till || 0), sat: Math.floor(p?.sat || 0), isci: flo(p?.isci), isciMax: isciMaxOf(x, p), isciFiyat: isciFiyat(flo(p?.isci)), menu: p && x.sabit ? ekon(x, p).menu : [], birim: p && p.tur === 'dukkan' ? Math.round(ekon(x, p).maliyet) : 0, menuSonraki: p && x.sabit ? kafeMenu(x.id, Math.min(5, p.lv + 1)).slice(kafeMenu(x.id, p.lv).length) : [], kesya: p && x.sabit ? (p.esya || []) : [], tema: p?.tema || '', musteriSaat: p && p.tur === 'dukkan' ? Math.round(dukkanMusteri(DUKKAN_BY_ID[p.tip], p.lv) * ekon(x, p).musK * (1 + ISCI_MUSTERI * flo(p.isci))) : 0,
         stokMax: p ? DUKKAN_STOK_MAX[p.lv] : 0, yakin: yakin(x, 1.5), ikon: x.sabit ? isletmeOf(x.id).ikon : '', asamaAd: x.sabit && p ? isletmeOf(x.id).asama[p.lv - 1] || '' : '', aletler: x.sabit ? isletmeOf(x.id).esya : [], yukselt: p && p.tur === 'dukkan' && p.lv < DUKKAN_MAX_SEVIYE ? dukkanYukselt(DUKKAN_BY_ID[p.tip], p.lv) : null }; }),
       gizem: (rt.gizem as { model(): unknown } | undefined)?.model() ?? null,
       lig: (rt.lig as { model(): unknown } | undefined)?.model() ?? null,

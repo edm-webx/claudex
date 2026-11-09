@@ -14,7 +14,7 @@ import { useSkyEnv } from './glb';
 
 export interface IcDeps {
   root: () => T.Object3D | null; hero: () => { x: number; z: number }; night: () => number;
-  /** owned fixed businesses by plot id */ isletme: () => Record<string, { lv: number; isci: number; esya: string[] }>;
+  /** owned fixed businesses by plot id */ isletme: () => Record<string, { lv: number; isci: number; esya: string[]; tema?: string }>;
   salon: () => { stage: number; esya: string[] };
   /** büfe mutfağı: hired kitchen staff + the live ticket lines for the KDS screen */
   mutfak: () => { ekip: { rol: string; rank: number }[]; kds: string[] };
@@ -240,7 +240,7 @@ const F: Record<string, Fn> = {
 };
 
 /* ---------- one room ---------- */
-function buildRoom(m: IcMekan, own: { lv: number; isci: number; esya: string[] } | null, salonEsya: string[], fine: boolean, stage = 1, ekip: { rol: string; rank: number }[] = []): { g: T.Group; an: Anim } {
+function buildRoom(m: IcMekan, own: { lv: number; isci: number; esya: string[]; tema?: string } | null, salonEsya: string[], fine: boolean, stage = 1, ekip: { rol: string; rank: number }[] = []): { g: T.Group; an: Anim } {
   const grp = new T.Group(); grp.name = 'ic-' + m.id; const cur = new T.Group(), curItem = new T.Group(); grp.add(cur); grp.userData.cur = cur;
   const hall = !!m.salon, { W, D } = icDim(m), h = Math.min(3.2, m.h), y0 = 0.14;   // above the ground detail layer
   grp.position.set(m.x, y0, m.z); grp.rotation.y = icYaw(m);
@@ -249,6 +249,8 @@ function buildRoom(m: IcMekan, own: { lv: number; isci: number; esya: string[] }
   const seed = m.id.split('').reduce((a, ch) => a * 31 + ch.charCodeAt(0), 7) >>> 0;
   const ctx: Ctx = { b, g, l, grp, m, an, seed: seed % 97, fine, lv: own?.lv || 0, owned: !!own };
   let [f1, f2] = FLOOR[m.tur], [w1, w2] = fine && hall ? ['#26304a', '#c9a24a'] : WALL[m.tur];
+  const TEMA: Record<string, [string, string, string, string]> = { retro: ['#7a3b1c', '#e8c27a', '#2f7d6d', '#e0533c'], modern: ['#d9d9d4', '#9aa0a6', '#f4f4f2', '#2b2b30'], bohem: ['#a0673a', '#d9a066', '#c46a4a', '#e9d3a8'], deniz: ['#e9e2cf', '#3f8fc9', '#f4f7fa', '#1d4f86'] };
+  if (own?.tema && TEMA[own.tema]) [f1, f2, w1, w2] = TEMA[own.tema];
   if (m.mutfak && mutfakCelik(stage)) { [f1, f2] = fine ? ['#2a2a30', '#c9a24a'] : ['#8d949a', '#7a8186']; [w1, w2] = fine ? ['#e8ecef', '#c9a24a'] : ['#e8ecef', '#9aa5b0']; }
   if (!hall) {
     // floor: base + pattern
@@ -338,7 +340,7 @@ export function createIcMekan(d: IcDeps): IcView {
           if (!exists || dist > R + 30) { kill(m.id); continue; }
           if (dist > R + 18) continue;
           const o = m.arsa ? own[m.arsa] || null : null, fine = (!!m.salon || !!m.mutfak) && sl.stage >= 10, mk = m.mutfak ? d.mutfak() : null;
-          const key = (o ? o.lv + ':' + o.isci + ':' + [...o.esya].sort().join(',') : '-') + '|' + (m.salon ? sl.esya.filter(e => e).sort().join(',') + (fine ? 'F' : '') : '') + (mk ? 'M' + sl.stage + ':' + mk.ekip.map(e => e.rol + e.rank).join(',') : '');
+          const key = (o ? o.lv + ':' + o.isci + ':' + (o.tema || '') + ':' + [...o.esya].sort().join(',') : '-') + '|' + (m.salon ? sl.esya.filter(e => e).sort().join(',') + (fine ? 'F' : '') : '') + (mk ? 'M' + sl.stage + ':' + mk.ekip.map(e => e.rol + e.rank).join(',') : '');
           const r = rooms.get(m.id); if (r && r.key === key) continue;
           kill(m.id); const nb = buildRoom(m, o, sl.esya, fine, sl.stage, mk ? mk.ekip : []); holder.add(nb.g); rooms.set(m.id, { key, g: nb.g, an: nb.an });
         }

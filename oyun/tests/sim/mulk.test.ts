@@ -75,3 +75,16 @@ it('karşı yaka kafe: satın alınca hemen kafe olur, arsa hakkından düşmez,
   S.money = 1e6; c({ op: 'kafeEsya', id: 'k1', e: 'espresso' }); expect(p.esya).toEqual(['espresso']); c({ op: 'kafeEsya', id: 'k1', e: 'barista' }); expect(p.esya).toEqual(['espresso']);   // barista needs lv5
   const k2 = m.model().arsa.find((x: any) => x.id === 'k2'); expect(k2!.owned).toBe(false);
 });
+it('kafe: the player brews at the espresso machine (wait-and-take) and picks a theme', () => {
+  const { sim, S, c } = mk();
+  S.level = 5; S.money = 200000;
+  c({ op: 'arsaAl', id: 'k1' });
+  const p = S.zones.arsa.plots.k1, sat0 = p.sat;
+  const it0 = (sim.interactions ?? sim.rules.interactions ?? sim.rules.K?.interactions).get('kafeYap.kafe1.espresso');
+  expect(it0).toBeTruthy();
+  sim.command({ kind: 'teleport', x: it0.pos.x, z: it0.pos.z });
+  for (let i = 0; i < 80; i++) sim.step(0.1);
+  expect(p.sat).toBeGreaterThan(sat0);
+  c({ op: 'tema', id: 'k1', e: 'deniz' }); expect(p.tema).toBe('deniz');
+  const m0 = S.money; c({ op: 'tema', id: 'k1', e: 'retro' }); expect(S.money).toBe(m0 - 15000);
+});
