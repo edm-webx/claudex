@@ -17,7 +17,8 @@ export interface FerryLookDeps { root: () => T.Object3D | null; rules: () => Rul
 export interface FerryLookView { update(dt: number): void; board(): FerryBoardModel | null; debug(): Record<string, unknown>; dispose(): void }
 
 const HP = Math.PI / 2;
-const BOARD_POS = { x: 8.0, z: -9.9, ry: 0 };
+// 2026-11-09 user: the ferry sign belongs at the pier edge by the ferry gangway, not at the büfe
+const BOARD_POS = { x: 21.0, z: -10.6, ry: 0 };
 const mats = new Map<string, T.Material>();
 const lam = (c: string) => { let m = mats.get('l' + c); if (!m) { m = new T.MeshLambertMaterial({ color: c }); mats.set('l' + c, m); } return m; };
 const bas = (c: string, op = 1) => { let m = mats.get('b' + c + op); if (!m) { m = new T.MeshBasicMaterial({ color: c, transparent: op < 1, opacity: op, depthWrite: op >= 1 }); mats.set('b' + c + op, m); } return m; };
@@ -80,7 +81,7 @@ export function createFerryLook(d: FerryLookDeps): FerryLookView {
   const tex = new T.CanvasTexture(cv); tex.colorSpace = T.SRGBColorSpace; tex.anisotropy = 4;
   const board = new T.Group(); board.name = 'tarifeTahtasi';
   board.position.set(BOARD_POS.x, 0, BOARD_POS.z); board.rotation.y = BOARD_POS.ry;
-  // one post (between the gangway and the 8,-11.4 lamp, so no lamp hides it on the play camera) and a face tilted back toward the steep play camera so it reads from above
+  // one post (at the east pier edge next to the gangway) and a face tilted back toward the steep play camera so it reads from above
   board.add(cyl(0.06, 2.2, lam('#33373b'), 1.1));
   const face = new T.Group(); face.position.set(0, 2.3, 0); face.rotation.x = -0.85; board.add(face);
   face.add(box(2.12, 1.32, 0.06, lam('#1d5fa8'), 0, 0, 0));

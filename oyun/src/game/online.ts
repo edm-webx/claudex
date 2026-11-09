@@ -18,7 +18,6 @@ import type { Object3D, Scene } from 'three';
 import type { Chars, HeroHandle, Vec2, Vec3, ScreenPt } from '../engine/api';
 import { esnafHeroOpts, SINIFLAR, type EsnafimSave } from './sim/esnafim';
 import { supa, supaReady } from './net/supa';
-import { SUNUCULAR, sunucu, setSunucu, sunucuAd } from './net/sunucu';
 
 type Json = unknown;
 interface Peer { peer: string; isMe: boolean; sameTab: boolean; kind: string; presence: Readonly<Record<string, Json>>; updatedAt: number }
@@ -149,7 +148,6 @@ export function createOnline(d: OnlineDeps): OnlineView {
   });
   void roomP.then(r => { ns = r; if (!link && r) connect(code); });
   if (supaReady()) connect(code);
-  window.addEventListener('martikoy:sunucu', () => { if (!code && link) connect(''); });
 
   function connect(c: string, asHost = false) {
     if (link) { link.leave(); link = null; }
@@ -157,6 +155,8 @@ export function createOnline(d: OnlineDeps): OnlineView {
     host = !!c && asHost; worldSig = ''; worldWant = host;
     for (const rm of remotes.values()) drop(rm); remotes.clear();
     code = c; lastSent = '';
+    // 2026-11-09 user: no public servers, every game is the player's own; a friend joins with the game code
+    if (!c) { via = ''; ui(); setPill('⚪ Tek başına · kodla arkadaşını çağır'); return; }
     const useRoom = () => { if (!ns) { setPill('⚪ Çevrimdışı'); return; } via = 'room'; link = artifactLink(ns, chan(), sync, () => setPill('⚪ Çevrimdışı')); ui(); };
     if (supaReady()) {
       via = 'supa';
@@ -165,7 +165,7 @@ export function createOnline(d: OnlineDeps): OnlineView {
     }
     useRoom();
   }
-  function chan() { return code ? 'oda-' + code : 'sunucu-' + sunucu(); }
+  function chan() { return 'oda-' + code; }
   function wireWorld(l: Link) {
     if (!d.world || !l.on) return;
     l.on('iste', () => { if (host) worldWant = true; });
@@ -240,17 +240,14 @@ export function createOnline(d: OnlineDeps): OnlineView {
       input.addEventListener('keyup', e => e.stopPropagation());
       addLog('Martıköy', 'Online dünyaya hoş geldin! Bir oyuncunun adına dokun, ona özel mesaj at.', 'sys');
     }
-    setPill('🟢 ' + (code ? 'Özel oda ' + code + (host ? ' · 🏠 ev sahibi' : guestOf ? ' · ev sahibi: ' + guestOf : '') : '🌐 ' + sunucuAd(sunucu()) + ' sunucusu') + ' · ' + (remotes.size + 1) + ' kişi');
-    if (odaBtn) odaBtn.textContent = '🌐 Sunucular / Özel oda';
+    setPill('🟢 ' + (code ? 'Özel oda ' + code + (host ? ' · 🏠 ev sahibi' : guestOf ? ' · ev sahibi: ' + guestOf : '') : '') + ' · ' + (remotes.size + 1) + ' kişi');
+    if (odaBtn) odaBtn.textContent = code ? '🔑 Oyun kodu: ' + code : '🔑 Arkadaşını çağır';
   }
   function odaPanel() {
     const bg = document.createElement('div'); bg.className = 'on-bg';
     const close = () => bg.remove();
     const main = (err = '') => {
-      const cur = code ? 0 : sunucu();
-      bg.innerHTML = `<div class="on-card"><h3>🌐 Sunucular</h3><p>Herkese açık 10 dünya. Arkadaşınla aynı sunucuya gir, aynı sokakta buluşun.</p>
-<div class="on-srv">${SUNUCULAR.map(x => `<button class="on-s${x.id === cur ? ' on' : ''}" data-srv="${x.id}"><i style="background:${x.renk}"></i>${x.id}. ${x.ad}${x.id === cur ? ' ✓' : ''}</button>`).join('')}</div>
-<h3 style="margin-top:14px">🔑 Özel oda</h3><p>Oda kur, çıkan kodu arkadaşına söyle. O da "Odaya katıl"a yazsın, aynı Martıköy'de buluşun.</p>
+      bg.innerHTML = `<div class="on-card"><h3>🔑 Oyun kodu</h3><p>Oyunun sadece senin. Arkadaşın gelsin istersen kod oluştur, kodu ona söyle. O da "Katıl"a yazsın, aynı Martıköy'de buluşun.</p>
 ${code ? `<div class="on-big">${code}</div><p>Şu an bu odadasın.</p>` : ''}
 <button class="on-b g" data-a="kur">Yeni oda kur</button><p style="margin:6px 0 0;font-size:12px">Odayı kuran ev sahibi olur: girenler senin büfeni görür, beraber çalışırsınız.</p>
 <div style="margin-top:12px;font:900 15px var(--disp)">Odaya katıl</div>
@@ -262,7 +259,6 @@ ${code ? `<div class="on-big">${code}</div><p>Şu an bu odadasın.</p>` : ''}
     bg.addEventListener('click', e => {
       if (e.target === bg) { close(); return; }
       const btn = (e.target as HTMLElement).closest('button') as HTMLButtonElement | null;
-      if (btn?.dataset.srv) { setSunucu(Number(btn.dataset.srv)); connect(''); close(); d.toast(sunucuAd(sunucu()) + ' sunucusuna geçtin.'); return; }
       const a = btn?.dataset.a; if (!a) return;
       if (a === 'kur') { const c = yeniKod(); connect(c, true); main(); d.toast('Oda kuruldu: ' + c + '. Kodu arkadaşına söyle!'); return; }
       if (a === 'katil') { const c = kodTemiz((bg.querySelector('.on-code') as HTMLInputElement).value); if (c.length !== 6) { main('Kod 6 harf olmalı.'); return; } connect(c); close(); d.toast(c + ' odasına girdin.'); return; }
@@ -319,8 +315,8 @@ ${code ? `<div class="on-big">${code}</div><p>Şu an bu odadasın.</p>` : ''}
     peers: () => [...remotes.values()].map(r => ({ peer: r.peer, uid: r.uid, hn: r.hn, ad: r.ad, x: r.x, z: r.z })),
     update(dt: number) {
       // an open panel sheet takes the screen: chat and the server button step aside so nothing covers its text
-      if (chat && (sheetT -= dt) <= 0) { sheetT = 0.25; const open = !!document.querySelector('.sb-sheet, .kl-p, .gr-bg'); chat.style.display = open ? 'none' : ''; if (odaBtn) odaBtn.style.display = open ? 'none' : ''; if (pill) pill.style.display = open ? 'none' : ''; }
-      if (!link) { if ((retryT -= dt) <= 0) { retryT = 20; connect(code); } return; }
+      if (chat && (sheetT -= dt) <= 0) { sheetT = 0.25; const open = !!document.querySelector('.sb-sheet, .kl-p, .gr-bg'); chat.style.display = open || !code ? 'none' : ''; if (odaBtn) odaBtn.style.display = open ? 'none' : ''; if (pill) pill.style.display = open ? 'none' : ''; }
+      if (!link) { if (code && (retryT -= dt) <= 0) { retryT = 20; connect(code); } return; }
       const me = d.me();
       sendT -= dt;
       if (sendT <= 0) {

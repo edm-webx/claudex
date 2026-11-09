@@ -58,11 +58,11 @@ export const STANT_STAND_D = 0.85;
 export const ADISYON = {
   fromStage: 3,
   /** share of new customers that come for table service, by kiosk stage (index stage-1) */
-  share: [0, 0, 0.3, 0.5, 0.6],
-  orderDelay: 2.5,        // s after sitting before the ticket prints
-  patience: 80,           // s for the whole ticket
-  maxOpen: 5,             // open tickets at once
-  eat: [7, 10] as [number, number],
+  share: [0, 0, 0.2, 0.3, 0.4],   // 2026-11-09 user: seated customers must not cycle so fast the player gives up (calmer)
+  orderDelay: 4,          // s after sitting before the ticket prints
+  patience: 150,          // s for the whole ticket
+  maxOpen: 3,             // open tickets at once
+  eat: [22, 32] as [number, number],
   /** speed tip: share of the bill by the fraction of the ticket time used */
   tip: [[0.35, 0.18], [0.65, 0.1], [1, 0.04]] as [number, number][],
   garsonS: 6,             // s per delivery for a garson (per hired garson)

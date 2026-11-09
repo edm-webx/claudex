@@ -154,9 +154,9 @@ export function createFaz2Hud(d: Faz2HudDeps): Faz2Hud {
     const head = `<div class="f2-ph" data-rail="1"><span>🧾 Sipariş paneli (${v.tickets.length})</span><span>${railOpen ? '▾' : '▸'}</span></div>`;
     if (!railOpen) { rail.innerHTML = head; return; }
     const top = `<div class="f2-top">Günün yemeği: <b>${esc(v.specialName)}</b><br>Servis: <b>${stars(v.servis)}</b></div><div class="f2-note">${v.tickets.length ? 'Garsonlar siparişleri halleder. Yetişmezlerse sen servis et.' : 'Bekleyen sipariş yok.'}</div>`;
-    rail.innerHTML = head + top + v.tickets.slice(0, 5).map(k => `<div class="f2-slip${k.special ? ' sp' : ''}${k.frac > 0.7 ? ' late' : ''}"><div class="h"><span>Sipariş ${k.no}</span><i>Masa ${k.table + 1}</i></div>
+    rail.innerHTML = head + top + v.tickets.slice(0, 3).map(k => `<div class="f2-slip${k.special ? ' sp' : ''}${k.frac > 0.7 ? ' late' : ''}"><div class="h"><span>Sipariş ${k.no}</span><i>Masa ${k.table + 1}</i></div>
       ${k.items.map(i => (i.left ? '' : '<s>') + `${i.n}× ${esc(i.name)}` + (i.left ? '' : '</s>')).join('<br>')}
-      <div class="bar"><u style="width:${Math.round((1 - k.frac) * 100)}%"></u></div></div>`).join('');
+      <div class="bar"><u style="width:${Math.round((1 - k.frac) * 100)}%"></u></div></div>`).join('') + (v.tickets.length > 3 ? `<div class="f2-note">+${v.tickets.length - 3} sipariş daha</div>` : '');
   }
   return {
     update(dt) {

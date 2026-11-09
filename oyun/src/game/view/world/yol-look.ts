@@ -81,13 +81,16 @@ function buildOverpass(): T.Group {
   const zm = (zB + zC) / 2, len = zC - zB;
   g.add(box(W, 0.3, len + 0.4, steel, x, h - 0.15, zm));
   g.add(box(W, 0.45, len, dark, x, h - 0.6, zm));
-  // two flights of steps: every tread is a solid block down to the ground, so nothing floats
+  // two flights: a solid wedge whose slope IS the walking surface (ugY), so the hero never sinks into a tread (2026-11-09 user:
+  // "merdivenden çıkarken içine gömülüyoruz"); thin tread ribs ride 2 cm above the slope for the stair look
   const N = 14;
   const flight = (z0: number, z1: number) => {
+    const sh = new T.Shape(); sh.moveTo(z0, 0); sh.lineTo(z1, h); sh.lineTo(z1, 0); sh.closePath();
+    const geo = new T.ExtrudeGeometry(sh, { depth: W, bevelEnabled: false }); geo.translate(0, 0, -W / 2); geo.rotateY(-Math.PI / 2);
+    const wedge = new T.Mesh(geo, lam('#8a9097')); wedge.position.x = x; g.add(wedge);
     for (let i = 0; i < N; i++) {
-      const za = z0 + (z1 - z0) * i / N, zb = z0 + (z1 - z0) * (i + 1) / N;
-      const top = ugY(x, (za + zb) / 2) || 0.05, th = Math.max(0.12, top);
-      g.add(box(W, th, Math.abs(zb - za) + 0.01, i % 2 ? lam('#8a9097') : lam('#979da4'), x, th / 2, (za + zb) / 2));
+      const zz = z0 + (z1 - z0) * (i + 0.5) / N;
+      g.add(box(W + 0.02, 0.04, Math.abs(z1 - z0) / N - 0.06, i % 2 ? lam('#979da4') : lam('#a7adb4'), x, ugY(x, zz) + 0.015, zz));
     }
   };
   flight(zA, zB); flight(zD, zC);
@@ -125,7 +128,7 @@ function wheels(g: T.Group, len: number, wid: number, r: number, xs: number[]) {
 }
 /** City bus (and metrobus when len is long): body, window band with pillars, roof unit, doors, wheels, destination sign. */
 function busBody(c: string, len: number, label: string): T.Group {
-  const b = new T.Group(), wid = 2.5, H = 3.0, r = 0.5;
+  const b = new T.Group(), wid = 1.7, H = 2.9, r = 0.5;   // 2026-11-09 user: buses still touch: a lane is 1.9 m, so vehicles stay under 1.7 m wide
   b.add(box(len, 0.28, wid - 0.1, lam('#2b2d31'), 0, r + 0.1, 0));                       // chassis skirt
   b.add(box(len, H - 0.9, wid, lam(c), 0, 0.9 + (H - 0.9) / 2, 0));                       // body
   b.add(box(len - 0.2, 0.2, wid - 0.15, lam('#f4f2ec'), 0, H + 0.1, 0));                  // roof cap
@@ -147,7 +150,7 @@ function busBody(c: string, len: number, label: string): T.Group {
 }
 /** Small car: lower body, glass cabin, wheels. */
 function carBody(c: string): T.Group {
-  const b = new T.Group(), len = 4.2, wid = 1.8, r = 0.34;
+  const b = new T.Group(), len = 4.0, wid = 1.6, r = 0.34;
   b.add(box(len, 0.6, wid, lam(c), 0, r + 0.3, 0));
   b.add(box(len * 0.5, 0.55, wid - 0.15, lam(c), -0.2, r + 0.85, 0));
   for (const sg of [-1, 1]) b.add(box(len * 0.44, 0.38, 0.04, GLASS(), -0.2, r + 0.88, sg * (wid / 2 - 0.05)));
@@ -165,7 +168,7 @@ function buildVehicles(): { group: T.Group; list: Vehicle[] } {
   const LS = [7, 9, 10, 10, 9, 7], SPACE = 36, COLORS = ['#2f9d59', '#ffd23f', '#3f7fd0', '#e0533c', '#f4f2ec', '#8a5fd0', '#2fb5b0'];
   // Kenney car models replace the box cars once loaded (the box body stays when a file is missing)
   const CARS = ['taxi', 'sedan', 'suv', 'hatchback-sports', 'van', 'sedan-sports', 'suv-luxury', 'delivery', 'police'];
-  const skin = (g: T.Group, k: number) => { loadGlb('auto/' + CARS[k % CARS.length]).then(src => { if (!src) return; g.clear(); g.add(fitClone(src, 1.9, 4.4, undefined, CAR_YAW)); }); return g; };
+  const skin = (g: T.Group, k: number) => { loadGlb('auto/' + CARS[k % CARS.length]).then(src => { if (!src) return; g.clear(); g.add(fitClone(src, 1.6, 4.0, undefined, CAR_YAW)); }); return g; };
   const add = (mesh: T.Object3D, lane: number, off: number, kind: Vehicle['kind']) => { mesh.position.set(X0 - 200, 0, laneZ(lane)); if (lane >= 3) mesh.rotation.y = Math.PI; group.add(mesh); list.push({ mesh, lane, speed: LS[lane], off, dir: lane >= 3 ? -1 : 1, kind }); };
   let ci = 0;
   for (const lane of [0, 1, 4, 5]) for (let k = 0; k < SPAN_V / SPACE; k++) { const bus = (k + lane) % 3 === 0; add(bus ? busBody(COLORS[ci++ % 3], 8.2, '42B') : skin(carBody(COLORS[ci % COLORS.length]), ci++), lane, k * SPACE + lane * 7, bus ? 'bus' : 'car'); }

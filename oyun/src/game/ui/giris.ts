@@ -4,7 +4,6 @@
 import { supaReady, girisYap, kayitOl, cikisYap } from '../net/supa';
 import { girisSonrasi, adminAdiMi, adminDogrula } from '../net/admin';
 import { girisLogu } from '../net/log';
-import { SUNUCULAR, sunucu, setSunucu } from '../net/sunucu';
 import { slotlariYukle, slotListesi, slotSec, aktifSlot } from '../net/slots';
 import { SINIFLAR } from '../sim/esnafim';
 
@@ -35,11 +34,11 @@ export function createGiris(deps: { root: HTMLElement; afterLogin: (isNew: boole
   return {
     show(go) {
       let done = false, isNew = false, logged = false, inServers = false;
-      // after the account step comes the MMORPG style server pick, then the game (and the kulis for a new esnaf)
+      // 2026-11-09: no public servers; after the account step comes the character slot, then the game (and the kulis for a new esnaf)
       // after any login: ban check (and the admin role check); a banned or non-admin account is signed out again
       const finish = (login: boolean) => {
         if (done) return;
-        if (!login) { logged = false; inServers = true; servers(); return; }
+        if (!login) { logged = false; void enter(); return; }
         void girisSonrasi().then(async r => {
           if (r.yasak) { await cikisYap(); paint(r.yasak); return; }
           logged = true; void girisLogu(isNew);
@@ -58,12 +57,6 @@ export function createGiris(deps: { root: HTMLElement; afterLogin: (isNew: boole
         const list = slotListesi(), cur = aktifSlot(), pt = (s: number) => s >= 3600 ? Math.floor(s / 3600) + ' sa ' + Math.floor(s % 3600 / 60) + ' dk' : Math.max(1, Math.floor(s / 60)) + ' dk';
         bg.innerHTML = `<div class="gr-card"><div class="gr-h">🧑 Karakterini seç</div><div class="gr-sub">Hesabında 4 yuva var. Banka hepsinin ortak. Adı bir kez seçersin, sonra değişmez.</div>
 <div class="gr-slots">${list.map((s, i) => s ? `<button class="gr-sl${i === cur ? ' on' : ''}" data-slot="${i}"><i>${SINIFLAR.find(x => x.id === s.sinif)?.icon || '🧑'}</i><span>${s.ad.replace(/[<>&]/g, '')}<small>${s.level}. seviye · ${SINIFLAR.find(x => x.id === s.sinif)?.ad || ''} · ${pt(s.playT)} oynandı</small></span></button>` : `<button class="gr-sl empty" data-slot="${i}"><i>＋</i><span>Yeni karakter<small>Boş yuva ${i + 1}</small></span></button>`).join('')}</div></div>`;
-      };
-      const servers = () => {
-        const cur = sunucu();
-        bg.innerHTML = `<div class="gr-card"><div class="gr-h">🌐 Sunucu seç</div><div class="gr-sub">Arkadaşınla aynı sunucuyu seç, aynı Martıköy'de buluşun.</div>
-<div class="gr-srv">${SUNUCULAR.map(x => `<button class="gr-s${x.id === cur ? ' on' : ''}" data-srv="${x.id}"><i style="background:${x.renk}"></i><span>${x.id}. ${x.ad}<small>${x.id === cur ? 'son girdiğin' : 'açık'}</small></span></button>`).join('')}</div>
-<button class="gr-go" data-enter="1">Oyuna gir ▶</button></div>`;
       };
       const bg = document.createElement('div'); bg.className = 'gr-bg';
       let mode: 'giris' | 'kayit' = 'giris';
@@ -96,8 +89,7 @@ export function createGiris(deps: { root: HTMLElement; afterLogin: (isNew: boole
       };
       bg.addEventListener('click', e => {
         const el = (e.target as HTMLElement).closest('button') as HTMLButtonElement | null; if (!el) return;
-        if (el.dataset.slot) { slotSec(Number(el.dataset.slot)); try { deps.sfx?.('pick'); } catch { /* */ } inServers = true; servers(); return; }
-        if (el.dataset.srv) { setSunucu(Number(el.dataset.srv)); servers(); return; }
+        if (el.dataset.slot) { slotSec(Number(el.dataset.slot)); try { deps.sfx?.('pick'); } catch { /* */ } void enter(); return; }
         if (el.dataset.enter) { void enter(); return; }
         if (el.dataset.m) { mode = el.dataset.m as 'giris' | 'kayit'; paint(); return; }
         if (el.dataset.go) { void submit(); return; }
