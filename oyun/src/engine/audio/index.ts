@@ -134,7 +134,8 @@ export function createAudio(deps: AudioDeps): MotorAudio {
       t += d + 0.015 + Math.random() * 0.03;
     }
   }
-  let coinGate = 0;
+  let coinGate = 0, coinRecent = 0, coinLast = 0;
+  const PENTA = [330, 371, 440, 495, 554, 660];
   type Recipe = (out?: AudioNode) => void;
   const SFX: Record<string, Recipe> = {
     pop: o => tone(420 + Math.random() * 90, 0.07, 'triangle', 0.12, 220, 0, o),
@@ -142,9 +143,17 @@ export function createAudio(deps: AudioDeps): MotorAudio {
     cut: o => noise(0.06, 0.08, 5200, 2, 0, o),
     pour: o => noise(0.25, 0.06, 1400, 1.5, 0, o),
     fizz: o => noise(0.35, 0.07, 7000, 0.6, 0, o),
-    coin: o => { const n = deps.platform.clock.now(); if (n - coinGate < 45) return; coinGate = n; tone(1180 + Math.random() * 200, 0.06, 'square', 0.04, 0, 0, o); },
-    cash: o => { tone(880, 0.08, 'triangle', 0.13, 0, 0, o); tone(1320, 0.12, 'triangle', 0.11, 0, 0.07, o); tone(1760, 0.18, 'sine', 0.09, 0, 0.14, o); },
-    buy: o => [523, 659, 784, 1046].forEach((f, i) => tone(f, 0.18, 'triangle', 0.13, 0, i * 0.07, o)),
+    // 2026-11-09 user: the money sound became very irritating after a while. Now a soft sine in a calm pentatonic scale
+    // (A major pentatonic, 330-660 Hz, no harsh square/1.2 kHz), and it habituates: the more coins in the last seconds,
+    // the quieter and rarer it gets, so a busy day is a gentle shimmer instead of a ping storm.
+    coin: o => {
+      const n = deps.platform.clock.now(); coinRecent = Math.max(0, coinRecent - (n - coinLast) / 1000 * 1.2); coinLast = n;
+      const gate = 160 + Math.min(coinRecent, 8) * 60; if (n - coinGate < gate) return; coinGate = n; coinRecent += 1;
+      const calm = 1 / (1 + coinRecent * 0.35), f = PENTA[Math.floor(Math.random() * PENTA.length)];
+      tone(f, 0.32, 'sine', 0.05 * calm, 0, 0, o); tone(f * 2, 0.18, 'sine', 0.012 * calm, 0, 0, o);
+    },
+    cash: o => { tone(440, 0.22, 'sine', 0.06, 0, 0, o); tone(660, 0.3, 'sine', 0.05, 0, 0.09, o); },
+    buy: o => [440, 554, 660, 880].forEach((f, i) => tone(f, 0.26, 'sine', 0.07, 0, i * 0.08, o)),
     bad: o => tone(180, 0.25, 'sawtooth', 0.08, -60, 0, o),
     wake: o => tone(300, 0.2, 'square', 0.06, 400, 0, o),
     flash: o => noise(0.12, 0.12, 6000, 1, 0, o),

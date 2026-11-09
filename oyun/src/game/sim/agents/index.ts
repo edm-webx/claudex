@@ -11,6 +11,7 @@ import { createActorRegistry } from './registry';
 import { createAnchorBook, layoutAnchors, type AnchorFn } from './anchors';
 import type { AgentEnv } from './env';
 import type { ActorRegistry, AgentHost } from './types';
+import { createKafe } from './kafe';
 import { createWorkers, type WorkersSystem } from './workers';
 import { createRegulars, type RegularsSystem } from './regulars';
 import { createVip, type VipSystem } from './vip';
@@ -55,7 +56,7 @@ export function createAgents(rules: Rules, opts: InstallOpts = {}): AgentsHandle
     emit: (name, data) => { rules.bus.emit(name, data as never); },
     shared: { followers: 0, tipBoostT: 0, dogDuty: false, dogBark: 0, dogPos: null, force: { reg: null, vip: false, kap: false, gull: false, sleep: false } },
   };
-  const workers = createWorkers(env), regulars = createRegulars(env), vip = createVip(env), kapkac = createKapkac(env), cats = createCats(env), dog = createDog(env), parrot = createParrot(env), gulls = createGulls(env);  // NPC Erim removed 2026-10-24 (user: sinir bozucu, tamamen sil)
+  const workers = createWorkers(env), regulars = createRegulars(env), vip = createVip(env), kapkac = createKapkac(env), cats = createCats(env), dog = createDog(env), parrot = createParrot(env), gulls = createGulls(env), kafe = createKafe(env, rules.rt as unknown as Record<string, unknown>);  // NPC Erim removed 2026-10-24 (user: sinir bozucu, tamamen sil)
   const handle: AgentsHandle = {
     registry: reg, workers, regulars, vip, kapkac, cats, gulls, dog, env,
     pigeons: () => pigeonArea(book),
@@ -74,7 +75,7 @@ export function createAgents(rules: Rules, opts: InstallOpts = {}): AgentsHandle
   cats.prime(rules.state);
   // registry tick bookkeeping runs first, then the systems (orders 40..46)
   rules.addSystem({ id: 'agents.begin', order: 39, phase: 'sim', step: () => reg.beginTick() });
-  for (const s of [workers, regulars, vip, kapkac, cats, dog, parrot, gulls]) rules.addSystem(s);
+  for (const s of [workers, regulars, vip, kapkac, cats, dog, parrot, gulls, kafe]) rules.addSystem(s);
   rules.addStateView(() => {
     const r = regulars.current(), v = vip.current(), k = kapkac.current(), pam = cats.rows().find((c) => c.id === 'pamuk');
     const stareG = gulls.stare();

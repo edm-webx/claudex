@@ -37,7 +37,7 @@ export const YENI_CSS = `
 #sbui .sb-bi.on{background:linear-gradient(180deg,rgba(255,182,39,.0),rgba(255,182,39,.22))!important;box-shadow:inset 0 -3px 0 var(--amb)!important;color:#fff!important}
 #sbui .sb-badge{background:#ff5a4e!important;border:2px solid var(--glass2)!important;font-family:var(--disp)}
 /* goals tab */
-body .hd-card{background:var(--glass,rgba(11,19,38,.74))!important;border:1px solid rgba(255,255,255,.13)!important;border-right:3px solid #ffb627!important;border-radius:0 14px 14px 0!important;left:0!important;right:auto!important;top:calc(var(--hudb,100px) + 10px)!important;width:min(232px,58vw)!important;box-shadow:0 14px 32px rgba(4,10,24,.45)!important;color:#fff!important;backdrop-filter:blur(16px) saturate(1.3);-webkit-backdrop-filter:blur(16px) saturate(1.3)}
+body .hd-card{background:var(--glass,rgba(11,19,38,.74))!important;border:1px solid rgba(255,255,255,.13)!important;border-right:3px solid #ffb627!important;border-radius:0 14px 14px 0!important;left:0!important;right:auto!important;top:calc(var(--hudb,100px) + 56px)!important;width:min(232px,58vw)!important;box-shadow:0 14px 32px rgba(4,10,24,.45)!important;color:#fff!important;backdrop-filter:blur(16px) saturate(1.3);-webkit-backdrop-filter:blur(16px) saturate(1.3)}
 body .hd-hd{background:transparent!important;border:0!important;padding:9px 12px 4px!important}
 body .hd-hd b{font:800 10px/1 var(--body)!important;letter-spacing:.22em!important;color:rgba(255,255,255,.62)}
 body .hd-hd i{background:#ffb627!important;color:#14213d!important;border:0!important;border-radius:7px!important}

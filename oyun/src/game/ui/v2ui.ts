@@ -778,7 +778,7 @@ function renderKarne(m) {
   } else if (stars >= 5) s += `<div class="sb-card" style="text-align:center;font:900 16px/1.3 var(--disp)">Beş yıldız! Martıköy seninle gurur duyuyor.</div>`;
   return s;
 }
-const STAGES = [['Seyyar Araba', 'cart1'], ['Büfe', 'shop'], ['Çay Bahçesi', 'garden'], ['Lokanta', 'lokanta'], ['Zincir Şube', 'zincir'], ['Deniz Platformu', 'garden'], ['Balık Restoranı', 'lokanta'], ['Boğaz Restoranı', 'lokanta'], ['Şef Mutfağı', 'zincir'], ['Fine Dining', 'zincir']];
+const STAGES = [['Seyyar Araba', 'cart1'], ['Büfe', 'shop'], ['Çay Bahçesi', 'garden'], ['Lokanta', 'lokanta'], ['Aile Lokantası', 'lokanta'], ['Deniz Platformu', 'garden'], ['Balık Restoranı', 'lokanta'], ['Boğaz Restoranı', 'lokanta'], ['Şef Mutfağı', 'zincir'], ['Fine Dining', 'zincir']];
 function renderTadilat(m) {
   const stg = clamp(num(m.stage) ? m.stage : 1, 1, STAGES.length);
   const names = Array.isArray(m.stages) ? m.stages : null;

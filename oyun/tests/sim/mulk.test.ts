@@ -76,16 +76,27 @@ it('karşı yaka kafe: satın alınca hemen kafe olur, arsa hakkından düşmez,
   S.money = 1e6; c({ op: 'kafeEsya', id: 'k1', e: 'espresso' }); expect(p.esya).toEqual(['espresso']); c({ op: 'kafeEsya', id: 'k1', e: 'barista' }); expect(p.esya).toEqual(['espresso']);   // barista needs lv5
   const k2 = m.model().arsa.find((x: any) => x.id === 'k2'); expect(k2!.owned).toBe(false);
 });
-it('kafe: the player brews at the espresso machine (wait-and-take) and picks a theme', () => {
+it('kafe: müşteriler içeri gelir, hired worker ve oyuncu servis eder, para kasaya girer, tema seçilir', () => {
   const { sim, S, c } = mk();
-  S.level = 5; S.money = 200000;
+  S.level = 5; S.money = 500000;
   c({ op: 'arsaAl', id: 'k1' });
-  const p = S.zones.arsa.plots.k1, sat0 = p.sat;
-  const it0 = (sim.interactions ?? sim.rules.interactions ?? sim.rules.K?.interactions).get('kafeYap.kafe1.espresso');
-  expect(it0).toBeTruthy();
+  const p = S.zones.arsa.plots.k1, h = sim.rules.rt.kafeHost, ag = sim.rules.rt.agents ?? {};
+  expect(h).toBeTruthy();
+  // no worker: guests come, queue, and nobody serves them
+  for (let i = 0; i < 400; i++) { sim.step(0.1); h.pending.k1 = Math.max(h.pending.k1 || 0, 1); }
+  const kr = [ag.kafe?.rooms?.() ?? 1];
+  expect(p.sat).toBe(0);
+  // the player serves from the machine
+  const it0 = sim.interactions.get('kafeYap.kafe1'); expect(it0).toBeTruthy();
   sim.command({ kind: 'teleport', x: it0.pos.x, z: it0.pos.z });
-  for (let i = 0; i < 80; i++) sim.step(0.1);
-  expect(p.sat).toBeGreaterThan(sat0);
+  for (let i = 0; i < 120; i++) { sim.step(0.1); h.pending.k1 = Math.max(h.pending.k1 || 0, 1); }
+  expect(p.sat).toBeGreaterThan(0);
+  // hired worker: real actor serves on its own
+  sim.command({ kind: 'teleport', x: 0, z: 0 });
+  const sat0 = p.sat; p.isci = 2;
+  for (let i = 0; i < 900; i++) { sim.step(0.1); h.pending.k1 = Math.max(h.pending.k1 || 0, 1); }
+  expect(p.sat).toBeGreaterThan(sat0 + 2);
+  expect(kr).toBeDefined();
   c({ op: 'tema', id: 'k1', e: 'deniz' }); expect(p.tema).toBe('deniz');
   const m0 = S.money; c({ op: 'tema', id: 'k1', e: 'retro' }); expect(S.money).toBe(m0 - 15000);
 });

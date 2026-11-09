@@ -175,24 +175,6 @@ export function installMulk(K: Kernel) {
     if (S.money < fiyat) { K.toast('Tema değiştirmek ' + fmtMoney(fiyat) + '.', 'bad'); return; }
     if (fiyat) K.spend(fiyat); q.p.tema = e; K.toast('🎨 ' + (q.a.ad || 'Kafe') + ': ' + KAFE_TEMA[e] + ' tema', 'good'); K.saveNow();
   }
-  for (const [mid, list] of [['kafe1', [['espresso', -2.7, '☕ Espresso']]], ['kafe2', [['kahve', -2.7, '☕ Filtre kahve'], ['waffle', -0.5, '🧇 Waffle']]]] as [string, [string, number, string][]][]) {
-    const m = IC_BY_ID[mid]; if (!m || !m.arsa) continue;
-    const D = icDim(m).D;
-    for (const [k, u, ad] of list) {
-      const brew = k === 'waffle' ? 4 : 2.6;
-      K.interactions.register({
-        id: 'kafeYap.' + mid + '.' + k, pos: icWorld(m, u, -D / 2 + 1.2 + 0.85), radius: 0.8, kind: 'station', dwell: brew, interval: brew,
-        canAct: () => !!arsa().plots[m.arsa!],
-        act: () => {
-          const ar = ARSALAR.find(x => x.id === m.arsa), p = arsa().plots[m.arsa!]; if (!ar || !p) return 'done';
-          const v = Math.round(ekon(ar, p).fiyat * 1.4);   // the boss's own cup sells a bit above the menu average
-          p.till += v; p.sat += 1; K.addXP(2); K.stat('kahveYap');
-          K.toast(ad + ' hazır: +' + fmtMoney(v) + ' kasaya', 'good');
-          return 'continue';
-        },
-      });
-    }
-  }
   // ── okul: English lesson at the classroom (back half of the school room) ──
   type OkulSave = { soru: number; secenek: number[]; cevap: number; dogru: number; sinavlar: number[]; son: string };
   const okulZ = (): OkulSave => { const z = (S.zones ||= {}) as Record<string, unknown>; let o = z.okul as OkulSave | undefined; if (!o || !Array.isArray(o.sinavlar)) { o = { soru: -1, secenek: [], cevap: 0, dogru: 0, sinavlar: [], son: '' }; z.okul = o as never; } return o; };
@@ -267,6 +249,13 @@ export function installMulk(K: Kernel) {
     kt.mus.t += dt;
     if (kt.mus.t >= KT_SABIR) { kt.kacan++; kt.son = '✗ ' + kt.mus.ad + ' beklemekten sıkılıp gitti.'; kt.mus = null; kt.bekle = rng.range(2, 4); }
   }
+  /** the café room sim (agents/kafe.ts) pulls its numbers from here and sells through here */
+  const kafeHost = {
+    live: false, pending: {} as Record<string, number>,
+    info(id: string) { const q = plotOf(id); if (!q || !q.p || !q.a.sabit) return null; const ek = ekon(q.a, q.p); return { lv: q.p.lv, isci: flo(q.p.isci), stok: q.p.stok, tema: q.p.tema || '', fiyat: ek.fiyat * (1 + q.p.lv * 0.04), menu: ek.menu.map(x => x.ad) }; },
+    sell(id: string, bonus = 1): number { const q = plotOf(id); if (!q || !q.p || q.p.stok < 1) return 0; const v = Math.round(ekon(q.a, q.p).fiyat * (1 + q.p.lv * 0.04) * bonus); q.p.stok -= 1; q.p.sat += 1; q.p.till += v; K.addXP(1); K.stat('kafeSatis'); return v; },
+  };
+  (rt as Record<string, unknown>).kafeHost = kafeHost;
   const plotOf = (id: string): { a: Arsa; p: Plot | undefined } | null => { const a = ARSALAR.find(x => x.id === id); return a ? { a, p: arsa().plots[id] } : null; };
   /** at the door, or anywhere inside the business (2026-11-09: every building is enterable) */
   const yakin = (ar: Arsa, extra = 0) => { if (dist(K.playerPos, arsaKapi(ar)) < KAPI_MENZIL + extra) return true; const m = icOfArsa(ar.id); return !!m && icIcinde(m, K.playerPos, -0.2); };
@@ -371,7 +360,9 @@ export function installMulk(K: Kernel) {
           const ucret = isci * ISCI_SAAT_UCRET * dh; if (p.till >= ucret) p.till -= ucret;      // wages come out of the till
           const max = DUKKAN_STOK_MAX[p.lv]; if (p.stok < max * 0.25 && p.till >= t.maliyet * 10) { const n = Math.min(max - Math.floor(p.stok), Math.floor(p.till * 0.6 / t.maliyet)); if (n > 0) { p.till -= n * t.maliyet; p.stok += n; } }
         }
-        if (dh > 0 && p.stok > 0) {
+        if (ar.sabit && kafeHost.live && dh > 0) {   // live room sim: customers walk in and get served by the player / hired workers
+          if (p.stok > 0) { p.fr += dukkanMusteri(t, p.lv) * ek.musK * (1 + ISCI_MUSTERI * isci) * dh; const n = Math.floor(p.fr); p.fr -= n; if (n > 0) kafeHost.pending[ar.id] = Math.min(6, (kafeHost.pending[ar.id] || 0) + n); }
+        } else if (dh > 0 && p.stok > 0) {
           p.fr += dukkanMusteri(t, p.lv) * ek.musK * (1 + ISCI_MUSTERI * isci) * dh; const n = Math.min(Math.floor(p.fr), p.stok); p.fr -= Math.floor(p.fr);
           if (n > 0) { p.stok -= n; p.sat += n; p.till += n * t.fiyat * (1 + p.lv * 0.04); }
         }

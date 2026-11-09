@@ -19,8 +19,8 @@ interface Deps {
 }
 
 const CSS = `
-.ad-fab{position:fixed;right:10px;top:calc(env(safe-area-inset-top,0px) + 74px);z-index:60;pointer-events:auto;width:48px;height:48px;border-radius:50%;border:3px solid #3b2a20;background:#ffd23f;box-shadow:0 4px 0 #3b2a20;font-size:22px;cursor:pointer}
-.ad-p{position:fixed;right:66px;top:calc(env(safe-area-inset-top,0px) + 74px);z-index:61;pointer-events:auto;width:min(380px,calc(100vw - 80px));max-height:calc(100vh - 100px);overflow:auto;background:#fdf3e1;color:#3b2a20;border:4px solid #3b2a20;border-radius:18px;box-shadow:0 6px 0 #3b2a20;padding:10px;font:700 14px/1.3 var(--body);display:none}
+.ad-fab{position:fixed;right:10px;top:calc(env(safe-area-inset-top,0px) + 300px);z-index:60;pointer-events:auto;width:48px;height:48px;border-radius:50%;border:3px solid #3b2a20;background:#ffd23f;box-shadow:0 4px 0 #3b2a20;font-size:22px;cursor:pointer}
+.ad-p{position:fixed;right:66px;top:calc(env(safe-area-inset-top,0px) + 300px);z-index:61;pointer-events:auto;width:min(380px,calc(100vw - 80px));max-height:calc(100vh - 320px);overflow:auto;background:#fdf3e1;color:#3b2a20;border:4px solid #3b2a20;border-radius:18px;box-shadow:0 6px 0 #3b2a20;padding:10px;font:700 14px/1.3 var(--body);display:none}
 .ad-p.on{display:block}
 .ad-h{font:900 18px var(--disp);margin:0 0 6px}
 .ad-top{position:sticky;top:-12px;z-index:2;background:#fdf3e1;margin:-12px -12px 6px;padding:10px 12px 4px;border-bottom:3px solid #3b2a20}
@@ -88,7 +88,7 @@ ${sel.peer ? `<button class="ad-b" data-a="tp-to">Yanına git</button><button cl
     if (tab === 'ara') return `<input class="ad-in" data-f="ara" placeholder="Kullanıcı adı ara (çevrimdışı da bulur)"><button class="ad-b" data-a="ara">Ara</button><div style="margin-top:6px">${found.map(f => rowOf(f.id, f.ad, '')).join('')}</div>` + selBlock();
     if (tab === 'isl') {
       const m = d.isletme?.(); if (!m) return '<small>Oyun yüklenmedi.</small>';
-      const NAMES = ['Seyyar', 'Büfe', 'Çay bahçesi', 'Lokanta', 'Zincir şube', 'Deniz platformu', 'Balık restoranı', 'Boğaz restoranı', 'Şef mutfağı', 'Fine dining'];
+      const NAMES = ['Seyyar', 'Büfe', 'Çay bahçesi', 'Lokanta', 'Aile lokantası', 'Deniz platformu', 'Balık restoranı', 'Boğaz restoranı', 'Şef mutfağı', 'Fine dining'];
       const KA = ['Yok', 'Köşe kafe', 'Kafe', 'Bistro', 'Teraslı bistro', 'Gurme bistro'];
       return `<div class="ad-stat"><div>Para<b>${Math.round(m.money).toLocaleString('tr')} ₺</b></div><div>Altın<b>${m.gold}</b></div><div>Seviye<b>${m.level} · ${m.stars}★</b></div></div>
 <div class="ad-h">Büfe aşaması <small>(şu an ${m.stage}: ${NAMES[m.stage - 1] || ''})</small></div><div class="ad-tabs">${NAMES.map((n, i) => `<button class="ad-b${m.stage === i + 1 ? ' cur' : ''}" data-a="stage" data-n="${i + 1}" title="${n}">${i + 1}. ${n}</button>`).join('')}</div>

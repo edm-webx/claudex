@@ -20,7 +20,7 @@ export interface HedefCardDeps {
 export interface HedefCard { update(dt: number): void; dispose(): void }
 
 const CSS = `
-.hd-card{position:absolute;left:calc(var(--sl,0px) + 8px);top:calc(var(--hudb,100px) + 10px);width:min(214px,54vw);z-index:24;pointer-events:auto;
+.hd-card{position:absolute;left:calc(var(--sl,0px) + 8px);top:calc(var(--hudb,100px) + 54px);width:min(214px,54vw);z-index:24;pointer-events:auto;
   background:var(--paper,#fff8ec);border:3px solid var(--ink,#3b2a20);border-radius:16px;box-shadow:0 4px 0 var(--ink,#3b2a20);color:var(--ink,#3b2a20);
   font-family:var(--body,system-ui,sans-serif);overflow:hidden;user-select:none;-webkit-user-select:none;transition:opacity .25s}
 .hd-card.off{opacity:0;pointer-events:none}

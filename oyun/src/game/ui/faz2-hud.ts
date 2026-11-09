@@ -165,7 +165,7 @@ export function createFaz2Hud(d: Faz2HudDeps): Faz2Hud {
       const r = d.rules(), z = zincirApi(r);
       const stage = (r?.state as { stage?: number })?.stage ?? 1;
       const v = z && r && r.rt.started ? z.view() : null;
-      const showBtn = !!v && (stage >= 3 || v.some(s => s.durum !== 'kilitli'));
+      const showBtn = false; void stage;   // chain removed (2026-11-09 user)
       zbtn.classList.toggle('off', !showBtn);
       if (v) {
         const buy = v.filter(s => s.durum === 'alinabilir').map(s => s.id).join(',');
