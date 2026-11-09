@@ -26,7 +26,8 @@ export interface EsnafimSave {
   sac: string; sacRenk: string; biyik: 'yok' | 'ince' | 'kalin' | 'burma'; sakal: boolean;
   /** 16:52 detailed face: eye spacing, mouth width, nose, ears, beard style (overrides sakal), brow colour */
   gozAra?: 'yakin' | 'orta' | 'uzak'; agiz?: 'dar' | 'orta' | 'genis'; burun?: 'kucuk' | 'orta' | 'iri' | 'uzun'; kulak?: 'kucuk' | 'orta' | 'kepce';
-  sakalStil?: 'yok' | 'kirli' | 'keci' | 'tam'; gozY?: 'asagi' | 'orta' | 'yukari';
+  sakalStil?: 'yok' | 'kirli' | 'keci' | 'tam' | 'kisa' | 'favori' | 'cember'; gozY?: 'asagi' | 'orta' | 'yukari';
+  /** resting face (index into the chars X_CELLS expressions) */ ifade?: string;
   ustStil: string; ust: string; aksan: string | null; desen: number; altStil: string; alt: string; ayakkabi: string; onluk: string | null;
   sapka: string | null; sapkaRenk: string; gozluk: string | null; papyon: string | null; kravat: string | null; kupe: boolean;
   /** karar paketi C3: the character name is chosen once and never changes (set on the first 'done') */
@@ -56,6 +57,8 @@ const clean = (v: unknown, n: number, def: string) => { const s = String(v ?? ''
 const STR_KEYS = ['goz', 'gozRenk', 'kas', 'sac', 'sacRenk', 'ustStil', 'ust', 'altStil', 'alt', 'ayakkabi', 'sapkaRenk'] as const;
 const NULLABLE = ['ruj', 'aksan', 'onluk', 'sapka', 'gozluk', 'papyon', 'kravat'] as const;
 
+/** resting face choices -> chars X_CELLS index (neutral 0, smile 1, grin 2, grumpy 7, wink 9, thinking 10, bliss 11, sleepy 5) */
+export const IFADE: Record<string, number> = { notr: 0, gulumser: 1, nese: 2, ciddi: 7, gozkirp: 9, dalgin: 10, huzurlu: 11, uykulu: 5 };
 export function applyEsnafim(z: EsnafimSave, d: Record<string, unknown>): void {
   if (d.ad !== undefined && !z.adKilit) z.ad = clean(d.ad, 14, z.ad);
   if (d.dukkan !== undefined) z.dukkan = clean(d.dukkan, 22, z.dukkan);
@@ -71,7 +74,7 @@ export function applyEsnafim(z: EsnafimSave, d: Record<string, unknown>): void {
   if (d.biyik === 'yok' || d.biyik === 'ince' || d.biyik === 'kalin' || d.biyik === 'burma') z.biyik = d.biyik;
   const pick = <K extends keyof EsnafimSave>(k: K, ok: string[]) => { if (typeof d[k] === 'string' && ok.includes(d[k] as string)) (z as unknown as Record<string, unknown>)[k] = d[k]; };
   pick('gozAra', ['yakin', 'orta', 'uzak']); pick('agiz', ['dar', 'orta', 'genis']); pick('burun', ['kucuk', 'orta', 'iri', 'uzun']);
-  pick('kulak', ['kucuk', 'orta', 'kepce']); pick('sakalStil', ['yok', 'kirli', 'keci', 'tam']); pick('gozY', ['asagi', 'orta', 'yukari']);
+  pick('kulak', ['kucuk', 'orta', 'kepce']); pick('sakalStil', ['yok', 'kirli', 'keci', 'tam', 'kisa', 'favori', 'cember']); pick('ifade', Object.keys(IFADE)); pick('gozY', ['asagi', 'orta', 'yukari']);
   if (typeof d.sakalStil === 'string') z.sakal = d.sakalStil === 'tam';
   if (typeof d.sakal === 'boolean') z.sakalStil = d.sakal ? 'tam' : 'yok';
   if (typeof d.sinif === 'string' && SINIFLAR.some(s => s.id === d.sinif)) z.sinif = d.sinif as Sinif;
@@ -109,8 +112,9 @@ export function esnafHeroOpts(e: Partial<EsnafimSave>, worn: Record<string, unkn
   const look: Record<string, unknown> = {
     skin: z.ten, body: z.vucut, height: z.boy, girth: z.vucut === 'slim' ? 0.92 : z.vucut === 'round' ? 1.16 : 1.0,
     // short, bushy styles poke through a hat: under one they sit as a neat crop
-    hair: z.sapka && z.sapka !== 'bandana' && /^(short|sport|curly|wavy|afro|loose)$/.test(z.sac) ? 'buzz' : z.sac, hairColor: z.sacRenk, temples: null, beard: z.sakalStil === 'keci' ? 'goatee' : z.sakalStil ? z.sakalStil === 'tam' : !!z.sakal,
-    mustache: z.biyik === 'yok' ? false : z.biyik === 'kalin' ? 'thick' : z.biyik === 'burma' ? 'curl' : 'thin',
+    hair: z.sapka && z.sapka !== 'bandana' && /^(short|sport|curly|wavy|afro|loose)$/.test(z.sac) ? 'buzz' : z.sac, hairColor: z.sacRenk, temples: null, beard: z.sakalStil === 'keci' || z.sakalStil === 'cember' ? 'goatee' : z.sakalStil === 'kisa' ? 'short' : z.sakalStil === 'favori' ? 'sideburns' : z.sakalStil ? z.sakalStil === 'tam' : !!z.sakal,
+    restCell: IFADE[z.ifade || ''] ?? undefined,
+    mustache: z.sakalStil === 'cember' && z.biyik === 'yok' ? 'thin' : z.biyik === 'yok' ? false : z.biyik === 'kalin' ? 'thick' : z.biyik === 'burma' ? 'curl' : 'thin',
     faceSpec: { eye: z.goz, iris: z.gozRenk, brow: z.kas, blush: z.allik, freckles: z.cil ? 1 : 0, dimples: z.gamze ? 1 : 0, lips: z.ruj || undefined,
       mouthW: z.agiz === 'dar' ? 10 : z.agiz === 'genis' ? 19 : 15, ex: z.gozAra === 'yakin' ? 17 : z.gozAra === 'uzak' ? 25 : 21,
       ey: z.gozY === 'asagi' ? 61 : z.gozY === 'yukari' ? 53 : 57, stubble: z.sakalStil === 'kirli' ? 1 : 0, browCol: z.kas === 'none' ? undefined : z.sacRenk },

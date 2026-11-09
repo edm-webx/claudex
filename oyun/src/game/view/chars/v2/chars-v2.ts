@@ -672,6 +672,8 @@ function buildHeroMesh(L?: any) {
     });
   }
   if (L.beard === 'goatee') b.add(sph(0.05, 10, 8), on('head', { m: mTRS(0, mouthY - 0.065, R * 0.86, 0, 0, 0, 0.9, 1.2, 0.8), color: L.age === 'old' ? HAIRC.silver : hairC }));
+  else if (L.beard === 'short') b.add(sph(+(R * 1.012).toFixed(4), 14, 6, PI / 2 - 1.0, 2.0, PI * 0.6, PI * 0.3), on('head', { m: HM, color: L.age === 'old' ? HAIRC.silver : hairC }));
+  else if (L.beard === 'sideburns') [-1, 1].forEach((s?: any) => b.add(sph(0.045, 8, 6), on('head', { m: mTRS(s * R * 0.84, mouthY + 0.06, R * 0.38, 0, 0, 0, 0.55, 1.9, 0.9), color: L.age === 'old' ? HAIRC.silver : hairC })));
   else if (L.beard) b.add(sph(+(R * 1.03).toFixed(4), 14, 6, PI / 2 - 1.15, 2.3, PI * 0.56, PI * 0.36), on('head', { m: HM, color: L.age === 'old' ? HAIRC.silver : hairC }));
   if (L.glasses) {
     const gc = L.glasses === 'sun' ? '#1b1b22' : L.glasses === 'thick' ? '#3a2a20' : '#4a4a55', tk = L.glasses === 'thick' ? 0.011 : 0.007;
@@ -929,6 +931,7 @@ Hero.prototype.update = function (this: any, dt?: any, s?: any) {
   // v2 face index -> motor cell; an explicit expression (setExpr from the motor API) wins unless the act forces a face
   let cell = V2_CELL[e];
   if (expr == null) { if (this.exprOverride != null) cell = this.exprOverride; else if (s.mood === 'sad') cell = 6; else if (s.mood === 'asleep') cell = 5; }
+  if (expr == null && this.exprOverride == null && (s.mood || 'ok') === 'ok' && this.look && this.look.restCell != null && e === 0) cell = this.look.restCell;   // the player's chosen resting face (kulis)
   if (this.blinkOn > 0) { this.blinkOn -= dt; if (BLINKABLE[cell]) cell = 12; }
   this.setExpr(cell);
   this.updateBrows(dt, expr == null && this.browOverride ? this.browOverride : X_DEF_BROW[X_CELLS[cell]] || 'flat');
