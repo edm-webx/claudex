@@ -31,7 +31,7 @@ export const IC_MEKANLAR: IcMekan[] = [
 ];
 export const IC_BY_ID: Record<string, IcMekan> = Object.fromEntries(IC_MEKANLAR.map(m => [m.id, m]));
 /** business rooms run by the live room sim (sim/agents/kafe.ts): real guests + real workers, no props */
-export const IC_CANLI = ['k1', 'k2', 'k4', 'k5', 'k6'];
+export const IC_CANLI = ['k1', 'k2', 'k3', 'k4', 'k5', 'k6'];
 export const icOfArsa = (arsa: string) => IC_MEKANLAR.find(m => m.arsa === arsa);
 
 const YAW: Record<Yon, number> = { '+z': 0, '+x': Math.PI / 2, '-z': Math.PI, '-x': -Math.PI / 2 };

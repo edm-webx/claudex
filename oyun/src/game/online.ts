@@ -118,7 +118,7 @@ interface Remote { peer: string; hero: HeroHandle | null; lookKey: string; x: nu
 
 /** what other players need to draw my esnaf (kept small: presence is ~4 KiB on claude.ai) */
 const LOOK_KEYS: (keyof EsnafimSave)[] = ['ad', 'sinif', 'tip', 'vucut', 'boy', 'ten', 'goz', 'gozRenk', 'kas', 'allik', 'cil', 'gamze', 'ruj', 'sac', 'sacRenk', 'biyik', 'sakal',
-  'ustStil', 'ust', 'aksan', 'desen', 'altStil', 'alt', 'ayakkabi', 'onluk', 'sapka', 'sapkaRenk', 'gozluk', 'papyon', 'kravat', 'kupe'];
+  'ustStil', 'ust', 'aksan', 'desen', 'altStil', 'alt', 'ayakkabi', 'onluk', 'sapka', 'sapkaRenk', 'gozluk', 'papyon', 'kravat', 'kupe', 'sakalStil', 'ifade', 'gozAra', 'gozY', 'burun', 'agiz', 'kulak'];
 
 export function createOnline(d: OnlineDeps): OnlineView {
   let ns: RoomNs | null = null, link: Link | null = null, via: 'supa' | 'room' | '' = '', code = '';

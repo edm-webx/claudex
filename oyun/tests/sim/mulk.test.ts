@@ -100,8 +100,8 @@ it('kafe: müşteriler içeri gelir, hired worker ve oyuncu servis eder, para ka
   c({ op: 'tema', id: 'k1', e: 'deniz' }); expect(p.tema).toBe('deniz');
   const m0 = S.money; c({ op: 'tema', id: 'k1', e: 'retro' }); expect(S.money).toBe(m0 - 15000);
 });
-it('canlı oda: kantin, AVM lokantası ve tesis kafeteryası da gerçek müşteri + işçiyle para kazanır (k4-k6)', () => {
-  for (const id of ['k4', 'k5', 'k6']) {
+it('canlı oda: kantin, AVM lokantası ve tesis kafeteryası da gerçek müşteri + işçiyle para kazanır (k3-k6)', () => {
+  for (const id of ['k3', 'k4', 'k5', 'k6']) {
     const { sim, S, c } = mk();
     S.level = 40; S.money = 5e7;
     c({ op: 'arsaAl', id });

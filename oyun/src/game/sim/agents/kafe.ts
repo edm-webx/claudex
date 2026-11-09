@@ -12,11 +12,11 @@ import type { AgentEnv } from './env';
 import type { Actor } from './types';
 
 interface KafeHostApi {
-  live: boolean; pending: Record<string, number>;
+  live: boolean; fp: boolean; pending: Record<string, number>; fpDone?: (arsa: string, ok: boolean) => void;
   info(id: string): { lv: number; isci: number; stok: number; tema: string; fiyat: number; menu: string[] } | null;
   sell(id: string, bonus?: number): number;
 }
-const ROOMS: { arsa: string; room: string; bistro: boolean }[] = [{ arsa: 'k1', room: 'kafe1', bistro: false }, { arsa: 'k2', room: 'kafe2', bistro: true }, { arsa: 'k4', room: 'okul', bistro: false }, { arsa: 'k5', room: 'avm', bistro: false }, { arsa: 'k6', room: 'tesis', bistro: false }];
+const ROOMS: { arsa: string; room: string; bistro: boolean }[] = [{ arsa: 'k1', room: 'kafe1', bistro: false }, { arsa: 'k2', room: 'kafe2', bistro: true }, { arsa: 'k4', room: 'okul', bistro: false }, { arsa: 'k5', room: 'avm', bistro: false }, { arsa: 'k6', room: 'tesis', bistro: false }, { arsa: 'k3', room: 'kirtasiye', bistro: false }];
 const PAT = 45, LOOKS = ['universiteli', 'teyze', 'emekli', 'plaza', 'turgrubu', 'gezgin', 'balayi', 'taraftar'];
 const LINES_IN = ['Selam, bir şey alabilir miyim?', 'Kahve kokusu buraya kadar geldi.', 'Bugün de geldik!', 'Boş masa var mı?'];
 const LINES_OUT = ['Eline sağlık!', 'Çok güzel olmuş.', 'Yine geleceğiz!', 'Tam kıvamında.'];
@@ -34,13 +34,16 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
   const host = () => rt.kafeHost as KafeHostApi | undefined;
   const geom = (r: Room) => {
     const m = IC_BY_ID[r.room], D = icDim(m).D, W = icDim(m).W, lay = icLayout(m), tz = lay.find(i => i.k === 'tezgah')!;
-    const bv = tz.v, cu = tz.u - tz.w / 2 + 1.0, endU = tz.u + tz.w / 2 + 0.6;   // counter row (v) and the machine end of the counter (u)
+    const vert = (tz.ry || 0) % 2 === 1;   // kırtasiye: the counter stands across the east end, customers queue on its west side
     const w = (u: number, v: number): Vec2 => icWorld(m, u, v);
+    /** a = position ALONG the counter, b = distance from the counter on the customer side (negative = staff side) */
+    const P = (a: number, b: number): Vec2 => vert ? w(tz.u - b, a) : w(a, tz.v + b);
+    const cu = vert ? tz.v - tz.w / 2 + 0.3 : tz.u - tz.w / 2 + 1.0, endU = vert ? tz.v + tz.w / 2 + 0.5 : tz.u + tz.w / 2 + 0.6;
     const tables = lay.filter(i => i.k.startsWith('masa')).map(i => ({ u: i.u, v: i.v }));
-    return { m, D, W, bv, cu, endU, w, door: w(0, D / 2 + 2.6), inside: w(0, D / 2 - 1.0), tables, sdv: D < 5 ? -0.6 : 0.7, wide: !(m.tur === 'kafe' || m.tur === 'bistro') };
+    return { m, D, W, bv: tz.v, cu, endU, w, P, vert, door: w(0, D / 2 + 2.6), inside: w(0, D / 2 - 1.0), tables, sdv: D < 5 ? -0.6 : 0.7, wide: !vert && !(m.tur === 'kafe' || m.tur === 'bistro'), gap: vert ? 0.5 : 0.85, maxQ: vert ? 3 : 5 };
   };
-  const slotU = (g: { cu: number }, i: number) => g.cu + 0.7 + Math.max(0, i) * 0.85;
-  const slotPos = (r: Room, i: number) => { const g = geom(r); return g.w(slotU(g, i), g.bv + 1.15); };
+  const slotU = (g: { cu: number; gap: number; vert: boolean }, i: number) => g.cu + (g.vert ? 0 : 0.7) + Math.max(0, i) * g.gap;
+  const slotPos = (r: Room, i: number) => { const g = geom(r); return g.P(slotU(g, i), 1.15); };
   const approach = (r: Room, i: number): Vec2[] => { const g = geom(r); return g.wide ? [g.inside, g.w(slotU(g, i), g.D / 2 - 1.0), slotPos(r, i)] : [g.inside, slotPos(r, i)]; };
   const step1 = (a: Actor, to: Vec2, sp: number, dt: number) => {   // straight-line step, returns true when arrived
     const dx = to.x - a.x, dz = to.z - a.z, d = Math.hypot(dx, dz);
@@ -82,10 +85,10 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
     while (r.wk.length < want) {
       const g = geom(r), idx = r.wk.length, seed = 31 * idx + (r.bistro ? 7 : 3), role = idx === 0 ? 'barista' : 'garson';
       const a = env.reg.add('worker', 'kafe-' + r.room + '-w' + idx, { kind: 'worker', role, seed }, g.w(0, g.D / 2 + 0.6), { role, name: 'Çalışan', rank: 0 });
-      r.wk.push({ a, idx, st: 'post', t: 0, guest: null, path: [g.inside, g.w(g.endU, g.bv + 1.0), g.w(g.endU, g.bv - 0.7), g.w(g.cu + 2.3 + idx * 1.4, g.bv - 0.7)] });
+      r.wk.push({ a, idx, st: 'post', t: 0, guest: null, path: [g.inside, g.P(g.endU, 1.4), g.P(g.endU, -0.7), g.P(g.cu + (g.vert ? 0.6 : 2.3) + idx * (g.vert ? 0.5 : 1.4), -0.7)] });
     }
   }
-  const postOf = (r: Room, idx: number): Vec2 => { const g = geom(r); return g.w(g.cu + 1.5 + idx * 1.4, g.bv - 0.7); };
+  const postOf = (r: Room, idx: number): Vec2 => { const g = geom(r); return g.P(g.cu + (g.vert ? 0.6 : 1.5) + idx * (g.vert ? 0.5 : 1.4), -0.7); };
 
   function tickRoom(r: Room, dt: number) {
     const h = host(), info = h?.info(r.arsa);
@@ -93,7 +96,7 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
     syncWorkers(r);
     // new guests from the hourly customer flow (mulk.ts accrues them into pending)
     const open = r.guests.filter(x => x.st === 'in' || x.st === 'queue').length;
-    if ((h.pending[r.arsa] || 0) > 0 && open < 5 && info.stok > 0) { h.pending[r.arsa]--; spawnGuest(r); }
+    if ((h.pending[r.arsa] || 0) > 0 && open < geom(r).maxQ && info.stok > 0) { h.pending[r.arsa]--; spawnGuest(r); }
     // guests
     for (let i = r.guests.length - 1; i >= 0; i--) {
       const gu = r.guests[i], a = gu.a; gu.t += dt;
@@ -116,28 +119,28 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
         const p = postOf(r, w.idx); if (Math.hypot(p.x - a.x, p.z - a.z) > 0.1) { step1(a, p, 1.6, dt); a.act = 'walk'; continue; }
         a.act = 'idle'; a.speed = 0; a.rot = geomYaw(r) + Math.PI;
         const gu = waiting(r).find(x => !x.claimed);
-        if (gu && info.stok > 0) { gu.claimed = w.a.id; w.guest = gu; w.st = 'brew'; w.t = 0; }
+        if (gu && info.stok > 0 && !(h.fp && r.arsa === 'k3')) { gu.claimed = w.a.id; w.guest = gu; w.st = 'brew'; w.t = 0; }
       } else if (w.st === 'brew') {
-        const g = geom(r), mp = g.w(g.cu + 0.2 + w.idx * 0.5, g.bv - 0.7);
+        const g = geom(r), mp = g.P(g.cu + (g.vert ? 0.2 : 0.2) + w.idx * 0.5, -0.7);
         if (Math.hypot(mp.x - a.x, mp.z - a.z) > 0.1) { step1(a, mp, 1.8, dt); a.act = 'walk'; w.t = 0; continue; }
         a.act = 'pour'; a.speed = 0; if (w.t >= brew) { w.st = 'hand'; w.t = 0; }
         if (!w.guest || w.guest.st !== 'queue') { w.guest = null; w.st = 'post'; }
       } else if (w.st === 'hand') {
         const gu = w.guest; if (!gu || gu.st !== 'queue') { w.guest = null; w.st = 'post'; continue; }
-        const g = geom(r), tp = g.w(slotU(g, waiting(r).indexOf(gu)), g.bv - 0.7);
+        const g = geom(r), tp = g.P(slotU(g, waiting(r).indexOf(gu)), -0.7);
         if (Math.hypot(tp.x - a.x, tp.z - a.z) > 0.1) { step1(a, tp, 1.8, dt); a.act = 'carry'; a.carry = [{ type: 'cay', tier: 1 } as never]; continue; }
         a.act = 'idle'; a.carry = []; if (w.t > 0.9) { served(r, gu, 'worker'); w.guest = null; w.st = 'post'; a.say = 'Buyurun!'; a.sayT = 1.6; }
       }
     }
   }
-  const geomYaw = (r: Room) => { const m = IC_BY_ID[r.room]; const a = icWorld(m, 0, 0), b = icWorld(m, 0, -1); return Math.atan2(b.x - a.x, b.z - a.z); };   // facing the counter (-v)
+  const geomYaw = (r: Room) => { const m = IC_BY_ID[r.room], g = geom(r); const a = icWorld(m, 0, 0), b = g.vert ? icWorld(m, 1, 0) : icWorld(m, 0, -1); return Math.atan2(b.x - a.x, b.z - a.z); };   // facing the counter (-v)
 
   // the player serves from the machine (dwell interaction = brewing time)
   for (const r of rooms) {
     const reg = () => {
       const g = geom(r), id = 'kafeYap.' + r.room;
       env.interactions.register({
-        id, pos: g.w(g.cu, g.bv + 0.85), radius: 1.0, kind: 'station', dwell: 2.2, interval: 2.2,
+        id, pos: g.P(g.vert ? g.bv : g.cu, 0.85), radius: 1.0, kind: 'station', dwell: 2.2, interval: 2.2,
         canAct: () => !!host()?.info(r.arsa) && waiting(r).length > 0,
         act: () => {
           const gu = waiting(r).find(x => !x.claimed) || waiting(r)[0]; if (!gu) return 'done';
@@ -153,7 +156,10 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
     id: 'kafe', order: 47, phase: 'sim',
     step(ctx: SimCtx) {
       const h = host(); if (!h) return;
-      if (!on) { on = true; h.live = true; }
+      if (!on) {
+        on = true; h.live = true;
+        h.fpDone = (arsa, ok) => { const r = rooms.find(x => x.arsa === arsa); const gu = r && waiting(r)[0]; if (r && gu) { leave(r, gu, !ok); if (ok) gu.a.mood = 'happy'; } };   // first-person counter: the head of the queue is the one being served there
+      }
       for (const r of rooms) tickRoom(r, Math.min(ctx.dt, 0.25));
     },
     rooms: () => rooms.map(r => ({ room: r.room, guests: r.guests.length, waiting: waiting(r).length, workers: r.wk.length })),

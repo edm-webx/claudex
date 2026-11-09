@@ -36,7 +36,7 @@ export function createGunSonu(deps: { root: HTMLElement; rules: () => Rules | nu
       <div class="gs-row"><span>Kızgın giden</span><b>${m.angry}</b></div>
       ${m.ekip ? `<div class="gs-row"><span>Personel payı (${m.ekip} kişi, bahşiş kumbarası dahil)</span><b>−${fmtMoney(m.maas || 0)}</b></div>` : ''}
       ${g && g.day === m.day ? `<div class="gs-row"><span>Kira</span><b>−${fmtMoney(g.kira)}</b></div><div class="gs-row"><span>Faturalar (elektrik, su, tüp)</span><b>−${fmtMoney(g.fatura)}</b></div><div class="gs-row"><span>Malzeme</span><b>−${fmtMoney(g.malzeme)}</b></div>` : ''}
-      <div class="gs-row"><span>Kasada</span><b>${fmtMoney(m.money)}</b></div>
+      <div class="gs-row"><span>Kasada</span><b>${fmtMoney(g && g.day === m.day ? Math.round(deps.rules()?.state.money ?? m.money) : m.money)}</b></div>
       <button class="gs-btn" type="button">Yeni güne başla ☀️</button></div>`;
     deps.root.appendChild(wrap);
     requestAnimationFrame(() => requestAnimationFrame(() => wrap?.classList.add('on')));

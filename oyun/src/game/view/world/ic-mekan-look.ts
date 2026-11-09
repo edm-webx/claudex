@@ -280,7 +280,7 @@ function buildRoom(m: IcMekan, own: { lv: number; isci: number; esya: string[]; 
   const has = new Set(m.salon ? salonEsya : m.mutfak ? mutfakEsya(stage) : own?.esya || []);
   const items = icLayout(m), occ = own ? Math.min(0.9, 0.35 + 0.12 * own.lv) : m.salon ? (fine ? 0.85 : 0.65) : 0.4;
   let ti = 0;
-  const live = !!own && !!m.arsa && IC_CANLI.includes(m.arsa); grp.userData.live = live;   // café/bistro: guests and staff are real actors (agents/kafe.ts), not props
+  const live = !!own && !!m.arsa && IC_CANLI.includes(m.arsa), empty = !!m.arsa && !own; grp.userData.live = live || empty;   // owned: real actors; unsold: an empty shop, no statues   // café/bistro: guests and staff are real actors (agents/kafe.ts), not props
   for (const it of items) {
     if (it.esya && !has.has(it.esya)) continue;
     if (it.k === 'masaK' || it.k === 'masa2' || it.k === 'masa4') ti++;
@@ -288,14 +288,14 @@ function buildRoom(m: IcMekan, own: { lv: number; isci: number; esya: string[]; 
     grp.userData.cur = new T.Group(); grp.userData.curItem = grp.userData.cur;
     const iy = WALLY.has(it.k) ? 0 : it.y || 0;
     b.push(mtx(it.u, iy, it.v, 0, (it.ry || 0) * HP, 0)); g.push(b.st[b.st.length - 1].clone()); l.push(b.st[b.st.length - 1].clone());
-    if (isMasa) masa(ctx, it, live ? 0 : Math.floor(((ti * 37 + ctx.seed) % 100) / 100 * (it.k === 'masa4' ? 4 : 2) * occ * 1.6 + (occ > 0.6 ? 1 : 0)));
+    if (isMasa) masa(ctx, it, live || empty ? 0 : Math.floor(((ti * 37 + ctx.seed) % 100) / 100 * (it.k === 'masa4' ? 4 : 2) * occ * 1.6 + (occ > 0.6 ? 1 : 0)));
     else fn!(ctx, it);
     b.pop(); g.pop(); l.pop();
     const sub = grp.userData.cur as T.Group; sub.position.set(it.u, iy, it.v); sub.rotation.y = (it.ry || 0) * HP; cur.add(sub);
   }
   // staff behind the counter: hired workers (owned) or the house staff
   const ctr = items.find(i => i.k === 'tezgah' || i.k === 'bar' || i.k === 'acikBufe');
-  if (ctr && !live) {
+  if (ctr && !live && !empty) {
     const n = m.salon ? (fine ? 3 : 2) : own ? Math.max(1, Math.min(3, own.isci || 1)) : 1;
     for (let i = 0; i < n; i++) {
       const p = person(i === 0 && (m.tur === 'kafe' || m.tur === 'bistro') && has.has(m.tur === 'kafe' ? 'barista' : 'kahve_bar') ? 'barista' : m.tur === 'lokanta' || m.salon || m.tur === 'kafeterya' ? (i === 0 ? 'chef' : 'staff') : 'staff', ctx.seed + i * 11, false, m.tur === 'bistro' ? '#1d4f86' : m.tur === 'kafeterya' ? '#2f9e5a' : '#7a3b1c');

@@ -62,7 +62,8 @@ describe('vip', () => {
 describe('kapkac', () => {
   it('grabs half the kasa; caught pays back +20%', () => {
     const sb = makeSandbox(5, (s) => { s.day = 4; });
-    sb.host.hour_ = 14; sb.h.force('kapkac');
+    sb.host.hour_ = 14; sb.h.env.shared.force.noDog = true;   // Torbacı lives on the pier from the start (2026-10-25): off duty for these two
+    sb.h.force('kapkac');
     sb.player.x = -20; sb.player.z = 8;
     for (let i = 0; i < 600 && !sb.events.includes('kapkacGrab'); i++) sb.step(0.1);
     sb.step(0.5);
@@ -75,7 +76,8 @@ describe('kapkac', () => {
   });
   it('escape spills half on the floor and owes the rest', () => {
     const sb = makeSandbox(6, (s) => { s.day = 4; });
-    sb.host.hour_ = 14; sb.h.force('kapkac');
+    sb.host.hour_ = 14; sb.h.env.shared.force.noDog = true;   // Torbacı lives on the pier from the start (2026-10-25): off duty for these two
+    sb.h.force('kapkac');
     sb.player.x = -20; sb.player.z = 8;
     sb.step(80);
     expect(sb.events).toContain('kapkacEscaped');

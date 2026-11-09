@@ -60,9 +60,9 @@ export function installLig(K: Kernel) {
     l.gecmis.push({ s: s + 1, sampiyon: [tb[0][0].id, tb[1][0].id], bolum: mine, sira: row + 1, puan: tb[mine][row].p }); if (l.gecmis.length > 10) l.gecmis.shift();
     const up = tb[1][0].id, down = tb[0][tb[0].length - 1].id;
     l.bolum[up] = 0; l.bolum[down] = 1;
-    if (up === KULUP.id) { K.earn(10000); K.toast('🏆 Mahalle Ligi şampiyonu! Üst lige çıktın. +10.000 ₺', 'good'); K.logEv('ligYukseldi', { s: s + 1 }); }
+    if (up === KULUP.id) { (K.earnTam || K.earn)(10000); K.toast('🏆 Mahalle Ligi şampiyonu! Üst lige çıktın. +10.000 ₺', 'good'); K.logEv('ligYukseldi', { s: s + 1 }); }
     else if (down === KULUP.id) K.toast('Alt lige düştük. Haftaya toparlarız abi.', 'info');
-    else if (mine === 0 && tb[0][0].id === KULUP.id) { K.earn(40000); K.toast('🏆 Boğaz Süper Ligi şampiyonuyuz! +40.000 ₺', 'good'); }
+    else if (mine === 0 && tb[0][0].id === KULUP.id) { (K.earnTam || K.earn)(40000); K.toast('🏆 Boğaz Süper Ligi şampiyonuyuz! +40.000 ₺', 'good'); }
     else K.toast(`Sezon bitti: ${LIG_ADI[mine]} ${row + 1}. sıra.`, 'info');
     l.maclar = l.maclar.filter(m => m.s > s);
   }
