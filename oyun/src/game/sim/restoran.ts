@@ -37,6 +37,9 @@ export interface RestoranApi {
   garsonDone?(wid: number, id: number): boolean;
   kitchenClaim?(wid: number): ProductId | null;
   kitchenDone?(wid: number, ok: boolean): void;
+  /** waiter table visits: bring the menu, bring the bill (survey waiter flow menü→sipariş→pass→masa→hesap→sil) */
+  masaClaim?(wid: number): { id: number; kind: 'menu' | 'hesap'; x: number; z: number } | null;
+  masaDone?(wid: number, id: number): void;
 }
 type Cu = { leave(c: Customer, angry: boolean): void; say(c: Customer, t: string, s?: number): void; seatPos(t: number, s: number): Vec2 | null };
 
@@ -57,6 +60,9 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
   // plates a garson carries from the pass to a table; unclaimed or stuck plates are delivered by the old abstract rule after a while
   type Job = { id: number; ticket: Ticket; p: ProductId; item: Item; t: number; wid: number };
   const jobs: Job[] = []; let jobId = 1;
+  type Masa = { id: number; kind: 'menu' | 'hesap'; cid: number; table: number; t: number; wid: number };
+  const masaJobs: Masa[] = [];
+  type CF = { tk?: boolean; menuJob?: boolean; menuOk?: boolean; hesapJob?: boolean; hesapBekle?: boolean };
   const cooking: { wid: number; ticket: Ticket; p: ProductId; t: number }[] = [];   // plates a kitchen cook is making for a ticket
   const active = () => (S.stage || 1) >= ADISYON.fromStage;
   // 2026-10-25 user: stands can be moved in the editor; the moved place is part of the save (cloud), so it stays after teleporting away and back
@@ -228,9 +234,16 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
       else if (show && i >= 0) rt.pads[i].pos = padAt(d);
     }
     // seated table guests: print the ticket after a short look at the menu
+    const gN = S.workers.filter(w => w.role === 'garson').length;
     for (const c of rt.customers) {
+      const f = c as unknown as CF;
+      if (c.kind === 'masa' && c.seat && gN > 0) {
+        if (c.state === 'wait' && !f.menuJob && c.t >= 0.5) { f.menuJob = true; masaJobs.push({ id: jobId++, kind: 'menu', cid: c.id, table: c.seat.table, t: 0, wid: 0 }); }
+        if (c.state === 'eat' && !f.hesapJob && c.t >= c.eatT - 1) { f.hesapJob = true; f.hesapBekle = true; masaJobs.push({ id: jobId++, kind: 'hesap', cid: c.id, table: c.seat.table, t: 0, wid: 0 }); }
+      }
       if (c.kind !== 'masa' || c.state !== 'wait') continue;
-      if (!tickets.some(t => t.cid === c.id) && c.t >= ADISYON.orderDelay && !(c as unknown as { tk?: boolean }).tk) {
+      const menuReady = gN === 0 || f.menuOk || c.t >= ADISYON.orderDelay + 14;
+      if (!tickets.some(t => t.cid === c.id) && c.t >= ADISYON.orderDelay && menuReady && !f.tk) {
         (c as unknown as { tk?: boolean }).tk = true;
         if (rng.next() < 0.2) cu.say(c, rng.pick(ADISYON_LINES.call), 1.8);
         openTicket(c);
@@ -241,6 +254,10 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
       if (!c || c.state === 'leave') { tickets.splice(i, 1); continue; }
       t.t += dt;
       if (t.t >= t.max) fail(t, c);
+    }
+    for (let i = masaJobs.length - 1; i >= 0; i--) {   // stale table visits fall back to the old timing
+      const j = masaJobs[i], c = rt.customers.find(k => k.id === j.cid); j.t += dt;
+      if (!c || c.state === 'leave' || j.t > 18) { if (c) { const f = c as unknown as CF; if (j.kind === 'hesap') f.hesapBekle = false; else f.menuOk = true; } masaJobs.splice(i, 1); }
     }
     for (let i = cooking.length - 1; i >= 0; i--) { cooking[i].t += dt; if (cooking[i].t > 40 || !tickets.includes(cooking[i].ticket)) cooking.splice(i, 1); }
     // garsons carry plates from the pass (counter stock) to the tables: a job is a plate taken off the counter, a garson walks it over
@@ -283,6 +300,18 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
       const out: { id: number; p: ProductId; x: number; z: number }[] = [];
       for (const j of jobs) { if (out.length >= n) break; if (j.wid && j.wid !== wid) continue; j.wid = wid; const tb = rt.layout.tables[j.ticket.table]; if (tb) out.push({ id: j.id, p: j.p, x: tb.x, z: tb.z }); }
       return out;
+    },
+    masaClaim(wid) {
+      const j = masaJobs.find(k => k.wid === wid) || masaJobs.find(k => !k.wid); if (!j) return null;
+      j.wid = wid; const tb = rt.layout.tables[j.table]; return { id: j.id, kind: j.kind, x: tb?.x ?? 0, z: tb?.z ?? 0 };
+    },
+    masaDone(wid, id) {
+      const i = masaJobs.findIndex(k => k.id === id && k.wid === wid); if (i < 0) return;
+      const j = masaJobs.splice(i, 1)[0], c = rt.customers.find(k => k.id === j.cid); if (!c) return;
+      const f = c as unknown as CF;
+      K.stat(j.kind === 'menu' ? 'menuGetir' : 'hesapGetir');
+      if (j.kind === 'menu') { f.menuOk = true; cu.say(c, rng.pick(['Teşekkürler, bakalım...', 'Ne güzel menü!', 'Hmm, ne yesek?']), 1.6); }
+      else { f.hesapBekle = false; cu.say(c, rng.pick(['Hesap tamam, eline sağlık!', 'Üstü kalsın!', 'Çok iyiydi.']), 1.8); }
     },
     kitchenClaim(wid) {
       if (cooking.some(c => c.wid === wid)) return null;

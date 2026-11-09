@@ -169,6 +169,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
         rt.loadT -= dt; if (rt.loadT > 0) return;
         rt.loadT = 0.4;
         if (a.carry.length) { rt.state = 'toCounter'; rt.wk.goTo(side(book.get('counter.standAt'), 0.5, 0)); return; }
+        if (!a.carry.length && host.masaClaim && !host.garsonOpen?.(rt.w.id).length) { const mj = host.masaClaim(rt.w.id); if (mj) { rt.job = { index: mj.id }; rt.jobKey = mj.kind; rt.state = 'toMasa'; rt.wk.goTo({ x: mj.x, z: mj.z + 0.95 }); if (mj.kind === 'hesap') a.carry.push({ type: 'cay', tier: 1 } as CarryItem); return; } }
         if (!a.carry.length && host.garsonClaim && host.garsonClaim(rt.w.id, 0).length === 0 && !host.garsonOpen?.(rt.w.id).length) { const cap2 = Math.min(3, 1 + Math.floor(rankOf(rt.w.xp || 0) / 3) + (fx.carry ? 1 : 0)); const js = host.garsonClaim(rt.w.id, cap2); if (js.length) { rt.state = 'toPass'; rt.t = 0; rt.wk.goTo(side(book.get('counter.standAt'), 0.5, 0)); return; } }
         const p = garsonPick(rt);
         if (p) { rt.job = null; rt.jobKey = p; rt.state = 'toSrc'; rt.wk.goTo(side(book.stationStand(p), 0.55, 0.2)); return; }
@@ -208,6 +209,14 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
           if (!a.carry.length || (!moved && rt.t > 3)) { rt.state = 'idle'; rt.loadT = 0.3; if (a.carry.length) a.carry.length = 0; }
         }
         return;
+      }
+      case 'toMasa': if (!rt.wk.walk(dt, speed)) { rt.state = 'masaAct'; rt.t = 0; } else a.act = 'walk'; return;
+      case 'masaAct': {   // menu handed over / bill brought, then wipe on the way out
+        a.act = rt.jobKey === 'hesap' ? 'count' : 'pour'; if (rt.t < 1.3) return;
+        if (rt.job) host.masaDone?.(rt.w.id, rt.job.index); rt.job = null; a.carry.length = 0;
+        if (rt.jobKey === 'menu') say(rt, rng.pick(['Menümüz, buyurun!', 'Günün yemeği döner, tavsiye ederim.', 'Hemen geliyorum.']), 2);
+        else say(rt, rng.pick(['Hesabınız efendim.', 'Afiyet olsun!', 'Yine bekleriz.']), 2);
+        rt.w.xp = (rt.w.xp || 0) + 1; checkRank(rt); rt.state = 'idle'; rt.loadT = 0.3; return;
       }
       case 'toPass': if (!rt.wk.walk(dt, speed)) { rt.state = 'pickJob'; rt.t = 0; } else a.act = 'walk'; return;
       case 'pickJob': {   // plates off the pass, 2-3 at once by level (survey g_tepsi)

@@ -95,6 +95,8 @@ export interface AgentHost {
   garsonOpen?(wid: number): { id: number; p: ProductId; x: number; z: number }[];
   garsonDone?(wid: number, id: number): boolean;
   /** kitchen: claim the oldest ticket item nobody cooks yet; done puts the finished plate on the pass */
+  masaClaim?(wid: number): { id: number; kind: 'menu' | 'hesap'; x: number; z: number } | null;
+  masaDone?(wid: number, id: number): void;
   kitchenClaim?(wid: number): ProductId | null;
   kitchenDone?(wid: number, ok: boolean): void;
   // ---- specials

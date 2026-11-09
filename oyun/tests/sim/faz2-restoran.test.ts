@@ -35,3 +35,17 @@ describe('Faz 2 restoran', () => {
     expect(sim.rules.rt.pads.some((p: any) => p.key === 'stant.islak')).toBe(false);
   }, 60000);
 });
+describe('garson masa turu', () => {
+  it('garson menüyü getirir, hesabı getirir', () => {
+    const sim: any = played(4);
+    for (let i = 0; i < 60; i++) sim.step(0.1);
+    sim.command({ kind: 'force', what: 'money', value: 2_000_000 });
+    for (const k of ['cay', 'ayran', 'simit', 'tabure1', 'tabure2', 'masa1', 'gazoz', 'masa2', 'tost']) sim.command({ kind: 'force', what: 'unlock', value: k });
+    sim.command({ kind: 'force', what: 'stage', value: 3 });
+    sim.state.workers.push({ id: 501, name: 'Nazlı', role: 'garson', xp: 0, morale: 70, traits: ['hamarat'] });
+    for (let s = 0; s < 500; s++) { for (let i = 0; i < 10; i++) sim.step(0.1); const r = sim.rules.rt; if (r.paused) { r.paused = false; r.pauseWhy = ''; }
+      for (const p of ['cay', 'ayran', 'simit', 'tost', 'gazoz', 'doner']) { const b = (r.counter[p] ||= []); if (b.length < 4) b.push({ type: p, tier: 1 }); } }   // the kitchen keeps the pass stocked
+    expect(sim.state.stats.menuGetir || 0).toBeGreaterThan(0);
+    expect(sim.state.stats.hesapGetir || 0).toBeGreaterThan(0);
+  });
+});

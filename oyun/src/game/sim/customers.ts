@@ -298,7 +298,7 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
         case 'wqueue': faceTo(c, L.window.standAt, dt); if (!rt.window || !rt.window.open) leave(c, false); break;
         case 'toSeat': if (!walkPath(c, dt, 1.6)) { if (c.kind === 'masa') { c.state = 'wait'; c.t = 0; } else { c.state = 'eat'; c.t = 0; c.eatT = rng.range(6, 9) * (havaOf(rt)?.eatX() ?? 1); } } break;
         case 'wait': if (c.seat) { const tb = rt.layout.tables[c.seat.table]; if (tb) faceTo(c, tb, dt); } break; // restoran.ts runs the adisyon
-        case 'eat': if (c.t >= c.eatT) finishMeal(c); break;
+        case 'eat': if (c.t >= c.eatT && !(c as unknown as { hesapBekle?: boolean }).hesapBekle) finishMeal(c); break;   // waits for the waiter's bill (restoran.ts)
         case 'leave': if (!walkPath(c, dt, 1.8) || outOfSight(c)) removeCustomer(c); break;
       }
     }
