@@ -7,7 +7,7 @@ import { ESYALAR, ESYA_BY_ID, SANDIKLAR, TARIFLER, DUKKAN_TIPLERI, DUKKAN_BY_ID,
 
 interface Deps { root: HTMLElement; rules: () => { rt: unknown } | null; command(c: { kind: string; [k: string]: unknown }): void; sfx?(id: string): void }
 export interface MulkPanel { update(dt: number): void; open(tab?: Tab): void; close(): void; dispose(): void }
-type Tab = 'envanter' | 'banka' | 'gunluk' | 'mulk' | 'stadyum' | 'lig' | 'defter' | 'salon';
+type Tab = 'envanter' | 'banka' | 'gunluk' | 'mulk' | 'stadyum' | 'lig' | 'defter' | 'salon' | 'okul';
 
 const CSS = `
 .mp-bg{position:fixed;inset:0;z-index:62;display:none;align-items:center;justify-content:center;background:rgba(40,22,18,.55);padding:12px;pointer-events:auto;font-family:var(--body)}
@@ -208,9 +208,19 @@ ${(a.menuSonraki || []).length ? `<small style="display:block;margin-top:4px;opa
     return h;
   }
 
-  const TABS: [Tab, string][] = [['envanter', '🎒 Envanter'], ['banka', '🏦 Banka'], ['gunluk', '📋 Günlük'], ['mulk', '🏠 Mülk'], ['stadyum', '🧢 Koordinatör'], ['lig', '🏆 Lig'], ['defter', '📓 Defter'], ['salon', '🍽 Salon']];
+  function okul(m: M): string {
+    const o = m.okul as M;
+    let h = `<div class="mp-row"><span class="mp-ic" style="font-size:34px">📚</span><div><b>İngilizce dersi · genel puan ${o.genel}/100</b><small>Her ${o.sinav} cevap bir sınav. Sınav puanı para + tecrübe verir, ortalaması genel puanın.</small></div></div>`;
+    if (!o.yakin) return h + '<div class="mp-note">Ders sınıfta: karşı yakadaki okula gir, sıraların olduğu tarafa geç.</div>';
+    if (!o.soru) return h + '<div class="mp-row"><button class="mp-b g" data-a="dersBasla">Derse başla</button></div>';
+    if (o.son) h += `<div class="mp-note">${esc(o.son)}</div>`;
+    h += `<div class="mp-sec">Soru ${o.cevap + 1}/${o.sinav} · doğru ${o.dogru} — "<b>${esc(o.soru)}</b>" İngilizcesi ne?</div><div class="mp-grid">${(o.secenek as string[]).map((s, i) => `<button class="mp-b" data-a="dersCevap" data-n="${i}">${esc(s)}</button>`).join('')}</div>`;
+    if ((o.sinavlar as number[]).length) h += `<small style="display:block;margin-top:6px">Son sınavlar: ${(o.sinavlar as number[]).slice(-6).join(', ')}</small>`;
+    return h;
+  }
+  const TABS: [Tab, string][] = [['envanter', '🎒 Envanter'], ['banka', '🏦 Banka'], ['gunluk', '📋 Günlük'], ['mulk', '🏠 Mülk'], ['stadyum', '🧢 Koordinatör'], ['lig', '🏆 Lig'], ['defter', '📓 Defter'], ['salon', '🍽 Salon'], ['okul', '📚 Okul']];
   function paint(m: M) {
-    const body = tab === 'envanter' ? envanter(m) : tab === 'banka' ? banka(m) : tab === 'gunluk' ? gunluk(m) : tab === 'mulk' ? mulk(m) : tab === 'lig' ? lig(m) : tab === 'defter' ? defter(m) : tab === 'salon' ? salon(m) : stadyum(m);
+    const body = tab === 'envanter' ? envanter(m) : tab === 'banka' ? banka(m) : tab === 'gunluk' ? gunluk(m) : tab === 'mulk' ? mulk(m) : tab === 'lig' ? lig(m) : tab === 'defter' ? defter(m) : tab === 'salon' ? salon(m) : tab === 'okul' ? okul(m) : stadyum(m);
     const keep = (bg.querySelector('input[data-f="takim"]') as HTMLInputElement | null)?.value || '';
     const sc = (bg.querySelector('.mp-body') as HTMLElement | null)?.scrollTop || 0;
     bg.innerHTML = `<div class="mp-card"><div class="mp-top"><h2>${TABS.find(x => x[0] === tab)![1]}</h2><span class="mp-chip">${tl(m.money)}</span><span class="mp-chip">🥨 ${m.gold}</span><button class="mp-x" data-a="close">✕</button></div>
@@ -252,9 +262,9 @@ ${(a.menuSonraki || []).length ? `<small style="display:block;margin-top:4px;opa
       const m = mulkApi(d.rules() as never); if (!m) return;
       const v = m.view();
       // contextual hint at the bank door / a plot door / the stadium gate
-      const ht: Tab | null = v.ipucuYakin ? 'defter' : v.stadyumYakin ? 'stadyum' : v.bankaYakin ? 'banka' : v.arsaYakin ? 'mulk' : v.salonYakin ? 'salon' : null;
+      const ht: Tab | null = v.ipucuYakin ? 'defter' : v.okulYakin ? 'okul' : v.stadyumYakin ? 'stadyum' : v.bankaYakin ? 'banka' : v.arsaYakin ? 'mulk' : v.salonYakin ? 'salon' : null;
       const fa = v.arsaYakin ? (m.model().arsa as M[]).find(x => x.id === v.arsaYakin) : null; if (fa) focus = fa.id;
-      const lbl = ht === 'defter' ? '🔍 İncele' : ht === 'stadyum' ? '🧢 Maç Koordinatörü: bilet, kulüp, lig' : ht === 'banka' ? '🏦 Gişe: bankayı aç' : ht === 'salon' ? '🍽 Salonu yönet: aletler' : ht === 'mulk' ? (fa && fa.sabit ? (fa.ikon || '🏪') + ' ' + fa.ad + (fa.owned ? ': yönet' : ': satın al') : '🏠 Arsa / Dükkân') : '';
+      const lbl = ht === 'defter' ? '🔍 İncele' : ht === 'stadyum' ? '🧢 Maç Koordinatörü: bilet, kulüp, lig' : ht === 'banka' ? '🏦 Gişe: bankayı aç' : ht === 'salon' ? '🍽 Salonu yönet: aletler' : ht === 'okul' ? '📚 İngilizce dersi / sınav' : ht === 'mulk' ? (fa && fa.sabit ? (fa.ikon || '🏪') + ' ' + fa.ad + (fa.owned ? ': yönet' : ': satın al') : '🏠 Arsa / Dükkân') : '';
       if (ht !== hintTab || hint.textContent !== lbl) { hintTab = ht; hint.style.display = ht && !openNow ? 'block' : 'none'; hint.textContent = lbl; }
       else if (hintTab) hint.style.display = openNow ? 'none' : 'block';
       if (!openNow) return;

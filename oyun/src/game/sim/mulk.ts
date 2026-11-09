@@ -18,6 +18,7 @@ import {
   isletmeOf, isletmeEsya, SALON_ESYA, SALON_ESYA_BY_ID,
 } from '../../content/esya';
 import { icOfArsa, icIcinde, bankaGise, IC_BY_ID, icDim, icWorld } from '../../content/ic-mekan';
+import { OKUL_KELIME, OKUL_SINAV } from '../../content/okul';
 export const KREDI_FAIZ = 0.03, MEVDUAT_FAIZ = 0.005, KREDI_LIMIT = (lv: number) => 25000 + lv * 15000;
 export const KAFE_TEMA: Record<string, string> = { retro: 'Retro', modern: 'Modern', bohem: 'Bohem', deniz: 'Deniz' };
 import { fmtMoney } from './util';
@@ -190,6 +191,29 @@ export function installMulk(K: Kernel) {
       });
     }
   }
+  // ── okul: English lesson at the classroom (back half of the school room) ──
+  type OkulSave = { soru: number; secenek: number[]; cevap: number; dogru: number; sinavlar: number[]; son: string };
+  const okulZ = (): OkulSave => { const z = (S.zones ||= {}) as Record<string, unknown>; let o = z.okul as OkulSave | undefined; if (!o || !Array.isArray(o.sinavlar)) { o = { soru: -1, secenek: [], cevap: 0, dogru: 0, sinavlar: [], son: '' }; z.okul = o as never; } return o; };
+  const okulYakin = () => { const m = IC_BY_ID.okul; return !!m && icIcinde(m, K.playerPos, -0.2) && K.playerPos.z > m.z - 0.5; };
+  function okulSoru() {
+    const o = okulZ(), n = OKUL_KELIME.length, q = rng.int(0, n - 1), set = new Set([q]);
+    while (set.size < 4) set.add(rng.int(0, n - 1));
+    o.soru = q; o.secenek = [...set].sort(() => rng.next() - 0.5);
+  }
+  function dersCevap(i: number) {
+    if (!okulYakin()) { K.toast('Ders sınıfta: okula gir, sıralara geç.', 'info'); return; }
+    const o = okulZ(); if (o.soru < 0) { okulSoru(); return; }
+    const ok = o.secenek[i] === o.soru, w = OKUL_KELIME[o.soru];
+    o.cevap++; if (ok) o.dogru++;
+    o.son = ok ? '✓ Doğru: ' + w[0] + ' = ' + w[1] : '✗ ' + w[0] + ' = ' + w[1];
+    if (o.cevap >= OKUL_SINAV) {
+      const puan = Math.round(o.dogru / o.cevap * 100); o.sinavlar.push(puan); if (o.sinavlar.length > 20) o.sinavlar.shift();
+      const odul = puan * 40; K.earn(odul); K.addXP(Math.round(puan / 4));
+      K.toast('📝 Sınav bitti: ' + puan + ' puan · +' + fmtMoney(odul), puan >= 50 ? 'good' : 'info'); K.stat('sinav');
+      o.cevap = 0; o.dogru = 0;
+    }
+    okulSoru(); K.saveNow();
+  }
   const plotOf = (id: string): { a: Arsa; p: Plot | undefined } | null => { const a = ARSALAR.find(x => x.id === id); return a ? { a, p: arsa().plots[id] } : null; };
   /** at the door, or anywhere inside the business (2026-11-09: every building is enterable) */
   const yakin = (ar: Arsa, extra = 0) => { if (dist(K.playerPos, arsaKapi(ar)) < KAPI_MENZIL + extra) return true; const m = icOfArsa(ar.id); return !!m && icIcinde(m, K.playerPos, -0.2); };
@@ -310,6 +334,7 @@ export function installMulk(K: Kernel) {
     const op = String(c.op || ''), id = String(c.id ?? ''), n = flo(c.n);
     switch (op) {
       case 'kullan': kullan(id); break; case 'uret': uret(id); break; case 'sandikAc': sandikAc(id); break;
+      case 'dersCevap': dersCevap(n); break; case 'dersBasla': if (okulYakin() && okulZ().soru < 0) okulSoru(); break;
       case 'krediAl': case 'krediOde': case 'tlYatir': case 'tlCek': case 'esyaYatir': case 'esyaCek': bankaOp(op, id, n); break;
       case 'gunlukAl': gunlukAl(id); break;
       case 'arsaAl': arsaAl(id); break; case 'arsaKur': arsaKur(id, String(c.tur ?? ''), String(c.tip ?? '')); break;
@@ -333,7 +358,7 @@ export function installMulk(K: Kernel) {
     const a = arsa(), p = K.playerPos;
     return {
       bankaYakin: nearBank(), kapiYakin: ARSALAR.find(x => a.plots[x.id] && yakin(x, 1.5))?.id || null,
-      arsaYakin: ARSALAR.find(x => yakin(x, 1.5))?.id || null, salonYakin: salonYakin(), stadyumYakin: nearGate(), ipucuYakin: (rt.gizem as { view(): { yakin: string | null } } | undefined)?.view().yakin ?? null,
+      arsaYakin: ARSALAR.find(x => yakin(x, 1.5))?.id || null, okulYakin: okulYakin(), salonYakin: salonYakin(), stadyumYakin: nearGate(), ipucuYakin: (rt.gizem as { view(): { yakin: string | null } } | undefined)?.view().yakin ?? null,
       plots: ARSALAR.map(x => ({ id: x.id, x: x.x, z: x.z, rotY: x.rotY, sabit: x.sabit || '', tur: a.plots[x.id]?.tur ?? null, tip: a.plots[x.id]?.tip || '', lv: a.plots[x.id]?.lv || 0, owned: !!a.plots[x.id], till: Math.floor(a.plots[x.id]?.till || 0), isci: flo(a.plots[x.id]?.isci), esya: a.plots[x.id]?.esya || [], tema: a.plots[x.id]?.tema || '' })),
     };
   }
@@ -345,6 +370,7 @@ export function installMulk(K: Kernel) {
       gunluk: e.gunluk.liste.map(h => ({ ...h })), gunlukSandik: e.gunluk.sandikAlindi,
       arsa: ARSALAR.map(x => { const p = a.plots[x.id]; return { id: x.id, ad: x.ad || '', sabit: x.sabit || '', fiyat: x.fiyat, seviye: x.seviye, owned: !!p, tur: p?.tur ?? null, tip: p?.tip || '', lv: p?.lv || 0, stok: Math.floor(p?.stok || 0), till: Math.floor(p?.till || 0), sat: Math.floor(p?.sat || 0), isci: flo(p?.isci), isciMax: isciMaxOf(x, p), isciFiyat: isciFiyat(flo(p?.isci)), menu: p && x.sabit ? ekon(x, p).menu : [], birim: p && p.tur === 'dukkan' ? Math.round(ekon(x, p).maliyet) : 0, menuSonraki: p && x.sabit ? kafeMenu(x.id, Math.min(5, p.lv + 1)).slice(kafeMenu(x.id, p.lv).length) : [], kesya: p && x.sabit ? (p.esya || []) : [], tema: p?.tema || '', musteriSaat: p && p.tur === 'dukkan' ? Math.round(dukkanMusteri(DUKKAN_BY_ID[p.tip], p.lv) * ekon(x, p).musK * (1 + ISCI_MUSTERI * flo(p.isci))) : 0,
         stokMax: p ? DUKKAN_STOK_MAX[p.lv] : 0, yakin: yakin(x, 1.5), ikon: x.sabit ? isletmeOf(x.id).ikon : '', asamaAd: x.sabit && p ? isletmeOf(x.id).asama[p.lv - 1] || '' : '', aletler: x.sabit ? isletmeOf(x.id).esya : [], yukselt: p && p.tur === 'dukkan' && p.lv < DUKKAN_MAX_SEVIYE ? dukkanYukselt(DUKKAN_BY_ID[p.tip], p.lv) : null }; }),
+      okul: (() => { const o = okulZ(), w = o.soru >= 0 ? OKUL_KELIME[o.soru] : null; return { soru: w ? w[0] : '', secenek: o.secenek.map(i => OKUL_KELIME[i][1]), cevap: o.cevap, dogru: o.dogru, sinav: OKUL_SINAV, son: o.son, sinavlar: [...o.sinavlar], genel: o.sinavlar.length ? Math.round(o.sinavlar.reduce((a, b) => a + b, 0) / o.sinavlar.length) : 0, yakin: okulYakin() }; })(),
       gizem: (rt.gizem as { model(): unknown } | undefined)?.model() ?? null,
       lig: (rt.lig as { model(): unknown } | undefined)?.model() ?? null,
       salon: (() => { const st = S.stage || 1, d = salonOf(st), k = salonKat(salonZ().esya, st); return { stage: st, esya: [...salonZ().esya], liste: SALON_ESYA, yakin: salonYakin(), misSaat: Math.round(d.mis * k.mis), adisyon: Math.round(d.adisyon * k.adis), ekip: d.ekip }; })(),

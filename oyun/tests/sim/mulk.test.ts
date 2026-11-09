@@ -2,6 +2,7 @@
 import { it, expect } from 'vitest';
 import { played } from './m1-helpers';
 import { mulkApi } from '../../src/game/sim/mulk';
+import { IC_BY_ID } from '../../src/content/ic-mekan';
 import { BANKA, ARSALAR, arsaKapi, STADYUM } from '../../src/content/esya';
 
 const mk = () => { const sim = played(1) as any; sim.step(1); const m = mulkApi(sim.rules)!; return { sim, m, S: sim.state, rt: sim.rules.rt, c: (x: any) => sim.command({ kind: 'mulk', ...x }) }; };
@@ -97,4 +98,15 @@ it('banka: kredi çekilir, limit seviyeye bağlı, gün dönünce faiz borca ekl
   const b0 = k.borc; k.gun = S.day - 1; S.zones.envanter.gunluk.gun = -1; sim.step(1);
   expect(k.borc).toBeGreaterThan(b0);
   S.money = 1e7; c({ op: 'krediOde', n: 1e9 }); expect(k.borc).toBe(0);
+});
+it('okul: İngilizce soruları sınıfta sorulur, 10 cevapta sınav puanı ve genel puan oluşur', () => {
+  const { sim, m, S, c } = mk();
+  const o0 = () => (m.model() as any).okul;
+  c({ op: 'dersBasla' }); expect(o0().soru).toBe('');   // not in the classroom
+  const room = IC_BY_ID.okul;
+  sim.command({ kind: 'teleport', x: room.x, z: room.z + 1.5 });
+  c({ op: 'dersBasla' }); expect(o0().soru).not.toBe('');
+  const m0 = S.money;
+  for (let i = 0; i < 10; i++) c({ op: 'dersCevap', n: 0 });
+  expect(o0().sinavlar.length).toBe(1); expect(S.money).toBeGreaterThanOrEqual(m0);
 });
