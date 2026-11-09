@@ -90,6 +90,8 @@ import { createHaliSaha } from './ui/hali-saha';
 import { createOrmanView } from './view/orman';
 import { createOtobusHud } from './ui/otobus-hud';
 import { createMulkPanel } from './ui/mulk-panel';
+import { createKirtasiyeFp } from './ui/kirtasiye-fp';
+import { IC_BY_ID as KT_IC, icWorld as ktWorld, icDim as ktDim } from '../content/ic-mekan';
 import { createMulkView } from './view/mulk';
 import { bankaOku, bankaYaz } from './net/slots';
 import { panelModel, panelActions } from './sim/panels';
@@ -512,6 +514,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     makeCat: chars ? (o => (chars as MotorChars).makeCat(o)) : undefined,
   })) : null;
   // karar paketi G: Envanter / Mülk panel (banka, günlük tahta, arsa, stadyum); the bank mirrors the cloud account record
+  const kirtasiyeFp = playMode && uiReal ? make('kirtasiyeFp', () => createKirtasiyeFp({ root: U.root, rules: () => sim.rules, command, sfx: id => { try { audio?.sfx(id); } catch { /* */ } } })) : null;
   const mulkPanel = playMode && uiReal ? make('mulkPanel', () => createMulkPanel({ root: U.root, rules: () => sim.rules, command, sfx: id => { try { audio?.sfx(id); } catch { /* */ } } })) : null;
   if (mulkPanel) U.root.addEventListener('ui:open', e => { const id = (e as CustomEvent).detail as string; if (id === 'envanter') mulkPanel.open('envanter'); else if (id === 'mulk') mulkPanel.open('mulk'); });
   const mulkView = ACIK_DUNYA && playMode && labels ? make('mulkView', () => createMulkView({ scene, labels, project, rules: () => sim.rules, hero: () => pos, setSolid: r => nav.setSolids('mulk', r) })) : null;
@@ -672,6 +675,12 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     const simDt = (sim.tick - camTick) / 30; camTick = sim.tick;
     const introLeft = (cam as { introLeft?: number }).introLeft ?? 0;
     const camDt = introLeft > 0 && simDt > fdt * 2 + 0.05 ? Math.min(simDt, 1) : fdt;
+    if (kirtasiyeFp) guard('kirtasiyeFp', () => {   // first-person behind the kırtasiye counter
+      kirtasiyeFp.update();
+      const m = KT_IC.kirtasiye, W = m ? ktDim(m).W : 0;
+      if (kirtasiyeFp.active() && m) { const e = ktWorld(m, W / 2 - 0.45, 0), to = ktWorld(m, -W / 2, 0); (cam as unknown as { fp(v: unknown): void }).fp({ x: e.x, y: 1.55, z: e.z, yaw: Math.atan2(to.x - e.x, to.z - e.z), pitch: -0.1 }); }
+      else (cam as unknown as { fp(v: unknown): void }).fp(null);
+    });
     guard('camera.update', () => cam.update(camDt, alpha));
     guard('ui', () => U.update(fdt, project));
     if (hud) guard('hud', () => hud.update(sim.state, fdt, alpha));

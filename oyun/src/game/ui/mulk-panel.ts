@@ -45,7 +45,7 @@ export function createMulkPanel(d: Deps): MulkPanel {
   const st = document.createElement('style'); st.textContent = CSS; d.root.appendChild(st);
   const bg = document.createElement('div'); bg.className = 'mp-bg'; d.root.appendChild(bg);
   const hint = document.createElement('button'); hint.className = 'mp-hint'; d.root.appendChild(hint);
-  let tab: Tab = 'envanter', key = '', openNow = false, t = 0, hintTab: Tab | null = null, pickPlot = '', pickTip = '', focus = '';
+  let tab: Tab = 'envanter', key = '', openNow = false, t = 0, hintTab: Tab | null = null, pickPlot = '', pickTip = '', focus = '', ktMode = false;
   const cmd = (c: Record<string, unknown>) => { d.command({ kind: 'mulk', ...c }); try { d.sfx?.('pick'); } catch { /* */ } key = ''; };
 
   const itemCard = (id: string, n: number, acts = '') => { const e = ESYA_BY_ID[id]; if (!e) return ''; return `<div class="mp-it r${e.nadir}"><span class="mp-ic">${e.ikon}</span><b>${esc(e.ad)}</b><small>${esc(e.blurb)}</small><span class="mp-n">×${n}</span>${acts}</div>`; };
@@ -271,9 +271,12 @@ ${(a.menuSonraki || []).length ? `<small style="display:block;margin-top:4px;opa
       const m = mulkApi(d.rules() as never); if (!m) return;
       const v = m.view();
       // contextual hint at the bank door / a plot door / the stadium gate
-      const ht: Tab | null = v.ipucuYakin ? 'defter' : v.okulYakin ? 'okul' : v.avmYakin ? 'avm' : v.stadyumYakin ? 'stadyum' : v.bankaYakin ? 'banka' : v.arsaYakin ? 'mulk' : v.salonYakin ? 'salon' : null;
+      if ((v as { kirtasiye?: unknown }).kirtasiye) { hint.style.display = 'none'; hintTab = null; return; }   // first-person counter has its own UI
+      const ktHint = !!(v as { ktYakin?: boolean }).ktYakin;
+      const ht: Tab | null = ktHint ? 'mulk' : v.ipucuYakin ? 'defter' : v.okulYakin ? 'okul' : v.avmYakin ? 'avm' : v.stadyumYakin ? 'stadyum' : v.bankaYakin ? 'banka' : v.arsaYakin ? 'mulk' : v.salonYakin ? 'salon' : null;
       const fa = v.arsaYakin ? (m.model().arsa as M[]).find(x => x.id === v.arsaYakin) : null; if (fa) focus = fa.id;
-      const lbl = ht === 'defter' ? '🔍 İncele' : ht === 'stadyum' ? '🧢 Maç Koordinatörü: bilet, kulüp, lig' : ht === 'banka' ? '🏦 Gişe: bankayı aç' : ht === 'salon' ? '🍽 Salonu yönet: aletler' : ht === 'okul' ? '📚 İngilizce dersi / sınav' : ht === 'avm' ? '🛍 AVM: alışveriş, sinema' : ht === 'mulk' ? (fa && fa.sabit ? (fa.ikon || '🏪') + ' ' + fa.ad + (fa.owned ? ': yönet' : ': satın al') : '🏠 Arsa / Dükkân') : '';
+      const lbl = ktHint ? '✏️ Tezgaha geç (birinci şahıs)' : ht === 'defter' ? '🔍 İncele' : ht === 'stadyum' ? '🧢 Maç Koordinatörü: bilet, kulüp, lig' : ht === 'banka' ? '🏦 Gişe: bankayı aç' : ht === 'salon' ? '🍽 Salonu yönet: aletler' : ht === 'okul' ? '📚 İngilizce dersi / sınav' : ht === 'avm' ? '🛍 AVM: alışveriş, sinema' : ht === 'mulk' ? (fa && fa.sabit ? (fa.ikon || '🏪') + ' ' + fa.ad + (fa.owned ? ': yönet' : ': satın al') : '🏠 Arsa / Dükkân') : '';
+      ktMode = ktHint;
       if (ht !== hintTab || hint.textContent !== lbl) { hintTab = ht; hint.style.display = ht && !openNow ? 'block' : 'none'; hint.textContent = lbl; }
       else if (hintTab) hint.style.display = openNow ? 'none' : 'block';
       if (!openNow) return;
@@ -282,6 +285,6 @@ ${(a.menuSonraki || []).length ? `<small style="display:block;margin-top:4px;opa
     },
     dispose() { st.remove(); bg.remove(); hint.remove(); },
   };
-  hint.onclick = () => { if (hintTab === 'defter') d.command({ kind: 'gizem', op: 'oku' } as never); if (hintTab) api.open(hintTab); };
+  hint.onclick = () => { if (ktMode) { d.command({ kind: 'mulk', op: 'ktAc' } as never); return; } if (hintTab === 'defter') d.command({ kind: 'gizem', op: 'oku' } as never); if (hintTab) api.open(hintTab); };
   return api;
 }

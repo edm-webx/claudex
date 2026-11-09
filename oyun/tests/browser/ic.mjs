@@ -23,5 +23,9 @@ for (const id of ids) {
   const [x, z, yi] = SPOTS[id];
   await p.evaluate(([x, z, yi]) => { const M = window.__marti; M.teleport(x, z); for (let k = 0; k < 8; k++) M.renderFrames(3, 0.1); M.camera({ x, z, zoomRaw: +(new URLSearchParams(location.search).get('zr') || 2.0), yaw: yi * Math.PI / 2, tilt: 0.75 }); for (let k = 0; k < 20; k++) M.renderFrames(2, 0.1); }, [x, z, yi]);
   await p.waitForTimeout(300); await p.screenshot({ path: join(out, id + '.png'), timeout: 300000 }); console.log('ok', id);
+  if (id === 'kirtasiye' && process.env.KT) {   // first-person counter
+    await p.evaluate(() => { const M = window.__marti; M.command({ kind: 'mulk', op: 'ktAc' }); for (let k = 0; k < 40; k++) { M.step(0.1); M.renderFrames(1, 0.1); } M.camera({ reset: true }); for (let k = 0; k < 10; k++) M.renderFrames(2, 0.1); });
+    await p.waitForTimeout(500); await p.screenshot({ path: join(out, 'kirtasiye-fp.png'), timeout: 300000 }); console.log('ok fp');
+  }
 }
 await b.close(); srv.close();

@@ -118,3 +118,15 @@ it('AVM: içeride alışveriş, kıyafet dolaba girer, sinema tecrübe verir', (
   const m1 = S.money; c({ op: 'avmAl', id: 'deri_ceket' }); expect(S.money).toBe(m1);
   c({ op: 'avmAl', id: 'film_doner' }); c({ op: 'avmAl', id: 'film_doner' }); expect(S.money).toBe(m1 - 1800);
 });
+it('kırtasiye tezgahı: müşteri listesi doğru verilince para, yanlışta sabır düşer', () => {
+  const { sim, m, S, c } = mk(); S.level = 6; S.money = 500000;
+  c({ op: 'arsaAl', id: 'k3' });
+  sim.command({ kind: 'teleport', x: IC_BY_ID.kirtasiye.x, z: IC_BY_ID.kirtasiye.z });
+  c({ op: 'ktAc' }); expect((m.view() as any).kirtasiye).toBeTruthy();
+  for (let i = 0; i < 50 && !(m.view() as any).kirtasiye.mus; i++) sim.step(0.1);
+  const k = (m.view() as any).kirtasiye; expect(k.mus).toBeTruthy();
+  c({ op: 'ktVer' }); expect((m.view() as any).kirtasiye.son).toMatch(/✗/);
+  for (const [id, n] of Object.entries(k.mus.istek) as [string, number][]) { if (id === 'fotokopi') c({ op: 'ktEkle', id }); else for (let i = 0; i < n; i++) c({ op: 'ktEkle', id }); }
+  const m0 = S.money; c({ op: 'ktVer' }); expect(S.money).toBeGreaterThan(m0);
+  c({ op: 'ktKapat' }); expect((m.view() as any).kirtasiye).toBeNull();
+});

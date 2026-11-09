@@ -19,6 +19,8 @@ export interface MotorCameraRig extends CameraRig {
   /** v2 dist for the current aspect and zoom (metres). */
   distance(): number;
   zoomRaw(z: number): void;
+  /** first-person override (kırtasiye counter): eye position + yaw; null returns to the follow camera */
+  fp(v: { x: number; y: number; z: number; yaw: number; pitch?: number } | null): void;
   tilt(delta: number): void;
   readonly introLeft: number;
   readonly yaw: number;
@@ -40,6 +42,7 @@ export function createCameraRig(deps: CameraDeps): MotorCameraRig {
   let pan: { x: number; z: number; t: number; dur: number; resolve: () => void } | null = null;
   let introResolve: (() => void) | null = null;
   let snapNext = true;
+  let fpv: { x: number; y: number; z: number; yaw: number; pitch?: number } | null = null;
   const frustum = new T.Frustum(), pv = new T.Matrix4();
 
   const baseDist = () => {
@@ -58,6 +61,7 @@ export function createCameraRig(deps: CameraDeps): MotorCameraRig {
     turn(delta: number) { yaw += delta; },
     /** dev/screenshot only: zoom without the ZOOM_MAX clamp */
     zoomRaw(z: number) { CAM.zoom = z; },
+    fp(v) { if (!v && fpv) snapNext = true; fpv = v; },
     tilt(delta: number) { tiltTo = null; tilt = clamp(tilt + delta, PITCH_MIN - CAM.pitch, PITCH_MAX - CAM.pitch); },
     recenter() { yawTo = Math.round(yaw / (Math.PI * 2)) * Math.PI * 2; tiltTo = 0; },
     follow(t: Vec2) { target.x = t.x; target.z = t.z; target.y = (t as { y?: number }).y || 0; },
@@ -75,6 +79,12 @@ export function createCameraRig(deps: CameraDeps): MotorCameraRig {
     setAspect(a: number) { if (a > 0 && isFinite(a)) { camera.aspect = a; camera.updateProjectionMatrix(); } },
     distance: baseDist,
     update(dt: number) {
+      if (fpv) {
+        const p = fpv.pitch ?? -0.12;
+        camera.position.set(fpv.x, fpv.y, fpv.z);
+        camera.lookAt(fpv.x + Math.sin(fpv.yaw) * Math.cos(p), fpv.y + Math.sin(p), fpv.z + Math.cos(fpv.yaw) * Math.cos(p));
+        camera.updateMatrixWorld(); return;
+      }
       let tx = target.x, tz = target.z;
       if (pan) {
         const p = pan; p.t += dt;

@@ -20,6 +20,7 @@ import {
 import { icOfArsa, icIcinde, bankaGise, IC_BY_ID, icDim, icWorld } from '../../content/ic-mekan';
 import { OKUL_KELIME, OKUL_SINAV } from '../../content/okul';
 import { AVM_URUN, AVM_BY_ID } from '../../content/avm';
+import { KT_URUN, KT_BY_ID, KT_MUSTERI, KT_SABIR } from '../../content/kirtasiye';
 export const KREDI_FAIZ = 0.03, MEVDUAT_FAIZ = 0.005, KREDI_LIMIT = (lv: number) => 25000 + lv * 15000;
 export const KAFE_TEMA: Record<string, string> = { retro: 'Retro', modern: 'Modern', bohem: 'Bohem', deniz: 'Deniz' };
 import { fmtMoney } from './util';
@@ -228,6 +229,44 @@ export function installMulk(K: Kernel) {
     if (kalici) o.alinan.push(id);
     K.toast(u.ikon + ' ' + u.ad + (kalici ? ' alındı (karakter dolabında)' : ': keyifli vakit! +' + u.xp + ' tecrübe'), 'good'); K.saveNow();
   }
+  // ── kırtasiye first-person counter (own the shop, stand inside, press "Tezgaha geç") ──
+  type KtMus = { ad: string; istek: Record<string, number>; t: number };
+  const kt = { on: false, mus: null as KtMus | null, sepet: {} as Record<string, number>, bekle: 2, ciro: 0, sat: 0, kacan: 0, son: '' };
+  const ktYakin = () => { const m = IC_BY_ID.kirtasiye; return !!m && icIcinde(m, K.playerPos, 0.2); };
+  const ktSahip = () => !!arsa().plots.k3;
+  function ktYeni() {
+    const n = rng.int(1, Math.min(4, 1 + Math.floor(kt.sat / 6))), istek: Record<string, number> = {};
+    for (let i = 0; i < n; i++) { const u = KT_URUN[rng.int(0, KT_URUN.length - 1)]; istek[u.id] = (istek[u.id] || 0) + (u.id === 'fotokopi' ? rng.int(2, 10) : 1); }
+    kt.mus = { ad: KT_MUSTERI[rng.int(0, KT_MUSTERI.length - 1)], istek, t: 0 }; kt.sepet = {};
+  }
+  function ktOp(op: string, id: string) {
+    if (op === 'ktAc') {
+      if (!ktSahip()) { K.toast('Önce Martı Kırtasiye\'yi satın al.', 'info'); return; }
+      if (!ktYakin()) { K.toast('Tezgaha geçmek için kırtasiyeye gir.', 'info'); return; }
+      kt.on = true; kt.mus = null; kt.bekle = 1.5; kt.sepet = {}; kt.son = ''; return;
+    }
+    if (!kt.on) return;
+    if (op === 'ktKapat') { kt.on = false; kt.mus = null; K.toast('✏️ Tezgahtan çıktın: ' + kt.sat + ' satış, ' + fmtMoney(kt.ciro), 'good'); kt.ciro = 0; kt.sat = 0; kt.kacan = 0; return; }
+    if (!kt.mus) return;
+    if (op === 'ktEkle' && KT_BY_ID[id]) { const need = (kt.mus.istek[id] || 0) - (kt.sepet[id] || 0); kt.sepet[id] = (kt.sepet[id] || 0) + (id === 'fotokopi' && need > 1 ? need : 1); return; }   // the copier runs the whole stack at once
+    if (op === 'ktTemizle') { kt.sepet = {}; return; }
+    if (op === 'ktVer') {
+      const ist = kt.mus.istek, keys = new Set([...Object.keys(ist), ...Object.keys(kt.sepet)]);
+      const ok = [...keys].every(k => (ist[k] || 0) === (kt.sepet[k] || 0));
+      if (!ok) { kt.mus.t += 4; kt.son = '✗ "' + rng.pick(['Bu değil ki!', 'Eksik var galiba.', 'Ben bunu istemedim.']) + '"'; return; }
+      const deger = Object.entries(ist).reduce((a, [k, n]) => a + KT_BY_ID[k].fiyat * n, 0), hiz = 1 + 0.5 * Math.max(0, 1 - kt.mus.t / KT_SABIR);
+      const v = Math.round(deger * hiz * (1 + S.level * 0.02)); K.earn(v); K.addXP(2); K.stat('kirtasiyeSatis');
+      kt.ciro += v; kt.sat++; kt.son = '✓ ' + kt.mus.ad + ': "' + rng.pick(['Teşekkürler!', 'Çok hızlısınız!', 'Kolay gelsin.']) + '" +' + fmtMoney(v);
+      kt.mus = null; kt.bekle = rng.range(1.5, 4);
+    }
+  }
+  function ktStep(dt: number) {
+    if (!kt.on) return;
+    if (!ktYakin()) { kt.on = false; kt.mus = null; return; }
+    if (!kt.mus) { kt.bekle -= dt; if (kt.bekle <= 0) ktYeni(); return; }
+    kt.mus.t += dt;
+    if (kt.mus.t >= KT_SABIR) { kt.kacan++; kt.son = '✗ ' + kt.mus.ad + ' beklemekten sıkılıp gitti.'; kt.mus = null; kt.bekle = rng.range(2, 4); }
+  }
   const plotOf = (id: string): { a: Arsa; p: Plot | undefined } | null => { const a = ARSALAR.find(x => x.id === id); return a ? { a, p: arsa().plots[id] } : null; };
   /** at the door, or anywhere inside the business (2026-11-09: every building is enterable) */
   const yakin = (ar: Arsa, extra = 0) => { if (dist(K.playerPos, arsaKapi(ar)) < KAPI_MENZIL + extra) return true; const m = icOfArsa(ar.id); return !!m && icIcinde(m, K.playerPos, -0.2); };
@@ -317,6 +356,7 @@ export function installMulk(K: Kernel) {
     id: 'mulk', order: 50, phase: 'sim',
     step(ctx) {
       if (!K.rt.started) return;
+      ktStep(ctx.dt);
       acc += ctx.dt; if (acc < 0.25) return;
       const dt = acc; acc = 0;
       const e = env(); if (e.gunluk.gun !== S.day) { rollBoard(S.day); faizGun(); }
@@ -348,7 +388,7 @@ export function installMulk(K: Kernel) {
     const op = String(c.op || ''), id = String(c.id ?? ''), n = flo(c.n);
     switch (op) {
       case 'kullan': kullan(id); break; case 'uret': uret(id); break; case 'sandikAc': sandikAc(id); break;
-      case 'avmAl': avmAl(id); break; case 'dersCevap': dersCevap(n); break; case 'dersBasla': if (okulYakin() && okulZ().soru < 0) okulSoru(); break;
+      case 'avmAl': avmAl(id); break; case 'ktAc': case 'ktKapat': case 'ktEkle': case 'ktTemizle': case 'ktVer': ktOp(op, id); break; case 'dersCevap': dersCevap(n); break; case 'dersBasla': if (okulYakin() && okulZ().soru < 0) okulSoru(); break;
       case 'krediAl': case 'krediOde': case 'tlYatir': case 'tlCek': case 'esyaYatir': case 'esyaCek': bankaOp(op, id, n); break;
       case 'gunlukAl': gunlukAl(id); break;
       case 'arsaAl': arsaAl(id); break; case 'arsaKur': arsaKur(id, String(c.tur ?? ''), String(c.tip ?? '')); break;
@@ -372,7 +412,8 @@ export function installMulk(K: Kernel) {
     const a = arsa(), p = K.playerPos;
     return {
       bankaYakin: nearBank(), kapiYakin: ARSALAR.find(x => a.plots[x.id] && yakin(x, 1.5))?.id || null,
-      arsaYakin: ARSALAR.find(x => yakin(x, 1.5))?.id || null, okulYakin: okulYakin(), avmYakin: avmYakin(), salonYakin: salonYakin(), stadyumYakin: nearGate(), ipucuYakin: (rt.gizem as { view(): { yakin: string | null } } | undefined)?.view().yakin ?? null,
+      arsaYakin: ARSALAR.find(x => yakin(x, 1.5))?.id || null, okulYakin: okulYakin(), avmYakin: avmYakin(), ktYakin: ktYakin() && ktSahip() && !kt.on,
+      kirtasiye: kt.on ? { mus: kt.mus ? { ad: kt.mus.ad, istek: { ...kt.mus.istek }, kalan: Math.max(0, 1 - kt.mus.t / KT_SABIR) } : null, sepet: { ...kt.sepet }, ciro: kt.ciro, sat: kt.sat, kacan: kt.kacan, son: kt.son, urun: KT_URUN } : null, salonYakin: salonYakin(), stadyumYakin: nearGate(), ipucuYakin: (rt.gizem as { view(): { yakin: string | null } } | undefined)?.view().yakin ?? null,
       plots: ARSALAR.map(x => ({ id: x.id, x: x.x, z: x.z, rotY: x.rotY, sabit: x.sabit || '', tur: a.plots[x.id]?.tur ?? null, tip: a.plots[x.id]?.tip || '', lv: a.plots[x.id]?.lv || 0, owned: !!a.plots[x.id], till: Math.floor(a.plots[x.id]?.till || 0), isci: flo(a.plots[x.id]?.isci), esya: a.plots[x.id]?.esya || [], tema: a.plots[x.id]?.tema || '' })),
     };
   }
