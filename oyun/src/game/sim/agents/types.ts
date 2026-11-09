@@ -90,6 +90,10 @@ export interface AgentHost {
   grabTime(p: ProductId): number;
   makeGrab(p: ProductId, carrier: number): CarryItem;
   counterPut(item: CarryItem): boolean;
+  /** garson flow (restoran.ts): plates waiting at the pass for a table */
+  garsonClaim?(wid: number, n: number): { id: number; p: ProductId; x: number; z: number }[];
+  garsonOpen?(wid: number): { id: number; p: ProductId; x: number; z: number }[];
+  garsonDone?(wid: number, id: number): boolean;
   // ---- specials
   playerHas(p: ProductId): boolean;
   playerTake(p: ProductId): CarryItem | null;

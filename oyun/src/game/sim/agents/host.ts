@@ -1,5 +1,6 @@
 /** Adapter: A's `Rules` -> the narrow `AgentHost` the agents layer codes against. Pure. */
 import { pencereWid } from '../window';
+import { restoranApi } from '../restoran';
 import type { Vec2 } from '../../../engine/api';
 import type { Rules } from '../state';
 import type { ProductId } from '../schema';
@@ -37,6 +38,9 @@ export function hostFromRules(r: Rules): AgentHost {
     grabTime: (p) => r.stations.grabTime(p),
     makeGrab: (p, c) => r.stations.makeGrab(p, c),
     counterPut: (it) => r.counterApi.put(it),
+    garsonClaim: (w, n) => restoranApi(r)?.garsonClaim?.(w, n) ?? [],
+    garsonOpen: (w) => restoranApi(r)?.garsonOpen?.(w) ?? [],
+    garsonDone: (w, id) => restoranApi(r)?.garsonDone?.(w, id) ?? false,
     playerHas: (p) => r.carry.count(p) > 0,
     playerTake: (p) => r.carry.takeFromPlayer(p),
     settle: (items, at) => r.salesApi.settle(items, { direct: true, at }),

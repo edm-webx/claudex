@@ -31,6 +31,10 @@ export interface RestoranApi {
   impulse(c: Customer): void;
   update(dt: number): void;
   register(): void;
+  /** 2026-11-09 garson flow: claim up to n plates waiting at the pass (counter), deliver one at its table */
+  garsonClaim?(wid: number, n: number): { id: number; p: ProductId; x: number; z: number }[];
+  garsonOpen?(wid: number): { id: number; p: ProductId; x: number; z: number }[];
+  garsonDone?(wid: number, id: number): boolean;
 }
 type Cu = { leave(c: Customer, angry: boolean): void; say(c: Customer, t: string, s?: number): void; seatPos(t: number, s: number): Vec2 | null };
 
@@ -48,6 +52,9 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     return g;
   };
   const tickets: Ticket[] = [];
+  // plates a garson carries from the pass to a table; unclaimed or stuck plates are delivered by the old abstract rule after a while
+  type Job = { id: number; ticket: Ticket; p: ProductId; item: Item; t: number; wid: number };
+  const jobs: Job[] = []; let jobId = 1;
   const active = () => (S.stage || 1) >= ADISYON.fromStage;
   // 2026-10-25 user: stands can be moved in the editor; the moved place is part of the save (cloud), so it stays after teleporting away and back
   const spot = (d: StantDef) => { const o = G().pos?.[d.id]; if (o && Number.isFinite(o.x) && Number.isFinite(o.z)) return { x: o.x, z: o.z, ry: Number(o.ry) || 0 }; const s = STANT_SPOTS[d.spot % STANT_SPOTS.length]; return { x: s[0], z: s[1], ry: s[2] }; };
@@ -230,17 +237,21 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
       t.t += dt;
       if (t.t >= t.max) fail(t, c);
     }
-    // garsons serve from the counter stock
+    // garsons carry plates from the pass (counter stock) to the tables: a job is a plate taken off the counter, a garson walks it over
     const g = S.workers.filter(w => w.role === 'garson').length;
-    if (g > 0 && tickets.length) {
+    for (let i = jobs.length - 1; i >= 0; i--) {
+      const j = jobs[i], c = custOf(j.ticket); j.t += dt;
+      if (!tickets.includes(j.ticket) || !c) { (rt.counter[j.p] ||= []).push(j.item); jobs.splice(i, 1); continue; }
+      if ((!j.wid && j.t > 12) || j.t > 30) { jobs.splice(i, 1); deliver(j.ticket, c, j.item); }
+    }
+    if (g > 0 && tickets.length && jobs.length < g * 3) {
       garsonT -= dt;
       if (garsonT <= 0) {
-        garsonT = ADISYON.garsonS / g;
+        garsonT = 0.8;
         for (const t of tickets) {
-          const p = (Object.keys(t.want) as ProductId[]).find(q => (rt.counter[q]?.length || 0) > 0);
+          const p = (Object.keys(t.want) as ProductId[]).find(q => (rt.counter[q]?.length || 0) > 0 && jobs.filter(j => j.ticket === t && j.p === q).length < (t.want[q] || 0));
           if (!p) continue;
-          const c = custOf(t); if (!c) continue;
-          const it = rt.counter[p].pop()!; deliver(t, c, it);
+          jobs.push({ id: jobId++, ticket: t, p, item: rt.counter[p].pop()!, t: 0, wid: 0 });
           break;
         }
       }
@@ -262,6 +273,18 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     };
   }
   const api: RestoranApi = {
+    garsonClaim(wid, n) {
+      const out: { id: number; p: ProductId; x: number; z: number }[] = [];
+      for (const j of jobs) { if (out.length >= n) break; if (j.wid && j.wid !== wid) continue; j.wid = wid; const tb = rt.layout.tables[j.ticket.table]; if (tb) out.push({ id: j.id, p: j.p, x: tb.x, z: tb.z }); }
+      return out;
+    },
+    garsonOpen(wid) { return jobs.filter(j => j.wid === wid).map(j => { const tb = rt.layout.tables[j.ticket.table]; return { id: j.id, p: j.p, x: tb?.x ?? 0, z: tb?.z ?? 0 }; }); },
+    garsonDone(wid, id) {
+      const i = jobs.findIndex(j => j.id === id && j.wid === wid); if (i < 0) return false;
+      const j = jobs.splice(i, 1)[0], c = custOf(j.ticket);
+      if (c && tickets.includes(j.ticket)) deliver(j.ticket, c, j.item); else (rt.counter[j.p] ||= []).push(j.item);
+      return true;
+    },
     handle(c) {
       if (c.op === 'buyStant') { buyStant(String(c.id)); return true; }
       if (c.op === 'stantMove') {

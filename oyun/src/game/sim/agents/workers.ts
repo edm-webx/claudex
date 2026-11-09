@@ -157,6 +157,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
         rt.loadT -= dt; if (rt.loadT > 0) return;
         rt.loadT = 0.4;
         if (a.carry.length) { rt.state = 'toCounter'; rt.wk.goTo(side(book.get('counter.standAt'), 0.5, 0)); return; }
+        if (!a.carry.length && host.garsonClaim && host.garsonClaim(rt.w.id, 0).length === 0 && !host.garsonOpen?.(rt.w.id).length) { const cap2 = Math.min(3, 1 + Math.floor(rankOf(rt.w.xp || 0) / 3) + (fx.carry ? 1 : 0)); const js = host.garsonClaim(rt.w.id, cap2); if (js.length) { rt.state = 'toPass'; rt.t = 0; rt.wk.goTo(side(book.get('counter.standAt'), 0.5, 0)); return; } }
         const p = garsonPick(rt);
         if (p) { rt.job = null; rt.jobKey = p; rt.state = 'toSrc'; rt.wk.goTo(side(book.stationStand(p), 0.55, 0.2)); return; }
         const dirty = host.dirtyTables().filter((t) => !claimed(t.index, rt));
@@ -194,6 +195,24 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
           }
           if (!a.carry.length || (!moved && rt.t > 3)) { rt.state = 'idle'; rt.loadT = 0.3; if (a.carry.length) a.carry.length = 0; }
         }
+        return;
+      }
+      case 'toPass': if (!rt.wk.walk(dt, speed)) { rt.state = 'pickJob'; rt.t = 0; } else a.act = 'walk'; return;
+      case 'pickJob': {   // plates off the pass, 2-3 at once by level (survey g_tepsi)
+        a.act = 'carry'; if (rt.t < 0.5) return;
+        const js = host.garsonOpen?.(rt.w.id) || []; if (!js.length) { rt.state = 'idle'; return; }
+        for (const j of js) a.carry.push({ type: j.p, tier: 1 });
+        const at = { x: a.x, z: a.z }; js.sort((u, v) => Math.hypot(u.x - at.x, u.z - at.z) - Math.hypot(v.x - at.x, v.z - at.z));
+        const j0 = js[0]; rt.job = { index: j0.id }; rt.state = 'toTable'; rt.wk.goTo({ x: j0.x, z: j0.z + 0.95 }); return;
+      }
+      case 'toTable': if (!rt.wk.walk(dt, speed)) { rt.state = 'serve'; rt.t = 0; } else a.act = 'carry'; return;
+      case 'serve': {
+        a.act = 'carry'; if (rt.t < 0.5) return;
+        const id = rt.job?.index ?? -1; if (id >= 0 && host.garsonDone?.(rt.w.id, id)) { rt.w.xp = (rt.w.xp || 0) + 2; checkRank(rt); }
+        a.carry.pop(); rt.job = null;
+        const js = host.garsonOpen?.(rt.w.id) || [];
+        if (js.length && a.carry.length) { const at = { x: a.x, z: a.z }; js.sort((u, v) => Math.hypot(u.x - at.x, u.z - at.z) - Math.hypot(v.x - at.x, v.z - at.z)); rt.job = { index: js[0].id }; rt.state = 'toTable'; rt.wk.goTo({ x: js[0].x, z: js[0].z + 0.95 }); }
+        else { a.carry.length = 0; rt.state = 'idle'; rt.loadT = 0.3; }
         return;
       }
       case 'toClean': if (!rt.wk.walk(dt, speed)) { rt.state = 'wipe'; rt.t = 0; } else a.act = 'walk'; return;
