@@ -110,3 +110,11 @@ it('okul: İngilizce soruları sınıfta sorulur, 10 cevapta sınav puanı ve ge
   for (let i = 0; i < 10; i++) c({ op: 'dersCevap', n: 0 });
   expect(o0().sinavlar.length).toBe(1); expect(S.money).toBeGreaterThanOrEqual(m0);
 });
+it('AVM: içeride alışveriş, kıyafet dolaba girer, sinema tecrübe verir', () => {
+  const { sim, S, c } = mk(); S.money = 50000;
+  c({ op: 'avmAl', id: 'deri_ceket' }); expect(S.money).toBe(50000);
+  sim.command({ kind: 'teleport', x: IC_BY_ID.avm.x, z: IC_BY_ID.avm.z });
+  c({ op: 'avmAl', id: 'deri_ceket' }); expect(S.zones.avm.alinan).toContain('deri_ceket');
+  const m1 = S.money; c({ op: 'avmAl', id: 'deri_ceket' }); expect(S.money).toBe(m1);
+  c({ op: 'avmAl', id: 'film_doner' }); c({ op: 'avmAl', id: 'film_doner' }); expect(S.money).toBe(m1 - 1800);
+});
