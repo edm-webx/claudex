@@ -6,6 +6,7 @@
  * lines) are paved strips that stay open in the walk grid; only buildings, stands, fences and the fountain block.
  */
 import type { PrefabDef, PrefabPlacement, PartDef, Rect } from '../../engine/api';
+import { IC_BY_ID, icCollidersLocal } from '../ic-mekan';
 
 type Def = PrefabDef;
 const box = (w: number, h: number, d: number, x: number, y: number, z: number, color: string, name?: string): PartDef => ({ shape: 'box', size: [w, h, d], pos: [x, y, z], color, name });
@@ -15,8 +16,9 @@ const R = (w: number, d: number, ox = 0, oz = 0): Rect => ({ x0: ox - w / 2, x1:
 const PAVE = '#c4aa80';
 
 /** A building with windows on the front (+z) and both side faces; the door on `door`. */
-function bld(id: string, w: number, d: number, h: number, wall: string, trim: string, door: '+z' | '-z' | '+x' | '-x', extra: PartDef[] = [], glb = false): Def {
-  if (glb) { void extra; return { id, parts: [box(w + 0.6, 0.12, d + 0.6, 0, 0.06, 0, '#b9b3a6', 'base')], colliders: [R(w, d)] }; }   // the whole building is a model (view/world/karsi-bina.ts)
+function bld(id: string, w: number, d: number, h: number, wall: string, trim: string, door: '+z' | '-z' | '+x' | '-x', extra: PartDef[] = [], glb = false, ic?: string): Def {
+  // 2026-11-09 "her binaya girilebilmeli": enterable buildings collide as walls with a door gap + their furniture (content/ic-mekan.ts)
+  if (glb) { void extra; return { id, parts: [box(w + 0.6, 0.12, d + 0.6, 0, 0.06, 0, '#b9b3a6', 'base')], colliders: ic && IC_BY_ID[ic] ? icCollidersLocal(IC_BY_ID[ic]) : [R(w, d)] }; }   // the whole building is a model (view/world/karsi-bina.ts)
   const parts: PartDef[] = [box(w, h, d, 0, h / 2, 0, wall, 'wall'), box(w + 0.5, 0.35, d + 0.5, 0, h + 0.17, 0, trim, 'roof')];
   const floors = Math.max(1, Math.floor((h - 1.2) / 3.0)), glass = '#9cc3d6';
   for (let f = 0; f < floors; f++) {
@@ -53,7 +55,7 @@ export function karsiPrefabs(): PrefabDef[] {
   };
   defs.push(stand('kr.stand.z', 33.7, 3.5, 'z'), stand('kr.stand.x', 3.7, 17.8, 'x'));
   // halı saha tesis binası (2026-11-08) replaces the west stand: model in view/world/karsi-bina.ts, same footprint
-  defs.push({ id: 'kr.tesis', parts: [box(4.3, 0.12, 18.4, 0, 0.06, 0, '#b9b3a6')], colliders: [R(3.7, 17.8)] });
+  defs.push({ id: 'kr.tesis', parts: [box(4.3, 0.12, 18.4, 0, 0.06, 0, '#b9b3a6')], colliders: icCollidersLocal(IC_BY_ID.tesis) });
   // the pitch: green plane with white lines, goals with nets, a low fence is separate (colliders)
   const line = (w: number, d: number, x: number, z: number): PartDef => box(w, 0.02, d, x, 0.1, z, '#f4f4f0');
   const W = 25.2, D = 17.8, lines: PartDef[] = [box(W, 0.06, D, 0, 0.05, 0, '#4f9a4a'), line(W, 0.12, 0, D / 2), line(W, 0.12, 0, -D / 2), line(0.12, D, W / 2, 0), line(0.12, D, -W / 2, 0), line(0.12, D, 0, 0), cyl(2.0, 0.02, 2.0, 0, 0.1, 0, '#f4f4f0', 28), cyl(1.85, 0.03, 1.85, 0, 0.11, 0, '#4f9a4a', 28)];
@@ -72,14 +74,15 @@ export function karsiPrefabs(): PrefabDef[] {
   const hoop = (z: number, dir: number): PartDef[] => [cyl(0.07, 3.2, 0.07, 0, 1.6, z, '#3b3b3b', 6), box(1.5, 1.0, 0.08, 0, 3.4, z + dir * 0.2, '#f4f4f0'), cyl(0.28, 0.06, 0.28, 0, 3.0, z + dir * 0.55, '#e0533c', 10)];
   defs.push({ id: 'kr.basket', parts: [box(7.2, 0.06, 10.7, 0, 0.04, 0, '#c8663c'), box(6.8, 0.02, 0.1, 0, 0.09, 0, '#f4f4f0'), cyl(1.1, 0.02, 1.1, 0, 0.09, 0, '#f4f4f0', 20), cyl(1.0, 0.03, 1.0, 0, 0.1, 0, '#c8663c', 20), ...hoop(-5.0, 1), ...hoop(5.0, -1)], colliders: [R(0.4, 0.4, 0, -5.0), R(0.4, 0.4, 0, 5.0)] });
   // buildings
-  defs.push(bld('kr.kafe', 7, 9.4, 3.8, '#f1d9b4', '#c2551f', '+x', [box(0.1, 0.9, 3.8, 3.7, 1.6, 0, '#d85a5a'), box(7.5, 0.4, 1.2, 0, 3.9, 5.05, '#c2551f')], true));
-  defs.push(bld('kr.kirtasiye', 7.1, 3.6, 3.6, '#bfd8e8', '#2b6fb8', '+z', [box(3.4, 0.8, 0.08, 0, 3.0, 1.9, '#ffd23f')], true));
-  defs.push(bld('kr.okul', 18.3, 7.5, 8.0, '#e9c98f', '#a2472f', '+z', [box(0.12, 6, 0.12, 6, 11, 0, '#cfd4da'), box(1.6, 1.0, 0.04, 6.9, 13.5, 0, '#d93a3a')], true));
+  defs.push(bld('kr.kafe1', 7, 9.4, 3.8, '#f1d9b4', '#c2551f', '+x', [], true, 'kafe1'), bld('kr.kafe2', 7, 9.4, 3.8, '#f1d9b4', '#c2551f', '+x', [], true, 'kafe2'));
+  defs.push(bld('kr.banka', 10, 8.4, 6.6, '#e9dfc8', '#fbf6ea', '+z', [], true, 'banka'));
+  defs.push(bld('kr.kirtasiye', 7.1, 3.6, 3.6, '#bfd8e8', '#2b6fb8', '+z', [], true, 'kirtasiye'));
+  defs.push(bld('kr.okul', 18.3, 7.5, 8.0, '#e9c98f', '#a2472f', '+z', [], true, 'okul'));
   defs.push(bld('kr.kantin', 3.7, 2.8, 3.0, '#f6efe1', '#e0533c', '-x', [box(3.6, 0.15, 1.2, 0, 2.4, 1.9, '#e0533c')], true));
-  defs.push(bld('kr.avm', 16.9, 10.6, 9.5, '#cfd6e6', '#3f4a6b', '-z', [box(10, 1.6, 0.12, 0, 8.2, 6.5, '#e0533c'), box(9, 3.2, 0.12, 0, 2.0, 6.5, '#7fb4d8')], true));
-  defs.push(bld('kr.hastane', 16.9, 6.7, 12.0, '#f2f4f6', '#d93a3a', '-z', [...redCross(0, 10.0, 3.5), box(4.4, 2.8, 0.1, 0, 1.4, 3.45, '#7fb4d8')], true));
-  defs.push(bld('kr.acil', 3.3, 3.2, 3.6, '#f2f4f6', '#d93a3a', '-x', [], true));     // walls: view/world/karsi-bina.ts
-  defs.push(bld('kr.morg', 3.3, 3.2, 3.2, '#c9ced6', '#5b6068', '-x', [], true));
+  defs.push(bld('kr.avm', 16.9, 10.6, 9.5, '#cfd6e6', '#3f4a6b', '-z', [], true, 'avm'));
+  defs.push(bld('kr.hastane', 16.9, 6.7, 12.0, '#f2f4f6', '#d93a3a', '-z', [...redCross(0, 10.0, 3.5)], true, 'hastane'));
+  defs.push(bld('kr.acil', 3.3, 3.2, 3.6, '#f2f4f6', '#d93a3a', '-x', [], true, 'acil'));     // walls: view/world/karsi-bina.ts
+  defs.push(bld('kr.morg', 3.3, 3.2, 3.2, '#c9ced6', '#5b6068', '-x', [], true, 'morg'));
   // metro exit: the model (glass canopy, stairs, totem) is view/world/karsi-bina.ts; colliders stay
   defs.push({ id: 'kr.metro', parts: [box(3.4, 0.12, 6.0, 0, 0.06, 0, '#b9ad99')], colliders: [R(0.3, 5.6, -1.5, 0), R(0.3, 5.6, 1.5, 0), R(3, 0.3, 0, -2.75)] });
   // ambulance park: paved lot with two parked ambulances
@@ -110,7 +113,7 @@ export function karsiProps(): PrefabPlacement[] {
   out.push(P('kr-stand-n', 'kr.stand.z', -39.2, 34.8, Math.PI), P('kr-stand-s', 'kr.stand.z', -39.2, 55.2), P('kr-stand-w', 'kr.tesis', -54.1, 45.4));
   out.push(P('kr-fence-gn', 'kr.fence.z7', -26.7, 40.0), P('kr-fence-gs', 'kr.fence.z7', -26.7, 51.0));
   out.push(P('kr-fence-t', 'kr.fence.x12', -45.5, 36.3), P('kr-fence-t2', 'kr.fence.x12', -33.5, 36.3), P('kr-fence-b', 'kr.fence.x12', -45.5, 54.5), P('kr-fence-b2', 'kr.fence.x12', -33.5, 54.5));
-  out.push(P('kr-kafe1', 'kr.kafe', -17.5, 37.9), P('kr-kafe2', 'kr.kafe', -17.5, 51.5));
+  out.push(P('kr-kafe1', 'kr.kafe1', -17.5, 37.9), P('kr-kafe2', 'kr.kafe2', -17.5, 51.5), P('kr-banka', 'kr.banka', 11.7, 36.8));
   out.push(P('kr-fiskiye', 'kr.fiskiye', -3.9, 45));
   for (let i = 0; i < 6; i++) { out.push(P('kr-bt' + i, 'kr.bench', -10.6 + i * 2.8, 34.8), P('kr-bb' + i, 'kr.bench', -10.6 + i * 2.8, 55.3, Math.PI)); }
   out.push(P('kr-kirtasiye', 'kr.kirtasiye', 28, 35.2));

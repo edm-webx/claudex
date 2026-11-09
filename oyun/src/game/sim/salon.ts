@@ -7,6 +7,14 @@
  */
 import type { Kernel } from './state';
 import { fmtMoney } from './util';
+import { SALON_ESYA_BY_ID } from '../../content/esya';
+
+/** bought hall equipment multipliers (2026-11-09); a hall's items count only once that hall stands (W stage 6, E stage 7) */
+export function salonKat(esya: string[] | undefined, stage: number): { mis: number; adis: number } {
+  let mis = 1, adis = 1;
+  for (const e of esya || []) { const d = SALON_ESYA_BY_ID[e]; if (!d || stage < (d.salon === 'W' ? 6 : 7)) continue; mis += d.misK || 0; adis += d.adisK || 0; }
+  return { mis, adis };
+}
 
 /** guests per game hour, average ticket (₺), staff, new dishes, per stage (index = stage) */
 export const SALON: { mis: number; adisyon: number; ekip: number; yeni: string[] }[] = [
@@ -24,7 +32,7 @@ export const salonOf = (stage: number) => SALON[Math.max(0, Math.min(10, Math.ro
 
 export function installSalon(K: Kernel) {
   const S = K.state;
-  const z = () => { const s = (S.zones.salon ||= {}) as unknown as { lastH: number; toplam: number; misafir: number; st?: number }; if (!Number.isFinite(s.lastH)) s.lastH = K.hour(); s.toplam ||= 0; s.misafir ||= 0; return s; };
+  const z = () => { const s = (S.zones.salon ||= {}) as unknown as { lastH: number; toplam: number; misafir: number; st?: number; esya?: string[] }; if (!Number.isFinite(s.lastH)) s.lastH = K.hour(); s.toplam ||= 0; s.misafir ||= 0; return s; };
   let acc = 0, toastH = 0;
   K.addSystem({ id: 'salon', order: 52, phase: 'sim', step(ctx) {
     if (!K.rt.started) return;
@@ -34,11 +42,11 @@ export function installSalon(K: Kernel) {
     acc += ctx.dt; if (acc < 1) return; acc = 0;
     const h = K.hour(), dh = Math.max(0, Math.min(1, h >= s.lastH ? h - s.lastH : (24 - s.lastH) + (h - 8))); s.lastH = h;
     const d = salonOf(st); if (!d.mis || dh <= 0 || K.rt.paused) return;
-    const mis = d.mis * dh, v = Math.round(mis * d.adisyon);
+    const k = salonKat(s.esya, st), mis = d.mis * k.mis * dh, v = Math.round(mis * d.adisyon * k.adis);
     if (v <= 0) return;
     if (K.earnTam) K.earnTam(v); else K.earn(v);
     s.toplam += v; s.misafir += mis; toastH += dh;
-    if (toastH >= 4) { toastH = 0; K.toast('🍽 Salon: ' + Math.round(d.mis * 4) + ' misafir, +' + fmtMoney(Math.round(d.mis * 4 * d.adisyon)), 'good'); }
+    if (toastH >= 4) { toastH = 0; K.toast('🍽 Salon: ' + Math.round(d.mis * k.mis * 4) + ' misafir, +' + fmtMoney(Math.round(d.mis * k.mis * 4 * d.adisyon * k.adis)), 'good'); }
   } });
-  return { view: () => ({ ...salonOf(S.stage || 1), toplam: Math.round(z().toplam) }) };
+  return { view: () => { const st = S.stage || 1, k = salonKat(z().esya, st), d = salonOf(st); return { ...d, misSaat: Math.round(d.mis * k.mis), adisyonK: Math.round(d.adisyon * k.adis), toplam: Math.round(z().toplam) }; } };
 }

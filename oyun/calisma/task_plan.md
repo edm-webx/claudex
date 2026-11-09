@@ -1,14 +1,10 @@
-# task_plan.md — Büfe + Stadyum + Belgrad yeniden kurulum (thread 2026-11-02)
-Kaynak: oyun/ (motor-v40 kopyası, Vite+TS+Three 0.160). Kural: Spec>Plan>Implement>Test>Review, minimal kod, sahte test yok.
-Kapsam: sadece iskele/büfe çevresi, stadyum + halı saha, Belgrad ormanı.
+# v54 — Her binaya girilebilsin (2026-11-09)
+İstek: her binaya girilebilmeli; kafe/bistro/lokanta içinde geliştirme + aletler (kahve makinesi vb.), her yerde bir şey olsun; işletmeler belli seviyeden sonra satın alınıp işletilsin.
 
-## Fazlar
-1. [x] Repo'ya taşı, build doğrula (npm ci + build OK; check-dist external URL uyarıları eski/bilinen)
-2. [~] Saha araştırması -> findings.md
-3. [ ] Maç motoru yeniden yazımı: sim/macmotor.ts (saf, seed'li, formasyon+rol, istatistik) + headless bot testleri
-4. [ ] hali-saha.ts'i yeni motora bağla (UI sadece çizer), stat ekranı
-5. [ ] Kulüp kurma standı (ad, forma, arma) + lig/fikstür/puan durumu/istatistik çetelesi (lig.ts üstüne)
-6. [ ] Gezgin gözlemci botlar: Playwright turu (iskele, büfe içi, stadyum, Belgrad) -> bug listesi -> düzelt
-7. [ ] Görünüm: HUD/UI yeniden tasarım, PBR/LOD, placeholder temizliği
-8. [ ] Büfe içi asset/özellik denetimi
-9. [ ] Doğrulama + itch zip (yalnız "at" denince)
+Karar (in-world dollhouse, büfe gibi aynı dünyada):
+- content/ic-mekan.ts: her bina için kapı yönü + iç yerleşim (saf veri). Duvar çarpıştırıcıları kapı boşluklu, katı eşyalar çarpışır.
+- İçerideyken dış kabuk gizlenir, iç mekan görünür (karsi-bina). Büfe salonlarında çatı/üst kat gizlenir.
+- İşletmeler (ARSALAR sabit): k1 Meydan Kafe, k2 Sahil Bistro, k3 Kırtasiye (lv4), k4 Okul Kantini (okul içinde, lv3), k5 AVM Martı Lokantası (lv6), k6 Tesis Kafeteryası (lv5). Her birinin kendi menüsü + 8-10 aleti; alınan alet içeride 3D görünür.
+- Büfe salonları (kahvaltı, balık): içeri girilir; salon aletleri salon gelirini artırır (mulk op salonEsya).
+- Banka: içeride gişe (banka işlemleri gişede de olur). Okul sınıfı, hastane, acil, morg, AVM mağazaları: görsel + figürler.
+Adımlar: veri > sim > çarpıştırıcı > görünüm > panel > test > ekran görüntüsü > zip.

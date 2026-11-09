@@ -15,12 +15,13 @@
  * Keeps clear: the ferry corridor (east, z -9.2..-4.8), the customer walkway behind the kiosk (z ~-12) and along x ~7.
  */
 import * as T from 'three';
+import { IC_BY_ID, icColliders, icIcinde } from '../../../content/ic-mekan';
 import { Batch } from '../../../engine/prefab/batch';
 import { PIER } from '../../../content/prefabs/iskele/layout';
 import { useSkyEnv } from './glb';
 import { radialTex, ensureKit } from '../../../content/prefabs/common/v2kit';
 
-export interface BuyumeDeps { root: () => T.Object3D | null; night: () => number; stage: () => number; /** running tadilat: target stage and 0..1 progress */ tadilat?: () => { to: number; p: number } | null; /** the player's club (sim/mulk takim) */ takim?: () => { ad: string; renk: string; renk2?: string } | null }
+export interface BuyumeDeps { root: () => T.Object3D | null; night: () => number; stage: () => number; /** running tadilat: target stage and 0..1 progress */ tadilat?: () => { to: number; p: number } | null; /** the player's club (sim/mulk takim) */ takim?: () => { ad: string; renk: string; renk2?: string } | null; /** player position: a hall's roof/upper floor hides while inside */ hero?: () => { x: number; z: number } }
 export interface BuyumeView { update(dt: number): void; dispose(): void }
 
 const UMB = ['#e0533c', '#2f7fb3', '#ffd23f', '#2f9e8f', '#f4f2ec', '#c94f6d'];
@@ -45,8 +46,9 @@ export function buyumeEngel(stage: number): { x0: number; x1: number; z0: number
   WT_TABLES.slice(0, wtN(stage)).forEach(([x, z]) => t(x, z)); ET_TABLES.slice(0, etN(stage)).forEach(([x, z]) => t(x, z));
   if (stage >= 3) add(WT.x0 + 0.2, WT.x0 + 1.4, -9.0, -6.4, 'buyume-ocak');
   if (stage >= 4) add(ET.x1 - 1.3, ET.x1 - 0.1, ET.z0 + 0.3, ET.z0 + 2.0, 'buyume-dolap');
-  if (stage >= 6) add(WB.x0, WB.x1, WB.z0, WB.z1);
-  if (stage >= 7) add(EB.x0, EB.x1, EB.z0, EB.z1);
+  // 2026-11-09 "her yere girilebilmeli": the halls are rooms with a door on the promenade side (content/ic-mekan.ts)
+  if (stage >= 6) icColliders(IC_BY_ID.salonW).forEach(r => add(r.x0, r.x1, r.z0, r.z1, 'buyume-salon'));
+  if (stage >= 7) icColliders(IC_BY_ID.salonE).forEach(r => add(r.x0, r.x1, r.z0, r.z1, 'buyume-salon'));
   if (stage >= 9) add(ET.x1 - 3.0, ET.x1, -3.6, -2.4, 'buyume-mutfak');
   return o;
 }
@@ -92,8 +94,10 @@ function figure(kind: 'guest' | 'waiter' | 'chef' | 'caycı', seed: number): T.G
 
 interface Built { g: T.Group; walkers: { o: T.Object3D; path: [number, number][]; t: number; sp: number }[]; bobbers: T.Object3D[] }
 function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Object3D[]): Built {
-  const grp = new T.Group(); grp.name = 'bufe-buyume-' + stage;
-  const b = new Batch(), gl = new Batch(), lit = new Batch(), pl = new Batch(), wm = new Batch();
+  const root = new T.Group(); root.name = 'bufe-buyume-' + stage;
+  let grp = root, b = new Batch(), gl = new Batch(), lit = new Batch(), wm = new Batch(); const pl = new Batch();
+  /** upper floors + roofs of the halls: own meshes, hidden while the player is inside that hall (2026-11-09) */
+  const catis: { g: T.Group; b: Batch; gl: Batch; lit: Batch; wm: Batch }[] = [];
   const walkers: Built['walkers'] = [], bobbers: T.Object3D[] = [];
   const glowAt = (x: number, z: number, r: number, c = '#ffb866', y = 0.13) => pl.plane(r * 2, r * 2, c, x, y, z, { rx: -HP, uv: [0, 0, 1, 1] });
   const fine = stage >= 10, frame = fine ? '#1f2a44' : '#f4f2ec', accent = fine ? '#c9a24a' : '#2f7fb3', wood = fine ? '#5a3b2a' : '#a8794e';
@@ -130,24 +134,26 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
   const hall = (r: { x0: number; x1: number; z0: number; z1: number }, floors: number, txt: string, roofTerrace: boolean, interiorCol: string) => {
     const pw = r.x1 - r.x0, pd = r.z1 - r.z0, ph = 3.4, X = cx(r), Z = cz(r);
     b.box(pw, 0.14, pd, fine ? '#2a2a30' : '#e9e0c8', X, 0.07, Z);
+    const cat = { g: new T.Group(), b: new Batch(), gl: new Batch(), lit: new Batch(), wm: new Batch() }; cat.g.name = 'cati-' + (X < 0 ? 'W' : 'E'); catis.push(cat);
+    const main = { grp, b, gl, lit, wm }, toCati = () => { grp = cat.g; b = cat.b; gl = cat.gl; lit = cat.lit; wm = cat.wm; }, toMain = () => { grp = main.grp; b = main.b; gl = main.gl; lit = main.lit; wm = main.wm; };
     for (let f = 0; f < floors; f++) {
-      const y0 = f * ph;
+      const y0 = f * ph; if (f > 0) toCati();
       gl.box(pw - 0.1, ph - 0.3, 0.04, '#a9d6ec', X, y0 + ph / 2, r.z1); gl.box(0.04, ph - 0.3, pd - 0.1, '#a9d6ec', r.x0, y0 + ph / 2, Z); gl.box(0.04, ph - 0.3, pd - 0.1, '#a9d6ec', r.x1, y0 + ph / 2, Z);
       b.box(pw, ph, 0.22, fine ? '#2a3550' : '#efe6d2', X, y0 + ph / 2, r.z0 + 0.11);   // solid back wall (sea side)
       for (let i = 0; i <= 6; i++) b.box(0.14, ph, 0.14, frame, r.x0 + pw * i / 6, y0 + ph / 2, r.z1);
       for (let i = 1; i < 4; i++) { b.box(0.14, ph, 0.14, frame, r.x0, y0 + ph / 2, r.z0 + pd * i / 4); b.box(0.14, ph, 0.14, frame, r.x1, y0 + ph / 2, r.z0 + pd * i / 4); }
-      b.box(pw + 0.3, 0.22, pd + 0.3, frame, X, y0 + ph, Z);
-      wm.box(pw - 0.4, ph - 0.6, pd - 0.4, interiorCol, X, y0 + ph / 2, Z);
-      for (let i = 0; i < 3; i++) for (let j = 0; j < 2; j++) table(r.x0 + 1.8 + i * (pw - 3.6) / 2, r.z0 + 1.7 + j * (pd - 3.2), '#fff', false, true, (i + j + f) % 3 === 0 ? 1 : 2, i * 3 + j + f * 11 + Math.round(X), y0 + 0.14);
+      { const mb = b; b = cat.b; b.box(pw + 0.3, 0.22, pd + 0.3, frame, X, y0 + ph, Z); b = mb; }   // ceiling slab hides with the roof
+      if (f > 0) wm.box(pw - 0.4, ph - 0.6, pd - 0.4, interiorCol, X, y0 + ph / 2, Z);   // ground floor: a real room (view/world/ic-mekan-look.ts)
+      if (f > 0) for (let i = 0; i < 3; i++) for (let j = 0; j < 2; j++) table(r.x0 + 1.8 + i * (pw - 3.6) / 2, r.z0 + 1.7 + j * (pd - 3.2), '#fff', false, true, (i + j + f) % 3 === 0 ? 1 : 2, i * 3 + j + f * 11 + Math.round(X), y0 + 0.14);
       for (let i = 0; i < 3; i++) { const x = r.x0 + pw * (i + 0.5) / 3; if (fine) { b.cyl(0.02, 0.02, 0.6, '#c9a24a', x, y0 + ph - 0.3, Z, { seg: 4 }); b.tor(0.38, 0.03, '#c9a24a', x, y0 + ph - 0.62, Z, { rx: HP, rs: 4, ts: 16 }); for (let k = 0; k < 8; k++) lit.sph(0.06, '#ffe6b0', x + Math.cos(k * 0.785) * 0.38, y0 + ph - 0.55, Z + Math.sin(k * 0.785) * 0.38, { ws: 6, hs: 4 }); } else lit.cyl(0.22, 0.3, 0.2, '#fff3d6', x, y0 + ph - 0.3, Z, { seg: 10 }); }
     }
-    const top = floors * ph;
+    const top = floors * ph; toCati();
     b.box(pw + 0.9, 0.3, pd + 0.9, frame, X, top + 0.15, Z); b.box(pw + 0.8, 0.06, pd + 0.8, roofTerrace ? wood : '#d9d4c8', X, top + 0.33, Z);
     for (const [w2, d2, ox, oz] of [[pw + 1.0, 0.12, 0, (pd + 0.9) / 2], [pw + 1.0, 0.12, 0, -(pd + 0.9) / 2], [0.12, pd + 1.0, (pw + 0.9) / 2, 0], [0.12, pd + 1.0, -(pw + 0.9) / 2, 0]]) b.box(w2, 0.36, d2, accent, X + ox, top + 0.16, Z + oz);
-    b.box(1.8, 2.5, 0.08, fine ? '#14192a' : '#cfd5db', X, 1.3, r.z1 + 0.05);   // door
+    toMain(); gl.box(1.6, 2.5, 0.04, '#cfe6f2', X - 0.95, 1.3, r.z1 + 0.3, { ry: 1.1 }); b.box(1.9, 0.1, 0.12, fine ? '#c9a24a' : frame, X, 2.6, r.z1 + 0.05);   // glass door standing open
     b.box(2.6, 0.12, 1.4, accent, X, 2.85, r.z1 + 0.7); for (const s2 of [-1, 1]) b.box(0.06, 0.06, 1.4, '#3a3d42', X + s2 * 1.2, 2.7, r.z1 + 0.7, { rx: 0.4 });   // door canopy
+    glowAt(X, r.z1 + 1.6, 3.2); toCati();
     sign(txt, X, top + 0.9, r.z1 + 0.5, Math.min(7, pw - 1));
-    glowAt(X, r.z1 + 1.6, 3.2);
     if (roofTerrace) {
       const ry = top + 0.36, rr = (xa: number, za: number, xb: number, zb: number) => { const len = Math.hypot(xb - xa, zb - za), a = Math.atan2(xb - xa, zb - za), n = Math.round(len / 1.2); b.box(0.08, 0.07, len, accent, (xa + xb) / 2, ry + 1.0, (za + zb) / 2, { ry: a }); for (let i = 0; i <= n; i++) b.box(0.05, 1.0, 0.05, frame, xa + (xb - xa) * i / n, ry + 0.5, za + (zb - za) * i / n); };
       rr(r.x0 - 0.3, r.z0 - 0.3, r.x1 + 0.3, r.z0 - 0.3); rr(r.x0 - 0.3, r.z1 + 0.3, r.x1 + 0.3, r.z1 + 0.3); rr(r.x0 - 0.3, r.z0 - 0.3, r.x0 - 0.3, r.z1 + 0.3); rr(r.x1 + 0.3, r.z0 - 0.3, r.x1 + 0.3, r.z1 + 0.3);
@@ -155,6 +161,7 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
       for (let s2 = 0; s2 < 14; s2++) b.box(0.9, 0.12, 0.34, '#8a6a4a', (r.x0 < 0 ? r.x1 + 0.55 : r.x0 - 0.55), 0.25 + s2 * (ry / 14), r.z1 - 0.3 - s2 * 0.4);   // outside stair
       lights([[r.x0 - 0.3, r.z0 - 0.3], [r.x0 - 0.3, r.z1 + 0.3], [r.x1 + 0.3, r.z1 + 0.3], [r.x1 + 0.3, r.z0 - 0.3]].map(([x, z]) => [x, z] as [number, number]), ry + 2.2);
     }
+    toMain();
   };
 
   /* 2: flower boxes, menu easel, bistro sets at the pier mouth */
@@ -234,12 +241,19 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
   }
 
   const { solid: sm, glass: gm, glow: lm, pool: pm, warm: wmm } = mats();
+  for (const c of catis) {
+    if (!c.wm.empty) { const w2 = c.wm.mesh(wmm, false, false); w2.renderOrder = 1; c.g.add(w2); }
+    if (!c.b.empty) c.g.add(c.b.mesh(sm, true, true));
+    if (!c.gl.empty) { const g2 = c.gl.mesh(gm, false, false); g2.renderOrder = 2; c.g.add(g2); }
+    if (!c.lit.empty) { const l = c.lit.mesh(lm, false, false); c.g.add(l); }
+    grp.add(c.g);
+  }
   if (!pl.empty) { const p2 = pl.mesh(pm, false, false); p2.renderOrder = 3; grp.add(p2); }
   if (!wm.empty) { const w2 = wm.mesh(wmm, false, false); w2.renderOrder = 1; grp.add(w2); }
   if (!b.empty) grp.add(b.mesh(sm, true, true));
   if (!gl.empty) { const g2 = gl.mesh(gm, false, false); g2.renderOrder = 2; grp.add(g2); }
   if (!lit.empty) { const l = lit.mesh(lm, false, false); l.name = 'lights'; grp.add(l); }
-  return { g: grp, walkers, bobbers };
+  return { g: root, walkers, bobbers };
 }
 
 /** Construction site while a wing tadilat (to 3..10) runs, on the wing that stage builds: scaffold towers, a tower crane with a
@@ -350,6 +364,8 @@ export function createBufeBuyume(deps: BuyumeDeps): BuyumeView {
       const mk = mevsim() ?? '';
       if (mk !== mevKey || (mev && mev.parent !== root)) { if (mev) { mev.removeFromParent(); mev = null; } mevKey = mk; if (mk) { mev = buildMevsim(mk as 'bayrak'); root.add(mev); } }
       if (!grp) return;
+      const hp = deps.hero?.();
+      if (hp) for (const [nm, m] of [['cati-W', IC_BY_ID.salonW], ['cati-E', IC_BY_ID.salonE]] as const) { const o = grp.getObjectByName(nm); if (o) o.visible = !icIcinde(m, hp, 0.2); }
       const n = deps.night();
       const M = mats(); M.glow.color.setScalar(0.55 + 0.45 * n); M.pool.opacity = 0.75 * n; M.warm.opacity = 0.35 * n;
       for (const s of signMats) s.emissiveIntensity = 0.25 + n * 0.5;

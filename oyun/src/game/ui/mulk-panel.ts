@@ -2,12 +2,12 @@
 // View only: reads rt.mulk (sim/mulk.ts) and sends { kind: 'mulk', ... }. A floating hint button appears at the bank door, a plot
 // door or the stadium gate and opens the right tab.
 import { FORMATIONS } from '../sim/macmotor';
-import { mulkApi, KAFE_ASAMA } from '../sim/mulk';
-import { ESYALAR, ESYA_BY_ID, SANDIKLAR, TARIFLER, DUKKAN_TIPLERI, DUKKAN_BY_ID, DUKKAN_STOK_MAX, dukkanMusteri, BANKA, KAFE_ESYA } from '../../content/esya';
+import { mulkApi } from '../sim/mulk';
+import { ESYALAR, ESYA_BY_ID, SANDIKLAR, TARIFLER, DUKKAN_TIPLERI, DUKKAN_BY_ID, DUKKAN_STOK_MAX, dukkanMusteri, BANKA } from '../../content/esya';
 
 interface Deps { root: HTMLElement; rules: () => { rt: unknown } | null; command(c: { kind: string; [k: string]: unknown }): void; sfx?(id: string): void }
 export interface MulkPanel { update(dt: number): void; open(tab?: Tab): void; close(): void; dispose(): void }
-type Tab = 'envanter' | 'banka' | 'gunluk' | 'mulk' | 'stadyum' | 'lig' | 'defter';
+type Tab = 'envanter' | 'banka' | 'gunluk' | 'mulk' | 'stadyum' | 'lig' | 'defter' | 'salon';
 
 const CSS = `
 .mp-bg{position:fixed;inset:0;z-index:62;display:none;align-items:center;justify-content:center;background:rgba(40,22,18,.55);padding:12px;pointer-events:auto;font-family:var(--body)}
@@ -45,7 +45,7 @@ export function createMulkPanel(d: Deps): MulkPanel {
   const st = document.createElement('style'); st.textContent = CSS; d.root.appendChild(st);
   const bg = document.createElement('div'); bg.className = 'mp-bg'; d.root.appendChild(bg);
   const hint = document.createElement('button'); hint.className = 'mp-hint'; d.root.appendChild(hint);
-  let tab: Tab = 'envanter', key = '', openNow = false, t = 0, hintTab: Tab | null = null, pickPlot = '', pickTip = '';
+  let tab: Tab = 'envanter', key = '', openNow = false, t = 0, hintTab: Tab | null = null, pickPlot = '', pickTip = '', focus = '';
   const cmd = (c: Record<string, unknown>) => { d.command({ kind: 'mulk', ...c }); try { d.sfx?.('pick'); } catch { /* */ } key = ''; };
 
   const itemCard = (id: string, n: number, acts = '') => { const e = ESYA_BY_ID[id]; if (!e) return ''; return `<div class="mp-it r${e.nadir}"><span class="mp-ic">${e.ikon}</span><b>${esc(e.ad)}</b><small>${esc(e.blurb)}</small><span class="mp-n">×${n}</span>${acts}</div>`; };
@@ -76,6 +76,19 @@ export function createMulkPanel(d: Deps): MulkPanel {
     return s;
   }
 
+  /** büfe salonları (2026-11-09): equipment for the pier halls, raises the hourly salon income */
+  function salon(m: M): string {
+    const z = m.salon; if (!z) return '';
+    if (z.stage < 6) return '<div class="mp-note">Salonlar büfe 6. aşamada (Kahvaltı salonu) açılır. Balık lokantası 7. aşamada.</div>';
+    const own = new Set<string>(z.esya);
+    let s = `<div class="mp-row"><span class="mp-ic" style="font-size:30px">🍽</span><div><b>Salonlar · saatte ~${z.misSaat} misafir</b><small>Ortalama adisyon ${tl(z.adisyon)} · ekip ${z.ekip} kişi. Gelir her oyun saati cebine yazılır.</small></div></div>`;
+    for (const [k, ad, min] of [['W', '🍳 Kahvaltı salonu (batı)', 6], ['E', '🐟 Balık lokantası (doğu)', 7]] as [string, string, number][]) {
+      s += `<div class="mp-sec">${ad}${z.stage < min ? ' · 🔒 ' + min + '. aşama' : ''}</div><div class="mp-grid">`;
+      s += (z.liste as M[]).filter(e => e.salon === k).map(e => own.has(e.id) ? `<div class="mp-it"><span class="mp-ic">${e.ikon}</span><b>${esc(e.ad)}</b><small>✓ ${esc(e.desc)}</small></div>` : `<div class="mp-it"><span class="mp-ic">${e.ikon}</span><b>${esc(e.ad)}</b><small>${esc(e.desc)}${z.stage < e.asama ? ' · 🔒 ' + e.asama + '. aşama' : ''}</small><button class="mp-b g" data-a="salonEsya" data-e="${e.id}"${z.stage < e.asama || m.money < e.fiyat ? ' disabled' : ''}>${tl(e.fiyat)}</button></div>`).join('') + '</div>';
+    }
+    return s;
+  }
+
   function gunluk(m: M): string {
     let s = `<div class="mp-sec">Bugünün görevleri <small>(üçünü bitirince Gümüş Sandık)</small></div>`;
     s += m.gunluk.map((h: M) => { const ok = h.sayi >= h.hedef; return `<div class="mp-row"><div><b>${esc(h.ad)}</b><small>Ödül ${tl(h.odul)}</small><div class="mp-bar"><i style="width:${Math.min(100, h.sayi / h.hedef * 100)}%"></i></div></div><span class="mp-chip">${h.sayi}/${h.hedef}</span><button class="mp-b g" data-a="gunlukAl" data-id="${h.id}"${ok && !h.alindi ? '' : ' disabled'}>${h.alindi ? 'Alındı' : 'Al'}</button></div>`; }).join('');
@@ -85,9 +98,10 @@ export function createMulkPanel(d: Deps): MulkPanel {
 
   function mulk(m: M): string {
     let s = `<div class="mp-sec">Arsalar <small>(${m.sahip}/${m.hak} hakkın dolu)</small></div>`;
-    for (const a of m.arsa) {
+    const list = focus ? [...m.arsa].sort((x: M, y: M) => (y.id === focus ? 1 : 0) - (x.id === focus ? 1 : 0)) : m.arsa;
+    for (const a of list) {
       if (!a.owned) { const lock = m.level < a.seviye; s += a.sabit
-        ? `<div class="mp-row"><span class="mp-ic">☕</span><div><b>${esc(a.ad)} · satılık</b><small>${lock ? '🔒 ' + a.seviye + '. seviyede açılır · ' : ''}${tl(a.fiyat)} · karşı yaka, meydanın batısı. Arsa hakkından düşmez; işçi tutulur.</small></div><button class="mp-b g" data-a="arsaAl" data-id="${a.id}"${lock || m.money < a.fiyat ? ' disabled' : ''}>Satın al</button></div>`
+        ? `<div class="mp-row"${a.id === focus ? ' style="background:#fff3c4"' : ''}><span class="mp-ic">${a.ikon || '☕'}</span><div><b>${esc(a.ad)} · satılık</b><small>${lock ? '🔒 ' + a.seviye + '. seviyede açılır · ' : ''}${tl(a.fiyat)} · karşı yaka. İçeri girilir, aletleri ve menüsü kendine has. Arsa hakkından düşmez; işçi tutulur.</small></div><button class="mp-b g" data-a="arsaAl" data-id="${a.id}"${lock || m.money < a.fiyat ? ' disabled' : ''}>Satın al</button></div>`
         : `<div class="mp-row"><span class="mp-ic">🏗️</span><div><b>Arsa ${a.id.toUpperCase()}</b><small>${lock ? '🔒 ' + a.seviye + '. seviyede açılır · ' : ''}${tl(a.fiyat)}</small></div><button class="mp-b g" data-a="arsaAl" data-id="${a.id}"${lock || m.sahip >= m.hak || m.money < a.fiyat ? ' disabled' : ''}>Satın al</button></div>`; continue; }
       if (!a.tur) {
         s += `<div class="mp-row"><span class="mp-ic">🏗️</span><div><b>Arsa ${a.id.toUpperCase()} · boş</b><small>Ne kurulsun?</small></div><button class="mp-b y" data-a="kurEv" data-id="${a.id}"${m.money >= 25000 ? '' : ' disabled'}>🏠 Ev · 25.000 ₺</button><button class="mp-b y" data-a="dukPick" data-id="${a.id}">🏪 Dükkân</button></div>`;
@@ -96,14 +110,14 @@ export function createMulkPanel(d: Deps): MulkPanel {
       }
       if (a.tur === 'ev') { s += `<div class="mp-row"><span class="mp-ic">🏠</span><div><b>Evin (Arsa ${a.id.toUpperCase()})</b><small>Oda, mutfak, balkon, teras, kedi köşesi. Kapıya yaklaşıp gir.</small></div><button class="mp-b g" data-a="evAc" data-id="${a.id}"${a.yakin ? '' : ' disabled'}>${a.yakin ? 'Eve gir' : 'Kapıya git'}</button></div>`; continue; }
       const t = DUKKAN_BY_ID[a.tip], y = a.yukselt;
-      s += `<div class="mp-row" style="align-items:flex-start"><span class="mp-ic">${t.ikon}</span><div><b>${a.sabit ? esc(a.ad) : esc(t.ad)} · ${a.lv}. seviye${a.sabit ? ' · ' + (KAFE_ASAMA[a.lv - 1] || '') : '' }${a.sabit ? '' : ' (Arsa ' + a.id.toUpperCase() + ')'}</b><small>Stok ${a.stok}/${a.stokMax} · ~${a.musteriSaat || Math.round(dukkanMusteri(t, a.lv) * (1 + 0.4 * a.isci))} müşteri/saat · ${a.sat} satış · kasada ${tl(a.till)}${a.isci ? ' · 👷 ' + a.isci + ' işçi (rafı doldurur, saatlik ücret kasadan)' : ''}${a.yakin ? '' : ' (kasayı toplamak için kapıya git)'}</small><div class="mp-bar"><i style="width:${a.stokMax ? a.stok / a.stokMax * 100 : 0}%"></i></div></div>
+      s += `<div class="mp-row" style="align-items:flex-start"><span class="mp-ic">${a.sabit ? a.ikon : t.ikon}</span><div><b>${a.sabit ? (a.ikon || '') + ' ' + esc(a.ad) : esc(t.ad)} · ${a.lv}. seviye${a.sabit ? ' · ' + esc(a.asamaAd || '') : '' }${a.sabit ? '' : ' (Arsa ' + a.id.toUpperCase() + ')'}</b><small>Stok ${a.stok}/${a.stokMax} · ~${a.musteriSaat || Math.round(dukkanMusteri(t, a.lv) * (1 + 0.4 * a.isci))} müşteri/saat · ${a.sat} satış · kasada ${tl(a.till)}${a.isci ? ' · 👷 ' + a.isci + ' işçi (rafı doldurur, saatlik ücret kasadan)' : ''}${a.yakin ? '' : ' (kasayı toplamak için içeri gir)'}</small><div class="mp-bar"><i style="width:${a.stokMax ? a.stok / a.stokMax * 100 : 0}%"></i></div></div>
 <button class="mp-b" data-a="stokAl" data-id="${a.id}" data-n="10"${m.money >= (a.birim || t.maliyet) * 10 ? '' : ' disabled'}>+10 stok · ${tl((a.birim || t.maliyet) * 10)}</button><button class="mp-b" data-a="stokAl" data-id="${a.id}" data-n="50"${m.money >= (a.birim || t.maliyet) * 10 ? '' : ' disabled'}>+50</button>
 ${a.sabit && a.isci < a.isciMax ? `<button class="mp-b" data-a="isciAl" data-id="${a.id}"${m.money >= a.isciFiyat ? '' : ' disabled'}>👷 İşçi tut · ${tl(a.isciFiyat)}</button>` : ''}${y ? `<button class="mp-b y" data-a="yukselt" data-id="${a.id}"${Object.entries(y.esya).every(([k, v]) => (m.esya[k] || 0) >= (v as number)) && m.money >= y.tl ? '' : ' disabled'}>⬆ ${tl(y.tl)} + ${Object.entries(y.esya).map(([k, v]) => v + ' ' + esc(ESYA_BY_ID[k].ad)).join(' + ')}</button>` : '<span class="mp-chip">En üst seviye</span>'}</div>`;
       if (a.sabit) {   // 2026-11-08: the café's own menu, next dishes, equipment
         const own = new Set<string>(a.kesya || []);
         s += `<div class="mp-row" style="display:block;margin-top:-4px"><small><b>Menü</b> ${(a.menu || []).map((x: { ikon: string; ad: string; fiyat: number }) => `<span class="mp-chip">${x.ikon} ${esc(x.ad)} ${tl(x.fiyat)}</span>`).join(' ')}</small>
 ${(a.menuSonraki || []).length ? `<small style="display:block;margin-top:4px;opacity:.75">Sonraki seviyede: ${(a.menuSonraki as { ikon: string; ad: string }[]).map(x => x.ikon + ' ' + esc(x.ad)).join(', ')}</small>` : ''}
-<div class="mp-grid" style="margin-top:6px">${KAFE_ESYA.map(e => own.has(e.id) ? `<div class="mp-it"><span class="mp-ic">${e.ikon}</span><b>${esc(e.ad)}</b><small>✓ ${esc(e.desc)}</small></div>` : `<div class="mp-it"><span class="mp-ic">${e.ikon}</span><b>${esc(e.ad)}</b><small>${esc(e.desc)}${a.lv < e.lv ? ' · 🔒 ' + e.lv + '. seviye' : ''}</small><button class="mp-b g" data-a="kafeEsya" data-id="${a.id}" data-e="${e.id}"${a.lv < e.lv || m.money < e.fiyat ? ' disabled' : ''}>${tl(e.fiyat)}</button></div>`).join('')}</div>
+<div class="mp-sec" style="margin:8px 0 4px">Aletler <small>(alınca içeride görünür)</small></div><div class="mp-grid" style="margin-top:6px">${(a.aletler as M[]).map(e => own.has(e.id) ? `<div class="mp-it"><span class="mp-ic">${e.ikon}</span><b>${esc(e.ad)}</b><small>✓ ${esc(e.desc)}</small></div>` : `<div class="mp-it"><span class="mp-ic">${e.ikon}</span><b>${esc(e.ad)}</b><small>${esc(e.desc)}${a.lv < e.lv ? ' · 🔒 ' + e.lv + '. seviye' : ''}</small><button class="mp-b g" data-a="kafeEsya" data-id="${a.id}" data-e="${e.id}"${a.lv < e.lv || m.money < e.fiyat ? ' disabled' : ''}>${tl(e.fiyat)}</button></div>`).join('')}</div>
 <small style="display:block;margin-top:4px">👷 İşçi ${a.isci}/${a.isciMax} (seviye arttıkça daha çok işçi çalışır)</small></div>`;
       }
     }
@@ -192,9 +206,9 @@ ${(a.menuSonraki || []).length ? `<small style="display:block;margin-top:4px;opa
     return h;
   }
 
-  const TABS: [Tab, string][] = [['envanter', '🎒 Envanter'], ['banka', '🏦 Banka'], ['gunluk', '📋 Günlük'], ['mulk', '🏠 Mülk'], ['stadyum', '🧢 Koordinatör'], ['lig', '🏆 Lig'], ['defter', '📓 Defter']];
+  const TABS: [Tab, string][] = [['envanter', '🎒 Envanter'], ['banka', '🏦 Banka'], ['gunluk', '📋 Günlük'], ['mulk', '🏠 Mülk'], ['stadyum', '🧢 Koordinatör'], ['lig', '🏆 Lig'], ['defter', '📓 Defter'], ['salon', '🍽 Salon']];
   function paint(m: M) {
-    const body = tab === 'envanter' ? envanter(m) : tab === 'banka' ? banka(m) : tab === 'gunluk' ? gunluk(m) : tab === 'mulk' ? mulk(m) : tab === 'lig' ? lig(m) : tab === 'defter' ? defter(m) : stadyum(m);
+    const body = tab === 'envanter' ? envanter(m) : tab === 'banka' ? banka(m) : tab === 'gunluk' ? gunluk(m) : tab === 'mulk' ? mulk(m) : tab === 'lig' ? lig(m) : tab === 'defter' ? defter(m) : tab === 'salon' ? salon(m) : stadyum(m);
     const keep = (bg.querySelector('input[data-f="takim"]') as HTMLInputElement | null)?.value || '';
     const sc = (bg.querySelector('.mp-body') as HTMLElement | null)?.scrollTop || 0;
     bg.innerHTML = `<div class="mp-card"><div class="mp-top"><h2>${TABS.find(x => x[0] === tab)![1]}</h2><span class="mp-chip">${tl(m.money)}</span><span class="mp-chip">🥨 ${m.gold}</span><button class="mp-x" data-a="close">✕</button></div>
@@ -219,6 +233,7 @@ ${(a.menuSonraki || []).length ? `<small style="display:block;margin-top:4px;opa
     if (a === 'takim') { cmd({ op: 'takim', name: (bg.querySelector('input[data-f="takim"]') as HTMLInputElement).value, renk: club.c1, renk2: club.c2, arma: club.arma }); return; }
     if (a === 'evAc') { cmd({ op: 'evAc', id }); api.close(); return; }
     if (a === 'kafeEsya') { cmd({ op: 'kafeEsya', id, e: el.dataset.e }); return; }
+    if (a === 'salonEsya') { cmd({ op: 'salonEsya', e: el.dataset.e }); return; }
     if (a === 'bilet') { cmd({ op: 'bilet' }); api.close(); return; }
     if (a === 'betK') { bet.k = el.dataset.v || ''; key = ''; return; }
     if (a === 'betN') { bet.n = Number(el.dataset.v) || 500; key = ''; return; }
@@ -234,8 +249,10 @@ ${(a.menuSonraki || []).length ? `<small style="display:block;margin-top:4px;opa
       const m = mulkApi(d.rules() as never); if (!m) return;
       const v = m.view();
       // contextual hint at the bank door / a plot door / the stadium gate
-      const ht: Tab | null = v.ipucuYakin ? 'defter' : v.stadyumYakin ? 'stadyum' : v.bankaYakin ? 'banka' : v.arsaYakin ? 'mulk' : null;
-      if (ht !== hintTab) { hintTab = ht; hint.style.display = ht && !openNow ? 'block' : 'none'; hint.textContent = ht === 'defter' ? '🔍 İncele' : ht === 'stadyum' ? '🧢 Maç Koordinatörü: bilet, kulüp, lig' : ht === 'banka' ? '🏦 Bankayı aç' : ht === 'mulk' ? '🏠 Arsa / Dükkân' : ''; }
+      const ht: Tab | null = v.ipucuYakin ? 'defter' : v.stadyumYakin ? 'stadyum' : v.bankaYakin ? 'banka' : v.arsaYakin ? 'mulk' : v.salonYakin ? 'salon' : null;
+      const fa = v.arsaYakin ? (m.model().arsa as M[]).find(x => x.id === v.arsaYakin) : null; if (fa) focus = fa.id;
+      const lbl = ht === 'defter' ? '🔍 İncele' : ht === 'stadyum' ? '🧢 Maç Koordinatörü: bilet, kulüp, lig' : ht === 'banka' ? '🏦 Gişe: bankayı aç' : ht === 'salon' ? '🍽 Salonu yönet: aletler' : ht === 'mulk' ? (fa && fa.sabit ? (fa.ikon || '🏪') + ' ' + fa.ad + (fa.owned ? ': yönet' : ': satın al') : '🏠 Arsa / Dükkân') : '';
+      if (ht !== hintTab || hint.textContent !== lbl) { hintTab = ht; hint.style.display = ht && !openNow ? 'block' : 'none'; hint.textContent = lbl; }
       else if (hintTab) hint.style.display = openNow ? 'none' : 'block';
       if (!openNow) return;
       const mod = m.model(); const k2 = tab + '|' + pickPlot + '|' + JSON.stringify(mod);

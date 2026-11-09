@@ -40,7 +40,7 @@ export function createKarsiYasam(d: YasamDeps): YasamView {
     if (!d.isci || !mkH || !addA) return;
     const want = new Map(d.isci().map(x => [x.id, x.n]));
     for (const a of ARSALAR) {
-      if (!a.sabit) continue; const n = want.get(a.id) || 0, cur = kafeIsci.get(a.id) || [];
+      if (!a.sabit) continue; const n = Math.min(1, want.get(a.id) || 0) * (a.id === 'k1' || a.id === 'k2' ? 1 : 0), cur = kafeIsci.get(a.id) || [];   // 2026-11-09: staff work inside (ic-mekan-look); one greeter at the café door
       while (cur.length > n) { const w = cur.pop()!; w.h.object.removeFromParent(); const i = actors.indexOf(w); if (i >= 0) actors.splice(i, 1); }
       while (cur.length < n) { const i = cur.length, k = arsaKapi(a); const h = mkH(['universiteli', 'plaza', 'teyze'][i % 3], 700 + a.id.charCodeAt(1) * 10 + i, { hat: 'cap' }); if (!h) break; addA(h, k.x - 0.6 - i * 0.2, k.z - 1.3 + i * 1.3, { act: i === 0 ? 'pour' : 'perform', yaw: Math.PI / 2 }); cur.push(actors[actors.length - 1]); }
       kafeIsci.set(a.id, cur);
@@ -54,7 +54,7 @@ export function createKarsiYasam(d: YasamDeps): YasamView {
     if (!d.isci) return;
     const lvs = new Map(d.isci().map(x => [x.id, x.lv || 1])), es = new Map(d.isci().map(x => [x.id, new Set(x.esya || [])]));
     for (const a of ARSALAR) {
-      if (!a.sabit) continue; const lv = lvs.get(a.id) || 0, cur = teras.get(a.id), has = es.get(a.id) || new Set<string>(), key = lv + ':' + [...has].sort().join(',');
+      if (!a.sabit || (a.id !== 'k1' && a.id !== 'k2')) continue; const lv = lvs.get(a.id) || 0, cur = teras.get(a.id), has = es.get(a.id) || new Set<string>(), key = lv + ':' + [...has].sort().join(',');
       if (cur && cur.lv === key) continue;
       if (cur) { cur.g.removeFromParent(); cur.g.traverse(o => { const m = o as T.Mesh; m.geometry?.dispose(); }); teras.delete(a.id); }
       if (!lv) continue;

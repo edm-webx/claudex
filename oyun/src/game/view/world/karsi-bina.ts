@@ -299,13 +299,13 @@ function hospitalExtras(k: Kit, L: Dim) {
 
 export function createKarsiBina(d: BinaDeps): BinaView {
   const holder = new T.Group(); holder.name = 'karsiBina';
-  let built = false, t = 0, flag: T.Mesh | null = null; const fades: { s: Spec; ms: T.Material[]; op: number }[] = [];
+  let built = false, t = 0, flag: T.Mesh | null = null; const fades: { s: Spec; ms: T.Material[]; op: number; g: T.Group }[] = [];
   return {
     update(dt) {
       const root = d.root(); if (!root) return;
       if (holder.parent !== root) root.add(holder);
       if (!built) {
-        built = true; for (const s of SPECS) { const g = build(s); holder.add(g); const ms: T.Material[] = []; g.traverse(o => { const m = o as T.Mesh; if (m.isMesh && m.material && !Array.isArray(m.material) && m.material !== glowMat) { const orig = m.material as T.Material, c = orig.clone(); m.material = c; ms.push(c); const si = signMats.indexOf(orig as T.MeshStandardMaterial); if (si >= 0) signMats[si] = c as T.MeshStandardMaterial; } }); fades.push({ s, ms, op: 1 }); }
+        built = true; for (const s of SPECS) { const g = build(s); holder.add(g); const ms: T.Material[] = []; g.traverse(o => { const m = o as T.Mesh; if (m.isMesh && m.material && !Array.isArray(m.material) && m.material !== glowMat) { const orig = m.material as T.Material, c = orig.clone(); m.material = c; ms.push(c); const si = signMats.indexOf(orig as T.MeshStandardMaterial); if (si >= 0) signMats[si] = c as T.MeshStandardMaterial; } }); fades.push({ s, ms, op: 1, g }); }
         holder.add(metroGiris()); flag = holder.getObjectByName('bayrak') as T.Mesh | null;
       }
       const camO = d.camera?.() ?? null, hp = d.hero?.();
@@ -313,6 +313,8 @@ export function createKarsiBina(d: BinaDeps): BinaView {
         const c = camO.position;
         for (const f of fades) {
           const s = f.s, hx = s.wx / 2 + 0.3, hz = s.wz / 2 + 0.3, inside = Math.abs(hp.x - s.x) < hx && Math.abs(hp.z - s.z) < hz;
+          // 2026-11-09 "her binaya girilebilmeli": inside a building its shell hides and the room shows (view/world/ic-mekan-look.ts)
+          const icerde = Math.abs(hp.x - s.x) < s.wx / 2 + 0.5 && Math.abs(hp.z - s.z) < s.wz / 2 + 0.5; if (f.g.visible === icerde) f.g.visible = !icerde; if (icerde) continue;
           let hit = false;
           if (!inside) for (let k = 1; k < 12 && !hit; k++) { const tt = k / 12, x = hp.x + (c.x - hp.x) * tt, z = hp.z + (c.z - hp.z) * tt, y = 1.2 + (c.y - 1.2) * tt; if (Math.abs(x - s.x) < hx && Math.abs(z - s.z) < hz && y < s.floors * s.fh + 1.2) hit = true; }
           const want = hit ? 0.22 : 1; if (Math.abs(f.op - want) < 0.01 && f.op === want) continue;
