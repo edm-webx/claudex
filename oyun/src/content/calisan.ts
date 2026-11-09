@@ -10,7 +10,7 @@ export const KURSLAR: KursDef[] = [
   { id: 'hafta', name: 'Hafta Sonu Kursu', desc: 'Kısa ve tatlı. Tepsi tutuşu, çay bardağı parlatma, "buyrun abla" tonlaması.', sure: 120, cost: 250, xp: 140, morale: 5 },
   { id: 'gulus', name: 'Güler Yüz Semineri', desc: 'Gülümseme kası çalıştırılır. Döner gelince keyfi tavan yapar.', sure: 90, cost: 300, xp: 40, morale: 40 },
   { id: 'usta', name: 'Ustalık Kursu', desc: 'Mahallenin en eski ustası Fevzi Hoca anlatır. Uzun ama değer.', sure: 300, cost: 600, xp: 420, morale: 10 },
-  { id: 'kamp', name: 'Usta-Çırak Kampı', desc: 'Bir hafta sonu Martıköy Yaylası\'nda. Döndüğünde başka biri olur (yine aynı kişi ama).', sure: 600, cost: 1500, xp: 1300, morale: 20, minRank: 1 },
+  { id: 'kamp', name: 'Usta-Çırak Kampı', desc: 'Bir hafta sonu Martıköy Yaylası\'nda. Döndüğünde başka biri olur (yine aynı kişi ama).', sure: 600, cost: 1500, xp: 1300, morale: 20, minRank: 2 },
 ];
 export const KURS_MERKEZI = 'Mahalle Kurs Merkezi';
 export const KURS_SLOTS = 2;

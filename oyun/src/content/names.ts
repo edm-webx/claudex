@@ -153,3 +153,6 @@ export const DISTRICTS: string[] = [
   "Bostancı",
   "Avcılar"
 ];
+
+/** Candidate hometowns (2026-11-09 survey p_cv: memleket, yaş). */
+export const MEMLEKET: string[] = ['Trabzon', 'Rize', 'Sivas', 'Konya', 'Kastamonu', 'Malatya', 'Erzurum', 'Mardin', 'Giresun', 'Adana', 'Samsun', 'Ordu', 'Tokat', 'Bolu', 'Edirne', 'Muğla', 'İzmir', 'Van', 'Gaziantep', 'Bursa'];

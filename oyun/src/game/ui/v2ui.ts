@@ -607,7 +607,7 @@ const btn = (label, act, id, cls, sub, opt) => {
 const pips = (n, of) => { let s = '<span class="sb-pips">'; for (let i = 0; i < of; i++) s += `<i class="${i < n ? 'on' : ''}"></i>`; return s + '</span>'; };
 const meter = (p, color, cls) => `<div class="sb-meter ${cls || ''}"><i style="width:${(clamp(p, 0, 1) * 100).toFixed(1)}%;${color ? 'background:' + color : ''}"></i></div>`;
 
-const RANKS = ['Çırak', 'Kalfa', 'Usta', 'Başusta', 'Efsane'];
+const RANKS = ['Çırak', 'Acemi', 'Kalfa', 'Deneyimli', 'Usta', 'Kıdemli Usta', 'Başusta', 'Uzman', 'Usta Şef', 'Efsane'];
 const MOODS = [['Küs', '#e63946'], ['Küskün', '#d9822b'], ['Normal', '#ebc07a'], ['Keyifli', '#8daa5b'], ['Coşkulu', '#49b96a']];
 const moodFace = i => {
   const m = ['M17 33q7-6 14 0', 'M17 32q7-3 14 0', 'M17 31h14', 'M17 29q7 5 14 0', 'M15 28q9 9 18 0'][i];
@@ -627,15 +627,14 @@ function renderIsciler(m, A) {
   try { s += renderCalisanSel(m.calisan, porTag); } catch (e) { console.error('[SB.ui] calisan', e); }
   if (!ws.length) s += `<div class="sb-empty">${ICONS.people}<span>Henüz işçin yok.<br>${m.hint ? esc(m.hint) : 'İskeledeki "İş ve İşçi Bulma" köşesine yürü ya da aşağıdaki düğmeye bas, panodan birini seç.'}</span></div>`;
   ws.forEach(w => {
-    let ri = RANKS.indexOf(w.rankLabel); if (ri < 0) ri = clamp(num(w.rank) ? Math.round(w.rank) : 0, 0, 4);
+    let ri = RANKS.indexOf(w.rankLabel); if (ri < 0) ri = clamp(num(w.rank) ? Math.round(w.rank) : 0, 0, 9);
     const t = traitParts(w.trait);
     const mo = num(w.morale) ? clamp(w.morale, 0, 1) : 0.7, mi = clamp(Math.floor(mo * 5), 0, 4);
     s += `<div class="sb-card sb-wk">
       ${porTag(w.look || ('w' + w.id + w.name), 68, { bg: '#bfe6e9', eyes: 'open' })}
       <div class="sb-grow"><h3>${esc(w.name)} <span class="sb-chip">${I(ROLE_ICON(w.role || w.roleLabel))}${esc(w.roleLabel || '')}</span></h3>
-        <div class="rk">${pips(ri + 1, 5)}<span>${esc(w.rankLabel || RANKS[ri])}</span></div>
+        <div class="rk">${pips(ri + 1, 10)}<span>${ri + 1}. seviye · ${esc(w.rankLabel || RANKS[ri])}</span></div>
         ${t.name ? `<div class="sb-trait"><b>${esc(t.name)}</b>${t.effect ? ': ' + esc(t.effect) : ''}</div>` : ''}
-        <div class="sb-mood">${moodFace(mi)}<span>${MOODS[mi][0]}</span>${meter(mo, MOODS[mi][1])}</div>
       </div>
       <div class="wb"><span class="sb-muted">${w.wage != null ? 'Maaş payı: <b>' + esc(wageTxt(w.wage)) + '</b>' : ''}${w.station ? '<br>İstasyon: <b>' + esc(w.station) + '</b>' : ''}</span>
         ${A.train ? btn('Kurs', 'train', w.id, 'blue sm', null, { icon: 'karne' }) : ''}${A.tasi ? btn('Taşı', 'tasi', w.id, 'cream sm') : ''}${A.pencere && num(m.pencere) && m.pencere >= 0 ? btn(m.pencere === w.id ? 'Pencerede ✓' : 'Pencereye', 'pencere', w.id, m.pencere === w.id ? 'green sm' : 'cream sm', null, { icon: 'ferry' }) : ''}${A.fire ? btn('Çıkar', 'fire', w.id, 'cream sm') : ''}</div>

@@ -11,7 +11,7 @@ import type { GameState, ProductId, WorkerSave } from '../schema';
 import { ROLES, ROLE_IDS, ROLE_SLOTS, RARITY, RARITY_ROLL, RANKS, JOB_REFRESH_COST, BOARD_REFRESH_S, MORALE_START, workerCost, rankOf } from '../../../content/ranks';
 import { TRAITS, TRAIT_IDS, TEAMS } from '../../../content/traits';
 import { LEGENDS, ABOUT, STORY_LEGENDS, type LegendDef } from '../../../content/workers';
-import { NAMES } from '../../../content/names';
+import { NAMES, MEMLEKET } from '../../../content/names';
 import { LINES } from '../../../content/lines';
 
 export interface JobCard {
@@ -69,7 +69,7 @@ function makeCandidate(s: GameState, rng: Rng, role: string, rarityId: string, l
   if (female && rng.chance(0.3)) look.headscarf = rng.pick(['yazma', 'loose', 'sport']);
   return {
     id: 'C' + (s.nextWid + 1000 * (s.boards || 0)) + '_' + rng.int(100, 999), name, role, roleLabel: ROLES[role].label, traitId, trait: traitCard(traitId),
-    rarity: rarityId, wageShare: RANKS[0].wage, price: workerCost(role, rarityId, s.workers.length), look, about: rng.pick(ABOUT),
+    rarity: rarityId, wageShare: RANKS[0].wage, price: workerCost(role, rarityId, s.workers.length), look, about: rng.pick(MEMLEKET) + "'li, " + rng.int(18, 52) + ' yaşında. ' + rng.pick(ABOUT),
   };
 }
 function rollRarity(rng: Rng): string {

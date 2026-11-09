@@ -99,47 +99,18 @@ export const RARITY: Record<string, RarityDef> = {
 };
 /** Roll order for random candidates (v2 rollRarity). */
 export const RARITY_ROLL: readonly string[] = ['gri', 'yesil', 'mavi', 'altin'];
+// 2026-11-09 survey: staff levels 1-10 (was 5)
 export const RANKS: RankDef[] = [
-  {
-    "id": "cirak",
-    "name": "Çırak",
-    "xp": 0,
-    "x": 1,
-    "wage": 0.03,
-    "look": "Hafif lekeli önlük, kağıt şapka"
-  },
-  {
-    "id": "kalfa",
-    "name": "Kalfa",
-    "xp": 300,
-    "x": 1.25,
-    "wage": 0.04,
-    "look": "Tertemiz önlük, göğüste isimlik"
-  },
-  {
-    "id": "usta",
-    "name": "Usta",
-    "xp": 1500,
-    "x": 1.5,
-    "wage": 0.05,
-    "look": "Altın diş: gülünce parlar"
-  },
-  {
-    "id": "basusta",
-    "name": "Başusta",
-    "xp": 6000,
-    "x": 1.8,
-    "wage": 0.06,
-    "look": "Beyaz aşçı şapkası"
-  },
-  {
-    "id": "efsane",
-    "name": "Efsane",
-    "xp": 20000,
-    "x": 2.2,
-    "wage": 0.06,
-    "look": "\"EFSANE\" işlemeli önlük"
-  }
+  { id: "cirak", name: "Çırak", xp: 0, x: 1, wage: 0.03, look: "Hafif lekeli önlük, kağıt şapka" },
+  { id: "acemi", name: "Acemi", xp: 150, x: 1.1, wage: 0.033, look: "Düzgün önlük, kendi şapkası" },
+  { id: "kalfa", name: "Kalfa", xp: 400, x: 1.2, wage: 0.036, look: "Tertemiz önlük, göğüste isimlik" },
+  { id: "deneyimli", name: "Deneyimli", xp: 900, x: 1.3, wage: 0.04, look: "Kolalı önlük, cebinde kalem" },
+  { id: "usta", name: "Usta", xp: 1800, x: 1.4, wage: 0.043, look: "Altın diş: gülünce parlar" },
+  { id: "kidemli", name: "Kıdemli Usta", xp: 3500, x: 1.5, wage: 0.047, look: "Koyu önlük, kol düğmesi" },
+  { id: "basusta", name: "Başusta", xp: 6500, x: 1.65, wage: 0.05, look: "Beyaz aşçı şapkası" },
+  { id: "uzman", name: "Uzman", xp: 11000, x: 1.8, wage: 0.054, look: "Uzun şapka, omuzda havlu" },
+  { id: "sef", name: "Usta Şef", xp: 17000, x: 2.0, wage: 0.058, look: "Çift sıra düğmeli ceket" },
+  { id: "efsane", name: "Efsane", xp: 25000, x: 2.2, wage: 0.06, look: '"EFSANE" işlemeli önlük' },
 ];
 /** [from morale, label, speed factor] */
 export const MORALE: [number, string, number][] = [
@@ -170,7 +141,8 @@ export const JOB_REFRESH_COST = 250;
 export const BOARD_REFRESH_S = 300;
 
 export function rankOf(xp: number): number { let r = 0; RANKS.forEach((k, i) => { if (xp >= k.xp) r = i; }); return r; }
-export function moraleFactor(m: number): number { for (const r of MORALE) if (m >= r[0]) return r[2]; return 0.7; }
+// 2026-11-09 survey (p_moral: Hayır): morale no longer changes speed
+export function moraleFactor(_m: number): number { return 1; }
 export function moraleLabel(m: number): string { for (const r of MORALE) if (m >= r[0]) return r[1]; return 'Küs'; }
 /** Hire price: legends carry their own; random = role base x rarity x 1.2^(hired beyond 3), rounded to 50. */
 export function workerCost(role: string, rarity: string, hiredCount: number): number {
