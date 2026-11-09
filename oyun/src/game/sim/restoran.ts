@@ -112,6 +112,8 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     let tipF = ADISYON.tip[ADISYON.tip.length - 1][1];
     for (const [u, f] of ADISYON.tip) if (used <= u) { tipF = f; break; }
     let tip = Math.round(value * tipF * (1 + mutfakEtki(S.workers).bahsis));
+    const gs = S.workers.filter(w => w.role === 'garson');   // shared tip jar: the waiters' cut of every table tip, split evenly (survey g_bahsis)
+    if (gs.length && tip > 1) { const cut = Math.floor(tip * 0.4); tip -= cut; for (const w of gs) { const q = w as { paidToday?: number }; q.paidToday = (q.paidToday || 0) + cut / gs.length; } }
     if (c.n >= 2 && rng.next() < ADISYON.fightChance) { tip *= 2; cu.say(c, rng.pick(ADISYON_LINES.fight), 2.5); K.stat('hesapKavgasi'); }
     else if (rng.next() < 0.1) cu.say(c, rng.pick(ADISYON_LINES.served), 2);
     const tb = rt.tables[t.table];
