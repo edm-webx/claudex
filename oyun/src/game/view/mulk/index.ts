@@ -114,8 +114,8 @@ export function createMulkView(d: MulkViewDeps): MulkView {
       const v = m.view(), md = m.model();
       for (const pv of v.plots) {
         const p = plots.get(pv.id)!, mp = md.arsa.find(x => x.id === pv.id)!;
-        const k = [pv.owned, pv.tur, pv.tip, pv.lv, Math.ceil(12 * mp.stok / (DUKKAN_STOK_MAX[pv.lv] || 1))].join('|');
-        if (k !== p.key) { p.key = k; if (!pv.sabit) build(p, pv, mp.stok); }
+        const k = [pv.owned, pv.tur, pv.tip, pv.lv, 12].join('|');
+        if (k !== p.key) { p.key = k; if (!pv.sabit) build(p, pv, DUKKAN_STOK_MAX[pv.lv] || 1); }
       }
       if (Math.hypot(d.hero().x - BANKA.x, d.hero().z - BANKA.z) < 26) put(bankL, BANKA.x, 4.8, BANKA.z + BANKA.d / 2 + 0.7, '🏦 ' + esc(BANKA.ad)); else bankL.hide();
       for (const pv of v.plots) {

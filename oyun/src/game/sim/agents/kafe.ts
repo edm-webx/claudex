@@ -96,7 +96,7 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
     syncWorkers(r);
     // new guests from the hourly customer flow (mulk.ts accrues them into pending)
     const open = r.guests.filter(x => x.st === 'in' || x.st === 'queue').length;
-    if ((h.pending[r.arsa] || 0) > 0 && open < geom(r).maxQ && info.stok > 0) { h.pending[r.arsa]--; spawnGuest(r); }
+    if ((h.pending[r.arsa] || 0) > 0 && open < geom(r).maxQ) { h.pending[r.arsa]--; spawnGuest(r); }
     // guests
     for (let i = r.guests.length - 1; i >= 0; i--) {
       const gu = r.guests[i], a = gu.a; gu.t += dt;
@@ -119,7 +119,7 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
         const p = postOf(r, w.idx); if (Math.hypot(p.x - a.x, p.z - a.z) > 0.1) { step1(a, p, 1.6, dt); a.act = 'walk'; continue; }
         a.act = 'idle'; a.speed = 0; a.rot = geomYaw(r) + Math.PI;
         const gu = waiting(r).find(x => !x.claimed);
-        if (gu && info.stok > 0 && !(h.fp && r.arsa === 'k3')) { gu.claimed = w.a.id; w.guest = gu; w.st = 'brew'; w.t = 0; }
+        if (gu && !(h.fp && r.arsa === 'k3')) { gu.claimed = w.a.id; w.guest = gu; w.st = 'brew'; w.t = 0; }
       } else if (w.st === 'brew') {
         const g = geom(r), mp = g.P(g.cu + (g.vert ? 0.2 : 0.2) + w.idx * 0.5, -0.7);
         if (Math.hypot(mp.x - a.x, mp.z - a.z) > 0.1) { step1(a, mp, 1.8, dt); a.act = 'walk'; w.t = 0; continue; }

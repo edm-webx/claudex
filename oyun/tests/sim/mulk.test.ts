@@ -45,10 +45,9 @@ it('plots: buy needs level + money + the 3 plot limit; a shop sells stock into i
   S.level = 8; c({ op: 'arsaAl', id: 'a1' }); c({ op: 'arsaAl', id: 'a2' }); c({ op: 'arsaAl', id: 'a3' }); c({ op: 'arsaAl', id: 'a4' });
   expect(Object.keys(S.zones.arsa.plots).length).toBe(3);
   c({ op: 'arsaKur', id: 'a1', tur: 'dukkan', tip: 'cay_ocagi' }); expect(S.zones.arsa.plots.a1.tur).toBe('dukkan');
-  c({ op: 'stokAl', id: 'a1', n: 40 }); expect(S.zones.arsa.plots.a1.stok).toBe(40);
   sim.command({ kind: 'teleport', x: 0, z: -7 });
   sim.step(300);
-  const p = S.zones.arsa.plots.a1; expect(p.sat + p.stok).toBe(40); expect(p.sat).toBeGreaterThan(0);
+  const p = S.zones.arsa.plots.a1; expect(p.sat).toBeGreaterThan(0);   // no stock: customers just buy
   const m0 = S.money; sim.command({ kind: 'teleport', x: arsaKapi(a1).x, z: arsaKapi(a1).z }); sim.step(1);
   expect(S.money).toBeGreaterThan(m0);
   void m;
@@ -64,13 +63,13 @@ it('karşı yaka kafe: satın alınca hemen kafe olur, arsa hakkından düşmez,
   const k1 = ARSALAR.find(a => a.id === 'k1')!;
   S.level = 5; S.money = 200000;
   c({ op: 'arsaAl', id: 'k1' });
-  const p = S.zones.arsa.plots.k1; expect(p.tur).toBe('dukkan'); expect(p.tip).toBe('kafe'); expect(p.stok).toBe(20);
+  const p = S.zones.arsa.plots.k1; expect(p.tur).toBe('dukkan'); expect(p.tip).toBe('kafe');
   expect(m.model().sahip).toBe(0);
   c({ op: 'isciAl', id: 'k1' }); expect(p.isci).toBe(1); expect(S.money).toBe(200000 - k1.fiyat - 12000);
   for (let i = 0; i < 3; i++) c({ op: 'isciAl', id: 'k1' }); expect(p.isci).toBe(2);   // lv1 café: 2 workers
   p.lv = 2; c({ op: 'isciAl', id: 'k1' }); expect(p.isci).toBe(3);
-  p.till = 5000; p.stok = 0; sim.step(240);
-  expect(p.stok).toBeGreaterThan(0); expect(p.sat).toBeGreaterThan(0);   // workers restocked from the till and the shelf sold
+  sim.step(240);
+  expect(p.sat).toBeGreaterThan(0);   // customers are served without any stock to buy
   expect(m.view().plots.find((x: any) => x.id === 'k1')!.isci).toBe(3);
   const row = m.model().arsa.find((x: any) => x.id === 'k1'); expect(row!.menu.map((x: any) => x.id)).toEqual(['turk_kahvesi', 'demlik_cay', 'kasarli_tost', 'su_boregi']);
   S.money = 1e6; c({ op: 'kafeEsya', id: 'k1', e: 'espresso' }); expect(p.esya).toEqual(['espresso']); c({ op: 'kafeEsya', id: 'k1', e: 'barista' }); expect(p.esya).toEqual(['espresso']);   // barista needs lv5
@@ -106,7 +105,7 @@ it('canlı oda: kantin, AVM lokantası ve tesis kafeteryası da gerçek müşter
     S.level = 40; S.money = 5e7;
     c({ op: 'arsaAl', id });
     const p = S.zones.arsa.plots[id], h = sim.rules.rt.kafeHost;
-    expect(p, id).toBeTruthy(); p.isci = 2; p.stok = 50;
+    expect(p, id).toBeTruthy(); p.isci = 2;
     for (let i = 0; i < 900; i++) { sim.step(0.1); h.pending[id] = Math.max(h.pending[id] || 0, 1); }
     expect(p.sat, id).toBeGreaterThan(2);
   }
