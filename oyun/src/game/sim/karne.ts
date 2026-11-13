@@ -93,7 +93,7 @@ export function installKarne(K: Kernel) {
     void complaint; void fix;
     const best = rt.dayHistory.reduce((m, d) => Math.max(m, d.earned), 0);
     if ((rt as unknown as { gunSonuCard?: boolean }).gunSonuCard) {
-    rt.uiLast.gunSonu = { day, earned: Math.round(T0.earned), customers: T0.customers, angry: T0.angry, money: Math.round(S.money), record: Math.round(T0.earned) > best && day > 1, maas, ekip };
+    rt.uiLast.gunSonu = { day, earned: Math.round(T0.earned), customers: T0.customers, angry: T0.angry, money: Math.round(S.money), record: Math.round(T0.earned) > best && day > 1, maas, ekip, sold: { ...((T0 as unknown as { sold?: Record<string, number> }).sold || {}) }, borc: Math.floor((S.zones.arsa as { kredi?: { borc?: number } } | undefined)?.kredi?.borc || 0) };
     rt.paused = true; rt.pauseWhy = 'gunSonu';
     }
     K.logEv('dayEnd', { day, customers: T0.customers, earned: Math.round(T0.earned), angry: T0.angry, money: Math.round(S.money), link });

@@ -1,11 +1,12 @@
 // Gün sonu (survey 2026-10-24, user reversed "no end-of-day card"): at 03:00 the screen fades to night black, the
 // day's ciro shows, and "Yeni güne başla" starts the next morning. Reads rt.uiLast.gunSonu; writes only the
 // 'yeniGun' command. Code-made DOM, Turkish text, no images.
+import { PRODUCTS } from '../../content/products';
 import type { Rules } from '../sim/state';
 import { fmtMoney } from '../sim/util';
 
 export interface GunSonuView { update(): void; dispose(): void }
-interface GunSonuModel { day: number; earned: number; customers: number; angry: number; money: number; record: boolean; maas?: number; ekip?: number }
+interface GunSonuModel { day: number; earned: number; customers: number; angry: number; money: number; record: boolean; maas?: number; ekip?: number; sold?: Record<string, number>; borc?: number }
 
 const CSS = `
 .gs-wrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:auto;background:rgba(6,8,22,0);transition:background 1.6s ease;z-index:60}
@@ -29,14 +30,17 @@ export function createGunSonu(deps: { root: HTMLElement; rules: () => Rules | nu
   function show(m: GunSonuModel) {
     const g = deps.rules()?.rt.uiLast.giderSon as { day: number; kira: number; fatura: number; malzeme: number } | undefined;
     close(); shownDay = m.day;
+    const top = Object.entries(m.sold || {}).sort((a, b) => b[1] - a[1]).map(([k, n]) => [(PRODUCTS as Record<string, { name?: string }>)[k]?.name || k, n] as [string, number])[0];
     wrap = document.createElement('div'); wrap.className = 'gs-wrap';
     wrap.innerHTML = `<div class="gs-card"><div class="gs-moon">🌙</div><div class="gs-h">Kepenkler indi</div><div class="gs-sub">${m.day}. gün bitti. Saat 03:00, iskele sessiz.</div>
       <div class="gs-sub" style="margin:0">Günün cirosu</div><div class="gs-ciro">${fmtMoney(m.earned)}</div>${m.record ? '<div class="gs-rec">Yeni rekor!</div>' : ''}
       <div class="gs-row"><span>Müşteri</span><b>${m.customers}</b></div>
       <div class="gs-row"><span>Kızgın giden</span><b>${m.angry}</b></div>
+      ${top ? `<div class="gs-row"><span>En çok satan</span><b>${top[0]} (${top[1]} adet)</b></div>` : ''}
       ${m.ekip ? `<div class="gs-row"><span>Personel payı (${m.ekip} kişi, bahşiş kumbarası dahil)</span><b>−${fmtMoney(m.maas || 0)}</b></div>` : ''}
       ${g && g.day === m.day ? `<div class="gs-row"><span>Kira</span><b>−${fmtMoney(g.kira)}</b></div><div class="gs-row"><span>Faturalar (elektrik, su, tüp)</span><b>−${fmtMoney(g.fatura)}</b></div><div class="gs-row"><span>Malzeme</span><b>−${fmtMoney(g.malzeme)}</b></div>` : ''}
       <div class="gs-row"><span>Kasada</span><b>${fmtMoney(g && g.day === m.day ? Math.round(deps.rules()?.state.money ?? m.money) : m.money)}</b></div>
+      ${m.borc ? `<div class="gs-row"><span>Banka borcu (faiz işliyor)</span><b>${fmtMoney(m.borc)}</b></div>` : ''}
       <button class="gs-btn" type="button">Yeni güne başla ☀️</button></div>`;
     deps.root.appendChild(wrap);
     requestAnimationFrame(() => requestAnimationFrame(() => wrap?.classList.add('on')));

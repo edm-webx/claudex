@@ -39,6 +39,7 @@ export function installEconomy(K: Kernel, addMoneyTo: (pile: MoneyStack[], v: nu
   function settleSale(c: Customer | null, items: Item[], opts: { direct?: boolean; at?: Vec2 } = {}): number {
     let sum = 0; const prods: ProductId[] = [];
     items.forEach(it => { sum += itemValue(it); if (!prods.includes(it.type)) prods.push(it.type); });
+    { const sold = ((S.today as unknown as { sold?: Record<string, number> }).sold ||= {}); items.forEach(it => { sold[it.type] = (sold[it.type] || 0) + 1; }); }   // day-end report: best seller
     const st = streakStep(rt, S.playT, prods);
     let mult = K.venueMult() * streakMult(st) * (1 + yetenekFxOf(K.rt).price);   // class skill (yetenek.ts)
     const hit = c ? setHit(c.set, c.got) : null;
