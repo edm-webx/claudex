@@ -82,7 +82,8 @@ it('satın al: seviye kilidi, içeride/kapıda doğru işletme seçilir, satın 
   expect(m.view().arsaYakin).toBe('k8'); expect(m.view().avmYakin).toBe(true);
   for (const id of AVM) { const k = arsaKapi(ARSALAR.find(a => a.id === id)!); sim.command({ kind: 'teleport', x: k.x, z: k.z }); sim.step(0.3); expect(m.view().arsaYakin, id).toBe(id); }
   S.money = 1e7; S.level = 7; c({ op: 'arsaAl', id: 'k8' }); expect(S.zones.arsa.plots.k8).toBeUndefined();   // tekno: level 8
-  S.level = 8; const m0 = S.money; c({ op: 'arsaAl', id: 'k8' });
+  S.level = 8; c({ op: 'arsaAl', id: 'k8' }); expect(S.zones.arsa.plots.k8).toBeUndefined();   // önce AVM (k5) alınmalı
+  c({ op: 'arsaAl', id: 'k5' }); const m0 = S.money; c({ op: 'arsaAl', id: 'k8' });
   expect(S.zones.arsa.plots.k8).toMatchObject({ tur: 'dukkan', lv: 1 }); expect(m0 - S.money).toBe(ARSALAR.find(a => a.id === 'k8')!.fiyat);
   const row: any = m.model().arsa.find((x: any) => x.id === 'k8'); expect(row.menu.map((x: any) => x.id)).toEqual(['kulaklik', 'powerbank']); expect(row.asamaAd).toBe('Telefoncu');
   c({ op: 'kafeEsya', id: 'k8', e: 'demo_masa' }); c({ op: 'kafeEsya', id: 'k8', e: 'askilik' }); expect(S.zones.arsa.plots.k8.esya).toEqual(['demo_masa']);   // a clothes rail is not a phone shop tool
@@ -92,7 +93,7 @@ it('satın al: seviye kilidi, içeride/kapıda doğru işletme seçilir, satın 
 it('işçi al, müşteri gelir rafa bakar, gerçek işçi kalemi taşır, satış kasaya yazar; stok tükenmez', () => {
   for (const id of SHOPS) {
     const { sim, S, h, c } = mk(); S.level = 40; S.money = 1e8;
-    c({ op: 'arsaAl', id }); const p = S.zones.arsa.plots[id], room = roomOf(id).id, menu = ISLETME[ARSA_ISLETME[id]].menu;
+    c({ op: 'arsaAl', id: 'k5' }); c({ op: 'arsaAl', id }); const p = S.zones.arsa.plots[id], room = roomOf(id).id, menu = ISLETME[ARSA_ISLETME[id]].menu;
     expect(h.info(id).kadro).toHaveLength(0);
     c({ op: 'ilanAl', id, e: '' }); c({ op: 'ilanAl', id, e: '' }); expect(p.kadro, id).toHaveLength(2); expect(p.isci).toBe(2);
     expect(p.kadro.every((k: any) => ISLETME_ROL[ARSA_ISLETME[id]].some(r => r.rol === k.rol))).toBe(true);
@@ -115,7 +116,7 @@ it('işçi al, müşteri gelir rafa bakar, gerçek işçi kalemi taşır, satı�
 });
 
 it('müşteri önce rafların önünde gezinir, sonra kasaya geçer (giyim)', () => {
-  const { sim, S, h, c } = mk(); S.level = 40; S.money = 1e8; c({ op: 'arsaAl', id: 'k7' }); c({ op: 'adminIsci', id: 'k7' });
+  const { sim, S, h, c } = mk(); S.level = 40; S.money = 1e8; c({ op: 'arsaAl', id: 'k5' }); c({ op: 'arsaAl', id: 'k7' }); c({ op: 'adminIsci', id: 'k7' });
   const room = roomOf('k7'), states = new Set<string>(); let atRack = false;
   for (let i = 0; i < 600; i++) {
     sim.step(0.1); h.pending.k7 = Math.max(h.pending.k7 || 0, 1);
@@ -126,7 +127,7 @@ it('müşteri önce rafların önünde gezinir, sonra kasaya geçer (giyim)', ()
 });
 
 it('oyuncu servis eder: kasada bekleyen müşterinin kalemini istasyonda hazırlayınca satış olur', () => {
-  const { sim, S, h, c } = mk(); S.level = 40; S.money = 1e8; c({ op: 'arsaAl', id: 'k9' });
+  const { sim, S, h, c } = mk(); S.level = 40; S.money = 1e8; c({ op: 'arsaAl', id: 'k5' }); c({ op: 'arsaAl', id: 'k9' });
   const p = S.zones.arsa.plots.k9, m0 = S.money;
   for (let i = 0; i < 900 && p.sat === 0; i++) {
     sim.step(0.1); h.pending.k9 = Math.max(h.pending.k9 || 0, 1);
@@ -138,7 +139,7 @@ it('oyuncu servis eder: kasada bekleyen müşterinin kalemini istasyonda hazırl
 });
 
 it('tadilat: mağaza süreli yükselir, 2 usta kendi cephesinde çalışır, aşama kuyruğu açar', () => {
-  const { sim, S, h, c } = mk(); S.level = 40; S.money = 1e8; c({ op: 'arsaAl', id: 'k7' });
+  const { sim, S, h, c } = mk(); S.level = 40; S.money = 1e8; c({ op: 'arsaAl', id: 'k5' }); c({ op: 'arsaAl', id: 'k7' });
   const p = S.zones.arsa.plots.k7, y = insaatYer('k7')!, room = roomOf('k7');
   expect(y).toBeTruthy(); expect(Math.abs(y.ox - room.x)).toBeLessThan(0.01); expect(y.oz).toBeCloseTo(room.z - room.wz / 2, 5); expect(y.S).toBeLessThanOrEqual(room.wx);
   const m0 = S.money; c({ op: 'yukselt', id: 'k7' }); expect(m0 - S.money).toBe(Math.round(300000 * 0.45));

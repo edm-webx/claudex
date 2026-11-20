@@ -57,7 +57,7 @@ export const SANDIK_DUSER: { stat: string; her: number; sandik: string; ad: stri
 export const HALI_SAHA_KAPI = { x: -25.2, z: 45 };
 export const BANKA = { x: 11.7, z: 36.8, kapi: { x: 11.7, z: 41.8 }, w: 10, d: 8.4, ad: 'Martı Kasası Bankası' };
 /** sabit: a fixed building on the map (karşı yaka kafeler): buying the plot opens that shop at once; kapi = interaction point. */
-export interface Arsa { id: string; x: number; z: number; fiyat: number; seviye: number; rotY: number; sabit?: string; kapi?: { x: number; z: number }; ad?: string }
+export interface Arsa { id: string; x: number; z: number; fiyat: number; seviye: number; rotY: number; sabit?: string; kapi?: { x: number; z: number }; ad?: string; once?: string }
 export const ARSALAR: Arsa[] = [
   { id: 'a1', x: 259.5, z: 0.4, fiyat: 60000, seviye: 3, rotY: 0 },
   { id: 'a2', x: 266.2, z: 0.4, fiyat: 150000, seviye: 5, rotY: 0 },
@@ -74,9 +74,9 @@ export const ARSALAR: Arsa[] = [
   // x / z = the room centre of content/ic-mekan.ts (AVM strips), kapi = in front of that room's own door on the -z front
   { id: 'k5', x: 26.0, z: 51.8, fiyat: 450000, seviye: 6, rotY: Math.PI, sabit: 'kafe', kapi: { x: 26.0, z: 45.6 }, ad: 'Martı Lokantası (AVM)' },
   { id: 'k6', x: -54.1, z: 45.4, fiyat: 260000, seviye: 5, rotY: Math.PI / 2, sabit: 'kafe', kapi: { x: -51.0, z: 45.4 }, ad: 'Tesis Kafeteryası' },
-  { id: 'k7', x: 21.45, z: 51.8, fiyat: 300000, seviye: 7, rotY: Math.PI, sabit: 'kafe', kapi: { x: 21.45, z: 45.6 }, ad: 'Martı Moda (AVM)' },
-  { id: 'k8', x: 17.55, z: 51.8, fiyat: 380000, seviye: 8, rotY: Math.PI, sabit: 'kafe', kapi: { x: 17.55, z: 45.6 }, ad: 'Tekno Martı (AVM)' },
-  { id: 'k9', x: 13.65, z: 51.8, fiyat: 260000, seviye: 7, rotY: Math.PI, sabit: 'kafe', kapi: { x: 13.65, z: 45.6 }, ad: 'Oyuncak Dünyası (AVM)' },
+  { id: 'k7', once: 'k5', x: 21.45, z: 51.8, fiyat: 300000, seviye: 7, rotY: Math.PI, sabit: 'kafe', kapi: { x: 21.45, z: 45.6 }, ad: 'Martı Moda (AVM)' },
+  { id: 'k8', once: 'k5', x: 17.55, z: 51.8, fiyat: 380000, seviye: 8, rotY: Math.PI, sabit: 'kafe', kapi: { x: 17.55, z: 45.6 }, ad: 'Tekno Martı (AVM)' },
+  { id: 'k9', once: 'k5', x: 13.65, z: 51.8, fiyat: 260000, seviye: 7, rotY: Math.PI, sabit: 'kafe', kapi: { x: 13.65, z: 45.6 }, ad: 'Oyuncak Dünyası (AVM)' },
 ];
 export const ARSA_HAK = 3;
 export const arsaKapi = (a: Arsa) => a.kapi ?? { x: a.x, z: a.z + (a.rotY ? -3.0 : 3.0) };

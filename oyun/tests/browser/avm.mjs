@@ -24,7 +24,7 @@ await p.evaluate((bos) => { const M = window.__marti; M.setTime(13); M.step(2); 
   M.step(1); }, bos);
 // x = room centre (content/ic-mekan.ts), camera yaw index 2 looks from the door side into the room
 const SPOTS = { dis: [20.15, 41.5, 2, 3.2], dis_yakin: [19.5, 44.2, 2, 2.2], lokanta: [26.0, 49.5, 2, 2.0], moda: [21.45, 49.5, 2, 2.0], tekno: [17.55, 49.5, 2, 2.0], oyuncak: [13.65, 49.5, 2, 2.0], ust: [20.15, 51.0, 2, 3.4] };
-for (const id of Object.keys(SPOTS)) {
+for (const id of Object.keys(SPOTS).filter(k => !process.argv[4] || process.argv[4].split(',').includes(k))) {
   const [x, z, yi, zr] = SPOTS[id];
   await p.evaluate(([x, z, yi, zr]) => { const M = window.__marti; M.teleport(x, z); for (let k = 0; k < 8; k++) { M.step(0.5); M.renderFrames(3, 0.1); } M.camera({ x, z, zoomRaw: zr, yaw: yi * Math.PI / 2, tilt: 0.75 }); for (let k = 0; k < 20; k++) M.renderFrames(2, 0.1); }, [x, z, yi, zr]);
   await p.waitForTimeout(300); await p.screenshot({ path: join(out, (bos ? 'bos-' : '') + id + '.png'), timeout: 300000 }); console.log('ok', id);
