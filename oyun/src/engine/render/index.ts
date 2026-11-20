@@ -45,6 +45,8 @@ export interface MotorRender extends RenderPipeline {
   /** Sky-based environment map (PMREM, refreshed every half game hour); null before the renderer exists. */
   onEnv(cb: (tex: T.Texture | null) => void): Disposer;
   readonly bloomOn: boolean;
+  /** PRF-08: outdoor hemisphere multiplier (night-lights eases it to 0.85 inside a room); setTime and hava-look multiply it in. */
+  hemiMul: number;
   /** PRF-12: dynamic resolution; multiplies the tier's pixel ratio (0.6..1). Resizes targets only, no shader relink. */
   setScale(s: number): void;
   /** PRF-03: parallel shader compile of everything visible, in both shadow states (so a later tier change links nothing). Never draws. */
@@ -156,7 +158,8 @@ export function createRender(deps: RenderDeps): MotorRender {
   const envSubs = new Set<(t: T.Texture | null) => void>();
   function refreshEnv() {
     if (!renderer) return;
-    const key = Math.round(hour * 2); if (key === envKey && envRT) return; envKey = key;
+    // PRF-08 (B-082): akıcı re-renders the PMREM sky every 2 game hours instead of every half hour (reflections still follow day/night)
+    const key = tier?.name === 'akici' ? 1000 + Math.round(hour / 2) : Math.round(hour * 2); if (key === envKey && envRT) return; envKey = key;
     pmrem ||= new T.PMREMGenerator(renderer);
     const s = new T.Scene(); s.add(new T.Mesh(sky.geometry, sky.material));
     const old = envRT; envRT = pmrem.fromScene(s, 0.02);
@@ -200,6 +203,7 @@ export function createRender(deps: RenderDeps): MotorRender {
     get lost() { return lost; },
     sun, hemi, sky,
     get bloomOn() { return !!composer; },
+    hemiMul: 1,
     onEnv(cb) { envSubs.add(cb); try { cb(envRT ? envRT.texture : null); } catch { /* ignore */ } return () => { envSubs.delete(cb); }; },
     init(canvas: HTMLCanvasElement, t: TierDef) {
       if (renderer && canvasEl === canvas) { api.setTier(t); return; }
@@ -242,7 +246,7 @@ export function createRender(deps: RenderDeps): MotorRender {
       sunDir.set(Math.sin(tod.az) * Math.cos(tod.el), Math.sin(tod.el), Math.cos(tod.az) * Math.cos(tod.el)).normalize();
       su.uSunDir.value.copy(sunDir); placeSun();
       sun.color.copy(tod.sun); sun.intensity = tod.si;
-      hemi.color.copy(tod.hs); hemi.groundColor.copy(tod.hg); hemi.intensity = tod.hi;
+      hemi.color.copy(tod.hs); hemi.groundColor.copy(tod.hg); hemi.intensity = tod.hi * api.hemiMul;
       (scene.fog as T.Fog).color.copy(tod.fog);
       tuneBloom();
       timeSubs.forEach(cb => { try { cb(tod, hour); } catch (err) { deps.log?.warn('[render] time cb', err); } });

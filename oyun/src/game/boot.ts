@@ -122,7 +122,7 @@ import { createHuyMotion, type HuyMotionView } from './view/chars/huy-motion';
 import { createAltinSimitFx, type AltinSimitFx } from './ui/altin-simit-fx';
 import { createDisariLook, type DisariLookView } from './view/disari';
 import { createStadyumView } from './view/stadyum';
-import { createNightLights } from './view/world/night-lights';
+import { createNightLights, roomLightsFor } from './view/world/night-lights';
 import { createHedefCard, type HedefCard } from './ui/hedef-card';
 import { createFaz2Hud, type Faz2Hud } from './ui/faz2-hud';
 import { createStantLook, type StantLookView } from './view/world/stant-look';
@@ -508,6 +508,8 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   // Faz 2: Altın Fırın (collections) removed from the pier
   const altinFx: AltinSimitFx | null = panels ? make('altinFx', () => createAltinSimitFx({ root: U.root, rules: () => sim.rules })) : null;
   const nightLights = playMode && zones ? make('nightLights', () => createNightLights({ scene, zones })) : null;
+  // PRF-08: havuz kademeye göre (4/6/10), büfe floresanı aşamaya göre, iç mekanda hemi kısma
+  if (nightLights) make('nightLights.bind', () => { nightLights.bind({ stage: () => sim.state.stage, render: R as unknown as { hemiMul: number } }); nightLights.setTier(quality.current()); return true; });
   // Martıköy: neighbourhood labels, guide cat, ferris wheel, barrier, pier props (view/disari) 
   const disariLook: DisariLookView | null = ACIK_DUNYA && playMode && zones && labels ? make('disariLook', () => createDisariLook({
     scene, zones: zones as ZoneManager, labels, project, rules: () => sim.rules, hero: () => pos, hour: () => sim.clock.hour, command,
@@ -562,6 +564,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     sim.state.settings.autoTier = t.name;
   };
   quality.onChange(applyTier);
+  if (nightLights) quality.onChange(t => make('nightLights.setTier', () => { nightLights.setTier(t); return true; }));   // PRF-08: ışık sayısı yalnız kademe değişiminde
   quality.onScale?.(sc => make('render.setScale', () => { R.setScale?.(sc); P.count('olcekYuzde', Math.round(sc * 100)); return true; }));
   if (chars) make('crowd.setBudget', () => { chars.crowd.setBudget(quality.current().crowd); return true; });
   sim.state.settings.quality = quality.setting();
@@ -642,7 +645,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (stadyumView) guard('stadyumView', () => stadyumView.update(fdt));
     if ((bankaT -= fdt) <= 0) { bankaT = 2; const b = bankaRt(); if (b?.dirty && hesap()) { b.dirty = false; void bankaYaz({ tl: b.tl, esya: b.esya }); } }
     if (otobusHud) guard('otobusHud', () => otobusHud.update(fdt));
-    if (nightLights) guard('nightLights', () => nightLights.update(pos, sim.clock.hour));
+    if (nightLights) guard('nightLights', () => nightLights.update(pos, sim.clock.hour, fdt, roomLightsFor(icMekan?.icinde())));
     if (playMode) guard('heroKind', syncHeroKind);
     guard('hero', () => {
       const r = rt();
@@ -818,6 +821,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     return { ...R.info(), buildMs: zones ? zones.buildMs() : 0, pending: zones ? zones.pending() : 0, timers: s.timers, counters: s.counters,
       particles: s.particles, fps: s.fps, frameP95: s.frameP95, heapMB: s.heapMB, warnings: s.warnings, tier: quality.current().name };
   });
+  reg('lights', () => nightLights?.stats() ?? null);   // PRF-08: gece ışığı havuzu durumu
   reg('setTime', (h: number) => { sim.command({ kind: 'setTime', hour: h }); lastHour = -1; timeT = 0; guard('setTime', () => { R.setTime(sim.clock.hour, sim.clock.season); havaLook?.relight(); }); });
   reg('setStage', (n: number) => { sim.command({ kind: 'setStage', stage: n }); callWorld('setStage', sim.state.stage, sim.state.renewed); });
   reg('setTier', (name: TierName) => quality.set(name));

@@ -47,7 +47,7 @@ const damp = (a: number, b: number, k: number, dt: number) => a + (b - a) * (1 -
 const hash = (n: number) => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
 
 interface RenderLike {
-  sun?: T.DirectionalLight; hemi?: T.HemisphereLight; sky?: T.Mesh; tod?: () => { top: T.Color; hor: T.Color; low: T.Color; fog: T.Color; sun: T.Color; si: number; hs: T.Color; hg: T.Color; hi: number; n: number };
+  sun?: T.DirectionalLight; hemi?: T.HemisphereLight; sky?: T.Mesh; /** PRF-08 room dimming (night-lights), multiplied in, never accumulated */ hemiMul?: number; tod?: () => { top: T.Color; hor: T.Color; low: T.Color; fog: T.Color; sun: T.Color; si: number; hs: T.Color; hg: T.Color; hi: number; n: number };
 }
 
 export function createHavaLook(d: HavaLookDeps): HavaLookView {
@@ -238,7 +238,7 @@ export function createHavaLook(d: HavaLookDeps): HavaLookView {
     flashAge += dt;
     flashK = flashAge < 0.06 ? flashAge / 0.06 : Math.max(0, 1 - (flashAge - 0.06) / 0.55);
     flashK = flashK * flashK * (3 - 2 * flashK) * 0.55;
-    if (R.hemi) R.hemi.intensity = baseHemi + flashK * 1.3;
+    if (R.hemi) R.hemi.intensity = baseHemi * (R.hemiMul ?? 1) + flashK * 1.3;
   }
 
   function light(v: HavaView): void {
@@ -246,7 +246,7 @@ export function createHavaLook(d: HavaLookDeps): HavaLookView {
     const dark = clamp(rainK * 0.55 + flakeK * 0.3 + fogK * 0.35, 0, 0.7);
     C1.copy(tod.sun).multiply(TINT[v.season] || TINT.yaz).lerp(GREY, dark * 0.6);
     R.sun.color.copy(C1); R.sun.intensity = tod.si * (1 - dark * 0.5) * (heatK > 0 ? 1 + heatK * 0.08 : 1);
-    R.hemi.color.copy(tod.hs).lerp(GREY, dark * 0.4); baseHemi = tod.hi * (1 - dark * 0.15); R.hemi.intensity = baseHemi;
+    R.hemi.color.copy(tod.hs).lerp(GREY, dark * 0.4); baseHemi = tod.hi * (1 - dark * 0.15); R.hemi.intensity = baseHemi * (R.hemiMul ?? 1);
     const su = (R.sky?.material as T.ShaderMaterial | undefined)?.uniforms;
     if (su && su.uTop && su.uHor) { su.uTop.value.copy(tod.top).lerp(GREY, dark * (1 - tod.n * 0.7)); su.uHor.value.copy(tod.hor).lerp(FOGC, dark * (1 - tod.n * 0.7)); if (su.uLow) su.uLow.value.copy(tod.low).lerp(GREY, dark * 0.8 * (1 - tod.n * 0.7)); }
     const fog = d.scene.fog as T.Fog | null;
