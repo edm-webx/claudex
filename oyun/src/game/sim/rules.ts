@@ -19,7 +19,6 @@ import { installGizem } from './gizem';
 import { installYetenek } from './yetenek';
 import { installZemin } from './zemin';
 import { installHaliSaha } from './halisaha';
-import { installZincir } from './zincir';
 import type { AmbientSystem, Bus, Entity, GameClock, InteractionRegistry, Nav, Rng, SimCtx, SoAStore, System, Vec2 } from '../../engine/api';
 import type { SimEvents } from '../events';
 import type { Content } from '../../content/types';
@@ -171,8 +170,6 @@ export function createRules(d: RulesDeps): RulesFull {
   installMusteri(K, cu); // müşteri istekleri, turistler, kalpler
   const hedefM = installHedef(K);
   installGider(K); // Faz 2: gün sonu kira + fatura (gider.ts)
-  // 2026-11-09 user: "dükkan zinciri saçmalığını kaldır": the chain is no longer installed (no button, no income, no map list)
-  const zincirM: { handle(c: unknown): boolean } | null = null; void installZincir;
   const yatirimM = installYatirim(K);
   const kiyafetM = installKiyafet(K);
   const esnafimM = installEsnafim(K);
@@ -307,7 +304,6 @@ export function createRules(d: RulesDeps): RulesFull {
       S.zones.pencere = { wid: wid === cur ? 0 : wid }; const w = S.workers.find(x => x.id === wid);
       K.toast(wid === cur || !w ? 'Pencereye kimse bakmayacak, vapur gelince sen koş.' : w.name + ' vapur gelince pencereye geçecek.', 'info'); K.saveNow(); return true;
     }
-    if (c.kind === 'zincir') return zincirM ? zincirM.handle(c) : true;
     if (c.kind === 'mini') return miniM.handle(c);
     if (c.kind === 'yiyecek') return yiyecekM.handle(c);
     if (c.kind === 'hava') return havaM.handle(c);

@@ -30,7 +30,7 @@ https://claude.ai/artifact/QLKgqtAKpixJWkd7VcTexe
 3. Kıyafetler: sadece üst, alt, ayakkabı ve şapka karaktere giriyor. Kostüm (palyaço, korsan, spor forması, takım elbise) giydirilmiyor. Kıyafet dolabı arayüzü dekor/menü panelinde.
 4. Ürünler: menüde tarif olarak var (yiyecek.ts). Survey'deki eksikler eklendi (lahmacun, pide, pizza, sushi vb.). Ürün görselleri ve istasyon yerleşimi büyük iş.
 5. Ses ve hava: gün batımı, mevsim sesleri, Kıraç tarzı müzik yok. Sadece mevcut ses motoru.
-6. Harita ve dükkan zinciri: Bütün İstanbul haritası ve dükkanlar yok.
+6. Harita: Bütün İstanbul haritası yok. Dükkan zinciri kullanıcı isteğiyle kaldırıldı (2026-11-09), geri eklenmeyecek.
 7. Mini oyunlar (hafıza, labirent, yarış) ve cila: yok.
 8. Faz 7 (online, hesap, sohbet, lider tablosu): sunucu gerektirir. Bu ortamda yapılmadı.
 9. APK/AAB paketleme: kullanıcı kararıyla ertelendi.

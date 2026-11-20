@@ -83,7 +83,6 @@ function mapSvg(m: any): string {
     if (here) s += `<text class="s" x="${x}" y="${y - 30}" text-anchor="middle" fill="#e0533c">Buradasın</text>`;
     s += `</g>`;
   }
-  // dükkan zinciri pins moved to the list below the map (they cluttered the districts)
   // compass rose
   s += `<g transform="translate(${MW - 40},${MH - 44})"><circle r="20" fill="#fff6e6" stroke="#3b2a20" stroke-width="2"/><path d="M0 -15 L6 0 L0 15 L-6 0 Z" fill="#e0533c"/><text class="s" y="-23" text-anchor="middle">K</text></g>`;
   s += `<text x="${mx(84)}" y="${my(6)}" class="s" font-style="italic" fill="#2f6f9a">Boğaz</text><text x="${mx(30)}" y="${my(88)}" class="s" font-style="italic" fill="#2f6f9a">Marmara</text>`;
@@ -129,15 +128,6 @@ export function renderHarita(m: any): string {
   };
   s += mk('mekan', 'Mekanlar', 'sparkle');
   s += mk('lokanta', 'Lokantalar', 'menu');
-  // survey 2026-10-24: dükkan zinciri (big shops), locked ones listed with what opens them
-  const zc = (m.zincir || []) as any[];
-  if (zc.length) {
-    s += `<div class="sb-sec">${I('shop')}Dükkan zinciri<span>${zc.filter(d => d.durum === 'acik').length} / ${zc.length} açık</span></div>`;
-    for (const d of zc) {
-      const st = d.durum === 'acik' ? `<span class="mk-st on">Senin</span>` : d.durum === 'alinabilir' ? `<span class="mk-st off">Alınabilir</span>` : `<span class="mk-st lock">Kilitli</span>`;
-      s += `<div class="sb-card mk-row"><div class="ic" style="background:${d.durum === 'kilitli' ? '#cfc6b6' : esc(d.color)}">${d.durum === 'kilitli' ? '🔒' : esc(d.icon)}</div><div><h3>${esc(d.ad)}${st}</h3><p>${esc(d.durum === 'kilitli' ? d.neden || d.desc : d.desc)}<small>${esc(d.tur)} · ${tl(d.cost)} · günde ~${tl(d.gunluk)}</small></p></div></div>`;
-    }
-  }
   // side shops
   s += `<div class="sb-sec">${I('shop')}Yan dükkanlar<span>${m.shopsOwned} / ${m.shopMax}</span></div>`;
   s += `<div class="sb-card" style="font:700 15px/1.35 var(--body)">Küçük dükkanları devral, kendi kendine kazansın. Kasayı boşaltmak için yanına uğra!</div>`;

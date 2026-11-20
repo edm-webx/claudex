@@ -14,7 +14,7 @@ import type { ProductId } from '../game/sim/schema';
 export type MarkaKat = 'gazoz' | 'cay' | 'ayran' | 'su' | 'kahve' | 'firin' | 'et' | 'atistirmalik' | 'dukkan' | 'uygulama' | 'arac' | 'medya';
 export const KAT_NAMES: Record<MarkaKat, string> = {
   gazoz: 'Gazoz ve soda', cay: 'Çay', ayran: 'Ayran ve şalgam', su: 'Su', kahve: 'Kahve', firin: 'Fırın ve börek', et: 'Et ve tavuk',
-  atistirmalik: 'Atıştırmalık', dukkan: 'Dükkan ve zincir', uygulama: 'Uygulama', arac: 'Araç ve vapur hattı', medya: 'Medya',
+  atistirmalik: 'Atıştırmalık', dukkan: 'Dükkan', uygulama: 'Uygulama', arac: 'Araç ve vapur hattı', medya: 'Medya',
 };
 
 export interface MaskotDef { id: string; name: string; desc: string; kind: 'balon' | 'inek' | 'damla' | 'nar' | 'kurye' | 'robot'; color: string; }
@@ -71,7 +71,7 @@ export const MARKALAR: MarkaDef[] = [
   { id: 'kraker_kaptan', name: 'Kaptan Kraker', kat: 'atistirmalik', color: '#1d5fa8', ink: '#ffffff', slogan: 'Tuzlu, çıtır, rotası belli.' },
   { id: 'cikolata_lodos', name: 'Poyraz Çikolata', kat: 'atistirmalik', color: '#5a3a2a', ink: '#f6bd3a', slogan: 'Ağızda poyraz gibi erir.' },
   { id: 'leblebici_hasan', name: 'Leblebiz', kat: 'atistirmalik', color: '#e8d9a8', ink: '#5a3a2a', slogan: 'Tek leblebi olmaz, avuç avuç!' },
-  // dükkan ve zincir
+  // dükkan
   { id: 'plaza_burger', name: 'Plaza Burger Holding', kat: 'dukkan', color: '#8a8f96', ink: '#ffffff', slogan: 'Bip bip! Menü büyütelim mi?', maskot: 'burgatron', ad: true },
   { id: 'koseci_market', name: 'Köşeci Market', kat: 'dukkan', color: '#2e8b57', ink: '#ffffff', slogan: 'Her köşede bir Köşeci.' },
   { id: 'kalemtras', name: 'Kalemtraş Kırtasiye', kat: 'dukkan', color: '#7d6bb0', ink: '#ffffff', slogan: 'Sınav haftasının sırdaşı.' },

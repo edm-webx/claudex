@@ -28,7 +28,7 @@ export interface StantDef {
   spot: number;             // index into STANT_SPOTS
   color: string;            // sign colour
 }
-/** false until the stand meshes / adisyon rail / zincir panel ship: the sim stays installed but dormant (ara önizleme). */
+/** false until the stand meshes / adisyon rail / panel ship: the sim stays installed but dormant (ara önizleme). */
 export const FAZ2_UI = true;
 export const TUM_STANTLAR: StantDef[] = [
   { id: 'kestane', name: 'Kestane arabası', short: 'KESTANE', desc: 'Közde kestane, kağıt külahta. Soğuk akşamın en iyi arkadaşı.', stage: 2, cost: 9000, price: 60, maliyet: 0.35, stock: 20, chance: 0.18, hours: [15, 23], look: 'kestane', spot: 8, color: '#7b3f1d' },

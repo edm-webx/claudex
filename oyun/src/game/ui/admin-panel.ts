@@ -88,7 +88,7 @@ ${sel.peer ? `<button class="ad-b" data-a="tp-to">Yanına git</button><button cl
     if (tab === 'ara') return `<input class="ad-in" data-f="ara" placeholder="Kullanıcı adı ara (çevrimdışı da bulur)"><button class="ad-b" data-a="ara">Ara</button><div style="margin-top:6px">${found.map(f => rowOf(f.id, f.ad, '')).join('')}</div>` + selBlock();
     if (tab === 'isl') {
       const m = d.isletme?.(); if (!m) return '<small>Oyun yüklenmedi.</small>';
-      const NAMES = ['Seyyar', 'Büfe', 'Çay bahçesi', 'Lokanta', 'Aile lokantası', 'Deniz platformu', 'Balık restoranı', 'Boğaz restoranı', 'Şef mutfağı', 'Fine dining'];
+      const NAMES = ['Seyyar', 'Büfe', 'Çay bahçesi', 'Lokanta', 'Aile lokantası', 'İskele terası', 'Balık restoranı', 'Boğaz restoranı', 'Şef mutfağı', 'Fine dining'];
       const KA = ['Yok', 'Köşe kafe', 'Kafe', 'Bistro', 'Teraslı bistro', 'Gurme bistro'];
       return `<div class="ad-stat"><div>Para<b>${Math.round(m.money).toLocaleString('tr')} ₺</b></div><div>Altın<b>${m.gold}</b></div><div>Seviye<b>${m.level} · ${m.stars}★</b></div></div>
 <div class="ad-h">Büfe aşaması <small>(şu an ${m.stage}: ${NAMES[m.stage - 1] || ''})</small></div><div class="ad-tabs">${NAMES.map((n, i) => `<button class="ad-b${m.stage === i + 1 ? ' cur' : ''}" data-a="stage" data-n="${i + 1}" title="${n}">${i + 1}. ${n}</button>`).join('')}</div>

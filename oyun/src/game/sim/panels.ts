@@ -28,7 +28,6 @@ import { yiyecekPanelModel } from './yiyecek';
 import { yatirimModel } from './yatirim';
 import { kiyafetSave } from './kiyafet';
 import { zeminSave } from './zemin';
-import { zincirApi } from './zincir';
 import { KIYAFET_URUNLER, KIYAFET_ZINCIRLER } from '../../content/kiyafet';
 
 /** Survey 2026-10-24: kıyafet dolabı panel model (owned / worn / gold, grouped by chain). */
@@ -50,7 +49,7 @@ export function panelModel(id: ModelId | string, r: Rules): Record<string, any> 
   if (id === 'deniz') return denizApi(r)?.model() ?? {};
   if (id === 'kurye') return kuryePanelModel(r);
   if (id === 'koleksiyon') return kolPanelModel(r);
-  if (id === 'harita') { const hm = disariApi(r)?.model(); return hm ? { ...hm, zincir: zincirApi(r)?.view() ?? [] } : {}; }   // + survey 2026-10-24: dükkan zinciri pins (locked shops show on the map) // Martıköy haritası (disari.ts)
+  if (id === 'harita') { const hm = disariApi(r)?.model(); return hm ? { ...hm } : {}; }   // + survey 2026-10-24: dükkan zinciri pins (locked shops show on the map) // Martıköy haritası (disari.ts)
   if (id === 'hikaye') return hikayePanelModel(r);
   switch (id) {
     case 'isciler': {
