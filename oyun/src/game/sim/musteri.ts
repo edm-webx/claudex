@@ -1,20 +1,17 @@
 /**
- * Müşteri istekleri (survey musteri-2, musteri-4, musteri-7, icecek-2). Pure sim module, runs right after rules.
- * - Special requests: ~1 in 6 fresh queue customers get one small wish fitting a product in their order
- *   ('soğansız', 'açık olsun', 'demli olsun'...). Serving that order pays +10 % extra tip and shows a heart.
- *   No failure state: a request is a bonus only.
+ * Turistler ve kalpler (survey musteri-4, musteri-7). Pure sim module, runs right after rules.
  * - Tourists: kruvaziyer / turgrubu / gezgin customers (cap + camera looks) say comic pronunciations ('Simmit!'),
  *   Sabri answers with hands and arms, and after a sale they may photograph the büfe (chance grows with şıklık):
  *   'musteriPhoto' bus event (view flashes) + toast. Once a day from day 2 a flag-carrying guide brings a wave.
  * - Hearts: a customer served while still happy (patience > 50 %) or finishing a meal leaves with a heart (heartT).
- * Customer fields used (runtime only): req, reqP, tourist, heartT (state.ts). Decision: no new persistent state.
+ * Customer fields used (runtime only): tourist, heartT (state.ts). Decision: no new persistent state.
  */
 import type { System } from '../../engine/api';
 import type { Kernel, Customer, CustomerState } from './state';
 import type { ProductId } from './schema';
 import type { installCustomers } from './customers';
 import { CITIZENS } from '../../content/citizens';
-import { REQUESTS, REQUEST_CHANCE, REQUEST_TIP, REQUEST_THANKS, TOURIST_TYPES, TOURIST_SAY, TOURIST_THANKS, SABRI_GESTURE, PHOTO_TOAST, GUIDE_WAVE } from '../../content/musteri';
+import { TOURIST_TYPES, TOURIST_SAY, TOURIST_THANKS, SABRI_GESTURE, PHOTO_TOAST, GUIDE_WAVE } from '../../content/musteri';
 
 type CustomersApi = ReturnType<typeof installCustomers>;
 interface Seen { st: CustomerState; got: number; }
@@ -29,11 +26,6 @@ export function installMusteri(K: Kernel, cu: CustomersApi): void {
   function tag(c: Customer) {
     if (c.kind !== 'q') return;
     c.tourist = TOURIST_TYPES.includes(c.typeId);
-    if (c.tourist || c.follower || !rng.chance(REQUEST_CHANCE)) return;
-    const prods = (Object.keys(c.order) as ProductId[]).filter(p => (c.order[p] || 0) > 0 && REQUESTS[p]);
-    if (!prods.length) return;
-    const p = rng.pick(prods);
-    c.reqP = p; c.req = rng.pick(REQUESTS[p]);
   }
   const touristLine = (c: Customer) => {
     const prods = (Object.keys(c.order) as ProductId[]).filter(p => (c.order[p] || 0) > (c.got[p] || 0) && TOURIST_SAY[p]);
@@ -43,15 +35,9 @@ export function installMusteri(K: Kernel, cu: CustomersApi): void {
 
   function served(c: Customer) {
     const ratio = c.patience / Math.max(0.01, c.patMax);
-    if (c.req) {
-      const bonus = Math.max(2, Math.round(c.value * REQUEST_TIP));
-      K.earn(bonus, { x: c.x, z: c.z });
-      say(c, rng.pick(REQUEST_THANKS) + ' (' + c.req + ')', 2.6);
-      c.heartT = 2.6;
-      K.stat('istekOk');
-    } else if (ratio > 0.5) c.heartT = 2.2;
+    if (ratio > 0.5) c.heartT = 2.2;
     if (c.tourist) {
-      if (!c.req) say(c, rng.pick(TOURIST_THANKS), 2.4);
+      say(c, rng.pick(TOURIST_THANKS), 2.4);
       const chance = 0.15 + 0.5 * Math.min(100, Math.max(0, rt.siklik || 0)) / 100;
       if (rng.chance(chance)) {
         K.logEv('musteriPhoto', { x: c.x, z: c.z });

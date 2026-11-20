@@ -131,14 +131,6 @@ export const SEN_GOTUR_SECS = 20;
 export const MUSTERI_ADLARI = ['Nadide Hanım', 'Kaptan Rıza', 'Öğrenci Evi No 5', 'Ressam Feyyaz', 'Kuaför Melahat', 'Bekçi Hayri', 'İkiz Kardeşler', 'Sinemacı Orhan', 'Teyzeler Kulübü', 'Ofisteki Sevgi', 'Balkon Ahmet', 'Yoga Tülay'];
 export const ADRES_NOTU = ['zili bozuk, ıslık çalın', 'kapıda kedi var, selam verin', 'üçüncü kat, asansör sayılmaz', 'mavi kapı, yok yeşil kapı', 'balkondan sepet iner', 'köpek havlar ama sever', 'yan komşuya bırakmayın, yer', 'çalınca şarkı söyleyin'];
 
-/** rating comments (kurye-8): 1..5 stars, bad ones included, never mean */
-export const YORUMLAR: Record<number, string[]> = {
-  5: ['Döner sıcacık, kurye güleç. Beş yıldız az bile!', 'Kurye kapıyı çalmadan kokusundan anladık geldiğini.', 'Çay bardağı bile tıngırdamadı. Sanatçı!', 'Annem bile bu kadar çabuk getiremez.'],
-  4: ['Gayet iyi. Kurye biraz fazla sohbet etti ama tatlıydı.', 'Simit çıtır, kurye terli. Hak etti.', 'Hızlıydı, sadece kornası biraz uzun çaldı.'],
-  3: ['Geldi, yedik, mutluyuz. Olay yok.', 'Kurye yanlış kata çıktı ama komşuyla tanıştık.', 'Ayran biraz sallanmış, ama köpüğü güzel olmuş.'],
-  2: ['Kurye kedimi sevmeye daldı, döner ılıdı.', 'Yokuşta bisikleti itmiş, paket de biraz itilmiş.', 'Zili beş kere çaldı, bebek uyandı. Döner yine de güzel.'],
-  1: ['Paket geldi ama kurye bizim çayımızı içip gitti.', 'Martı paketi kaptı, kurye martıyı kovaladı. Biz izledik. Bir yıldız ama eğlenceliydi.', 'Kurye adresi bulamadı, biz kuryeyi bulduk.'],
-};
 
 /** slope / stair humour moments (kurye-9) */
 export const YOKUS_ANLARI: Record<'yokus' | 'merdiven' | 'tepe', string[]> = {

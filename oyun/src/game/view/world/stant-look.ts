@@ -231,7 +231,7 @@ export function createStantLook(d: StantLookDeps): StantLookView {
       v.tickets.forEach((t, i) => {
         let s = tickets[i]; if (!s) { s = new T.Sprite(M(new T.SpriteMaterial({ depthTest: false }))); s.scale.set(0.42, 0.42, 1); s.renderOrder = 6; root.add(s); tickets.push(s); }
         const tb = tbs[t.table]; s.visible = !!tb; if (!tb) return;
-        (s.material as T.SpriteMaterial).map = ticketTex(t.no, t.frac > 0.7, t.special); (s.material as T.SpriteMaterial).needsUpdate = true;
+        (s.material as T.SpriteMaterial).map = ticketTex(t.no, t.frac > 0.7, false); (s.material as T.SpriteMaterial).needsUpdate = true;
         s.position.x = tb.x; s.position.z = tb.z;
       });
       for (let i = v.tickets.length; i < tickets.length; i++) tickets[i].visible = false;

@@ -1,5 +1,5 @@
 /**
- * Worker roles, rarity, ranks, morale (v2 D.ROLES, D.RARITY, D.RANKS, D.MORALE).
+ * Worker roles, rarity, ranks (v2 D.ROLES, D.RARITY, D.RANKS). Morale was removed in BUF-02.
  * Ported 1:1 from v2 data.js (numbers and Turkish text kept). Owner: Builder C (M1). Pure data, no imports of sim code.
  */
 
@@ -116,38 +116,11 @@ export const RANKS: RankDef[] = [
   { id: "sef", name: "Usta Şef", xp: 17000, x: 2.0, wage: 0.058, look: "Çift sıra düğmeli ceket" },
   { id: "efsane", name: "Efsane", xp: 25000, x: 2.2, wage: 0.06, look: '"EFSANE" işlemeli önlük' },
 ];
-/** [from morale, label, speed factor] */
-export const MORALE: [number, string, number][] = [
-  [
-    80,
-    "Coşkulu",
-    1.1
-  ],
-  [
-    40,
-    "Normal",
-    1
-  ],
-  [
-    20,
-    "Küskün",
-    0.85
-  ],
-  [
-    0,
-    "Küs",
-    0.7
-  ]
-];
-export const MORALE_START = 70;
 export const JOB_REFRESH_COST = 250;
 /** Board auto-refresh period (s of play time). */
 export const BOARD_REFRESH_S = 300;
 
 export function rankOf(xp: number): number { let r = 0; RANKS.forEach((k, i) => { if (xp >= k.xp) r = i; }); return r; }
-// 2026-11-09 survey (p_moral: Hayır): morale no longer changes speed
-export function moraleFactor(_m: number): number { return 1; }
-export function moraleLabel(m: number): string { for (const r of MORALE) if (m >= r[0]) return r[1]; return 'Küs'; }
 /** Hire price: legends carry their own; random = role base x rarity x 1.2^(hired beyond 3), rounded to 50. */
 export function workerCost(role: string, rarity: string, hiredCount: number): number {
   const r = ROLES[role], k = RARITY[rarity] || RARITY.gri;

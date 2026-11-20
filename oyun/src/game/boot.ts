@@ -117,7 +117,6 @@ import { createReklam, type ReklamView } from './view/world/reklam';
 import { createHavaLook, type HavaLookView } from './view/world/hava-look';
 import { createDenizLook, type DenizLookView } from './view/world/deniz-look';
 import { createDenizUi, type DenizUiView } from './ui/deniz-ui';
-import { createCalisanLook, type CalisanLookView } from './view/world/calisan-look';
 import { createHuyMotion, type HuyMotionView } from './view/chars/huy-motion';
 import { createAltinSimitFx, type AltinSimitFx } from './ui/altin-simit-fx';
 import { createDisariLook, type DisariLookView } from './view/disari';
@@ -498,8 +497,6 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     float: (x, z, text) => { const sp = { x: 0, y: 0 }; if (panels && project({ x, y: 2.6, z }, sp)) panels.v2.float(sp.x, sp.y, text, 'good'); },
   })) : null;
   // PaketMartı: counter tablet + parked courier bikes (view/world/kurye-look.ts) and the fiş / live map / Sen götür overlay (ui/kurye-ui.ts)
-  // Çalışanlar 2.0: Ayın Elemanı photo, pasta, çay köşesi, Dinlenme Bankı sitters (view/world/calisan-look.ts) + huy motion (view/chars/huy-motion.ts)
-  const calisanLook: CalisanLookView | null = playMode ? make('calisanLook', () => createCalisanLook({ scene, rules: () => sim.rules, chars: (chars as MotorChars) ?? null })) : null;
   const huyMotion: HuyMotionView | null = playMode && chars && agentsView ? make('huyMotion', () => createHuyMotion({ scene, chars: chars as MotorChars, agents: agentsOf, rigOf: id => agentsView.rigOf(id) })) : null;
   // Deniz: sea life, boats, extra animals, ferry rope/bump, glitter, kiosk exterior, table kinds, pier expansions (deniz-look.ts) + deck run / photo / boat offer cards and the ferry interior (deniz-ui.ts)
   const denizLook: DenizLookView | null = !FAZ2_LEAN && playMode && zones ? make('denizLook', () => createDenizLook({ root: () => zones.root('iskele') ?? null, rules: () => sim.rules, hour: () => sim.clock.hour })) : null;
@@ -655,7 +652,6 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     });
     if (agentsView) guard('agents', () => { P.time('agents', () => agentsView.update(sim.state, fdt, alpha)); });
     if (huyMotion) guard('huyMotion', () => huyMotion.update(fdt));
-    if (calisanLook) guard('calisanLook', () => calisanLook.update(fdt));
     if (chars) guard('crowd', () => { P.time('crowd', () => { chars.crowd.update(sim.agents, fdt, alpha); chars.update(fdt, alpha); }); });
     if (carsi) guard('carsi', () => carsi.update(fdt));
     if (moments) guard('moments', () => moments.update(fdt));

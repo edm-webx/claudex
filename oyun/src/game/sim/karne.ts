@@ -2,7 +2,7 @@
  * Day clock end, report card (Karne), stars, day card, weekly kasa count (v2 updateDay / gradeScores / updateKarne /
  * endDay / onNewDay / weeklyCount). Owner: Builder A. Pure. `dayCard` and `kasaSayimi` overlays are models in rt.uiLast.
  */
-import { P, GRADES, grade5, starsFor, COMPLAINTS, TROPHIES } from '../../content/economy';
+import { P, GRADES, grade5, starsFor, TROPHIES } from '../../content/economy';
 import { PRODUCT_IDS } from '../../content/products';
 import { LINES } from '../../content/lines';
 import { TEAMS } from '../../content/traits';
@@ -38,12 +38,6 @@ export function installKarne(K: Kernel) {
       S.stars = st; K.statMax('stars', st);
       K.toast('★ ' + st + '. yıldız! Büfe karnesi parlıyor.', 'good'); K.logEv('star', { stars: st });
     }
-  }
-  function worstLink(): string | null {
-    const sl = S.today!.slow || {}; let best: string | null = null, n = 0;
-    for (const k in sl) if (sl[k] > n) { n = sl[k]; best = k; }
-    if (!best && S.today!.angry >= 4) best = 'queue';
-    return best;
   }
   let kasa: { week: number; total: number; bonus: number; trophy: { id: string; name: string }; t: number } | null = null;
   let kasaBekle: { week: number; total: number; bonus: number; trophy: { id: string; name: string } } | null = null;
@@ -81,15 +75,13 @@ export function installKarne(K: Kernel) {
       const team = TEAMS.find(t => t.id === fan.team) || TEAMS[0];
       K.toast(S.teamWin ? team.name + ' kazandı! ' + fan.name + ' bugün %30 hızlı.' : team.name + ' berabere kaldı. ' + fan.name + ' biraz dalgın.', 'info');
     }
-    if (S.owedBack > 0) { const v = S.owedBack; S.owedBack = 0; K.earn(v); K.toast('Kapkaççı geri geldi: "Tamam abi, getirdim."', 'good'); }
     K.syncOrders();
   }
   function endDay(): void {
     const T0 = S.today!, day = S.day;
     updateKarne();
-    const link = worstLink();
     const maas = Math.round(S.workers.reduce((a, w) => a + ((w as { paidToday?: number }).paidToday || 0), 0)), ekip = S.workers.length;
-    S.workers.forEach(w => { (w as { paidToday?: number }).paidToday = 0; if (T0.angry < 3) w.morale = Math.min(100, (w.morale || 70) + 5); });
+    S.workers.forEach(w => { (w as { paidToday?: number }).paidToday = 0; });
     // survey 2026-10-24 (reversed): at 03:00 the screen fades and the gün sonu card shows the day's ciro; the next
     // day starts behind it (morning) and the sim waits until the player presses "Yeni güne başla".
     const best = rt.dayHistory.reduce((m, d) => Math.max(m, d.earned), 0);
@@ -97,7 +89,7 @@ export function installKarne(K: Kernel) {
     rt.uiLast.gunSonu = { day, earned: Math.round(T0.earned), customers: T0.customers, angry: T0.angry, money: Math.round(S.money), record: Math.round(T0.earned) > best && day > 1, maas, ekip, sold: { ...((T0 as unknown as { sold?: Record<string, number> }).sold || {}) }, borc: Math.floor((S.zones.arsa as { kredi?: { borc?: number } } | undefined)?.kredi?.borc || 0) };
     rt.paused = true; rt.pauseWhy = 'gunSonu';
     }
-    K.logEv('dayEnd', { day, customers: T0.customers, earned: Math.round(T0.earned), angry: T0.angry, money: Math.round(S.money), link });
+    K.logEv('dayEnd', { day, customers: T0.customers, earned: Math.round(T0.earned), angry: T0.angry, money: Math.round(S.money) });
     rt.dayHistory.push({ day, earned: Math.round(T0.earned), customers: T0.customers });
     S.day++; S.dayT = 0; S.today = newToday();
     onNewDay();
