@@ -126,6 +126,8 @@ export interface AgentHost {
   kitchenDrop?(wid: number): void;
   /** BUF-13 dish pile: dirty plates waiting at the dishwashing station; wash one (false: pile empty); table-wipe time factor (1..2) */
   dishCount?(): number;
+  /** BUF-12: kasada işlem bekleyen / işlenen müşteri var (kasiyer para sayar) */
+  kasaMesgul?(): boolean;
   dishWash?(): boolean;
   dishCeza?(): number;
   /** BUF-13: kitchen workers busy cooking / washing now (kitchen floor dirt), a cleaner mopping the kitchen now (wet-floor sign) */
@@ -135,6 +137,12 @@ export interface AgentHost {
   kitchenDevir?(wid: number): string | null;
   /** a tray plate nobody took for `yas` s (an idle cook takes it) */
   kitchenBekleyen?(yas: number): boolean;
+  /** BUF-15 paket servis (sim/kurye.ts): hazır paket var mı, tabakları pass'tan al, adres, teslim (dönüşte gelir), bırak (işten çıkış) */
+  paketHazir?(): boolean;
+  paketAl?(wid: number): CarryItem<FoodId>[] | null;
+  paketAdres?(wid: number): { ad: string; x: number; z: number } | null;
+  paketTeslim?(wid: number): number;
+  paketBirak?(wid: number): void;
   // ---- specials
   playerHas(p: ProductId): boolean;
   playerTake(p: ProductId): CarryItem | null;

@@ -50,6 +50,7 @@ export function installSalon(K: Kernel) {
     if (v <= 0) return;
     if (K.earnTam) K.earnTam(v); else K.earn(v);
     s.toplam += v; s.misafir += mis; toastH += dh;
+    { const T = K.state.today as unknown as { salonGelir?: number; salonMis?: number } | null; if (T) { T.salonGelir = (T.salonGelir || 0) + v; T.salonMis = (T.salonMis || 0) + mis; } }   // gün sonu raporu: bugünün salon/teras geliri
     if (toastH >= 4) { toastH = 0; K.toast('🍽 Salon: ' + Math.round(d.mis * k.mis * 4) + ' misafir, +' + fmtMoney(Math.round(d.mis * k.mis * 4 * d.adisyon * k.adis)), 'good'); }
   } });
   return { view: () => { const st = S.stage || 1, k = salonKat(z().esya, st), d = salonOf(st); return { ...d, misSaat: Math.round(d.mis * k.mis), adisyonK: Math.round(d.adisyon * k.adis), toplam: Math.round(z().toplam) }; } };

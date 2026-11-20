@@ -62,6 +62,8 @@ import { installDisari } from './disari';
 import { installDeniz } from './deniz';
 import { installHikaye } from './hikaye';
 import { installCalisan } from './calisan';
+import { installKurye } from './kurye';
+import { installHijyen } from './hijyen';
 import { applySetting } from './settings';
 import { normalizeState } from './save';
 import { hourOf, clamp } from './util';
@@ -189,7 +191,7 @@ export function createRules(d: RulesDeps): RulesFull {
   const miniM = installMini(K); // mini oyunlar + içecek ustalık hareketleri
   const yiyecekM = installYiyecek(K); // tarifler, Gezgin Aşçı, Deney Tezgahı, tazelik, Anlaşma Masası (yiyecek.ts)
   const havaM = installHava(K); // hava, mevsimler, etkinlikler, Gece Pazarı (hava.ts)
-  // Faz 2: paket servis (PaketMartı) kaldırıldı; kurye.ts kayıt uyumu için duruyor, kurulmuyor.
+  installKurye(K); installHijyen(K);   // BUF-15 paket servis (kurye, telefon siparişi) + BUF-16 hijyen, müfettiş sonucu, Martı yıldızı
   const kolM = installKoleksiyon(K); // koleksiyonlar, Altın Simit, Altın Fırın
   const disariM = installDisari(K, (x, z) => d.walk.teleport(x, z)); // Martıköy haritası, mahalleler, dolmuş, buluntular (disari.ts)
   const denizM = installDeniz(K, cu as never); // deniz canlıları, tekneler, güverte koşusu, iskele büyümesi (deniz.ts)

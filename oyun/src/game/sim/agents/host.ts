@@ -1,6 +1,7 @@
 /** Adapter: A's `Rules` -> the narrow `AgentHost` the agents layer codes against. Pure. */
 import { pencereWid } from '../window';
 import { restoranApi } from '../restoran';
+import { teslimatApi } from '../kurye';
 import type { Vec2 } from '../../../engine/api';
 import type { Rules } from '../state';
 import type { ProductId } from '../schema';
@@ -55,12 +56,18 @@ export function hostFromRules(r: Rules): AgentHost {
     kitchenPass: (w) => restoranApi(r)?.kitchenPass?.(w) ?? false,
     kitchenDrop: (w) => restoranApi(r)?.kitchenDrop?.(w),
     dishCount: () => rt.dirtyDishes || 0,
+    kasaMesgul: () => rt.kasaQueue.length > 0,
     dishWash: () => !!(rt as unknown as { bulasik?: { wash(): boolean } }).bulasik?.wash(),
     dishCeza: () => (rt as unknown as { bulasik?: { ceza(): number } }).bulasik?.ceza() ?? 1,
     setMutfakBusy: (n) => { rt.mutfakBusy = n; },
     setMutfakMop: (on) => { rt.mutfakMop = on; },
     kitchenDevir: (w) => restoranApi(r)?.kitchenDevir?.(w) ?? null,
     kitchenBekleyen: (y) => restoranApi(r)?.kitchenBekleyen?.(y) ?? false,
+    paketHazir: () => !!teslimatApi(r)?.hazirVar(),
+    paketAl: (w) => (teslimatApi(r)?.al(w) as CarryItem<import('../../../content/yemek-menu').FoodId>[] | null | undefined) ?? null,
+    paketAdres: (w) => teslimatApi(r)?.adres(w) ?? null,
+    paketTeslim: (w) => teslimatApi(r)?.teslim(w) ?? 0,
+    paketBirak: (w) => teslimatApi(r)?.birak(w),
     playerHas: (p) => r.carry.count(p) > 0,
     playerTake: (p) => r.carry.takeFromPlayer(p),
     settle: (items, at) => r.salesApi.settle(items, { direct: true, at }),

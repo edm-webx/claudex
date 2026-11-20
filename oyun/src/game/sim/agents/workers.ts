@@ -19,6 +19,8 @@ import { zeminSave } from '../zemin';
 import { IC_BY_ID, icWorld, icDim, icIcinde, icKapi, mutfakRota, mutfakStand, mutfakKoridor, MUTFAK_NOKTA, MUTFAK_YER } from '../../../content/ic-mekan';
 import { isProduct } from '../../../content/yemek-menu';
 import { BULASIK, MUTFAK_MIN_STAGE } from '../../../content/mutfak';
+import { createRoller, type ValeCar } from './roller';
+import { kasaDurus } from '../../../content/musteri';
 /** BUF-05: masa biletindeki yiyecek (FoodId) mutfakta kendi tabağıyla pişer ve garsonla taşınır (taşıyıcı ürün köprüsü yok). */
 export type { DishId, FoodId } from '../../../content/yemek-menu';
 
@@ -32,8 +34,11 @@ interface WRt {
 export interface WorkersSystem extends System {
   /** Live runtime rows for state views / tests. */
   rows(): { id: number; name: string; role: string; state: string; x: number; z: number; rank: number; /** BUF-05: kitchen station the cook/komi is working at or walking to */ ist?: string }[];
-  /** Fraction the queue's patience drains slower near (x,z): Geveze / Güler yüzlü / Türkü. */
+  /** Fraction the queue's patience drains slower near (x,z): Geveze / Güler yüzlü / Türkü; BUF-14: güvenlik (kalabalık), müzisyen, hostes. */
   aura(x: number, z: number): number;
+  /** BUF-14: vale'nin park ettiği / sürdüğü arabalar (görünüm), müdür vekil modunda mı, kalabalık mı */
+  valeCars(): readonly ValeCar[];
+  vekil(): boolean;
   /** Rank check after external xp changes (training). */
   recheck(workerId: number): void;
   say(workerId: number, text: string, t?: number): void;
@@ -45,11 +50,15 @@ const FRONT_LINES: Record<string, string[]> = {
   guvenlik: ['Gözüm kasada.', 'Burada kapkaç yok.', 'Sıraya lütfen.'], muzisyen: ['Bir türkü de sizin için!', 'Boğaz’da akşam olur...', 'Alkışlar!'],
   hostes: ['Hoş geldiniz, buyurun masanız!', 'Kaç kişisiniz?'], barista: ['Köpüğü tam kıvamında.', 'Demli çay geliyor!'], mudur: ['Herkes yerine!', 'Bugün rekor kıracağız.'], vale: ['Anahtarınız bende.', 'Arabanız hazır!'],
 };
+// BUF-12: kasiyer kasa başında (L.kasa) durur; müşteri kasaya gelip öder (sim/customers.ts kasa sırası)
+FRONT_LINES.kasiyer = ['Buyurun, kasa burada!', 'Nakit mi, kart mı?', 'Fişinizi unutmayın.', 'Hesap hemen tamam.'];
+const angLerpTo = (a: number, b: number, k: number): number => { let d = (b - a) % (Math.PI * 2); if (d > Math.PI) d -= Math.PI * 2; else if (d < -Math.PI) d += Math.PI * 2; return a + d * Math.min(1, k); };
 export function createWorkers(env: AgentEnv): WorkersSystem {
   const rows: WRt[] = [];
   let first = true;
   const { host, book, reg } = env;
   const rng = env.rng('workers');
+  const roller = createRoller(env);   // BUF-14: güvenlik, müzisyen, hostes, vale, müdür
 
   const say = (rt: WRt, text: string, t = 2.2) => { rt.a.say = text; rt.a.sayT = t; };
   const emit = env.emit;
@@ -59,6 +68,10 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
     if (rt.w.role === 'garson') {
       const i = rows.filter((x) => x.w.role === 'garson').indexOf(rt);
       return side(book.get('counter.standAt'), 1.3 + i * 0.7, 0.1);
+    }
+    if (rt.w.role === 'kasiyer') {   // BUF-12: kasa başı (L.kasa), birden çok kasiyer yan yana
+      const i = rows.filter((x) => x.w.role === 'kasiyer').indexOf(rt), k = book.get('kasa'), kp = book.get('kasa.pile');
+      return kasaDurus({ pos: k, pile: kp }, Math.max(0, i));
     }
     if (ROLES[rt.w.role]?.on) {   // front-of-house posts around the counter
       const c = book.get('counter.standAt'), i = rows.filter((x) => x.w.role === rt.w.role).indexOf(rt);
@@ -102,6 +115,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
     const i = rows.indexOf(rt); if (i >= 0) rows.splice(i, 1);
     if (ROLES[rt.w.role]?.mutfak) host.kitchenDrop?.(rt.w.id);   // fired cook/komi: its station and plate are released (no stuck job)
     if (rt.w.role === 'garson') host.isBirak?.(rt.w.id);          // fired garson: table tasks back to the pool, plates back to the rack
+    if (rt.w.role === 'kurye') host.paketBirak?.(rt.w.id);        // BUF-15: fired courier: the parcel is reopened, plates back on the pass
     reg.remove(rt.a);
   }
   function checkRank(rt: WRt) {
@@ -475,6 +489,58 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
       default: rt.state = 'kArrive';
     }
   }
+  // ---- BUF-15 kurye (paket servis): pass'tan paketi al, bisikletle adrese git, teslim et, dön; gelir dönüşte kasaya yazılır (sim/kurye.ts) ----
+  // Durumlar: idle (evde bekler) -> qPass (pass'a yürür) -> qAl (tabakları alır) -> qYol (bisikletle adrese) -> qTeslim -> qDon (bisikletle döner, gelir yatar)
+  const BISIKLET = 4.8, YAYA = 2.6;
+  function kuryeWork(rt: WRt, S: GameState, dt: number) {
+    const a = rt.a, wid = rt.w.id, fx = traitFx(rt.w);
+    const hiz = (b: boolean) => (b ? BISIKLET : YAYA) * (1 + (fx.walk || 0)) * (rt.boostT > 0 ? rt.boostX : 1);
+    const iceri = () => icIcinde(KM, a, 0);
+    const sur = (b: boolean) => { a.fx = b && !iceri() ? 'bike' : ''; };
+    switch (rt.state) {
+      case 'idle': {
+        a.fx = '';
+        if (rt.wk.walk(dt, hiz(false))) { a.act = 'walk'; return; }
+        a.act = 'idle';
+        rt.loadT -= dt; if (rt.loadT > 0) return;
+        rt.loadT = 0.6;
+        if (host.paketHazir?.()) { rt.state = 'qPass'; rt.t = 0; goVia(rt, kw(MUTFAK_NOKTA.passGarson[0], MUTFAK_NOKTA.passGarson[1])); say(rt, 'Paket hazır mı?', 2); return; }
+        const h = home(rt, S); if (!near2(a, h, 0.4)) goVia(rt, h); else rt.wk.face(book.queue(0), dt);
+        return;
+      }
+      case 'qPass': {
+        if (rt.wk.walk(dt, hiz(false))) { a.act = 'walk'; if (rt.t > 45) { rt.state = 'idle'; rt.loadT = 0.6; } return; }
+        rt.state = 'qAl'; rt.t = 0; return;
+      }
+      case 'qAl': {
+        a.act = 'carry'; if (rt.t < 0.8) return;
+        const ps = host.paketAl?.(wid), ad = ps ? host.paketAdres?.(wid) : null;
+        if (!ps || !ad) { host.paketBirak?.(wid); a.carry.length = 0; rt.state = 'idle'; rt.loadT = 0.6; return; }   // biri paketi kaptı: iş yok
+        a.carry = ps.map((p) => ({ type: p.type, tier: p.tier || 1 }));
+        rt.jobKey = ad.ad; rt.state = 'qYol'; rt.t = 0; goVia(rt, ad); say(rt, 'Paket bende, gidiyorum!', 2.2); return;
+      }
+      case 'qYol': {
+        sur(true); a.act = 'walk';
+        if (rt.wk.walk(dt, hiz(true))) { if (rt.t > 90) { rt.state = 'qDon'; rt.t = 0; goVia(rt, home(rt, S)); } return; }
+        rt.state = 'qTeslim'; rt.t = 0; a.fx = ''; say(rt, rng.pick(['Siparişiniz, buyurun!', 'Afiyet olsun!', 'Paket servis geldi!']), 2.4); return;
+      }
+      case 'qTeslim': {
+        a.act = 'serve'; a.fx = ''; a.speed = 0;
+        if (rt.t < 1.8) return;
+        a.carry.length = 0; a.info.tasi = '';
+        rt.state = 'qDon'; rt.t = 0; goVia(rt, home(rt, S)); return;
+      }
+      case 'qDon': {
+        sur(true); a.act = 'walk';
+        if (rt.wk.walk(dt, hiz(true))) { if (rt.t > 90) { rt.wk.stop(); } else return; }
+        a.fx = ''; a.act = 'idle';
+        const v = host.paketTeslim?.(wid) ?? 0;   // gelir yalnız dönüşte kasaya yazılır
+        if (v > 0) { rt.w.xp = (rt.w.xp || 0) + 3; checkRank(rt); say(rt, 'Teslim tamam, kasaya yazıldı!', 2.4); }
+        rt.state = 'idle'; rt.loadT = 0.6; return;
+      }
+      default: rt.state = 'idle';
+    }
+  }
   const posted = new Set<number>();   // Faz 2: workers currently at the ferry window
   function update(rt: WRt, S: GameState, dt: number, pl: Vec2) {
     const w = rt.w, fx = traitFx(w), a = rt.a;
@@ -507,10 +573,14 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
         }
         break;
       case 'work': stationWork(rt, S, dt); break;
-      case 'front': {   // front roles: stand at the post, small idle life; their effect is in content/mutfak.ts (mutfakEtki) and kapkac.ts
-        if (rt.wk.walk(dt, 2.2)) { a.act = 'walk'; break; }
-        a.act = w.role === 'muzisyen' ? 'cheer' : w.role === 'barista' ? 'pour' : 'idle';
-        if (rt.t > 9) { rt.t = 0; if (rng.chance(0.35)) say(rt, rng.pick(FRONT_LINES[w.role] || ['Hoş geldiniz!']), 2.2); }
+      case 'front': {   // front roles (BUF-14): her rol gerçek iş yapar, ayrıntı agents/roller.ts
+        if (w.role === 'kasiyer') {   // BUF-12: kasa başında müşteriye dönük durur, kasada işlem varken para sayar; rütbe kasa işleminden gelen xp ile yükselir
+          if (rt.wk.walk(dt, 2.2)) { a.act = 'walk'; break; }
+          a.rot = angLerpTo(a.rot, 0, dt * 6); a.speed = 0; a.act = host.kasaMesgul?.() ? 'count' : 'idle'; checkRank(rt);
+          if (rt.t > 9) { rt.t = 0; if (rng.chance(0.3)) say(rt, rng.pick(FRONT_LINES.kasiyer), 2.2); }
+          break;
+        }
+        roller.front(rt, S, dt, home(rt, S));
         break;
       }
       case 'sleep':
@@ -531,6 +601,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
       default:
         if (w.role === 'garson') garsonWork(rt, S, dt);
         else if (w.role === 'temizlik') cleanerWork(rt, S, dt);
+        else if (w.role === 'kurye') kuryeWork(rt, S, dt);
     }
     if (rt.state !== 'sleep' && rt.state !== 'selfie' && !rt.wk.moving) a.speed = 0;
   }
@@ -550,6 +621,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
         update(rt, S, dt, pl);
         rt.a.info.carryN = rt.a.carry.length;
       }
+      roller.step(S, dt, rows);
       host.setMutfakBusy?.(rows.reduce((n, r) => n + (r.state === 'kCook' || r.state === 'kWash' ? 1 : 0), 0));   // BUF-13: kitchen floor dirt
       host.setMutfakMop?.(rows.some((r) => r.state === 'mopK'));
       // 2026-10-25 user: waiters followed each other like a train and walked through one another: soft push-apart
@@ -569,8 +641,10 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
         const fx = traitFx(r.w); if (!fx.patienceAura) continue;
         if (Math.hypot(r.a.x - x, r.a.z - z) <= (fx.auraR || 6)) best = Math.max(best, fx.patienceAura);
       }
-      return best;
+      return Math.max(best, roller.aura(x, z));
     },
+    valeCars: () => roller.valeCars(),
+    vekil: () => roller.vekil(),
     recheck(id) { const r = rows.find((x) => x.w.id === id); if (r) { checkRank(r); say(r, LINES.workers.gift, 2.5); } },
     forceSleep(id) { const r = rows.find((x) => x.w.id === id); if (r) { r.state = 'sleep'; r.t = 0; r.sleepFor = 20; r.a.act = 'sleep'; } },
     say(id, t, s) { const r = rows.find((x) => x.w.id === id); if (r) say(r, t, s); },

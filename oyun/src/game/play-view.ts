@@ -21,6 +21,7 @@ import { P, xpForLevel } from '../content/economy';
 import { SETS } from '../content/products';
 import { LINES } from '../content/lines';
 import { musteriBubble, photoFlash } from './ui/musteri-ui';
+import { restoranApi } from './sim/restoran';
 
 export interface PlayViewDeps {
   ui: Ui;
@@ -89,6 +90,7 @@ export function createPlayView(d: PlayViewDeps): PlayView {
     on('set', e => { const s = SETS.find(x => x.id === e?.set); const p = front(); floatAt(p.x, p.z, 0, LINES.set + (s ? ' ×' + s.x : ''), 'good'); });
     on('sale', e => { if (e && e.streak >= 2) { const p = front(); floatAt(p.x, p.z, 0.3, LINES.streak + ' ×' + (e.streak + 1), 'good'); } });
     on('slowTap', () => { const s = r.rt.slow; if (s && d.pan) d.pan({ x: s.at.x, z: s.at.z }); });
+    on('kizginAyril', e => { if (e) floatAt(Number(e.x) || 0, Number(e.z) || 0, 0.6, e.masa ? '💢 Masaya vurdu!' : '💢', 'bad'); });   // BUF-23: sabrı biten masaya / tezgâha vurup gider
     on('musteriPhoto', e => { const s = e && screenOf(Number(e.x) || 0, 1.7, Number(e.z) || 0); if (s) photoFlash(s.x, s.y); });
   }
 
@@ -120,6 +122,20 @@ export function createPlayView(d: PlayViewDeps): PlayView {
       const h = head(c, tmp); h.y += 0.35;
       add(h, musteriBubble(v2.bubbleHTML({ icons, text, patience: k }), k), k < 0.25 ? 'bubble angry' : i > 2 ? 'bubble mini' : 'bubble', 10 - i + (k < 0.3 ? 4 : 0), 'c' + c.id);
     });
+    // BUF-12/23: kasa sırasındaki müşteri (ürünü aldı, ödemeyi bekliyor): sabır çubuğu + nakit/kart simgesi
+    rt.kasaQueue.forEach((c, i) => {
+      if (c.state !== 'queue') return;
+      const k = c.patience / Math.max(0.01, c.patMax), h = head(c, tmp); h.y += 0.35;
+      add(h, musteriBubble(v2.bubbleHTML({ icons: [c.odeme === 'kart' ? '<b>💳</b>' : '<b>💵</b>'], text: c.sayT > 0 ? c.say : '', patience: k }), k), k < 0.25 ? 'bubble angry' : 'bubble', 11 - i + (k < 0.3 ? 4 : 0), 'c' + c.id);
+    });
+    // BUF-23: masadaki müşterinin sabır çubuğu (restoran.view().masalar: menü / sipariş / tabak / hesap bekleme doluluğu)
+    const rv = restoranApi(r);
+    if (rv) for (const m of rv.view().masalar) {
+      if (m.durum === 'bos' || m.durum === 'kirli' || m.durum === 'yemek' || m.frac < 0.08) continue;
+      const tb = rt.layout.tables[m.table]; if (!tb) continue;
+      const k = 1 - m.frac, ad = m.durum === 'menu' ? 'Menü bekliyor' : m.durum === 'siparis' ? 'Sipariş verecek' : m.durum === 'tabak' ? 'Yemek bekliyor' : 'Hesap bekliyor';
+      add({ x: tb.x, y: 1.55, z: tb.z }, v2.bubbleHTML({ text: ad, patience: k }), k < 0.25 ? 'bubble angry' : 'bubble mini', 8 + (k < 0.3 ? 4 : 0), 'm' + m.table);
+    }
     rt.winq.forEach((c, i) => {
       if (c.state !== 'wqueue' || i > 2) return;
       const h = head(c, tmp); h.y += 0.35;

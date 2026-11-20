@@ -50,7 +50,7 @@ export interface HavaView {
   umbrellas: number; tables: number;
   fly: FlyUmbrella | null;
 }
-export interface HavaMods { arrival(): number; pref(p: ProductId): number; sitOk(): boolean; eatX(): number; tipX(): number; skipFerry(): boolean }
+export interface HavaMods { /** BUF-24: Cumartesi / Pazar (oyun takvimi) */ weekend(): boolean; arrival(): number; pref(p: ProductId): number; sitOk(): boolean; eatX(): number; tipX(): number; skipFerry(): boolean }
 export interface HavaApi extends HavaMods {
   handle(c: { kind: string; [k: string]: unknown }): boolean;
   view(): HavaView;
@@ -144,6 +144,7 @@ export function installHava(K: Kernel): HavaApi {
   const tablesN = () => K.tablesBuilt();
   const umbN = () => Math.min(H().umb, tablesN());
   const mods: HavaMods = {
+    weekend() { const w = weekday(date()); return w === 0 || w === 6; },
     arrival() {
       if (!rt.started) return 1;
       const kd = HAVA_KINDS[kind()];

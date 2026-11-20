@@ -46,6 +46,10 @@ export interface Customer {
   qi: number;
   /** musteri.ts (runtime only): special request line + its product, tourist flag, heart timer after a happy serve */
   tourist?: boolean; heartT?: number;
+  /** BUF-12 kasa sırası: true = kasada sırada (state 'queue' kalır), kasaT = işlem süresi sayacı, odeme = nakit/kart (yalnız görsel) */
+  kasa?: boolean; kasaT?: number; odeme?: 'nakit' | 'kart';
+  /** BUF-24 büyük grup: birleştirilen ek masalar (ana masa seat.table) ve büyük grubun adı (Doğum günü kalabalığı...) */
+  ekMasa?: number[]; grupAd?: string;
 }
 
 export interface StationRt { built: boolean; out: Item[]; grabT: number; /** sim time of the last worker operate() */ opT: number; /** worker id -> progress 0..1 */ prog: Record<number, number>; }
@@ -68,6 +72,8 @@ export interface Runtime {
   tables: TableRt[];
   customers: Customer[];
   queue: Customer[]; winq: Customer[];
+  /** BUF-12: kasada sırada bekleyen müşteriler (kasiyer kasa başındayken) */
+  kasaQueue: Customer[];
   ferry: { state: FerryPhase; t: number; next: number; arriveAt: number; docked: boolean; /** dock +25 s etc. in sim seconds */ phaseLen: number };
   /** ferry kinds + timetable (ferry-kinds.ts); set by installFerry */
   ferryInfo?: import('./ferry-kinds').FerryInfo;
@@ -212,7 +218,7 @@ export const emptyRuntime = (layout: StageLayout): Runtime => ({
     simit: { built: false, out: [], grabT: 0, opT: -99, prog: {} }, tost: { built: false, out: [], grabT: 0, opT: -99, prog: {} }, gazoz: { built: false, out: [], grabT: 0, opT: -99, prog: {} },
   },
   counter: { doner: [], cay: [], ayran: [], simit: [], tost: [], gazoz: [] },
-  kasa: [], floor: [], tables: [], customers: [], queue: [], winq: [],
+  kasa: [], floor: [], tables: [], customers: [], queue: [], winq: [], kasaQueue: [],
   ferry: { state: 'away', t: 0, next: 120, arriveAt: -1, docked: false, phaseLen: 0 },
   'window': null, streak: 0, lastSaleT: -99, lastSaleProducts: [], siklik: 0, slow: null, pads: [],
   panel: null, boardOpen: false, uiLast: {}, incomeWin: [], rate: 0, act: 'idle', layout, say: '', sayT: 0,

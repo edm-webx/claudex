@@ -66,15 +66,17 @@ export const MUTFAK_ROL: MutfakRol[] = [
   { id: 'asci', label: 'Aşçı', base: 2600, stage: 3, slots: S(0, 0, 1, 1, 2, 2, 3, 3, 4, 5), etki: 'Siparişleri istasyonunda pişirir; bir istasyonu devredebilirsin' },
   { id: 'komi', label: 'Komi', base: 1700, stage: 4, slots: S(0, 0, 0, 1, 1, 2, 2, 3, 3, 4), etki: 'Hazır tabağı istasyondan pass rafına taşır, aşçı pişirmeye devam eder' },
   { id: 'bulasikci', label: 'Bulaşıkçı', base: 1500, stage: 5, slots: S(0, 0, 0, 0, 1, 1, 1, 2, 2, 2), etki: 'Kirli tabakları yıkar; o yokken tabak yığılır ve masa hazırlığı yavaşlar' },
-  { id: 'kasiyer', label: 'Kasiyer', base: 2300, stage: 3, slots: S(0, 0, 1, 1, 1, 2, 2, 2, 3, 3), etki: 'Bahşiş ve hesap hızı' },
+  { id: 'kasiyer', label: 'Kasiyer', base: 2300, stage: 3, slots: S(0, 0, 1, 1, 1, 2, 2, 2, 3, 3), etki: 'Kasada durur, müşteri kasaya gelip öder: seviyesi kasa sırasını hızlandırır, bahşiş artar', on: true },
   { id: 'sef', label: 'Şef', base: 7000, stage: 7, slots: S(0, 0, 0, 0, 0, 0, 1, 1, 1, 2), etki: 'Tüm mutfağı hızlandırır' },
   // survey 2026-11-09: front-of-house roles
-  { id: 'guvenlik', label: 'Güvenlik', base: 2400, stage: 4, slots: S(0, 0, 0, 1, 1, 1, 1, 2, 2, 2), etki: 'Kapkaççı yaklaşamaz', on: true },
-  { id: 'muzisyen', label: 'Müzisyen', base: 2000, stage: 4, slots: S(0, 0, 0, 1, 1, 1, 1, 1, 2, 2), etki: 'Canlı müzik: bahşiş artar', on: true },
-  { id: 'hostes', label: 'Hostes', base: 2200, stage: 5, slots: S(0, 0, 0, 0, 1, 1, 1, 2, 2, 2), etki: 'Masaya karşılama: bahşiş artar', on: true },
+  { id: 'guvenlik', label: 'Güvenlik', base: 2400, stage: 4, slots: S(0, 0, 0, 1, 1, 1, 1, 2, 2, 2), etki: 'Kapıda kuyruğu düzenler: maç günü ve büyük grupta sabır daha yavaş tükenir', on: true },
+  { id: 'muzisyen', label: 'Müzisyen', base: 2000, stage: 4, slots: S(0, 0, 0, 1, 1, 1, 1, 1, 2, 2), etki: 'Canlı müzik çalar: yakın masada yemek uzar, sabır az düşer', on: true },
+  { id: 'hostes', label: 'Hostes', base: 2200, stage: 5, slots: S(0, 0, 0, 0, 1, 1, 1, 2, 2, 2), etki: 'Kapıda karşılar, kalabalık günde masa gösterir', on: true },
   { id: 'barista', label: 'Barista', base: 2500, stage: 5, slots: S(0, 0, 0, 0, 1, 1, 1, 1, 2, 2), etki: 'Çay ve içecek siparişlerini çay barında kendisi yapar, aşçılar içeceğe bakmaz' },
-  { id: 'mudur', label: 'Müdür', base: 9000, stage: 6, slots: S(0, 0, 0, 0, 0, 1, 1, 1, 1, 1), etki: 'Sen yokken işi çevirir: herkes biraz hızlı', on: true },
-  { id: 'vale', label: 'Vale', base: 1800, stage: 8, slots: S(0, 0, 0, 0, 0, 0, 0, 1, 1, 2), etki: 'Arabalı müşteri: bahşiş artar', on: true },
+  { id: 'mudur', label: 'Müdür', base: 9000, stage: 6, slots: S(0, 0, 0, 0, 0, 1, 1, 1, 1, 1), etki: 'Sen büfeden uzaktayken boş istasyonları işletir, kasayı toplar (yavaş)', on: true },
+  { id: 'vale', label: 'Vale', base: 1800, stage: 8, slots: S(0, 0, 0, 0, 0, 0, 0, 1, 1, 2), etki: 'Arabalı müşterinin anahtarını alır, arabayı park eder', on: true },
+  // BUF-15 paket servis (aşama 5+): kurye pass'tan paketi alıp bisikletle adrese götürür, dönüşte geliri kasaya getirir
+  { id: 'kurye', label: 'Kurye', base: 2100, stage: 5, slots: S(0, 0, 0, 0, 1, 1, 1, 2, 2, 2), etki: 'Telefon siparişlerini bisikletle adrese götürür, dönünce geliri getirir', on: true },
 ];
 export const MUTFAK_ROL_BY_ID: Record<string, MutfakRol> = Object.fromEntries(MUTFAK_ROL.map(r => [r.id, r]));
 export const mutfakSlot = (rol: string, stage: number): number => { const r = MUTFAK_ROL_BY_ID[rol]; return r && stage >= r.stage ? r.slots[Math.max(0, Math.min(9, stage - 1))] : 0; };

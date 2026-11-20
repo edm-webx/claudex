@@ -158,7 +158,9 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
   // stations produce for open tickets too (room above the counter stock)
   rt.reserved.push(() => { const r: Order = {}; for (const t of tickets) for (const p in t.want) if (isProduct(p)) add(r, p, t.want[p] || 0); return r; });
   // BUF-05: mutfak hattı (istasyonlar, tepsi, pass rafı). Garsonun ELİNDEKİ tabaklar bilete sayılır; ayrılmış ama raftaki tabak hâlâ raftadır.
-  const hat = installMutfakHat<Ticket>(K, { tickets: () => tickets, jobs: (t, f) => tabakTasks(t, f, true) });
+  // BUF-15: paket biletleri (sim/kurye.ts rt.teslimat) masa biletlerinin ARKASINDA aynı hatta pişer; masa mantığı (garson, sabır, hesap) onlara dokunmaz
+  const paketler = (): readonly Ticket[] => (rt as unknown as { teslimat?: { biletler(): Ticket[] } }).teslimat?.biletler() ?? [];
+  const hat = installMutfakHat<Ticket>(K, { tickets: () => { const p = paketler(); return p.length ? [...tickets, ...p] : tickets; }, jobs: (t, f) => tabakTasks(t, f, true) });
   // BUF-06: oyuncu mutfakta (ya da yeni çıktı) ise pişirir ve taşır: aşçı ya da oyuncu pişirir, garson ya da oyuncu taşır
   let oyuncuMutfakT = -1e9;
   const oyuncuAktif = () => saat - oyuncuMutfakT < OYUNCU_MUTFAK_S;
@@ -222,6 +224,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     g.servis = clamp(g.servis * (1 - SERVIS.weight) + 5 * (1 - used * 0.8) * SERVIS.weight, 0, 5);
     c.value = 0; c.state = 'eat'; c.t = 0; c.eatT = rng.range(ADISYON.eat[0], ADISYON.eat[1]);
     K.stat('adisyon');
+    { const T = S.today as unknown as { masaServis?: number; masaBekleS?: number } | null; if (T) { T.masaServis = (T.masaServis || 0) + 1; T.masaBekleS = (T.masaBekleS || 0) + t.t; } }   // gün sonu raporu: masa servis sayısı ve ortalama bekleme
   }
   /**
    * Hesap: tek ödeme giriş noktası (BUF-12 kasada ödeme de bunu çağırır). Satış settle ile kasaya; bahşiş formülü aynı

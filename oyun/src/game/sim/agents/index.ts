@@ -49,7 +49,7 @@ export function createAgents(rules: Rules, opts: InstallOpts = {}): AgentsHandle
   const reg = createActorRegistry();
   const book = createAnchorBook(anchors);
   const env: AgentEnv = {
-    host, nav: rules.nav, book, reg, interactions: rules.interactions, playerEntity: rules.player,
+    host, rules, nav: rules.nav, book, reg, interactions: rules.interactions, playerEntity: rules.player,
     rng: (n) => rules.rng(n), player: () => rules.playerPos,
     emit: (name, data) => { rules.bus.emit(name, data as never); },
     shared: { followers: 0, tipBoostT: 0, dogDuty: false, dogBark: 0, dogPos: null, force: { reg: null, vip: false, kap: false, gull: false, sleep: false } },
