@@ -19,12 +19,16 @@ interface KafeHostApi {
   info(id: string): { lv: number; isci: number; masa: number; kuyruk: number; kadro: { id: number; ad: string; rol: string; huy: string; look: { apronText: string; lookSeed: number; headscarf?: string }; rank: number }[]; tema: string; fiyat: number; menu: { id: string; ad: string; ikon: string }[] } | null;
   sell(id: string, kalem?: string, bonus?: number): number;
 }
-const ROOMS: { arsa: string; room: string; bistro: boolean }[] = [{ arsa: 'k1', room: 'kafe1', bistro: false }, { arsa: 'k2', room: 'kafe2', bistro: true }, { arsa: 'k4', room: 'okul', bistro: false }, { arsa: 'k5', room: 'avm', bistro: false }, { arsa: 'k6', room: 'tesis', bistro: false }, { arsa: 'k3', room: 'kirtasiye', bistro: false }];
+const ROOMS: { arsa: string; room: string; bistro: boolean }[] = [{ arsa: 'k1', room: 'kafe1', bistro: false }, { arsa: 'k2', room: 'kafe2', bistro: true }, { arsa: 'k4', room: 'okul', bistro: false }, { arsa: 'k5', room: 'avm', bistro: false }, { arsa: 'k6', room: 'tesis', bistro: false }, { arsa: 'k3', room: 'kirtasiye', bistro: false },
+  // 2026-11-20 AVM shops: same loop, guests first look around the racks, then take one item to the till
+  { arsa: 'k7', room: 'avm_moda', bistro: false }, { arsa: 'k8', room: 'avm_tekno', bistro: false }, { arsa: 'k9', room: 'avm_oyuncak', bistro: false }];
 const PAT = 45, LOOKS = ['universiteli', 'teyze', 'emekli', 'plaza', 'turgrubu', 'gezgin', 'balayi', 'taraftar'];
 const LINES_OUT = ['Eline sağlık!', 'Çok güzel olmuş.', 'Yine geleceğiz!', 'Tam kıvamında.'];
 const LINES_ANGRY = ['Çok bekledim, gidiyorum!', 'Kimse yok mu?', 'Bu kadar beklenmez.'];
+const MAGAZA = new Set(['giyim', 'elektronik', 'oyuncak']);
+const LINES_GEZ = ['Şuna bir bakayım…', 'Bedeni var mı acaba?', 'Bu güzelmiş.', 'Fiyatı ne kadar?'];
 
-interface Guest { a: Actor; st: 'in' | 'queue' | 'served' | 'toSeat' | 'sit' | 'out'; t: number; path: Vec2[]; slot: number; claimed: number; seat: Vec2 | null; tbl: number; face: number; want: string }
+interface Guest { a: Actor; st: 'in' | 'gez' | 'queue' | 'served' | 'toSeat' | 'sit' | 'out'; t: number; gez: number; gezYaw: number; path: Vec2[]; slot: number; claimed: number; seat: Vec2 | null; tbl: number; face: number; want: string }
 interface Wk { a: Actor; cid: number; idx: number; st: 'post' | 'toSt' | 'brew' | 'hand'; t: number; guest: Guest | null; path: Vec2[]; item: string }
 interface Room { arsa: string; room: string; bistro: boolean; guests: Guest[]; wk: Wk[]; seatTaken: Set<number> }
 
@@ -34,7 +38,7 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
   const rng = env.rng('kafe');
   const rooms: Room[] = ROOMS.map(r => ({ ...r, guests: [], wk: [], seatTaken: new Set<number>() }));
   const host = () => rt.kafeHost as KafeHostApi | undefined;
-  const geom = (r: Room) => {
+  const geom0 = (r: Room) => {
     const m = IC_BY_ID[r.room], D = icDim(m).D, W = icDim(m).W, lay = icLayout(m), tz = lay.find(i => i.k === 'tezgah')!;
     const vert = (tz.ry || 0) % 2 === 1;   // kırtasiye: the counter stands across the east end, customers queue on its west side
     const w = (u: number, v: number): Vec2 => icWorld(m, u, v);
@@ -42,8 +46,14 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
     const P = (a: number, b: number): Vec2 => vert ? w(tz.u - b, a) : w(a, tz.v + b);
     const cu = vert ? tz.v - tz.w / 2 + 0.3 : tz.u - tz.w / 2 + 1.0, endU = vert ? tz.v + tz.w / 2 + 0.5 : tz.u + tz.w / 2 + 0.6;
     const tables = lay.filter(i => i.k.startsWith('masa')).map(i => ({ u: i.u, v: i.v, k: i.k }));
-    return { m, D, W, bv: tz.v, cu, endU, w, P, vert, door: w(0, D / 2 + 2.6), inside: w(0, D / 2 - 1.0), tables, sdv: D < 5 ? -0.6 : 0.7, wide: !vert && !(m.tur === 'kafe' || m.tur === 'bistro'), gap: vert ? 0.5 : 0.85, maxQ: vert ? 3 : 5 };
+    // a narrow room (the AVM lokanta strip) packs the line and the staff posts so they stay inside the walls
+    const narrow = W < 7, gap = vert ? 0.5 : Math.min(0.85, Math.max(0.5, (W / 2 - 0.55 - (cu + 0.7)) / 4)), post = vert ? 0.5 : narrow ? Math.min(1.4, (endU - 0.6 - (cu + 1.5)) / 2) : 1.4;
+    // shops: where a guest stands to look at the goods (in front of the racks and the display table, on the customer side)
+    const gez = MAGAZA.has(m.tur) ? lay.filter(i => i.k === 'reyon' || i.k === 'teshir').flatMap(i => i.k === 'teshir' ? [{ u: i.u - i.w / 2 - 0.4, v: i.v, yaw: 1 }] : [-0.3, 0.3].map(f => ({ u: i.u + 0.6, v: i.v + f * i.w, yaw: -1 }))) : [];
+    return { m, D, W, bv: tz.v, cu, endU, w, P, vert, door: w(0, D / 2 + 2.6), inside: w(0, D / 2 - 1.0), tables, sdv: D < 5 ? -0.6 : 0.7, wide: !vert && !(m.tur === 'kafe' || m.tur === 'bistro'), gap, post, maxQ: vert ? 3 : 5, gez };
   };
+  const gCache = new Map<string, ReturnType<typeof geom0>>();   // the room geometry is static: build it once per room
+  const geom = (r: Room) => { let g = gCache.get(r.room); if (!g) { g = geom0(r); gCache.set(r.room, g); } return g; };
   const slotU = (g: { cu: number; gap: number; vert: boolean }, i: number) => g.cu + (g.vert ? 0 : 0.7) + Math.max(0, i) * g.gap;
   const slotPos = (r: Room, i: number) => { const g = geom(r); return g.P(slotU(g, i), 1.15); };
   const approach = (r: Room, i: number): Vec2[] => { const g = geom(r); return g.wide ? [g.inside, g.w(slotU(g, i), g.D / 2 - 1.0), slotPos(r, i)] : [g.inside, slotPos(r, i)]; };
@@ -77,7 +87,12 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
     const a = env.reg.add('regular', 'kafe-' + r.room + '-' + seed, { kind: 'regular', look: { lookType: look, lookSeed: seed }, seed }, g.door, { name: '' });
     const slot = r.guests.filter(x => x.st === 'queue' || x.st === 'in').length;
     const want = pickWant(r);
-    r.guests.push({ a, st: 'in', t: 0, path: approach(r, slot), slot, claimed: 0, seat: null, tbl: -1, face: 0, want });
+    if (g.gez.length) {   // shop: first to a rack, look around for a while, then to the till
+      const sp = g.gez[Math.floor(rng.next() * g.gez.length)], p = g.w(sp.u, sp.v), o = g.w(sp.u + sp.yaw, sp.v);
+      r.guests.push({ a, st: 'in', t: 0, path: [g.inside, p], slot: 99, claimed: 0, seat: null, tbl: -1, face: 0, want, gez: 3 + rng.next() * 5, gezYaw: Math.atan2(p.x - o.x, p.z - o.z) + Math.PI });
+      return;
+    }
+    r.guests.push({ a, st: 'in', t: 0, path: approach(r, slot), slot, claimed: 0, seat: null, tbl: -1, face: 0, want, gez: 0, gezYaw: 0 });
   }
   function leave(r: Room, gu: Guest, angry: boolean) {
     const g = geom(r); gu.st = 'out'; gu.t = 0; gu.claimed = 0; gu.path = [g.inside, g.door]; gu.a.mood = angry ? 'impatient' : 'happy';
@@ -114,23 +129,28 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
       if (r.wk.some(w => w.cid === c.id)) return;
       const g = geom(r), idx = r.wk.length, role = c.rol === 'barista' || c.rol === 'garson' || c.rol === 'kasiyer' || c.rol === 'asci' ? c.rol : (ISLETME_ROL[ARSA_ISLETME[r.arsa]].find(x => x.rol === c.rol)?.gorunum || 'garson');
       const a = env.reg.add('worker', 'kafe-' + r.room + '-' + c.id, { kind: 'worker', role, look: c.look, seed: (c.id * 977) % 10007 }, g.w(0, g.D / 2 + 0.6), { role, name: c.ad, rank: c.rank, trait: c.huy });
-      r.wk.push({ a, cid: c.id, idx, st: 'post', t: 0, guest: null, path: [g.inside, g.P(g.endU, 1.4), g.P(g.endU, -0.7), g.P(g.cu + (g.vert ? 0.6 : 1.5) + idx * (g.vert ? 0.5 : 1.4), -0.7)], item: '' });
+      r.wk.push({ a, cid: c.id, idx, st: 'post', t: 0, guest: null, path: [g.inside, g.P(g.endU, 1.4), g.P(g.endU, -0.7), g.P(g.cu + (g.vert ? 0.6 : 1.5) + idx * g.post, -0.7)], item: '' });
     });
     r.wk.forEach((w, i) => { w.idx = i; });   // posts stay packed after somebody leaves
   }
-  const postOf = (r: Room, idx: number): Vec2 => { const g = geom(r); return g.P(g.cu + (g.vert ? 0.6 : 1.5) + idx * (g.vert ? 0.5 : 1.4), -0.7); };
+  const postOf = (r: Room, idx: number): Vec2 => { const g = geom(r); return g.P(g.cu + (g.vert ? 0.6 : 1.5) + idx * g.post, -0.7); };
 
   function tickRoom(r: Room, dt: number) {
     const h = host(), info = h?.info(r.arsa);
     if (!h || !info) { for (const gu of r.guests) env.reg.remove(gu.a); for (const w of r.wk) env.reg.remove(w.a); r.guests.length = 0; r.wk.length = 0; r.seatTaken.clear(); return; }
     syncWorkers(r);
     // new guests from the hourly customer flow (mulk.ts accrues them into pending)
-    const open = r.guests.filter(x => x.st === 'in' || x.st === 'queue').length;
+    const open = r.guests.filter(x => x.st === 'in' || x.st === 'gez' || x.st === 'queue').length;
     if ((h.pending[r.arsa] || 0) > 0 && open < Math.min(geom(r).maxQ, info.kuyruk)) { h.pending[r.arsa]--; spawnGuest(r); }
     // guests
     for (let i = r.guests.length - 1; i >= 0; i--) {
       const gu = r.guests[i], a = gu.a; gu.t += dt;
-      if (gu.st === 'in') { if (follow(a, gu.path, 1.5, dt)) { gu.st = 'queue'; gu.t = 0; a.act = 'idle'; a.speed = 0; a.rot = Math.PI * 0 + geomYaw(r); if (gu.want && (waiting(r).indexOf(gu) < 2 || rng.chance(0.4))) { a.say = 'Bir ' + kalemAd(r, gu.want) + ' alabilir miyim?'; a.sayT = 3; } } }
+      if (gu.st === 'in' && gu.gez > 0) { if (follow(a, gu.path, 1.4, dt)) { gu.st = 'gez'; gu.t = 0; a.act = 'idle'; a.speed = 0; a.rot = gu.gezYaw; if (rng.chance(0.35)) { a.say = LINES_GEZ[Math.floor(rng.next() * LINES_GEZ.length)]; a.sayT = 2; } } }
+      else if (gu.st === 'gez') {
+        a.act = 'idle'; a.speed = 0; a.rot = gu.gezYaw + Math.sin(gu.t * 0.8) * 0.4;   // looking along the rack
+        if (gu.t >= gu.gez) { const q = r.guests.filter(x => x !== gu && (x.st === 'queue' || (x.st === 'in' && x.gez <= 0))); gu.slot = q.reduce((mx, x) => Math.max(mx, x.slot), -1) + 1; gu.gez = 0; gu.st = 'in'; gu.t = 0; gu.path = [slotPos(r, q.length)]; }
+      }
+      else if (gu.st === 'in') { if (follow(a, gu.path, 1.5, dt)) { gu.st = 'queue'; gu.t = 0; a.act = 'idle'; a.speed = 0; a.rot = Math.PI * 0 + geomYaw(r); if (gu.want && (waiting(r).indexOf(gu) < 2 || rng.chance(0.4))) { a.say = 'Bir ' + kalemAd(r, gu.want) + ' alabilir miyim?'; a.sayT = 3; } } }
       else if (gu.st === 'queue') {
         const ahead = waiting(r).indexOf(gu); const tp = slotPos(r, ahead < 0 ? gu.slot : ahead);
         if (Math.hypot(tp.x - a.x, tp.z - a.z) > 0.08) step1(a, tp, 1.4, dt), a.act = 'walk'; else { a.act = 'idle'; a.speed = 0; a.rot = geomYaw(r); }

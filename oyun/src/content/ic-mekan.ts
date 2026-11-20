@@ -7,7 +7,7 @@
  * Items with `esya` show only when that equipment is bought (never solid, so the static walk grid stays valid).
  */
 export type Yon = '+x' | '-x' | '+z' | '-z';
-export type IcTur = 'kafe' | 'bistro' | 'kirtasiye' | 'okul' | 'lokanta' | 'kafeterya' | 'banka' | 'hastane' | 'acil' | 'morg' | 'kahvalti' | 'balik' | 'mutfak';
+export type IcTur = 'kafe' | 'bistro' | 'kirtasiye' | 'okul' | 'lokanta' | 'kafeterya' | 'banka' | 'hastane' | 'acil' | 'morg' | 'kahvalti' | 'balik' | 'mutfak' | 'giyim' | 'elektronik' | 'oyuncak';
 export interface IcMekan { id: string; ad: string; tur: IcTur; x: number; z: number; wx: number; wz: number; kapi: Yon; arsa?: string; bina?: string; salon?: 'W' | 'E'; mutfak?: boolean; h: number }
 export interface IcItem { k: string; u: number; v: number; w: number; d: number; ry?: number; solid?: boolean; esya?: string; y?: number; txt?: string; c?: string }
 export interface Rect { x0: number; x1: number; z0: number; z1: number }
@@ -17,7 +17,13 @@ export const IC_MEKANLAR: IcMekan[] = [
   { id: 'kafe2', ad: 'Sahil Bistro', tur: 'bistro', x: -17.5, z: 51.5, wx: 7, wz: 9.4, kapi: '+x', arsa: 'k2', bina: 'kafe2', h: 3.1 },
   { id: 'kirtasiye', ad: 'Martı Kırtasiye', tur: 'kirtasiye', x: 28, z: 35.2, wx: 7.1, wz: 3.6, kapi: '-z', arsa: 'k3', bina: 'kirtasiye', h: 3.0 },
   { id: 'okul', ad: 'Martıköy İlkokulu', tur: 'okul', x: 48.85, z: 37.25, wx: 18.3, wz: 7.5, kapi: '-z', arsa: 'k4', bina: 'okul', h: 3.2 },
-  { id: 'avm', ad: 'Martı AVM', tur: 'lokanta', x: 20.15, z: 51.8, wx: 16.9, wz: 10.6, kapi: '-z', arsa: 'k5', bina: 'avm', h: 3.6 },
+  // 2026-11-20 owner: "AVM içindeki mağazalar ayrı, satın alınıp işletilebilen işletmeler olsun". The mall footprint
+  // (x 11.7..28.6, z 46.5..57.1) is cut into strips side by side, each with its own door on the -z front: lokanta (k5, keeps
+  // the room id 'avm') + Martı Moda (k7) + Tekno Martı (k8) + Oyuncak Dünyası (k9). The rooms touch but never overlap.
+  { id: 'avm', ad: 'Martı Lokantası', tur: 'lokanta', x: 26.0, z: 51.8, wx: 5.2, wz: 10.6, kapi: '-z', arsa: 'k5', bina: 'avm', h: 3.6 },
+  { id: 'avm_moda', ad: 'Martı Moda', tur: 'giyim', x: 21.45, z: 51.8, wx: 3.9, wz: 10.6, kapi: '-z', arsa: 'k7', bina: 'avm', h: 3.6 },
+  { id: 'avm_tekno', ad: 'Tekno Martı', tur: 'elektronik', x: 17.55, z: 51.8, wx: 3.9, wz: 10.6, kapi: '-z', arsa: 'k8', bina: 'avm', h: 3.6 },
+  { id: 'avm_oyuncak', ad: 'Oyuncak Dünyası', tur: 'oyuncak', x: 13.65, z: 51.8, wx: 3.9, wz: 10.6, kapi: '-z', arsa: 'k9', bina: 'avm', h: 3.6 },
   { id: 'tesis', ad: 'Halı Saha Tesisleri', tur: 'kafeterya', x: -54.1, z: 45.4, wx: 3.7, wz: 17.8, kapi: '+x', arsa: 'k6', bina: 'tesis', h: 2.8 },
   { id: 'banka', ad: 'Martı Kasası Bankası', tur: 'banka', x: 11.7, z: 36.8, wx: 10, wz: 8.4, kapi: '+z', bina: 'banka', h: 3.3 },
   { id: 'hastane', ad: 'Devlet Hastanesi', tur: 'hastane', x: 46.95, z: 53.55, wx: 16.9, wz: 6.7, kapi: '-z', bina: 'hastane', h: 3.0 },
@@ -31,7 +37,9 @@ export const IC_MEKANLAR: IcMekan[] = [
 ];
 export const IC_BY_ID: Record<string, IcMekan> = Object.fromEntries(IC_MEKANLAR.map(m => [m.id, m]));
 /** business rooms run by the live room sim (sim/agents/kafe.ts): real guests + real workers, no props */
-export const IC_CANLI = ['k1', 'k2', 'k3', 'k4', 'k5', 'k6'];
+export const IC_CANLI = ['k1', 'k2', 'k3', 'k4', 'k5', 'k6', 'k7', 'k8', 'k9'];
+/** every room of one building (the AVM has four) */
+export const icBina = (bina: string) => IC_MEKANLAR.filter(m => m.bina === bina);
 export const icOfArsa = (arsa: string) => IC_MEKANLAR.find(m => m.arsa === arsa);
 
 const YAW: Record<Yon, number> = { '+z': 0, '+x': Math.PI / 2, '-z': Math.PI, '-x': -Math.PI / 2 };
@@ -101,20 +109,56 @@ function okulLayout(W: number, D: number): IcItem[] {
     it('ekran', 5.2, -D / 2 + 0.2, 1.4, 0.08, { esya: 'ekran_k', y: 2.0 }), it('izgara', 7.3, -D / 2 + 0.55, 0.9, 0.6, { esya: 'izgara_k' }));
   return o;
 }
+/** AVM lokanta strip (W 5.2): counter at the back, staff behind it, cooking line on the back wall, tables in a column on the
+ *  east side so the queue lanes on the west side stay clear */
 function avmLayout(W: number, D: number): IcItem[] {
-  const bv = -D / 2 + 1.3;
+  const bv = -D / 2 + 1.6, bw = -D / 2 + 0.5;
   return [
     it('lamba', 0, 0, W, D), it('zemin', 0, 0, W, D, { c: 'avm' }),
-    it('tezgah', -5.0, bv, 6.0, 0.8, { solid: true, c: '#a2472f' }), it('kasa', -2.4, bv, 0.4, 0.4, { y: 1.05 }), it('menuPano', -5.0, -D / 2 + 0.27, 4.0, 0.05, { y: 2.6, txt: 'MARTI LOKANTASI' }),
-    masa(-6.4, 0.6, 'masa4'), masa(-3.6, 0.6, 'masa4'), masa(-6.4, 3.0, 'masa4'), masa(-3.6, 3.0, 'masa4'),
-    it('magaza', 2.2, -D / 2 + 0.75, 3.6, 1.3, { solid: true, txt: 'MARTI MODA', c: '#c94f6d' }), it('magaza', 6.2, -D / 2 + 0.75, 3.6, 1.3, { solid: true, txt: 'TEKNO MARTI', c: '#2b6fb8' }),
-    it('magaza', W / 2 - 0.75, 1.6, 3.6, 1.3, { solid: true, txt: 'OYUNCAK DÜNYASI', c: '#ffb627', ry: 3 }),
-    it('yuruyen', 3.6, 1.6, 1.3, 3.6, { solid: true }), it('saksiB', 1.2, 3.8, 0.7, 0.7, { solid: true }), it('saksiB', -1.2, 3.8, 0.7, 0.7, { solid: true }), it('bank', 6.4, 3.9, 1.8, 0.45, { solid: true }),
-    it('benmari', -6.6, bv, 1.6, 0.6, { esya: 'benmari', y: 1.05 }), it('corba', -4.2, bv, 0.55, 0.55, { esya: 'corba_kazan', y: 1.05 }),
-    it('tasFirin', -7.4, -D / 2 + 0.7, 1.4, 1.0, { esya: 'pide_firin' }), it('semaver', -3.3, bv, 0.4, 0.4, { esya: 'cay_ocak', y: 1.05 }),
-    it('mangal', -5.6, -D / 2 + 0.55, 1.2, 0.6, { esya: 'ocakbasi' }), it('doner', -4.1, -D / 2 + 0.5, 0.6, 0.6, { esya: 'doner' }),
-    it('tatliVitrin', -1.4, bv, 1.2, 0.75, { esya: 'tatli_vitrin' }), it('ekran', -5.0, -D / 2 + 0.2, 2.6, 0.08, { esya: 'led_menu', y: 2.0 }), it('ustaOcak', -2.8, -D / 2 + 0.55, 1.0, 0.6, { esya: 'sef_ocak' }),
+    it('tezgah', -0.5, bv, 3.6, 0.8, { solid: true, c: '#a2472f' }), it('kasa', 1.0, bv, 0.4, 0.4, { y: 1.05 }), it('menuPano', -0.5, -D / 2 + 0.27, 3.4, 0.05, { y: 2.75, txt: 'MARTI LOKANTASI' }),
+    masa(-1.6, -0.9, 'masa4'), masa(-1.6, 1.1, 'masa4'), masa(-1.6, 3.1, 'masa4'), it('saksiB', W / 2 - 0.55, D / 2 - 0.55, 0.5, 0.5, { solid: true }),
+    it('benmari', -1.6, bv, 1.4, 0.6, { esya: 'benmari', y: 1.05 }), it('corba', -0.45, bv, 0.5, 0.5, { esya: 'corba_kazan', y: 1.05 }), it('semaver', 0.3, bv, 0.4, 0.4, { esya: 'cay_ocak', y: 1.05 }),
+    // back wall cooking line; the staff lane (v ~ bv - 0.7) stays free in front of it
+    it('tasFirin', -1.75, bw, 1.0, 0.5, { esya: 'pide_firin' }), it('mangal', -0.7, bw, 0.9, 0.5, { esya: 'ocakbasi' }), it('doner', 0.1, bw, 0.5, 0.5, { esya: 'doner' }),
+    it('ustaOcak', 0.9, bw, 0.8, 0.5, { esya: 'sef_ocak' }), it('tatliVitrin', W / 2 - 0.75, bw, 0.8, 0.5, { esya: 'tatli_vitrin' }),
+    it('ekran', -0.5, -D / 2 + 0.2, 1.6, 0.08, { esya: 'led_menu', y: 1.85 }),
   ];
+}
+/** AVM shop strip (W 3.9, D 10.6), door at v = +D/2. The till counter stands along the depth (ry 3: front to the customers on
+ *  the -u side, like the stationery shop), the stock shelf behind it on the +u wall, goods racks on the -u wall, a display
+ *  table near the door. The middle lane (u ~ -0.6..0.2) stays empty: guests walk door -> racks -> till in straight lines.
+ *  Equipment (`esya`) never collides. */
+export const MAGAZA_RENK: Record<'giyim' | 'elektronik' | 'oyuncak', { c: string; txt: string }> = {
+  giyim: { c: '#c94f6d', txt: 'MARTI MODA' }, elektronik: { c: '#2b6fb8', txt: 'TEKNO MARTI' }, oyuncak: { c: '#e8892b', txt: 'OYUNCAK DÜNYASI' },
+};
+function magazaLayout(W: number, D: number, tur: 'giyim' | 'elektronik' | 'oyuncak'): IcItem[] {
+  const R = MAGAZA_RENK[tur], tv = -2.6, tu = 0.5, wl = -W / 2 + 0.5, wr = W / 2 - 0.4, fv = D / 2 - 0.55;
+  const o: IcItem[] = [
+    it('lamba', 0, 0, W, D), it('zemin', 0, 0, W, D, { c: 'avm' }),
+    it('tezgah', tu, tv, 3.0, 0.6, { solid: true, ry: 3, c: R.c }), it('kasa', tu, tv + 1.15, 0.4, 0.4, { y: 1.05, ry: 3 }),
+    it('depoRaf', wr + 0.05, tv, 3.0, 0.3, { ry: 3, c: tur }), it('paketMasa', tu, tv + 0.45, 0.5, 0.4, { y: 1.05, ry: 3, c: tur }),
+    it('menuPano', 0, -D / 2 + 0.27, 2.8, 0.05, { y: 2.55, txt: R.txt }),
+    it('reyon', wl + 0.05, -2.15, 3.5, 0.4, { solid: true, ry: 1, c: tur }), it('reyon', wl + 0.05, 2.0, 3.2, 0.4, { solid: true, ry: 1, c: tur }),
+    it('teshir', 0.9, 2.2, 0.9, 1.3, { solid: true, c: tur }),
+  ];
+  if (tur === 'giyim') o.push(
+    it('askilik', 0.95, 0.55, 0.9, 0.9, { esya: 'askilik' }), it('manken', wl + 0.15, fv, 0.5, 0.5, { esya: 'manken' }), it('manken', wr - 0.05, fv, 0.5, 0.5, { esya: 'manken', c: 'b' }),
+    it('prova', wl + 0.3, -D / 2 + 0.75, 1.0, 1.0, { esya: 'prova' }), it('ayna', -W / 2 + 0.3, 0.0, 0.7, 0.06, { esya: 'ayna', ry: 1 }),
+    it('ayakkabi', wr + 0.1, 0.55, 1.1, 0.3, { esya: 'ayakkabi', ry: 3 }), it('aksesuar', 0.9, 3.65, 0.55, 0.55, { esya: 'aksesuar' }),
+    it('ledPano', 0.45, -D / 2 + 0.2, 1.5, 0.05, { esya: 'led_vitrin', y: 1.5, c: R.c }), it('dikis', tu, tv - 0.95, 0.55, 0.45, { esya: 'tasarim', y: 1.05, ry: 3 }));
+  else if (tur === 'elektronik') o.push(
+    it('testMasa', tu, tv - 0.9, 0.6, 0.45, { y: 1.05, ry: 3 }),
+    it('demoMasa', 0.95, 0.55, 0.8, 0.9, { esya: 'demo_masa' }), it('tamir', tu, tv - 0.3, 0.5, 0.4, { esya: 'tamir', y: 1.05, ry: 3 }),
+    it('tvDuvar', W / 2 - 0.27, 2.2, 2.4, 0.06, { esya: 'tv_duvar', y: 1.75, ry: 3 }), it('kulaklikStand', wl + 0.15, fv, 0.5, 0.5, { esya: 'kulaklik_stand' }),
+    it('konsol', wl + 0.3, -D / 2 + 0.75, 1.0, 1.0, { esya: 'konsol' }), it('vr', wr - 0.05, fv, 0.6, 0.6, { esya: 'vr' }),
+    it('drone', -0.2, 1.0, 0.6, 0.6, { esya: 'drone', y: 2.35 }), it('ledPano', 0.45, -D / 2 + 0.2, 1.5, 0.05, { esya: 'led_e', y: 1.5, c: R.c }));
+  else o.push(
+    it('testMasa', tu, tv - 0.9, 0.6, 0.45, { y: 1.05, ry: 3 }),
+    it('pelusSepet', 0.95, 0.55, 0.8, 0.8, { esya: 'pelus_sepet' }), it('balon', wl + 0.15, fv, 0.5, 0.5, { esya: 'balon' }),
+    it('trenPist', 0.9, 2.2, 0.8, 1.2, { esya: 'tren_pist', y: 0.8 }), it('legoDuvar', wr + 0.1, 0.55, 1.1, 0.3, { esya: 'lego_duvar', ry: 3 }),
+    it('oyunKale', wl + 0.3, -D / 2 + 0.75, 1.0, 1.0, { esya: 'oyun_kale' }), it('maskot', wr - 0.05, fv, 0.6, 0.6, { esya: 'maskot' }),
+    it('hediye', tu, tv - 0.3, 0.5, 0.4, { esya: 'hediye_paket', y: 1.05, ry: 3 }), it('ledPano', 0.45, -D / 2 + 0.2, 1.5, 0.05, { esya: 'led_o', y: 1.5, c: R.c }));
+  return o;
 }
 function kafeteryaLayout(W: number, D: number): IcItem[] {
   const bv = -D / 2 + 0.85;
@@ -238,6 +282,7 @@ export function icLayout(m: IcMekan): IcItem[] {
   const { W, D } = icDim(m);
   o = m.tur === 'kafe' ? kafeLayout(W, D, false) : m.tur === 'bistro' ? kafeLayout(W, D, true) : m.tur === 'kirtasiye' ? kirtasiyeLayout(W, D) : m.tur === 'okul' ? okulLayout(W, D)
     : m.tur === 'lokanta' ? avmLayout(W, D) : m.tur === 'kafeterya' ? kafeteryaLayout(W, D) : m.tur === 'banka' ? bankaLayout(W, D) : m.tur === 'hastane' ? hastaneLayout(W, D)
+    : m.tur === 'giyim' || m.tur === 'elektronik' || m.tur === 'oyuncak' ? magazaLayout(W, D, m.tur)
     : m.tur === 'mutfak' ? mutfakLayout(W, D) : m.tur === 'kahvalti' ? kahvaltiLayout(W, D) : m.tur === 'balik' ? balikLayout(W, D) : m.tur === 'acil' ? acilLayout(W, D) : morgLayout(W, D);
   cache.set(m.id, o); return o;
 }
@@ -251,6 +296,8 @@ export function icColliders(m: IcMekan): Rect[] {
   return o;
 }
 /** Same, relative to the building centre (prefab-local colliders for an unrotated placement). */
-export const icCollidersLocal = (m: IcMekan): Rect[] => icColliders(m).map(r => ({ x0: r.x0 - m.x, x1: r.x1 - m.x, z0: r.z0 - m.z, z1: r.z1 - m.z }));
+export const icCollidersLocal = (m: IcMekan, cx = m.x, cz = m.z): Rect[] => icColliders(m).map(r => ({ x0: r.x0 - cx, x1: r.x1 - cx, z0: r.z0 - cz, z1: r.z1 - cz }));
+/** every room of a building, relative to the building centre (the AVM shell holds four rooms) */
+export const icBinaCollidersLocal = (bina: string, cx: number, cz: number): Rect[] => icBina(bina).flatMap(m => icCollidersLocal(m, cx, cz));
 /** bank teller window: bank ops work here too */
 export function bankaGise(): { x: number; z: number } { const m = IC_BY_ID.banka; return icWorld(m, 0, -icDim(m).D / 2 + 2.6); }

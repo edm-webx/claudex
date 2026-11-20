@@ -103,13 +103,13 @@ export function createKarsiYasam(d: YasamDeps): YasamView {
       const g = new T.Group(), terasli = a.id === 'k1' || a.id === 'k2', ACC = ['#e0533c', '#2f7fb3', '#2f9e8f', '#c94f6d', '#e8892b', '#7d6bb0'][ARSALAR.indexOf(a) % 6];
       g.position.set(y.ox, 0, y.oz); g.rotation.y = y.yaw;
       if (!terasli && lv >= 2) {   // awning: alternating stripes tilted out over the door
-        const n = 7, w = 4.2;
+        const n = 7, w = Math.min(4.2, y.S);   // a narrow AVM shop keeps the awning on its own front
         for (let i = 0; i < n; i++) { const st = new T.Mesh(new T.BoxGeometry(w / n, 0.05, 1.3), lam(i % 2 ? '#fbfaf6' : ACC)); st.position.set(-w / 2 + (i + 0.5) * w / n, 2.75, 0.75); st.rotation.x = 0.28; g.add(st); }
         bx(w, 0.22, 0.04, ACC, 0, 2.55, 1.38, g);
       }
       if (lv >= 3) for (const s2 of [-1, 1]) {   // sign lamps on arms
-        bx(0.05, 0.05, 0.5, '#3a3d42', s2 * 2.2, 3.5, 0.28, g);
-        const l = new T.Mesh(new T.SphereGeometry(0.12, 8, 6), new T.MeshBasicMaterial({ color: '#ffe6a8' })); l.position.set(s2 * 2.2, 3.4, 0.55); g.add(l);
+        const lx = Math.min(2.2, y.S / 2 - 0.1); bx(0.05, 0.05, 0.5, '#3a3d42', s2 * lx, 3.5, 0.28, g);
+        const l = new T.Mesh(new T.SphereGeometry(0.12, 8, 6), new T.MeshBasicMaterial({ color: '#ffe6a8' })); l.position.set(s2 * lx, 3.4, 0.55); g.add(l);
       }
       if (!terasli && (lv >= 4 || has.has('saksi'))) for (const s2 of [-1, 1]) { bx(0.55, 0.5, 0.55, '#f4f2ec', s2 * 1.5, 0.25, 0.95, g); const p = new T.Mesh(new T.SphereGeometry(0.42, 8, 6), lam('#3f7a34')); p.position.set(s2 * 1.5, 0.85, 0.95); g.add(p); }
       if (!terasli && (lv >= 5 || has.has('isik'))) {
