@@ -43,9 +43,8 @@ describe('gün sonu raporu', () => {
     expect(gunBitir(sim).hijyen).toBeUndefined();
     const sim2 = mk(), R = sim2.rules.rt, day = sim2.rules.state.day;
     R.uiLast.hijyenGun = { day, not: 'A', marti: 3 };
-    R.uiLast.isletmeMaas = { gun: day, toplam: 90, odenen: 90, satirlar: [{ ad: 'Kafe', tutar: 90, odenen: true }] };
     const m = gunBitir(sim2);
     expect(m.hijyen).toEqual({ not: 'A', mufettis: undefined, marti: 3 });
-    expect(m.isletme.odenen).toBe(90);
+    expect(m.isletme).toBeUndefined();   // işletme kadrosu yok: gün sonu maaş satırı kartta görünmez (mulk.ts günü kendi hesaplar, kart bunu okur)
   });
 });
