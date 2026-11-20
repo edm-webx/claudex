@@ -387,7 +387,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     else if (key === 'hand') { const h = value === 'left' ? 'left' : 'right'; U.settings.hand = h; input.setHand(h); }
     else if (key === 'haptics') U.settings.haptics = !!value;
   };
-  const copyReport = () => { void platform.copyText(P.report()).then(ok => U.toast(ok ? 'Rapor kopyalandı.' : 'Kopyalanamadı, hız ölçerden dene.', ok ? 'good' : 'info')); };
+  const copyReport = () => { void platform.copyText(P.dump().kayit ? JSON.stringify(P.dump()) : P.report()).then(ok => U.toast(ok ? 'Rapor kopyalandı.' : 'Kopyalanamadı, hız ölçerden dene.', ok ? 'good' : 'info')); };
   const panels: Panels | null = playMode && uiReal ? make('panels', () => createPanels({
     ui: U, sim, models: { panelModel: panelModel as never, panelActions: panelActions as never }, audio: audio ?? undefined, extraSettings,
     perf: { visible: () => !!P.visible, show: (on: boolean) => { try { P.show(on); } catch { /* headless */ } }, copy: copyReport },
@@ -855,6 +855,11 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   reg('frame', (t: number) => { synthT = t; loop.frame(t); });
   reg('trace', (on: boolean) => { if (on) { traceBuf = []; tracing = true; return []; } tracing = false; return traceBuf; });
   reg('perfReport', () => P.report());
+  reg('perfRecord', (on = true) => { P.record(!!on); return P.recording; });
+  reg('perfDump', () => P.dump());
+  P.meta('dpr', +(window.devicePixelRatio || 1).toFixed(2));
+  P.meta('ekran', `${window.innerWidth}x${window.innerHeight}`);
+  P.context(() => ({ x: +pos.x.toFixed(1), z: +pos.z.toFixed(1), saat: +sim.clock.hour.toFixed(1) }));
   reg('perfShow', (on = true) => P.show(!!on));
   reg('exportSave', () => save.exportCode());
   reg('importSave', async (code: string) => { const ok = await save.importCode(code); if (ok) { const r = await save.load(); sim.load(r.data); } return ok; });

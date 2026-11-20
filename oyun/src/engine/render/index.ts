@@ -93,6 +93,25 @@ export function createRender(deps: RenderDeps): MotorRender {
   }
 
   let renderer: T.WebGLRenderer | null = null;
+  // PRF-01: GPU frame time via EXT_disjoint_timer_query_webgl2 (only while the perf recorder is on; absent = not measured).
+  let progSeen = 0;
+  let gl2: WebGL2RenderingContext | null = null, gpuExt: { TIME_ELAPSED_EXT: number; GPU_DISJOINT_EXT: number } | null = null;
+  let gpuQ: WebGLQuery | null = null; const gpuPending: WebGLQuery[] = [];
+  const gpuBegin = () => { if (!gl2 || !gpuExt || gpuQ || gpuPending.length > 4) return; try { gpuQ = gl2.createQuery(); if (gpuQ) gl2.beginQuery(gpuExt.TIME_ELAPSED_EXT, gpuQ); } catch { gpuQ = null; } };
+  const gpuEnd = () => { if (!gl2 || !gpuExt || !gpuQ) return; try { gl2.endQuery(gpuExt.TIME_ELAPSED_EXT); gpuPending.push(gpuQ); } catch { /* ignore */ } gpuQ = null; };
+  const gpuPoll = () => {
+    if (!gl2 || !gpuExt) return;
+    while (gpuPending.length) {
+      const q = gpuPending[0];
+      try {
+        if (!gl2.getQueryParameter(q, gl2.QUERY_RESULT_AVAILABLE)) break;
+        const bad = gl2.getParameter(gpuExt.GPU_DISJOINT_EXT);
+        if (!bad) deps.perf?.gpu(gl2.getQueryParameter(q, gl2.QUERY_RESULT) / 1e6);
+        gl2.deleteQuery(q);
+      } catch { /* ignore */ }
+      gpuPending.shift();
+    }
+  };
   let canvasEl: HTMLCanvasElement | null = null;
   let tier: TierDef | null = null;
   let wantAA: boolean | null = null;
@@ -189,6 +208,13 @@ export function createRender(deps: RenderDeps): MotorRender {
       // program right after linking, which blocks the main thread until the GPU process finishes compiling (no parallel
       // compile). On Windows/ANGLE that was seconds per new area. Errors are only checked in dev builds now.
       renderer.debug.checkShaderErrors = !!(import.meta as { env?: { DEV?: boolean } }).env?.DEV;
+      try {
+        const c = renderer.getContext();
+        if (typeof WebGL2RenderingContext !== 'undefined' && c instanceof WebGL2RenderingContext) { gl2 = c; gpuExt = c.getExtension('EXT_disjoint_timer_query_webgl2') as typeof gpuExt; }
+        const dbg = c.getExtension('WEBGL_debug_renderer_info');
+        deps.perf?.meta('gpu', dbg ? String(c.getParameter(dbg.UNMASKED_RENDERER_WEBGL)) : 'bilinmiyor');
+        deps.perf?.meta('gpuZamanOlcer', gpuExt ? 'var' : 'yok');
+      } catch { /* headless */ }
       renderer.outputColorSpace = T.SRGBColorSpace;
       renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.98;
       renderer.shadowMap.type = T.PCFSoftShadowMap;
@@ -236,7 +262,15 @@ export function createRender(deps: RenderDeps): MotorRender {
       if (frameNo % 30 === 2 || !envRT) refreshEnv();
       renderer.info.autoReset = false; renderer.info.reset();   // info() = everything drawn for this frame (composer passes, shadow pass)
       const draw = () => { if (composer && rpass) { rpass.scene = sc; rpass.camera = cam; composer.render(); } else renderer!.render(sc, cam); };
-      if (deps.perf) deps.perf.time('render.draw', draw); else draw();
+      const pf = deps.perf;
+      if (pf) {
+        const rec = pf.recording;
+        if (rec) gpuBegin();
+        pf.time('render.draw', draw);
+        if (rec) { gpuEnd(); gpuPoll(); }
+        const np = (renderer.info as { programs?: unknown[] }).programs?.length ?? 0;
+        if (np > progSeen) { if (progSeen > 0) pf.mark('compile', `${np - progSeen} shader, toplam ${np}`); progSeen = np; }
+      } else draw();
       const ri = renderer.info;
       lastInfo.calls = ri.render.calls; lastInfo.tris = ri.render.triangles;
       lastInfo.geos = ri.memory.geometries; lastInfo.texs = ri.memory.textures;

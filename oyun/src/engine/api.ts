@@ -347,6 +347,31 @@ export interface PerfMeter {
   report(): string;               // "Raporu kopyala" text
   show(on: boolean): void;        // DOM overlay (no-op headless)
   readonly visible: boolean;
+  /** 2026-11-20 PRF-01 recorder: 60 s capture (auto-stops); off = no extra work per frame. */
+  record(on: boolean): void;
+  readonly recording: boolean;
+  /** Free-form event on the recording timeline (shader compile, zone build...). No-op when not recording. */
+  mark(kind: string, detail?: string): void;
+  /** Static facts for the dump: gpu, build, ... */
+  meta(key: string, value: string | number): void;
+  /** Where the player is, merged into every recorded hitch (zone, hour, shop...). */
+  context(fn: () => Record<string, string | number>): void;
+  /** One GPU frame time sample in ms (from EXT_disjoint_timer_query_webgl2 when the browser has it). */
+  gpu(ms: number): void;
+  /** Machine readable recording (schema 1). Safe to call any time; `kayit` is false when nothing was recorded. */
+  dump(): PerfDump;
+}
+export interface PerfDump {
+  schema: 1; kayit: boolean; kayitSn: number; zaman: string;
+  cihaz: Record<string, string | number>;
+  kare: { n: number; fps: number; p50: number; p95: number; p99: number; max: number; esik33: number; esik50: number; esik100: number };
+  takilmalar: { t: number; ms: number; ctx: Record<string, string | number>; en: [string, number][] }[];
+  longtask: { t: number; ms: number }[];
+  olaylar: { t: number; tur: string; detay: string }[];
+  bellek: { ornekMB: number[]; gcDususu: number };
+  gpu: { olculdu: boolean; ortMs: number; p95Ms: number };
+  sayaclar: Record<string, number>; zamanlayicilar: Record<string, number>;
+  enYavaslar: { id: string; ms: number; hint: string }[]; uyarilar: string[];
 }
 export interface PerfDeps { platform?: Platform; root?: HTMLElement; }
 
