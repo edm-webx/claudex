@@ -115,6 +115,7 @@ export function createUi(deps: UiDeps): Ui {
     root.style.setProperty('--hudb', Math.max(0, Math.round(hb)) + 'px');
   };
   window.addEventListener('resize', measure);
+  if (typeof ResizeObserver !== 'undefined') new ResizeObserver(() => measure()).observe(hud);   // HUD yazı/rozet değişince de yeniden ölç (yalnızca resize yetmiyordu)
 
   function hudPatch(p: HudPatch) {
     if (!hudShown) { hudShown = true; hud.classList.remove('off'); requestAnimationFrame(measure); }

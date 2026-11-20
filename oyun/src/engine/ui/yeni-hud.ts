@@ -66,4 +66,13 @@ body .on-send{background:#ffb627!important;color:#14213d!important;border:0!impo
 body .yt-b{background:rgba(11,19,38,.82)!important;border:2px solid #ffb627!important;box-shadow:0 10px 26px rgba(4,10,24,.5),0 0 18px rgba(255,182,39,.35)!important}
 body .yt-b.cd{filter:saturate(.3) brightness(.8)}
 body .yt-b span{background:#ffb627!important;color:#14213d!important}
+/* kısa yatay telefon: yukarıdaki !important kuralları v2-style'daki yatay medya sorgusunu eziyordu; burada aynı değerler yeniden uygulanır */
+@media (orientation:landscape) and (max-height:540px){
+#sbui .sb-lvl{width:52px!important;height:52px!important}
+#sbui .sb-lvl-in{width:38px!important;height:38px!important;font-size:18px!important}
+#sbui .sb-bar{max-width:calc(42vw - 16px)!important}
+#sbui .sb-bi{height:48px!important;max-width:56px!important}
+#sbui .sb-bi span{display:none!important}
+#sbui .sb-bi svg{width:30px!important;height:30px!important}
+}
 `;

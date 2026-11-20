@@ -44,7 +44,7 @@ export function createHaritaHud(d: HaritaHudDeps): HaritaHud {
   d.root.appendChild(trav);
   const veh = trav.querySelector('.veh') as HTMLElement, cap = trav.querySelector('.cap') as HTMLElement;
   const arrow = document.createElement('div'); arrow.className = 'mk-arrow'; d.root.appendChild(arrow);
-  let drawT = 0, travKey = '', lastArrow = '';
+  let drawT = 0, placeT = 0, travKey = '', lastArrow = '';
 
   function drawMini(v: DisariView) {
     if (!g) return;
@@ -79,6 +79,12 @@ export function createHaritaHud(d: HaritaHudDeps): HaritaHud {
       const show = v.away && !v.travel;
       mini.classList.toggle('off', !show);
       if (show && (drawT -= dt) <= 0) { drawT = 0.12; drawMini(v); }
+      // hedefler kartı açılıp uzayınca mini harita onun altına iner (üst üste binmesin)
+      if (show && (placeT -= dt) <= 0) {
+        placeT = 0.4;
+        const card = d.root.querySelector('.hd-card:not(.off)') as HTMLElement | null, rr = d.root.getBoundingClientRect();
+        mini.style.top = card ? Math.max(0, Math.round(card.getBoundingClientRect().bottom - rr.top + 8)) + 'px' : '';
+      }
       // travel overlay
       const t = v.travel;
       if (t) {
