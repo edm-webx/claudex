@@ -12,7 +12,7 @@ import { createMatch, FORMATIONS } from '../sim/macmotor';
 
 type Cmd = { kind: string; [k: string]: unknown };
 interface Izle { seed: number; s0: number; s1: number; f: [string, string]; oran: Record<string, number>; bahis: '1' | 'X' | '2' | null; n: number; halfS: number }
-interface MacInfo { iz?: Izle; team: string; name: string; colors: [string, string]; rival: string; rivalName: string; rivalColors: [string, string]; formasyon?: string }
+interface MacInfo { iz?: Izle; team: string; name: string; colors: [string, string]; rival: string; rivalName: string; rivalColors: [string, string]; formasyon?: string; doluluk?: number }
 export interface HaliSahaDeps { root: HTMLElement; rules: () => { rt: { uiLast: Record<string, unknown> } } | null; command(c: Cmd): void; sfx?(id: string): void; chars?: { makeHero(o: never): unknown } | null; esnaf?: () => Record<string, unknown> | null }
 export interface HaliSahaView { update(): void; dispose(): void }
 
@@ -63,7 +63,7 @@ export function createHaliSaha(deps: HaliSahaDeps): HaliSahaView {
     const resize = () => { dpr = Math.min(2, window.devicePixelRatio || 1); cw = wrap.clientWidth; ch = wrap.clientHeight; cv.width = Math.round(cw * dpr); cv.height = Math.round(ch * dpr); };
     resize(); window.addEventListener('resize', resize);
     let hs3: HS3 | null = null;
-    try { hs3 = createHaliSaha3D({ wrap, chars: deps.chars || null, esnaf: deps.esnaf?.() || null, L, WD, m0: MOUTH0, m1: MOUTH1, colors: t.colors, rival: t.rivalColors, clubName: t.name, rivalName: t.rivalName }); } catch { hs3 = null; }
+    try { hs3 = createHaliSaha3D({ wrap, chars: deps.chars || null, esnaf: deps.esnaf?.() || null, L, WD, m0: MOUTH0, m1: MOUTH1, colors: t.colors, rival: t.rivalColors, clubName: t.name, rivalName: t.rivalName, doluluk: t.doluluk }); } catch { hs3 = null; }
 
     // ---- state: the match itself lives in sim/macmotor.ts (formation + role AI, stats); this view only draws and feeds input
     const FKEYS = Object.keys(FORMATIONS), seed = (Date.now() & 0xfffff) | 1, iz = t.iz || null, HALF = iz ? iz.halfS : HALF_S;

@@ -44,3 +44,10 @@ it('bahis: tohum her izlemede farklı ve gün/saatten türetilemez', () => {
   c({ op: 'izle', bahis: '1', n: 100 }); const s2 = rt.uiLast.haliSahaIzle.seed;
   expect(s1).not.toBe(s2);
 });
+it('maç teklifi kabul edilince tribün doluluğu (gişe tahmini) görünüme verilir', () => {
+  const { sim, S, rt, c } = mk(); S.money = 20000;
+  c({ op: 'adminTakim', name: 'Martı FK' });
+  sim.command({ kind: 'teleport', x: STADYUM.kapi.x, z: STADYUM.kapi.z });
+  c({ op: 'bilet' });
+  const d = rt.uiLast.haliSahaMac.doluluk; expect(d).toBeGreaterThan(0.05); expect(d).toBeLessThanOrEqual(1);
+});

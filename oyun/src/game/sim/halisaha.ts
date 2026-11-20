@@ -9,7 +9,7 @@
 import type { Kernel } from './state';
 import { TEAMS } from '../../content/traits';
 import { LIG_BY_ID } from '../../content/lig';
-import { stadSave, tahminDoluluk, kapiGeliri } from './stadyum';
+import { stadSave, tahminDoluluk, kapiGeliri, FIYAT_VARSAYILAN } from './stadyum';
 import { createMatch, FORMATIONS, rng } from './macmotor';
 
 export const MAC_GUNU_EVERY = 7;          // one fan day a game week
@@ -116,7 +116,7 @@ export function installHaliSaha(K: Kernel, lig?: { mac(day: number): (MacGunu & 
       if (c.op === 'kabul') {
         const t = rt.uiLast.haliSahaTeklif as MacGunu | undefined; if (!t) return false;
         delete rt.uiLast.haliSahaTeklif;
-        rt.uiLast.haliSahaMac = { ...t, formasyon: ((S.zones.arsa as { takim?: unknown; stad?: { formasyon?: string } } | undefined)?.takim ? stadSave(S.zones.arsa as never).formasyon : '2-2') }; rt.paused = true; rt.pauseWhy = 'halisaha';
+        rt.uiLast.haliSahaMac = { ...t, doluluk: tahminDoluluk((S.zones.arsa as { takim?: unknown } | undefined)?.takim ? stadSave(S.zones.arsa as never).fiyat : FIYAT_VARSAYILAN, z.form || [], LIG_BY_ID[t.rival]?.guc || 55), formasyon: ((S.zones.arsa as { takim?: unknown; stad?: { formasyon?: string } } | undefined)?.takim ? stadSave(S.zones.arsa as never).formasyon : '2-2') }; rt.paused = true; rt.pauseWhy = 'halisaha';
         K.logEv('haliSaha', { op: 'kabul', team: t.team });
         return true;
       }
