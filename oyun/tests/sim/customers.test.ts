@@ -98,7 +98,7 @@ describe('BUF-23 müşteri tipleri ve sabır', () => {
   it('tip davranışı: öğrenci hızlı yer, çift ve yaşlı yavaş; iş insanı aceleci; aile büyük masa ister', () => {
     expect(davranisOf('universiteli').ye).toBeLessThan(1);
     expect(davranisOf('balayi').ye).toBeGreaterThan(1.3); expect(davranisOf('emekli').ye).toBeGreaterThan(1.3);
-    expect(davranisOf('isinsani').sabir).toBeLessThan(1); expect(davranisOf('isinsani').kasa).toBeLessThan(1);
+    expect(CITIZENS.find(c => c.id === 'isinsani')!.patience).toBe(1); expect(davranisOf('isinsani').kasa).toBeLessThan(1);
     expect(davranisOf('emekli').kasa).toBeGreaterThan(1.2); expect(davranisOf('emekli').sohbet!.length).toBeGreaterThan(0);
     expect(davranisOf('bebekarabali').buyuk!.n[1]).toBeGreaterThanOrEqual(5);
     expect(CITIZENS.find(t => t.id === 'balayi')!.prefer.gazoz).toBeDefined();

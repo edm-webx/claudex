@@ -178,10 +178,11 @@ describe('BUF-14 salon rolleri', () => {
     void m;
   });
 
-  it('oyun kapalıyken gelir yok: yeniden yüklemede müdür vekil geliri üretmez (offline kapalı)', () => {
+  it('oyun kapalıyken gelir yok: uzun süre dışarıda kalınca müdür ya da başka rol gelir üretmez (offline kapalı)', () => {
     const k = kur(); rol(k, 'mudur'); k.step(8);
+    k.sim.command({ kind: 'teleport', x: 800, z: 9 }); k.r.kasa.push({ value: 400 });
     const m0 = k.S.money;
-    // sim durmuşken (sekme kapalı) hiçbir sistem çalışmaz: sürede ilerleme yok, para değişmez
-    expect(k.S.money).toBe(m0);
+    k.sim.rules.welcomeBack(3600 * 8);
+    expect(k.S.money).toBe(m0); expect(k.r.kasa.length).toBe(1);
   });
 });

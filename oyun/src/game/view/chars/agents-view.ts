@@ -34,7 +34,20 @@ export interface AgentsView extends GameView {
   stats(): { rigs: number };
 }
 
-interface Row { a: Actor; h: HeroHandle; animal: boolean; carryKey: string; gull: number; bag?: T.Object3D }
+interface Row { a: Actor; h: HeroHandle; animal: boolean; carryKey: string; gull: number; bag?: T.Object3D; props?: Record<string, T.Object3D> }
+
+/** BUF-14/15: hafif rol aksesuarları (a.fx): kurye bisikleti, müzisyen sazı, vale arabası (sürerken), müfettiş klipsi; tek kutu/silindir, gölge yok */
+function rolProps(): Record<string, T.Object3D> {
+  const L = (c: string) => new T.MeshLambertMaterial({ color: c });
+  const box = (w: number, h: number, d: number, c: string, x = 0, y = 0, z = 0) => { const m = new T.Mesh(new T.BoxGeometry(w, h, d), L(c)); m.position.set(x, y, z); return m; };
+  const wheel = (x: number, z: number) => { const m = new T.Mesh(new T.TorusGeometry(0.3, 0.035, 5, 12), L('#222')); m.rotation.y = Math.PI / 2; m.position.set(x, 0.3, z); return m; };
+  const bike = new T.Group(); bike.add(wheel(0, 0.55), wheel(0, -0.55), box(0.05, 0.05, 1.1, '#3fb5b0', 0, 0.45, 0), box(0.4, 0.04, 0.04, '#222', 0, 0.85, 0.5));
+  const saz = new T.Group(); saz.add(box(0.22, 0.26, 0.07, '#8a5a2b', 0.1, 0.95, 0.25), box(0.05, 0.5, 0.04, '#5a3a1c', 0.1, 1.3, 0.25)); saz.rotation.z = -0.5;
+  const araba = new T.Group(); araba.add(box(1.0, 0.35, 2.2, '#c0392b', 0, 0.35, 0), box(0.9, 0.3, 1.1, '#8fb8d8', 0, 0.65, -0.1), wheel(0.5, 0.7), wheel(-0.5, 0.7), wheel(0.5, -0.7), wheel(-0.5, -0.7));
+  const klips = new T.Group(); klips.add(box(0.2, 0.28, 0.02, '#a0764a', -0.2, 1.0, 0.3));
+  for (const g of [bike, saz, araba, klips]) g.visible = false;
+  return { bike, saz, araba, klips };
+}
 
 export function resolveLook(chars: MotorChars, look: Record<string, unknown> | undefined): Record<string, unknown> | undefined {
   if (!look) return look;
@@ -74,7 +87,9 @@ export function createAgentsView(deps: AgentsViewDeps): AgentsView {
       const rope = new T.Mesh(new T.CylinderGeometry(0.014, 0.014, 1.9, 4), new T.MeshLambertMaterial({ color: '#d8d0c0' })); rope.rotation.x = Math.PI / 2; rope.position.set(0, 0.22, 0.95);
       g.add(sack, knot, rope); g.position.set(0, 0, -1.55); g.visible = false; h.object.add(g); bag = g;
     }
-    return { a, h, animal, bag, carryKey: '', gull: a.kind === 'gull' ? Number(a.key.split('-')[1]) : -1 };
+    let props: Record<string, T.Object3D> | undefined;
+    if (!animal && (a.kind === 'worker' || a.key === 'mufettis')) { props = rolProps(); for (const o of Object.values(props)) h.object.add(o); }
+    return { a, h, animal, bag, props, carryKey: '', gull: a.kind === 'gull' ? Number(a.key.split('-')[1]) : -1 };
   }
   function ensure(agents: AgentsHandle | null) {
     if (!agents) return;
@@ -106,6 +121,7 @@ export function createAgentsView(deps: AgentsViewDeps): AgentsView {
         const rot = lerpAngle(a.prot, a.rot, alpha);
         h.setPose({ x, z }, rot);
         h.object.position.y = y;
+        if (r.props) for (const k in r.props) r.props[k].visible = a.fx === k;
         if (r.bag) { r.bag.visible = a.fx === 'bag'; r.bag.rotation.y = Math.sin(performance.now() / 260) * 0.12; }
         if (r.gull >= 0) h.object.visible = r.gull < gullsNear || a.act === 'stare' || a.act === 'snatch' || a.carry.length > 0;
         if (r.animal) {

@@ -54,7 +54,7 @@ export function kasaSiraNokta(kasa: { pos: { x: number; z: number } }, i: number
 export const kasaSure = (kalem: number, rankX: number, tipX = 1): number => (KASA.taban + KASA.kalem * Math.max(1, kalem)) * tipX / Math.max(1, rankX);
 
 /**
- * Müşteri tipi davranışları (BUF-23). Anahtar: citizens/index.ts tip id'si; etiket oyuncunun gördüğü tür adı.
+ * Müşteri tipi davranışları (BUF-23). Ekonomi hızı korunur: sabir < 1 YOK (ilk oturum eğrisi bozuluyordu; iş insanının acelesi zaten patience 1 ve hızlı kasa), ürün eğilimleri hafif. Anahtar: citizens/index.ts tip id'si; etiket oyuncunun gördüğü tür adı.
  *  ye: yeme süresi çarpanı | sabir: sabır çarpanı | kasa: kasa işlem süresi çarpanı | kart: karta yatkınlık 0..1 (yalnız görsel)
  *  urun: ürün tercih çarpanı (ucuz/pahalı eğilim) | sohbet: kasada sohbet satırları | buyuk: büyük grup şansı ve boyu
  */
@@ -66,15 +66,15 @@ export interface TipDavranis {
 }
 const SOHBET_YASLI = ['Bizim zamanımızda kasa defterdi evladım...', 'Hele bir dur, bozuk paramı arıyorum.', 'Nasılsın kızım, anan iyi mi?', 'Çay da güzeldi, sohbet de.'];
 export const TIP_DAVRANIS: Record<string, TipDavranis> = {
-  universiteli: { etiket: 'ogrenci', ye: 0.8, sabir: 1, kasa: 0.85, kart: 0.5, buyuk: { sans: 0.06, n: [4, 6], ad: 'Doğum günü kalabalığı' } },
+  universiteli: { etiket: 'ogrenci', ye: 0.8, sabir: 1, kasa: 0.85, kart: 0.5, urun: { simit: 1.2, ayran: 1.15, gazoz: 1.1 }, buyuk: { sans: 0.06, n: [4, 6], ad: 'Doğum günü kalabalığı' } },
   okul: { etiket: 'ogrenci', ye: 0.8, sabir: 1, kasa: 0.9, kart: 0.1, buyuk: { sans: 0.12, n: [5, 6], ad: 'Okul gezisi' } },
   bebekarabali: { etiket: 'aile', ye: 1.15, sabir: 1.1, kasa: 1.15, kart: 0.7, buyuk: { sans: 0.2, n: [4, 6], ad: 'Aile sofrası' } },
   teyze: { etiket: 'yasli', ye: 1.3, sabir: 1.1, kasa: 1.3, kart: 0.15, sohbet: SOHBET_YASLI },
   emekli: { etiket: 'yasli', ye: 1.4, sabir: 1.1, kasa: 1.35, kart: 0.1, sohbet: SOHBET_YASLI },
   turgrubu: { etiket: 'yasli', ye: 1.3, sabir: 1.1, kasa: 1.3, kart: 0.3, sohbet: SOHBET_YASLI },
   balayi: { etiket: 'cift', ye: 1.5, sabir: 1.15, kasa: 1.1, kart: 0.8 },
-  isinsani: { etiket: 'isinsani', ye: 0.85, sabir: 0.85, kasa: 0.8, kart: 0.95, urun: { doner: 1.7, tost: 1.5, cay: 0.8, ayran: 0.9 } },
-  plaza: { etiket: 'isinsani', ye: 0.9, sabir: 0.9, kasa: 0.85, kart: 0.9, urun: { doner: 1.3, tost: 1.2 } },
+  isinsani: { etiket: 'isinsani', ye: 0.85, sabir: 1, kasa: 0.8, kart: 0.95, urun: { doner: 1.7, tost: 1.5, cay: 0.8, ayran: 0.9 } },
+  plaza: { etiket: 'isinsani', ye: 0.9, sabir: 1, kasa: 0.85, kart: 0.9, urun: { doner: 1.3, tost: 1.2 } },
   kruvaziyer: { etiket: 'turist', ye: 1.0, sabir: 1, kasa: 1.25, kart: 0.7, buyuk: { sans: 0.1, n: [4, 6], ad: 'Tur kafilesi' } },
   gezgin: { etiket: 'turist', ye: 1.0, sabir: 1, kasa: 1.2, kart: 0.6 },
   taraftar: { etiket: 'taraftar', ye: 0.9, sabir: 1, kasa: 0.9, kart: 0.3, buyuk: { sans: 0.25, n: [4, 6], ad: 'Taraftar grubu' } },
