@@ -23,3 +23,9 @@ Sıra (kullanıcı seçti): 1 personel seviyesi, 2 kafe/bistro oynanış, 3 büf
 - [x] M-F (müşteri tipleri+sabır mevcut, gün sonu raporu detaylı) Müşteri tipleri + sabır çubuğu + gruplar; vatandaşlar (acıkır, dükkana gider); dekor sürükle-bırak; gün sonu raporu; Martı yıldızı
 - [x] M-G (checkShaderErrors kapalı, gece ışığı sayısı sabit, otomatik kalite yukarı-aşağı döngüsü kesildi, zone sonrası compileAsync) Chrome donma kök nedeni (EN SON). Baseline: perf.mjs 183-263 çağrı, 94k-392k üçgen
 - [x] M-H (cinsiyet, dururken yüz ifadesi, 3 yeni sakal, AVM kıyafetleri dolapta giyilir) Karakter yaratıcı (yüz ifadesi, cinsiyet, saç, sakal, kıyafet) EN SON
+
+## 2026-11-20 DÜZELTME + YOL PLANI (taslak, sahip onayı bekliyor)
+DÜZELTME: Yukarıdaki 2026-11-09 [x] işaretleri koddan doğrulandı; 262 anket isteğinin 84'ü yapıldı, 91'i yarım, 55'i yok, 9'u "olmasın" dediği halde var (hijyen müfettişi, kurye, garson bölge ataması, olaylar, mutfağın büfe içinde büyümesi, duman/buğu, mini harita oluşturma vb. eksik). [x] işaretlerine güvenme; ayrıntı: /mnt/project-files/sosisci-oyun/plan-2026-11-13/ (arastirma-sonuc-*.json, studyo/).
+Plan belgesi: https://claude.ai/artifact/F2BUtovpYYC5vMA5WC7QtC (8 aşama, 13 karar). Uzman paketleri: studyo/uzman-paketleri.json (213 paket: 173 İSTEK, 40 ÖNERİ), eleştirmenler: studyo/elestirmenler.json.
+Kırmızı çizgiler: stok yok; prop işçi yok; büfe iskelede yerinde büyür (zincir, kestane/mısır, müdavim, deniz platformu yok); para sesi yumuşak; ışık koyu, yazı okunur; ÖNERİ paketleri onaysız yapılmaz.
+Aşamalar (oturum): [ ] 0 Karar ve ölçüm (12-14) [ ] 1 Temizlik ve temel (60-70) [ ] 2 Akıcılık ve görsel omurga (50-55) [ ] 3 Gerçek çalışanlar ve canlı odalar (85-100) [ ] 4 Büfe 10 aşama ve işletmeler (110-130) [ ] 5 Futbol ve stadyum (50-55) [ ] 6 Dünya, orman, sokak, hikâye (130-150) [ ] 7 Karakter, arayüz filigranı, online (70-90).
