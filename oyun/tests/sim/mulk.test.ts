@@ -101,7 +101,7 @@ it('kafe: müşteriler içeri gelir, hired worker ve oyuncu servis eder, para ka
   expect(p.sat).toBeGreaterThan(0);
   // hired worker: real actor serves on its own
   sim.command({ kind: 'teleport', x: 0, z: 0 });
-  const sat0 = p.sat; p.isci = 2;
+  const sat0 = p.sat; c({ op: 'adminIsci', id: 'k1' }); c({ op: 'adminIsci', id: 'k1' });
   for (let i = 0; i < 900; i++) { sim.step(0.1); h.pending.k1 = Math.max(h.pending.k1 || 0, 1); }
   expect(p.sat).toBeGreaterThan(sat0 + 2);
   expect(kr).toBeDefined();

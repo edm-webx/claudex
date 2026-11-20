@@ -8,13 +8,14 @@
  */
 import type { System, SimCtx, Vec2 } from '../../../engine/api';
 import { IC_BY_ID, icWorld, icDim, icLayout } from '../../../content/ic-mekan';
-import { KAFE_ISCI_TAVAN } from '../../../content/esya';
+import { KAFE_ISCI_TAVAN, ARSA_ISLETME } from '../../../content/esya';
+import { ISLETME_ROL } from '../../../content/isletme-kadro';
 import type { AgentEnv } from './env';
 import type { Actor } from './types';
 
 interface KafeHostApi {
   live: boolean; fp: boolean; pending: Record<string, number>; fpDone?: (arsa: string, ok: boolean) => void;
-  info(id: string): { lv: number; isci: number; tema: string; fiyat: number; menu: string[] } | null;
+  info(id: string): { lv: number; isci: number; kadro: { id: number; ad: string; rol: string; huy: string; look: { apronText: string; lookSeed: number; headscarf?: string }; rank: number }[]; tema: string; fiyat: number; menu: string[] } | null;
   sell(id: string, bonus?: number): number;
 }
 const ROOMS: { arsa: string; room: string; bistro: boolean }[] = [{ arsa: 'k1', room: 'kafe1', bistro: false }, { arsa: 'k2', room: 'kafe2', bistro: true }, { arsa: 'k4', room: 'okul', bistro: false }, { arsa: 'k5', room: 'avm', bistro: false }, { arsa: 'k6', room: 'tesis', bistro: false }, { arsa: 'k3', room: 'kirtasiye', bistro: false }];
@@ -24,7 +25,7 @@ const LINES_OUT = ['Eline sağlık!', 'Çok güzel olmuş.', 'Yine geleceğiz!',
 const LINES_ANGRY = ['Çok bekledim, gidiyorum!', 'Kimse yok mu?', 'Bu kadar beklenmez.'];
 
 interface Guest { a: Actor; st: 'in' | 'queue' | 'served' | 'toSeat' | 'sit' | 'out'; t: number; path: Vec2[]; slot: number; claimed: number; seat: Vec2 | null; tbl: number; face: number; want: string }
-interface Wk { a: Actor; idx: number; st: 'post' | 'brew' | 'hand'; t: number; guest: Guest | null; path: Vec2[] }
+interface Wk { a: Actor; cid: number; idx: number; st: 'post' | 'brew' | 'hand'; t: number; guest: Guest | null; path: Vec2[] }
 interface Room { arsa: string; room: string; bistro: boolean; guests: Guest[]; wk: Wk[]; seatTaken: Set<number> }
 
 export interface KafeSystem extends System { rooms(): { room: string; guests: number; waiting: number; workers: number }[] }
@@ -83,14 +84,21 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
   /** waiting guests in arrival order */
   const waiting = (r: Room) => r.guests.filter(x => x.st === 'queue').sort((p, q) => p.slot - q.slot);
 
+  /** DKN-03: one actor per named crew member, matched by id (hired = walks in with the name, fired = walks out and is gone) */
   function syncWorkers(r: Room) {
-    const h = host(), info = h?.info(r.arsa), want = info ? Math.min(KAFE_ISCI_TAVAN, info.isci) : 0;
-    while (r.wk.length > want) { const w = r.wk.pop()!; if (w.guest) { w.guest.claimed = 0; w.guest = null; } env.reg.remove(w.a); }   // a guest claimed by the removed worker is released, never stuck in the queue
-    while (r.wk.length < want) {
-      const g = geom(r), idx = r.wk.length, seed = 31 * idx + (r.bistro ? 7 : 3), role = idx === 0 ? 'barista' : 'garson';
-      const a = env.reg.add('worker', 'kafe-' + r.room + '-w' + idx, { kind: 'worker', role, seed }, g.w(0, g.D / 2 + 0.6), { role, name: 'Çalışan', rank: 0 });
-      r.wk.push({ a, idx, st: 'post', t: 0, guest: null, path: [g.inside, g.P(g.endU, 1.4), g.P(g.endU, -0.7), g.P(g.cu + (g.vert ? 0.6 : 1.5) + idx * (g.vert ? 0.5 : 1.4), -0.7)] });   // last point = postOf(): no back-slide on arrival
+    const h = host(), info = h?.info(r.arsa), kad = (info ? info.kadro : []).slice(0, KAFE_ISCI_TAVAN);
+    for (let i = r.wk.length - 1; i >= 0; i--) {
+      const w = r.wk[i]; if (kad.some(c => c.id === w.cid)) continue;
+      if (w.guest) { w.guest.claimed = 0; w.guest = null; }   // a guest claimed by the removed worker is released, never stuck in the queue
+      env.reg.remove(w.a); r.wk.splice(i, 1);
     }
+    kad.forEach((c) => {
+      if (r.wk.some(w => w.cid === c.id)) return;
+      const g = geom(r), idx = r.wk.length, role = c.rol === 'barista' || c.rol === 'garson' || c.rol === 'kasiyer' || c.rol === 'asci' ? c.rol : (ISLETME_ROL[ARSA_ISLETME[r.arsa]].find(x => x.rol === c.rol)?.gorunum || 'garson');
+      const a = env.reg.add('worker', 'kafe-' + r.room + '-' + c.id, { kind: 'worker', role, look: c.look, seed: (c.id * 977) % 10007 }, g.w(0, g.D / 2 + 0.6), { role, name: c.ad, rank: c.rank, trait: c.huy });
+      r.wk.push({ a, cid: c.id, idx, st: 'post', t: 0, guest: null, path: [g.inside, g.P(g.endU, 1.4), g.P(g.endU, -0.7), g.P(g.cu + (g.vert ? 0.6 : 1.5) + idx * (g.vert ? 0.5 : 1.4), -0.7)] });
+    });
+    r.wk.forEach((w, i) => { w.idx = i; });   // posts stay packed after somebody leaves
   }
   const postOf = (r: Room, idx: number): Vec2 => { const g = geom(r); return g.P(g.cu + (g.vert ? 0.6 : 1.5) + idx * (g.vert ? 0.5 : 1.4), -0.7); };
 
