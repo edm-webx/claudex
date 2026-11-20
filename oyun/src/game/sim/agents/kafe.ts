@@ -26,7 +26,7 @@ interface Guest { a: Actor; st: 'in' | 'queue' | 'served' | 'toSeat' | 'sit' | '
 interface Wk { a: Actor; idx: number; st: 'post' | 'brew' | 'hand'; t: number; guest: Guest | null; path: Vec2[] }
 interface Room { arsa: string; room: string; bistro: boolean; guests: Guest[]; wk: Wk[]; seatTaken: Set<number> }
 
-export interface KafeSystem extends System { rooms(): { room: string; guests: number; waiting: number; workers: number }[]; serveByPlayer(room: string): number }
+export interface KafeSystem extends System { rooms(): { room: string; guests: number; waiting: number; workers: number }[] }
 
 export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSystem {
   const rng = env.rng('kafe');
@@ -84,7 +84,7 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
 
   function syncWorkers(r: Room) {
     const h = host(), info = h?.info(r.arsa), want = info ? Math.min(3, info.isci) : 0;
-    while (r.wk.length > want) { const w = r.wk.pop()!; env.reg.remove(w.a); }
+    while (r.wk.length > want) { const w = r.wk.pop()!; if (w.guest) { w.guest.claimed = 0; w.guest = null; } env.reg.remove(w.a); }   // a guest claimed by the removed worker is released, never stuck in the queue
     while (r.wk.length < want) {
       const g = geom(r), idx = r.wk.length, seed = 31 * idx + (r.bistro ? 7 : 3), role = idx === 0 ? 'barista' : 'garson';
       const a = env.reg.add('worker', 'kafe-' + r.room + '-w' + idx, { kind: 'worker', role, seed }, g.w(0, g.D / 2 + 0.6), { role, name: 'Çalışan', rank: 0 });
@@ -147,7 +147,7 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
         canAct: () => !!host()?.info(r.arsa) && waiting(r).length > 0,
         act: () => {
           const gu = waiting(r).find(x => !x.claimed) || waiting(r)[0]; if (!gu) return 'done';
-          const v = served(r, gu, 'player'); if (v) { rt.toastKafe = { room: r.room, v }; }
+          const v = served(r, gu, 'player'); if (v) env.host.heroSay('Buyurun! +' + Math.round(v) + ' ₺ kasaya', 1.6);   // player feedback (the money lands in the till, collected from the cash register)
           return waiting(r).length ? 'continue' : 'done';
         },
       });
@@ -166,6 +166,5 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
       for (const r of rooms) tickRoom(r, Math.min(ctx.dt, 0.25));
     },
     rooms: () => rooms.map(r => ({ room: r.room, guests: r.guests.length, waiting: waiting(r).length, workers: r.wk.length })),
-    serveByPlayer(room) { const r = rooms.find(x => x.room === room); if (!r) return 0; const gu = waiting(r)[0]; return gu ? served(r, gu, 'player') : 0; },
   };
 }

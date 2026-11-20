@@ -33,7 +33,7 @@ export function izleMac(seed: number) {
   const [a, b] = m.score; return { s0, s1, f, oran, sonuc: (a > b ? '1' : a === b ? 'X' : '2') as '1' | 'X' | '2', skor: [a, b] as [number, number] };
 }
 
-interface Save { izlenen?: number; bahisKazanc?: number; offerDay: number; played: number; won: number; drawn: number; lost: number; goals: number; conceded?: number; form?: string[]; team?: Record<string, number>; players?: Record<string, Record<string, number>> }
+interface Save { izlenen?: number; bekleyen?: number; bahisKazanc?: number; offerDay: number; played: number; won: number; drawn: number; lost: number; goals: number; conceded?: number; form?: string[]; team?: Record<string, number>; players?: Record<string, Record<string, number>> }
 const N = (v: unknown, max = 99999) => { const n = Number(v); return Number.isFinite(n) ? Math.max(0, Math.min(max, Math.round(n))) : 0; };
 const TEAM_KEYS = ['shots', 'onTarget', 'passes', 'passesOk', 'tackles', 'saves', 'corners', 'possession'] as const;
 const PL_KEYS = ['goals', 'assists', 'shots', 'onTarget', 'passes', 'passesOk', 'tackles', 'saves', 'touches'] as const;
@@ -60,10 +60,16 @@ export function installHaliSaha(K: Kernel, lig?: { mac(day: number): (MacGunu & 
     return z;
   };
   let announced = -1;
+  const izleRng = K.rng('sim.izle');   // the watched match's seed is drawn when the ticket is bought: it cannot be precomputed from day/hour
   const R = rt as unknown as { macGunu?: MacGunu | null };
   return {
     update(): void {
       if (!rt.started) return;
+      const zb = save();
+      if (zb.bekleyen && !(rt as unknown as { _izle?: unknown })._izle && !rt.uiLast.haliSahaIzle) {   // the page was reloaded mid-match: the stake is refunded, never burnt
+        S.money += zb.bekleyen; K.toast('Maç yarıda kaldı: bahis ' + zb.bekleyen.toLocaleString('tr') + ' ₺ iade edildi.', 'info'); zb.bekleyen = 0;
+        if (rt.pauseWhy === 'halisaha') { rt.paused = false; rt.pauseWhy = ''; }
+      }
       const fan = isMacGunu(S.day);
       R.macGunu = fan ? macGunuOf(S.day) : null;
       if (!fan) return;
@@ -86,8 +92,8 @@ export function installHaliSaha(K: Kernel, lig?: { mac(day: number): (MacGunu & 
         const bahis = (['1', 'X', '2'] as const).find(x => x === c.bahis) || null, n = bahis ? Math.max(BAHIS.min, Math.min(BAHIS.max, N(c.n))) : 0;
         if (rt.uiLast.haliSahaIzle || rt.uiLast.haliSahaMac) return false;
         if (n > S.money) { K.toast('Bahis için para yetmiyor.', 'bad'); return false; }
-        const seed = ((S.day * 7919 + Math.floor(K.hour() * 60) * 31 + (z.izlenen || 0) * 977) >>> 0) | 1, im = izleMac(seed), tm = macGunuOf(Math.max(MAC_GUNU_OFFSET, S.day) + 7 * ((z.izlenen || 0) + 1));
-        if (n) K.spend(n);
+        const seed = (Math.floor(izleRng.next() * 0x7fffffff) | 1), im = izleMac(seed), tm = macGunuOf(Math.max(MAC_GUNU_OFFSET, S.day) + 7 * ((z.izlenen || 0) + 1));
+        if (n) { K.spend(n); z.bekleyen = n; }   // persisted until the result is settled
         z.izlenen = (z.izlenen || 0) + 1;
         rt.uiLast.haliSahaIzle = { ...tm, seed, s0: im.s0, s1: im.s1, f: im.f, oran: im.oran, bahis, n, halfS: BAHIS.halfS };
         (rt as unknown as { _izle?: unknown })._izle = { sonuc: im.sonuc, skor: im.skor, bahis, n, oran: bahis ? im.oran[bahis] : 0, ad: [tm.name, tm.rivalName] };
@@ -97,6 +103,7 @@ export function installHaliSaha(K: Kernel, lig?: { mac(day: number): (MacGunu & 
       if (c.op === 'izleSonuc') {
         const iz = (rt as unknown as { _izle?: { sonuc: string; skor: [number, number]; bahis: string | null; n: number; oran: number; ad: [string, string] } })._izle;
         delete rt.uiLast.haliSahaIzle; if (rt.pauseWhy === 'halisaha') { rt.paused = false; rt.pauseWhy = ''; }
+        z.bekleyen = 0;
         if (!iz) return false; delete (rt as unknown as { _izle?: unknown })._izle;
         const skor = iz.skor[0] + '-' + iz.skor[1];
         if (iz.bahis && iz.bahis === iz.sonuc) { const kaz = Math.round(iz.n * iz.oran); odul(kaz); z.bahisKazanc = (z.bahisKazanc || 0) + kaz - iz.n; K.toast('🎉 Bahsi tutturdun (' + skor + ')! +' + kaz.toLocaleString('tr') + ' ₺', 'good'); }

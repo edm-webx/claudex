@@ -29,3 +29,18 @@ it('bahis: sonuç motorla sabit, tutarsa oran kadar öder', () => {
   expect(S.money).toBe(r.sonuc === '1' ? 9000 + Math.round(1000 * iz.oran['1']) : 9000);
   expect(rt.uiLast.haliSahaIzle).toBeUndefined();
 });
+it('bahis: maç sırasında sayfa yenilenirse (çalışma zamanı durumu kaybolur) yatırılan para iade edilir', () => {
+  const { sim, S, rt, c } = mk(); S.money = 10000;
+  sim.command({ kind: 'teleport', x: STADYUM.kapi.x, z: STADYUM.kapi.z });
+  c({ op: 'izle', bahis: '2', n: 700 }); expect(S.money).toBe(9300); expect(S.zones.halisaha.bekleyen).toBe(700);
+  delete rt._izle; delete rt.uiLast.haliSahaIzle; rt.paused = false; rt.pauseWhy = '';   // what a reload does: the save keeps `bekleyen`, the runtime is gone
+  sim.step(1);
+  expect(S.money).toBe(10000); expect(S.zones.halisaha.bekleyen).toBe(0); expect(rt.paused).toBe(false);
+});
+it('bahis: tohum her izlemede farklı ve gün/saatten türetilemez', () => {
+  const { sim, S, rt, c } = mk(); S.money = 50000;
+  sim.command({ kind: 'teleport', x: STADYUM.kapi.x, z: STADYUM.kapi.z });
+  c({ op: 'izle', bahis: '1', n: 100 }); const s1 = rt.uiLast.haliSahaIzle.seed; sim.command({ kind: 'halisaha', op: 'izleSonuc' });
+  c({ op: 'izle', bahis: '1', n: 100 }); const s2 = rt.uiLast.haliSahaIzle.seed;
+  expect(s1).not.toBe(s2);
+});
