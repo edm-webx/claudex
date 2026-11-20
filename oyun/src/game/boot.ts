@@ -566,6 +566,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   };
   quality.onChange(applyTier);
   if (nightLights) quality.onChange(t => make('nightLights.setTier', () => { nightLights.setTier(t); return true; }));   // PRF-08: ışık sayısı yalnız kademe değişiminde
+  quality.onChange(() => { void R.warm?.(scene, cam.camera); });   // PRF-03: gölge + ışık havuzu değişti; yeni programlar paralel derlensin (kare içinde değil)
   quality.onScale?.(sc => make('render.setScale', () => { R.setScale?.(sc); P.count('olcekYuzde', Math.round(sc * 100)); return true; }));
   if (chars) make('crowd.setBudget', () => { chars.crowd.setBudget(quality.current().crowd); return true; });
   sim.state.settings.quality = quality.setting();
@@ -701,6 +702,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (zones) { const pend = zones.pending(); if (pend === 0 && warmPend !== 0) { void R.warm?.(scene, cam.camera); } warmPend = pend; }
     // PRF-04: opaque full-screen overlays (halı saha, Sabri'nin evi, karakter oluşturma) hide the main canvas completely:
     // skip the main scene draw (shadow pass + bloom + ~1000 draw calls) so the fan stays quiet; the next frame after close draws as usual.
+    if (coverOpen()) quality.flushAuto?.();   // PRF-03: bekleyen otomatik kademe, dünya örtülüyken
     if (coverOpen()) P.count('overlayAtlanan', ++overlaySkipped);
     else guard('render', () => P.time('render', () => R.frame(scene, cam.camera, alpha)));
     if (tracing) traceBuf.push([synthT ?? t0, pos.x, pos.z, cam.camera.position.x, cam.camera.position.z]);
@@ -744,6 +746,10 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
       if (audio) make('audio.suspend', () => { audio.suspend(false); return true; });
     }
   });
+  // PRF-03: otomatik kademe değişimi oyun sırasında uygulanmaz (her materyal yeniden derlenir); sekme gizlenince ya da
+  // tam ekran pencere (halı saha, ev, karakter) ana sahneyi örterken uygulanır. Oyun içinde PRF-12 çözünürlük ölçeği çalışır.
+  quality.deferAuto?.(() => !pauses.size && !coverOpen());
+  platform.visibility.onChange(hidden => { if (hidden) quality.flushAuto?.(); });
   R.onContextLost(() => { pause('context'); sim.bus.emit('contextLost', undefined); });
   R.onContextRestored(() => { resume('context'); sim.bus.emit('contextRestored', undefined); guard('render', () => R.frame(scene, cam.camera, 1)); });
 
@@ -930,6 +936,8 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   reg('applyTier', (name: TierName) => quality.set(name));
   reg('scale', () => quality.scale?.() ?? 1);
   reg('setScale', (v: number) => { R.setScale?.(v); return true; });   // PRF-12 ölçüm kancası (profil.mjs)
+  reg('warmStats', () => (R as unknown as { warmStats?: () => unknown }).warmStats?.() ?? null);   // PRF-03: ısıtma/karede doğan shader sayısı
+  reg('warmBusy', () => !!((R as unknown as { warmStats?: () => { busy: boolean } }).warmStats?.().busy));
   reg('loseGl', (on = true) => { const e = R.renderer?.getContext().getExtension('WEBGL_lose_context') as { loseContext(): void; restoreContext(): void } | null; if (!e) return false; if (on) e.loseContext(); else e.restoreContext(); return true; });   // PRF-13: bağlam kaybı sınaması
   for (const what of ['ferry', 'gull', 'kapkac', 'regular', 'vip', 'endDay', 'money', 'gold', 'stars', 'sleep', 'offline', 'unlock']) {
     reg(`force.${what}`, (value?: number | string) => cmd('force', { what, value }));
@@ -974,6 +982,8 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
 
   // ── first frame, then go
   if (playMode) guard('startFlow', startFlow);
+  // PRF-03: yükleme ekranı ısıtması: ilk kareden önce sahnedeki her şeyin shader'ı paralel derlenir (en çok 6 sn beklenir)
+  if (R.warm) await Promise.race([R.warm(scene, cam.camera), new Promise(res => setTimeout(res, 6000))]);
   renderFrame(1 / 30, 1);
   if (!params.noloop) loop.start();
   if (warnings.length) console.warn('[marti] fallbacks:', warnings.join('; '));
