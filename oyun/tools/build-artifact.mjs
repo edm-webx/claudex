@@ -8,6 +8,7 @@ const dist = process.env.MARTI_DIST || 'dist';
 if (!existsSync(join(dist, 'game.js'))) { console.error('build-artifact: dist/game.js missing (run vite build first)'); process.exit(1); }
 
 const html = `<title>Sabri'nin Büfesi</title>
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <style>
 html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;background:#c6e3f2;touch-action:none;-webkit-user-select:none;user-select:none;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
