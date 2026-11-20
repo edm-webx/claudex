@@ -187,13 +187,6 @@ export const ASK_LINES = ['Bir {t} lütfen!', '{t} var mı? Ondan alayım!', 'Ba
 export const DUBLE_LINE = ' Duble olsun!';
 export const TARIF_THANKS = ['Tam kıvamında!', 'Eline sağlık usta, efsane!', 'Bu tarif kimin? Helal!', 'Bunu annem bile böyle yapamaz!'];
 
-/** Freshness line (tarif-4): seconds on the counter before an item gets stale (sold at STALE_X), and before a cat takes it. */
-export const STALE_S = 120, CAT_S = 200, STALE_X = 0.6;
-/** Station products that go stale on the counter (bottled drinks do not). */
-export const FRESH_PRODUCTS: ProductId[] = ['doner', 'tost', 'simit', 'cay'];
-export const STALE_TOAST = 'Tezgahta bayatlayan var: ucuza gidiyor.';
-export const CAT_LINES = ['Pamuk bayat {p} kaptı. Çöp yok, kedi tok!', 'Mahallenin kedileri bayat {p} ile ziyafet çekti.', 'Bir kedi bayat {p} alıp tentenin üstüne çıktı. Mutlu.'];
-
 /** Çay ustalığı (icecek-1, icecek-2): sold çay thresholds, names and extra on çay sales. */
 export const CAY_USTA = [
   { n: 0, name: 'Çırak demlik', pct: 0, line: 'Tek demlik, ocakta bekliyor.' },
@@ -203,47 +196,3 @@ export const CAY_USTA = [
 ];
 export const TAZE_DEMLEME_S = 200;
 export const TAZE_DEMLEME_TOAST = 'Taze demleme! Çay kokusu iskeleyi sardı, bahşişler biraz artıyor.';
-
-// ───────── Deney Tezgahı (tarif-8) ─────────
-export interface Malzeme { id: string; name: string; color: string; }
-export const MALZEMELER: Malzeme[] = [
-  { id: 'lavas', name: 'Lavaş', color: '#f2d39b' }, { id: 'ekmek', name: 'Ekmek', color: '#d9a35f' }, { id: 'simit', name: 'Simit', color: '#b5733a' },
-  { id: 'kasar', name: 'Kaşar', color: '#f4c542' }, { id: 'sucuk', name: 'Sucuk', color: '#b5432f' }, { id: 'domates', name: 'Domates', color: '#e0533c' },
-  { id: 'salatalik', name: 'Salatalık', color: '#6bb36b' }, { id: 'nane', name: 'Nane', color: '#3f9b5a' }, { id: 'tarcin', name: 'Tarçın', color: '#8a5530' },
-  { id: 'portakal', name: 'Portakal', color: '#f29a2e' }, { id: 'nar', name: 'Nar', color: '#c0304a' }, { id: 'tahin', name: 'Tahin', color: '#d8c19a' },
-  { id: 'pekmez', name: 'Pekmez', color: '#5a2f1e' }, { id: 'dondurma', name: 'Dondurma', color: '#fbe7e9' }, { id: 'cay', name: 'Çay', color: '#a3361f' },
-  { id: 'ayran', name: 'Ayran', color: '#f7f7f2' }, { id: 'gazoz', name: 'Gazoz', color: '#9fd8e8' },
-];
-/** Sorted ingredient ids joined with '+' -> tarif id. */
-export const DENEY_TARIFLERI: Record<string, string> = {
-  'domates+kasar+simit': 'simit_tost',
-  'ayran+nane+salatalik': 'cacikli_ayran',
-  'cay+portakal+tarcin': 'kis_cayi',
-  'kasar+lavas+sucuk': 'kasarli_sucuklu_durum',
-  'dondurma+simit': 'simit_dondurma',
-  'gazoz+nane+nar': 'nar_fissi',
-  'pekmez+simit+tahin': 'tahinli_pekmezli_simit',
-};
-/** Hints shown in the Deney Tezgahı (one per undiscovered recipe, no full answer). */
-export const DENEY_IPUCU: Record<string, string> = {
-  simit_tost: 'Simit tost makinesine girse ne olurdu? Yanına iki arkadaş lazım.',
-  cacikli_ayran: 'Ayran bahçeye gitse yanında hangi yeşillikler olurdu?',
-  kis_cayi: 'Çaya kış kokusu verecek iki şey düşün.',
-  kasarli_sucuklu_durum: 'Tostun malzemeleri lavaşa taşınsa?',
-  simit_dondurma: 'Sıcak bir halka ile soğuk bir tatlı. Sadece ikisi.',
-  nar_fissi: 'Fıs ile Nare barışsa, araya bir de yeşil yaprak girse?',
-  tahinli_pekmezli_simit: 'Kış kahvaltısının iki tatlı yapışkanı ve bir halka.',
-};
-/** Comic failures (picked by a hash of the combination, so the same mix always gives the same line). */
-export const DENEY_FAIL = [
-  '{m}... Martılar bile yüz çevirdi.',
-  '{m} karıştı, tezgahta bir köpük canavarı doğdu. Pamuk kaçtı.',
-  '{m}! Tadına bakan Zeki üç dakika konuşamadı.',
-  '{m} oldu mu? Olmadı. Ama renk güzel, fotoğrafını çektim.',
-  '{m} denemesi bitti. Önlük yıkamaya gitti.',
-  '{m}: Hüsnü Usta "bunu fırına sokma" dedi. Haklı.',
-  '{m}. Kaptan Nevzat bile "bu rotada fırtına var" dedi.',
-  '{m} bardağa koydum, bardak çatladı gibi baktı bana.',
-];
-/** Free experiments per game day; then each costs DENEY_COST (small, earnable). */
-export const DENEY_FREE = 3, DENEY_COST = 60;

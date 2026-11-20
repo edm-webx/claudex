@@ -1,12 +1,12 @@
 {
  "schema": 1,
- "mod": "tam",
+ "mod": "hizli",
  "gecti": true,
  "adimlar": [
   {
    "ad": "tip kontrolü",
    "ok": true,
-   "sn": 6.7,
+   "sn": 5.9,
    "son": ""
   },
   {
@@ -18,25 +18,7 @@
   {
    "ad": "birim ve sim testleri",
    "ok": true,
-   "sn": 34.4,
-   "son": ""
-  },
-  {
-   "ad": "derleme",
-   "ok": true,
-   "sn": 5.4,
-   "son": ""
-  },
-  {
-   "ad": "paket sayfası",
-   "ok": true,
-   "sn": 0,
-   "son": ""
-  },
-  {
-   "ad": "dist denetimi",
-   "ok": true,
-   "sn": 0.1,
+   "sn": 28.4,
    "son": ""
   }
  ]

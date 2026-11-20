@@ -12,15 +12,18 @@ import { TRAITS } from '../../content/traits';
 import { RARITY } from '../../content/ranks';
 import type { Vec2 } from '../../engine/api';
 import type { ProductId } from './schema';
-import type { Kernel, Item, Customer, SalesApi, MoneyStack } from './state';
+import type { Kernel, Plate, Customer, SalesApi, MoneyStack } from './state';
+import { DISH_BY_ID, isProduct, yemekMaliyet } from '../../content/yemek-menu';
 import { clamp, r1 } from './util';
 import { streakStep, streakMult } from './streak';
 import { setHit } from './sets';
 import { yatirimFx } from './yatirim';
 
-export function installEconomy(K: Kernel, addMoneyTo: (pile: MoneyStack[], v: number) => void): { sales: SalesApi; settleSale(c: Customer | null, items: Item[], opts?: { direct?: boolean; at?: Vec2 }): number; tipMult(): number; earn(v: number, at?: Vec2): number; earnTam(v: number): void; incomePerMin(): number } {
+export function installEconomy(K: Kernel, addMoneyTo: (pile: MoneyStack[], v: number) => void): { sales: SalesApi; settleSale(c: Customer | null, items: Plate[], opts?: { direct?: boolean; at?: Vec2 }): number; tipMult(): number; earn(v: number, at?: Vec2): number; earnTam(v: number): void; incomePerMin(): number } {
   const rt = K.rt, S = K.state;
-  const itemValue = (it: Item): number => price(it.type, it.tier || S.tiers[it.type] || 1) * (it.priceX || 1);
+  /** BUF-05: a kitchen dish plate sells at its menu price (DishDef.fiyat), a counter product at its tier price */
+  const itemValue = (it: Plate): number => (isProduct(it.type) ? price(it.type, it.tier || S.tiers[it.type] || 1) : (DISH_BY_ID[it.type]?.fiyat ?? 0)) * (it.priceX || 1);
+  const costRate = (it: Plate): number => (isProduct(it.type) ? MALIYET[it.type] : DISH_BY_ID[it.type] ? yemekMaliyet(DISH_BY_ID[it.type]) : 0.4);
   const pay = (v: number) => {
     S.money += v; S.today!.earned += v; S.week.earned += v; S.totalEarned += v; rt.incomeWin.push([S.playT, v]);
     K.statMax('moneyMax', S.money);
@@ -36,10 +39,10 @@ export function installEconomy(K: Kernel, addMoneyTo: (pile: MoneyStack[], v: nu
     return v;   // toast'lar kırpılmış tutarı yazsın
   };
   /** Ingredients of the sold items (₺), paid out of the sale. */
-  const costOf = (items: Item[]) => items.reduce((s, it) => s + itemValue(it) * (MALIYET[it.type] ?? 0.4), 0) * (1 - yatirimFx(S, 'hammadde'));
-  function settleSale(c: Customer | null, items: Item[], opts: { direct?: boolean; at?: Vec2 } = {}): number {
+  const costOf = (items: Plate[]) => items.reduce((s, it) => s + itemValue(it) * costRate(it), 0) * (1 - yatirimFx(S, 'hammadde'));
+  function settleSale(c: Customer | null, items: Plate[], opts: { direct?: boolean; at?: Vec2 } = {}): number {
     let sum = 0; const prods: ProductId[] = [];
-    items.forEach(it => { sum += itemValue(it); if (!prods.includes(it.type)) prods.push(it.type); });
+    items.forEach(it => { sum += itemValue(it); if (isProduct(it.type) && !prods.includes(it.type)) prods.push(it.type); });
     { const sold = ((S.today as unknown as { sold?: Record<string, number> }).sold ||= {}); items.forEach(it => { sold[it.type] = (sold[it.type] || 0) + 1; }); }   // day-end report: best seller
     const st = streakStep(rt, S.playT, prods);
     let mult = K.venueMult() * streakMult(st) * (1 + yetenekFxOf(K.rt).price);   // class skill (yetenek.ts)

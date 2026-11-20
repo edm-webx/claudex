@@ -1,42 +1,71 @@
 /**
- * Faz 2 restoran sistemi (content/restoran.ts): stantlar (buy / impulse sales / refill) and the adisyon (ticket)
- * table service. Pure sim: no three, no DOM, seeded rng only. Persistent bits live in GameState.zones['restoran']
+ * Faz 2 restoran sistemi (content/restoran.ts): the adisyon (ticket) table service. Pure sim: no three, no DOM, seeded rng only. Persistent bits live in GameState.zones['restoran']
  * (created on first read, so old saves load untouched); tickets are runtime only (table guests don't survive a reload).
  *
  * Interactables (dwell rule like everything else):
- *   `stantal.<id>` buy plate of a stand (0.8 s stand-still, then it's bought if the money is there),
- *   `stant.<id>`   refill one portion per tick, ingredients paid now (no money -> stops),
  *   `servis.<i>`   at table i: hand over one item from the hands that the table's ticket still wants.
- * Hooks used by customers.ts: rt.restoran.wantMasa() (spawner), .impulse(c) (after a counter sale).
+ * Hooks used by customers.ts: rt.restoran.wantMasa() (spawner).
  * Views/UI read restoranApi(rules).view().
  */
-import { mutfakEtki } from '../../content/mutfak';
-import { ADISYON, ADISYON_LINES, SERVIS, STANTLAR, STANT_SPOTS, STANT_STAND_D, type StantDef, FAZ2_UI } from '../../content/restoran';
-import { PRODUCTS } from '../../content/products';
+import { mutfakEtki, sefHizi } from '../../content/mutfak';
+import { ADISYON, ADISYON_LINES, SERVIS, FAZ2_UI } from '../../content/restoran';
+import { YEMEK } from '../../content/ekonomi2';
+import { DISH_BY_ID, acikYemekler, menuPano, yemekAgirlik, yemekAd, isProduct, type DishId, type FoodId, type MenuAsama } from '../../content/yemek-menu';
+import { MUTFAK_NOKTA, mutfakDunya } from '../../content/ic-mekan';
+import { installMutfakHat, type IstDurum, type MutfakHatApi } from './mutfak-hat';
 import type { Vec2 } from '../../engine/api';
 import type { ProductId } from './schema';
-import type { Kernel, Customer, Item, Order } from './state';
-import { fmtMoney, clamp } from './util';
+import type { Kernel, Customer, Item, Order, Plate } from './state';
+import { clamp } from './util';
 
 export const RESTORAN_KEY = 'restoran';
-interface Save { pos?: Record<string, { x: number; z: number; ry: number }>; owned: string[]; stock: Record<string, number>; servis: number; no: number; sold: number }
-export interface Ticket { no: number; table: number; cid: number; want: Order; all: Order; t: number; max: number; special: boolean }
-export interface TicketView { no: number; table: number; items: { p: ProductId; name: string; n: number; left: number }[]; frac: number; special: boolean }
-export interface StantView { id: string; name: string; short: string; owned: boolean; buyable: boolean; cost: number; price: number; stock: number; max: number; x: number; z: number; ry: number; look: StantDef['look']; color: string }
-export interface RestoranView { active: boolean; tickets: TicketView[]; servis: number; special: ProductId | null; specialName: string; stands: StantView[] }
+interface Save { servis: number; no: number }
+/**
+ * Bilet kalemi: ya eski tezgâh ürünü (dish null, food = ProductId) ya da menüdeki bir yemek (food = dish = DishId). BUF-05: yemek
+ * kendi adıyla kendi istasyonunda pişer ve kendi tabağıyla (Plate.type = DishId) masaya gider; taşıyıcı ürün köprüsü yok.
+ * Tadım menüsü: kurs>1, her servis ayrı kalem.
+ */
+export interface TicketLine { food: FoodId; dish: DishId | null; fiyat: number; done: boolean; kurs: number }
+export type FoodOrder = Record<FoodId, number | undefined>;
+export interface Ticket { no: number; table: number; cid: number; want: FoodOrder; all: FoodOrder; lines: TicketLine[]; t: number; max: number }
+export interface TicketView { no: number; table: number; items: { p: FoodId; dish: DishId | null; name: string; n: number; left: number }[]; frac: number }
+/** Kaldırılan stant sisteminden kalan boş sözleşme: stant-look.ts / world/index.ts / boot.ts temizlenene kadar. */
+export interface StantView { id: string; name: string; short: string; owned: boolean; buyable: boolean; cost: number; price: number; stock: number; max: number; x: number; z: number; ry: number; look: string; color: string }
+export interface RestoranView {
+  active: boolean; tickets: TicketView[]; servis: number; stands: StantView[];
+  /** BUF-05 mutfak: pass rafındaki tabaklar (FoodId, en eski önce), istasyon durumları, şef hızı (0..0.6) */
+  pass: FoodId[]; ist: Record<string, IstDurum>; sefHizi: number;
+}
 export interface RestoranApi {
   handle(c: { kind: string; [k: string]: unknown }): boolean;
   view(): RestoranView;
+  /** menü panosu: aşama aşama açılan yemek listesi (kilitliler 'Aşama N'de açılır') */
+  menu(): MenuAsama[];
+  /** şu an masa biletinde çıkabilecek yemekler (aşama açık + taşıyıcı ürün yapılı) */
+  openDishes(): DishId[];
   wantMasa(): boolean;
-  impulse(c: Customer): void;
   update(dt: number): void;
   register(): void;
   /** 2026-11-09 garson flow: claim up to n plates waiting at the pass (counter), deliver one at its table */
-  garsonClaim?(wid: number, n: number): { id: number; p: ProductId; x: number; z: number }[];
-  garsonOpen?(wid: number): { id: number; p: ProductId; x: number; z: number }[];
+  garsonClaim?(wid: number, n: number): { id: number; p: FoodId; x: number; z: number }[];
+  garsonOpen?(wid: number): { id: number; p: FoodId; x: number; z: number }[];
   garsonDone?(wid: number, id: number): boolean;
-  kitchenClaim?(wid: number): ProductId | null;
+  /** BUF-05: garsonun tabakları mutfak pass rafından alacaksa oradaki durak (dünya), tezgâhtan alacaksa null */
+  passDurak?(wid: number): Vec2 | null;
+  /** BUF-05 mutfak hattı (sim/mutfak-hat.ts): en eski bilet kalemini ve boş istasyonunu ayırır */
+  kitchenClaim?(wid: number, opt?: { from?: Vec2 }): FoodId | null;
+  /** legacy tek adım: ok=true pişen tabağı doğrudan pass'a koyar (ya da eldekini), ok=false işi bırakır */
   kitchenDone?(wid: number, ok: boolean): void;
+  kitchenIst?(wid: number): string | null;
+  kitchenSure?(wid: number): number;
+  kitchenReady?(wid: number): boolean;
+  kitchenTasi?(wid: number, opt?: { kendi?: boolean; yas?: number }): { ist: string; p: FoodId } | null;
+  kitchenTasiAl?(wid: number): Plate | null;
+  kitchenPass?(wid: number): boolean;
+  kitchenDrop?(wid: number): void;
+  kitchenBekleyen?(yas: number): boolean;
+  /** mutfak hattının kendisi (testler, görünüm) */
+  hat?: MutfakHatApi<Ticket>;
   /** waiter table visits: bring the menu, bring the bill (survey waiter flow menü→sipariş→pass→masa→hesap→sil) */
   masaClaim?(wid: number): { id: number; kind: 'menu' | 'hesap'; x: number; z: number } | null;
   masaDone?(wid: number, id: number): void;
@@ -45,44 +74,34 @@ type Cu = { leave(c: Customer, angry: boolean): void; say(c: Customer, t: string
 
 export function restoranApi(r: { rt: unknown } | null | undefined): RestoranApi | null { return r ? ((r.rt as { restoran?: RestoranApi }).restoran || null) : null; }
 
-export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: Item[]) => number, addMoneyTo: (p: { value: number }[], v: number) => void): RestoranApi {
+export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: Plate[]) => number, addMoneyTo: (p: { value: number }[], v: number) => void): RestoranApi {
   const rt = K.rt, S = K.state, rng = K.rng('sim.restoran');
   const G = (): Save => {
     if (!S.zones || typeof S.zones !== 'object') S.zones = {};
     let g = S.zones[RESTORAN_KEY] as unknown as Save | undefined;
     if (!g || typeof g !== 'object') { g = {} as Save; S.zones[RESTORAN_KEY] = g as unknown as Record<string, unknown>; }
-    if (!Array.isArray(g.owned)) g.owned = [];
-    if (!g.stock || typeof g.stock !== 'object') g.stock = {};
-    // eski kayıtlardaki kaldırılmış stant kimlikleri (kestane/mısır arabası) sessizce temizlenir
-    g.owned = g.owned.filter(id => STANTLAR.some(d => d.id === id));
-    for (const k of Object.keys(g.stock)) if (!STANTLAR.some(d => d.id === k)) delete g.stock[k];
-    g.servis = Number.isFinite(g.servis) ? g.servis : SERVIS.start; g.no = g.no | 0; g.sold = g.sold | 0;
+    g.servis = Number.isFinite(g.servis) ? g.servis : SERVIS.start; g.no = g.no | 0;
     return g;
   };
   const tickets: Ticket[] = [];
   // plates a garson carries from the pass to a table; unclaimed or stuck plates are delivered by the old abstract rule after a while
-  type Job = { id: number; ticket: Ticket; p: ProductId; item: Item; t: number; wid: number };
+  // src: 'pass' (mutfak pass rafı, BUF-05) or 'counter' (ön tezgâh: tezgâh ürünü)
+  type Job = { id: number; ticket: Ticket; p: FoodId; item: Plate; t: number; wid: number; src: 'pass' | 'counter' };
   const jobs: Job[] = []; let jobId = 1;
   type Masa = { id: number; kind: 'menu' | 'hesap'; cid: number; table: number; t: number; wid: number };
   const masaJobs: Masa[] = [];
   type CF = { tk?: boolean; menuJob?: boolean; menuOk?: boolean; hesapJob?: boolean; hesapBekle?: boolean };
-  const cooking: { wid: number; ticket: Ticket; p: ProductId; t: number }[] = [];   // plates a kitchen cook is making for a ticket
   const active = () => (S.stage || 1) >= ADISYON.fromStage;
-  // 2026-10-25 user: stands can be moved in the editor; the moved place is part of the save (cloud), so it stays after teleporting away and back
-  const spot = (d: StantDef) => { const o = G().pos?.[d.id]; if (o && Number.isFinite(o.x) && Number.isFinite(o.z)) return { x: o.x, z: o.z, ry: Number(o.ry) || 0 }; const s = STANT_SPOTS[d.spot % STANT_SPOTS.length]; return { x: s[0], z: s[1], ry: s[2] }; };
-  const padAt = (d: StantDef): Vec2 => { const p = spot(d); return { x: p.x + Math.sin(p.ry) * 0.9, z: p.z + Math.cos(p.ry) * 0.9 }; };
-  const standAt = (d: StantDef): Vec2 => { const p = spot(d); return { x: p.x + Math.sin(p.ry) * STANT_STAND_D, z: p.z + Math.cos(p.ry) * STANT_STAND_D }; };
-  const owned = (id: string) => G().owned.includes(id);
   const custOf = (t: Ticket) => rt.customers.find(c => c.id === t.cid) || null;
-  const special = (): ProductId | null => {
-    const open = K.openProducts(); if (!open.length) return null;
-    return open[(S.day * 7 + 3) % open.length];
-  };
-  const add = (o: Order, p: ProductId, n = 1) => { o[p] = (o[p] || 0) + n; };
-  const left = (t: Ticket) => Object.values(t.want).reduce((s, n) => s + (n || 0), 0);
+  const add = (o: Record<string, number | undefined>, p: string, n = 1) => { o[p] = (o[p] || 0) + n; };
+  const left = (t: Ticket) => Object.values(t.want).reduce<number>((s, n) => s + (n || 0), 0);
 
   // stations produce for open tickets too (room above the counter stock)
-  rt.reserved.push(() => { const r: Order = {}; for (const t of tickets) for (const p in t.want) add(r, p as ProductId, t.want[p as ProductId] || 0); return r; });
+  rt.reserved.push(() => { const r: Order = {}; for (const t of tickets) for (const p in t.want) if (isProduct(p)) add(r, p, t.want[p] || 0); return r; });
+  // BUF-05: mutfak hattı (istasyonlar, tepsi, pass rafı)
+  const hat = installMutfakHat<Ticket>(K, { tickets: () => tickets, jobs: (t, f) => jobs.filter(j => j.ticket === t && j.p === f).length });
+  /** yemek masa biletine ancak mutfak pişirip getirebiliyorsa çıkar: aşçı (pişirir) ve garson (pass'tan taşır) işe alınmış olmalı */
+  const mutfakHazir = () => S.workers.some(w => w.role === 'asci') && S.workers.some(w => w.role === 'garson');
 
   function freeTable(): number {
     for (let i = 0; i < rt.tables.length; i++) {
@@ -91,25 +110,36 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     }
     return -1;
   }
+  const dishesNow = () => acikYemekler(S.stage || 1);
   function openTicket(c: Customer): void {
     if (!c.seat) return;
-    const g = G(), sp = special();
-    const want: Order = {};
-    let n = 0;
-    for (const p in c.order) { const k = Math.min(c.order[p as ProductId] || 0, ADISYON.maxItems - n); if (k > 0) { want[p as ProductId] = k; n += k; } }
-    let isSp = false;
-    if (sp && !want[sp] && n < ADISYON.maxItems && rng.next() < 0.35) { want[sp] = 1; isSp = true; cu.say(c, rng.pick(ADISYON_LINES.special), 2); }
-    else if (sp && want[sp]) isSp = true;
-    if (!Object.keys(want).length) want[K.openProducts()[0] || 'cay'] = 1;
-    c.order = { ...want }; c.got = {};
+    const g = G();
+    const units: ProductId[] = [];
+    for (const p in c.order) for (let k = 0; k < (c.order[p as ProductId] || 0) && units.length < ADISYON.maxItems; k++) units.push(p as ProductId);
+    if (!units.length) units.push(K.openProducts()[0] || 'cay');
+    // menü: kalemlerin bir kısmı açık aşamanın yemeği (tip tercihine göre), kalanı eski ürünler; tadım menüsü tek siparişin kendisi
+    const avail = mutfakHazir() ? dishesNow() : [], pay = YEMEK.pay[Math.max(0, Math.min(9, (S.stage || 1) - 1))] ?? 0;
+    let lines: TicketLine[] = [], kursN = 1;
+    for (const u of units) {
+      if (avail.length && rng.next() < pay) {
+        const w: Record<string, number> = {}; for (const d of avail) w[d.id] = yemekAgirlik(d, c.typeId, u);
+        const d = DISH_BY_ID[rng.weighted(w)];
+        if (d.kurs) { kursN = rng.int(d.kurs[0], d.kurs[1]); lines = Array.from({ length: kursN }, () => ({ food: d.id, dish: d.id, fiyat: Math.round(d.fiyat / kursN), done: false, kurs: kursN })); break; }
+        lines.push({ food: d.id, dish: d.id, fiyat: d.fiyat, done: false, kurs: 1 });
+      } else lines.push({ food: u, dish: null, fiyat: 0, done: false, kurs: 1 });
+    }
+    const want: FoodOrder = {}, po: Order = {};
+    for (const l of lines) { add(want, l.food); if (isProduct(l.food)) add(po, l.food); }
+    c.order = po; c.got = {};   // müşterinin tezgâh ürünü siparişi (yemekler bilette, adıyla)
     g.no = (g.no % 99) + 1;
-    tickets.push({ no: g.no, table: c.seat.table, cid: c.id, want: { ...want }, all: { ...want }, t: 0, max: ADISYON.patience, special: isSp });
+    tickets.push({ no: g.no, table: c.seat.table, cid: c.id, want: { ...want }, all: { ...want }, lines, t: 0, max: ADISYON.patience + (kursN - 1) * YEMEK.kursSabir });
     K.logEv('ticket', { no: g.no, table: c.seat.table, x: c.x, z: c.z });
   }
-  function deliver(t: Ticket, c: Customer, it: Item): void {
+  function deliver(t: Ticket, c: Customer, it: Plate): void {
     const p = it.type;
-    if (t.special && p === special()) it.priceX = (it.priceX || 1) * (1 + ADISYON.special);
-    c.items.push(it); add(c.got, p);
+    const ln = t.lines.find(l => !l.done && l.food === p);
+    if (ln) { ln.done = true; if (ln.dish) { it.priceX = (it.priceX || 1) * ln.fiyat / DISH_BY_ID[ln.dish].fiyat; K.stat('yemek_' + ln.dish); } }   // tadım menüsü: servis başına payı
+    c.items.push(it); if (isProduct(p)) add(c.got, p);
     t.want[p] = Math.max(0, (t.want[p] || 0) - 1); if (!t.want[p]) delete t.want[p];
     K.logEv('serve', { x: c.x, z: c.z });
     if (!left(t)) complete(t, c);
@@ -137,75 +167,8 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     if (c) { cu.say(c, rng.pick(ADISYON_LINES.late), 2.5); c.items.splice(0); S.today!.angry++; K.logEv('angry', { type: c.typeId }); cu.leave(c, true); }
   }
 
-  // ───────── stands ─────────
-  function buyStant(id: string, prepaid = false): void {
-    const d = STANTLAR.find(x => x.id === id), g = G();
-    if (!d || owned(id)) return;
-    if ((S.stage || 1) < 2) return;
-    if (!prepaid && S.money < d.cost) { K.toast(d.name + ' için ' + fmtMoney(d.cost) + ' lazım.', 'bad'); return; }
-    if (!prepaid) K.spend(d.cost);
-    g.owned.push(id); g.stock[id] = Math.round(d.stock / 2);
-    K.toast(d.name + ' kuruldu! Stok bitince başına geçip doldur.', 'good');
-    K.logEv('stantBuy', { id }); K.saveNow(); register();
-  }
-  function impulse(c: Customer): void {
-    if (c.kind !== 'q') return;
-    const g = G(), h = K.hour();
-    for (const d of STANTLAR) {
-      if (!g.owned.includes(d.id) || (g.stock[d.id] || 0) <= 0) continue;
-      const busy = d.hours && h >= d.hours[0] && h < d.hours[1] ? 1.6 : 1;
-      if (rng.next() >= d.chance * busy) continue;
-      g.stock[d.id]--; g.sold++;
-      const v = d.price;
-      addMoneyTo(rt.kasa, v); S.today!.earned += v; S.week.earned += v; S.totalEarned += v; rt.incomeWin.push([S.playT, v]);
-      const tt = S.today as unknown as { sales?: number }; tt.sales = (tt.sales || 0) + v;
-      K.stat('stant_' + d.id); K.logEv('stantSale', { id: d.id, v });
-      return; // one impulse per guest
-    }
-  }
-  let lastNoMoney = -99;
-  const regIds = new Set<string>();
   function register(): void {
     if (!FAZ2_UI) return;
-    for (const d of STANTLAR) {
-      const buyId = 'stantal.' + d.id, refId = 'stant.' + d.id;
-      if (!owned(d.id) && !regIds.has(buyId)) {
-        regIds.add(buyId);
-        // Faz 2: a yellow pad like every other unit: money flows from the pocket while the player stands on it
-        // (same rate as pads.ts), the paid part is kept in S.padPaid, the stand is built when it is full.
-        const pos = padAt(d), key = 'stant.' + d.id; let warned = false;
-        K.interactions.register({
-          id: buyId, pos, radius: 0.8, kind: 'pad', dwell: 0, interval: 0.05,
-          canAct: () => !owned(d.id) && S.stage >= 2,
-          act: () => {
-            const paid = S.padPaid[key] || 0, left = d.cost - paid;
-            if (S.money < 1) { if (!warned) { warned = true; K.toast('Para lazım: müşterilere satış yap, kasayı topla.', 'info'); } return 'continue'; }
-            const amt = Math.min(Math.max(d.cost / 1.2, 250) * 0.05, S.money, left);
-            S.money -= amt; S.padPaid[key] = paid + amt;
-            if (S.padPaid[key] >= d.cost - 0.01) { delete S.padPaid[key]; S.money = Math.max(0, S.money); buyStant(d.id, true); return 'done'; }
-            return 'continue';
-          },
-        });
-      }
-      if (owned(d.id)) {
-        if (regIds.has(buyId)) { regIds.delete(buyId); K.interactions.unregister(buyId); }
-        if (!regIds.has(refId)) {
-          regIds.add(refId);
-          K.interactions.register({
-            id: refId, pos: standAt(d), radius: 0.8, kind: 'station', dwell: 0.4, interval: 0.15,
-            canAct: () => (G().stock[d.id] || 0) < d.stock,
-            act: (_a, ctx) => {
-              const g = G(), cost = Math.max(1, Math.round(d.price * d.maliyet));
-              if ((g.stock[d.id] || 0) >= d.stock) return 'done';
-              if (S.money < cost) { if (ctx.t - lastNoMoney > 4) { lastNoMoney = ctx.t; K.toast('Malzemeye para yetmiyor abi.', 'bad'); } return 'done'; }
-              K.spend(cost); g.stock[d.id] = (g.stock[d.id] || 0) + 1;
-              K.logEv('stantRefill', { id: d.id });
-              return 'continue';
-            },
-          });
-        }
-      }
-    }
     // table service plates
     rt.layout.tables.forEach((tb, i) => {
       const id = 'servis.' + i, ex = K.interactions.get(id);
@@ -228,14 +191,6 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
   // ───────── per tick ─────────
   let garsonT = 0;
   function update(dt: number): void {
-    // Faz 2: buyable stands show as yellow pads (drawn by view/world/rtview.ts with fill), like every other unit
-    if (FAZ2_UI) for (const d of STANTLAR) {
-      const key = 'stant.' + d.id, i = rt.pads.findIndex(p => p.key === key);
-      const show = !owned(d.id) && S.stage >= 2;
-      if (show && i < 0) rt.pads.push({ key, price: d.cost, paid: S.padPaid[key] || 0, pos: padAt(d), kind: 'stant', warned: false, label: d.short, sub: d.name });
-      else if (!show && i >= 0) rt.pads.splice(i, 1);
-      else if (show && i >= 0) rt.pads[i].pos = padAt(d);
-    }
     // seated table guests: print the ticket after a short look at the menu
     const gN = S.workers.filter(w => w.role === 'garson').length;
     for (const c of rt.customers) {
@@ -262,22 +217,24 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
       const j = masaJobs[i], c = rt.customers.find(k => k.id === j.cid); j.t += dt;
       if (!c || c.state === 'leave' || j.t > (j.wid ? 30 : 18)) { if (c) { const f = c as unknown as CF; if (j.kind === 'hesap') f.hesapBekle = false; else f.menuOk = true; } masaJobs.splice(i, 1); }
     }
-    for (let i = cooking.length - 1; i >= 0; i--) { cooking[i].t += dt; if (cooking[i].t > 40 || !tickets.includes(cooking[i].ticket)) cooking.splice(i, 1); }
+    hat.update(dt);
     // garsons carry plates from the pass (counter stock) to the tables: a job is a plate taken off the counter, a garson walks it over
     const g = S.workers.filter(w => w.role === 'garson').length;
     for (let i = jobs.length - 1; i >= 0; i--) {
       const j = jobs[i], c = custOf(j.ticket); j.t += dt;
-      if (!tickets.includes(j.ticket) || !c) { (rt.counter[j.p] ||= []).push(j.item); jobs.splice(i, 1); continue; }
+      if (!tickets.includes(j.ticket) || !c) { geri(j); jobs.splice(i, 1); continue; }
       if ((!j.wid && j.t > 12) || j.t > 30) { jobs.splice(i, 1); deliver(j.ticket, c, j.item); }
     }
     if (g > 0 && tickets.length && jobs.length < g * 3) {
       garsonT -= dt;
       if (garsonT <= 0) {
         garsonT = 0.8;
-        for (const t of tickets) {
-          const p = (Object.keys(t.want) as ProductId[]).find(q => (rt.counter[q]?.length || 0) > 0 && jobs.filter(j => j.ticket === t && j.p === q).length < (t.want[q] || 0));
+        for (const t of tickets) {   // tabak kaynağı: önce mutfak pass rafı, yoksa ön tezgâh (pass'ı olmayan aşama / aşçısız oyun eskisi gibi)
+          const p = Object.keys(t.want).find(q => (hat.passCount(q) > 0 || (isProduct(q) && (rt.counter[q]?.length || 0) > 0)) && jobs.filter(j => j.ticket === t && j.p === q).length < (t.want[q] || 0));
           if (!p) continue;
-          jobs.push({ id: jobId++, ticket: t, p, item: rt.counter[p].pop()!, t: 0, wid: 0 });
+          const fromPass = hat.passTake(p);
+          const item: Plate = fromPass || rt.counter[p as ProductId].pop()!;
+          jobs.push({ id: jobId++, ticket: t, p, item, t: 0, wid: 0, src: fromPass ? 'pass' : 'counter' });
           break;
         }
       }
@@ -289,18 +246,32 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     if (rng.next() >= sh) return false;
     return freeTable() >= 0;
   }
+  /** bileti düşen tabak: tezgâh ürünü tezgâha döner (eski kural), mutfak yemeği sessizce gider (stok yok) */
+  function geri(j: Job): void { if (j.src === 'counter' && isProduct(j.item.type)) (rt.counter[j.item.type] ||= []).push(j.item as Item); }
+  function ticketItems(t: Ticket): TicketView['items'] {
+    const m = new Map<string, TicketView['items'][number]>();
+    for (const l of t.lines) {
+      const key = l.food;
+      let it = m.get(key);
+      if (!it) { const d = l.dish ? DISH_BY_ID[l.dish] : null; it = { p: l.food, dish: l.dish, name: d ? (l.kurs > 1 ? d.ad + ' (' + l.kurs + ' servis)' : d.ad) : yemekAd(l.food), n: 0, left: 0 }; m.set(key, it); }
+      it.n++; if (!l.done) it.left++;
+    }
+    return [...m.values()];
+  }
   function view(): RestoranView {
-    const g = G(), sp = special();
+    const g = G();
     return {
-      active: active(), servis: Math.round(g.servis * 10) / 10, special: active() ? sp : null, specialName: sp ? PRODUCTS[sp].short : '',
-      tickets: tickets.map(t => ({ no: t.no, table: t.table, frac: clamp(t.t / t.max, 0, 1), special: t.special,
-        items: (Object.keys(t.all) as ProductId[]).map(p => ({ p, name: PRODUCTS[p].short, n: t.all[p] || 0, left: t.want[p] || 0 })) })),
-      stands: STANTLAR.map(d => { const s = spot(d); return { id: d.id, name: d.name, short: d.short, owned: g.owned.includes(d.id), buyable: (S.stage || 1) >= 2, cost: d.cost, price: d.price, stock: g.stock[d.id] || 0, max: d.stock, x: s.x, z: s.z, ry: s.ry, look: d.look, color: d.color }; }),
+      active: active(), servis: Math.round(g.servis * 10) / 10,
+      tickets: tickets.map(t => ({ no: t.no, table: t.table, frac: clamp(t.t / t.max, 0, 1),
+        items: ticketItems(t) })),
+      stands: [],
+      ...hat.view(), sefHizi: sefHizi(S.workers),
     };
   }
   const api: RestoranApi = {
+    hat,
     garsonClaim(wid, n) {
-      const out: { id: number; p: ProductId; x: number; z: number }[] = [];
+      const out: { id: number; p: FoodId; x: number; z: number }[] = [];
       for (const j of jobs) { if (out.length >= n) break; if (j.wid && j.wid !== wid) continue; j.wid = wid; const tb = rt.layout.tables[j.ticket.table]; if (tb) out.push({ id: j.id, p: j.p, x: tb.x, z: tb.z }); }
       return out;
     },
@@ -317,44 +288,32 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
       if (j.kind === 'menu') { f.menuOk = true; cu.say(c, rng.pick(['Teşekkürler, bakalım...', 'Ne güzel menü!', 'Hmm, ne yesek?']), 1.6); }
       else { f.hesapBekle = false; cu.say(c, rng.pick(['Hesap tamam, eline sağlık!', 'Üstü kalsın!', 'Çok iyiydi.']), 1.8); }
     },
-    kitchenClaim(wid) {
-      if (cooking.some(c => c.wid === wid)) return null;
-      // tezgahtaki hazır tabaklar da hesaba katılır: toplam ihtiyaç - yoldaki işler - pişen - tezgah
-      const spare: Partial<Record<ProductId, number>> = {};
-      for (const t of tickets) for (const p of Object.keys(t.want) as ProductId[]) {
-        spare[p] ??= rt.counter[p]?.length || 0;
-        let left = (t.want[p] || 0) - jobs.filter(j => j.ticket === t && j.p === p).length - cooking.filter(c => c.ticket === t && c.p === p).length;
-        const use = Math.min(Math.max(0, left), spare[p]!); spare[p]! -= use; left -= use;
-        if (left > 0) { cooking.push({ wid, ticket: t, p, t: 0 }); return p; }
-      }
-      return null;
-    },
+    kitchenClaim: (wid, opt) => hat.claim(wid, opt?.from),
+    kitchenIst: wid => hat.ist(wid),
+    kitchenSure: wid => hat.sure(wid),
+    kitchenReady: wid => hat.ready(wid),
+    kitchenTasi: (wid, opt) => hat.tasiClaim(wid, opt),
+    kitchenTasiAl: wid => hat.tasiAl(wid),
+    kitchenPass: wid => hat.done(wid),
+    kitchenDrop: wid => hat.drop(wid),
+    kitchenBekleyen: yas => hat.bekleyenTepsi(yas),
     kitchenDone(wid, ok) {
-      const i = cooking.findIndex(c => c.wid === wid); if (i < 0) return;
-      const c = cooking.splice(i, 1)[0];
-      if (ok && tickets.includes(c.ticket)) { const b = (rt.counter[c.p] ||= []); if (b.length < 8) b.push({ type: c.p, tier: S.tiers[c.p] || 1 } as Item); }
+      if (!ok) { hat.drop(wid); return; }
+      if (hat.ist(wid) && hat.ready(wid) && hat.tasiClaim(wid, { kendi: true })) hat.tasiAl(wid);
+      if (hat.elde(wid) && !hat.done(wid)) hat.drop(wid);
     },
+    passDurak(wid) { return jobs.some(j => j.wid === wid && j.src === 'pass') ? mutfakDunya(MUTFAK_NOKTA.passGarson) : null; },
     garsonOpen(wid) { return jobs.filter(j => j.wid === wid).map(j => { const tb = rt.layout.tables[j.ticket.table]; return { id: j.id, p: j.p, x: tb?.x ?? 0, z: tb?.z ?? 0 }; }); },
     garsonDone(wid, id) {
       const i = jobs.findIndex(j => j.id === id && j.wid === wid); if (i < 0) return false;
       const j = jobs.splice(i, 1)[0], c = custOf(j.ticket);
-      if (c && tickets.includes(j.ticket)) deliver(j.ticket, c, j.item); else (rt.counter[j.p] ||= []).push(j.item);
+      if (c && tickets.includes(j.ticket)) deliver(j.ticket, c, j.item); else geri(j);
       return true;
     },
-    handle(c) {
-      if (c.op === 'buyStant') { buyStant(String(c.id)); return true; }
-      if (c.op === 'stantMove') {
-        const d = STANTLAR.find(x => x.id === String(c.id)); if (!d) return true;
-        const p = spot(d), g = G(); if (!g.pos) g.pos = {};
-        const cl = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
-        g.pos[d.id] = { x: cl(p.x + (Number(c.dx) || 0), -16, 16), z: cl(p.z + (Number(c.dz) || 0), -8, 9), ry: p.ry + (Number(c.dry) || 0) };
-        const it = K.interactions.get('stantal.' + d.id); if (it) it.pos = padAt(d);
-        const rf = K.interactions.get('stant.' + d.id); if (rf) rf.pos = standAt(d);
-        K.saveNow(); return true;
-      }
-      return false;
-    },
-    view, wantMasa, impulse, update, register,
+    handle() { return false; },
+    view, wantMasa, update, register,
+    menu: () => menuPano(S.stage || 1),
+    openDishes: () => dishesNow().map(d => d.id),
   };
   (rt as unknown as { restoran?: RestoranApi }).restoran = api;
   return api;

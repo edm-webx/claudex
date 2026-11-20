@@ -26,7 +26,7 @@ export function createVip(env: AgentEnv): VipSystem {
         if (!rng.chance(dt * 0.05) && !forced) return;
         env.shared.force.vip = false;
         v = makeSpecial(env, 'vip', def, { ...def.look }, queueSide(env, 1), S.owned.ayran ? { doner: 1, ayran: 1 } : { doner: 1, cay: 1 });
-        S.vipLast = S.day; host.toast(def.lines.arrive, 'info'); env.emit('vipArrive');
+        S.vipLast = S.day; env.emit('vipArrive');
         return;
       }
       const a = v.a, pl = env.player();

@@ -8,25 +8,28 @@
  */
 import type { System, SimCtx, Vec2 } from '../../../engine/api';
 import type { WorkerSave, GameState, ProductId } from '../schema';
-import { ROLES, RANKS, rankOf, moraleFactor, MORALE_START } from '../../../content/ranks';
+import { ROLES, RANKS, rankOf } from '../../../content/ranks';
 import { LINES } from '../../../content/lines';
 import type { Actor, CarryItem } from './types';
 import { Walker, near2, side } from './move';
-import { traitFx, traitId, workerSpeed, moraleOf } from './traits';
+import { traitFx, traitId, workerSpeed } from './traits';
 import type { AgentEnv } from './env';
 import { zeminSave } from '../zemin';
-import { IC_BY_ID, icWorld, icDim } from '../../../content/ic-mekan';
+import { IC_BY_ID, icWorld, icDim, icIcinde, icKapi, mutfakRota, mutfakStand, mutfakKoridor, MUTFAK_NOKTA, MUTFAK_YER } from '../../../content/ic-mekan';
+import { isProduct } from '../../../content/yemek-menu';
+/** BUF-05: masa biletindeki yiyecek (FoodId) mutfakta kendi tabağıyla pişer ve garsonla taşınır (taşıyıcı ürün köprüsü yok). */
+export type { DishId, FoodId } from '../../../content/yemek-menu';
 
 interface WRt {
   w: WorkerSave; a: Actor; wk: Walker; st: ProductId | null;
-  state: string; t: number; boostT: number; boostX: number; made: number; nearT: number; moraleCd: number; pauseT: number; workT: number;
+  state: string; t: number; boostT: number; boostX: number; made: number; pauseT: number;
   job: { index: number } | null; loadT: number; nextSleep: number; selfieNext: number; songNext: number; chatNext: number; sleepFor: number; selfieFor: number;
   jobKey: string;
 }
 
 export interface WorkersSystem extends System {
   /** Live runtime rows for state views / tests. */
-  rows(): { id: number; name: string; role: string; state: string; x: number; z: number; rank: number; morale: number }[];
+  rows(): { id: number; name: string; role: string; state: string; x: number; z: number; rank: number; /** BUF-05: kitchen station the cook/komi is working at or walking to */ ist?: string }[];
   /** Fraction the queue's patience drains slower near (x,z): Geveze / Güler yüzlü / Türkü. */
   aura(x: number, z: number): number;
   /** Rank check after external xp changes (training). */
@@ -76,7 +79,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
     const a = reg.add('worker', String(w.id), { kind: 'worker', role: w.role, look: rolGorunumu((w as { look?: Record<string, unknown> }).look), seed }, start,
       { role: w.role, trait: traitId(w), name: w.name, rank: rankOf(w.xp || 0), rarity: w.rarity });
     const rt: WRt = {
-      w, a, wk: new Walker(a, env.nav), st, state: 'arrive', t: 0, boostT: 0, boostX: 1, made: 0, nearT: 0, moraleCd: 30, pauseT: 0, workT: 0,
+      w, a, wk: new Walker(a, env.nav), st, state: 'arrive', t: 0, boostT: 0, boostX: 1, made: 0, pauseT: 0,
       job: null, loadT: 0, nextSleep: 0, selfieNext: S.playT + 100, songNext: S.playT + 70, chatNext: S.playT + 25, sleepFor: 0, selfieFor: 0, jobKey: '',
     };
     const fx = traitFx(w);
@@ -95,12 +98,13 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
   }
   function remove(rt: WRt) {
     const i = rows.indexOf(rt); if (i >= 0) rows.splice(i, 1);
+    if (ROLES[rt.w.role]?.mutfak) host.kitchenDrop?.(rt.w.id);   // fired cook/komi: its station and plate are released (no stuck job)
     reg.remove(rt.a);
   }
   function checkRank(rt: WRt) {
     const w = rt.w, r = rankOf(w.xp || 0);
     if (r > Number(w.rank || 0)) {
-      w.rank = r; w.morale = Math.min(100, moraleOf(w) + 8);
+      w.rank = r;
       rt.a.info.rank = r;
       say(rt, LINES.workers.rankUp[r - 1] || 'Terfi!', 3);
       host.toast(w.name + ' artık ' + RANKS[r].name + '!', 'good');
@@ -165,7 +169,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
   }
   function garsonWork(rt: WRt, S: GameState, dt: number) {
     const fx = traitFx(rt.w), a = rt.a;
-    const speed = 2.6 * (1 + (fx.walk || 0)) * moraleFactor(moraleOf(rt.w)) * (rt.boostT > 0 ? rt.boostX : 1);
+    const speed = 2.6 * (1 + (fx.walk || 0)) * (rt.boostT > 0 ? rt.boostX : 1);
     const cap = (ROLES.garson.carry || 4) + (fx.carry || 0);
     a.act = rt.a.carry.length ? 'carry' : 'idle';
     switch (rt.state) {
@@ -175,12 +179,12 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
         rt.loadT = 0.4;
         if (a.carry.length) { rt.state = 'toCounter'; rt.wk.goTo(side(book.get('counter.standAt'), 0.5, 0)); return; }
         if (!a.carry.length && host.masaClaim && !host.garsonOpen?.(rt.w.id).length) { const mj = host.masaClaim(rt.w.id); if (mj) { rt.job = { index: mj.id }; rt.jobKey = mj.kind; rt.state = 'toMasa'; rt.wk.goTo({ x: mj.x, z: mj.z + 0.95 }); return; } }
-        if (!a.carry.length && host.garsonClaim && host.garsonClaim(rt.w.id, 0).length === 0 && !host.garsonOpen?.(rt.w.id).length) { const cap2 = Math.min(3, 1 + Math.floor(rankOf(rt.w.xp || 0) / 3) + (fx.carry ? 1 : 0)); const js = host.garsonClaim(rt.w.id, cap2); if (js.length) { rt.state = 'toPass'; rt.t = 0; rt.wk.goTo(side(book.get('counter.standAt'), 0.5, 0)); return; } }
+        if (!a.carry.length && host.garsonClaim && host.garsonClaim(rt.w.id, 0).length === 0 && !host.garsonOpen?.(rt.w.id).length) { const cap2 = Math.min(3, 1 + Math.floor(rankOf(rt.w.xp || 0) / 3) + (fx.carry ? 1 : 0)); const js = host.garsonClaim(rt.w.id, cap2); if (js.length) { rt.state = 'toPass'; rt.t = 0; goVia(rt, host.passDurak?.(rt.w.id) ?? side(book.get('counter.standAt'), 0.5, 0)); return; } }
         const p = garsonPick(rt);
         if (p) { rt.job = null; rt.jobKey = p; rt.state = 'toSrc'; rt.wk.goTo(side(book.stationStand(p), 0.55, 0.2)); return; }
         const dirty = host.dirtyTables().filter((t) => !claimed(t.index, rt));
         if (dirty.length && !rows.some((o) => o.w.role === 'temizlik')) { rt.job = { index: dirty[0].index }; rt.state = 'toClean'; rt.wk.goTo(dirty[0]); return; }
-        const h = home(rt, S); if (!near2(a, h, 0.4)) rt.wk.goTo(h); else rt.wk.face(book.queue(0), dt);
+        const h = home(rt, S); if (!near2(a, h, 0.4)) goVia(rt, h); else rt.wk.face(book.queue(0), dt);
         return;
       }
       case 'toSrc': if (!rt.wk.walk(dt, speed)) { rt.state = 'load'; rt.t = 0; rt.loadT = 0; } else a.act = 'walk'; return;
@@ -209,7 +213,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
           let moved = false;
           for (let i = a.carry.length - 1; i >= 0; i--) {
             const it = a.carry[i];
-            if (host.counterFree(it.type) && host.counterPut(it)) { a.carry.splice(i, 1); rt.w.xp = (rt.w.xp || 0) + 1; checkRank(rt); moved = true; break; }
+            if (isProduct(it.type) && host.counterFree(it.type) && host.counterPut(it as CarryItem)) { a.carry.splice(i, 1); rt.w.xp = (rt.w.xp || 0) + 1; checkRank(rt); moved = true; break; }
           }
           if (!a.carry.length || (!moved && rt.t > 3)) { rt.state = 'idle'; rt.loadT = 0.3; if (a.carry.length) a.carry.length = 0; }
         }
@@ -226,10 +230,10 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
       case 'toPass': if (!rt.wk.walk(dt, speed)) { rt.state = 'pickJob'; rt.t = 0; } else a.act = 'walk'; return;
       case 'pickJob': {   // plates off the pass, 2-3 at once by level (survey g_tepsi)
         a.act = 'carry'; if (rt.t < 0.5) return;
-        const js = host.garsonOpen?.(rt.w.id) || []; if (!js.length) { rt.state = 'idle'; return; }
+        const js = host.garsonOpen?.(rt.w.id) || []; if (!js.length) { rt.state = 'idle'; return; }   // (BUF-05: tabak mutfak pass rafından, kendi adıyla)
         for (const j of js) a.carry.push({ type: j.p, tier: 1 });
         const at = { x: a.x, z: a.z }; js.sort((u, v) => Math.hypot(u.x - at.x, u.z - at.z) - Math.hypot(v.x - at.x, v.z - at.z));
-        const j0 = js[0]; rt.job = { index: j0.id }; rt.state = 'toTable'; rt.wk.goTo({ x: j0.x, z: j0.z + 0.95 }); return;
+        const j0 = js[0]; rt.job = { index: j0.id }; rt.state = 'toTable'; goVia(rt, { x: j0.x, z: j0.z + 0.95 }); return;
       }
       case 'toTable': if (!rt.wk.walk(dt, speed)) { rt.state = 'serve'; rt.t = 0; } else a.act = 'carry'; return;
       case 'serve': {
@@ -252,7 +256,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
   }
   function cleanerWork(rt: WRt, S: GameState, dt: number) {
     const fx = traitFx(rt.w), a = rt.a;
-    const speed = 2.4 * (1 + (fx.walk || 0)) * moraleFactor(moraleOf(rt.w));
+    const speed = 2.4 * (1 + (fx.walk || 0));
     a.act = 'idle';
     if (rt.state === 'idle') {
       if (rt.wk.walk(dt, speed)) { a.act = 'walk'; return; }
@@ -289,28 +293,52 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
     rt.state = 'idle';
   }
 
-  // ---- kitchen crew (survey 2026-11-09): real hired actors inside the mutfak room, no nav (the room is an open floor) ----
+  // ---- kitchen crew (survey 2026-11-09, BUF-05 mutfak hattı): real hired actors inside the mutfak room, routes along the aisles ----
+  // Aşçı: boştaki aşçı en eski bilet kalemini alır (uzmanlık yok), o yiyeceğin istasyonuna yürür, bekle-al pişirir (yanma/kalite yok),
+  // tabak istasyon tepsisine iner. Komi varsa tabağı komi pass rafına taşır (aşçı hemen yeni iş alır), yoksa aşçı kendisi taşır.
+  // Şef pasoda durur, her tabak pass'a konunca seslenir; hız etkisi yalnız pişirme süresinde (host.kitchenSure -> content/mutfak.ts sefHizi).
   const KM = IC_BY_ID.mutfak, KD = icDim(KM);
   const kw = (u: number, v: number): Vec2 => icWorld(KM, u, v);
-  const ROW = -KD.D / 2 + 1.5;   // aisle in front of the back-row stations
-  const KPOST: Record<ProductId, [number, number]> = { doner: [4.5, ROW], cay: [6.5, KD.D / 2 - 1.3], ayran: [6.5, KD.D / 2 - 1.3], simit: [2.7, ROW], tost: [-2.7, ROW], gazoz: [-8.1, ROW] };
+  const ROW = mutfakKoridor().arka;   // aisle in front of the back-row stations
+  const uvOf = (p: Vec2): [number, number] => [p.x - KM.x, p.z - KM.z];   // the room faces +z: u = x - room x, v = z - room z
+  const KOMI_YAS = 6;   // a tray plate the komi leaves this long is taken by an idle cook
   const kIdlePost = (rt: WRt): [number, number] => {
     const i = rows.filter((x) => x.w.role === rt.w.role).indexOf(rt);
     if (rt.w.role === 'bulasikci') return [-7.2 + i * 1.2, KD.D / 2 - 1.3];
     if (rt.w.role === 'kasiyer') return [7.8 - i * 1.2, ROW];
-    if (rt.w.role === 'sef') return [i * 1.8, -0.3];
+    if (rt.w.role === 'sef') { const d = MUTFAK_NOKTA.sefDurak; return i < d.length ? d[i] : [d[0][0] - 1.3 * i, d[0][1]]; }
+    if (rt.w.role === 'komi') { const d = MUTFAK_NOKTA.komiDurak; return i < d.length ? d[i] : [d[d.length - 1][0] - 1.7 * (i - d.length + 1), d[0][1]]; }
     return [-6.3 + i * 1.8, ROW];
   };
-  /** straight moves along the aisle: first to the aisle, then along it, then to the target */
+  /** walk along the kitchen aisles (content/ic-mekan.ts mutfakRota: never through the solid prep tables) */
   function kGo(rt: WRt, u: number, v: number) {
-    const cur = rt.a, here = { x: cur.x, z: cur.z }, to = kw(u, v), wp: Vec2[] = [];
-    const aisle = (uu: number) => kw(uu, ROW);
-    const dv = Math.abs(here.z - KM.z - ROW);   // the room faces +z: v = z - room z
-    const fromU = here.x - KM.x;
-    if (dv > 0.25) wp.push(aisle(fromU));
-    wp.push(aisle(u)); wp.push(to);
+    const to = kw(u, v), wp = mutfakRota(uvOf(rt.a), [u, v]).map(([pu, pv]) => kw(pu, pv));
     rt.wk.path = wp; rt.wk.goal = to;
   }
+  /** garson: walk to a target, through the kitchen door when either end is inside the kitchen room */
+  function goVia(rt: WRt, target: Vec2) {
+    const inK = icIcinde(KM, rt.a, 0), tIn = icIcinde(KM, target, 0), doorIn: [number, number] = [0, KD.D / 2 - 0.4], door = icKapi(KM, 0.7);
+    if (!inK && !tIn) { rt.wk.goTo(target); return; }
+    if (inK && tIn) { const t = uvOf(target); kGo(rt, t[0], t[1]); return; }
+    if (inK) {
+      const pre = mutfakRota(uvOf(rt.a), doorIn).map(([u, v]) => kw(u, v)), rest = env.nav.path(door, target);
+      rt.wk.path = [...pre, door, ...(rest.length ? rest.slice(1) : []), { x: target.x, z: target.z }]; rt.wk.goal = { x: target.x, z: target.z }; return;
+    }
+    rt.wk.goTo(door);
+    rt.wk.path.push(...mutfakRota(doorIn, uvOf(target)).map(([u, v]) => kw(u, v)));
+    rt.wk.goal = { x: target.x, z: target.z };
+  }
+  const komiVar = () => rows.some((x) => x.w.role === 'komi');
+  const kStand = (ist: string) => mutfakStand(ist);
+  const sefSay = (rt: WRt) => {   // şef pasoda: her tabak pass'a konunca seslenir
+    const s = rows.find((x) => x.w.role === 'sef'); if (!s) return;
+    say(s, rng.pick(['Servis!', 'Sıcak tabak, servis!', 'Pass, servis lütfen!', 'Tabak hazır, alın!']), 1.8); void rt;
+  };
+  function kTake(rt: WRt, opt: { kendi?: boolean; yas?: number }): boolean {   // carry duty: reserve a tray plate, walk to its station
+    const j = host.kitchenTasi?.(rt.w.id, opt); if (!j) return false;
+    rt.jobKey = j.ist; const [u, v] = kStand(j.ist); kGo(rt, u, v); rt.state = 'kTasiAl'; rt.t = 0; return true;
+  }
+  function kToPass(rt: WRt) { const [u, v] = MUTFAK_NOKTA.passAsci; kGo(rt, u, v); rt.state = 'kPass'; rt.t = 0; }
   function kitchenWork(rt: WRt, S: GameState, dt: number) {
     const a = rt.a, role = rt.w.role, speed = 2.1 * (1 + 0.04 * rankOf(rt.w.xp || 0));
     const walking = rt.wk.walk(dt, speed);
@@ -318,23 +346,59 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
     a.speed = 0;
     switch (rt.state) {
       case 'kArrive': { const [u, v] = kIdlePost(rt); kGo(rt, u, v); rt.state = 'kBack'; return; }
-      case 'kBack': rt.state = 'kIdle'; rt.t = 0; a.rot = Math.PI; a.act = role === 'bulasikci' ? 'wipe' : 'idle'; return;
+      case 'kBack': rt.state = 'kIdle'; rt.t = 0; rt.loadT = 0; a.rot = Math.PI; a.act = role === 'bulasikci' ? 'wipe' : 'idle'; return;
       case 'kIdle': {
+        a.act = role === 'bulasikci' ? 'wipe' : 'idle';
         if (role === 'asci' || role === 'komi') {
-          if (rt.t > 0.6 && host.kitchenClaim) { const p = host.kitchenClaim(rt.w.id); if (p) { rt.jobKey = p; const [u, v] = KPOST[p] || [0, ROW]; kGo(rt, u, v); rt.state = 'kCook'; rt.t = 0; rt.loadT = 0; return; } rt.t = 0.2; }
-        } else if (role === 'sef' && rt.t > 8) { const u = (rng.next() - 0.5) * 12; kGo(rt, u, -0.3); rt.t = 0; }
-        else if (role === 'kasiyer' && rt.t > 14) { a.rot = Math.PI; rt.t = 0; }
-        a.act = role === 'bulasikci' ? 'wipe' : 'idle'; return;
+          if (rt.t < 0.3) return;
+          rt.t = 0;
+          if (role === 'komi') { if (kTake(rt, {})) return; }
+          else {
+            if ((!komiVar() || host.kitchenBekleyen?.(KOMI_YAS)) && kTake(rt, { yas: komiVar() ? KOMI_YAS : 0 })) return;
+            const p = host.kitchenClaim?.(rt.w.id, { from: { x: a.x, z: a.z } });
+            if (p) {
+              const ist = host.kitchenIst?.(rt.w.id) || 'ocak';
+              rt.jobKey = ist; const [u, v] = kStand(ist); kGo(rt, u, v); rt.state = 'kGoCook'; rt.loadT = 0; return;
+            }
+          }
+          rt.loadT += 0.3;   // nothing to do: after a while walk back to the post
+          if (rt.loadT > 3) { const [u, v] = kIdlePost(rt), h = kw(u, v); if (!near2(a, h, 0.4)) { kGo(rt, u, v); rt.state = 'kBack'; } rt.loadT = 0; }
+          return;
+        }
+        if (role === 'sef') {   // şef pasoda durur (gezinme yok), mutfağa döner
+          const [u, v] = kIdlePost(rt), h = kw(u, v);
+          if (!near2(a, h, 0.4)) { kGo(rt, u, v); rt.state = 'kBack'; return; }
+          a.rot = Math.PI; a.act = 'idle'; return;
+        }
+        if (role === 'kasiyer' && rt.t > 14) { a.rot = Math.PI; rt.t = 0; }
+        return;
       }
-      case 'kCook': {   // wait-and-take: no burning, no quality; chef + rank shorten it
-        a.act = 'cut'; rt.loadT += dt;
-        const need = 4.5 / (1 + 0.12 * rankOf(rt.w.xp || 0) + 0.25 * S.workers.filter((x) => x.role === 'sef').length);
-        if (rt.loadT >= need) { a.carry.push({ type: rt.jobKey as ProductId, tier: 1 } as CarryItem); const [u, v] = [7.0, ROW]; kGo(rt, u, v); rt.state = 'kPass'; rt.t = 0; }
+      case 'kGoCook': {
+        if (!host.kitchenIst?.(rt.w.id)) { rt.state = 'kIdle'; rt.t = 0; return; }   // the job went away
+        rt.state = 'kCook'; rt.t = 0; rt.loadT = 0; a.rot = MUTFAK_YER[rt.jobKey]?.sira === 'on' ? 0 : Math.PI; return;
+      }
+      case 'kCook': {   // wait-and-take: no burning, no quality; rank + chef shorten it (one formula, host.kitchenSure)
+        if (!host.kitchenIst?.(rt.w.id)) { rt.state = 'kIdle'; rt.t = 0; return; }
+        a.act = rt.jobKey === 'cay_bar' ? 'pour' : 'cut'; rt.loadT += dt;
+        if (rt.loadT < (host.kitchenSure?.(rt.w.id) || 4.5)) return;
+        host.kitchenReady?.(rt.w.id); rt.w.xp = (rt.w.xp || 0) + 1; checkRank(rt);
+        if (komiVar()) { rt.state = 'kIdle'; rt.t = 0.3; rt.loadT = 0; return; }   // the komi carries it, the cook takes the next job
+        if (host.kitchenTasi?.(rt.w.id, { kendi: true })) { const it = host.kitchenTasiAl?.(rt.w.id); if (it) { a.carry.push(it); kToPass(rt); return; } }
+        rt.state = 'kIdle'; rt.t = 0; return;
+      }
+      case 'kTasiAl': {   // at the station: take the tray plate in hand (real carry), walk it to the pass
+        const it = host.kitchenTasiAl?.(rt.w.id);
+        if (it) { a.carry.push(it); kToPass(rt); } else { rt.state = 'kIdle'; rt.t = 0; }
         return;
       }
       case 'kPass': {
-        a.carry.length = 0; host.kitchenDone?.(rt.w.id, true); rt.w.xp = (rt.w.xp || 0) + 1; checkRank(rt);
-        const [u, v] = kIdlePost(rt); kGo(rt, u, v); rt.state = 'kBack'; return;
+        a.act = 'carry';
+        if (host.kitchenPass?.(rt.w.id)) {
+          a.carry.length = 0; rt.w.xp = (rt.w.xp || 0) + 1; checkRank(rt); sefSay(rt);
+          rt.state = 'kIdle'; rt.t = 0.3; rt.loadT = 0; return;
+        }
+        if (rt.t > 30) { host.kitchenDrop?.(rt.w.id); a.carry.length = 0; rt.state = 'kIdle'; rt.t = 0; }   // pass full for long: give up (no stuck cook)
+        return;
       }
       default: rt.state = 'kArrive';
     }
@@ -343,13 +407,8 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
   function update(rt: WRt, S: GameState, dt: number, pl: Vec2) {
     const w = rt.w, fx = traitFx(w), a = rt.a;
     if (ROLES[w.role]?.mutfak) { rt.t += dt; kitchenWork(rt, S, dt); return; }
-    rt.t += dt; rt.boostT -= dt; rt.moraleCd -= dt; rt.pauseT -= dt;
+    rt.t += dt; rt.boostT -= dt; rt.pauseT -= dt;
     a.mood = rt.state === 'sleep' ? 'asleep' : 'ok';
-    if (rt.state !== 'sleep' && near2(pl, a, 1.6)) {
-      rt.nearT += dt;
-      if (rt.nearT > 1.5 && rt.moraleCd <= 0) { rt.moraleCd = 60; w.morale = Math.min(100, moraleOf(w) + 4); }
-    } else rt.nearT = 0;
-    if (['work', 'idle', 'toSrc', 'toCounter'].includes(rt.state)) { rt.workT += dt; if (rt.workT > 120) { rt.workT = 0; w.morale = Math.max(10, moraleOf(w) - 1); } }
     if (S.playT > rt.chatNext) {
       rt.chatNext = S.playT + rng.range(25, 45);
       if (fx.chat) say(rt, rng.pick(LINES.workers.chat), 2); else if (fx.phone) say(rt, rng.pick(LINES.workers.phone), 2);
@@ -423,11 +482,13 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
       for (let i = 0; i < rows.length; i++) for (let j = i + 1; j < rows.length; j++) {
         const p = rows[i].a, q = rows[j].a, dx = q.x - p.x, dz = q.z - p.z, d = Math.hypot(dx, dz), R = 0.7;
         if (d >= R) continue;
+        // BUF-05: the kitchen aisles are one body wide: two people meeting head-on there squeeze past (no push, no aisle deadlock)
+        if ((rows[i].wk.moving || rows[j].wk.moving) && icIcinde(KM, p, 0) && icIcinde(KM, q, 0)) continue;
         const nx = d > 0.001 ? dx / d : 1, nz = d > 0.001 ? dz / d : 0, push = (R - d) * Math.min(1, dt * 6) * 0.5;
         p.x -= nx * push; p.z -= nz * push; q.x += nx * push; q.z += nz * push;
       }
     },
-    rows: () => rows.map((r) => ({ id: r.w.id, name: r.w.name, role: r.w.role, state: r.state, x: r.a.x, z: r.a.z, rank: Number(r.w.rank || 0), morale: moraleOf(r.w) })),
+    rows: () => rows.map((r) => ({ id: r.w.id, name: r.w.name, role: r.w.role, state: r.state, x: r.a.x, z: r.a.z, rank: Number(r.w.rank || 0), ist: r.state === 'kGoCook' || r.state === 'kCook' || r.state === 'kTasiAl' ? r.jobKey : undefined })),
     aura(x, z) {
       let best = 0;
       for (const r of rows) {

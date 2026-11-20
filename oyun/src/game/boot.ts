@@ -117,7 +117,6 @@ import { createReklam, type ReklamView } from './view/world/reklam';
 import { createHavaLook, type HavaLookView } from './view/world/hava-look';
 import { createDenizLook, type DenizLookView } from './view/world/deniz-look';
 import { createDenizUi, type DenizUiView } from './ui/deniz-ui';
-import { createCalisanLook, type CalisanLookView } from './view/world/calisan-look';
 import { createHuyMotion, type HuyMotionView } from './view/chars/huy-motion';
 import { createAltinSimitFx, type AltinSimitFx } from './ui/altin-simit-fx';
 import { createDisariLook, type DisariLookView } from './view/disari';
@@ -313,7 +312,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const icMekan: IcView | null = playMode && zones ? make('icMekan', () => createIcMekan({ root: () => zones.root('iskele') ?? null, hero: () => walk.pos, night: () => nightK,
     isletme: () => { const m = mulkApi(sim.rules), o: Record<string, { lv: number; isci: number; esya: string[]; tema?: string }> = {}; if (m) for (const p of m.view().plots) if (p.sabit && p.owned) o[p.id] = { lv: p.lv, isci: p.isci, esya: (p as { esya?: string[] }).esya || [], tema: (p as { tema?: string }).tema || '' }; return o; },
     salon: () => ({ stage: sim.state.stage || 1, esya: ((sim.state.zones as { salon?: { esya?: string[] } }).salon?.esya) || [] }),
-    mutfak: () => ({ ekip: sim.state.workers.filter(w => MUTFAK_ROL_BY_ID[w.role]).map(w => ({ rol: w.role, rank: rankOf(w.xp || 0) })), kds: (restoranApi(sim.rules)?.view().tickets || []).slice(0, 6).map(k => '#' + k.no + '  Masa ' + (k.table + 1) + ' · ' + k.items.filter(i => i.left).map(i => i.left + '× ' + i.name).join(', ')) }) })) : null;
+    mutfak: () => { const rv = restoranApi(sim.rules)?.view(); return { ekip: sim.state.workers.filter(w => MUTFAK_ROL_BY_ID[w.role]).map(w => ({ rol: w.role, rank: rankOf(w.xp || 0) })), kds: (rv?.tickets || []).slice(0, 6).map(k => '#' + k.no + '  Masa ' + (k.table + 1) + ' · ' + k.items.filter(i => i.left).map(i => i.left + '× ' + i.name).join(', ')), pass: rv?.pass || [], ist: rv?.ist || {} }; } })) : null;   // BUF-05: pass rafı + istasyon tepsileri
   const karsiYasam: YasamView | null = playMode && zones && chars ? make('karsiYasam', () => createKarsiYasam({ root: () => zones.root('iskele') ?? null, chars, hero: () => walk.pos, hour: () => sim.clock.hour, sfx: id => { try { audio?.sfx(id); } catch { /* */ } }, isci: () => { const m = mulkApi(sim.rules); return m ? m.view().plots.filter(p => p.sabit && p.owned).map(p => ({ id: p.id, n: p.isci, lv: p.lv, esya: (p as { esya?: string[] }).esya || [] })) : []; } })) : null;
   const yolLook: YolLookView | null = playMode && zones ? make('yolLook', () => createYolLook({ root: () => zones.root('iskele') ?? null })) : null;
 
@@ -499,8 +498,6 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     float: (x, z, text) => { const sp = { x: 0, y: 0 }; if (panels && project({ x, y: 2.6, z }, sp)) panels.v2.float(sp.x, sp.y, text, 'good'); },
   })) : null;
   // PaketMartı: counter tablet + parked courier bikes (view/world/kurye-look.ts) and the fiş / live map / Sen götür overlay (ui/kurye-ui.ts)
-  // Çalışanlar 2.0: Ayın Elemanı photo, pasta, çay köşesi, Dinlenme Bankı sitters (view/world/calisan-look.ts) + huy motion (view/chars/huy-motion.ts)
-  const calisanLook: CalisanLookView | null = playMode ? make('calisanLook', () => createCalisanLook({ scene, rules: () => sim.rules, chars: (chars as MotorChars) ?? null })) : null;
   const huyMotion: HuyMotionView | null = playMode && chars && agentsView ? make('huyMotion', () => createHuyMotion({ scene, chars: chars as MotorChars, agents: agentsOf, rigOf: id => agentsView.rigOf(id) })) : null;
   // Deniz: sea life, boats, extra animals, ferry rope/bump, glitter, kiosk exterior, table kinds, pier expansions (deniz-look.ts) + deck run / photo / boat offer cards and the ferry interior (deniz-ui.ts)
   const denizLook: DenizLookView | null = !FAZ2_LEAN && playMode && zones ? make('denizLook', () => createDenizLook({ root: () => zones.root('iskele') ?? null, rules: () => sim.rules, hour: () => sim.clock.hour })) : null;
@@ -659,7 +656,6 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     });
     if (agentsView) guard('agents', () => { P.time('agents', () => agentsView.update(sim.state, fdt, alpha)); });
     if (huyMotion) guard('huyMotion', () => huyMotion.update(fdt));
-    if (calisanLook) guard('calisanLook', () => calisanLook.update(fdt));
     if (chars) guard('crowd', () => { P.time('crowd', () => { chars.crowd.update(sim.agents, fdt, alpha); chars.update(fdt, alpha); }); });
     if (carsi) guard('carsi', () => carsi.update(fdt));
     if (moments) guard('moments', () => moments.update(fdt));

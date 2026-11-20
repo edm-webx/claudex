@@ -20,6 +20,7 @@ export const V2_EVENT_NAMES = [
 /** New engine/ecosystem events (not in v2). */
 export const ENGINE_EVENT_NAMES = [
   'ticket', 'serve', 'hesap', 'stantBuy', 'stantSale', 'stantRefill', 'dukkanAc', 'erimGlitch', 'erimBonk', // Faz 2
+  'passBell',       // BUF-05 { no, p, x, z }: a plate landed on the kitchen pass (servis zili; ses SES-05)
   'zoneState',      // { id, state }
   'save',           // { reason, ok, mode }
   'saveRepaired',   // { notes }

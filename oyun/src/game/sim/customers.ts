@@ -13,7 +13,8 @@ import { LINES } from '../../content/lines';
 import { ISKELE_ZONE } from '../../content/zones/iskele';
 import type { CitizenTypeDef } from '../../content/types';
 import { AGENT_FLAG, ACT_ORDER, MOOD_ORDER, type ProductId } from './schema';
-import type { Kernel, Customer, Order } from './state';
+import type { Kernel, Customer, Order, Item } from './state';
+import { isProduct } from '../../content/yemek-menu';
 import { clamp, dist2d, hourOf, inHours, near2, pointBack } from './util';
 import { setChance, setById } from './sets';
 import { SETS } from '../../content/products';
@@ -27,11 +28,11 @@ const A_IDLE = ACT_ORDER.indexOf('idle'), A_WALK = ACT_ORDER.indexOf('walk'), A_
 
 export interface SpawnOpts { type?: CitizenTypeDef; n?: number; order?: Order; set?: string | null; from?: Vec2; near?: Vec2; kind?: 'q' | 'win' | 'masa'; patienceX?: number; say?: string; follower?: boolean; tag?: string }
 
-export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (p: { value: number }[], v: number) => void, settle: (c: Customer, items: import('./state').Item[]) => number) {
+export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (p: { value: number }[], v: number) => void, settle: (c: Customer, items: import('./state').Plate[]) => number) {
   const rt = K.rt, S = K.state;
   const rng = K.R.main;
   let seq = 1;
-  const restoranHook = () => (rt as unknown as { restoran?: { wantMasa(): boolean; impulse(c: Customer): void } }).restoran;
+  const restoranHook = () => (rt as unknown as { restoran?: { wantMasa(): boolean } }).restoran;
   const spawns: Vec2[] = (() => {
     const a = (K.content.zones?.iskele?.anchors) ?? ISKELE_ZONE.anchors;
     const l: Vec2[] = [];
@@ -173,7 +174,7 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
     goTo(c, angry ? nearestSpawn({ x: c.x, z: c.z }) : spawnPoint());
   }
   const returnItemsToCounter = (c: Customer) => {
-    c.items.splice(0).forEach(it => { const b = rt.counter[it.type]; if (b && b.length < 8) b.push(it); });
+    c.items.splice(0).forEach(it => { if (!isProduct(it.type)) return; const b = rt.counter[it.type]; if (b && b.length < 8) b.push(it as Item); });   // mutfak tabağı tezgâha stok olarak dönmez (BUF-05)
     c.got = {};
   };
   function freeSeat(n: number): { t: number; seat: number } | null {
@@ -192,7 +193,6 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
     const items = c.items.slice();
     const value = settle(c, items);
     c.value = value;
-    restoranHook()?.impulse(c); // Faz 2: midye / ıslak burger... stands
     if (rng.chance(0.08)) { // Faz 2: customers comment rarely (owner: just show the order)
       const lines = LINES.type[c.typeId as keyof typeof LINES.type];
       say(c, rng.pick(lines && rng.chance(0.4) ? lines : LINES.happy), 2);

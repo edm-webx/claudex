@@ -3,7 +3,7 @@
 // door or the stadium gate and opens the right tab.
 import { FORMATIONS } from '../sim/macmotor';
 import { mulkApi } from '../sim/mulk';
-import { ESYALAR, ESYA_BY_ID, SANDIKLAR, TARIFLER, DUKKAN_TIPLERI, DUKKAN_BY_ID, DUKKAN_STOK_MAX, dukkanMusteri, BANKA } from '../../content/esya';
+import { ESYALAR, ESYA_BY_ID, SANDIKLAR, TARIFLER, DUKKAN_TIPLERI, DUKKAN_BY_ID, dukkanMusteri, BANKA } from '../../content/esya';
 
 interface Deps { root: HTMLElement; rules: () => { rt: unknown } | null; command(c: { kind: string; [k: string]: unknown }): void; sfx?(id: string): void }
 export interface MulkPanel { update(dt: number): void; open(tab?: Tab): void; close(): void; dispose(): void }
@@ -126,7 +126,6 @@ ${(a.menuSonraki || []).length ? `<small style="display:block;margin-top:4px;opa
 <small style="display:block;margin-top:4px">👷 İşçi ${a.isci}/${a.isciMax} (seviye arttıkça daha çok işçi çalışır)</small></div>`;
       }
     }
-    void DUKKAN_STOK_MAX;
     return s;
   }
 

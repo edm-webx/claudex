@@ -9,10 +9,16 @@ import type { SimEvents } from '../events';
 import type { Content } from '../../content/types';
 import type { StageLayout } from '../../content/prefabs/iskele/layout';
 import type { SimCmd } from './commands';
+import type { FoodId } from '../../content/yemek-menu';
 
-/** One product unit (in hands, on a tray, on the counter). */
-export interface Item { type: ProductId; tier: number; /** worker id who made it (wage share) */ by?: number; /** worker id who carried it */ carrier?: number; /** price multiplier (Titiz) */ priceX?: number; }
+/**
+ * One product unit (in hands, on a tray, on the counter). BUF-05: `T` widens to FoodId for kitchen plates (`Plate`: a DishId
+ * plate cooked at its own station, on the pass, carried to a table, sold). Counter/stations/carry stay ProductId (runtime only, not saved).
+ */
+export interface Item<T extends string = ProductId> { type: T; tier: number; /** worker id who made it (wage share) */ by?: number; /** worker id who carried it */ carrier?: number; /** price multiplier (Titiz) */ priceX?: number; }
 export type Order = Partial<Record<ProductId, number>>;
+/** BUF-05: a plate of any food (tezgâh ürünü or mutfak yemeği, content/yemek-menu.ts FoodId); runtime only */
+export type Plate = Item<FoodId>;
 export interface MoneyStack { value: number; }
 export interface FloorMoney { value: number; x: number; z: number; }
 
@@ -33,13 +39,13 @@ export interface Customer {
   path: Vec2[];
   /** agents SoA slot (-1: logical only, no body) and party member slots */
   agent: number; members: number[];
-  items: Item[];
+  items: Plate[];
   seat: { table: number; seat: number } | null;
   say: string; sayT: number;
   calm: boolean; follower: boolean; tag: string | null;
   qi: number;
   /** musteri.ts (runtime only): special request line + its product, tourist flag, heart timer after a happy serve */
-  req?: string; reqP?: ProductId; tourist?: boolean; heartT?: number;
+  tourist?: boolean; heartT?: number;
 }
 
 export interface StationRt { built: boolean; out: Item[]; grabT: number; /** sim time of the last worker operate() */ opT: number; /** worker id -> progress 0..1 */ prog: Record<number, number>; }
@@ -192,8 +198,8 @@ export interface MoneyApi {
 }
 export interface SalesApi {
   /** v2 settleSale for non-queue sales (regular, VIP): streak, sets, siftah, wages. Returns the money value. */
-  settle(items: Item[], opts?: { direct?: boolean; at?: Vec2 }): number;
-  itemValue(it: Item): number;
+  settle(items: Plate[], opts?: { direct?: boolean; at?: Vec2 }): number;
+  itemValue(it: Plate): number;
 }
 
 export const emptyRuntime = (layout: StageLayout): Runtime => ({

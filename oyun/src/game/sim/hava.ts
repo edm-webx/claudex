@@ -9,21 +9,20 @@
  *   gökkuşağı. Effects: arrival multiplier, hot/cold demand shift (season + weather), wet tables (customers sit only
  *   under umbrellas), sunny umbrellas (longer stay, bigger tips), fırtına skips one ferry wave, lodos makes an
  *   umbrella fly: walk to where it lands within UMBRELLA.catchS for a bonus.
- * - Seasonal foods: an extra with a sale now and then (seasonal cart next to the kiosk).
  * - Events calendar: 3-4 limited items each, sold as extras with sales; a goal of specials sold gives a decor item,
  *   Altın Simit, a trophy and sometimes a Sabri outfit / a new cat name. Progress carries over to next year's run when
  *   missed. Every item sold once stays in the Tarif Defteri memories. 23 Nisan: kids run the büfe (patience aura).
- * - Gece Pazarı: every Saturday night 19-24 a stall the player stocks in advance sells by itself; the last hour is half
- *   price (tazelik), leftovers go to the cats. Never negative money, nothing is lost.
+ * - Gece Pazarı: every Saturday night 19-24 the stalls sell by themselves, no stock: each sale earns price minus unit
+ *   cost (net).
  * - Persistent: GameState.zones['hava'] (defaults on read, old saves load). Runtime for views: `havaApi(rules).view()`.
- * - Commands: { kind: 'hava', op: 'open' | 'umb' | 'stock', id? }.
+ * - Commands: { kind: 'hava', op: 'open' | 'umb' }.
  */
 import type { Kernel } from './state';
 import type { ProductId } from './schema';
 import {
-  HAVA_KINDS, HAVA_WEIGHTS, HAVA_WINDOW, RAINBOW_H, SEASON_PREF, WEATHER_PREF, SEASON_FOODS, RAMAZAN, SEASON_FOOD_CHANCE, HAVA_PRICE_X,
+  HAVA_KINDS, HAVA_WEIGHTS, HAVA_WINDOW, RAINBOW_H, SEASON_PREF, WEATHER_PREF, HAVA_PRICE_X,
   UMBRELLA, UMBRELLA_LINES, MARKET, MARKET_LINES, WEEKDAYS, MONTHS, SEASON_NAMES,
-  type HavaKind, type HavaSeason, type SeasonFood,
+  type HavaKind, type HavaSeason,
 } from '../../content/hava';
 import { fmtMoney, hashStr } from './util';
 
@@ -38,8 +37,8 @@ interface HavaSave {
   ev: Record<string, EvSave>;
   mem: string[]; trophies: string[]; extras: string[];
   lastEv: string;
-  mkt: { day: number; stock: Record<string, number>; sold: number; earned: number; open: boolean; fresh: boolean; closed: boolean };
-  foodSold: number; caught: number; skipDay: number;
+  mkt: { day: number; sold: number; earned: number; open: boolean; closed: boolean };
+  caught: number; skipDay: number;
 }
 export interface YMD { y: number; m: number; d: number }
 export interface FlyUmbrella { phase: 'fly' | 'down'; x0: number; z0: number; x: number; z: number; t: number; color: number }
@@ -47,10 +46,9 @@ export interface HavaView {
   kind: HavaKind; name: string; icon: string;
   /** 0..1 ramp in/out of the current weather window */ k: number;
   season: HavaSeason; date: YMD; dateText: string;
-  market: { today: boolean; open: boolean; fresh: boolean; stock: number };
+  market: { today: boolean; open: boolean };
   umbrellas: number; tables: number;
   fly: FlyUmbrella | null;
-  food: string;
 }
 export interface HavaMods { arrival(): number; pref(p: ProductId): number; sitOk(): boolean; eatX(): number; tipX(): number; skipFerry(): boolean }
 export interface HavaApi extends HavaMods {
@@ -97,9 +95,8 @@ export function installHava(K: Kernel): HavaApi {
     if (!h.ev || typeof h.ev !== 'object') h.ev = {};
     if (!Array.isArray(h.mem)) h.mem = []; if (!Array.isArray(h.trophies)) h.trophies = []; if (!Array.isArray(h.extras)) h.extras = [];
     h.lastEv = typeof h.lastEv === 'string' ? h.lastEv : '';
-    if (!h.mkt || typeof h.mkt !== 'object') h.mkt = { day: 0, stock: {}, sold: 0, earned: 0, open: false, fresh: false, closed: false };
-    if (!h.mkt.stock || typeof h.mkt.stock !== 'object') h.mkt.stock = {};
-    h.foodSold = Number(h.foodSold) || 0; h.caught = Number(h.caught) || 0; h.skipDay = Number(h.skipDay) || 0;
+    if (!h.mkt || typeof h.mkt !== 'object') h.mkt = { day: 0, sold: 0, earned: 0, open: false, closed: false };
+    h.caught = Number(h.caught) || 0; h.skipDay = Number(h.skipDay) || 0;
     return h;
   };
 
@@ -118,8 +115,6 @@ export function installHava(K: Kernel): HavaApi {
     return civilFromDays(daysFromCivil(a.y, a.m, a.d) + (S().day - (h.anchorDay || S().day)));
   }
   const season = () => seasonOfMonth(date().m);
-  const ramazan = (v: YMD) => { const s = ymdStr(v); return RAMAZAN.some(([a, b]) => s >= a && s <= b); };
-  const foods = (): SeasonFood[] => { const v = date(); return [...SEASON_FOODS[seasonOfMonth(v.m)], ...(ramazan(v) ? SEASON_FOODS.ramazan : [])]; };
   const marketDay = () => weekday(date()) === MARKET.weekday;
   const priceX = () => HAVA_PRICE_X * Math.sqrt(Math.max(1, K.venueMult()));
 
@@ -223,19 +218,9 @@ export function installHava(K: Kernel): HavaApi {
     const h = H();
     const s0 = H().segs[0];
     if (s0) K.toast(HAVA_KINDS[s0.k].icon + ' Bugün ' + HAVA_KINDS[s0.k].name.toLocaleLowerCase('tr') + ' bekleniyor, saat ' + Math.floor(s0.a) + ' gibi.', 'info');
-    if (marketDay()) { h.mkt = { day: S().day, stock: h.mkt.day === S().day ? h.mkt.stock : (h.mkt.stock || {}), sold: 0, earned: 0, open: false, fresh: false, closed: false }; K.toast(MARKET_LINES.morning, 'info'); }
+    if (marketDay()) { h.mkt = { day: S().day, sold: 0, earned: 0, open: false, closed: false }; K.toast(MARKET_LINES.morning, 'info'); }
     K.saveNow();
   }
-
-  // ───────── extras with a sale ─────────
-  K.bus.on('sale', ((e: { value: number; kind: string }) => {
-    if (!rt.started || !e || !(e.value > 0)) return;
-    const h = H();
-    if (rng.chance(SEASON_FOOD_CHANCE)) {
-      const f = rng.pick(foods()); if (!f) return;
-      K.earn(Math.round(f.price * priceX())); h.foodSold++;
-    }
-  }) as never);
 
   // ───────── Gece Pazarı ─────────
   let sellT = 3;
@@ -244,27 +229,18 @@ export function installHava(K: Kernel): HavaApi {
     if (!marketDay() || m.day !== S().day || m.closed) return;
     const hr = K.hour();
     if (hr < MARKET.fromH) return;
-    if (!m.open) { m.open = true; K.toast(MARKET_LINES.open, 'good'); K.logEv('havaMarket', { open: true }); if (!stockN()) K.toast(MARKET_LINES.empty, 'info'); }
-    if (hr >= MARKET.freshH && !m.fresh) { m.fresh = true; K.toast(MARKET_LINES.fresh, 'info'); }
+    if (!m.open) { m.open = true; K.toast(MARKET_LINES.open, 'good'); K.logEv('havaMarket', { open: true }); }
     if (hr >= 23.85) {
       m.closed = true;
-      K.toast(MARKET_LINES.close.replace('{n}', String(m.sold)).replace('{money}', fmtMoney(m.earned)), 'good');
-      const left = stockN();
-      if (left > 0) { K.toast(MARKET_LINES.cats.replace('{n}', String(left)), 'info'); K.stat('kediMama', left); }
-      m.stock = {}; K.saveNow();
+      K.toast(MARKET_LINES.close.replace('{n}', String(m.sold)).replace('{money}', fmtMoney(m.earned)), 'good'); K.saveNow();
       return;
     }
     sellT -= dt; if (sellT > 0) return;
     sellT = rng.range(MARKET.sellEvery[0], MARKET.sellEvery[1]) / (1 + 0.15 * (S().stage - 1));
-    const ids = MARKET.items.filter(i => (m.stock[i.id] || 0) > 0);
-    if (!ids.length) return;
-    const it = rng.pick(ids);
-    m.stock[it.id]--;
-    const v = Math.round(it.price * priceX() * (m.fresh ? 0.5 : 1));
+    const it = rng.pick(MARKET.items);
+    const v = Math.round((it.price - it.cost) * priceX());
     K.earn(v); m.sold++; m.earned += v;
   }
-  const stockN = () => Object.values(H().mkt.stock).reduce((a, b) => a + (b || 0), 0);
-
 
   // ───────── tick ─────────
   let lastKind: HavaKind | '' = '';
@@ -297,30 +273,17 @@ export function installHava(K: Kernel): HavaApi {
       K.spend(cost); h.umb++; K.toast(UMBRELLA_LINES.buy, 'good'); K.logEv('havaUmb', { n: h.umb }); K.saveNow();
       return true;
     }
-    if (op === 'stock') {
-      const it = MARKET.items.find(i => i.id === String(c.id)); if (!it) return true;
-      const m = h.mkt;
-      if (m.day !== S().day && !marketDay()) { m.day = 0; }
-      const have = m.stock[it.id] || 0;
-      if (have >= MARKET.maxStock) { K.toast('Tezgahta ' + it.name + ' yeterince var.', 'info'); return true; }
-      const cost = Math.round(it.cost * priceX() * MARKET.pack);
-      if (S().money < cost) { K.toast(it.name + ' için kasada ' + fmtMoney(cost) + ' olmalı.', 'info'); return true; }
-      K.spend(cost); m.stock[it.id] = have + MARKET.pack;
-      if (marketDay()) m.day = S().day;
-      K.toast('Tezgaha ' + MARKET.pack + ' ' + it.name + ' kondu.', 'good'); K.saveNow();
-      return true;
-    }
     return false;
   }
 
   // ───────── views and panel ─────────
   function dateText(v: YMD = date()): string { return v.d + ' ' + MONTHS[v.m - 1] + ' ' + WEEKDAYS[weekday(v)]; }
   function view(): HavaView {
-    const v = date(), kd = HAVA_KINDS[kind()], m = H().mkt, f = foods();
+    const v = date(), kd = HAVA_KINDS[kind()], m = H().mkt;
     return {
       kind: kd.id, name: kd.name, icon: kd.icon, k: ramp(), season: seasonOfMonth(v.m), date: v, dateText: dateText(v),
-      market: { today: marketDay(), open: marketDay() && m.open && !m.closed, fresh: m.fresh, stock: stockN() },
-      umbrellas: umbN(), tables: tablesN(), fly, food: f.length ? f[(S().day + 7) % f.length].name : '',
+      market: { today: marketDay(), open: marketDay() && m.open && !m.closed },
+      umbrellas: umbN(), tables: tablesN(), fly,
     };
   }
   function effectText(k: HavaKind): string {
@@ -344,11 +307,9 @@ export function installHava(K: Kernel): HavaApi {
       today: h.segs.map(s => ({ name: HAVA_KINDS[s.k].name, icon: HAVA_KINDS[s.k].icon, from: Math.floor(s.a), to: Math.min(24, Math.ceil(s.b)) })),
       umbrella: { n: h.umb, max: UMBRELLA.max, tables: tablesN(), cost: h.umb < UMBRELLA.max ? UMBRELLA.cost(h.umb) : 0, money: st.money },
       market: {
-        today: marketDay(), days: mDays, open: marketDay() && h.mkt.open && !h.mkt.closed, closed: marketDay() && h.mkt.closed, fresh: h.mkt.fresh, sold: h.mkt.sold, earned: h.mkt.earned,
-        items: MARKET.items.map(i => ({ id: i.id, name: i.name, color: i.color, stock: h.mkt.stock[i.id] || 0, cost: Math.round(i.cost * px * MARKET.pack), price: Math.round(i.price * px), pack: MARKET.pack, max: MARKET.maxStock })),
-        money: st.money,
+        today: marketDay(), days: mDays, open: marketDay() && h.mkt.open && !h.mkt.closed, closed: marketDay() && h.mkt.closed, sold: h.mkt.sold, earned: h.mkt.earned,
+        items: MARKET.items.map(i => ({ id: i.id, name: i.name, color: i.color, net: Math.round((i.price - i.cost) * px) })),
       },
-      foods: foods().map(f => ({ name: f.name, price: Math.round(f.price * px) })), foodSold: h.foodSold,
       trophies: h.trophies.slice(), extras: h.extras.slice(), caught: h.caught,
     };
   }

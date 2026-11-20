@@ -23,7 +23,6 @@ export const TUT: readonly TutStep[] = [
   { id: 'window', urgent: true, rush: true, show: v => !!v.window && v.window.open, done: v => !!v.tutFlags.windowSale, at: v => v.anchors.window },
   { id: 'riza', urgent: true, y: 1.9, show: v => !!v.sleeper && !v.tutFlags.rizaSleep, done: v => !!v.tutFlags.rizaSleep, at: v => v.sleeper },
   { id: 'slow', urgent: true, y: 2.8, show: v => !!v.slow && !v.tutFlags.slowTapped, done: v => !!v.tutFlags.slowTapped, at: v => v.slow && v.slow.at },
-  { id: 'kapkac', urgent: true, repeat: true, y: 2.3, show: v => !!v.kap && v.kap.state === 'run', done: v => !!v.stats.kapkacCaught, at: v => v.kap && v.kap.pos },
   { id: 'walk', hand: true, show: v => v.t > 3, done: v => v.movedTotal > 1.5 || !!v.tutFlags.firstCut },
   { id: 'doner', show: v => v.t > 5 || v.movedTotal > 1.5, done: v => !!v.tutFlags.firstCut, at: v => v.anchors.stations.doner },
   { id: 'counter', show: v => v.carry.includes('doner'), done: v => !!v.tutFlags.firstDrop, at: v => v.anchors.counter },

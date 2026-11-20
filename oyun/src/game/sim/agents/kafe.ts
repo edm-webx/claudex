@@ -14,7 +14,7 @@ import type { Actor } from './types';
 
 interface KafeHostApi {
   live: boolean; fp: boolean; pending: Record<string, number>; fpDone?: (arsa: string, ok: boolean) => void;
-  info(id: string): { lv: number; isci: number; stok: number; tema: string; fiyat: number; menu: string[] } | null;
+  info(id: string): { lv: number; isci: number; tema: string; fiyat: number; menu: string[] } | null;
   sell(id: string, bonus?: number): number;
 }
 const ROOMS: { arsa: string; room: string; bistro: boolean }[] = [{ arsa: 'k1', room: 'kafe1', bistro: false }, { arsa: 'k2', room: 'kafe2', bistro: true }, { arsa: 'k4', room: 'okul', bistro: false }, { arsa: 'k5', room: 'avm', bistro: false }, { arsa: 'k6', room: 'tesis', bistro: false }, { arsa: 'k3', room: 'kirtasiye', bistro: false }];

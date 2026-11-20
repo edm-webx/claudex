@@ -118,7 +118,7 @@ export function createPlayView(d: PlayViewDeps): PlayView {
       const party = c.n > 1 && c.members.length + 1 < c.n ? c.n + ' kişilik' : '';
       const text = c.sayT > 0 ? c.say : party;
       const h = head(c, tmp); h.y += 0.35;
-      add(h, musteriBubble(v2.bubbleHTML({ icons, text, patience: k }), c, k), k < 0.25 ? 'bubble angry' : i > 2 ? 'bubble mini' : 'bubble', 10 - i + (k < 0.3 ? 4 : 0), 'c' + c.id);
+      add(h, musteriBubble(v2.bubbleHTML({ icons, text, patience: k }), k), k < 0.25 ? 'bubble angry' : i > 2 ? 'bubble mini' : 'bubble', 10 - i + (k < 0.3 ? 4 : 0), 'c' + c.id);
     });
     rt.winq.forEach((c, i) => {
       if (c.state !== 'wqueue' || i > 2) return;
@@ -132,24 +132,19 @@ export function createPlayView(d: PlayViewDeps): PlayView {
     const ag = agents(r);
     if (ag) {
       const reg = ag.registry;
-      // regulars and the gurme
-      const specials: [string, { state: string; need: Record<string, number>; visit?: number } | null][] = [['regular', ag.regulars.current()], ['vip', ag.vip.current()]];
+      // the gurme
+      const specials: [string, { state: string; need: Record<string, number> } | null][] = [['vip', ag.vip.current()]];
       for (const [kind, o] of specials) {
         if (!o || o.state === 'walk') continue;
         const a = reg.list.find(x => x.kind === kind && !x.dead); if (!a) continue;
         const p = actorHead(a.id, a.x, a.z, 1.85, tmp); p.y += 0.35;
         if (o.state === 'wait') {
-          const known = kind === 'regular' && (o.visit || 0) > 0;
           const name = String((a.info as { name?: string }).name || '');
           const order: Order = {}; for (const k in o.need) order[k] = o.need[k];
           const text = a.sayT > 0 ? a.say : name;
-          add(p, v2.bubbleHTML({ icons: known ? [] : orderIcons(order, order), text }), kind === 'vip' ? 'bubble vip' : 'bubble praise', 13, kind);
+          add(p, v2.bubbleHTML({ icons: orderIcons(order, order), text }), 'bubble vip', 13, kind);
         } else if (a.sayT > 0) add(p, esc(a.say), 'say', 12, kind);
       }
-      const kap = ag.kapkac.current() as { state: string; pos: Vec2 } | null;
-      const ka = reg.list.find(x => x.kind === 'kapkac' && !x.dead);
-      if (kap && kap.state === 'run') add({ x: kap.pos.x, y: 2.2, z: kap.pos.z }, v2.icon('warn'), 'icon', 15, 'kap');
-      else if (ka && ka.sayT > 0) add({ x: ka.x, y: 2.1, z: ka.z }, esc(ka.say), 'say', 12, 'kap');
       // workers: Zzz while asleep, short lines otherwise
       for (const w of ag.workers.rows() as { id: number; state: string }[]) {
         const a = reg.byKey('worker', String(w.id)); if (!a) continue;
