@@ -37,6 +37,7 @@ export function createNightLights(o: { scene: T.Scene; zones: ZoneManager | null
     lamps = out;
   }
   refresh();
+  const nearI: number[] = new Array(POOL).fill(0), nearD: number[] = new Array(POOL).fill(0);
   function update(focus: Vec2, hour: number): void {
     const t = todAt(hour);
     const k = Math.max(0, Math.min(1, (t.n ?? 0)));
@@ -49,10 +50,18 @@ export function createNightLights(o: { scene: T.Scene; zones: ZoneManager | null
     if (pickT <= 0 || lights[0].userData.i == null) {
       pickT = 0.4;
       if (!lamps.length) refresh();
-      const near = lamps.map((l, i) => ({ i, d: (l.x - focus.x) ** 2 + (l.z - focus.z) ** 2 })).sort((a, b) => a.d - b.d).slice(0, POOL);
+      // PRF-05: partial selection of the POOL nearest lamps into preallocated scratch arrays (was map+sort+slice: ~100 objects + 2 arrays per pick)
+      let cnt = 0;
+      for (let i = 0; i < lamps.length; i++) {
+        const d = (lamps[i].x - focus.x) ** 2 + (lamps[i].z - focus.z) ** 2;
+        if (cnt === POOL && d >= nearD[POOL - 1]) continue;
+        let j = cnt < POOL ? cnt++ : POOL - 1;
+        while (j > 0 && nearD[j - 1] > d) { nearD[j] = nearD[j - 1]; nearI[j] = nearI[j - 1]; j--; }
+        nearD[j] = d; nearI[j] = i;
+      }
       lights.forEach((l, j) => {
-        const c = near[j]; if (!c) { l.intensity = 0; return; }
-        const p = lamps[c.i]; l.userData.i = c.i; l.userData.flo = !!p.flo;
+        if (j >= cnt) { l.intensity = 0; return; }
+        const p = lamps[nearI[j]]; l.userData.i = nearI[j]; l.userData.flo = !!p.flo;
         l.position.set(p.x, p.y - 0.15, p.z);
         l.color.set(p.flo ? '#fff4dc' : '#ffc77a');
       });

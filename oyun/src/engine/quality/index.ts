@@ -8,9 +8,14 @@
  * - Auto-watch: 1 s buckets, 10 s rolling average of frame time. avg > 1.5x target -> drop one tier;
  *   avg < 0.8x target for 120 s -> rise one tier; at most one change per 60 s (first drop may happen after 10 s).
  *   Target = 1000 / effective fps (battery saver forces 30). Only active when setting is 'auto'.
+ * PRF-12 dynamic resolution (auto mode, no ?tier=): a fast layer scales the pixel ratio SCALE_MIN..1 in 0.05 steps, no shader relink.
+ *   1 s buckets: bucket frame time > 1.1x target -> one step down (at most every 2 s); work time < 0.7x target for 3 s in a row
+ *   and no step down in the last 6 s -> one step up. The slow layer (tier drop) only starts once the scale sits at SCALE_MIN;
+ *   a tier change resets the scale to 1.
  */
 import type { Quality, QualityDeps, QualitySetting, TierDef, TierName, Disposer } from '../api';
 
+export const SCALE_MIN = 0.7, SCALE_STEP = 0.05;
 const ORDER: TierName[] = ['akici', 'dengeli', 'sahane'];
 export const TIER_TABLE: Readonly<Record<TierName, TierDef>> = Object.freeze({
   akici: { name: 'akici', label: 'Akıcı', crowd: 25, gullsNear: 4, gullsFar: 12, pigeons: 8, pixelRatio: 0.85, antialias: false, shadows: false, shadowSize: 0, fps: 30, particles: 120, buildBudgetMs: 3, maxLiveZones: 2, heroes: 12, flags: {} },
@@ -37,6 +42,14 @@ export function createQuality(deps: QualityDeps): Quality {
   const guess = () => guessTier(p.device.memoryGB, p.device.cores);
   let cur: TierName = p.params.tier ?? (setting !== 'auto' ? setting : autoTier ?? guess());
   const subs = new Set<(t: TierDef, why: Why) => void>();
+  const scaleSubs = new Set<(s: number) => void>();
+  let scale = 1, scaleHold = 0, scaleCalm = 0, scaleLastDown = -1e9, scaleLastStep = -1e9;
+  const setScale = (v: number) => {
+    v = Math.round(Math.max(SCALE_MIN, Math.min(1, v)) * 100) / 100;
+    if (v === scale) return;
+    scale = v;
+    for (const cb of [...scaleSubs]) { try { cb(scale); } catch (e) { deps.log?.error('quality scale cb', e); } }
+  };
   let battery = false;
 
   // watch state
@@ -47,7 +60,8 @@ export function createQuality(deps: QualityDeps): Quality {
   const apply = (n: TierName, why: Why) => {
     if (n === cur) return;
     cur = n;
-    buckets.length = 0; bSum = 0; bN = 0; bT = 0; calm = 0;
+    buckets.length = 0; bSum = 0; bN = 0; bT = 0; calm = 0; scaleCalm = 0;
+    setScale(1);
     for (const cb of [...subs]) { try { cb(TIER_TABLE[cur], why); } catch (e) { deps.log?.error('quality cb', e); } }
   };
 
@@ -61,21 +75,31 @@ export function createQuality(deps: QualityDeps): Quality {
       apply(s === 'auto' ? autoTier ?? guess() : s, 'manual');
     },
     onChange(cb): Disposer { subs.add(cb); return () => { subs.delete(cb); }; },
-    feed(frameMs, dt) {
+    scale: () => scale,
+    onScale(cb): Disposer { scaleSubs.add(cb); return () => { scaleSubs.delete(cb); }; },
+    feed(frameMs, dt, workMs) {
       t += dt;
-      if (setting !== 'auto' || p.params.tier) return;
-      bSum += frameMs; bN++; bT += dt;
+      if (setting !== 'auto' || p.params.tier) { if (scale !== 1) setScale(1); return; }
+      bSum += frameMs; bN++; bT += dt; scaleHold += workMs ?? frameMs;
       if (bT < 1) return;
-      const avg1 = bSum / bN; bSum = 0; bN = 0; bT = 0;
+      const avg1 = bSum / bN, work1 = scaleHold / bN; bSum = 0; bN = 0; bT = 0; scaleHold = 0;
       buckets.push(avg1); if (buckets.length > 10) buckets.shift();
       const fps = battery ? 30 : TIER_TABLE[cur].fps;
       const target = 1000 / fps;
       if (avg1 < target * 0.8) calm += 1; else calm = 0;
+      // fast layer: resolution scale
+      if (avg1 > target * 1.1 && scale > SCALE_MIN + 1e-6) {
+        if (t - scaleLastStep >= 2) { scaleLastStep = scaleLastDown = t; setScale(scale - SCALE_STEP); }
+        scaleCalm = 0;
+      } else if (work1 < target * 0.7 && avg1 <= target * 1.1) {
+        if (++scaleCalm >= 3 && scale < 1 && t - scaleLastDown >= 6) { scaleCalm = 0; scaleLastStep = t; setScale(scale + SCALE_STEP); }
+      } else scaleCalm = 0;
       if (t - lastChange < 60) return;
       if (buckets.length >= 10) {
         const avg = buckets.reduce((a, b) => a + b, 0) / buckets.length;
         const i = ORDER.indexOf(cur);
-        if (avg > target * 1.5 && i > 0) { lastChange = t; downThisSession = true; autoTier = ORDER[i - 1]; persist(); apply(autoTier, 'auto'); return; }
+        if (avg > target * 1.5 && i > 0 && scale <= SCALE_MIN + 1e-6) {   // slow layer waits until the scale has hit the floor
+          lastChange = t; downThisSession = true; autoTier = ORDER[i - 1]; persist(); apply(autoTier, 'auto'); return; }
       }
       // 2026-11-09 Chrome freeze: auto mode used to step back up after 120 calm seconds; a tier change toggles shadows,
       // which recompiles every material (multi-second freeze), then the heavier tier missed its target and stepped down

@@ -251,7 +251,10 @@ export interface Quality {
   set(s: QualitySetting): void;            // persists
   onChange(cb: (t: TierDef, why: 'auto' | 'manual' | 'probe' | 'url') => void): Disposer;
   /** Feed every rendered frame; auto mode drops a tier after 10 s avg > 1.5x target, rises after 2 min calm, max 1 change/min. */
-  feed(frameMs: number, dt: number): void;
+  feed(frameMs: number, dt: number, workMs?: number): void;
+  /** PRF-12: continuous resolution scale (SCALE_MIN..1) the render multiplies onto the tier's pixel ratio; auto mode only. */
+  scale?(): number;
+  onScale?(cb: (s: number) => void): Disposer;
   batterySaver(on: boolean): void;         // forces 30 fps
   table: Readonly<Record<TierName, TierDef>>;
 }
@@ -778,6 +781,10 @@ export interface RenderPipeline {
   setTime(hour: number, season?: Season): void;     // 4-phase blend, v2 world.setTime table
   setWeather(w: WeatherState): void;
   frame(scene: Scene, cam: Camera, alpha: number): void;
+  /** PRF-03: compile shaders of the visible scene ahead of the first draw (both shadow states); optional, the fallback renderer has none. */
+  warm?(scene: Scene, cam: Camera): Promise<void>;
+  /** PRF-12: dynamic resolution multiplier on the tier's pixel ratio; optional, the fallback renderer has none. */
+  setScale?(s: number): void;
   info(): RenderInfo;
   resize(): void;
   readonly scene: Scene;

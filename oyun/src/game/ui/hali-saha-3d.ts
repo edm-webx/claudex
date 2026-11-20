@@ -26,7 +26,7 @@ export function createHaliSaha3D(o: {
   BOARDS = o.clubName ? [o.clubName.toUpperCase(), 'MARTIKART', o.rivalName ? o.rivalName.toUpperCase() : 'AYRANBEY', 'BOĞAZ GAZOZU', o.clubName.toUpperCase(), 'NARÇİÇEK', 'MARTI SU', o.clubName.toUpperCase()] : BOARDS_BASE;
   let ren: T.WebGLRenderer;
   try { ren = new T.WebGLRenderer({ antialias: true }); } catch { return null; }
-  ren.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  ren.setPixelRatio(Math.min(1.5, window.devicePixelRatio || 1));   // PRF-04: 1.5 instead of 2 = 44% fewer pixels to fill on retina screens (owner should eyeball the stands)
   ren.shadowMap.enabled = true; ren.shadowMap.type = T.PCFSoftShadowMap;
   ren.outputColorSpace = T.SRGBColorSpace; ren.toneMapping = T.ACESFilmicToneMapping; ren.toneMappingExposure = 0.85;   // same filmic grade as the main scene: floodlights must not blow out
   const cv = ren.domElement; cv.style.cssText = 'position:absolute;inset:0;width:100%;height:100%';

@@ -45,6 +45,10 @@ export interface MotorRender extends RenderPipeline {
   /** Sky-based environment map (PMREM, refreshed every half game hour); null before the renderer exists. */
   onEnv(cb: (tex: T.Texture | null) => void): Disposer;
   readonly bloomOn: boolean;
+  /** PRF-12: dynamic resolution; multiplies the tier's pixel ratio (0.6..1). Resizes targets only, no shader relink. */
+  setScale(s: number): void;
+  /** PRF-03: parallel shader compile of everything visible, in both shadow states (so a later tier change links nothing). Never draws. */
+  warm(sc: T.Scene, cam: T.Camera): Promise<void>;
 }
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
@@ -116,7 +120,7 @@ export function createRender(deps: RenderDeps): MotorRender {
   let tier: TierDef | null = null;
   let wantAA: boolean | null = null;
   let hour = 11, tod = todAt(11), night = 0;
-  let frameNo = 0, lost = false;
+  let frameNo = 0, lost = false, resScale = 1;
   const timeSubs = new Set<(t: Tod, h: number) => void>();
   const lostSubs = new Set<() => void>(), restoredSubs = new Set<() => void>();
   let loseExt: { loseContext(): void; restoreContext(): void } | null = null;
@@ -177,13 +181,10 @@ export function createRender(deps: RenderDeps): MotorRender {
     if (sun.shadow.mapSize.x !== sz) { sun.shadow.mapSize.set(sz, sz); if (sun.shadow.map) { sun.shadow.map.dispose(); (sun.shadow as { map: T.WebGLRenderTarget | null }).map = null; } }
     Object.assign(sun.shadow.camera, { left: -ext, right: ext, top: ext, bottom: -ext, near: 1, far: 80 }); sun.shadow.camera.updateProjectionMatrix();
     sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.035;
-    if (renderer) {
-      renderer.shadowMap.type = T.PCFSoftShadowMap;
-      if (renderer.shadowMap.enabled !== sh) {
-        renderer.shadowMap.enabled = sh;
-        scene.traverse(o => { const m = (o as T.Mesh).material; if (m) (Array.isArray(m) ? m : [m]).forEach(x => { x.needsUpdate = true; }); });
-      }
-    }
+    // PRF-03: renderer.shadowMap.enabled stays true for the whole session (set in init). Flipping it forced
+    // scene.traverse(needsUpdate) = every material re-linked on a tier change (seconds of freeze on ANGLE). Now only the
+    // sun's castShadow follows the tier; three re-evaluates its light hash by itself. A shadow-off tier frees the map.
+    if (!sh && sun.shadow.map) { sun.shadow.map.dispose(); (sun.shadow as { map: T.WebGLRenderTarget | null }).map = null; }
   }
 
   const api: MotorRender = {
@@ -218,7 +219,7 @@ export function createRender(deps: RenderDeps): MotorRender {
       renderer.outputColorSpace = T.SRGBColorSpace;
       renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.98;
       renderer.shadowMap.type = T.PCFSoftShadowMap;
-      renderer.shadowMap.enabled = false;
+      renderer.shadowMap.enabled = true;
       wantAA = !!t.antialias;
       try { loseExt = renderer.getContext().getExtension('WEBGL_lose_context'); } catch { loseExt = null; }
       canvas.addEventListener('webglcontextlost', (e: Event) => { e.preventDefault(); lost = true; lostSubs.forEach(cb => { try { cb(); } catch (err) { deps.log?.warn('[render] lost cb', err); } }); }, false);
@@ -229,7 +230,7 @@ export function createRender(deps: RenderDeps): MotorRender {
       tier = t;
       if (wantAA !== null && !!t.antialias !== wantAA) deps.log?.info('[render] antialias change applies on next load');
       applyShadows(t);
-      if (renderer) renderer.setPixelRatio(Math.min((typeof window !== 'undefined' && window.devicePixelRatio) || 1, t.pixelRatio));
+      if (renderer) renderer.setPixelRatio(Math.min((typeof window !== 'undefined' && window.devicePixelRatio) || 1, t.pixelRatio) * resScale);
       setupPost(t);
       api.resize();
     },
@@ -275,9 +276,27 @@ export function createRender(deps: RenderDeps): MotorRender {
       lastInfo.calls = ri.render.calls; lastInfo.tris = ri.render.triangles;
       lastInfo.geos = ri.memory.geometries; lastInfo.texs = ri.memory.textures;
     },
+    setScale(v: number) {
+      const nv = clamp(+v || 1, 0.5, 1);
+      if (nv === resScale) return;
+      resScale = nv;
+      if (renderer && tier) { renderer.setPixelRatio(Math.min((typeof window !== 'undefined' && window.devicePixelRatio) || 1, tier.pixelRatio) * resScale); api.resize(); }
+    },
+    warm(sc: T.Scene, cam: T.Camera) {
+      const r = renderer as unknown as { compileAsync?: (s: T.Scene, c: T.Camera) => Promise<unknown> } | null;
+      if (!r || !r.compileAsync || lost) return Promise.resolve();
+      const was = sun.castShadow, jobs: Promise<unknown>[] = [];
+      try {
+        jobs.push(r.compileAsync(sc, cam));
+        // the other shadow state too: three keys programs by the shadow-casting light count, and the sync part of compileAsync reads it right now
+        if (tier && tier.name !== 'akici') { sun.castShadow = !was; jobs.push(r.compileAsync(sc, cam)); }
+      } catch (err) { deps.log?.warn('[render] warm', err); }
+      sun.castShadow = was;
+      return Promise.all(jobs).then(() => undefined, () => undefined);
+    },
     info() {
       if (renderer) { lastInfo.geos = renderer.info.memory.geometries; lastInfo.texs = renderer.info.memory.textures; }
-      return { ...lastInfo, programs: renderer ? ((renderer.info as { programs?: unknown[] }).programs?.length ?? 0) : 0, programNames: renderer ? ((renderer.info as { programs?: { name: string; cacheKey: string }[] }).programs || []).map(p => p.name + '|' + p.cacheKey.length) : [] };
+      return { ...lastInfo, programs: renderer ? ((renderer.info as { programs?: unknown[] }).programs?.length ?? 0) : 0, programNames: renderer ? ((renderer.info as { programs?: { name: string; cacheKey: string }[] }).programs || []).filter(Boolean).map(p => p.name + '|' + (p.cacheKey || '').length) : [] };
     },
     resize() {
       const { w, h } = size();

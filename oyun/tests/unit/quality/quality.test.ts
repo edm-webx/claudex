@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createQuality, guessTier, TIER_TABLE } from '../../../src/engine/quality';
+import { createQuality, guessTier, TIER_TABLE, SCALE_MIN } from '../../../src/engine/quality';
 import { createPlatform } from '../../../src/engine/platform';
 
 function memLs(): Storage {
@@ -35,7 +35,8 @@ describe('quality', () => {
     q2.onChange((t, why) => changes.push(`${t.name}:${why}`));
     for (let i = 0; i < 9.5 * 60; i++) q2.feed(40, 1 / 60);
     expect(changes).toEqual([]);
-    for (let i = 0; i < 1 * 60; i++) q2.feed(40, 1 / 60);
+    // PRF-12: the resolution scale takes the first ~12 s (6 steps, 2 s apart); only at the floor does the tier drop
+    for (let i = 0; i < 6 * 60; i++) q2.feed(40, 1 / 60);
     expect(changes).toEqual(['dengeli:auto']);
     for (let i = 0; i < 30 * 60; i++) q2.feed(60, 1 / 60); // still slow, but < 60 s since change
     expect(changes).toEqual(['dengeli:auto']);
@@ -58,5 +59,37 @@ describe('quality', () => {
     again.set('sahane');
     for (let i = 0; i < 20 * 60; i++) again.feed(100, 1 / 60);
     expect(again.current().name).toBe('sahane');
+  });
+});
+
+describe('quality: dinamik çözünürlük (PRF-12)', () => {
+  const mk = (tier: string) => { const ls = memLs(); ls.setItem('marti-quality', JSON.stringify({ setting: 'auto', autoTier: tier })); return createQuality({ platform: plat('', ls) }); };
+  const run = (q: ReturnType<typeof mk>, sec: number, ms: number, work = ms) => { for (let i = 0; i < sec * 60; i++) q.feed(ms, 1 / 60, work); };
+  it('yavaş karelerde ölçek adım adım düşer, tabanda durur, kademe hemen düşmez', () => {
+    const q = mk('sahane'); const seen: number[] = []; q.onScale!(s => seen.push(s)); const tiers: string[] = [];
+    q.onChange(t => tiers.push(t.name));
+    run(q, 6, 25);
+    expect(q.scale!()).toBeLessThan(1); expect(tiers).toEqual([]);
+    run(q, 8, 25);
+    expect(q.scale!()).toBe(SCALE_MIN);
+    expect(seen.every((v, i) => i === 0 || v < seen[i - 1])).toBe(true);
+    expect(seen.every(v => v >= SCALE_MIN)).toBe(true);
+  });
+  it('tabanda hâlâ yavaşsa kademe düşer ve ölçek 1e döner', () => {
+    const q = mk('sahane'); const tiers: string[] = [];
+    q.onChange(t => tiers.push(t.name));
+    run(q, 90, 40);
+    expect(tiers[0]).toBe('dengeli'); expect(q.scale!()).toBeGreaterThanOrEqual(SCALE_MIN);
+  });
+  it('hızlı karelerde ölçek geri yükselir (iş süresi hedefin altında)', () => {
+    const q = mk('sahane'); run(q, 14, 25);
+    const low = q.scale!(); expect(low).toBe(SCALE_MIN);
+    run(q, 40, 16.7, 6);
+    expect(q.scale!()).toBe(1);
+  });
+  it('vsync sınırında iş süresi yüksekse yükselmez; elle kademede ölçek 1', () => {
+    const q = mk('sahane'); run(q, 14, 25); run(q, 30, 16.7, 14);
+    expect(q.scale!()).toBe(SCALE_MIN);
+    q.set('dengeli'); run(q, 3, 25); expect(q.scale!()).toBe(1);
   });
 });

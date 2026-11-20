@@ -562,6 +562,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     sim.state.settings.autoTier = t.name;
   };
   quality.onChange(applyTier);
+  quality.onScale?.(sc => make('render.setScale', () => { R.setScale?.(sc); return true; }));
   if (chars) make('crowd.setBudget', () => { chars.crowd.setBudget(quality.current().crowd); return true; });
   sim.state.settings.quality = quality.setting();
 
@@ -592,6 +593,8 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   // frame trace for smoothness tests: hooks.trace(true) records [time, heroX, heroZ, camX, camZ] per render, trace(false) returns it
   let synthT: number | null = null;
   let warmPend = -1;
+  let overlaySkipped = 0;
+  const coverOpen = () => !!(evRoom?.isOpen() || kulis?.open || document.getElementsByClassName('hs-game').length);
   let tracing = false; let traceBuf: number[][] = [];
   const renderFrame = (fdt: number, alpha: number) => {
     const t0 = platform.clock.now();
@@ -691,13 +694,16 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (juice) guard('juice', () => juice.update(fdt));
     // 2026-11-09 Chrome freeze: when streamed zones finish building, ask three to compile their shaders in parallel
     // (KHR_parallel_shader_compile) before they are drawn, instead of a blocking compile on first sight
-    if (zones) { const pend = zones.pending(); if (pend === 0 && warmPend !== 0) { const ren = R.renderer as unknown as { compileAsync?: (s: unknown, c: unknown) => Promise<unknown> } | null; ren?.compileAsync?.(scene, cam.camera)?.catch(() => { /* ignore */ }); } warmPend = pend; }
-    guard('render', () => P.time('render', () => R.frame(scene, cam.camera, alpha)));
+    if (zones) { const pend = zones.pending(); if (pend === 0 && warmPend !== 0) { void R.warm?.(scene, cam.camera); } warmPend = pend; }
+    // PRF-04: opaque full-screen overlays (halı saha, Sabri'nin evi, karakter oluşturma) hide the main canvas completely:
+    // skip the main scene draw (shadow pass + bloom + ~1000 draw calls) so the fan stays quiet; the next frame after close draws as usual.
+    if (coverOpen()) P.count('overlayAtlanan', ++overlaySkipped);
+    else guard('render', () => P.time('render', () => R.frame(scene, cam.camera, alpha)));
     if (tracing) traceBuf.push([synthT ?? t0, pos.x, pos.z, cam.camera.position.x, cam.camera.position.z]);
     const ms = platform.clock.now() - t0;
     P.frame(fdt * 1000);
     P.count('frameWorkMs', ms);
-    quality.feed(fdt * 1000, fdt);
+    quality.feed(fdt * 1000, fdt, ms);
     if (saveOn()) {
       save.tick(platform.clock.wall());
       if (sim.rules.ext.takeDirty()) void save.save('purchase');
@@ -857,17 +863,17 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   reg('perfReport', () => P.report());
   reg('perfRecord', (on = true) => { P.record(!!on); return P.recording; });
   reg('perfDump', () => P.dump());
-  P.meta('dpr', +(window.devicePixelRatio || 1).toFixed(2));
-  P.meta('ekran', `${window.innerWidth}x${window.innerHeight}`);
-  P.context(() => ({ x: +pos.x.toFixed(1), z: +pos.z.toFixed(1), saat: +sim.clock.hour.toFixed(1) }));
-  reg('perfShow', (on = true) => P.show(!!on));
-  reg('exportSave', () => save.exportCode());
   // PRF-02 kırmızı sınama: sahneyi bilerek şişirir (görünür mesh'leri, kendi geometrisiyle, ebeveynine kopyalar). Yalnız tools/perf-gate.mjs --sisir kullanır.
   reg('sisir', (n = 500) => {
     const src: AnyRec[] = []; R.scene.traverse((o0: Object3D) => { const o = o0 as unknown as AnyRec; if (o.isMesh && o.visible && o.geometry && o.parent) src.push(o); });
     let k = 0; for (let i = 0; i < (n || 0) && src.length; i++) { const o = src[i % src.length]; const c = (o.clone as () => AnyRec)(); c.geometry = (o.geometry as AnyRec & { clone(): unknown }).clone(); (o.parent as { add(x: unknown): void }).add(c); k++; }
     return k;
   });
+  P.meta('dpr', +(window.devicePixelRatio || 1).toFixed(2));
+  P.meta('ekran', `${window.innerWidth}x${window.innerHeight}`);
+  P.context(() => ({ x: +pos.x.toFixed(1), z: +pos.z.toFixed(1), saat: +sim.clock.hour.toFixed(1) }));
+  reg('perfShow', (on = true) => P.show(!!on));
+  reg('exportSave', () => save.exportCode());
   reg('importSave', async (code: string) => { const ok = await save.importCode(code); if (ok) { const r = await save.load(); sim.load(r.data); } return ok; });
   reg('loop', () => ({ tick: loop.tick, paused: loop.paused, pauseWhy: loop.pauseWhy, simTime: loop.simTime, ...loop.stats(), nav: nav.stats?.() }));
   for (const k of ['select', 'drag', 'save']) if (!(target.editor as AnyRec | undefined)?.[k]) reg(`editor.${k}`, () => { throw new Error('editor not loaded (?edit=1)'); });
@@ -913,6 +919,9 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     document.querySelectorAll('.sb-kasa').forEach(el => { const f = (el as unknown as { _sb?: { finish(): void } })._sb; if (f) f.finish(); else el.remove(); });
   });
   reg('applyTier', (name: TierName) => quality.set(name));
+  reg('scale', () => quality.scale?.() ?? 1);
+  reg('setScale', (v: number) => { R.setScale?.(v); return true; });   // PRF-12 ölçüm kancası (profil.mjs)
+  reg('loseGl', (on = true) => { const e = R.renderer?.getContext().getExtension('WEBGL_lose_context') as { loseContext(): void; restoreContext(): void } | null; if (!e) return false; if (on) e.loseContext(); else e.restoreContext(); return true; });   // PRF-13: bağlam kaybı sınaması
   for (const what of ['ferry', 'gull', 'kapkac', 'regular', 'vip', 'endDay', 'money', 'gold', 'stars', 'sleep', 'offline', 'unlock']) {
     reg(`force.${what}`, (value?: number | string) => cmd('force', { what, value }));
   }

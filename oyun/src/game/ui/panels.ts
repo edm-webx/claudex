@@ -92,6 +92,17 @@ export function createPanels(deps: PanelsDeps): Panels {
   let shownBoard = false;
   const lastOverlay: Record<string, unknown> = {};
   let barKey = '';
+  let barSig = -1;
+  // PRF-05: menuItems() + JSON.stringify used to run every frame (dozens of objects and a string per frame). The bar only depends on a few
+  // small facts of the state; they are folded into one integer here (no allocation) and the list is rebuilt only when it changes.
+  function barSignature(): number {
+    const s = S();
+    let hasAch = 0; if (s.ach) { for (const _k in s.ach) { hasAch = 1; break; } }
+    let badge = 0; const l = s.orders && s.orders.list; if (l) for (let i = 0; i < l.length; i++) if (l[i].done && !l[i].claimed) badge++;
+    const lv = Math.min(s.level | 0, 4);
+    return lv | (((s.workers && s.workers.length) ? 1 : 0) << 3) | ((s.day >= 2 ? 1 : 0) << 4) | (hasAch << 5) | (((s.cats && s.cats.length) ? 1 : 0) << 6)
+      | ((s.stars >= 1 ? 1 : 0) << 7) | ((s.stage > 1 ? 1 : 0) << 8) | ((s.tadilat ? 1 : 0) << 9) | (Math.min(badge, 255) << 10);
+  }
   let lastRender = 0;
 
   function menuItems() {
@@ -159,9 +170,13 @@ export function createPanels(deps: PanelsDeps): Panels {
       const r = rt();
       if (!r) return;
       // menu bar
-      const items = menuItems();
-      const key = JSON.stringify(items);
-      if (key !== barKey) { barKey = key; v2.menuBar(items); }
+      const sig = barSignature();
+      if (sig !== barSig) {
+        barSig = sig;
+        const items = menuItems();
+        const key = JSON.stringify(items);
+        if (key !== barKey) { barKey = key; v2.menuBar(items); }
+      }
       // tab panels
       const p: string | null = r.panel;
       if (p !== shownPanel) {
