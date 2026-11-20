@@ -75,6 +75,8 @@ it('karşı yaka kafe: satın alınca hemen kafe olur, arsa hakkından düşmez,
   c({ op: 'isciAl', id: 'k1' }); expect(p.isci).toBe(1); expect(S.money).toBe(200000 - k1.fiyat - 12000);
   for (let i = 0; i < 3; i++) c({ op: 'isciAl', id: 'k1' }); expect(p.isci).toBe(2);   // lv1 café: 2 workers
   p.lv = 2; c({ op: 'isciAl', id: 'k1' }); expect(p.isci).toBe(3);
+  p.lv = 5; S.money = 1e6; for (let i = 0; i < 6; i++) c({ op: 'isciAl', id: 'k1' }); expect(p.isci).toBe(3);   // sahnede 3 gerçek aktör var: 4-6. işçi satılmaz
+  p.lv = 2;
   sim.step(240);
   expect(p.sat).toBeGreaterThan(0);   // customers are served without any stock to buy
   expect(m.view().plots.find((x: any) => x.id === 'k1')!.isci).toBe(3);

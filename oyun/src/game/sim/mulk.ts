@@ -14,7 +14,7 @@ import { stadSave, tahminDoluluk, fiyatAyarla, FORMASYONLAR, KAPASITE, FIYAT_MIN
 import type { Kernel } from './state';
 import {
   ESYA_BY_ID, TARIFLER, SANDIK_BY_ID, GUNLUK_HAVUZ, SANDIK_DUSER, BANKA, ARSALAR, ARSA_HAK, arsaKapi, DUKKAN_BY_ID, DUKKAN_MAX_SEVIYE,
-  DUKKAN_STOK_MAX, dukkanYukselt, dukkanMusteri, STADYUM, HALI_SAHA_KAPI, ISCI_MAX, isciFiyat, kafeMenu, kafeIsciMax, ISCI_SAAT_UCRET, ISCI_MUSTERI, type Arsa,
+  DUKKAN_STOK_MAX, dukkanYukselt, dukkanMusteri, STADYUM, HALI_SAHA_KAPI, ISCI_MAX, isciFiyat, kafeMenu, kafeIsciMax, KAFE_ISCI_TAVAN, ISCI_SAAT_UCRET, ISCI_MUSTERI, type Arsa,
   isletmeOf, isletmeEsya, SALON_ESYA, SALON_ESYA_BY_ID,
 } from '../../content/esya';
 import { IC_CANLI, icOfArsa, icIcinde, bankaGise, IC_BY_ID, icDim, icWorld } from '../../content/ic-mekan';
@@ -302,7 +302,7 @@ export function installMulk(K: Kernel) {
   }
   function isciAl(id: string) {
     const q = plotOf(id); if (!q || !q.p || q.p.tur !== 'dukkan') return;
-    const n = flo(q.p.isci), mx = isciMaxOf(q.a, q.p); if (n >= mx) { K.toast('Bu seviyede en fazla ' + mx + ' işçi çalışır' + (q.a.sabit && mx < 6 ? ' (kafeyi yükselt)' : '') + '.', 'info'); return; }
+    const n = flo(q.p.isci), mx = isciMaxOf(q.a, q.p); if (n >= mx) { K.toast('Bu seviyede en fazla ' + mx + ' işçi çalışır' + (q.a.sabit && mx < KAFE_ISCI_TAVAN ? ' (kafeyi yükselt)' : '') + '.', 'info'); return; }
     const f = isciFiyat(n); if (S.money < f) { K.toast('İşçi tutmak ' + fmtMoney(f) + '.', 'bad'); return; }
     K.spend(f); q.p.isci = n + 1; K.toast('👷 İşçi tutuldu (' + q.p.isci + '/' + mx + '). Saatlik ' + fmtMoney(ISCI_SAAT_UCRET) + ' kasadan ödenir.', 'good'); K.stat('isciTutuldu'); K.addXP(20); K.saveNow();
   }
@@ -355,7 +355,7 @@ export function installMulk(K: Kernel) {
       void dt;
       for (const ar of ARSALAR) {
         const p = a.plots[ar.id]; if (!p || p.tur !== 'dukkan') continue;
-        const t0 = DUKKAN_BY_ID[p.tip], ek = ekon(ar, p), t = { ...t0, fiyat: ek.fiyat, maliyet: ek.maliyet }, isci = flo(p.isci);
+        const t0 = DUKKAN_BY_ID[p.tip], ek = ekon(ar, p), t = { ...t0, fiyat: ek.fiyat, maliyet: ek.maliyet }, isci = ar.sabit ? Math.min(flo(p.isci), isciMaxOf(ar, p)) : flo(p.isci);   // eski kayıttaki 4-6. işçi sahnede görünmediği için sayılmaz
         if (dh > 0 && isci > 0) {
           const ucret = isci * ISCI_SAAT_UCRET * dh; if (p.till >= ucret) p.till -= ucret;      // wages come out of the till
         }

@@ -197,7 +197,9 @@ export const SALON_ESYA: SalonEsya[] = [
   { id: 'sarkuteri', ad: 'Şarküteri vitrini', ikon: '🧀', fiyat: 260000, salon: 'W', asama: 10, adisK: 0.1, desc: 'Peynirler, zeytinler, şarküteri: adisyon +%10' },
 ];
 export const SALON_ESYA_BY_ID: Record<string, SalonEsya> = Object.fromEntries(SALON_ESYA.map(e => [e.id, e]));
-export const kafeIsciMax = (lv: number) => Math.min(6, lv + 1);
+/** sahnede en fazla 3 gerçek işçi aktörü (agents/kafe.ts) var: ödenen her işçi tezgahta görünür */
+export const KAFE_ISCI_TAVAN = 3;
+export const kafeIsciMax = (lv: number) => Math.min(KAFE_ISCI_TAVAN, lv + 1);
 export const isciFiyat = (n: number) => 12000 * (n + 1), ISCI_SAAT_UCRET = 60, ISCI_MUSTERI = 0.4;
 
 /** shop types (D). One shared engine: stok -> müşteri -> satış -> upgrade. fiyat/maliyet per unit, musteri per game hour at level 1. */

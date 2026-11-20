@@ -8,6 +8,7 @@
  */
 import type { System, SimCtx, Vec2 } from '../../../engine/api';
 import { IC_BY_ID, icWorld, icDim, icLayout } from '../../../content/ic-mekan';
+import { KAFE_ISCI_TAVAN } from '../../../content/esya';
 import type { AgentEnv } from './env';
 import type { Actor } from './types';
 
@@ -83,7 +84,7 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
   const waiting = (r: Room) => r.guests.filter(x => x.st === 'queue').sort((p, q) => p.slot - q.slot);
 
   function syncWorkers(r: Room) {
-    const h = host(), info = h?.info(r.arsa), want = info ? Math.min(3, info.isci) : 0;
+    const h = host(), info = h?.info(r.arsa), want = info ? Math.min(KAFE_ISCI_TAVAN, info.isci) : 0;
     while (r.wk.length > want) { const w = r.wk.pop()!; if (w.guest) { w.guest.claimed = 0; w.guest = null; } env.reg.remove(w.a); }   // a guest claimed by the removed worker is released, never stuck in the queue
     while (r.wk.length < want) {
       const g = geom(r), idx = r.wk.length, seed = 31 * idx + (r.bistro ? 7 : 3), role = idx === 0 ? 'barista' : 'garson';
