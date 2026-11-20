@@ -6,6 +6,7 @@ import { mulkApi } from '../sim/mulk';
 import { ESYALAR, ESYA_BY_ID, SANDIKLAR, DUKKAN_TIPLERI, DUKKAN_BY_ID, dukkanMusteri, BANKA } from '../../content/esya';
 
 interface Deps { root: HTMLElement; rules: () => { rt: unknown } | null; command(c: { kind: string; [k: string]: unknown }): void; sfx?(id: string): void }
+const mmss = (sec: number) => { const t = Math.max(0, Math.ceil(sec)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
 export interface MulkPanel { update(dt: number): void; open(tab?: Tab): void; close(): void; dispose(): void }
 type Tab = 'envanter' | 'banka' | 'gunluk' | 'mulk' | 'stadyum' | 'lig' | 'defter' | 'salon' | 'okul' | 'avm';
 
@@ -114,7 +115,7 @@ export function createMulkPanel(d: Deps): MulkPanel {
       if (a.tur === 'ev') { s += `<div class="mp-row"><span class="mp-ic">🏠</span><div><b>Evin (Arsa ${a.id.toUpperCase()})</b><small>Oda, mutfak, balkon, teras, kedi köşesi. Kapıya yaklaşıp gir.</small></div><button class="mp-b g" data-a="evAc" data-id="${a.id}"${a.yakin ? '' : ' disabled'}>${a.yakin ? 'Eve gir' : 'Kapıya git'}</button></div>`; continue; }
       const t = DUKKAN_BY_ID[a.tip], y = a.yukselt;
       s += `<div class="mp-row" style="align-items:flex-start"><span class="mp-ic">${a.sabit ? a.ikon : t.ikon}</span><div><b>${a.sabit ? (a.ikon || '') + ' ' + esc(a.ad) : esc(t.ad)} · ${a.lv}. seviye${a.sabit ? ' · ' + esc(a.asamaAd || '') : '' }${a.sabit ? '' : ' (Arsa ' + a.id.toUpperCase() + ')'}</b><small>~${a.musteriSaat || Math.round(dukkanMusteri(t, a.lv) * (1 + 0.4 * a.isci))} müşteri/saat · ${a.sat} satış · kasada ${tl(a.till)}${a.isci ? ' · 👷 ' + a.isci + ' işçi (maaş gün sonunda: ' + tl(a.maasGun || 0) + ')' : ''}${a.yakin ? '' : ' (kasayı toplamak için içeri gir)'}</small></div>
-${!a.sabit && a.isci < a.isciMax ? `<button class="mp-b" data-a="isciAl" data-id="${a.id}"${m.money >= a.isciFiyat ? '' : ' disabled'}>👷 İşçi tut · ${tl(a.isciFiyat)}</button>` : ''}${y ? `<button class="mp-b y" data-a="yukselt" data-id="${a.id}"${m.money >= y.tl ? '' : ' disabled'}>⬆ ${tl(y.tl)}</button>` : '<span class="mp-chip">En üst seviye</span>'}</div>`;
+${!a.sabit && a.isci < a.isciMax ? `<button class="mp-b" data-a="isciAl" data-id="${a.id}"${m.money >= a.isciFiyat ? '' : ' disabled'}>👷 İşçi tut · ${tl(a.isciFiyat)}</button>` : ''}${a.tadilat ? `<div style="flex-basis:100%"><small>🔨 Tadilat: ${esc(a.sonraki?.ad || '')} · kalan ${mmss(a.tadilat.left)}</small><div class="mp-bar"><i style="width:${Math.round((1 - a.tadilat.left / a.tadilat.total) * 100)}%"></i></div><button class="mp-b y" data-a="tadilatAtla" data-id="${a.id}"${m.gold >= a.tadilat.skipGold ? '' : ' disabled'}>⏩ Altın Simitle bitir · ${a.tadilat.skipGold}</button></div>` : y ? `<button class="mp-b y" data-a="yukselt" data-id="${a.id}"${m.money >= y.tl ? '' : ' disabled'}>${a.sabit ? '🔨 Tadilat · ' : '⬆ '}${tl(y.tl)}${a.sonraki ? ' · ' + mmss(a.sonraki.sureS) : ''}</button>${a.sonraki ? `<small style="flex-basis:100%">Sonraki: <b>${esc(a.sonraki.ad)}</b>${(a.sonraki.aciklar || []).length ? ' · açılır: ' + (a.sonraki.aciklar as string[]).map(esc).join(', ') : ''}${(a.menuSonraki || []).length ? ' · yeni menü' : ''}</small>` : ''}` : '<span class="mp-chip">En üst seviye</span>'}</div>`;
       if (a.sabit) {   // 2026-11-08: the café's own menu, next dishes, equipment
         const own = new Set<string>(a.kesya || []);
         s += `<div class="mp-row" style="display:block;margin-top:-4px"><small><b>Menü</b> ${(a.menu || []).map((x: { ikon: string; ad: string; fiyat: number }) => `<span class="mp-chip">${x.ikon} ${esc(x.ad)} ${tl(x.fiyat)}</span>`).join(' ')}</small>
@@ -256,6 +257,7 @@ ${a.isci < a.isciMax ? `<div class="mp-sec" style="margin:8px 0 4px">İlan panos
     if (a === 'kPick') { const k = el.dataset.k as 'c1' | 'c2' | 'arma'; club[k] = el.dataset.v!; key = ''; t = 0; return; }
     if (a === 'takim') { cmd({ op: 'takim', name: (bg.querySelector('input[data-f="takim"]') as HTMLInputElement).value, renk: club.c1, renk2: club.c2, arma: club.arma }); return; }
     if (a === 'evAc') { cmd({ op: 'evAc', id }); api.close(); return; }
+    if (a === 'tadilatAtla') { cmd({ op: 'tadilatAtla', id }); return; }
     if (a === 'ilanAl') { cmd({ op: 'ilanAl', id, e: el.dataset.e }); return; }
     if (a === 'ilanYenile') { cmd({ op: 'ilanYenile', id }); return; }
     if (a === 'kov') { cmd({ op: 'kov', id, n }); return; }

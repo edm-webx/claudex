@@ -16,7 +16,7 @@ import type { Actor } from './types';
 
 interface KafeHostApi {
   live: boolean; fp: boolean; pending: Record<string, number>; fpDone?: (arsa: string, ok: boolean) => void;
-  info(id: string): { lv: number; isci: number; kadro: { id: number; ad: string; rol: string; huy: string; look: { apronText: string; lookSeed: number; headscarf?: string }; rank: number }[]; tema: string; fiyat: number; menu: { id: string; ad: string; ikon: string }[] } | null;
+  info(id: string): { lv: number; isci: number; masa: number; kuyruk: number; kadro: { id: number; ad: string; rol: string; huy: string; look: { apronText: string; lookSeed: number; headscarf?: string }; rank: number }[]; tema: string; fiyat: number; menu: { id: string; ad: string; ikon: string }[] } | null;
   sell(id: string, kalem?: string, bonus?: number): number;
 }
 const ROOMS: { arsa: string; room: string; bistro: boolean }[] = [{ arsa: 'k1', room: 'kafe1', bistro: false }, { arsa: 'k2', room: 'kafe2', bistro: true }, { arsa: 'k4', room: 'okul', bistro: false }, { arsa: 'k5', room: 'avm', bistro: false }, { arsa: 'k6', room: 'tesis', bistro: false }, { arsa: 'k3', room: 'kirtasiye', bistro: false }];
@@ -86,7 +86,7 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
     const h = host(); if (!h) return 0;
     const v = h.sell(r.arsa, gu.want, by === 'player' ? 1.15 : 1); if (!v) { leave(r, gu, true); return 0; }
     const g = geom(r);
-    const free = g.tables.map((_, i) => i).filter(i => !r.seatTaken.has(i));
+    const masa = h.info(r.arsa)?.masa ?? 99, free = g.tables.map((_, i) => i).filter(i => i < masa && !r.seatTaken.has(i));   // stage decides how many tables are open
     if (free.length && rng.chance(0.55)) {
       // sit ON the chair at the table's +u side (masa(): chair at u+0.68, masa4 corner u+0.48 / v+0.48) and face the table centre
       const i = free[Math.floor(rng.next() * free.length)], t = g.tables[i], cu2 = t.k === 'masa4' ? 0.48 : 0.68, cv2 = t.k === 'masa4' ? 0.48 : 0;
@@ -124,7 +124,7 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
     syncWorkers(r);
     // new guests from the hourly customer flow (mulk.ts accrues them into pending)
     const open = r.guests.filter(x => x.st === 'in' || x.st === 'queue').length;
-    if ((h.pending[r.arsa] || 0) > 0 && open < geom(r).maxQ) { h.pending[r.arsa]--; spawnGuest(r); }
+    if ((h.pending[r.arsa] || 0) > 0 && open < Math.min(geom(r).maxQ, info.kuyruk)) { h.pending[r.arsa]--; spawnGuest(r); }
     // guests
     for (let i = r.guests.length - 1; i >= 0; i--) {
       const gu = r.guests[i], a = gu.a; gu.t += dt;

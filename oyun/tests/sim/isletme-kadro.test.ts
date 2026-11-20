@@ -23,7 +23,7 @@ it('işe alma kadroyu ve parayı günceller, tavan dolunca para düşmez', () =>
 });
 it('kadro sayısı = sahnedeki çalışan sayısı ve adlı (k1-k6)', () => {
   for (const id of ['k1', 'k2', 'k3', 'k4', 'k5', 'k6']) {
-    const { sim, m, S, c } = mk(); c({ op: 'arsaAl', id }); c({ op: 'yukselt', id }); c({ op: 'yukselt', id }); sim.step(0.5);
+    const { sim, m, S, c } = mk(); c({ op: 'arsaAl', id }); c({ op: 'yukselt', id }); c({ op: 'adminTadilatBitir', id }); c({ op: 'yukselt', id }); c({ op: 'adminTadilatBitir', id }); sim.step(0.5);
     for (let i = 0; i < 3; i++) { const k = (m.model() as any).arsa.find((a: any) => a.id === id).ilan[0]; c({ op: 'ilanAl', id, e: k.id }); }
     for (let i = 0; i < 300; i++) sim.step(0.1);
     const kad = plot(S, id).kadro; expect(kad.length).toBe(3);
@@ -33,13 +33,13 @@ it('kadro sayısı = sahnedeki çalışan sayısı ve adlı (k1-k6)', () => {
   }
 });
 it('kovulan gider, kalanlar kalır', () => {
-  const { sim, m, S, c } = mk(); c({ op: 'arsaAl', id: 'k1' }); c({ op: 'yukselt', id: 'k1' }); sim.step(0.5);
+  const { sim, m, S, c } = mk(); c({ op: 'arsaAl', id: 'k1' }); c({ op: 'yukselt', id: 'k1' }); c({ op: 'adminTadilatBitir', id: 'k1' }); sim.step(0.5);
   for (let i = 0; i < 3; i++) c({ op: 'ilanAl', id: 'k1', e: (m.model() as any).arsa.find((a: any) => a.id === 'k1').ilan[0].id });
   const ids = plot(S, 'k1').kadro.map((x: any) => x.id); c({ op: 'kov', id: 'k1', n: ids[1] });
   expect(plot(S, 'k1').kadro.map((x: any) => x.id)).toEqual([ids[0], ids[2]]); expect(plot(S, 'k1').isci).toBe(2);
 });
 it('maaş gün sonunda toplu, negatife düşmez; büfe kadrosuna karışmaz', () => {
-  const { sim, m, S, c } = mk(); c({ op: 'arsaAl', id: 'k1' }); c({ op: 'yukselt', id: 'k1' }); sim.step(0.5);
+  const { sim, m, S, c } = mk(); c({ op: 'arsaAl', id: 'k1' }); c({ op: 'yukselt', id: 'k1' }); c({ op: 'adminTadilatBitir', id: 'k1' }); sim.step(0.5);
   const w0 = S.workers.length;
   for (let i = 0; i < 2; i++) c({ op: 'ilanAl', id: 'k1', e: (m.model() as any).arsa.find((a: any) => a.id === 'k1').ilan[0].id });
   expect(S.workers.length).toBe(w0);

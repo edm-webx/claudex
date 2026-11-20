@@ -102,7 +102,7 @@ import { ugY, onUg } from '../content/ustgecit';
 import { createKarsiLook, type KarsiLookView } from './view/world/karsi-look';
 import { createKarsiBina, type BinaView } from './view/world/karsi-bina';
 import { createBufeBuyume, mevsimZorla, type BuyumeView } from './view/world/bufe-buyume';
-import { ARSALAR } from '../content/esya';
+import { ARSALAR, ISLETME, ARSA_ISLETME } from '../content/esya';
 import { createKarsiYasam, type YasamView } from './view/world/karsi-yasam';
 import { createIcMekan, type IcView } from './view/world/ic-mekan-look';
 import { restoranApi } from './sim/restoran';
@@ -474,7 +474,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     setMoney: n => { sim.state.money = n; }, setGold: n => { sim.state.gold = n; }, editor: () => adminEditor(), stands: () => (restoranApi(sim.rules)?.view().stands ?? []).map(t => ({ id: t.id, name: t.name, owned: t.owned, x: t.x, z: t.z })), izgara: () => { const v = !(izgaraLook?.get()); izgaraLook?.set(v); return v; },
     resetMe: () => { void (async () => { try { sim.load(defaultState(seed ?? 1) as never); esnafimSave(sim.state).done = false; await save.save('manual'); if (hesap()) { const code = await save.exportCode(); await bulutYaz(code, 0, esnafimSave(sim.state), 1); } } finally { location.reload(); } })(); },
     command: c => command(c as never), setLevel: n => { sim.state.level = n; }, allPadKeys: () => PAD_KEYS.filter(k => k !== 'tadilat'),
-    isletme: () => { const S = sim.state, z = S.zones as { arsa?: { plots?: Record<string, { lv: number; isci?: number }>; takim?: { ad: string } | null } }, t = S.tadilat as unknown as { to: number; left: number } | null; return { stage: S.stage, tadilat: t ? { to: t.to, left: t.left } : null, money: S.money, gold: S.gold || 0, level: S.level, stars: S.stars, kafeler: ARSALAR.filter(a => a.sabit).map(a => ({ id: a.id, ad: a.ad || a.id, lv: z.arsa?.plots?.[a.id]?.lv || 0, isci: z.arsa?.plots?.[a.id]?.isci || 0 })), takim: z.arsa?.takim?.ad ?? null, mevsim: mevsimZorla() }; },
+    isletme: () => { const S = sim.state, z = S.zones as { arsa?: { plots?: Record<string, { lv: number; isci?: number; tadilat?: { to: number; left: number } }>; takim?: { ad: string } | null } }, t = S.tadilat as unknown as { to: number; left: number } | null; return { stage: S.stage, tadilat: t ? { to: t.to, left: t.left } : null, money: S.money, gold: S.gold || 0, level: S.level, stars: S.stars, kafeler: ARSALAR.filter(a => a.sabit).map(a => ({ id: a.id, ad: a.ad || a.id, lv: z.arsa?.plots?.[a.id]?.lv || 0, isci: z.arsa?.plots?.[a.id]?.isci || 0, asama: ISLETME[ARSA_ISLETME[a.id]].asama[(z.arsa?.plots?.[a.id]?.lv || 1) - 1] || '', tadilat: z.arsa?.plots?.[a.id]?.tadilat ? Math.ceil(z.arsa.plots[a.id].tadilat!.left) : 0 })), takim: z.arsa?.takim?.ad ?? null, mevsim: mevsimZorla() }; },
     setMevsim: k => mevsimZorla(k),
     setMuted: m => { sim.state.settings.muted = m; if (audio) for (const b of Object.values(audio.buses)) (b as { muted: boolean }).muted = m; } })) : null;
   // J2: back to the slot screen (save first, then sign out and reload: the login screen opens again)

@@ -14,7 +14,7 @@ interface Deps {
   setMoney: (n: number) => void; setGold: (n: number) => void; resetMe: () => void; editor: () => void; izgara: () => boolean; stands: () => { id: string; name: string; owned: boolean; x: number; z: number }[];
   command: (c: Record<string, unknown>) => void; setLevel: (n: number) => void; setMuted: (m: boolean) => void; allPadKeys: () => string[];
   /** 2026-11-08 İşletme sekmesi: büfe aşaması, tadilat, kafeler, kulüp, mevsim süsü */
-  isletme?: () => { stage: number; tadilat: { to: number; left: number } | null; money: number; gold: number; level: number; stars: number; kafeler: { id: string; ad: string; lv: number; isci: number }[]; takim: string | null; mevsim: string };
+  isletme?: () => { stage: number; tadilat: { to: number; left: number } | null; money: number; gold: number; level: number; stars: number; kafeler: { id: string; ad: string; lv: number; isci: number; asama: string; tadilat: number }[]; takim: string | null; mevsim: string };
   setMevsim?: (k: string) => void;
 }
 
@@ -89,11 +89,10 @@ ${sel.peer ? `<button class="ad-b" data-a="tp-to">Yanına git</button><button cl
     if (tab === 'isl') {
       const m = d.isletme?.(); if (!m) return '<small>Oyun yüklenmedi.</small>';
       const NAMES = ['Seyyar', 'Büfe', 'Çay bahçesi', 'Lokanta', 'Aile lokantası', 'İskele terası', 'Balık restoranı', 'Boğaz restoranı', 'Şef mutfağı', 'Fine dining'];
-      const KA = ['Yok', 'Köşe kafe', 'Kafe', 'Bistro', 'Teraslı bistro', 'Gurme bistro'];
       return `<div class="ad-stat"><div>Para<b>${Math.round(m.money).toLocaleString('tr')} ₺</b></div><div>Altın<b>${m.gold}</b></div><div>Seviye<b>${m.level} · ${m.stars}★</b></div></div>
 <div class="ad-h">Büfe aşaması <small>(şu an ${m.stage}: ${NAMES[m.stage - 1] || ''})</small></div><div class="ad-tabs">${NAMES.map((n, i) => `<button class="ad-b${m.stage === i + 1 ? ' cur' : ''}" data-a="stage" data-n="${i + 1}" title="${n}">${i + 1}. ${n}</button>`).join('')}</div>
 <div class="ad-tabs">${m.tadilat ? `<button class="ad-b grn" data-a="tadBitir">🔨 Tadilatı bitir (${m.tadilat.to}. aşama, ${Math.ceil(m.tadilat.left)} sn kaldı)</button>` : `<button class="ad-b" data-a="tadBaslat">🔨 Sonraki tadilatı başlat (bedava)</button>`}<button class="ad-b" data-a="git" data-n="-31" data-z="-4">🍽 Restorana git</button></div>
-<div class="ad-h" style="margin-top:8px">Karşı yaka işletmeleri</div>${m.kafeler.map(k => `<div class="ad-row"><b>${esc(k.ad)}</b><small>${KA[k.lv] || ''}${k.isci ? ' · 👷' + k.isci : ''}</small></div><div class="ad-tabs">${[0, 1, 2, 3, 4, 5].map(l => `<button class="ad-b${k.lv === l ? ' cur' : ''}" data-a="kafeLv" data-id="${k.id}" data-n="${l}">${l ? l : 'Sat'}</button>`).join('')}<button class="ad-b" data-a="kafeIsci" data-id="${k.id}">👷 +1 işçi</button></div>`).join('')}
+<div class="ad-h" style="margin-top:8px">Karşı yaka işletmeleri</div>${m.kafeler.map(k => `<div class="ad-row"><b>${esc(k.ad)}</b><small>${k.lv ? esc(k.asama) : 'Yok'}${k.tadilat ? ' · 🔨 ' + k.tadilat + ' sn' : ''}${k.isci ? ' · 👷' + k.isci : ''}</small></div><div class="ad-tabs">${[0, 1, 2, 3, 4, 5].map(l => `<button class="ad-b${k.lv === l ? ' cur' : ''}" data-a="kafeLv" data-id="${k.id}" data-n="${l}">${l ? l : 'Sat'}</button>`).join('')}<button class="ad-b" data-a="kafeIsci" data-id="${k.id}">👷 +1 işçi</button>${k.tadilat ? `<button class="ad-b grn" data-a="kafeTad" data-id="${k.id}">🔨 Tadilatı bitir</button>` : ''}</div>`).join('')}
 <div class="ad-h" style="margin-top:8px">Kulüp</div><div class="ad-row"><b>${m.takim ? esc(m.takim) : 'Kulüp yok'}</b><small>${m.takim && m.stage >= 3 ? 'sponsor afişleri açık' : m.takim ? 'sponsorluk 3. aşamada' : ''}</small></div>${m.takim ? '' : '<input class="ad-in" data-f="takim" maxlength="16" placeholder="Kulüp adı"><button class="ad-b grn" data-a="takimKur">⚽ Kulüp kur (bedava)</button>'}
 <div class="ad-h" style="margin-top:8px">Süsleme önizleme <small>(şu an: ${esc(m.mevsim || 'takvim')})</small></div><div class="ad-tabs">${[['', 'Takvime göre'], ['bayrak', '🇹🇷 Bayram'], ['lale', '🌷 Lale'], ['yilbasi', '🎄 Yılbaşı'], ['yok', 'Kapalı']].map(([k, l]) => `<button class="ad-b${(m.mevsim || '') === k ? ' cur' : ''}" data-a="mevsim" data-n="${k}">${l}</button>`).join('')}</div>`;
     }
@@ -166,6 +165,7 @@ ${sel.peer ? `<button class="ad-b" data-a="tp-to">Yanına git</button><button cl
     if (a === 'tadBitir') { d.command({ kind: 'force', what: 'tadilatBitir' }); say('✓ Tadilat bitiyor.'); return; }
     if (a === 'tadBaslat') { d.command({ kind: 'force', what: 'stars', value: 5 }); const m = d.isletme?.(); if (m) d.addMoney(1e10); d.command({ kind: 'startTadilat' }); say('✓ Tadilat başladı (vinç ve işçiler restoran alanında).'); return; }
     if (a === 'kafeLv') { d.command({ kind: 'mulk', op: 'adminKafe', id: el.dataset.id, n: Number(el.dataset.n) }); say('✓ Kafe ayarlandı.'); setTimeout(paint, 50); return; }
+    if (a === 'kafeTad') { d.command({ kind: 'mulk', op: 'adminTadilatBitir', id: el.dataset.id }); say('✓ Tadilat bitti.'); setTimeout(paint, 50); return; }
     if (a === 'kafeIsci') { d.command({ kind: 'mulk', op: 'adminIsci', id: el.dataset.id }); say('✓ İşçi eklendi.'); setTimeout(paint, 50); return; }
     if (a === 'takimKur') { const t = val('takim'); if (t.length < 3) { say('⚠ En az 3 harf.'); return; } d.command({ kind: 'mulk', op: 'adminTakim', name: t }); say('✓ Kulüp kuruldu.'); setTimeout(paint, 50); return; }
     if (a === 'mevsim') { d.setMevsim?.(el.dataset.n || ''); say('✓ Süsleme değişti.'); setTimeout(paint, 50); return; }
