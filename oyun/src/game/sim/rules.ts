@@ -18,6 +18,7 @@ import { installSalon } from './salon';
 import { installGizem } from './gizem';
 import { installYetenek } from './yetenek';
 import { installZemin } from './zemin';
+import { installBulasik } from './bulasik';
 import { installHaliSaha } from './halisaha';
 import type { AmbientSystem, Bus, Entity, GameClock, InteractionRegistry, Nav, Rng, SimCtx, SoAStore, System, Vec2 } from '../../engine/api';
 import type { SimEvents } from '../events';
@@ -178,6 +179,7 @@ export function createRules(d: RulesDeps): RulesFull {
   const mulkM = installMulk(K);
   const yetenekM = installYetenek(K);
   const zeminM = installZemin(K);
+  installBulasik(K);   // BUF-13: kirli tabak yığını (restoran / agents'tan önce: rt.bulasik)
   const ligM = installLig(K);
   installSalon(K);   // 2026-11-08 pier-wing seating income from stage 3
   const gizemM = installGizem(K);
@@ -211,6 +213,7 @@ export function createRules(d: RulesDeps): RulesFull {
     rt.tables = rt.layout.tables.map(() => ({ built: false, seats: [{ occ: 0 }, { occ: 0 }], pile: [], dirty: 0, dirtyT: 0 }));
     for (const k of PRODUCT_IDS) rt.stations[k] = { built: k === 'doner', out: [], grabT: 0, opT: -99, prog: {} };
     for (const k of PRODUCT_IDS) rt.counter[k] = [];
+    rt.dirtyDishes = 0; rt.mutfakBusy = 0; rt.mutfakMop = false;
     rt.carry = []; rt.kasa = []; rt.floor = []; rt.pads.splice(0).forEach(p => d.interactions.unregister('pad.' + p.key));
     rt.queue = []; rt.winq = []; rt.window = null; rt.streak = 0; rt.slow = null; rt.slowCard = null;
     if (rt.customers.length) cu.clearAll();

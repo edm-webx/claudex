@@ -82,11 +82,13 @@ export function installKarne(K: Kernel) {
     updateKarne();
     const maas = Math.round(S.workers.reduce((a, w) => a + ((w as { paidToday?: number }).paidToday || 0), 0)), ekip = S.workers.length;
     S.workers.forEach(w => { (w as { paidToday?: number }).paidToday = 0; });
+    // BUF-10: the waiters' shared tip jar is split at day end (restoran.ts); not player income, one report row
+    const bahsis = (rt as unknown as { restoran?: { kumbaraDagit?(day: number): { toplam: number; pay: unknown[] } | null } }).restoran?.kumbaraDagit?.(day) ?? null;
     // survey 2026-10-24 (reversed): at 03:00 the screen fades and the gün sonu card shows the day's ciro; the next
     // day starts behind it (morning) and the sim waits until the player presses "Yeni güne başla".
     const best = rt.dayHistory.reduce((m, d) => Math.max(m, d.earned), 0);
     if ((rt as unknown as { gunSonuCard?: boolean }).gunSonuCard) {
-    rt.uiLast.gunSonu = { day, earned: Math.round(T0.earned), customers: T0.customers, angry: T0.angry, money: Math.round(S.money), record: Math.round(T0.earned) > best && day > 1, maas, ekip, sold: { ...((T0 as unknown as { sold?: Record<string, number> }).sold || {}) }, borc: Math.floor((S.zones.arsa as { kredi?: { borc?: number } } | undefined)?.kredi?.borc || 0) };
+    rt.uiLast.gunSonu = { day, earned: Math.round(T0.earned), customers: T0.customers, angry: T0.angry, money: Math.round(S.money), record: Math.round(T0.earned) > best && day > 1, maas, ekip, sold: { ...((T0 as unknown as { sold?: Record<string, number> }).sold || {}) }, borc: Math.floor((S.zones.arsa as { kredi?: { borc?: number } } | undefined)?.kredi?.borc || 0), bahsis: bahsis ? { toplam: bahsis.toplam, kisi: bahsis.pay.length } : undefined };
     rt.paused = true; rt.pauseWhy = 'gunSonu';
     }
     K.logEv('dayEnd', { day, customers: T0.customers, earned: Math.round(T0.earned), angry: T0.angry, money: Math.round(S.money) });

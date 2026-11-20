@@ -181,7 +181,7 @@ describe('aşama 10 tam mutfak (gerçek sim, 30 dk)', () => {
     for (const k of ['cay', 'ayran', 'simit', 'tabure1', 'tabure2', 'masa1', 'gazoz', 'masa2', 'tost']) sim.command({ kind: 'force', what: 'unlock', value: k });
     sim.command({ kind: 'force', what: 'stage', value: 10 });
     let id = 600; const ise = (role: string, n: number) => { for (let i = 0; i < n; i++) sim.state.workers.push({ id: id++, name: role + i, role, xp: 0, morale: 70, traits: ['hamarat'] }); };
-    ise('garson', 4); ise('asci', 5); ise('komi', 4); ise('sef', 2);
+    ise('garson', 4); ise('asci', 5); ise('komi', 4); ise('sef', 2); ise('bulasikci', 2);   // BUF-13: bulaşıkçı yoksa yığın masa silmeyi yavaşlatır
     expect(mutfakEsya(sim.state.stage).length).toBe(15);
     const api = restoranApi(sim.rules)!, hat = api.hat!;
     const pg = mutfakDunya(MUTFAK_NOKTA.passGarson); let garsonPass = false;

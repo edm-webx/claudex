@@ -16,6 +16,9 @@ import type { FoodId } from '../../../content/yemek-menu';
 
 export type ActorKind = 'worker' | 'regular' | 'vip' | 'kapkac' | 'cat' | 'dog' | 'gull' | 'parrot';
 
+/** a plate in a garson's hands: x,z = the target table's side, gx,gz = where to bring it back (geri) */
+export interface GarsonTabak { id: number; p: FoodId; table: number; x: number; z: number; geri: boolean; gx: number; gz: number }
+
 export interface CarryItem<T extends string = ProductId> { type: T; tier: number; by?: number; carrier?: number; priceX?: number }
 
 /** One individually drawn character. All fields are plain numbers/strings so the sim stays serialisable. */
@@ -91,14 +94,20 @@ export interface AgentHost {
   grabTime(p: ProductId): number;
   makeGrab(p: ProductId, carrier: number): CarryItem;
   counterPut(item: CarryItem): boolean;
-  /** garson flow (restoran.ts): plates waiting at the pass for a table */
-  garsonClaim?(wid: number, n: number): { id: number; p: FoodId; x: number; z: number }[];
-  garsonOpen?(wid: number): { id: number; p: FoodId; x: number; z: number }[];
-  garsonDone?(wid: number, id: number): boolean;
+  /**
+   * BUF-09 garson task queue (restoran.ts): priority hot plate > take order > menu > bill > wipe. `isAl` claims the next task
+   * (plates: up to `cap`, from one source), `tabakAl` takes the claimed plates off the pass / counter when the garson stands
+   * there, `isTamam` finishes a task at the table (plate: 'tasi' = carry it to another table, 'geri' = bring it back to the rack),
+   * `tabakGeri` puts returned plates back, `isBirak` releases everything (timeout, fired, window post).
+   */
+  isAl?(wid: number, o: { cap: number; at?: Vec2 }): { id: number; tur: 'tabak' | 'siparis' | 'menu' | 'hesap' | 'sil'; table: number; x: number; z: number; n?: number } | null;
+  tabakAl?(wid: number): GarsonTabak[];
+  tepsi?(wid: number): GarsonTabak[];
+  isTamam?(wid: number, id: number, at: Vec2): { durum: 'tamam' | 'tasi' | 'geri' | 'yok'; table?: number; x?: number; z?: number };
+  tabakGeri?(wid: number): number;
+  isBirak?(wid: number): void;
   /** BUF-05: where the garson picks his claimed plates up: the kitchen pass (world point) or null (front counter) */
   passDurak?(wid: number): Vec2 | null;
-  masaClaim?(wid: number): { id: number; kind: 'menu' | 'hesap'; x: number; z: number } | null;
-  masaDone?(wid: number, id: number): void;
   /** kitchen line (sim/mutfak-hat.ts): claim the oldest ticket item + a free station for it (nearest to `from`) */
   kitchenClaim?(wid: number, opt?: { from?: Vec2 }): FoodId | null;
   /** legacy one-step finish (ok) / give the job up (!ok) */
@@ -115,6 +124,15 @@ export interface AgentHost {
   /** put the carried plate on the pass (false: pass full, wait) */
   kitchenPass?(wid: number): boolean;
   kitchenDrop?(wid: number): void;
+  /** BUF-13 dish pile: dirty plates waiting at the dishwashing station; wash one (false: pile empty); table-wipe time factor (1..2) */
+  dishCount?(): number;
+  dishWash?(): boolean;
+  dishCeza?(): number;
+  /** BUF-13: kitchen workers busy cooking / washing now (kitchen floor dirt), a cleaner mopping the kitchen now (wet-floor sign) */
+  setMutfakBusy?(n: number): void;
+  setMutfakMop?(on: boolean): void;
+  /** BUF-06: the station the player handed over to this cook (null: none) */
+  kitchenDevir?(wid: number): string | null;
   /** a tray plate nobody took for `yas` s (an idle cook takes it) */
   kitchenBekleyen?(yas: number): boolean;
   // ---- specials

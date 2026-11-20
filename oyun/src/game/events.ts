@@ -21,6 +21,8 @@ export const V2_EVENT_NAMES = [
 export const ENGINE_EVENT_NAMES = [
   'ticket', 'serve', 'hesap', 'stantBuy', 'stantSale', 'stantRefill', 'dukkanAc', 'erimGlitch', 'erimBonk', // Faz 2
   'passBell',       // BUF-05 { no, p, x, z }: a plate landed on the kitchen pass (servis zili; ses SES-05)
+  'tavaCarpma',     // BUF-08 { ist, x, z }: a pan dish finished on a tava station (mutfak-hat ready)
+  'bulasikSes',     // BUF-08 { x, z }: dishwasher clink; emitter not yet wired (BUF-13 owns the dish pile trigger)
   'zoneState',      // { id, state }
   'save',           // { reason, ok, mode }
   'saveRepaired',   // { notes }

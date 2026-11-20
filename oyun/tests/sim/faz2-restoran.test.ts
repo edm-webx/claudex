@@ -31,6 +31,8 @@ describe('garson masa turu', () => {
       for (const p of ['cay', 'ayran', 'simit', 'tost', 'gazoz', 'doner']) { const b = (r.counter[p] ||= []); if (b.length < 4) b.push({ type: p, tier: 1 }); } }   // the kitchen keeps the pass stocked
     expect(sim.state.stats.menuGetir || 0).toBeGreaterThan(0);
     expect(sim.state.stats.hesapGetir || 0).toBeGreaterThan(0);
+    expect(sim.state.stats.siparisAl || 0).toBeGreaterThan(0);   // BUF-09: fiş garson siparişi alınca yazılır
+    expect(sim.state.stats.isinlanma || 0).toBe(0);              // hiçbir tabak/iş masaya garsonsuz varmadı
   });
 });
 describe('aşçı tezgah hesabı', () => {

@@ -7,7 +7,7 @@ import type { Rules } from '../sim/state';
 import { fmtMoney } from '../sim/util';
 
 export interface GunSonuView { update(): void; dispose(): void }
-interface GunSonuModel { day: number; earned: number; customers: number; angry: number; money: number; record: boolean; maas?: number; ekip?: number; sold?: Record<string, number>; borc?: number }
+interface GunSonuModel { day: number; earned: number; customers: number; angry: number; money: number; record: boolean; maas?: number; ekip?: number; sold?: Record<string, number>; borc?: number; bahsis?: { toplam: number; kisi: number } }
 
 const CSS = `
 .gs-wrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:auto;background:rgba(6,8,22,0);transition:background 1.6s ease;z-index:60}
@@ -46,6 +46,7 @@ export function createGunSonu(deps: { root: HTMLElement; rules: () => Rules | nu
       ${top ? `<div class="gs-row"><span>En çok satan</span><b>${top[0]} (${top[1]} adet)</b></div>` : ''}
       ${m.ekip || gider ? `<div class="gs-sub" style="margin:2px 0 4px;font-size:13px">Brüt satış ${fmtMoney(brut)}${m.ekip ? ' − personel payı ' + fmtMoney(m.maas || 0) : ''}${gider && gider.malzeme ? ' − malzeme ' + fmtMoney(gider.malzeme) : ''} = ciro</div>` : ''}
       ${gider ? `<div class="gs-row"><span>Kira${eksik ? ' (kasa yetmedi)' : ''}</span><b>−${fmtMoney(kiraOd)}</b></div><div class="gs-row"><span>Faturalar (elektrik, su, tüp)</span><b>−${fmtMoney(faturaOd)}</b></div>` : ''}
+      ${m.bahsis && m.bahsis.toplam > 0 ? `<div class="gs-row"><span>Bahşiş kumbarası (${m.bahsis.kisi} kişiye paylaşıldı)</span><b>${fmtMoney(m.bahsis.toplam)}</b></div>` : ''}
       <div class="gs-row"><span>Kasada</span><b>${fmtMoney(gider ? Math.round(deps.rules()?.state.money ?? m.money) : m.money)}</b></div>
       ${m.borc ? `<div class="gs-row"><span>Banka borcu (faiz işliyor)</span><b>${fmtMoney(m.borc)}</b></div>` : ''}
       <button class="gs-btn" type="button">Yeni güne başla ☀️</button></div>`;

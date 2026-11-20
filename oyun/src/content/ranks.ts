@@ -49,7 +49,7 @@ export const ROLES: Record<string, RoleDef> = {
 };
 // 2026-11-09 survey: kitchen crew (content/mutfak.ts holds the stage/slot rules; they work inside the büfe mutfağı room)
 for (const [id, label, base, on] of [['asci', 'Aşçı', 2600], ['komi', 'Komi (aşçı yardımcısı)', 1700], ['bulasikci', 'Bulaşıkçı', 1500], ['kasiyer', 'Kasiyer', 2300], ['sef', 'Şef', 7000],
-  ['guvenlik', 'Güvenlik', 2400, 1], ['muzisyen', 'Müzisyen', 2000, 1], ['hostes', 'Hostes', 2200, 1], ['barista', 'Barista', 2500, 1], ['mudur', 'Müdür', 9000, 1], ['vale', 'Vale', 1800, 1]] as [string, string, number, number?][])
+  ['guvenlik', 'Güvenlik', 2400, 1], ['muzisyen', 'Müzisyen', 2000, 1], ['hostes', 'Hostes', 2200, 1], ['barista', 'Barista', 2500], ['mudur', 'Müdür', 9000, 1], ['vale', 'Vale', 1800, 1]] as [string, string, number, number?][])
   ROLES[id] = { id, label, station: null, act: 'cut', base, mutfak: !on, on: !!on };   // stage/slot rules: content/mutfak.ts (front roles work out front)
 export const ROLE_IDS: string[] = Object.keys(ROLES);
 export const ROLE_SLOTS: Record<string, number> = {
@@ -120,6 +120,15 @@ export const JOB_REFRESH_COST = 250;
 /** Board auto-refresh period (s of play time). */
 export const BOARD_REFRESH_S = 300;
 
+/**
+ * BUF-09: how many plates a waiter carries from the pass to the tables (the ONE place this is defined).
+ * Level 1-3 (rank 0-2) carry 2, level 4+ (rank 3+) carry 3; a carry trait adds one, never above 3.
+ * (ROLES.garson.carry is the other job: station -> counter refills of the büfe.)
+ */
+export const GARSON_TASIMA = { taban: 2, ust: 3, ustRank: 3 };
+export function garsonTasima(rank: number, fxCarry = 0): number {
+  return Math.min(GARSON_TASIMA.ust, (rank >= GARSON_TASIMA.ustRank ? GARSON_TASIMA.ust : GARSON_TASIMA.taban) + (fxCarry ? 1 : 0));
+}
 export function rankOf(xp: number): number { let r = 0; RANKS.forEach((k, i) => { if (xp >= k.xp) r = i; }); return r; }
 /** Hire price: legends carry their own; random = role base x rarity x 1.2^(hired beyond 3), rounded to 50. */
 export function workerCost(role: string, rarity: string, hiredCount: number): number {

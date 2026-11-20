@@ -4,21 +4,34 @@
  *
  * Interactables (dwell rule like everything else):
  *   `servis.<i>`   at table i: hand over one item from the hands that the table's ticket still wants.
- * Hooks used by customers.ts: rt.restoran.wantMasa() (spawner).
+ * Hooks used by customers.ts: rt.restoran.wantMasa() (spawner), rezerve(p) (garsonun ayırdığı tezgâh tabağı).
  * Views/UI read restoranApi(rules).view().
+ *
+ * BUF-09 garson akışı (ışınlanma yok): garson varken masa müşterisine garson menü götürür, müşteri 3-5 sn bakar, garson gelip siparişi
+ * not alır (fiş O AN yazılır), pass'taki / tezgâhtaki gerçek tabakları alır (seviye 1-3: 2, 4+: 3 tabak; content/ranks garsonTasima),
+ * yürüyerek masaya götürür; son tabakta müşteri yemeğe başlar, hesabı garson getirir ve ödeme o an yapılır (odemeYap tek giriş),
+ * kalkınca masada kirli tabak kalır, garson (temizlikçi varsa o) silene kadar masaya kimse oturmaz. Garson meşgulse müşteri bekler
+ * (sipariş için bekleSabirS, hesap için en çok hesapBekleMaxS sonra parayı masaya bırakır). Garson yoksa oyuncu servis yapar:
+ * bilet orderDelay sonra açılır, müşteri yemeği bitince kendisi öder. Görev kuyruğu sırası: sıcak tabak > sipariş > menü > hesap > sil;
+ * iş zaman aşımı garsonun işi aldığı andan sayılır, işten çıkan garsonun işleri havuza / tabakları rafa döner (takılı iş yok).
+ * BUF-10: masalar konuma göre bölgelere ayrılır (sim/garson-bolge.ts), garson başına bölge, boştaki garson komşu bölgeye yardım eder;
+ * bahşiş ortak kumbarada birikir (oyuncuya gelir değil), gün sonunda (karne.ts) garsonlara eşit paylaşılır.
  */
-import { mutfakEtki, sefHizi } from '../../content/mutfak';
-import { ADISYON, ADISYON_LINES, SERVIS, FAZ2_UI } from '../../content/restoran';
+import { mutfakEtki, sefHizi, mutfakEsya, MUTFAK_IST_BY_ID, PASS_KAP } from '../../content/mutfak';
+import { ADISYON, ADISYON_LINES, SERVIS, FAZ2_UI, type GarsonTur } from '../../content/restoran';
+import { bolgeleriKur, bolgeAtamasi, type Bolge } from './garson-bolge';
 import { YEMEK } from '../../content/ekonomi2';
 import { DISH_BY_ID, acikYemekler, menuPano, yemekAgirlik, yemekAd, isProduct, type DishId, type FoodId, type MenuAsama } from '../../content/yemek-menu';
-import { MUTFAK_NOKTA, mutfakDunya } from '../../content/ic-mekan';
-import { installMutfakHat, type IstDurum, type MutfakHatApi } from './mutfak-hat';
-import type { Vec2 } from '../../engine/api';
+import { MUTFAK_NOKTA, IC_BY_ID, icIcinde, mutfakDunya, mutfakStand } from '../../content/ic-mekan';
+import { installMutfakHat, OYUNCU, type IstDurum, type MutfakHatApi, type OyuncuIs } from './mutfak-hat';
+import { DWELL_DEFAULTS, type Vec2 } from '../../engine/api';
 import type { ProductId } from './schema';
 import type { Kernel, Customer, Item, Order, Plate } from './state';
 import { clamp } from './util';
 
 export const RESTORAN_KEY = 'restoran';
+/** oyuncu mutfaktan çıktıktan sonra bu kadar sn hâlâ mutfakta sayılır (yeni biletler yemek içerebilir) */
+const OYUNCU_MUTFAK_S = 45;
 interface Save { servis: number; no: number }
 /**
  * Bilet kalemi: ya eski tezgâh ürünü (dish null, food = ProductId) ya da menüdeki bir yemek (food = dish = DishId). BUF-05: yemek
@@ -35,7 +48,20 @@ export interface RestoranView {
   active: boolean; tickets: TicketView[]; servis: number; stands: StantView[];
   /** BUF-05 mutfak: pass rafındaki tabaklar (FoodId, en eski önce), istasyon durumları, şef hızı (0..0.6) */
   pass: FoodId[]; ist: Record<string, IstDurum>; sefHizi: number;
+  /** BUF-06: oyuncunun pişirdiği istasyon / ilerleme, devredilen istasyonlar (istasyon -> aşçı) */
+  oyuncu: OyuncuIs; devir: Record<string, { wid: number; ad: string }>;
+  /** BUF-09 masa durumları (kurulu masalar) */
+  masalar: MasaView[];
 }
+/** BUF-09: masa durumu (sabır çubuğu BUF-23 bundan çizer): frac = bekleme sabrı / bilet süresi / hesap beklemesi doluluğu 0..1 */
+export interface MasaView { table: number; durum: 'bos' | 'menu' | 'siparis' | 'tabak' | 'yemek' | 'hesap' | 'kirli'; frac: number }
+export type GorevTur = GarsonTur;
+/** isAl sonucu: tabak için x,z pass/tezgâh durağı, masa işleri için masanın garson tarafı (yan) */
+export interface IsAlSonuc { id: number; tur: GorevTur; table: number; x: number; z: number; n?: number }
+/** garsonun elindeki (tepsideki) bir tabak: x,z hedef masanın yanı, geri ise gx,gz bırakılacak yer (pass ya da tezgâh) */
+export interface TepsiTabak { id: number; p: FoodId; table: number; x: number; z: number; geri: boolean; gx: number; gz: number }
+export interface IsTamamSonuc { durum: 'tamam' | 'tasi' | 'geri' | 'yok'; table?: number; x?: number; z?: number }
+export interface BahsisDagitim { day: number; toplam: number; kalan: number; pay: { wid: number; ad: string; tutar: number }[] }
 export interface RestoranApi {
   handle(c: { kind: string; [k: string]: unknown }): boolean;
   view(): RestoranView;
@@ -46,12 +72,36 @@ export interface RestoranApi {
   wantMasa(): boolean;
   update(dt: number): void;
   register(): void;
-  /** 2026-11-09 garson flow: claim up to n plates waiting at the pass (counter), deliver one at its table */
-  garsonClaim?(wid: number, n: number): { id: number; p: FoodId; x: number; z: number }[];
-  garsonOpen?(wid: number): { id: number; p: FoodId; x: number; z: number }[];
-  garsonDone?(wid: number, id: number): boolean;
+  // ── BUF-09 garson görev kuyruğu (öncelik: sıcak tabak > sipariş > menü > hesap > masa sil) ──
+  /** garson `wid` için sıradaki işi ayırır (tabak: kapasiteye kadar, aynı kaynaktan); zaten işi varsa onu döner */
+  isAl?(wid: number, o: { cap: number; at?: Vec2 }): IsAlSonuc | null;
+  /** garson pass'a / tezgâha vardı: ayırdığı tabakları gerçekten alır (rafta yoksa iş düşer) */
+  tabakAl?(wid: number): TepsiTabak[];
+  /** elindeki tabaklar (hedef masa ya da geri bırakılacak yer) */
+  tepsi?(wid: number): TepsiTabak[];
+  /** iş masada bitti (at: garsonun konumu; masadan uzaksa stats.isinlanma artar) */
+  isTamam?(wid: number, id: number, at: Vec2): IsTamamSonuc;
+  /** geri dönen tabakları pass'a / tezgâha bırak (vardığında) */
+  tabakGeri?(wid: number): number;
+  /** garsonun tüm işlerini bırak (zaman aşımı, işten çıkma, pencere görevi): masa işleri havuza döner, eldeki tabak rafına */
+  isBirak?(wid: number): void;
   /** BUF-05: garsonun tabakları mutfak pass rafından alacaksa oradaki durak (dünya), tezgâhtan alacaksa null */
   passDurak?(wid: number): Vec2 | null;
+  /** sıra/pencere müşterisinin tezgâhtan alamayacağı (garsonun ayırdığı) ürün sayısı */
+  rezerve?(p: ProductId): number;
+  /** test / denetim */
+  debug?(): { gorevler: number; tepsi: number; claimed: number; isinlanma: number };
+  // ── BUF-10 bölgeler + ortak bahşiş kumbarası ──
+  /** masa kümeleri ve garson ataması (UI: bölge seçici bunu okur) */
+  bolgeler?(): { id: string; masalar: number[]; komsu: string[]; garsonlar: number[] }[];
+  /** garsonun bölgesi (null: bölgesiz / serbest) */
+  bolgeOf?(wid: number): string | null;
+  /** elle bölge ata: id bir bölge kimliği, '*' serbest, null otomatik. Çalışma anı (kayda yazılmaz). */
+  bolgeAta?(wid: number, id: string | null): boolean;
+  /** kumbara: bugün biriken bahşiş ve son gün sonu paylaşımı */
+  kumbara?(): { birikim: number; son: BahsisDagitim | null };
+  /** gün sonu (karne.ts endDay): kumbarayı garsonlara eşit paylaştır (garson yoksa tüm ekibe, ekip yoksa ertesi güne kalır) */
+  kumbaraDagit?(day: number): BahsisDagitim | null;
   /** BUF-05 mutfak hattı (sim/mutfak-hat.ts): en eski bilet kalemini ve boş istasyonunu ayırır */
   kitchenClaim?(wid: number, opt?: { from?: Vec2 }): FoodId | null;
   /** legacy tek adım: ok=true pişen tabağı doğrudan pass'a koyar (ya da eldekini), ok=false işi bırakır */
@@ -64,11 +114,12 @@ export interface RestoranApi {
   kitchenPass?(wid: number): boolean;
   kitchenDrop?(wid: number): void;
   kitchenBekleyen?(yas: number): boolean;
+  /** BUF-06: aşçının devraldığı istasyon (yoksa null); komut: { kind:'restoran', op:'devret', ist, wid? } / { op:'devirAl', ist } */
+  kitchenDevir?(wid: number): string | null;
+  /** BUF-06: yemek biletleri şu an çıkabilir mi: (aşçı ya da oyuncu mutfakta) pişirir, (garson ya da oyuncu) taşır */
+  mutfakHazir?(): boolean;
   /** mutfak hattının kendisi (testler, görünüm) */
   hat?: MutfakHatApi<Ticket>;
-  /** waiter table visits: bring the menu, bring the bill (survey waiter flow menü→sipariş→pass→masa→hesap→sil) */
-  masaClaim?(wid: number): { id: number; kind: 'menu' | 'hesap'; x: number; z: number } | null;
-  masaDone?(wid: number, id: number): void;
 }
 type Cu = { leave(c: Customer, angry: boolean): void; say(c: Customer, t: string, s?: number): void; seatPos(t: number, s: number): Vec2 | null };
 
@@ -76,6 +127,7 @@ export function restoranApi(r: { rt: unknown } | null | undefined): RestoranApi 
 
 export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: Plate[]) => number, addMoneyTo: (p: { value: number }[], v: number) => void): RestoranApi {
   const rt = K.rt, S = K.state, rng = K.rng('sim.restoran');
+  void addMoneyTo;   // BUF-10: bahşiş artık masa yığınına düşmüyor (ortak kumbara); imza rules.ts ile uyumlu kalsın
   const G = (): Save => {
     if (!S.zones || typeof S.zones !== 'object') S.zones = {};
     let g = S.zones[RESTORAN_KEY] as unknown as Save | undefined;
@@ -84,24 +136,34 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     return g;
   };
   const tickets: Ticket[] = [];
-  // plates a garson carries from the pass to a table; unclaimed or stuck plates are delivered by the old abstract rule after a while
-  // src: 'pass' (mutfak pass rafı, BUF-05) or 'counter' (ön tezgâh: tezgâh ürünü)
-  type Job = { id: number; ticket: Ticket; p: FoodId; item: Plate; t: number; wid: number; src: 'pass' | 'counter' };
-  const jobs: Job[] = []; let jobId = 1;
-  type Masa = { id: number; kind: 'menu' | 'hesap'; cid: number; table: number; t: number; wid: number };
-  const masaJobs: Masa[] = [];
-  type CF = { tk?: boolean; menuJob?: boolean; menuOk?: boolean; hesapJob?: boolean; hesapBekle?: boolean };
+  /**
+   * BUF-09 görev kuyruğu. menu/siparis/hesap satırları müşteri adımında üretilir (wid 0 = sahipsiz); tabak ve sil satırları
+   * garson isAl ile ayırınca doğar (sanal). Tabak satırı `item` tutuyorsa tabak garsonun elinde (tepside) demektir; o ana kadar
+   * tabak rafta (pass ya da tezgâh) GÖRÜNÜR durur. Hiçbir yol tabağı masaya kendiliğinden koymaz.
+   */
+  interface Gorev { id: number; tur: GorevTur; table: number; cid: number; yas: number; wid: number; claimT: number; ticket?: Ticket; p?: FoodId; src?: 'pass' | 'counter'; item?: Plate; geri?: boolean }
+  const gorevler: Gorev[] = []; let gid = 1, saat = 0;
+  type CF = { tk?: boolean; menuJob?: boolean; menuOk?: boolean; dusunT?: number; siparisJob?: boolean; hesapJob?: boolean; hesapBekle?: boolean; bekleT?: number; hb?: number; garsonlu?: boolean; tipUsed?: number };
   const active = () => (S.stage || 1) >= ADISYON.fromStage;
   const custOf = (t: Ticket) => rt.customers.find(c => c.id === t.cid) || null;
+  const custById = (id: number) => rt.customers.find(c => c.id === id) || null;
   const add = (o: Record<string, number | undefined>, p: string, n = 1) => { o[p] = (o[p] || 0) + n; };
   const left = (t: Ticket) => Object.values(t.want).reduce<number>((s, n) => s + (n || 0), 0);
+  const garsonlar = () => S.workers.filter(w => w.role === 'garson');
+  const tabakTasks = (t: Ticket, f: FoodId, eldeMi?: boolean) => gorevler.filter(g => g.tur === 'tabak' && g.ticket === t && g.p === f && (eldeMi === undefined || !!g.item === eldeMi)).length;
+  // kumbara (BUF-10, sahip kararı 2026-11-09): bahşiş oyuncuya gelir olarak yazılmaz, garsonların ortak kumbarasında birikir,
+  // gün sonunda paylaşılır. Çalışma anı: yeniden yüklemede o günün birikimi sıfırlanır (kalıcı alan schema kararı bekliyor).
+  let kumbara = 0, sonDagitim: BahsisDagitim | null = null, isinlanma = 0;
 
   // stations produce for open tickets too (room above the counter stock)
   rt.reserved.push(() => { const r: Order = {}; for (const t of tickets) for (const p in t.want) if (isProduct(p)) add(r, p, t.want[p] || 0); return r; });
-  // BUF-05: mutfak hattı (istasyonlar, tepsi, pass rafı)
-  const hat = installMutfakHat<Ticket>(K, { tickets: () => tickets, jobs: (t, f) => jobs.filter(j => j.ticket === t && j.p === f).length });
-  /** yemek masa biletine ancak mutfak pişirip getirebiliyorsa çıkar: aşçı (pişirir) ve garson (pass'tan taşır) işe alınmış olmalı */
-  const mutfakHazir = () => S.workers.some(w => w.role === 'asci') && S.workers.some(w => w.role === 'garson');
+  // BUF-05: mutfak hattı (istasyonlar, tepsi, pass rafı). Garsonun ELİNDEKİ tabaklar bilete sayılır; ayrılmış ama raftaki tabak hâlâ raftadır.
+  const hat = installMutfakHat<Ticket>(K, { tickets: () => tickets, jobs: (t, f) => tabakTasks(t, f, true) });
+  // BUF-06: oyuncu mutfakta (ya da yeni çıktı) ise pişirir ve taşır: aşçı ya da oyuncu pişirir, garson ya da oyuncu taşır
+  let oyuncuMutfakT = -1e9;
+  const oyuncuAktif = () => saat - oyuncuMutfakT < OYUNCU_MUTFAK_S;
+  /** yemek masa biletine ancak mutfak pişirip getirebiliyorsa çıkar: (aşçı ya da oyuncu) pişirir, (garson ya da oyuncu) pass'tan taşır */
+  const mutfakHazir = () => (S.workers.some(w => w.role === 'asci') || oyuncuAktif()) && (S.workers.some(w => w.role === 'garson') || oyuncuAktif());
 
   function freeTable(): number {
     for (let i = 0; i < rt.tables.length; i++) {
@@ -110,6 +172,13 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     }
     return -1;
   }
+  /** garsonun masada durduğu yer: koltuksuz taraf (ax 'x' masada koltuklar x ekseninde, garson z tarafında) */
+  function masaYan(i: number): Vec2 {
+    const tb = rt.layout.tables[i]; if (!tb) return { x: 0, z: 0 };
+    return tb.ax === 'z' ? { x: tb.x + 0.95, z: tb.z } : { x: tb.x, z: tb.z + 0.95 };
+  }
+  const passNokta = () => mutfakDunya(MUTFAK_NOKTA.passGarson);
+  const tezgahNokta = (): Vec2 => ({ x: rt.layout.counter.standAt.x + 0.5, z: rt.layout.counter.standAt.z });
   const dishesNow = () => acikYemekler(S.stage || 1);
   function openTicket(c: Customer): void {
     if (!c.seat) return;
@@ -141,30 +210,55 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     if (ln) { ln.done = true; if (ln.dish) { it.priceX = (it.priceX || 1) * ln.fiyat / DISH_BY_ID[ln.dish].fiyat; K.stat('yemek_' + ln.dish); } }   // tadım menüsü: servis başına payı
     c.items.push(it); if (isProduct(p)) add(c.got, p);
     t.want[p] = Math.max(0, (t.want[p] || 0) - 1); if (!t.want[p]) delete t.want[p];
-    K.logEv('serve', { x: c.x, z: c.z });
+    K.logEv('serve', { x: c.x, z: c.z, table: t.table });
     if (!left(t)) complete(t, c);
   }
+  /** son tabak masada: bilet kapanır, müşteri yemeğe başlar. Ödeme YOK: hesap gelince (odemeYap). */
   function complete(t: Ticket, c: Customer): void {
     tickets.splice(tickets.indexOf(t), 1);
-    const g = G(), used = clamp(t.t / t.max, 0, 1);
-    const value = settle(c, c.items.slice());
-    let tipF = ADISYON.tip[ADISYON.tip.length - 1][1];
-    for (const [u, f] of ADISYON.tip) if (used <= u) { tipF = f; break; }
-    let tip = Math.round(value * tipF * (1 + mutfakEtki(S.workers).bahsis));
-    const gs = S.workers.filter(w => w.role === 'garson');   // shared tip jar: the waiters' cut of every table tip, split evenly (survey g_bahsis)
-    if (gs.length && tip > 1) { const cut = Math.floor(tip * 0.4); tip -= cut; for (const w of gs) { const q = w as { paidToday?: number }; q.paidToday = (q.paidToday || 0) + cut / gs.length; } }
-    if (c.n >= 2 && rng.next() < ADISYON.fightChance) { tip *= 2; cu.say(c, rng.pick(ADISYON_LINES.fight), 2.5); K.stat('hesapKavgasi'); }
-    else if (rng.next() < 0.1) cu.say(c, rng.pick(ADISYON_LINES.served), 2);
-    const tb = rt.tables[t.table];
-    if (tb && tip > 0) { addMoneyTo(tb.pile, tip); S.today!.earned += tip; S.week.earned += tip; S.totalEarned += tip; rt.incomeWin.push([S.playT, tip]); K.stat('tips'); }
+    const g = G(), used = clamp(t.t / t.max, 0, 1), f = c as unknown as CF;
+    f.tipUsed = used; f.hesapBekle = true; f.hesapJob = false; f.hb = 0;
+    if (rng.next() < 0.1) cu.say(c, rng.pick(ADISYON_LINES.served), 2);
     g.servis = clamp(g.servis * (1 - SERVIS.weight) + 5 * (1 - used * 0.8) * SERVIS.weight, 0, 5);
     c.value = 0; c.state = 'eat'; c.t = 0; c.eatT = rng.range(ADISYON.eat[0], ADISYON.eat[1]);
-    K.stat('adisyon'); K.logEv('hesap', { value, tip, x: c.x, z: c.z });
+    K.stat('adisyon');
+  }
+  /**
+   * Hesap: tek ödeme giriş noktası (BUF-12 kasada ödeme de bunu çağırır). Satış settle ile kasaya; bahşiş formülü aynı
+   * (hız bahşişi x mutfak etkisi, hesap kavgası x2) ama TAMAMI ortak kumbaraya (oyuncuya bahşiş geliri yok). Kumbara yalnız
+   * takımda garson varken dolar (garsonların kumbarası).
+   */
+  function odemeYap(c: Customer, garsonla: boolean): void {
+    const f = c as unknown as CF;
+    if (!f.hesapBekle) return;
+    f.hesapBekle = false;
+    gorevSil(c.id, 'hesap');
+    const value = settle(c, c.items.slice());
+    const used = f.tipUsed ?? 1;
+    let tipF = ADISYON.tip[ADISYON.tip.length - 1][1];
+    for (const [u, k] of ADISYON.tip) if (used <= u) { tipF = k; break; }
+    let tip = Math.round(value * tipF * (1 + mutfakEtki(S.workers).bahsis));
+    if (c.n >= 2 && rng.next() < ADISYON.fightChance) { tip *= 2; cu.say(c, rng.pick(ADISYON_LINES.fight), 2.5); K.stat('hesapKavgasi'); }
+    else if (garsonla) cu.say(c, rng.pick(ADISYON_LINES.hesap), 1.8);
+    if (!garsonla) { cu.say(c, rng.pick(ADISYON_LINES.kendi), 2); K.stat('hesapKendisi'); }
+    if (!garsonlar().length) tip = 0;
+    if (tip > 0) { kumbara += tip; K.stat('tips'); K.stat('kumbara', tip); K.logEv('tip', { tip, kumbara: true }); }
+    K.logEv('hesap', { value, tip, x: c.x, z: c.z, garson: garsonla });
   }
   function fail(t: Ticket, c: Customer | null): void {
     tickets.splice(tickets.indexOf(t), 1);
     const g = G(); g.servis = clamp(g.servis * (1 - SERVIS.weight), 0, 5);
-    if (c) { cu.say(c, rng.pick(ADISYON_LINES.late), 2.5); c.items.splice(0); S.today!.angry++; K.logEv('angry', { type: c.typeId }); cu.leave(c, true); }
+    if (c) { cu.say(c, rng.pick(ADISYON_LINES.late), 2.5); c.items.splice(0); S.today!.angry++; K.logEv('angry', { type: c.typeId }); gorevSil(c.id); cu.leave(c, true); }
+  }
+  /** müşterinin bekleyen masa işlerini sil (elde tabak satırları kalır: garson onları başka masaya ya da rafa götürür) */
+  function gorevSil(cid: number, tur?: GorevTur): void {
+    for (let i = gorevler.length - 1; i >= 0; i--) { const g = gorevler[i]; if (g.cid === cid && g.tur !== 'tabak' && g.tur !== 'sil' && (!tur || g.tur === tur)) gorevler.splice(i, 1); }
+  }
+  /** raftan tabak bırakma: tezgâh ürünü tezgâha, yemek pass rafına; yer yoksa düşer (yoktan var etme yok) */
+  function rafaKoy(it: Plate): void {
+    if (isProduct(it.type)) { const b = (rt.counter[it.type] ||= []); if (b.length < 8) { b.push(it as Item); return; } }
+    else if (hat.geriKoy(it)) return;
+    K.stat('tabakDustu');
   }
 
   function register(): void {
@@ -188,23 +282,160 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     });
   }
 
+  // ───────── BUF-06 oyuncu şef (mutfak istasyonları: dwell, bekle-al, pass'a bırak, devret) ─────────
+  /**
+   * `mutfak.<ist>` (stations.ts deseni): istasyonun başında durulunca KDS sırasındaki en eski uygun bilet kalemi otomatik seçilir,
+   * süre yalnız başında dururken işler (pişirme formülü aynı: hat.sure), bitince tabak oyuncunun elinde (rt.carry). Elde tabak
+   * varken başka istasyonda durmak ayrı bilete geçmektir (önceki iş bırakılır). Bilet yokken eller boşsa: o istasyon boştaki bir
+   * aşçıya devredilir ('devredildi'); devredilmiş istasyonda yine bilet yokken durmak devri geri alır. `mutfak.pass`: eldeki
+   * mutfak tabakları pass rafına bırakılır (masaya götürmek için mevcut `servis.<i>` kullanılır). Aşama 1-2'de mutfak yok: kayıt yok.
+   */
+  const handCap = () => 4 + (S.owned.tepsi1 ? 2 : 0) + (S.owned.tepsi2 ? 2 : 0);   // stations.ts carryCap ile aynı formül
+  const pStat = { last: -99, fullT: -99, toggleT: -99 };
+  const elleriDolu = () => rt.carry.length >= handCap();
+  const bosAsci = () => asciler().find(w => !hat.devirIst(w.id)) ?? null;
+  function asciler() { return S.workers.filter(w => w.role === 'asci'); }
+  const pisirIstler = () => mutfakEsya(S.stage || 1).filter(i => MUTFAK_IST_BY_ID[i]?.islev === 'pisir');
+  function pisirKur(ist: string) {
+    const id = 'mutfak.' + ist;
+    if (K.interactions.get(id)) return;
+    const at = mutfakDunya(mutfakStand(ist));
+    K.interactions.register({
+      id, pos: { x: at.x, z: at.z }, radius: 0.6, kind: 'station', dwell: DWELL_DEFAULTS.station, interval: 0.1,
+      canAct: () => {
+        if (!pisirIstler().includes(ist)) return false;
+        if (hat.ist(OYUNCU) === ist) return true;
+        if (elleriDolu()) return false;
+        if (hat.aday(ist)) return true;
+        return rt.carry.length === 0 && (hat.devirOf(ist) != null || !!bosAsci());
+      },
+      act: (_a, ctx) => {
+        let cur = hat.ist(OYUNCU);
+        if (cur !== ist) {
+          if (elleriDolu()) { if (ctx.t - pStat.fullT > 3) { pStat.fullT = ctx.t; K.toast('Eller dolu!', 'info'); } return 'continue'; }
+          if (cur) hat.pBirak();   // başka bilete geçti
+          const f = hat.claim(OYUNCU, undefined, { ist });
+          if (!f) return devirDeneme(ist, ctx.t);
+          pStat.last = -99; cur = ist; K.stat('oyuncuPisirme');
+          K.toast(yemekAd(f) + ' pişiyor, başında dur.', 'info');
+        }
+        const el = ctx.t - pStat.last < 0.5 ? ctx.t - pStat.last : DWELL_DEFAULTS.station + 0.1;   // dwell süresi yapılmış iş sayılır
+        pStat.last = ctx.t;
+        rt.act = ist === 'cay_bar' ? 'pour' : 'cut'; rt.actT = 0.4;
+        const pl = hat.pTik(el);
+        if (pl) {
+          rt.carry.push(pl as Item); K.stat('oyuncuTabak');
+          K.toast(yemekAd(pl.type) + ' hazır: pass\'a bırak ya da masaya götür.', 'good');
+        }
+        return 'continue';
+      },
+    });
+  }
+  /** bilet yokken istasyonda durmak: devret ya da (devredilmişse) geri al; tek seferlik */
+  function devirDeneme(ist: string, t: number): 'continue' | 'done' {
+    if (t - pStat.toggleT < 1 || rt.carry.length) return 'continue';
+    const w = hat.devirOf(ist);
+    if (w != null) {
+      pStat.toggleT = t; hat.devirAl(ist);
+      K.toast('İstasyon senin: ' + (S.workers.find(k => k.id === w)?.name || 'aşçı') + ' serbest.', 'info'); return 'done';
+    }
+    const a = bosAsci(); if (!a) return 'continue';
+    if (!hat.devret(ist, a.id)) return 'continue';
+    pStat.toggleT = t; K.toast(a.name + ' ' + (MUTFAK_IST_BY_ID[ist]?.ad || ist) + ' istasyonunu devraldı (devredildi).', 'good');
+    return 'done';
+  }
+  function passKur() {
+    const id = 'mutfak.pass';
+    if (K.interactions.get(id)) return;
+    const at = mutfakDunya(MUTFAK_NOKTA.passAsci);
+    K.interactions.register({
+      id, pos: { x: at.x, z: at.z }, radius: 0.9, kind: 'counter', dwell: DWELL_DEFAULTS.counter, interval: 0.16,
+      canAct: () => rt.carry.some(it => hat.mutfakTabagi(it)) && hat.passCount() < PASS_KAP,
+      act: () => {
+        const k = rt.carry.findIndex(it => hat.mutfakTabagi(it)); if (k < 0) return 'done';
+        const it = rt.carry[k] as unknown as Plate;
+        if (!hat.pPass(it)) { K.toast('Pass dolu, garson alsın.', 'info'); return 'done'; }
+        rt.carry.splice(k, 1); K.stat('oyuncuPass');
+        return rt.carry.some(x => hat.mutfakTabagi(x)) ? 'continue' : 'done';
+      },
+    });
+  }
+  let kayitKey = '';
+  /** mutfak büyüdükçe (aşama) istasyon etkileşimleri eklenir; mutfak yoksa (aşama < 3, yeni oyun) kaldırılır */
+  function mutfakKayit(): void {
+    if (!FAZ2_UI) return;
+    const ist = pisirIstler(), key = ist.join(',');
+    if (key === kayitKey) return;
+    kayitKey = key;
+    for (const i of Object.keys(MUTFAK_IST_BY_ID)) { if (!ist.includes(i) && K.interactions.get('mutfak.' + i)) K.interactions.unregister('mutfak.' + i); }
+    if (!ist.length) { if (K.interactions.get('mutfak.pass')) K.interactions.unregister('mutfak.pass'); return; }
+    ist.forEach(pisirKur); passKur();
+  }
+
+  // ───────── BUF-10 bölgeler (çalışma anı) ─────────
+  const elle = new Map<number, string>();
+  let bolgeKey = '', bolgeList: Bolge[] = [], atama = new Map<number, string | null>();
+  function bolgeYenile(): void {
+    const ws = garsonlar().map(w => w.id), built: number[] = [];
+    rt.tables.forEach((t, i) => { if (t && t.built && rt.layout.tables[i]) built.push(i); });
+    const key = ws.join(',') + '|' + built.join(',') + '|' + [...elle].map(([w, b]) => w + ':' + b).join(',') + '|' + S.stage;
+    if (key === bolgeKey) return;
+    bolgeKey = key;
+    bolgeList = bolgeleriKur(rt.layout.tables, built, ws.length);
+    atama = bolgeAtamasi(ws, bolgeList, elle);
+  }
+  const masaBolgesi = (table: number) => bolgeList.find(b => b.masalar.includes(table))?.id ?? null;
+  /** bölge kuralı: kendi bölgesi / sahipsiz bölge hemen, komşu bölge iş `yardimBekleS` sahipsiz kalınca; bölgesiz garson her yer */
+  function bolgeKurali(wid: number, table: number, yas: number): { ok: boolean; ic: boolean } {
+    const z = atama.get(wid) ?? null; if (!z) return { ok: true, ic: true };
+    const gz = masaBolgesi(table); if (!gz || gz === z) return { ok: true, ic: true };
+    const sahip = garsonlar().some(w => w.id !== wid && atama.get(w.id) === gz);
+    if (!sahip) return { ok: true, ic: false };
+    const komsu = bolgeList.find(b => b.id === z)?.komsu.includes(gz) ?? false;
+    return { ok: komsu && yas >= ADISYON.yardimBekleS, ic: false };
+  }
+
   // ───────── per tick ─────────
-  let garsonT = 0;
+  const tabakYas = new Map<Ticket, number>();   // biletin rafta hazır bekleyen tabağı ne kadardır sahipsiz (yardım kuralı)
+  function rafSerbest(p: FoodId, src: 'pass' | 'counter'): number {
+    const n = src === 'pass' ? hat.passCount(p) : (isProduct(p) ? rt.counter[p]?.length || 0 : 0);
+    return n - gorevler.filter(g => g.tur === 'tabak' && !g.item && g.p === p && g.src === src).length;
+  }
   function update(dt: number): void {
-    // seated table guests: print the ticket after a short look at the menu
-    const gN = S.workers.filter(w => w.role === 'garson').length;
-    for (const c of rt.customers) {
+    saat += dt;
+    const gN = garsonlar().length;
+    bolgeYenile();
+    mutfakKayit();
+    if (icIcinde(IC_BY_ID.mutfak, K.playerPos, 0)) oyuncuMutfakT = saat;
+    for (const c of rt.customers.slice()) {
+      if (c.kind !== 'masa' || !c.seat || c.state === 'leave') continue;
       const f = c as unknown as CF;
-      if (c.kind === 'masa' && c.seat && gN > 0) {
-        if (c.state === 'wait' && !f.menuJob && c.t >= 0.5) { f.menuJob = true; masaJobs.push({ id: jobId++, kind: 'menu', cid: c.id, table: c.seat.table, t: 0, wid: 0 }); }
-        if (c.state === 'eat' && !f.hesapJob && c.t >= c.eatT - 1) { f.hesapJob = true; f.hesapBekle = true; masaJobs.push({ id: jobId++, kind: 'hesap', cid: c.id, table: c.seat.table, t: 0, wid: 0 }); }
+      if (c.state === 'wait' && !f.tk) {
+        f.bekleT = (f.bekleT || 0) + dt;
+        if (gN === 0) {   // garson yok: oyuncu servis yapar (H-142), bilet kısa bakıştan sonra açılır
+          gorevSil(c.id);
+          if (c.t >= ADISYON.orderDelay) { f.tk = true; if (rng.next() < 0.2) cu.say(c, rng.pick(ADISYON_LINES.call), 1.8); openTicket(c); }
+        } else {
+          if (!f.menuOk && !gorevler.some(g => g.cid === c.id && g.tur === 'menu') && c.t >= 0.5) { f.menuJob = true; gorevler.push({ id: gid++, tur: 'menu', table: c.seat.table, cid: c.id, yas: 0, wid: 0, claimT: 0 }); }
+          if (f.menuOk && !gorevler.some(g => g.cid === c.id && g.tur === 'siparis') && c.t >= (f.dusunT ?? 0)) {
+            f.siparisJob = true; gorevler.push({ id: gid++, tur: 'siparis', table: c.seat.table, cid: c.id, yas: 0, wid: 0, claimT: 0 });
+            if (rng.next() < 0.2) cu.say(c, rng.pick(ADISYON_LINES.call), 1.8);
+          }
+        }
+        if (!f.tk && f.bekleT > ADISYON.bekleSabirS) {   // kimse siparişi almadı: sabırla kalkar
+          cu.say(c, rng.pick(ADISYON_LINES.late), 2.5); S.today!.angry++; K.logEv('angry', { type: c.typeId }); K.stat('siparisBekleKalkti');
+          gorevSil(c.id); cu.leave(c, true);
+        }
+        continue;
       }
-      if (c.kind !== 'masa' || c.state !== 'wait') continue;
-      const menuReady = gN === 0 || f.menuOk || c.t >= ADISYON.orderDelay + 14;
-      if (!tickets.some(t => t.cid === c.id) && c.t >= ADISYON.orderDelay && menuReady && !f.tk) {
-        (c as unknown as { tk?: boolean }).tk = true;
-        if (rng.next() < 0.2) cu.say(c, rng.pick(ADISYON_LINES.call), 1.8);
-        openTicket(c);
+      if (c.state === 'eat' && f.hesapBekle) {
+        if (gN > 0) f.garsonlu = true;
+        if (!f.hesapJob && gN > 0 && c.t >= c.eatT - 1) { f.hesapJob = true; gorevler.push({ id: gid++, tur: 'hesap', table: c.seat.table, cid: c.id, yas: 0, wid: 0, claimT: 0 }); }
+        if (c.t >= c.eatT) {
+          f.hb = (f.hb || 0) + dt;
+          // garson hiç yoksa (oyuncu servisi) müşteri yemeği bitince parayı masaya bırakır; garson varken hesabı bekler (en çok hesapBekleMaxS)
+          if ((gN === 0 && !f.garsonlu) || f.hb >= ADISYON.hesapBekleMaxS) odemeYap(c, false);
+        }
       }
     }
     for (let i = tickets.length - 1; i >= 0; i--) {
@@ -213,32 +444,27 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
       t.t += dt;
       if (t.t >= t.max) fail(t, c);
     }
-    for (let i = masaJobs.length - 1; i >= 0; i--) {   // stale table visits fall back to the old timing
-      const j = masaJobs[i], c = rt.customers.find(k => k.id === j.cid); j.t += dt;
-      if (!c || c.state === 'leave' || j.t > (j.wid ? 30 : 18)) { if (c) { const f = c as unknown as CF; if (j.kind === 'hesap') f.hesapBekle = false; else f.menuOk = true; } masaJobs.splice(i, 1); }
-    }
-    hat.update(dt);
-    // garsons carry plates from the pass (counter stock) to the tables: a job is a plate taken off the counter, a garson walks it over
-    const g = S.workers.filter(w => w.role === 'garson').length;
-    for (let i = jobs.length - 1; i >= 0; i--) {
-      const j = jobs[i], c = custOf(j.ticket); j.t += dt;
-      if (!tickets.includes(j.ticket) || !c) { geri(j); jobs.splice(i, 1); continue; }
-      if ((!j.wid && j.t > 12) || j.t > 30) { jobs.splice(i, 1); deliver(j.ticket, c, j.item); }
-    }
-    if (g > 0 && tickets.length && jobs.length < g * 3) {
-      garsonT -= dt;
-      if (garsonT <= 0) {
-        garsonT = 0.8;
-        for (const t of tickets) {   // tabak kaynağı: önce mutfak pass rafı, yoksa ön tezgâh (pass'ı olmayan aşama / aşçısız oyun eskisi gibi)
-          const p = Object.keys(t.want).find(q => (hat.passCount(q) > 0 || (isProduct(q) && (rt.counter[q]?.length || 0) > 0)) && jobs.filter(j => j.ticket === t && j.p === q).length < (t.want[q] || 0));
-          if (!p) continue;
-          const fromPass = hat.passTake(p);
-          const item: Plate = fromPass || rt.counter[p as ProductId].pop()!;
-          jobs.push({ id: jobId++, ticket: t, p, item, t: 0, wid: 0, src: fromPass ? 'pass' : 'counter' });
-          break;
-        }
+    // gözcü: sahibi gitmiş / zaman aşımına düşmüş satırlar bırakılır; müşterisi gitmiş masa işleri silinir
+    const ids = new Set(garsonlar().map(w => w.id));
+    for (const g of gorevler.slice()) {
+      if (!gorevler.includes(g)) continue;
+      if (g.wid && !ids.has(g.wid)) { isBirak(g.wid); continue; }
+      if (g.wid && saat - g.claimT > ADISYON.isZamanAsimiS + 5) { K.stat('isZamanAsimi'); isBirak(g.wid); continue; }
+      if (g.tur === 'menu' || g.tur === 'siparis' || g.tur === 'hesap') {
+        const c = custById(g.cid);
+        if (!c || c.state === 'leave') { gorevler.splice(gorevler.indexOf(g), 1); continue; }
+        if (!g.wid) g.yas += dt;
       }
+      if (g.tur === 'tabak' && !g.item && !tickets.includes(g.ticket!)) gorevler.splice(gorevler.indexOf(g), 1);   // bilet düştü, tabak rafta kalır
+      if (g.tur === 'sil' && !(rt.tables[g.table]?.dirty > 0)) gorevler.splice(gorevler.indexOf(g), 1);           // oyuncu sildi
     }
+    for (const t of tickets) {
+      const hazir = Object.keys(t.want).some(p => (t.want[p] || 0) - tabakTasks(t, p) > 0 && (rafSerbest(p, 'pass') > 0 || rafSerbest(p, 'counter') > 0));
+      tabakYas.set(t, hazir ? (tabakYas.get(t) || 0) + dt : 0);
+    }
+    for (const k of [...tabakYas.keys()]) if (!tickets.includes(k)) tabakYas.delete(k);
+    for (const t of rt.tables) if (t && t.dirty > 0) t.dirtyT += dt;
+    hat.update(dt);
   }
   function wantMasa(): boolean {
     if (!FAZ2_UI || !active() || tickets.length >= ADISYON.maxOpen + Math.max(0, Math.floor(((S.stage || 1) - 4) / 2))) return false;
@@ -246,8 +472,154 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     if (rng.next() >= sh) return false;
     return freeTable() >= 0;
   }
-  /** bileti düşen tabak: tezgâh ürünü tezgâha döner (eski kural), mutfak yemeği sessizce gider (stok yok) */
-  function geri(j: Job): void { if (j.src === 'counter' && isProduct(j.item.type)) (rt.counter[j.item.type] ||= []).push(j.item as Item); }
+
+  // ───────── garson API ─────────
+  function tepsiOf(wid: number): TepsiTabak[] {
+    return gorevler.filter(g => g.wid === wid && g.tur === 'tabak' && g.item).map(g => {
+      const y = masaYan(g.table), r = isProduct(g.p!) ? tezgahNokta() : passNokta();
+      return { id: g.id, p: g.p!, table: g.table, x: y.x, z: y.z, geri: !!g.geri, gx: r.x, gz: r.z };
+    });
+  }
+  function sonuc(g: Gorev): IsAlSonuc {
+    if (g.tur === 'tabak') {
+      const n = gorevler.filter(k => k.wid === g.wid && k.tur === 'tabak').length;
+      const d = g.src === 'pass' ? passNokta() : tezgahNokta();
+      return { id: g.id, tur: 'tabak', table: g.table, x: d.x, z: d.z, n };
+    }
+    if (g.tur === 'sil') { const tb = rt.layout.tables[g.table]; return { id: g.id, tur: 'sil', table: g.table, x: tb?.x ?? 0, z: tb?.z ?? 0 }; }
+    const y = masaYan(g.table); return { id: g.id, tur: g.tur, table: g.table, x: y.x, z: y.z };
+  }
+  function isAl(wid: number, o: { cap: number; at?: Vec2 }): IsAlSonuc | null {
+    const mine = gorevler.find(g => g.wid === wid); if (mine) return sonuc(mine);
+    if (!garsonlar().some(w => w.id === wid)) return null;
+    bolgeYenile();
+    for (const tur of ADISYON.oncelik) {
+      if (tur === 'tabak') {
+        // birim adaylar: bilet sırası (KDS FIFO), pass önce; bölge içi önce. Tek seferde tek kaynak (tek durak).
+        type Aday = { t: Ticket; p: FoodId; src: 'pass' | 'counter'; ic: boolean; o: number };
+        const ad: Aday[] = []; let seq = 0;
+        const sanal = new Map<string, number>();   // bu çağrıda ayrılan (rafSerbest'ten düş)
+        for (const t of tickets) {
+          const c = custOf(t); if (!c || c.state === 'leave') continue;
+          const r = bolgeKurali(wid, t.table, tabakYas.get(t) || 0); if (!r.ok) continue;
+          for (const p of Object.keys(t.want)) {
+            let need = (t.want[p] || 0) - tabakTasks(t, p);
+            for (const src of ['pass', 'counter'] as const) {
+              while (need > 0 && rafSerbest(p, src) - (sanal.get(src + p) || 0) > 0) { sanal.set(src + p, (sanal.get(src + p) || 0) + 1); ad.push({ t, p, src, ic: r.ic, o: seq++ }); need--; }
+            }
+          }
+        }
+        if (!ad.length) continue;
+        ad.sort((a, b) => (a.ic === b.ic ? 0 : a.ic ? -1 : 1) || a.o - b.o);
+        const src = ad[0].src, cap = Math.max(1, Math.floor(o.cap) || 1);
+        const al = ad.filter(a => a.src === src).slice(0, cap);
+        const made = al.map(a => ({ id: gid++, tur: 'tabak' as const, table: a.t.table, cid: a.t.cid, yas: 0, wid, claimT: saat, ticket: a.t, p: a.p, src }));
+        gorevler.push(...made);
+        return sonuc(made[0]);
+      }
+      if (tur === 'sil') {
+        if (S.workers.some(w => w.role === 'temizlik')) continue;   // temizlikçi varsa masa silme onun (BUF-13)
+        let best: { i: number; ic: boolean; yas: number } | null = null;
+        rt.tables.forEach((t, i) => {
+          if (!t || !t.built || !(t.dirty > 0) || gorevler.some(g => g.tur === 'sil' && g.table === i)) return;
+          const r = bolgeKurali(wid, i, t.dirtyT); if (!r.ok) return;
+          if (!best || (r.ic && !best.ic) || (r.ic === best.ic && t.dirtyT > best.yas + 1e-9)) best = { i, ic: r.ic, yas: t.dirtyT };
+        });
+        if (!best) continue;
+        const b = best as { i: number };
+        const g: Gorev = { id: gid++, tur: 'sil', table: b.i, cid: 0, yas: 0, wid, claimT: saat };
+        gorevler.push(g); return sonuc(g);
+      }
+      const cand = gorevler.filter(g => g.tur === tur && !g.wid).map(g => ({ g, r: bolgeKurali(wid, g.table, g.yas) })).filter(x => x.r.ok);
+      if (!cand.length) continue;
+      cand.sort((a, b) => (a.r.ic === b.r.ic ? 0 : a.r.ic ? -1 : 1) || b.g.yas - a.g.yas || a.g.id - b.g.id);
+      const g = cand[0].g; g.wid = wid; g.claimT = saat;   // zaman aşımı garsonun işi aldığı andan sayılır
+      return sonuc(g);
+    }
+    return null;
+  }
+  function tabakAl(wid: number): TepsiTabak[] {
+    for (const g of gorevler.filter(k => k.wid === wid && k.tur === 'tabak' && !k.item)) {
+      if (!tickets.includes(g.ticket!) || (g.ticket!.want[g.p!] || 0) - tabakTasks(g.ticket!, g.p!, true) <= 0) { gorevler.splice(gorevler.indexOf(g), 1); continue; }
+      let it: Plate | null = null;
+      if (g.src === 'pass') it = hat.passTake(g.p!);
+      if (!it && isProduct(g.p!) && rt.counter[g.p!]?.length) it = rt.counter[g.p!].pop()!;
+      if (!it && g.src === 'counter') it = hat.passTake(g.p!);
+      if (!it) { gorevler.splice(gorevler.indexOf(g), 1); continue; }   // başkası aldı: hata değil
+      g.item = it; it.carrier = undefined as never;
+    }
+    return tepsiOf(wid);
+  }
+  function isinlanmaBak(table: number, at: Vec2): void {
+    const tb = rt.layout.tables[table]; if (!tb) return;
+    if (Math.hypot(at.x - tb.x, at.z - tb.z) > ADISYON.isinlanmaM) { isinlanma++; K.stat('isinlanma'); }
+  }
+  function isTamam(wid: number, id: number, at: Vec2): IsTamamSonuc {
+    const g = gorevler.find(k => k.id === id && k.wid === wid); if (!g) return { durum: 'yok' };
+    const rm = () => { const i = gorevler.indexOf(g); if (i >= 0) gorevler.splice(i, 1); };
+    if (g.tur === 'tabak') {
+      if (!g.item) { rm(); return { durum: 'yok' }; }
+      const t = g.ticket!, c = tickets.includes(t) ? custOf(t) : null;
+      if (c && (t.want[g.p!] || 0) > 0) {
+        isinlanmaBak(g.table, at); rm(); deliver(t, c, g.item); return { durum: 'tamam' };
+      }
+      // bilet artık bu tabağı istemiyor (oyuncu servis etti / müşteri gitti): aynı yiyeceği bekleyen başka masaya, yoksa rafa geri
+      const t2 = tickets.find(k => (k.want[g.p!] || 0) - tabakTasks(k, g.p!) > 0);
+      if (t2) { g.ticket = t2; g.table = t2.table; g.cid = t2.cid; const y = masaYan(t2.table); return { durum: 'tasi', table: t2.table, x: y.x, z: y.z }; }
+      g.geri = true; const r = isProduct(g.p!) ? tezgahNokta() : passNokta();
+      return { durum: 'geri', x: r.x, z: r.z };
+    }
+    if (g.tur === 'sil') {
+      const t = rt.tables[g.table]; rm(); isinlanmaBak(g.table, at);
+      if (t && t.dirty > 0) { (rt as unknown as { bulasik?: { masaSilindi(i: number): void } }).bulasik?.masaSilindi(g.table); t.dirty = 0; t.dirtyT = 0; K.stat('cleaned'); K.stat('garsonSildi'); }
+      return { durum: 'tamam' };
+    }
+    const c = custById(g.cid); rm();
+    if (!c || c.state === 'leave') return { durum: 'yok' };
+    const f = c as unknown as CF;
+    isinlanmaBak(g.table, at);
+    if (g.tur === 'menu') {
+      if (c.state !== 'wait' || f.tk) return { durum: 'yok' };
+      f.menuOk = true; f.garsonlu = true; f.dusunT = c.t + rng.range(ADISYON.dusunS[0], ADISYON.dusunS[1]);
+      K.stat('menuGetir'); cu.say(c, rng.pick(ADISYON_LINES.menu), 1.6);
+      return { durum: 'tamam' };
+    }
+    if (g.tur === 'siparis') {
+      if (c.state !== 'wait' || f.tk) return { durum: 'yok' };
+      f.tk = true; f.garsonlu = true; openTicket(c);
+      K.stat('siparisAl'); K.logEv('siparisAl', { table: g.table, x: at.x, z: at.z });
+      return { durum: 'tamam' };
+    }
+    if (c.state !== 'eat' || !f.hesapBekle) return { durum: 'yok' };
+    K.stat('hesapGetir'); odemeYap(c, true);
+    return { durum: 'tamam' };
+  }
+  function tabakGeri(wid: number): number {
+    let n = 0;
+    for (const g of gorevler.filter(k => k.wid === wid && k.tur === 'tabak' && k.item && k.geri)) { gorevler.splice(gorevler.indexOf(g), 1); rafaKoy(g.item!); n++; }
+    return n;
+  }
+  function isBirak(wid: number): void {
+    for (const g of gorevler.filter(k => k.wid === wid)) {
+      if (g.tur === 'menu' || g.tur === 'siparis' || g.tur === 'hesap') { g.wid = 0; g.claimT = 0; continue; }
+      gorevler.splice(gorevler.indexOf(g), 1);
+      if (g.item) rafaKoy(g.item);
+    }
+  }
+  function kumbaraDagit(day: number): BahsisDagitim | null {
+    const toplam = Math.floor(kumbara);
+    if (toplam <= 0) return null;
+    let alan = garsonlar(); if (!alan.length) alan = S.workers.slice();
+    if (!alan.length) return null;   // paylaşacak kimse yok: ertesi güne kalır
+    const per = Math.floor(toplam / alan.length); if (per <= 0) return null;   // kişi başı 1 ₺ bile değil: ertesi güne kalır
+    const kalan = kumbara - per * alan.length;
+    const pay = alan.map(w => ({ wid: w.id, ad: w.name, tutar: per }));
+    kumbara = kalan;   // küsurat ertesi güne kalır (toplam korunur: dağıtılan + kalan = biriken)
+    sonDagitim = { day, toplam: per * alan.length, kalan: Math.round(kalan * 100) / 100, pay };
+    K.logEv('bahsisDagit', { day, toplam, kisi: pay.length, per });
+    return sonDagitim;
+  }
+
   function ticketItems(t: Ticket): TicketView['items'] {
     const m = new Map<string, TicketView['items'][number]>();
     for (const l of t.lines) {
@@ -258,6 +630,19 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     }
     return [...m.values()];
   }
+  function masalar(): MasaView[] {
+    const out: MasaView[] = [];
+    rt.tables.forEach((tb, i) => {
+      if (!tb || !tb.built) return;
+      const c = rt.customers.find(k => k.kind === 'masa' && k.seat?.table === i && k.state !== 'leave');
+      if (!c) { out.push({ table: i, durum: tb.dirty > 0 ? 'kirli' : 'bos', frac: 0 }); return; }
+      const f = c as unknown as CF, t = tickets.find(k => k.cid === c.id);
+      if (t) out.push({ table: i, durum: 'tabak', frac: clamp(t.t / t.max, 0, 1) });
+      else if (c.state === 'eat') out.push({ table: i, durum: f.hesapBekle && c.t >= c.eatT ? 'hesap' : 'yemek', frac: f.hesapBekle && c.t >= c.eatT ? clamp((f.hb || 0) / ADISYON.hesapBekleMaxS, 0, 1) : 0 });
+      else out.push({ table: i, durum: f.menuOk ? 'siparis' : 'menu', frac: clamp((f.bekleT || 0) / ADISYON.bekleSabirS, 0, 1) });
+    });
+    return out;
+  }
   function view(): RestoranView {
     const g = G();
     return {
@@ -266,28 +651,26 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
         items: ticketItems(t) })),
       stands: [],
       ...hat.view(), sefHizi: sefHizi(S.workers),
+      devir: Object.fromEntries(Object.entries(hat.view().devir).map(([i, wid]) => [i, { wid, ad: S.workers.find(w => w.id === wid)?.name || '' }])),
+      masalar: masalar(),
     };
   }
   const api: RestoranApi = {
     hat,
-    garsonClaim(wid, n) {
-      const out: { id: number; p: FoodId; x: number; z: number }[] = [];
-      for (const j of jobs) { if (out.length >= n) break; if (j.wid && j.wid !== wid) continue; j.wid = wid; const tb = rt.layout.tables[j.ticket.table]; if (tb) out.push({ id: j.id, p: j.p, x: tb.x, z: tb.z }); }
-      return out;
+    isAl, tabakAl, tepsi: tepsiOf, isTamam, tabakGeri, isBirak,
+    passDurak(wid) { return gorevler.some(g => g.wid === wid && g.tur === 'tabak' && g.src === 'pass') ? passNokta() : null; },
+    rezerve: p => gorevler.filter(g => g.tur === 'tabak' && !g.item && g.src === 'counter' && g.p === p).length,
+    debug: () => ({ gorevler: gorevler.length, tepsi: gorevler.filter(g => g.item).length, claimed: gorevler.filter(g => g.wid).length, isinlanma }),
+    bolgeler() { bolgeYenile(); return bolgeList.map(b => ({ id: b.id, masalar: [...b.masalar], komsu: [...b.komsu], garsonlar: [...atama].filter(([, z]) => z === b.id).map(([w]) => w) })); },
+    bolgeOf(wid) { bolgeYenile(); return atama.get(wid) ?? null; },
+    bolgeAta(wid, id) {
+      if (!garsonlar().some(w => w.id === wid)) return false;
+      if (id === null) elle.delete(wid);
+      else { bolgeYenile(); if (id !== '*' && !bolgeList.some(b => b.id === id)) return false; elle.set(wid, id); }
+      bolgeYenile(); return true;
     },
-    masaClaim(wid) {
-      const j = masaJobs.find(k => k.wid === wid) || masaJobs.find(k => !k.wid); if (!j) return null;
-      j.wid = wid; j.t = 0;   // süre garsonun işi aldığı andan sayılır (yürürken silinmesin)
-      const tb = rt.layout.tables[j.table]; return { id: j.id, kind: j.kind, x: tb?.x ?? 0, z: tb?.z ?? 0 };
-    },
-    masaDone(wid, id) {
-      const i = masaJobs.findIndex(k => k.id === id && k.wid === wid); if (i < 0) return;
-      const j = masaJobs.splice(i, 1)[0], c = rt.customers.find(k => k.id === j.cid); if (!c) return;
-      const f = c as unknown as CF;
-      K.stat(j.kind === 'menu' ? 'menuGetir' : 'hesapGetir');
-      if (j.kind === 'menu') { f.menuOk = true; cu.say(c, rng.pick(['Teşekkürler, bakalım...', 'Ne güzel menü!', 'Hmm, ne yesek?']), 1.6); }
-      else { f.hesapBekle = false; cu.say(c, rng.pick(['Hesap tamam, eline sağlık!', 'Üstü kalsın!', 'Çok iyiydi.']), 1.8); }
-    },
+    kumbara: () => ({ birikim: Math.round(kumbara * 100) / 100, son: sonDagitim }),
+    kumbaraDagit,
     kitchenClaim: (wid, opt) => hat.claim(wid, opt?.from),
     kitchenIst: wid => hat.ist(wid),
     kitchenSure: wid => hat.sure(wid),
@@ -296,21 +679,22 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     kitchenTasiAl: wid => hat.tasiAl(wid),
     kitchenPass: wid => hat.done(wid),
     kitchenDrop: wid => hat.drop(wid),
+    kitchenDevir: wid => hat.devirIst(wid),
+    mutfakHazir,
     kitchenBekleyen: yas => hat.bekleyenTepsi(yas),
     kitchenDone(wid, ok) {
       if (!ok) { hat.drop(wid); return; }
       if (hat.ist(wid) && hat.ready(wid) && hat.tasiClaim(wid, { kendi: true })) hat.tasiAl(wid);
       if (hat.elde(wid) && !hat.done(wid)) hat.drop(wid);
     },
-    passDurak(wid) { return jobs.some(j => j.wid === wid && j.src === 'pass') ? mutfakDunya(MUTFAK_NOKTA.passGarson) : null; },
-    garsonOpen(wid) { return jobs.filter(j => j.wid === wid).map(j => { const tb = rt.layout.tables[j.ticket.table]; return { id: j.id, p: j.p, x: tb?.x ?? 0, z: tb?.z ?? 0 }; }); },
-    garsonDone(wid, id) {
-      const i = jobs.findIndex(j => j.id === id && j.wid === wid); if (i < 0) return false;
-      const j = jobs.splice(i, 1)[0], c = custOf(j.ticket);
-      if (c && tickets.includes(j.ticket)) deliver(j.ticket, c, j.item); else geri(j);
-      return true;
+    handle(c) {
+      // BUF-10 bölge komutu (UI için): { kind:'restoran', op:'bolge', wid, id: 'b1' | '*' | null }
+      // BUF-06 devir komutları: { kind:'restoran', op:'devret', ist, wid? } (wid yoksa boştaki aşçı), { op:'devirAl', ist }
+      if (c.op === 'devret') { const w = c.wid != null ? Number(c.wid) : bosAsci()?.id; return w != null && hat.devret(String(c.ist), w); }
+      if (c.op === 'devirAl') return hat.devirAl(String(c.ist));
+      if (c.op === 'bolge') { const ok = api.bolgeAta!(Number(c.wid), c.id == null || c.id === '' ? null : String(c.id)); return ok; }
+      return false;
     },
-    handle() { return false; },
     view, wantMasa, update, register,
     menu: () => menuPano(S.stage || 1),
     openDishes: () => dishesNow().map(d => d.id),

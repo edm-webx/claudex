@@ -95,6 +95,8 @@ export interface Runtime {
   tutStep: string | null;
   slowSeat: number;
   dayHistory: { day: number; earned: number; customers: number }[];
+  /** BUF-13: kirli tabak yığını (bulaşık istasyonunda), mutfakta çalışan sayısı (zemin kiri), temizlikçi mutfağı paspaslıyor mu; çalışma anı */
+  dirtyDishes: number; mutfakBusy: number; mutfakMop: boolean;
 }
 
 /** Everything C's agents may ask of / tell A's rules. */
@@ -214,7 +216,7 @@ export const emptyRuntime = (layout: StageLayout): Runtime => ({
   ferry: { state: 'away', t: 0, next: 120, arriveAt: -1, docked: false, phaseLen: 0 },
   'window': null, streak: 0, lastSaleT: -99, lastSaleProducts: [], siklik: 0, slow: null, pads: [],
   panel: null, boardOpen: false, uiLast: {}, incomeWin: [], rate: 0, act: 'idle', layout, say: '', sayT: 0,
-  reserved: [], auras: [], followers: 0, tipBoostT: 0, actT: 0, slowCard: null, slowSeen: false, tutStep: null, slowSeat: 0, dayHistory: [],
+  reserved: [], auras: [], followers: 0, tipBoostT: 0, actT: 0, slowCard: null, slowSeen: false, tutStep: null, slowSeat: 0, dayHistory: [], dirtyDishes: 0, mutfakBusy: 0, mutfakMop: false,
 });
 
 /** Internal shared object of the sim modules (A only): Rules plus helpers that cross module borders. */

@@ -8,7 +8,7 @@ import type { Vec2 } from '../../engine/api';
 import { angLerp } from '../../engine/core';
 import { CITIZENS } from '../../content/citizens';
 import { PRODUCT_IDS } from '../../content/products';
-import { P, PATIENCE_S, TIP_FRAC, decorKeyif } from '../../content/economy';
+import { P, PATIENCE_S, decorKeyif } from '../../content/economy';
 import { LINES } from '../../content/lines';
 import { ISKELE_ZONE } from '../../content/zones/iskele';
 import type { CitizenTypeDef } from '../../content/types';
@@ -30,9 +30,10 @@ export interface SpawnOpts { type?: CitizenTypeDef; n?: number; order?: Order; s
 
 export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (p: { value: number }[], v: number) => void, settle: (c: Customer, items: import('./state').Plate[]) => number) {
   const rt = K.rt, S = K.state;
+  void tipMult; void addMoneyTo;   // BUF-10: tips go to the shared jar (restoran.ts); kept in the signature for rules.ts
   const rng = K.R.main;
   let seq = 1;
-  const restoranHook = () => (rt as unknown as { restoran?: { wantMasa(): boolean } }).restoran;
+  const restoranHook = () => (rt as unknown as { restoran?: { wantMasa(): boolean; rezerve?(p: ProductId): number } }).restoran;
   const spawns: Vec2[] = (() => {
     const a = (K.content.zones?.iskele?.anchors) ?? ISKELE_ZONE.anchors;
     const l: Vec2[] = [];
@@ -218,17 +219,12 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
   }
   function finishMeal(c: Customer) {
     const ti = c.seat ? c.seat.table : -1, t = ti >= 0 ? rt.tables[ti] : null;
-    // Survey 2026-10-24: no tips ("bahşiş yok"). Flip TIPS_ON to bring the tip pile back.
-    const TIPS_ON = false;
-    const tipFrac = (TIP_FRAC[CITIZENS[c.typeIdx].tip] || 0.1) * tipMult() * (havaOf(rt)?.tipX() ?? 1);
-    const tip = TIPS_ON ? Math.max(5, Math.round(c.value * tipFrac)) : 0;
+    // BUF-09: the plates stay on the table as dirty dishes until a garson / cleaner (or the player) clears and wipes it.
+    // Only while someone on the team can wipe: no invisible cleaning, and a solo player never gets locked tables.
+    // (Tips: BUF-10 shared jar in restoran.ts odemeYap; the old dead tip-pile block is gone.)
+    const plates = c.items.length;
+    if (t && t.built && plates > 0 && S.workers.some(w => w.role === 'garson' || w.role === 'temizlik')) { t.dirty = Math.min(8, t.dirty + plates); K.stat('kirliMasa'); }
     c.items.length = 0;
-    if (t && tip > 0) {
-      addMoneyTo(t.pile, tip);
-      S.today!.earned += tip; S.week.earned += tip; S.totalEarned += tip; rt.incomeWin.push([S.playT, tip]);
-      t.dirty++;
-      K.stat('tips'); K.logEv('tip', { tip });
-    }
     K.logEv('mealDone', { table: ti });
     if (rng.chance(0.06)) say(c, rng.pick(LINES.happy), 2);
     leave(c, false);
@@ -279,7 +275,7 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
       for (const p of PRODUCT_IDS) {
         if (!left[p]) continue;
         const box = rt.counter[p];
-        if (box.length) { c.items.push(box.pop()!); c.got[p] = (c.got[p] || 0) + 1; c.patience = Math.min(c.patMax, c.patience + 1.5); break; }
+        if (box.length > (restoranHook()?.rezerve?.(p) ?? 0)) { c.items.push(box.pop()!); c.got[p] = (c.got[p] || 0) + 1; c.patience = Math.min(c.patMax, c.patience + 1.5); break; }
       }
       if (!Object.keys(orderLeft(c)).length) { payAndGo(c); i--; }
     }

@@ -226,7 +226,9 @@ function mutfakLayout(W: number, D: number): IcItem[] {
   void W;
   return [
     ...Object.keys(MUTFAK_YER).map(st),
-    it('davlumbaz', -4.0, bv, 9.0, 1.0, { esya: 'ocak' }), it('asiliTava', -1.0, -D / 2 + 0.1, 16, 0.2), it('kds', 7.8, -D / 2 + 0.1, 1.9, 0.1),
+    it('davlumbaz', -4.0, bv, 9.0, 1.0, { esya: 'ocak' }), it('asiliTava', -1.0, -D / 2 + 0.3, 16, 0.2), it('kds', 7.8, -D / 2 + 0.3, 1.9, 0.1),   // duvar yüzü -D/2+0.25: duvara asılı öğeler onun önünde (2026-11-20 BUF-07: eskiden duvarın içinde, görünmüyordu)
+    it('mutfakMenu', 3.5, -D / 2 + 0.28, 3.3, 0.1),   // BUF-07: duvar menü panosu (aşamaya göre) + şef notu
+    it('islakTabela', -1.6, 0.95, 0.4, 0.4),   // BUF-07: ıslak zemin tabelasının yeri (yalnız yerleşim, görünürlük kir eşiğiyle ic-mekan-look'ta)
     it('hazirlik', -3.4, 0.1, 2.4, 0.7, { solid: true }), it('hazirlik', 3.9, 0.1, 2.4, 0.7, { solid: true }),
   ];
 }

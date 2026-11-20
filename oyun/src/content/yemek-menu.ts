@@ -94,6 +94,8 @@ export const URUN_GRUP: Record<ProductId, DishGrup> = { doner: 'izgara', cay: 'i
 export const isProduct = (id: string): id is ProductId => id in PRODUCTS;
 /** yiyeceğin istenen istasyonu (yemek: DishDef.istasyon, tezgâh ürünü: URUN_ISTASYON) */
 export const yemekIstasyon = (f: FoodId): string => DISH_BY_ID[f]?.istasyon ?? URUN_ISTASYON[f] ?? 'ocak';
+/** BUF-13: içecek mi (çay barında hazırlanır: tezgâh içecekleri ve menüdeki içecek yemekleri); barista varsa yalnız o yapar */
+export const icecekMi = (f: FoodId): boolean => yemekIstasyon(f) === 'cay_bar';
 /** o aşamada gerçekten pişeceği istasyon (yoksa ocak yedeği; soğuk oda ve bulaşık asla) */
 export const calismaIstasyonu = (f: FoodId, stage: number): string => calismaIstasyonuOf(yemekIstasyon(f), stage);
 /** yiyeceğin temel hazırlık süresi (sn): DishDef.hazirlik ya da PISIRME_S */
