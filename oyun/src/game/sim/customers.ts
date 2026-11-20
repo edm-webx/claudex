@@ -13,7 +13,8 @@ import { LINES } from '../../content/lines';
 import { ISKELE_ZONE } from '../../content/zones/iskele';
 import type { CitizenTypeDef } from '../../content/types';
 import { AGENT_FLAG, ACT_ORDER, MOOD_ORDER, type ProductId } from './schema';
-import type { Kernel, Customer, Order } from './state';
+import type { Kernel, Customer, Order, Item } from './state';
+import { isProduct } from '../../content/yemek-menu';
 import { clamp, dist2d, hourOf, inHours, near2, pointBack } from './util';
 import { setChance, setById } from './sets';
 import { SETS } from '../../content/products';
@@ -27,7 +28,7 @@ const A_IDLE = ACT_ORDER.indexOf('idle'), A_WALK = ACT_ORDER.indexOf('walk'), A_
 
 export interface SpawnOpts { type?: CitizenTypeDef; n?: number; order?: Order; set?: string | null; from?: Vec2; near?: Vec2; kind?: 'q' | 'win' | 'masa'; patienceX?: number; say?: string; follower?: boolean; tag?: string }
 
-export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (p: { value: number }[], v: number) => void, settle: (c: Customer, items: import('./state').Item[]) => number) {
+export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (p: { value: number }[], v: number) => void, settle: (c: Customer, items: import('./state').Plate[]) => number) {
   const rt = K.rt, S = K.state;
   const rng = K.R.main;
   let seq = 1;
@@ -173,7 +174,7 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
     goTo(c, angry ? nearestSpawn({ x: c.x, z: c.z }) : spawnPoint());
   }
   const returnItemsToCounter = (c: Customer) => {
-    c.items.splice(0).forEach(it => { const b = rt.counter[it.type]; if (b && b.length < 8) b.push(it); });
+    c.items.splice(0).forEach(it => { if (!isProduct(it.type)) return; const b = rt.counter[it.type]; if (b && b.length < 8) b.push(it as Item); });   // mutfak tabağı tezgâha stok olarak dönmez (BUF-05)
     c.got = {};
   };
   function freeSeat(n: number): { t: number; seat: number } | null {

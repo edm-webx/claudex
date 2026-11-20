@@ -620,6 +620,7 @@ function renderIsciler(m, A) {
   const ws = m.workers || [];
   let s = '';
   try { s += renderCalisanSel(m.calisan, porTag); } catch (e) { console.error('[SB.ui] calisan', e); }
+  if (num(m.mutfakHizi) && m.mutfakHizi > 0) s += `<div class="sb-card"><b>+%${m.mutfakHizi} mutfak hızı (Şef)</b></div>`;   // BUF-05: şef etkisi tek yerden (sefHizi)
   if (!ws.length) s += `<div class="sb-empty">${ICONS.people}<span>Henüz işçin yok.<br>${m.hint ? esc(m.hint) : 'İskeledeki "İş ve İşçi Bulma" köşesine yürü ya da aşağıdaki düğmeye bas, panodan birini seç.'}</span></div>`;
   ws.forEach(w => {
     let ri = RANKS.indexOf(w.rankLabel); if (ri < 0) ri = clamp(num(w.rank) ? Math.round(w.rank) : 0, 0, 9);

@@ -7,28 +7,35 @@
  * Hooks used by customers.ts: rt.restoran.wantMasa() (spawner).
  * Views/UI read restoranApi(rules).view().
  */
-import { mutfakEtki } from '../../content/mutfak';
+import { mutfakEtki, sefHizi } from '../../content/mutfak';
 import { ADISYON, ADISYON_LINES, SERVIS, FAZ2_UI } from '../../content/restoran';
-import { PRODUCTS } from '../../content/products';
 import { YEMEK } from '../../content/ekonomi2';
-import { DISH_BY_ID, acikYemekler, menuPano, tasiyiciOf, yemekAgirlik, type DishId, type MenuAsama } from '../../content/yemek-menu';
+import { DISH_BY_ID, acikYemekler, menuPano, yemekAgirlik, yemekAd, isProduct, type DishId, type FoodId, type MenuAsama } from '../../content/yemek-menu';
+import { MUTFAK_NOKTA, mutfakDunya } from '../../content/ic-mekan';
+import { installMutfakHat, type IstDurum, type MutfakHatApi } from './mutfak-hat';
 import type { Vec2 } from '../../engine/api';
 import type { ProductId } from './schema';
-import type { Kernel, Customer, Item, Order } from './state';
+import type { Kernel, Customer, Item, Order, Plate } from './state';
 import { clamp } from './util';
 
 export const RESTORAN_KEY = 'restoran';
 interface Save { servis: number; no: number }
 /**
- * Bilet kalemi: ya eski tezgâh ürünü (dish null) ya da menüdeki bir yemek (DishId). Yemek fiziksel olarak `p` taşıyıcı tabağı
- * üzerinden akar (want/all ve usta/garson akışı ProductId ile çalışır), satışta yemeğin fiyatı geçer. Tadım menüsü: kurs>1, her servis ayrı kalem.
+ * Bilet kalemi: ya eski tezgâh ürünü (dish null, food = ProductId) ya da menüdeki bir yemek (food = dish = DishId). BUF-05: yemek
+ * kendi adıyla kendi istasyonunda pişer ve kendi tabağıyla (Plate.type = DishId) masaya gider; taşıyıcı ürün köprüsü yok.
+ * Tadım menüsü: kurs>1, her servis ayrı kalem.
  */
-export interface TicketLine { dish: DishId | null; p: ProductId; fiyat: number; done: boolean; kurs: number }
-export interface Ticket { no: number; table: number; cid: number; want: Order; all: Order; lines: TicketLine[]; t: number; max: number }
-export interface TicketView { no: number; table: number; items: { p: ProductId; dish: DishId | null; name: string; n: number; left: number }[]; frac: number }
+export interface TicketLine { food: FoodId; dish: DishId | null; fiyat: number; done: boolean; kurs: number }
+export type FoodOrder = Record<FoodId, number | undefined>;
+export interface Ticket { no: number; table: number; cid: number; want: FoodOrder; all: FoodOrder; lines: TicketLine[]; t: number; max: number }
+export interface TicketView { no: number; table: number; items: { p: FoodId; dish: DishId | null; name: string; n: number; left: number }[]; frac: number }
 /** Kaldırılan stant sisteminden kalan boş sözleşme: stant-look.ts / world/index.ts / boot.ts temizlenene kadar. */
 export interface StantView { id: string; name: string; short: string; owned: boolean; buyable: boolean; cost: number; price: number; stock: number; max: number; x: number; z: number; ry: number; look: string; color: string }
-export interface RestoranView { active: boolean; tickets: TicketView[]; servis: number; stands: StantView[] }
+export interface RestoranView {
+  active: boolean; tickets: TicketView[]; servis: number; stands: StantView[];
+  /** BUF-05 mutfak: pass rafındaki tabaklar (FoodId, en eski önce), istasyon durumları, şef hızı (0..0.6) */
+  pass: FoodId[]; ist: Record<string, IstDurum>; sefHizi: number;
+}
 export interface RestoranApi {
   handle(c: { kind: string; [k: string]: unknown }): boolean;
   view(): RestoranView;
@@ -40,11 +47,25 @@ export interface RestoranApi {
   update(dt: number): void;
   register(): void;
   /** 2026-11-09 garson flow: claim up to n plates waiting at the pass (counter), deliver one at its table */
-  garsonClaim?(wid: number, n: number): { id: number; p: ProductId; x: number; z: number }[];
-  garsonOpen?(wid: number): { id: number; p: ProductId; x: number; z: number }[];
+  garsonClaim?(wid: number, n: number): { id: number; p: FoodId; x: number; z: number }[];
+  garsonOpen?(wid: number): { id: number; p: FoodId; x: number; z: number }[];
   garsonDone?(wid: number, id: number): boolean;
-  kitchenClaim?(wid: number): ProductId | null;
+  /** BUF-05: garsonun tabakları mutfak pass rafından alacaksa oradaki durak (dünya), tezgâhtan alacaksa null */
+  passDurak?(wid: number): Vec2 | null;
+  /** BUF-05 mutfak hattı (sim/mutfak-hat.ts): en eski bilet kalemini ve boş istasyonunu ayırır */
+  kitchenClaim?(wid: number, opt?: { from?: Vec2 }): FoodId | null;
+  /** legacy tek adım: ok=true pişen tabağı doğrudan pass'a koyar (ya da eldekini), ok=false işi bırakır */
   kitchenDone?(wid: number, ok: boolean): void;
+  kitchenIst?(wid: number): string | null;
+  kitchenSure?(wid: number): number;
+  kitchenReady?(wid: number): boolean;
+  kitchenTasi?(wid: number, opt?: { kendi?: boolean; yas?: number }): { ist: string; p: FoodId } | null;
+  kitchenTasiAl?(wid: number): Plate | null;
+  kitchenPass?(wid: number): boolean;
+  kitchenDrop?(wid: number): void;
+  kitchenBekleyen?(yas: number): boolean;
+  /** mutfak hattının kendisi (testler, görünüm) */
+  hat?: MutfakHatApi<Ticket>;
   /** waiter table visits: bring the menu, bring the bill (survey waiter flow menü→sipariş→pass→masa→hesap→sil) */
   masaClaim?(wid: number): { id: number; kind: 'menu' | 'hesap'; x: number; z: number } | null;
   masaDone?(wid: number, id: number): void;
@@ -53,7 +74,7 @@ type Cu = { leave(c: Customer, angry: boolean): void; say(c: Customer, t: string
 
 export function restoranApi(r: { rt: unknown } | null | undefined): RestoranApi | null { return r ? ((r.rt as { restoran?: RestoranApi }).restoran || null) : null; }
 
-export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: Item[]) => number, addMoneyTo: (p: { value: number }[], v: number) => void): RestoranApi {
+export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: Plate[]) => number, addMoneyTo: (p: { value: number }[], v: number) => void): RestoranApi {
   const rt = K.rt, S = K.state, rng = K.rng('sim.restoran');
   const G = (): Save => {
     if (!S.zones || typeof S.zones !== 'object') S.zones = {};
@@ -64,19 +85,23 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
   };
   const tickets: Ticket[] = [];
   // plates a garson carries from the pass to a table; unclaimed or stuck plates are delivered by the old abstract rule after a while
-  type Job = { id: number; ticket: Ticket; p: ProductId; item: Item; t: number; wid: number };
+  // src: 'pass' (mutfak pass rafı, BUF-05) or 'counter' (ön tezgâh: tezgâh ürünü)
+  type Job = { id: number; ticket: Ticket; p: FoodId; item: Plate; t: number; wid: number; src: 'pass' | 'counter' };
   const jobs: Job[] = []; let jobId = 1;
   type Masa = { id: number; kind: 'menu' | 'hesap'; cid: number; table: number; t: number; wid: number };
   const masaJobs: Masa[] = [];
   type CF = { tk?: boolean; menuJob?: boolean; menuOk?: boolean; hesapJob?: boolean; hesapBekle?: boolean };
-  const cooking: { wid: number; ticket: Ticket; p: ProductId; t: number }[] = [];   // plates a kitchen cook is making for a ticket
   const active = () => (S.stage || 1) >= ADISYON.fromStage;
   const custOf = (t: Ticket) => rt.customers.find(c => c.id === t.cid) || null;
-  const add = (o: Order, p: ProductId, n = 1) => { o[p] = (o[p] || 0) + n; };
-  const left = (t: Ticket) => Object.values(t.want).reduce((s, n) => s + (n || 0), 0);
+  const add = (o: Record<string, number | undefined>, p: string, n = 1) => { o[p] = (o[p] || 0) + n; };
+  const left = (t: Ticket) => Object.values(t.want).reduce<number>((s, n) => s + (n || 0), 0);
 
   // stations produce for open tickets too (room above the counter stock)
-  rt.reserved.push(() => { const r: Order = {}; for (const t of tickets) for (const p in t.want) add(r, p as ProductId, t.want[p as ProductId] || 0); return r; });
+  rt.reserved.push(() => { const r: Order = {}; for (const t of tickets) for (const p in t.want) if (isProduct(p)) add(r, p, t.want[p] || 0); return r; });
+  // BUF-05: mutfak hattı (istasyonlar, tepsi, pass rafı)
+  const hat = installMutfakHat<Ticket>(K, { tickets: () => tickets, jobs: (t, f) => jobs.filter(j => j.ticket === t && j.p === f).length });
+  /** yemek masa biletine ancak mutfak pişirip getirebiliyorsa çıkar: aşçı (pişirir) ve garson (pass'tan taşır) işe alınmış olmalı */
+  const mutfakHazir = () => S.workers.some(w => w.role === 'asci') && S.workers.some(w => w.role === 'garson');
 
   function freeTable(): number {
     for (let i = 0; i < rt.tables.length; i++) {
@@ -85,8 +110,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     }
     return -1;
   }
-  const builtNow = () => K.openProducts();
-  const dishesNow = () => { const b = builtNow(); return acikYemekler(S.stage || 1).filter(d => tasiyiciOf(d, b)); };
+  const dishesNow = () => acikYemekler(S.stage || 1);
   function openTicket(c: Customer): void {
     if (!c.seat) return;
     const g = G();
@@ -94,28 +118,28 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     for (const p in c.order) for (let k = 0; k < (c.order[p as ProductId] || 0) && units.length < ADISYON.maxItems; k++) units.push(p as ProductId);
     if (!units.length) units.push(K.openProducts()[0] || 'cay');
     // menü: kalemlerin bir kısmı açık aşamanın yemeği (tip tercihine göre), kalanı eski ürünler; tadım menüsü tek siparişin kendisi
-    const b = builtNow(), avail = dishesNow(), pay = YEMEK.pay[Math.max(0, Math.min(9, (S.stage || 1) - 1))] ?? 0;
+    const avail = mutfakHazir() ? dishesNow() : [], pay = YEMEK.pay[Math.max(0, Math.min(9, (S.stage || 1) - 1))] ?? 0;
     let lines: TicketLine[] = [], kursN = 1;
     for (const u of units) {
       if (avail.length && rng.next() < pay) {
         const w: Record<string, number> = {}; for (const d of avail) w[d.id] = yemekAgirlik(d, c.typeId, u);
-        const d = DISH_BY_ID[rng.weighted(w)], p = tasiyiciOf(d, b)!;
-        if (d.kurs) { kursN = rng.int(d.kurs[0], d.kurs[1]); lines = Array.from({ length: kursN }, () => ({ dish: d.id, p, fiyat: Math.round(d.fiyat / kursN), done: false, kurs: kursN })); break; }
-        lines.push({ dish: d.id, p, fiyat: d.fiyat, done: false, kurs: 1 });
-      } else lines.push({ dish: null, p: u, fiyat: 0, done: false, kurs: 1 });
+        const d = DISH_BY_ID[rng.weighted(w)];
+        if (d.kurs) { kursN = rng.int(d.kurs[0], d.kurs[1]); lines = Array.from({ length: kursN }, () => ({ food: d.id, dish: d.id, fiyat: Math.round(d.fiyat / kursN), done: false, kurs: kursN })); break; }
+        lines.push({ food: d.id, dish: d.id, fiyat: d.fiyat, done: false, kurs: 1 });
+      } else lines.push({ food: u, dish: null, fiyat: 0, done: false, kurs: 1 });
     }
-    const want: Order = {};
-    for (const l of lines) add(want, l.p);
-    c.order = { ...want }; c.got = {};
+    const want: FoodOrder = {}, po: Order = {};
+    for (const l of lines) { add(want, l.food); if (isProduct(l.food)) add(po, l.food); }
+    c.order = po; c.got = {};   // müşterinin tezgâh ürünü siparişi (yemekler bilette, adıyla)
     g.no = (g.no % 99) + 1;
     tickets.push({ no: g.no, table: c.seat.table, cid: c.id, want: { ...want }, all: { ...want }, lines, t: 0, max: ADISYON.patience + (kursN - 1) * YEMEK.kursSabir });
     K.logEv('ticket', { no: g.no, table: c.seat.table, x: c.x, z: c.z });
   }
-  function deliver(t: Ticket, c: Customer, it: Item): void {
+  function deliver(t: Ticket, c: Customer, it: Plate): void {
     const p = it.type;
-    const ln = t.lines.find(l => !l.done && l.p === p);
-    if (ln) { ln.done = true; if (ln.dish) { it.priceX = (it.priceX || 1) * ln.fiyat / PRODUCTS[p].base; K.stat('yemek_' + ln.dish); } }
-    c.items.push(it); add(c.got, p);
+    const ln = t.lines.find(l => !l.done && l.food === p);
+    if (ln) { ln.done = true; if (ln.dish) { it.priceX = (it.priceX || 1) * ln.fiyat / DISH_BY_ID[ln.dish].fiyat; K.stat('yemek_' + ln.dish); } }   // tadım menüsü: servis başına payı
+    c.items.push(it); if (isProduct(p)) add(c.got, p);
     t.want[p] = Math.max(0, (t.want[p] || 0) - 1); if (!t.want[p]) delete t.want[p];
     K.logEv('serve', { x: c.x, z: c.z });
     if (!left(t)) complete(t, c);
@@ -193,22 +217,24 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
       const j = masaJobs[i], c = rt.customers.find(k => k.id === j.cid); j.t += dt;
       if (!c || c.state === 'leave' || j.t > (j.wid ? 30 : 18)) { if (c) { const f = c as unknown as CF; if (j.kind === 'hesap') f.hesapBekle = false; else f.menuOk = true; } masaJobs.splice(i, 1); }
     }
-    for (let i = cooking.length - 1; i >= 0; i--) { cooking[i].t += dt; if (cooking[i].t > 40 || !tickets.includes(cooking[i].ticket)) cooking.splice(i, 1); }
+    hat.update(dt);
     // garsons carry plates from the pass (counter stock) to the tables: a job is a plate taken off the counter, a garson walks it over
     const g = S.workers.filter(w => w.role === 'garson').length;
     for (let i = jobs.length - 1; i >= 0; i--) {
       const j = jobs[i], c = custOf(j.ticket); j.t += dt;
-      if (!tickets.includes(j.ticket) || !c) { (rt.counter[j.p] ||= []).push(j.item); jobs.splice(i, 1); continue; }
+      if (!tickets.includes(j.ticket) || !c) { geri(j); jobs.splice(i, 1); continue; }
       if ((!j.wid && j.t > 12) || j.t > 30) { jobs.splice(i, 1); deliver(j.ticket, c, j.item); }
     }
     if (g > 0 && tickets.length && jobs.length < g * 3) {
       garsonT -= dt;
       if (garsonT <= 0) {
         garsonT = 0.8;
-        for (const t of tickets) {
-          const p = (Object.keys(t.want) as ProductId[]).find(q => (rt.counter[q]?.length || 0) > 0 && jobs.filter(j => j.ticket === t && j.p === q).length < (t.want[q] || 0));
+        for (const t of tickets) {   // tabak kaynağı: önce mutfak pass rafı, yoksa ön tezgâh (pass'ı olmayan aşama / aşçısız oyun eskisi gibi)
+          const p = Object.keys(t.want).find(q => (hat.passCount(q) > 0 || (isProduct(q) && (rt.counter[q]?.length || 0) > 0)) && jobs.filter(j => j.ticket === t && j.p === q).length < (t.want[q] || 0));
           if (!p) continue;
-          jobs.push({ id: jobId++, ticket: t, p, item: rt.counter[p].pop()!, t: 0, wid: 0 });
+          const fromPass = hat.passTake(p);
+          const item: Plate = fromPass || rt.counter[p as ProductId].pop()!;
+          jobs.push({ id: jobId++, ticket: t, p, item, t: 0, wid: 0, src: fromPass ? 'pass' : 'counter' });
           break;
         }
       }
@@ -220,12 +246,14 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     if (rng.next() >= sh) return false;
     return freeTable() >= 0;
   }
+  /** bileti düşen tabak: tezgâh ürünü tezgâha döner (eski kural), mutfak yemeği sessizce gider (stok yok) */
+  function geri(j: Job): void { if (j.src === 'counter' && isProduct(j.item.type)) (rt.counter[j.item.type] ||= []).push(j.item as Item); }
   function ticketItems(t: Ticket): TicketView['items'] {
     const m = new Map<string, TicketView['items'][number]>();
     for (const l of t.lines) {
-      const key = l.dish || l.p;
+      const key = l.food;
       let it = m.get(key);
-      if (!it) { const d = l.dish ? DISH_BY_ID[l.dish] : null; it = { p: l.p, dish: l.dish, name: d ? (l.kurs > 1 ? d.ad + ' (' + l.kurs + ' servis)' : d.ad) : PRODUCTS[l.p].short, n: 0, left: 0 }; m.set(key, it); }
+      if (!it) { const d = l.dish ? DISH_BY_ID[l.dish] : null; it = { p: l.food, dish: l.dish, name: d ? (l.kurs > 1 ? d.ad + ' (' + l.kurs + ' servis)' : d.ad) : yemekAd(l.food), n: 0, left: 0 }; m.set(key, it); }
       it.n++; if (!l.done) it.left++;
     }
     return [...m.values()];
@@ -237,11 +265,13 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
       tickets: tickets.map(t => ({ no: t.no, table: t.table, frac: clamp(t.t / t.max, 0, 1),
         items: ticketItems(t) })),
       stands: [],
+      ...hat.view(), sefHizi: sefHizi(S.workers),
     };
   }
   const api: RestoranApi = {
+    hat,
     garsonClaim(wid, n) {
-      const out: { id: number; p: ProductId; x: number; z: number }[] = [];
+      const out: { id: number; p: FoodId; x: number; z: number }[] = [];
       for (const j of jobs) { if (out.length >= n) break; if (j.wid && j.wid !== wid) continue; j.wid = wid; const tb = rt.layout.tables[j.ticket.table]; if (tb) out.push({ id: j.id, p: j.p, x: tb.x, z: tb.z }); }
       return out;
     },
@@ -258,28 +288,26 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
       if (j.kind === 'menu') { f.menuOk = true; cu.say(c, rng.pick(['Teşekkürler, bakalım...', 'Ne güzel menü!', 'Hmm, ne yesek?']), 1.6); }
       else { f.hesapBekle = false; cu.say(c, rng.pick(['Hesap tamam, eline sağlık!', 'Üstü kalsın!', 'Çok iyiydi.']), 1.8); }
     },
-    kitchenClaim(wid) {
-      if (cooking.some(c => c.wid === wid)) return null;
-      // tezgahtaki hazır tabaklar da hesaba katılır: toplam ihtiyaç - yoldaki işler - pişen - tezgah
-      const spare: Partial<Record<ProductId, number>> = {};
-      for (const t of tickets) for (const p of Object.keys(t.want) as ProductId[]) {
-        spare[p] ??= rt.counter[p]?.length || 0;
-        let left = (t.want[p] || 0) - jobs.filter(j => j.ticket === t && j.p === p).length - cooking.filter(c => c.ticket === t && c.p === p).length;
-        const use = Math.min(Math.max(0, left), spare[p]!); spare[p]! -= use; left -= use;
-        if (left > 0) { cooking.push({ wid, ticket: t, p, t: 0 }); return p; }
-      }
-      return null;
-    },
+    kitchenClaim: (wid, opt) => hat.claim(wid, opt?.from),
+    kitchenIst: wid => hat.ist(wid),
+    kitchenSure: wid => hat.sure(wid),
+    kitchenReady: wid => hat.ready(wid),
+    kitchenTasi: (wid, opt) => hat.tasiClaim(wid, opt),
+    kitchenTasiAl: wid => hat.tasiAl(wid),
+    kitchenPass: wid => hat.done(wid),
+    kitchenDrop: wid => hat.drop(wid),
+    kitchenBekleyen: yas => hat.bekleyenTepsi(yas),
     kitchenDone(wid, ok) {
-      const i = cooking.findIndex(c => c.wid === wid); if (i < 0) return;
-      const c = cooking.splice(i, 1)[0];
-      if (ok && tickets.includes(c.ticket)) { const b = (rt.counter[c.p] ||= []); if (b.length < 8) b.push({ type: c.p, tier: S.tiers[c.p] || 1 } as Item); }
+      if (!ok) { hat.drop(wid); return; }
+      if (hat.ist(wid) && hat.ready(wid) && hat.tasiClaim(wid, { kendi: true })) hat.tasiAl(wid);
+      if (hat.elde(wid) && !hat.done(wid)) hat.drop(wid);
     },
+    passDurak(wid) { return jobs.some(j => j.wid === wid && j.src === 'pass') ? mutfakDunya(MUTFAK_NOKTA.passGarson) : null; },
     garsonOpen(wid) { return jobs.filter(j => j.wid === wid).map(j => { const tb = rt.layout.tables[j.ticket.table]; return { id: j.id, p: j.p, x: tb?.x ?? 0, z: tb?.z ?? 0 }; }); },
     garsonDone(wid, id) {
       const i = jobs.findIndex(j => j.id === id && j.wid === wid); if (i < 0) return false;
       const j = jobs.splice(i, 1)[0], c = custOf(j.ticket);
-      if (c && tickets.includes(j.ticket)) deliver(j.ticket, c, j.item); else (rt.counter[j.p] ||= []).push(j.item);
+      if (c && tickets.includes(j.ticket)) deliver(j.ticket, c, j.item); else geri(j);
       return true;
     },
     handle() { return false; },

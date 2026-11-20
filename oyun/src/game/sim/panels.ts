@@ -14,6 +14,7 @@ import { ROLES, RANKS, rankOf } from '../../content/ranks';
 import { TRAITS } from '../../content/traits';
 import { STATIONS } from '../../content/products';
 import { defaultSign } from '../../content/sign-fonts';
+import { sefHizi } from '../../content/mutfak';
 import type { Rules } from './state';
 import type { ModelId, SimCmd } from './commands';
 import { clamp, fmtMoney } from './util';
@@ -70,6 +71,7 @@ export function panelModel(id: ModelId | string, r: Rules): Record<string, any> 
         money: S.money,
         kurye: kuryeSummary(r), // Kuryeler section (ui/kurye-panel.ts)
         calisan: calisanSummary(r), // Kurs Merkezi / Bekleyenler section (ui/calisan-panel.ts)
+        mutfakHizi: Math.round(sefHizi(S.workers) * 100),   // BUF-05: şefin mutfak hızı (tek kaynak content/mutfak.ts sefHizi), 0 = şef yok
       };
     }
     case 'menu': {

@@ -2,6 +2,7 @@
 // day's ciro shows, and "Yeni güne başla" starts the next morning. Reads rt.uiLast.gunSonu; writes only the
 // 'yeniGun' command. Code-made DOM, Turkish text, no images.
 import { PRODUCTS } from '../../content/products';
+import { DISH_BY_ID } from '../../content/yemek-menu';
 import type { Rules } from '../sim/state';
 import { fmtMoney } from '../sim/util';
 
@@ -36,7 +37,7 @@ export function createGunSonu(deps: { root: HTMLElement; rules: () => Rules | nu
     // earned zaten personel payı ve malzeme düşülmüş NET tutardır; brüt satış = net + personel + malzeme.
     const brut = Math.round(m.earned + (m.maas || 0) + (gider ? gider.malzeme : 0));
     close(); shownDay = m.day;
-    const top = Object.entries(m.sold || {}).sort((a, b) => b[1] - a[1]).map(([k, n]) => [(PRODUCTS as Record<string, { name?: string }>)[k]?.name || k, n] as [string, number])[0];
+    const top = Object.entries(m.sold || {}).sort((a, b) => b[1] - a[1]).map(([k, n]) => [(PRODUCTS as Record<string, { name?: string }>)[k]?.name || DISH_BY_ID[k]?.ad || k, n] as [string, number])[0];
     wrap = document.createElement('div'); wrap.className = 'gs-wrap';
     wrap.innerHTML = `<div class="gs-card"><div class="gs-moon">🌙</div><div class="gs-h">Kepenkler indi</div><div class="gs-sub">${m.day}. gün bitti. Saat 03:00, iskele sessiz.</div>
       <div class="gs-sub" style="margin:0">Günün cirosu (net)</div><div class="gs-ciro">${fmtMoney(m.earned)}</div>${m.record ? '<div class="gs-rec">Yeni rekor!</div>' : ''}

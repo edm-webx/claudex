@@ -12,10 +12,11 @@
  */
 import type { Vec2, Vec3 } from '../../../engine/api';
 import type { ProductId } from '../schema';
+import type { FoodId } from '../../../content/yemek-menu';
 
 export type ActorKind = 'worker' | 'regular' | 'vip' | 'kapkac' | 'cat' | 'dog' | 'gull' | 'parrot';
 
-export interface CarryItem { type: ProductId; tier: number; by?: number; carrier?: number; priceX?: number }
+export interface CarryItem<T extends string = ProductId> { type: T; tier: number; by?: number; carrier?: number; priceX?: number }
 
 /** One individually drawn character. All fields are plain numbers/strings so the sim stays serialisable. */
 export interface Actor {
@@ -34,8 +35,8 @@ export interface Actor {
   /** ActId for people ('idle','walk','pour',...), v2 animal act / mode names for animals ('sleep','rub','stand','glide'...). */
   act: string;
   mood: 'happy' | 'ok' | 'impatient' | 'sad' | 'asleep';
-  /** Items shown in the carried stack (people only). */
-  carry: CarryItem[];
+  /** Items shown in the carried stack (people only). BUF-05: kitchen/garson plates may be dishes (FoodId). */
+  carry: CarryItem<FoodId>[];
   /** Speech bubble text and seconds left. */
   say: string; sayT: number;
   /** Heart / emote hints for the view: 'heart', 'zzz', 'bark', 'selfie'. */
@@ -91,18 +92,35 @@ export interface AgentHost {
   makeGrab(p: ProductId, carrier: number): CarryItem;
   counterPut(item: CarryItem): boolean;
   /** garson flow (restoran.ts): plates waiting at the pass for a table */
-  garsonClaim?(wid: number, n: number): { id: number; p: ProductId; x: number; z: number }[];
-  garsonOpen?(wid: number): { id: number; p: ProductId; x: number; z: number }[];
+  garsonClaim?(wid: number, n: number): { id: number; p: FoodId; x: number; z: number }[];
+  garsonOpen?(wid: number): { id: number; p: FoodId; x: number; z: number }[];
   garsonDone?(wid: number, id: number): boolean;
-  /** kitchen: claim the oldest ticket item nobody cooks yet; done puts the finished plate on the pass */
+  /** BUF-05: where the garson picks his claimed plates up: the kitchen pass (world point) or null (front counter) */
+  passDurak?(wid: number): Vec2 | null;
   masaClaim?(wid: number): { id: number; kind: 'menu' | 'hesap'; x: number; z: number } | null;
   masaDone?(wid: number, id: number): void;
-  kitchenClaim?(wid: number): ProductId | null;
+  /** kitchen line (sim/mutfak-hat.ts): claim the oldest ticket item + a free station for it (nearest to `from`) */
+  kitchenClaim?(wid: number, opt?: { from?: Vec2 }): FoodId | null;
+  /** legacy one-step finish (ok) / give the job up (!ok) */
   kitchenDone?(wid: number, ok: boolean): void;
+  /** station id the cook reserved */
+  kitchenIst?(wid: number): string | null;
+  /** real cooking time (s): DishDef.hazirlik / (1 + rank + chef), chef bonus counted only here */
+  kitchenSure?(wid: number): number;
+  /** cooking finished: the plate goes on the station tray */
+  kitchenReady?(wid: number): boolean;
+  /** reserve a tray plate to carry to the pass (komi, or the cook) */
+  kitchenTasi?(wid: number, opt?: { kendi?: boolean; yas?: number }): { ist: string; p: FoodId } | null;
+  kitchenTasiAl?(wid: number): CarryItem<FoodId> | null;
+  /** put the carried plate on the pass (false: pass full, wait) */
+  kitchenPass?(wid: number): boolean;
+  kitchenDrop?(wid: number): void;
+  /** a tray plate nobody took for `yas` s (an idle cook takes it) */
+  kitchenBekleyen?(yas: number): boolean;
   // ---- specials
   playerHas(p: ProductId): boolean;
   playerTake(p: ProductId): CarryItem | null;
-  settle(items: CarryItem[], at: Vec2): number;
+  settle(items: CarryItem<FoodId>[], at: Vec2): number;
   earn(value: number, at: Vec2): void;
   kasaCount(): number;
   kasaValue(): number;

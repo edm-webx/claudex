@@ -7,17 +7,18 @@
  * exterior shell hides, view/world/karsi-bina.ts) or always for the glass büfe halls. Pure view, no sim, no colliders.
  */
 import * as T from 'three';
-import { mutfakEsya, mutfakCelik } from '../../../content/mutfak';
+import { mutfakEsya, mutfakCelik, pisirIstasyonu, PASS_KAP } from '../../../content/mutfak';
+import { yemekRenk } from '../../../content/yemek-menu';
 import { Batch, mtx } from '../../../engine/prefab/batch';
-import { IC_CANLI, IC_MEKANLAR, icLayout, icDim, icYaw, icIcinde, type IcMekan, type IcItem } from '../../../content/ic-mekan';
+import { IC_CANLI, IC_MEKANLAR, icLayout, icDim, icYaw, icIcinde, mutfakUst, MUTFAK_YER, type IcMekan, type IcItem } from '../../../content/ic-mekan';
 import { useSkyEnv } from './glb';
 
 export interface IcDeps {
   root: () => T.Object3D | null; hero: () => { x: number; z: number }; night: () => number;
   /** owned fixed businesses by plot id */ isletme: () => Record<string, { lv: number; isci: number; esya: string[]; tema?: string }>;
   salon: () => { stage: number; esya: string[] };
-  /** büfe mutfağı: hired kitchen staff + the live ticket lines for the KDS screen */
-  mutfak: () => { ekip: { rol: string; rank: number }[]; kds: string[] };
+  /** büfe mutfağı: hired kitchen staff + the live ticket lines for the KDS screen; BUF-05: pass rafı tabakları + istasyon durumu (sim restoranApi.view()) */
+  mutfak: () => { ekip: { rol: string; rank: number }[]; kds: string[]; pass?: string[]; ist?: Record<string, { d: 'pisiyor' | 'hazir'; p: string }> };
 }
 export interface IcView { update(dt: number): void; dispose(): void; /** id of the room the player stands in */ icinde(): string | null }
 
@@ -40,6 +41,12 @@ function mats() {
 const LM = new Map<string, T.MeshLambertMaterial>();
 const lm = (c: string) => { let m = LM.get(c); if (!m) { m = new T.MeshLambertMaterial({ color: c }); LM.set(c, m); } return m; };
 const BOX = new T.BoxGeometry(1, 1, 1), SPH = new T.SphereGeometry(1, 10, 8);
+const TABAK = new T.CylinderGeometry(0.14, 0.12, 0.025, 14), YEMEK = new T.SphereGeometry(1, 8, 6);
+/** one plate (shared geometry, cached materials), hidden until the sim puts food on it */
+function tabak(): { g: T.Group; food: T.Mesh } {
+  const g = new T.Group(), p = new T.Mesh(TABAK, lm('#fbfaf6')), food = new T.Mesh(YEMEK, lm('#e8e2d4'));
+  food.scale.set(0.085, 0.04, 0.085); food.position.y = 0.035; g.add(p, food); g.visible = false; return { g, food };
+}
 function part(g: T.Object3D, geo: T.BufferGeometry, c: string, x: number, y: number, z: number, sx: number, sy: number, sz: number) { const m = new T.Mesh(geo, lm(c)); m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.castShadow = true; g.add(m); return m; }
 
 type Kind = 'guest' | 'staff' | 'chef' | 'student' | 'teacher' | 'nurse' | 'doctor' | 'clerk' | 'patient' | 'barista';
@@ -72,7 +79,9 @@ function signTex(text: string, bg: string, fg: string, aspect: number, chalk = f
   const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace; return t;
 }
 
-interface Anim { spin: T.Object3D[]; fire: T.Object3D[]; fish: T.Object3D[]; screens: T.MeshBasicMaterial[]; flick: T.Object3D[]; walkers: { o: T.Object3D; p: [number, number][]; t: number; sp: number }[]; bob: T.Object3D[]; lamps: T.Object3D | null; kds?: { draw(lines: string[]): void }; kdsT?: number }
+interface Anim { spin: T.Object3D[]; fire: T.Object3D[]; fish: T.Object3D[]; screens: T.MeshBasicMaterial[]; flick: T.Object3D[]; walkers: { o: T.Object3D; p: [number, number][]; t: number; sp: number }[]; bob: T.Object3D[]; lamps: T.Object3D | null; kds?: { draw(lines: string[]): void }; kdsT?: number;
+  /** BUF-05 mutfak: pass rafında PASS_KAP tabak yuvası ve her pişirme istasyonunun üstünde bir tabak + pişiyor işareti (buhar topu) */
+  pasTabak?: { g: T.Group; food: T.Mesh }[]; istTabak?: Map<string, { g: T.Group; food: T.Mesh; buhar: T.Mesh }>; pisiyor?: T.Mesh[] }
 interface Ctx { b: Batch; g: Batch; l: Batch; grp: T.Group; m: IcMekan; an: Anim; seed: number; fine: boolean; lv: number; owned: boolean }
 
 /* ---------- furniture & equipment builders (local frame: item faces +z, base at y=0) ---------- */
@@ -224,7 +233,7 @@ const F: Record<string, Fn> = {
       else { b.cyl(0.13, 0.1, 0.12, '#2a2d33', x, 1.02, 0, { seg: 10 }); } } },
   izgaraK: (c, it) => { const { b, l } = c; b.box(it.w, 0.9, it.d, '#8a9098', 0, 0.45, 0); b.box(it.w - 0.08, 0.06, it.d - 0.08, '#1d1d1d', 0, 0.93, 0); for (let i = 0; i < 7; i++) b.box(it.w - 0.2, 0.02, 0.025, '#5b6068', 0, 0.97, -it.d / 2 + 0.12 + i * (it.d - 0.24) / 6); l.box(it.w - 0.3, 0.02, 0.06, '#ff6a2a', 0, 0.9, it.d / 2 - 0.02); for (let i = 0; i < 3; i++) b.box(0.3, 0.05, 0.18, ['#8a3a2a', '#9a5a2a', '#7a2a1d'][i], -0.4 + i * 0.4, 0.99, 0.05); },
   fritoz: (c, it) => { const { b } = c; b.box(it.w, 0.9, it.d, '#aab3bb', 0, 0.45, 0); for (const s of [-1, 1]) { b.box(it.w / 2 - 0.12, 0.06, it.d - 0.2, '#33373b', s * it.w / 4, 0.93, 0); b.box(it.w / 2 - 0.2, 0.02, it.d - 0.3, '#e9b84a', s * it.w / 4, 0.97, 0); b.box(0.04, 0.04, 0.34, '#1d1d1d', s * it.w / 4, 1.04, it.d / 2 - 0.05); } },
-  pass: (c, it) => { const { b, l } = c; b.box(it.w, 0.95, it.d, '#9aa5b0', 0, 0.475, 0); b.box(it.w + 0.06, 0.06, it.d + 0.08, '#e9eef2', 0, 0.98, 0.02); for (let i = 0; i < 3; i++) { const x = -it.w / 2 + 0.4 + i * (it.w - 0.8) / 2; b.cyl(0.02, 0.02, 0.55, '#c9ced6', x, 1.3, -0.2, { seg: 5 }); l.box(0.5, 0.05, 0.3, '#ff9a4a', x, 1.58, -0.12); for (let k = 0; k < 3; k++) b.cyl(0.18, 0.18, 0.02, '#ffffff', x, 1.03 + k * 0.025, 0.1, { seg: 12 }); }
+  pass: (c, it) => { const { b, l } = c; b.box(it.w, 0.95, it.d, '#9aa5b0', 0, 0.475, 0); b.box(it.w + 0.06, 0.06, it.d + 0.08, '#e9eef2', 0, 0.98, 0.02); for (let i = 0; i < 3; i++) { const x = -it.w / 2 + 0.4 + i * (it.w - 0.8) / 2; b.cyl(0.02, 0.02, 0.55, '#c9ced6', x, 1.3, -0.2, { seg: 5 }); l.box(0.5, 0.05, 0.3, '#ff9a4a', x, 1.58, -0.12); }   // tabaklar sabit yığın değil: sim'in pass rafı (BUF-05, buildRoom an.pasTabak)
     b.cyl(0.07, 0.08, 0.05, '#c9a24a', it.w / 2 - 0.25, 1.04, 0.3, { seg: 8 }); b.cyl(0.02, 0.02, 0.05, '#c9a24a', it.w / 2 - 0.25, 1.09, 0.3, { seg: 5 }); },
   bulasik: (c, it) => { const { b } = c; b.box(it.w, 0.9, it.d, '#9aa5b0', 0, 0.45, 0); b.box(it.w + 0.04, 0.05, it.d + 0.04, '#e9eef2', 0, 0.93, 0); for (const s of [-1, 1]) b.box(0.7, 0.04, it.d - 0.3, '#33373b', s * (it.w / 4 + 0.05), 0.96, 0); b.cyl(0.02, 0.02, 0.4, '#c9ced6', 0, 1.15, -it.d / 2 + 0.15, { seg: 5 }); b.cyl(0.015, 0.015, 0.2, '#c9ced6', 0, 1.35, -it.d / 2 + 0.25, { rx: HP, seg: 5 }); for (let i = 0; i < 6; i++) b.cyl(0.17, 0.17, 0.018, '#fbfaf6', it.w / 2 - 0.3, 0.99 + i * 0.02, 0, { seg: 12 }); b.box(0.5, 0.35, 0.4, '#5b6068', -it.w / 2 + 0.3, 1.1, -it.d / 2 + 0.3); },
   salata: (c, it) => { F.buzVitrin(c, it); for (let i = 0; i < 4; i++) c.b.cyl(0.13, 0.1, 0.07, ['#6f9e4f', '#e0533c', '#ffd23f', '#8cc63e'][i], -it.w / 2 + 0.25 + i * (it.w - 0.5) / 3, 1.02, 0, { seg: 10 }); },
@@ -305,6 +314,21 @@ function buildRoom(m: IcMekan, own: { lv: number; isci: number; esya: string[]; 
     const waiters = own && own.isci >= 2 ? Math.min(2, own.isci - 1) : 0;
     for (let i = 0; i < waiters; i++) { const p = person('staff', ctx.seed + 50 + i, false); cur.add(p); const yv = ctr.v + ctr.d / 2 + 0.9; an.walkers.push({ o: p, p: [[-W / 2 + 1.2, yv], [W / 2 - 1.2, yv], [W / 2 - 1.2, D / 2 - 1.4], [-W / 2 + 1.2, D / 2 - 1.4]], t: i * 2, sp: 0.8 }); }
   }
+  if (m.mutfak) {   // BUF-05: dynamic plates (pass rack slots + one per cooking station), shown from the sim view in update()
+    const D2 = icDim(m).D / 2, py = 1.03;
+    if (has.has('pass')) {
+      const pu = MUTFAK_YER.pass.u, pw = MUTFAK_YER.pass.w; an.pasTabak = [];
+      for (let i = 0; i < PASS_KAP; i++) { const t = tabak(), row = i % 2, col = Math.floor(i / 2); t.g.position.set(pu - pw / 2 + 0.3 + col * (pw - 0.6) / 3, py, -D2 + 0.45 + row * 0.3); grp.add(t.g); an.pasTabak.push(t); }
+    }
+    an.istTabak = new Map(); an.pisiyor = [];
+    for (const id of Object.keys(MUTFAK_YER)) {
+      if (!pisirIstasyonu(id) || id === 'pass' || !has.has(id)) continue;   // pasoda kepçelenen tabak zaten rafa iner
+      const [u, v] = mutfakUst(id), t = tabak(), on = MUTFAK_YER[id].sira === 'on';
+      t.g.position.set(u, id === 'sef_masa' ? 1.08 : 0.98, v + (on ? -0.3 : 0.3));
+      const buhar = new T.Mesh(SPH, lm('#f4f6f8')); buhar.scale.setScalar(0.07); buhar.position.set(u, 1.35, v); buhar.visible = false; buhar.userData.ph = u;
+      grp.add(t.g, buhar); an.istTabak.set(id, { g: t.g, food: t.food, buhar });
+    }
+  }
   if (m.tur === 'morg') an.flick.push(grp);
   const M = mats();
   if (!wb.empty) { const wm = wb.mesh(M.wall, false, true); grp.add(wm); }
@@ -318,7 +342,7 @@ export function createIcMekan(d: IcDeps): IcView {
   const holder = new T.Group(); holder.name = 'icMekan';
   const rooms = new Map<string, { key: string; g: T.Group; an: Anim }>();
   let t = 0, inside: string | null = null, acc = 1;
-  const keep = new Set<unknown>([BOX, SPH]);
+  const keep = new Set<unknown>([BOX, SPH, TABAK, YEMEK]);
   const kill = (id: string) => {
     const r = rooms.get(id); if (!r) return; r.g.removeFromParent();
     const M = mats(), shared = new Set<unknown>([M.solid, M.glass, M.glow, M.wall, ...LM.values()]);
@@ -358,7 +382,13 @@ export function createIcMekan(d: IcDeps): IcView {
         for (let i = 0; i < a.screens.length; i++) a.screens[i].color.setHSL(((t * 0.05 + i * 0.3) % 1), 0.55, 0.42 + 0.06 * Math.sin(t * 3 + i));
         for (const p of a.bob) p.rotation.z = Math.sin(t * 1.4 + p.position.x * 3) * 0.04;
         for (const w of a.walkers) { const P = w.p, n = P.length, i0 = Math.floor(w.t) % n, i1 = (i0 + 1) % n, L = Math.max(0.5, Math.hypot(P[i1][0] - P[i0][0], P[i1][1] - P[i0][1])); w.t = (w.t + dt * w.sp / L) % n; const f = w.t - Math.floor(w.t); w.o.position.set(P[i0][0] + (P[i1][0] - P[i0][0]) * f, Math.abs(Math.sin(t * 8)) * 0.03, P[i0][1] + (P[i1][1] - P[i0][1]) * f); w.o.rotation.y = Math.atan2(P[i1][0] - P[i0][0], P[i1][1] - P[i0][1]); }
-        if (a.kds && (a.kdsT = (a.kdsT || 0) - dt) <= 0) { a.kdsT = 0.7; a.kds.draw(d.mutfak().kds); }
+        if ((a.kds || a.pasTabak || a.istTabak) && (a.kdsT = (a.kdsT || 0) - dt) <= 0) {
+          a.kdsT = 0.7; const mk = d.mutfak(); a.kds?.draw(mk.kds);
+          // BUF-05: pass rack plates (oldest first) and station trays/pans from the sim, colour = the food on it
+          if (a.pasTabak) a.pasTabak.forEach((t, i) => { const f = mk.pass?.[i]; t.g.visible = !!f; if (f) t.food.material = lm(yemekRenk(f)); });
+          if (a.istTabak) { a.pisiyor!.length = 0; for (const [id, t] of a.istTabak) { const s = mk.ist?.[id]; t.g.visible = s?.d === 'hazir'; t.buhar.visible = s?.d === 'pisiyor'; if (s) t.food.material = lm(yemekRenk(s.p)); if (t.buhar.visible) a.pisiyor!.push(t.buhar); } }
+        }
+        if (a.pisiyor) for (const b of a.pisiyor) { const k = (t * 1.6 + b.userData.ph) % 1; b.position.y = 1.15 + k * 0.5; b.scale.setScalar(0.05 + k * 0.08); }   // pişiyor: tencereden yükselen buhar topu
         if (a.flick.length && a.lamps) a.lamps.visible = Math.sin(t * 23) + Math.sin(t * 7.3) > -1.2;
         void nk;
       }

@@ -170,16 +170,62 @@ function morgLayout(W: number, D: number): IcItem[] {
   return [it('lamba', 0, 0, W, D, { c: 'titrek' }), it('zemin', 0, 0, W, D, { c: 'morg' }), it('cekmece', 0, -D / 2 + 0.4, W - 0.7, 0.55, { solid: true }), it('otopsi', 0.85, 0.15, 0.7, 1.7, { solid: true })];
 }
 
+/**
+ * Mutfak istasyonlarının yeri (BUF-05, kapı çerçevesi: u kapı duvarı boyunca, v odanın içine): tek doğruluk kaynağı. mutfakLayout,
+ * sim'deki aşçı durakları (mutfakStand) ve rota (mutfakRota) buradan okur. sira: arka duvar hattı, ön hat ya da ortada (şef pasosu).
+ */
+export const MUTFAK_YER: Record<string, { u: number; w: number; sira: 'arka' | 'on' | 'orta'; k: string }> = {
+  soguk_oda: { u: -8.1, w: 1.4, sira: 'arka', k: 'sogukOda' }, ocak: { u: -6.3, w: 1.6, sira: 'arka', k: 'ocakK' }, ocak2: { u: -4.5, w: 1.6, sira: 'arka', k: 'ocakK' },
+  izgara: { u: -2.7, w: 1.6, sira: 'arka', k: 'izgaraK' }, izgara2: { u: -0.9, w: 1.6, sira: 'arka', k: 'izgaraK' }, fritoz: { u: 0.8, w: 1.2, sira: 'arka', k: 'fritoz' },
+  tas_firin: { u: 2.7, w: 1.8, sira: 'arka', k: 'tasFirin' }, doner: { u: 4.5, w: 1.1, sira: 'arka', k: 'doner' }, tatli: { u: 5.9, w: 1.2, sira: 'arka', k: 'tatliVitrin' },
+  pass: { u: 7.8, w: 2.0, sira: 'arka', k: 'pass' },
+  bulasik: { u: -7.2, w: 2.0, sira: 'on', k: 'bulasik' }, salata: { u: -4.6, w: 1.6, sira: 'on', k: 'salata' }, meze: { u: -2.6, w: 1.4, sira: 'on', k: 'mezeDolap' },
+  cay_bar: { u: 6.5, w: 1.6, sira: 'on', k: 'cayBar' }, sef_masa: { u: 0, w: 2.8, sira: 'orta', k: 'sefMasa' },
+};
+/** mutfak koridorları ve duraklar (u, v): arka koridor v=-D/2+1.5, ön koridor v=D/2-1.3; geçitler hazırlık tezgâhlarının arasından */
+export const MUTFAK_NOKTA = {
+  passAsci: [6.9, -0.7] as [number, number], passGarson: [8.1, -0.7] as [number, number],
+  gecit: [-6.0, 2.05, 6.0], sefDurak: [[8.0, 0.4], [6.7, 0.4]] as [number, number][], komiDurak: [[3.6, -0.7], [1.9, -0.7]] as [number, number][],
+};
+const mutfakD = () => icDim(IC_BY_ID.mutfak).D;
+export const mutfakKoridor = () => { const D = mutfakD(); return { arka: -D / 2 + 1.5, on: D / 2 - 1.3 }; };
+/** istasyonun önünde aşçının durduğu nokta (u, v); şef pasosu arka koridordan */
+export function mutfakStand(id: string): [number, number] {
+  const y = MUTFAK_YER[id], k = mutfakKoridor(); if (!y) return [0, k.arka];
+  return [y.u, y.sira === 'on' ? k.on : k.arka];
+}
+/** istasyonun üstü (tabak görünümü), oda çerçevesinde (u, v) */
+export function mutfakUst(id: string): [number, number] {
+  const y = MUTFAK_YER[id], D = mutfakD(); if (!y) return [0, 0];
+  return [y.u, y.sira === 'on' ? D / 2 - 0.55 : y.sira === 'orta' ? 0.1 : -D / 2 + 0.55];
+}
+export const mutfakDunya = (uv: [number, number]) => icWorld(IC_BY_ID.mutfak, uv[0], uv[1]);
+/**
+ * Mutfak içi yürüyüş rotası (u, v noktaları): koridora çık, koridor boyunca git, gerekirse en kısa geçitten öbür koridora geç,
+ * hedefe in. Hazırlık tezgâhlarının (solid) içinden geçmez; kapı (v > ön koridor) ve şef durakları gibi ara noktalar dikine bağlanır.
+ */
+export function mutfakRota(from: [number, number], to: [number, number]): [number, number][] {
+  const k = mutfakKoridor(), near = (v: number, a: number) => Math.abs(v - a) < 0.3;
+  const aisleOf = (p: [number, number]) => (near(p[1], k.arka) ? k.arka : near(p[1], k.on) ? k.on : p[1] < (k.arka + k.on) / 2 - 0.4 ? k.arka : k.on);
+  const a0 = aisleOf(from), a1 = aisleOf(to), out: [number, number][] = [];
+  if (Math.abs(from[1] - a0) > 0.05) out.push([from[0], a0]);
+  if (a0 !== a1) {
+    let g = MUTFAK_NOKTA.gecit[0], best = 1e9;
+    for (const x of MUTFAK_NOKTA.gecit) { const c = Math.abs(from[0] - x) + Math.abs(x - to[0]); if (c < best) { best = c; g = x; } }
+    out.push([g, a0], [g, a1]);
+  }
+  out.push([to[0], a1]);
+  if (Math.abs(to[1] - a1) > 0.05) out.push([to[0], to[1]]);
+  return out;
+}
 const cache = new Map<string, IcItem[]>();
 /** Kitchen (door frame): cooking line on the back wall, prep line in front, pass at the right end; every station is `esya` = its id */
 function mutfakLayout(W: number, D: number): IcItem[] {
   const bv = -D / 2 + 0.55, fv = D / 2 - 0.55;
-  const st = (k: string, esya: string, u: number, w: number, v = bv, o: Partial<IcItem> = {}) => it(k, u, v, w, 0.9, { esya, ...o });
+  const st = (id: string) => { const y = MUTFAK_YER[id]; return it(y.k, y.u, y.sira === 'arka' ? bv : y.sira === 'on' ? fv : 0.1, y.w, 0.9, { esya: id }); };
+  void W;
   return [
-    st('sogukOda', 'soguk_oda', -8.1, 1.4), st('ocakK', 'ocak', -6.3, 1.6), st('ocakK', 'ocak2', -4.5, 1.6), st('izgaraK', 'izgara', -2.7, 1.6), st('izgaraK', 'izgara2', -0.9, 1.6),
-    st('fritoz', 'fritoz', 0.8, 1.2), st('tasFirin', 'tas_firin', 2.7, 1.8), st('doner', 'doner', 4.5, 1.1), st('tatliVitrin', 'tatli', 5.9, 1.2), st('pass', 'pass', 7.8, 2.0),
-    st('bulasik', 'bulasik', -7.2, 2.0, fv), st('salata', 'salata', -4.6, 1.6, fv), st('mezeDolap', 'meze', -2.6, 1.4, fv), st('cayBar', 'cay_bar', 6.5, 1.6, fv),
-    st('sefMasa', 'sef_masa', 0, 2.8, 0.1),
+    ...Object.keys(MUTFAK_YER).map(st),
     it('davlumbaz', -4.0, bv, 9.0, 1.0, { esya: 'ocak' }), it('asiliTava', -1.0, -D / 2 + 0.1, 16, 0.2), it('kds', 7.8, -D / 2 + 0.1, 1.9, 0.1),
     it('hazirlik', -3.4, 0.1, 2.4, 0.7, { solid: true }), it('hazirlik', 3.9, 0.1, 2.4, 0.7, { solid: true }),
   ];

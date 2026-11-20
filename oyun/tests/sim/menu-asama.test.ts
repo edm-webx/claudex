@@ -2,9 +2,9 @@
 import { describe, it, expect } from 'vitest';
 import { played } from './m1-helpers';
 import { restoranApi } from '../../src/game/sim/restoran';
-import { DISHES, DISH_BY_ID, acikYemekler, yeniYemekler, menuPano, istasyonAsama, tasiyiciOf } from '../../src/content/yemek-menu';
+import { DISHES, DISH_BY_ID, acikYemekler, yeniYemekler, menuPano, istasyonAsama, yemekMaliyet } from '../../src/content/yemek-menu';
 import { MUTFAK_ISTASYON } from '../../src/content/mutfak';
-import { PRODUCT_IDS, PRODUCTS } from '../../src/content/products';
+import { PRODUCTS } from '../../src/content/products';
 import { SALON, salonOf } from '../../src/game/sim/salon';
 import { YEMEK, MALIYET } from '../../src/content/ekonomi2';
 import { yemekAgirlik } from '../../src/content/yemek-menu';
@@ -15,13 +15,13 @@ describe('yemek kataloğu', () => {
     for (let s = 3; s <= 10; s++) expect(yeniYemekler(s).length, 'aşama ' + s).toBeGreaterThanOrEqual(2);
     expect(acikYemekler(10).length).toBeGreaterThanOrEqual(20);
   });
-  it('veri tutarlı: benzersiz id, geçerli istasyon, istasyon yemekten önce açılmış, fiyat ve taşıyıcı geçerli', () => {
+  it('veri tutarlı: benzersiz id, geçerli istasyon, istasyon yemekten önce açılmış, fiyat geçerli, taşıyıcı ürün köprüsü yok', () => {
     expect(new Set(DISHES.map(d => d.id)).size).toBe(DISHES.length);
     for (const d of DISHES) {
       expect(MUTFAK_ISTASYON.some(i => i.id === d.istasyon), d.id).toBe(true);
       expect(istasyonAsama(d), d.id).toBeLessThanOrEqual(d.asama);
       expect(d.fiyat).toBeGreaterThan(0); expect(d.hazirlik).toBeGreaterThan(0);
-      for (const p of d.tasiyici) expect(PRODUCT_IDS).toContain(p);
+      expect((d as unknown as Record<string, unknown>).tasiyici).toBeUndefined();
       expect(DISH_BY_ID[d.id]).toBe(d);
     }
     expect(DISHES.filter(d => d.kurs).every(d => d.asama === 10 && d.kurs![0] >= 4 && d.kurs![1] <= 6)).toBe(true);
@@ -50,7 +50,7 @@ describe('yemek kataloğu', () => {
       expect(adisyon, 'aşama ' + s).toBeGreaterThan(hedef * 0.2); expect(adisyon, 'aşama ' + s).toBeLessThan(hedef * (s < 6 ? 3 : 1.8));   // erken aşamalarda masa bileti zaten tezgâh fiyatlarıyla SALON'dan yüksek
     }
   });
-  it('birim maliyet taşıyıcı oranından gelir (stok yok)', () => { for (const d of DISHES) expect(MALIYET[d.tasiyici[0]]).toBeGreaterThan(0); });
+  it('birim maliyet yemek grubunun oranından gelir, tezgâh MALIYET bandında (stok yok)', () => { const lo = Math.min(...Object.values(MALIYET)), hi = Math.max(...Object.values(MALIYET)); for (const d of DISHES) { expect(yemekMaliyet(d)).toBeGreaterThanOrEqual(lo); expect(yemekMaliyet(d)).toBeLessThanOrEqual(hi); } });
 });
 
 function kur(stage: number) {
@@ -60,6 +60,7 @@ function kur(stage: number) {
   for (const k of ['cay', 'ayran', 'simit', 'tabure1', 'tabure2', 'masa1', 'gazoz', 'masa2', 'tost']) sim.command({ kind: 'force', what: 'unlock', value: k });
   sim.command({ kind: 'force', what: 'stage', value: stage });
   sim.state.workers.push({ id: 501, name: 'Nazlı', role: 'garson', xp: 0, morale: 70, traits: ['hamarat'] });
+  if (stage >= 3) for (let i = 0; i < Math.min(5, Math.max(1, stage - 4)); i++) sim.state.workers.push({ id: 510 + i, name: 'Aşçı' + i, role: 'asci', xp: 0, morale: 70, traits: ['hamarat'] });   // BUF-05: yemek mutfakta pişer
   return sim;
 }
 describe('masa bileti yemekleri', () => {
@@ -101,4 +102,3 @@ describe('masa bileti yemekleri', () => {
     expect(PRODUCTS.doner.base).toBe(160);
   });
 });
-void tasiyiciOf;
