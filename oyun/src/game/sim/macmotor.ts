@@ -185,7 +185,7 @@ export function createMatch(o: MatchOpts = {}) {
               let s = Math.min(nearestOpp(p, cx, cy), 5) * 0.5 + Math.min(laneClear(holder!, cx, cy), 3) * 1.1 + (cx - holder!.x) * dir * (p.role === 'FWD' ? 0.18 : 0.08) + xg(p, cx, cy) * 4 - Math.hypot(cx - tx, cy - ty) * 0.12;
               for (const q of mates) if (q !== p && !q.gk) s -= Math.max(0, 3.5 - Math.hypot(q.x - cx, q.y - cy)) * 0.5;
               if (Math.abs(cx - holder!.x) < 2.2 && Math.abs(cy - holder!.y) < 2.2) s -= 2;
-              if (k === 4) s += 0.4 + (prev > 0 ? 0 : 0);
+              if (k === 4) s += 0.4;
               if (s > best) { best = s; bx = cx; by = cy; }
             }
             tx = bx; ty = by;
@@ -201,7 +201,7 @@ export function createMatch(o: MatchOpts = {}) {
           if (p === press) {   // close down from the goal side, jockey when near
             const gd = len(og - hold.x, WD / 2 - hold.y), px = hold.x + (og - hold.x) / gd * 0.9, py = hold.y + (WD / 2 - hold.y) / gd * 0.9;
             const dd = Math.hypot(px - p.x, py - p.y); tx = px; ty = py; sp = dd > 3 ? 6.4 + p.sk.pace * 0.8 : 4.6;
-          } else if (p === cover) { tx = hold.x + (og - hold.x) * 0.45 + dir * 0, ty = hold.y + (WD / 2 - hold.y) * 0.45; sp = 5.6; }
+          } else if (p === cover) { tx = hold.x + (og - hold.x) * 0.45, ty = hold.y + (WD / 2 - hold.y) * 0.45; sp = 5.6; }
           else {
             let mk: Pl | null = null, md = 1e9; for (const o of free) if (!used.has(o)) { const d = Math.hypot(o.x - tx, o.y - ty); if (d < md) { md = d; mk = o; } }
             if (mk && md < 9) { used.add(mk); const gd = len(og - mk.x, WD / 2 - mk.y); tx = tx * 0.35 + (mk.x + (og - mk.x) / gd * 1.7) * 0.65; ty = ty * 0.35 + (mk.y + (WD / 2 - mk.y) / gd * 1.7) * 0.65; }

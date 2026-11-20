@@ -19,9 +19,9 @@ export function mantarlarOf(day: number): MantarItem[] {
     const r = hash(day * 97 + i * 13 + 1), rx = hash(day * 31 + i * 7 + 2), rz = hash(day * 53 + i * 11 + 3);
     let k = r * tot, m: typeof MANTARLAR[number] = MANTARLAR[0];
     for (const c of MANTARLAR) { if (k < c.w) { m = c; break; } k -= c.w; }
-    // under the trees along both edges of the clearing, away from the trail
+    // under the trees along both edges of the clearing, away from the trail; kuzey şerit walkZ('orman') sınırı (20) ve ağaçlardan içeride kalır
     const north = rz < 0.5;
-    out.push({ i, id: m.id, x: 806 + rx * 70, z: north ? 17.5 + hash(i + day) * 3.5 : -2.5 + hash(i * 3 + day) * 3.5 });
+    out.push({ i, id: m.id, x: 806 + rx * 70, z: north ? 16.5 + hash(i + day) * 2.5 : -2.5 + hash(i * 3 + day) * 3.5 });
   }
   return out;
 }

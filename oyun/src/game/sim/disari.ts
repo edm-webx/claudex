@@ -84,7 +84,7 @@ export function installDisari(K: Kernel, teleport: (x: number, z: number) => voi
   const rng = K.rng('sim.disari');
   const rt = K.rt as unknown as Record<string, unknown>;
   let bus: BusView | null = null;
-  // 17:24 user: Belgrad Ormanı stays a template for now (no bus there); the 42B serves the town from the büfe stop.
+  // 42B hattı büfe durağından hem kasabaya hem Belgrad Ormanına (REALMS.belgrad, durak 806,9) gider.
   // Boarding happens on the road at the bus's front door, not from the shelter.
   const atBusStop = (): RealmId | null => { const p = K.playerPos; const r = REALMS.find(r => Math.hypot(p.x - r.stop.x, p.z - r.stop.z) < 4.2); return r ? r.id : null; };
   // J1 Belgrad dönüş fix: the door follows the bus (it was pinned to the büfe stop, so nobody could board in the forest)
