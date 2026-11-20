@@ -8,27 +8,27 @@
  */
 import type { System, SimCtx, Vec2 } from '../../../engine/api';
 import { IC_BY_ID, icWorld, icDim, icLayout } from '../../../content/ic-mekan';
-import { KAFE_ISCI_TAVAN, ARSA_ISLETME } from '../../../content/esya';
+import { KAFE_ISCI_TAVAN, ARSA_ISLETME, kafeMenu } from '../../../content/esya';
+import { kalemOf, ISTASYON_LAYOUT_K, ISTASYON_SIRA, type IstasyonId } from '../../../content/isletme-istasyon';
 import { ISLETME_ROL } from '../../../content/isletme-kadro';
 import type { AgentEnv } from './env';
 import type { Actor } from './types';
 
 interface KafeHostApi {
   live: boolean; fp: boolean; pending: Record<string, number>; fpDone?: (arsa: string, ok: boolean) => void;
-  info(id: string): { lv: number; isci: number; kadro: { id: number; ad: string; rol: string; huy: string; look: { apronText: string; lookSeed: number; headscarf?: string }; rank: number }[]; tema: string; fiyat: number; menu: string[] } | null;
-  sell(id: string, bonus?: number): number;
+  info(id: string): { lv: number; isci: number; kadro: { id: number; ad: string; rol: string; huy: string; look: { apronText: string; lookSeed: number; headscarf?: string }; rank: number }[]; tema: string; fiyat: number; menu: { id: string; ad: string; ikon: string }[] } | null;
+  sell(id: string, kalem?: string, bonus?: number): number;
 }
 const ROOMS: { arsa: string; room: string; bistro: boolean }[] = [{ arsa: 'k1', room: 'kafe1', bistro: false }, { arsa: 'k2', room: 'kafe2', bistro: true }, { arsa: 'k4', room: 'okul', bistro: false }, { arsa: 'k5', room: 'avm', bistro: false }, { arsa: 'k6', room: 'tesis', bistro: false }, { arsa: 'k3', room: 'kirtasiye', bistro: false }];
 const PAT = 45, LOOKS = ['universiteli', 'teyze', 'emekli', 'plaza', 'turgrubu', 'gezgin', 'balayi', 'taraftar'];
-const LINES_IN = ['Selam, bir şey alabilir miyim?', 'Kahve kokusu buraya kadar geldi.', 'Bugün de geldik!', 'Boş masa var mı?'];
 const LINES_OUT = ['Eline sağlık!', 'Çok güzel olmuş.', 'Yine geleceğiz!', 'Tam kıvamında.'];
 const LINES_ANGRY = ['Çok bekledim, gidiyorum!', 'Kimse yok mu?', 'Bu kadar beklenmez.'];
 
 interface Guest { a: Actor; st: 'in' | 'queue' | 'served' | 'toSeat' | 'sit' | 'out'; t: number; path: Vec2[]; slot: number; claimed: number; seat: Vec2 | null; tbl: number; face: number; want: string }
-interface Wk { a: Actor; cid: number; idx: number; st: 'post' | 'brew' | 'hand'; t: number; guest: Guest | null; path: Vec2[] }
+interface Wk { a: Actor; cid: number; idx: number; st: 'post' | 'toSt' | 'brew' | 'hand'; t: number; guest: Guest | null; path: Vec2[]; item: string }
 interface Room { arsa: string; room: string; bistro: boolean; guests: Guest[]; wk: Wk[]; seatTaken: Set<number> }
 
-export interface KafeSystem extends System { rooms(): { room: string; guests: number; waiting: number; workers: number }[] }
+export interface KafeSystem extends System { rooms(): { room: string; guests: number; waiting: number; workers: number; siparisler: string[] }[]; siparisOf(room: string): string[] }
 
 export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSystem {
   const rng = env.rng('kafe');
@@ -54,12 +54,28 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
   };
   const follow = (a: Actor, path: Vec2[], sp: number, dt: number) => { if (!path.length) return true; if (step1(a, path[0], sp, dt)) path.shift(); a.act = 'walk'; return !path.length; };
 
+  /** what the next guest asks for: an item of this business's own menu (the level decides how many are on it), cheap ones more often */
+  const menuOf = (r: Room) => { const info = host()?.info(r.arsa); return info ? kafeMenu(r.arsa, info.lv) : []; };
+  function pickWant(r: Room): string {
+    const menu = menuOf(r); if (!menu.length) return '';
+    const w = menu.map(m => (m.fiyat > 150 ? 0.5 : m.fiyat < 20 ? 1.5 : 1)); let x = rng.next() * w.reduce((a, b) => a + b, 0);
+    for (let i = 0; i < menu.length; i++) { x -= w[i]; if (x <= 0) return menu[i].id; }
+    return menu[0].id;
+  }
+  const kalemAd = (r: Room, id: string) => (menuOf(r).find(m => m.id === id)?.ad || '').toLocaleLowerCase('tr');
+  /** where a worker stands to make an item: the matching equipment's spot along the counter (staff side), else a fixed slot per station */
+  function istasyonNoktasi(r: Room, ist: IstasyonId, idx: number): Vec2 {
+    const g = geom(r), lay = icLayout(g.m), hit = lay.find(i => ISTASYON_LAYOUT_K[ist].includes(i.k));
+    const lo = g.cu + 0.2, hi = g.endU - 0.6;
+    const a = hit && ist !== 'tezgah' && ist !== 'raf' ? (g.vert ? hit.v : hit.u) : lo + ((ISTASYON_SIRA.indexOf(ist) * 0.9) % Math.max(0.9, hi - lo));
+    return g.P(Math.max(lo, Math.min(hi, a + idx * 0.35)), -0.7);
+  }
   function spawnGuest(r: Room) {
     const g = geom(r), seed = Math.floor(rng.next() * 1e6), look = LOOKS[Math.floor(rng.next() * LOOKS.length)];
     const a = env.reg.add('regular', 'kafe-' + r.room + '-' + seed, { kind: 'regular', look: { lookType: look, lookSeed: seed }, seed }, g.door, { name: '' });
     const slot = r.guests.filter(x => x.st === 'queue' || x.st === 'in').length;
-    r.guests.push({ a, st: 'in', t: 0, path: approach(r, slot), slot, claimed: 0, seat: null, tbl: -1, face: 0, want: '' });
-    if (rng.chance(0.4)) { a.say = LINES_IN[Math.floor(rng.next() * LINES_IN.length)]; a.sayT = 2.5; }
+    const want = pickWant(r);
+    r.guests.push({ a, st: 'in', t: 0, path: approach(r, slot), slot, claimed: 0, seat: null, tbl: -1, face: 0, want });
   }
   function leave(r: Room, gu: Guest, angry: boolean) {
     const g = geom(r); gu.st = 'out'; gu.t = 0; gu.claimed = 0; gu.path = [g.inside, g.door]; gu.a.mood = angry ? 'impatient' : 'happy';
@@ -68,7 +84,7 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
   }
   function served(r: Room, gu: Guest, by: 'player' | 'worker') {
     const h = host(); if (!h) return 0;
-    const v = h.sell(r.arsa, by === 'player' ? 1.15 : 1); if (!v) { leave(r, gu, true); return 0; }
+    const v = h.sell(r.arsa, gu.want, by === 'player' ? 1.15 : 1); if (!v) { leave(r, gu, true); return 0; }
     const g = geom(r);
     const free = g.tables.map((_, i) => i).filter(i => !r.seatTaken.has(i));
     if (free.length && rng.chance(0.55)) {
@@ -96,7 +112,7 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
       if (r.wk.some(w => w.cid === c.id)) return;
       const g = geom(r), idx = r.wk.length, role = c.rol === 'barista' || c.rol === 'garson' || c.rol === 'kasiyer' || c.rol === 'asci' ? c.rol : (ISLETME_ROL[ARSA_ISLETME[r.arsa]].find(x => x.rol === c.rol)?.gorunum || 'garson');
       const a = env.reg.add('worker', 'kafe-' + r.room + '-' + c.id, { kind: 'worker', role, look: c.look, seed: (c.id * 977) % 10007 }, g.w(0, g.D / 2 + 0.6), { role, name: c.ad, rank: c.rank, trait: c.huy });
-      r.wk.push({ a, cid: c.id, idx, st: 'post', t: 0, guest: null, path: [g.inside, g.P(g.endU, 1.4), g.P(g.endU, -0.7), g.P(g.cu + (g.vert ? 0.6 : 1.5) + idx * (g.vert ? 0.5 : 1.4), -0.7)] });
+      r.wk.push({ a, cid: c.id, idx, st: 'post', t: 0, guest: null, path: [g.inside, g.P(g.endU, 1.4), g.P(g.endU, -0.7), g.P(g.cu + (g.vert ? 0.6 : 1.5) + idx * (g.vert ? 0.5 : 1.4), -0.7)], item: '' });
     });
     r.wk.forEach((w, i) => { w.idx = i; });   // posts stay packed after somebody leaves
   }
@@ -112,7 +128,7 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
     // guests
     for (let i = r.guests.length - 1; i >= 0; i--) {
       const gu = r.guests[i], a = gu.a; gu.t += dt;
-      if (gu.st === 'in') { if (follow(a, gu.path, 1.5, dt)) { gu.st = 'queue'; gu.t = 0; a.act = 'idle'; a.speed = 0; a.rot = Math.PI * 0 + geomYaw(r); } }
+      if (gu.st === 'in') { if (follow(a, gu.path, 1.5, dt)) { gu.st = 'queue'; gu.t = 0; a.act = 'idle'; a.speed = 0; a.rot = Math.PI * 0 + geomYaw(r); if (gu.want && (waiting(r).indexOf(gu) < 2 || rng.chance(0.4))) { a.say = 'Bir ' + kalemAd(r, gu.want) + ' alabilir miyim?'; a.sayT = 3; } } }
       else if (gu.st === 'queue') {
         const ahead = waiting(r).indexOf(gu); const tp = slotPos(r, ahead < 0 ? gu.slot : ahead);
         if (Math.hypot(tp.x - a.x, tp.z - a.z) > 0.08) step1(a, tp, 1.4, dt), a.act = 'walk'; else { a.act = 'idle'; a.speed = 0; a.rot = geomYaw(r); }
@@ -122,26 +138,30 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
       else if (gu.st === 'sit') { a.act = 'sit'; a.rot = gu.face; if (gu.t > 14 + (gu.slot % 3) * 3) { a.act = 'idle'; leave(r, gu, false); } }
       else if (gu.st === 'out') { if (follow(a, gu.path, 1.6, dt)) { env.reg.remove(a); r.guests.splice(i, 1); } }
     }
-    // workers: take the oldest unclaimed waiting guest, brew at the machine, hand over
-    const brew = 3.0 / (1 + 0.12 * info.lv);
+    // workers: take the oldest unclaimed waiting guest, walk to the station of what that guest asked for, make it (its own time), carry it over
     for (const w of r.wk) {
       const a = w.a; w.t += dt;
       if (w.st === 'post') {
         if (w.path.length) { follow(a, w.path, 1.9, dt); continue; }
         const p = postOf(r, w.idx); if (Math.hypot(p.x - a.x, p.z - a.z) > 0.1) { step1(a, p, 1.6, dt); a.act = 'walk'; continue; }
-        a.act = 'idle'; a.speed = 0; a.rot = geomYaw(r) + Math.PI;
+        a.act = 'idle'; a.speed = 0; a.rot = geomYaw(r) + Math.PI; a.carry = [];
         const gu = waiting(r).find(x => !x.claimed);
-        if (gu && !(h.fp && r.arsa === 'k3')) { gu.claimed = w.a.id; w.guest = gu; w.st = 'brew'; w.t = 0; }
+        if (gu && !(h.fp && r.arsa === 'k3')) { gu.claimed = w.a.id; w.guest = gu; w.item = gu.want; w.st = 'toSt'; w.t = 0; }
+      } else if (w.st === 'toSt') {
+        if (!w.guest || w.guest.st !== 'queue') { w.guest = null; w.st = 'post'; continue; }
+        const kal = kalemOf(w.item), mp = istasyonNoktasi(r, kal.ist, w.idx);
+        if (Math.hypot(mp.x - a.x, mp.z - a.z) > 0.1) { step1(a, mp, 1.8, dt); a.act = 'walk'; continue; }
+        a.speed = 0; a.rot = geomYaw(r) + Math.PI; w.st = 'brew'; w.t = 0;
       } else if (w.st === 'brew') {
-        const g = geom(r), mp = g.P(g.cu + (g.vert ? 0.2 : 0.2) + w.idx * 0.5, -0.7);
-        if (Math.hypot(mp.x - a.x, mp.z - a.z) > 0.1) { step1(a, mp, 1.8, dt); a.act = 'walk'; w.t = 0; continue; }
-        a.act = 'pour'; a.speed = 0; if (w.t >= brew) { w.st = 'hand'; w.t = 0; }
-        if (!w.guest || w.guest.st !== 'queue') { w.guest = null; w.st = 'post'; }
+        const kal = kalemOf(w.item); a.speed = 0;
+        a.act = kal.ist === 'ocak' || kal.ist === 'izgara' || kal.ist === 'firin' || kal.ist === 'kopya' ? 'cut' : 'pour';
+        if (!w.guest || w.guest.st !== 'queue') { w.guest = null; w.st = 'post'; a.act = 'idle'; continue; }
+        if (w.t >= kal.sure / (1 + 0.12 * info.lv)) { w.st = 'hand'; w.t = 0; a.carry = [{ type: 'urun:' + w.item, tier: 1 } as never]; }
       } else if (w.st === 'hand') {
-        const gu = w.guest; if (!gu || gu.st !== 'queue') { w.guest = null; w.st = 'post'; continue; }
+        const gu = w.guest; if (!gu || gu.st !== 'queue') { w.guest = null; w.st = 'post'; a.carry = []; continue; }
         const g = geom(r), tp = g.P(slotU(g, waiting(r).indexOf(gu)), -0.7);
-        if (Math.hypot(tp.x - a.x, tp.z - a.z) > 0.1) { step1(a, tp, 1.8, dt); a.act = 'carry'; a.carry = [{ type: 'cay', tier: 1 } as never]; continue; }
-        a.act = 'idle'; a.carry = []; if (w.t > 0.9) { served(r, gu, 'worker'); w.guest = null; w.st = 'post'; a.say = 'Buyurun!'; a.sayT = 1.6; }
+        if (Math.hypot(tp.x - a.x, tp.z - a.z) > 0.1) { step1(a, tp, 1.8, dt); a.act = 'carry'; continue; }
+        a.act = 'idle'; if (w.t > 0.9) { a.carry = []; served(r, gu, 'worker'); w.guest = null; w.st = 'post'; a.say = 'Buyurun!'; a.sayT = 1.6; }
       }
     }
   }
@@ -156,13 +176,14 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
         canAct: () => !!host()?.info(r.arsa) && waiting(r).length > 0,
         act: () => {
           const gu = waiting(r).find(x => !x.claimed) || waiting(r)[0]; if (!gu) return 'done';
-          const v = served(r, gu, 'player'); if (v) env.host.heroSay('Buyurun! +' + Math.round(v) + ' ₺ kasaya', 1.6);   // player feedback (the money lands in the till, collected from the cash register)
+          const ad = kalemAd(r, gu.want), v = served(r, gu, 'player'); if (v) env.host.heroSay('Buyurun! ' + (ad ? ad.charAt(0).toLocaleUpperCase('tr') + ad.slice(1) + ' ' : '') + '+' + Math.round(v) + ' ₺ kasaya', 1.6);   // player feedback (the money lands in the till, collected from the cash register)
           return waiting(r).length ? 'continue' : 'done';
         },
       });
     };
     reg();
   }
+  const siparis = (r: Room) => waiting(r).slice(0, 4).map(gu => menuOf(r).find(m => m.id === gu.want)?.ad || '');
   let on = false;
   return {
     id: 'kafe', order: 47, phase: 'sim',
@@ -174,6 +195,7 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
       }
       for (const r of rooms) tickRoom(r, Math.min(ctx.dt, 0.25));
     },
-    rooms: () => rooms.map(r => ({ room: r.room, guests: r.guests.length, waiting: waiting(r).length, workers: r.wk.length })),
+    rooms: () => rooms.map(r => ({ room: r.room, guests: r.guests.length, waiting: waiting(r).length, workers: r.wk.length, siparisler: siparis(r) })),
+    siparisOf: (room: string) => { const r = rooms.find(x => x.room === room); return r ? siparis(r) : []; },
   };
 }

@@ -24,6 +24,7 @@ import { ugY, onUg } from '../../../content/ustgecit';
 import * as T from 'three';
 import { CH } from './v2/chars-v2';
 import * as K from './v2/kit';
+import { makeUrunModel } from './urun-model';
 import type {
   Chars, CharsDeps, CharLook, HeroHandle, CrowdView, AnimalOpts, AnimLayerInput, ExprId, BrowId, Vec2, Vec3, SoAStore, Animator, GaitId, ActId,
 } from '../../../engine/api';
@@ -73,6 +74,7 @@ export function createChars(deps: CharsDeps): MotorChars {
   const handles = new Set<MotorHero>();
 
   function itemMesh(id: string): T.Object3D {
+    if (id.startsWith('urun:')) return makeUrunModel(id.slice(5));   // DKN-05: far-shore business items
     const o = itemFactory ? itemFactory(id) : null;
     if (o) return o;
     const L = ITEM_LOOK[id] || { color: '#e8e2d4', h: 0.12 };

@@ -169,11 +169,11 @@ export function installMulk(K: Kernel) {
   /** Per-unit price, cost and customer multiplier of a shop; cafés use their own menu and equipment (2026-11-08). */
   function ekon(ar: Arsa, p: Plot) {
     const t = DUKKAN_BY_ID[p.tip];
-    if (!ar.sabit) return { fiyat: t.fiyat, musK: 1, menu: [] as ReturnType<typeof kafeMenu> };
+    if (!ar.sabit) return { fiyat: t.fiyat, fK: 1, musK: 1, menu: [] as ReturnType<typeof kafeMenu> };
     const menu = kafeMenu(ar.id, p.lv), avg = () => menu.reduce((s, m) => s + m.fiyat, 0) / Math.max(1, menu.length);
     let fK = 1, mK = 1 + 0.08 * Math.max(0, menu.length - 2);
     for (const e of p.esya || []) { const d = isletmeEsya(ar.id, e); if (d) { fK += d.fiyatK || 0; mK += d.musteri || 0; } }
-    return { fiyat: avg() * fK, musK: mK * isletmeOf(ar.id).mus, menu };
+    return { fiyat: avg() * fK, fK, musK: mK * isletmeOf(ar.id).mus, menu };
   }
   const isciMaxOf = (ar: Arsa, p: Plot | undefined) => (ar.sabit && p ? kafeIsciMax(p.lv) : ISCI_MAX);
   /** named staff of a far-shore business (DKN-03). Old saves only had a head count: the same crew is rebuilt from (seed, id). Plot.isci always equals kadro.length. */
@@ -300,8 +300,14 @@ export function installMulk(K: Kernel) {
   /** the café room sim (agents/kafe.ts) pulls its numbers from here and sells through here */
   const kafeHost = {
     live: false, fp: false, pending: {} as Record<string, number>, fpDone: undefined as ((arsa: string, ok: boolean) => void) | undefined,
-    info(id: string) { const q = plotOf(id); if (!q || !q.p || !q.a.sabit) return null; const ek = ekon(q.a, q.p); return { lv: q.p.lv, isci: flo(q.p.isci), kadro: kadroOf(q.a, q.p).map(c => ({ id: c.id, ad: c.ad, rol: c.rol, huy: c.huy, look: c.look, rank: 0 })), tema: q.p.tema || '', fiyat: ek.fiyat * (1 + q.p.lv * 0.04), menu: ek.menu.map(x => x.ad) }; },
-    sell(id: string, bonus = 1): number { const q = plotOf(id); if (!q || !q.p) return 0; const ek = ekon(q.a, q.p); const v = Math.max(1, Math.round(ek.fiyat * (1 + q.p.lv * 0.04) * bonus)); q.p.sat += 1; q.p.till += v; K.addXP(1); K.stat('kafeSatis'); return v; },
+    info(id: string) { const q = plotOf(id); if (!q || !q.p || !q.a.sabit) return null; const ek = ekon(q.a, q.p); return { lv: q.p.lv, isci: flo(q.p.isci), kadro: kadroOf(q.a, q.p).map(c => ({ id: c.id, ad: c.ad, rol: c.rol, huy: c.huy, look: c.look, rank: 0 })), tema: q.p.tema || '', fiyat: ek.fiyat * (1 + q.p.lv * 0.04), menu: ek.menu.map(x => ({ id: x.id, ad: x.ad, ikon: x.ikon })) }; },
+    /** kalem = the menu item that was served (price = its own price x level x equipment); without it the menu average is used */
+    sell(id: string, kalem = '', bonus = 1): number {
+      const q = plotOf(id); if (!q || !q.p) return 0; const ek = ekon(q.a, q.p), it = kalem ? ek.menu.find(m => m.id === kalem) : undefined;
+      const v = Math.max(1, Math.round((it ? it.fiyat * ek.fK : ek.fiyat) * (1 + q.p.lv * 0.04) * bonus)); q.p.sat += 1; q.p.till += v;
+      if (it) { const sold = ((S.today as unknown as { sold?: Record<string, number> }).sold ||= {}); sold['k:' + it.id] = (sold['k:' + it.id] || 0) + 1; }
+      K.addXP(1); K.stat('kafeSatis'); return v;
+    },
   };
   (rt as Record<string, unknown>).kafeHost = kafeHost;
   const plotOf = (id: string): { a: Arsa; p: Plot | undefined } | null => { const a = ARSALAR.find(x => x.id === id); return a ? { a, p: arsa().plots[id] } : null; };
