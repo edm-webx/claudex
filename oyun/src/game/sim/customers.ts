@@ -31,7 +31,7 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
   const rt = K.rt, S = K.state;
   const rng = K.R.main;
   let seq = 1;
-  const restoranHook = () => (rt as unknown as { restoran?: { wantMasa(): boolean; impulse(c: Customer): void } }).restoran;
+  const restoranHook = () => (rt as unknown as { restoran?: { wantMasa(): boolean } }).restoran;
   const spawns: Vec2[] = (() => {
     const a = (K.content.zones?.iskele?.anchors) ?? ISKELE_ZONE.anchors;
     const l: Vec2[] = [];
@@ -192,7 +192,6 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
     const items = c.items.slice();
     const value = settle(c, items);
     c.value = value;
-    restoranHook()?.impulse(c); // Faz 2: midye / ıslak burger... stands
     if (rng.chance(0.08)) { // Faz 2: customers comment rarely (owner: just show the order)
       const lines = LINES.type[c.typeId as keyof typeof LINES.type];
       say(c, rng.pick(lines && rng.chance(0.4) ? lines : LINES.happy), 2);

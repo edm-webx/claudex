@@ -493,7 +493,7 @@ U.confirm = function (o) {
 /* ---------- sheet panels ---------- */
 let sheet = null, sheetActs = {}, sheetModel = {}, sheetClose = null;
 const PANELS = {
-  isciler: { t: 'Ekip', s: 'İşçiler, rütbeler ve keyifler', ic: 'people', acc: 'var(--blue)' },
+  isciler: { t: 'Ekip', s: 'İşçiler ve rütbeler', ic: 'people', acc: 'var(--blue)' },
   menu: { t: 'Menü', s: 'Ürün kademeleri ve fiyatlar', ic: 'menu', acc: 'var(--red)' },
   dekor: { t: 'Dekor', s: 'Büfeni güzelleştir', ic: 'dekor', acc: 'var(--tile)' },
   gorevler: { t: 'Görevler', s: 'Sipariş Panosu ve başarımlar', ic: 'gorev', acc: 'var(--tea)' },
@@ -608,11 +608,6 @@ const pips = (n, of) => { let s = '<span class="sb-pips">'; for (let i = 0; i < 
 const meter = (p, color, cls) => `<div class="sb-meter ${cls || ''}"><i style="width:${(clamp(p, 0, 1) * 100).toFixed(1)}%;${color ? 'background:' + color : ''}"></i></div>`;
 
 const RANKS = ['Çırak', 'Acemi', 'Kalfa', 'Deneyimli', 'Usta', 'Kıdemli Usta', 'Başusta', 'Uzman', 'Usta Şef', 'Efsane'];
-const MOODS = [['Küs', '#e63946'], ['Küskün', '#d9822b'], ['Normal', '#ebc07a'], ['Keyifli', '#8daa5b'], ['Coşkulu', '#49b96a']];
-const moodFace = i => {
-  const m = ['M17 33q7-6 14 0', 'M17 32q7-3 14 0', 'M17 31h14', 'M17 29q7 5 14 0', 'M15 28q9 9 18 0'][i];
-  return svg(`<circle cx="24" cy="24" r="19" fill="${MOODS[i][1]}" ${K}/><circle cx="18" cy="20" r="2.4" fill="${INK}"/><circle cx="30" cy="20" r="2.4" fill="${INK}"/><path d="${m}" fill="${i === 4 ? '#fff' : 'none'}" ${K}/>`);
-};
 function traitParts(t) {
   if (!t) return { name: '', effect: '', flaw: '', line: '' };
   if (typeof t === 'string') return { name: t, effect: '', flaw: '', line: '' };
@@ -629,7 +624,6 @@ function renderIsciler(m, A) {
   ws.forEach(w => {
     let ri = RANKS.indexOf(w.rankLabel); if (ri < 0) ri = clamp(num(w.rank) ? Math.round(w.rank) : 0, 0, 9);
     const t = traitParts(w.trait);
-    const mo = num(w.morale) ? clamp(w.morale, 0, 1) : 0.7, mi = clamp(Math.floor(mo * 5), 0, 4);
     s += `<div class="sb-card sb-wk">
       ${porTag(w.look || ('w' + w.id + w.name), 68, { bg: '#bfe6e9', eyes: 'open' })}
       <div class="sb-grow"><h3>${esc(w.name)} <span class="sb-chip">${I(ROLE_ICON(w.role || w.roleLabel))}${esc(w.roleLabel || '')}</span></h3>
@@ -637,7 +631,7 @@ function renderIsciler(m, A) {
         ${t.name ? `<div class="sb-trait"><b>${esc(t.name)}</b>${t.effect ? ': ' + esc(t.effect) : ''}</div>` : ''}
       </div>
       <div class="wb"><span class="sb-muted">${w.wage != null ? 'Maaş payı: <b>' + esc(wageTxt(w.wage)) + '</b>' : ''}${w.station ? '<br>İstasyon: <b>' + esc(w.station) + '</b>' : ''}</span>
-        ${A.train ? btn('Kurs', 'train', w.id, 'blue sm', null, { icon: 'karne' }) : ''}${A.tasi ? btn('Taşı', 'tasi', w.id, 'cream sm') : ''}${A.pencere && num(m.pencere) && m.pencere >= 0 ? btn(m.pencere === w.id ? 'Pencerede ✓' : 'Pencereye', 'pencere', w.id, m.pencere === w.id ? 'green sm' : 'cream sm', null, { icon: 'ferry' }) : ''}${A.fire ? btn('Çıkar', 'fire', w.id, 'cream sm') : ''}</div>
+        ${A.train ? btn('Kurs', 'train', w.id, 'blue sm', null, { icon: 'karne' }) : ''}${A.pencere && num(m.pencere) && m.pencere >= 0 ? btn(m.pencere === w.id ? 'Pencerede ✓' : 'Pencereye', 'pencere', w.id, m.pencere === w.id ? 'green sm' : 'cream sm', null, { icon: 'ferry' }) : ''}${A.fire ? btn('Çıkar', 'fire', w.id, 'cream sm') : ''}</div>
     </div>`;
   });
   if (A.board) s += btn('Yeni işçi bul', 'board', null, 'wide', null, { icon: 'newspaper' });

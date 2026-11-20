@@ -192,7 +192,7 @@ export function createRules(d: RulesDeps): RulesFull {
   const disariM = installDisari(K, (x, z) => d.walk.teleport(x, z)); // Martıköy haritası, mahalleler, dolmuş, buluntular (disari.ts)
   const denizM = installDeniz(K, cu as never); // deniz canlıları, tekneler, güverte koşusu, iskele büyümesi (deniz.ts)
   const hikayeM = installHikaye(K); // hikaye bölümleri, rakipler, karakterli öğreticiler (hikaye.ts)
-  const calisanM = installCalisan(K); // Kurs Merkezi, Dinlenme Bankı, ekip etkinlikleri, Ayın Elemanı (calisan.ts)
+  const calisanM = installCalisan(K); // Kurs Merkezi, bekleyenler (calisan.ts)
 
   K.onLayout = () => {
     rt.layout = stageLayout(S.stage);
@@ -222,7 +222,6 @@ export function createRules(d: RulesDeps): RulesFull {
     K.refreshSiklik();
     if (S.pile > 0) { mo.addMoneyTo(rt.kasa, S.pile); S.pile = 0; }
     if (S.playT > 0) S.tut.firstCustomer = 1;
-    S.workers.forEach(w => { if (w.morale == null) w.morale = P.MORALE_START; });
     K.syncOrders(); K.syncPads();
     rt.started = !!S.hero && S.playT > 0 ? rt.started : rt.started;
   }

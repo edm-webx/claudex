@@ -34,8 +34,6 @@ export const GOAL_DONE_LINES = ['Hedef tamam', 'Oldu bu iş', 'Helal olsun', 'T�
 /** Coins (tips + müdavim bozuklukları) to fill the jar: base + per stage. */
 export const JAR_BASE = 8;
 export const JAR_PER_STAGE = 2;
-/** Morale points every worker gets when the jar fills (morale drives speed via moraleFactor). */
-export const JAR_MORALE = 12;
 /** How long the jar sparkles in the world after it fills (sim seconds). */
 export const JAR_SPARKLE_S = 90;
 export const JAR_FULL_LINES = [

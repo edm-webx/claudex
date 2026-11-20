@@ -39,7 +39,7 @@ export interface Customer {
   calm: boolean; follower: boolean; tag: string | null;
   qi: number;
   /** musteri.ts (runtime only): special request line + its product, tourist flag, heart timer after a happy serve */
-  req?: string; reqP?: ProductId; tourist?: boolean; heartT?: number;
+  tourist?: boolean; heartT?: number;
 }
 
 export interface StationRt { built: boolean; out: Item[]; grabT: number; /** sim time of the last worker operate() */ opT: number; /** worker id -> progress 0..1 */ prog: Record<number, number>; }

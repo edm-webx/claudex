@@ -73,7 +73,7 @@ export function createPanels(deps: PanelsDeps): Panels {
     if (id === 'isciler') out.board = () => send({ kind: 'openJobBoard' });
     if (id === 'menu') out.yy = a => { send({ kind: 'yiyecek', arg: String(a ?? '') } as Cmd); setTimeout(() => { if (rt().panel === 'menu') renderPanel('menu'); }, 0); }; // yiyecek tabs (yiyecek-panel.ts)
     if (id === 'koleksiyon') for (const k of Object.keys(out)) { const f = out[k]; out[k] = a => { f(a); setTimeout(() => { if (rt().panel === 'koleksiyon') renderPanel('koleksiyon'); }, 0); }; } // instant re-render (koleksiyon-panel.ts)
-    if (id === 'isciler') for (const k of Object.keys(out)) if (k === 'train' || k === 'tasi' || /^c[A-Z]/.test(k)) { const f = out[k]; out[k] = a => { f(a); setTimeout(() => { if (rt().panel === 'isciler') renderPanel('isciler'); }, 0); }; } // instant re-render (calisan-panel.ts)
+    if (id === 'isciler') for (const k of Object.keys(out)) if (k === 'train' || /^c[A-Z]/.test(k)) { const f = out[k]; out[k] = a => { f(a); setTimeout(() => { if (rt().panel === 'isciler') renderPanel('isciler'); }, 0); }; } // instant re-render (calisan-panel.ts)
     if (id === 'hikaye' && out.hkTab) { const f = out.hkTab; out.hkTab = a => { f(a); setTimeout(() => { if (rt().panel === 'hikaye') renderPanel('hikaye'); }, 0); }; } // instant tab switch (hikaye-panel.ts)
     return out;
   }

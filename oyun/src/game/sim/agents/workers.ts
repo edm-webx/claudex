@@ -8,25 +8,25 @@
  */
 import type { System, SimCtx, Vec2 } from '../../../engine/api';
 import type { WorkerSave, GameState, ProductId } from '../schema';
-import { ROLES, RANKS, rankOf, moraleFactor, MORALE_START } from '../../../content/ranks';
+import { ROLES, RANKS, rankOf } from '../../../content/ranks';
 import { LINES } from '../../../content/lines';
 import type { Actor, CarryItem } from './types';
 import { Walker, near2, side } from './move';
-import { traitFx, traitId, workerSpeed, moraleOf } from './traits';
+import { traitFx, traitId, workerSpeed } from './traits';
 import type { AgentEnv } from './env';
 import { zeminSave } from '../zemin';
 import { IC_BY_ID, icWorld, icDim } from '../../../content/ic-mekan';
 
 interface WRt {
   w: WorkerSave; a: Actor; wk: Walker; st: ProductId | null;
-  state: string; t: number; boostT: number; boostX: number; made: number; nearT: number; moraleCd: number; pauseT: number; workT: number;
+  state: string; t: number; boostT: number; boostX: number; made: number; pauseT: number;
   job: { index: number } | null; loadT: number; nextSleep: number; selfieNext: number; songNext: number; chatNext: number; sleepFor: number; selfieFor: number;
   jobKey: string;
 }
 
 export interface WorkersSystem extends System {
   /** Live runtime rows for state views / tests. */
-  rows(): { id: number; name: string; role: string; state: string; x: number; z: number; rank: number; morale: number }[];
+  rows(): { id: number; name: string; role: string; state: string; x: number; z: number; rank: number }[];
   /** Fraction the queue's patience drains slower near (x,z): Geveze / Güler yüzlü / Türkü. */
   aura(x: number, z: number): number;
   /** Rank check after external xp changes (training). */
@@ -76,7 +76,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
     const a = reg.add('worker', String(w.id), { kind: 'worker', role: w.role, look: rolGorunumu((w as { look?: Record<string, unknown> }).look), seed }, start,
       { role: w.role, trait: traitId(w), name: w.name, rank: rankOf(w.xp || 0), rarity: w.rarity });
     const rt: WRt = {
-      w, a, wk: new Walker(a, env.nav), st, state: 'arrive', t: 0, boostT: 0, boostX: 1, made: 0, nearT: 0, moraleCd: 30, pauseT: 0, workT: 0,
+      w, a, wk: new Walker(a, env.nav), st, state: 'arrive', t: 0, boostT: 0, boostX: 1, made: 0, pauseT: 0,
       job: null, loadT: 0, nextSleep: 0, selfieNext: S.playT + 100, songNext: S.playT + 70, chatNext: S.playT + 25, sleepFor: 0, selfieFor: 0, jobKey: '',
     };
     const fx = traitFx(w);
@@ -100,7 +100,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
   function checkRank(rt: WRt) {
     const w = rt.w, r = rankOf(w.xp || 0);
     if (r > Number(w.rank || 0)) {
-      w.rank = r; w.morale = Math.min(100, moraleOf(w) + 8);
+      w.rank = r;
       rt.a.info.rank = r;
       say(rt, LINES.workers.rankUp[r - 1] || 'Terfi!', 3);
       host.toast(w.name + ' artık ' + RANKS[r].name + '!', 'good');
@@ -165,7 +165,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
   }
   function garsonWork(rt: WRt, S: GameState, dt: number) {
     const fx = traitFx(rt.w), a = rt.a;
-    const speed = 2.6 * (1 + (fx.walk || 0)) * moraleFactor(moraleOf(rt.w)) * (rt.boostT > 0 ? rt.boostX : 1);
+    const speed = 2.6 * (1 + (fx.walk || 0)) * (rt.boostT > 0 ? rt.boostX : 1);
     const cap = (ROLES.garson.carry || 4) + (fx.carry || 0);
     a.act = rt.a.carry.length ? 'carry' : 'idle';
     switch (rt.state) {
@@ -252,7 +252,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
   }
   function cleanerWork(rt: WRt, S: GameState, dt: number) {
     const fx = traitFx(rt.w), a = rt.a;
-    const speed = 2.4 * (1 + (fx.walk || 0)) * moraleFactor(moraleOf(rt.w));
+    const speed = 2.4 * (1 + (fx.walk || 0));
     a.act = 'idle';
     if (rt.state === 'idle') {
       if (rt.wk.walk(dt, speed)) { a.act = 'walk'; return; }
@@ -343,13 +343,8 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
   function update(rt: WRt, S: GameState, dt: number, pl: Vec2) {
     const w = rt.w, fx = traitFx(w), a = rt.a;
     if (ROLES[w.role]?.mutfak) { rt.t += dt; kitchenWork(rt, S, dt); return; }
-    rt.t += dt; rt.boostT -= dt; rt.moraleCd -= dt; rt.pauseT -= dt;
+    rt.t += dt; rt.boostT -= dt; rt.pauseT -= dt;
     a.mood = rt.state === 'sleep' ? 'asleep' : 'ok';
-    if (rt.state !== 'sleep' && near2(pl, a, 1.6)) {
-      rt.nearT += dt;
-      if (rt.nearT > 1.5 && rt.moraleCd <= 0) { rt.moraleCd = 60; w.morale = Math.min(100, moraleOf(w) + 4); }
-    } else rt.nearT = 0;
-    if (['work', 'idle', 'toSrc', 'toCounter'].includes(rt.state)) { rt.workT += dt; if (rt.workT > 120) { rt.workT = 0; w.morale = Math.max(10, moraleOf(w) - 1); } }
     if (S.playT > rt.chatNext) {
       rt.chatNext = S.playT + rng.range(25, 45);
       if (fx.chat) say(rt, rng.pick(LINES.workers.chat), 2); else if (fx.phone) say(rt, rng.pick(LINES.workers.phone), 2);
@@ -427,7 +422,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
         p.x -= nx * push; p.z -= nz * push; q.x += nx * push; q.z += nz * push;
       }
     },
-    rows: () => rows.map((r) => ({ id: r.w.id, name: r.w.name, role: r.w.role, state: r.state, x: r.a.x, z: r.a.z, rank: Number(r.w.rank || 0), morale: moraleOf(r.w) })),
+    rows: () => rows.map((r) => ({ id: r.w.id, name: r.w.name, role: r.w.role, state: r.state, x: r.a.x, z: r.a.z, rank: Number(r.w.rank || 0) })),
     aura(x, z) {
       let best = 0;
       for (const r of rows) {

@@ -24,17 +24,16 @@ import { KEPENK } from '../../content/economy';
 import {
   SEMTLER, SEMT_BY_ID, ARACLAR, ARAC_BY_ID, HUYLAR, HUY_IDS, KURYE_ADLARI, KURYE_OPEN_LEVEL, KURYE_HIRE, KURYE_MAX,
   YUKSELTMELER, BAG_BASE, SPEED_PER_LVL, SUSLER, SUS_KIND_NAME, HAVALAR, HAVA_WEIGHTS, ORDER_EVERY, ORDER_TTL, TABLET_MAX,
-  WAIT_MAX, OFFLINE_RATE, SEN_GOTUR_CHANCE, SEN_GOTUR_LEVEL, MUSTERI_ADLARI, ADRES_NOTU, YORUMLAR, YOKUS_ANLARI,
+  WAIT_MAX, OFFLINE_RATE, SEN_GOTUR_CHANCE, SEN_GOTUR_LEVEL, MUSTERI_ADLARI, ADRES_NOTU, YOKUS_ANLARI,
   KEDI_GETIRDI, SEN_GOTUR, PAKETMARTI_LINES, TERRAIN_NAME, type HavaId, type HuyId, type Terrain,
 } from '../../content/kurye';
 import { fmtMoney } from './util';
 
 interface CourierSave { id: number; name: string; huy: HuyId; arac: string; trips: number; stars: number }
-interface Rating { s: number; text: string; who: string; semt: string; kurye: string }
 interface KuryeSave {
   on: boolean; couriers: CourierSave[]; nextId: number;
   upg: Record<string, number>; owned: string[]; sus: Record<string, string>;
-  ratings: Rating[]; starSum: number; starN: number; earned: number; trips: number; workSec: number; cats: number;
+  starSum: number; starN: number; earned: number; trips: number; workSec: number; cats: number;
   day: number; hava: HavaId; offNote: string; selfWins: number;
 }
 export interface KOrder { id: number; semt: string; items: Partial<Record<ProductId, number>>; value: number; until: number; sen: boolean; who: string; note: string; accepted: boolean }
@@ -83,12 +82,11 @@ export function installKurye(K: Kernel): KuryeApi {
     if (!S.zones || typeof S.zones !== 'object') (S as { zones: Record<string, Record<string, unknown>> }).zones = {};
     let m = S.zones.kurye as unknown as KuryeSave | undefined;
     if (!m || typeof m !== 'object') {
-      m = { on: false, couriers: [], nextId: 1, upg: {}, owned: ['bisiklet', 'boya-sari', 'korna-dit', 'bayrak-yok'], sus: { boya: 'boya-sari', korna: 'korna-dit', bayrak: 'bayrak-yok' }, ratings: [], starSum: 0, starN: 0, earned: 0, trips: 0, workSec: 0, cats: 0, day: 0, hava: 'gunes', offNote: '', selfWins: 0 };
+      m = { on: false, couriers: [], nextId: 1, upg: {}, owned: ['bisiklet', 'boya-sari', 'korna-dit', 'bayrak-yok'], sus: { boya: 'boya-sari', korna: 'korna-dit', bayrak: 'bayrak-yok' }, starSum: 0, starN: 0, earned: 0, trips: 0, workSec: 0, cats: 0, day: 0, hava: 'gunes', offNote: '', selfWins: 0 };
       S.zones.kurye = m as unknown as Record<string, unknown>;
     }
     if (!Array.isArray(m.couriers)) m.couriers = [];
     if (!Array.isArray(m.owned)) m.owned = ['bisiklet'];
-    if (!Array.isArray(m.ratings)) m.ratings = [];
     m.upg ||= {}; m.sus ||= { boya: 'boya-sari', korna: 'korna-dit', bayrak: 'bayrak-yok' };
     for (const k of ['nextId', 'starSum', 'starN', 'earned', 'trips', 'workSec', 'cats', 'day', 'selfWins'] as const) if (typeof m[k] !== 'number' || !isFinite(m[k])) m[k] = 0;
     if (!HAVALAR[m.hava]) m.hava = 'gunes';
@@ -203,9 +201,6 @@ export function installKurye(K: Kernel): KuryeApi {
     (K.earnTam || K.earn)(money);   // toast tam tutarı söylüyor: günlük yan gelir tavanı kırpmasın
     K.stat('kuryeTeslim');
     m.earned += money; m.trips++; c.trips++; c.stars += stars; m.starSum += stars; m.starN++;
-    const text = rng.pick(YORUMLAR[stars]);
-    m.ratings.unshift({ s: stars, text, who: r.order.who, semt: s.name, kurye: c.name }); if (m.ratings.length > 12) m.ratings.length = 12;
-    pushFeed({ kind: 'rate', text, stars, money, who: r.order.who + ' · ' + s.name });
     if (selfScore == null) {
       if ((s.terrain === 'yokus' || s.terrain === 'merdiven' || s.terrain === 'tepe') && rng.chance(0.45)) pushFeed({ kind: 'moment', text: c.name + ': ' + rng.pick(YOKUS_ANLARI[s.terrain]) });
       else if (rng.chance(0.25)) pushFeed({ kind: 'moment', text: c.name + ': ' + rng.pick(h.lines) });
@@ -442,7 +437,6 @@ export function installKurye(K: Kernel): KuryeApi {
       upg: YUKSELTMELER.map(y => { const l = m.upg[y.id] || 0; return { id: y.id, name: y.name, what: y.what, lvl: l, max: y.max, cost: l < y.max ? Math.round(y.cost(l)) : 0 }; }),
       sus: SUSLER.map(s => ({ id: s.id, kind: s.kind, kindName: SUS_KIND_NAME[s.kind], name: s.name, price: s.price, color: s.color, owned: m.owned.includes(s.id), on: m.sus[s.kind] === s.id })),
       semtler: SEMTLER.map(s => ({ id: s.id, name: s.name, terrain: TERRAIN_NAME[s.terrain], open: s.range <= (m.upg.menzil || 0), range: s.range, payX: s.payX, blurb: s.blurb, mx: s.mx, my: s.my })),
-      ratings: m.ratings.slice(0, 8),
       live: v.couriers.map(c => ({ name: c.name, mx: c.mx, my: c.my, state: c.state, color: c.color })),
     };
   }

@@ -1,4 +1,4 @@
-// Faz 2: adisyon tickets appear for table guests at the çay bahçesi stage; stands sell on impulse.
+// Faz 2: adisyon tickets appear for table guests at the çay bahçesi stage.
 import { describe, it, expect } from 'vitest';
 import { played } from './m1-helpers';
 import { restoranApi } from '../../src/game/sim/restoran';
@@ -14,9 +14,9 @@ describe('Faz 2 restoran', () => {
     for (let s = 0; s < 400; s++) { for (let i = 0; i < 10; i++) sim.step(0.1); const r = sim.rules.rt; if (r.paused) { r.paused = false; r.pauseWhy = ''; } const v = restoranApi(sim.rules)!.view(); maxT = Math.max(maxT, v.tickets.length); }
     const ev = sim.events(0).map((e: any) => e.name);
     const v = restoranApi(sim.rules)!.view();
-    console.log('tickets max', maxT, 'ticket ev', ev.filter((n: string) => n === 'ticket').length, 'stantSale', ev.filter((n: string) => n === 'stantSale').length, 'servis', v.servis, 'stands', v.stands.filter(s => s.owned).map(s => s.id + ':' + s.stock).join(','));
+    console.log('tickets max', maxT, 'ticket ev', ev.filter((n: string) => n === 'ticket').length, 'servis', v.servis);
     expect(ev.filter((n: string) => n === 'ticket').length).toBeGreaterThan(0);
-    expect(v.stands.length).toBe(0);   // 2026-11-08: all street carts are gone (kestane/mısır removed)
+    expect(ev.filter((n: string) => n.startsWith('stant')).length).toBe(0);   // stant sistemi kalktı
   }, 120000);
 });
 describe('garson masa turu', () => {
