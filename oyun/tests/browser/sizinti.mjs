@@ -1,5 +1,5 @@
 // PRF-15 + PRF-04: sızıntı avı. node tests/browser/sizinti.mjs   (DIST=klasör, TUR=20, SES=1 ile her turu yaz)
-// Aynı rotayı TUR kez gezer (uzak bölgeler arası gidiş-geliş + kademe akıcı<->dengeli + Sabri'nin evi ve kulis aç/kapa + saat süpürme); her turdan sonra
+// Aynı rotayı TUR kez gezer (uzak bölgeler arası gidiş-geliş + büfede 45 sn oyun zamanı + kademe akıcı<->dengeli + Sabri'nin evi ve kulis aç/kapa + saat süpürme); her turdan sonra
 // geometri / doku / shader programı / DOM düğümü / canlı WebGL bağlamı / yığın sayılır. Sayılar donanımdan bağımsızdır (SwiftShader'da da geçerli).
 // Kırmızı: son yarıda geometri/doku/program/bağlam/DOM artıyorsa; yığın yalnız bilgi (Chromium'da gürültülü, eğim MB/tur yazılır).
 import { createServer } from 'node:http'; import { readFileSync, existsSync, statSync } from 'node:fs'; import { join, resolve } from 'node:path'; import { createRequire } from 'node:module';
@@ -25,6 +25,7 @@ const ROTA = [[0, -2], [-16.4, 37.9], [28.6, 34.6], [50, 35.2], [18.5, 49.2], [-
 const rows = []; let evCalls = null;
 for (let t = 0; t < TUR; t++) {
   for (const [x, z] of ROTA) { await p.evaluate(([x, z]) => window.__marti.teleport(x, z), [x, z]); await settle(8); }
+  await p.evaluate(() => window.__marti.step(+(window.__simSn || 45))); await settle(6);   // büfede oyun zamanı akar: müşteri gelir/gider, ajan ağları doğar/ölür
   for (const k of ['akici', process.env.TIER || 'dengeli']) { await p.evaluate(k => window.__marti.setTier(k), k); await settle(2); }   // kademe gidiş-geliş: bloom hedefleri serbest kalmalı
   for (const h of [9, 20, 13]) { await p.evaluate(h => window.__marti.setTime(h), h); await settle(2); }
   await p.evaluate(() => window.__marti.command({ kind: 'dekor2', arg: 'evOpen' })); await settle(4);   // Sabri'nin evi: ikinci WebGL bağlamı açılır

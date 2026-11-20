@@ -188,11 +188,16 @@ export function createRender(deps: RenderDeps): MotorRender {
     if (gate.held() && now > gateUntil) gate.release();   // safety: never hide anything longer than 3 s
     if (!gate.dirty() || !renderer) return;
     const pr = renderer.properties;
-    const got = gate.collect(sc, m => !(pr.get(m) as { currentProgram?: unknown }).currentProgram);
+    type Prog = { isReady(): boolean };
+    const got = gate.collect(sc, m => !(pr.get(m) as { currentProgram?: Prog }).currentProgram);
     if (!got.length) return;
-    gateN += got.length; deps.perf?.count('shaderBekletilen', gateN);
     gateUntil = now + 3000;
     void compileFor(sc, cam, got).then(() => { gate.release(got); });
+    // a new material instance whose program already exists (cache hit) is ready right after the sync part: show it this frame,
+    // only objects whose program is really still linking wait (else a view that respawns meshes would blink for a frame)
+    const ready = got.filter(o => { const mt = (o as T.Mesh).material; return (Array.isArray(mt) ? mt : [mt]).every(m => { const cp = (pr.get(m) as { currentProgram?: Prog }).currentProgram; return !!cp && cp.isReady(); }); });
+    if (ready.length) gate.release(ready);
+    if (got.length > ready.length) { gateN += got.length - ready.length; deps.perf?.count('shaderBekletilen', gateN); }
   };
   let gl2: WebGL2RenderingContext | null = null, gpuExt: { TIME_ELAPSED_EXT: number; GPU_DISJOINT_EXT: number } | null = null;
   let gpuQ: WebGLQuery | null = null; const gpuPending: WebGLQuery[] = [];
