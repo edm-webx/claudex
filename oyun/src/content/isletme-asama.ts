@@ -8,7 +8,8 @@ import { ISLETME, ARSA_ISLETME, type IsletmeId } from './esya';
 export interface AsamaDef { lv: number; ad: string; kuyruk: number; masa: number; iscMax: number }
 /** seconds of renovation for lv -> lv+1 */
 export const TADILAT_SURE_S = [90, 180, 300, 480];
-const KUYRUK: Record<IsletmeId, number[]> = { kafe: [3, 4, 4, 5, 5], bistro: [3, 4, 4, 5, 5], kantin: [3, 4, 4, 5, 5], lokanta: [3, 4, 4, 5, 5], kafeterya: [3, 4, 4, 5, 5], kirtasiye: [2, 2, 3, 3, 3] };
+const KUYRUK: Record<IsletmeId, number[]> = { kafe: [3, 4, 4, 5, 5], bistro: [3, 4, 4, 5, 5], kantin: [3, 4, 4, 5, 5], lokanta: [3, 4, 4, 5, 5], kafeterya: [3, 4, 4, 5, 5], kirtasiye: [2, 2, 3, 3, 3],
+  /* AVM shops: few customers, a short line at the till */ giyim: [2, 2, 3, 3, 3], elektronik: [2, 2, 3, 3, 3], oyuncak: [2, 3, 3, 3, 3] };
 const MASA = [2, 3, 4, 5, 5];
 const ISC_MAX = [2, 3, 3, 3, 3];
 export const ASAMA: Record<IsletmeId, AsamaDef[]> = Object.fromEntries((Object.keys(ISLETME) as IsletmeId[]).map(t => [t, [1, 2, 3, 4, 5].map(lv => ({ lv, ad: ISLETME[t].asama[lv - 1] || '', kuyruk: KUYRUK[t][lv - 1], masa: MASA[lv - 1], iscMax: ISC_MAX[lv - 1] }))])) as Record<IsletmeId, AsamaDef[]>;

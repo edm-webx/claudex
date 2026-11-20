@@ -13,6 +13,10 @@ export const ISLETME_ROL: Record<IsletmeId, IsletmeRol[]> = {
   kantin: [{ rol: 'kantinci', ad: 'Kantinci', huyRol: 'tost', gorunum: 'tost', minLv: 1 }, { rol: 'garson', ad: 'Garson', huyRol: 'garson', gorunum: 'garson', minLv: 1 }],
   lokanta: [{ rol: 'asci', ad: 'Aşçı', huyRol: 'asci', gorunum: 'asci', minLv: 1 }, { rol: 'garson', ad: 'Garson', huyRol: 'garson', gorunum: 'garson', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }],
   kafeterya: [{ rol: 'kantinci', ad: 'Kantinci', huyRol: 'tost', gorunum: 'tost', minLv: 1 }, { rol: 'garson', ad: 'Garson', huyRol: 'garson', gorunum: 'garson', minLv: 1 }],
+  // 2026-11-20 AVM shops: a sales consultant fetches the goods, the cashier rings them up
+  giyim: [{ rol: 'danisman', ad: 'Satış danışmanı', huyRol: 'garson', gorunum: 'hostes', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }, { rol: 'vitrinci', ad: 'Vitrin sorumlusu', huyRol: 'komi', gorunum: 'gorevli', minLv: 3 }],
+  elektronik: [{ rol: 'danisman', ad: 'Satış danışmanı', huyRol: 'garson', gorunum: 'hostes', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }, { rol: 'teknisyen', ad: 'Teknisyen', huyRol: 'komi', gorunum: 'gorevli', minLv: 2 }],
+  oyuncak: [{ rol: 'danisman', ad: 'Satış danışmanı', huyRol: 'garson', gorunum: 'tost', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }],
 };
 /** wage is paid once at day end: same total as the old hourly cut (24 game hours) */
 export const ISCI_GUN_UCRET = ISCI_SAAT_UCRET * 24;

@@ -6,7 +6,8 @@
 import { ARSALAR, arsaKapi } from './esya';
 
 /** front-wall depth from the building centre (f) and facade width (w), from the karsi-bina.ts footprints */
-const OLCU: Record<string, { f: number; w: number }> = { k1: { f: 3.5, w: 9.4 }, k2: { f: 3.5, w: 9.4 }, k3: { f: 1.8, w: 7.1 }, k4: { f: 3.75, w: 18.3 }, k5: { f: 5.3, w: 16.9 }, k6: { f: 1.85, w: 17.8 } };
+const OLCU: Record<string, { f: number; w: number }> = { k1: { f: 3.5, w: 9.4 }, k2: { f: 3.5, w: 9.4 }, k3: { f: 1.8, w: 7.1 }, k4: { f: 3.75, w: 18.3 }, k5: { f: 5.3, w: 5.2 }, k6: { f: 1.85, w: 17.8 },
+  /* AVM strips (content/ic-mekan.ts): each shop renovates its own front */ k7: { f: 5.3, w: 3.9 }, k8: { f: 5.3, w: 3.9 }, k9: { f: 5.3, w: 3.9 } };
 export const USTA_SAYISI = 2;
 export interface InsaatYer {
   id: string;
@@ -22,7 +23,7 @@ export function insaatYer(arsaId: string): InsaatYer | null {
   const hit = cache.get(arsaId); if (hit) return hit;
   const a = ARSALAR.find(x => x.id === arsaId), o = OLCU[arsaId]; if (!a || !a.sabit || !o) return null;
   const k = arsaKapi(a), l = Math.hypot(k.x - a.x, k.z - a.z) || 1, dx = (k.x - a.x) / l, dz = (k.z - a.z) / l, px = dz, pz = -dx;
-  const ox = a.x + dx * o.f, oz = a.z + dz * o.f, S = Math.max(5.5, Math.min(9, o.w - 0.8));
+  const ox = a.x + dx * o.f, oz = a.z + dz * o.f, S = o.w < 6 ? o.w - 0.4 : Math.max(5.5, Math.min(9, o.w - 0.8));   // a narrow AVM front keeps its scaffold on its own strip
   const y: InsaatYer = {
     id: arsaId, ox, oz, dx, dz, yaw: Math.atan2(dx, dz), S,
     w: (u, v) => ({ x: ox + px * u + dx * v, z: oz + pz * u + dz * v }),

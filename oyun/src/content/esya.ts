@@ -70,8 +70,13 @@ export const ARSALAR: Arsa[] = [
   // 2026-11-09: every business building can be bought from a level and run (interiors: content/ic-mekan.ts)
   { id: 'k3', x: 28, z: 35.2, fiyat: 140000, seviye: 4, rotY: Math.PI, sabit: 'kafe', kapi: { x: 28, z: 32.6 }, ad: 'Martı Kırtasiye' },
   { id: 'k4', x: 48.85, z: 37.25, fiyat: 110000, seviye: 3, rotY: Math.PI, sabit: 'kafe', kapi: { x: 48.85, z: 32.6 }, ad: 'Okul Kantini' },
-  { id: 'k5', x: 20.15, z: 51.8, fiyat: 450000, seviye: 6, rotY: Math.PI, sabit: 'kafe', kapi: { x: 20.15, z: 45.6 }, ad: 'Martı Lokantası (AVM)' },
+  // 2026-11-20 owner: Martı AVM is split into separate businesses (lokanta + three shops), each bought and run on its own;
+  // x / z = the room centre of content/ic-mekan.ts (AVM strips), kapi = in front of that room's own door on the -z front
+  { id: 'k5', x: 26.0, z: 51.8, fiyat: 450000, seviye: 6, rotY: Math.PI, sabit: 'kafe', kapi: { x: 26.0, z: 45.6 }, ad: 'Martı Lokantası (AVM)' },
   { id: 'k6', x: -54.1, z: 45.4, fiyat: 260000, seviye: 5, rotY: Math.PI / 2, sabit: 'kafe', kapi: { x: -51.0, z: 45.4 }, ad: 'Tesis Kafeteryası' },
+  { id: 'k7', x: 21.45, z: 51.8, fiyat: 300000, seviye: 7, rotY: Math.PI, sabit: 'kafe', kapi: { x: 21.45, z: 45.6 }, ad: 'Martı Moda (AVM)' },
+  { id: 'k8', x: 17.55, z: 51.8, fiyat: 380000, seviye: 8, rotY: Math.PI, sabit: 'kafe', kapi: { x: 17.55, z: 45.6 }, ad: 'Tekno Martı (AVM)' },
+  { id: 'k9', x: 13.65, z: 51.8, fiyat: 260000, seviye: 7, rotY: Math.PI, sabit: 'kafe', kapi: { x: 13.65, z: 45.6 }, ad: 'Oyuncak Dünyası (AVM)' },
 ];
 export const ARSA_HAK = 3;
 export const arsaKapi = (a: Arsa) => a.kapi ?? { x: a.x, z: a.z + (a.rotY ? -3.0 : 3.0) };
@@ -85,7 +90,7 @@ export const ISCI_MAX = 3;
 export interface KafeYemek { id: string; ad: string; ikon: string; fiyat: number }
 /** ic: shown inside (ic-mekan-look); teras: shown on the café terrace (karsi-yasam) */
 export interface KafeEsya { id: string; ad: string; ikon: string; fiyat: number; lv: number; musteri?: number; fiyatK?: number; desc: string; teras?: boolean }
-export type IsletmeId = 'kafe' | 'bistro' | 'kirtasiye' | 'kantin' | 'lokanta' | 'kafeterya';
+export type IsletmeId = 'kafe' | 'bistro' | 'kirtasiye' | 'kantin' | 'lokanta' | 'kafeterya' | 'giyim' | 'elektronik' | 'oyuncak';
 export interface Isletme { id: IsletmeId; ad: string; ikon: string; asama: string[]; mus: number; menu: KafeYemek[]; esya: KafeEsya[] }
 const Y = (id: string, ad: string, ikon: string, fiyat: number): KafeYemek => ({ id, ad, ikon, fiyat });
 const A = (id: string, ad: string, ikon: string, fiyat: number, lv: number, o: Partial<KafeEsya>, desc: string): KafeEsya => ({ id, ad, ikon, fiyat, lv, ...o, desc });
@@ -161,12 +166,47 @@ export const ISLETME: Record<IsletmeId, Isletme> = {
       A('izgara_t', 'Köfte ızgarası', '🔥', 45000, 3, { fiyatK: 0.14 }, 'Maç sonu köfte: fiyatlar +%14'),
       A('forma_duvar', 'Forma duvarı', '👕', 35000, 4, { musteri: 0.12 }, 'İmzalı formalar: müşteri +%12'),
       A('vip', 'VIP loca', '🎟️', 85000, 5, { fiyatK: 0.2 }, 'Saha manzaralı koltuklar: fiyatlar +%20')] },
+  // 2026-11-20 AVM shops (holding yolu, ilk adım giyim): goods are sold at a net price, NO stock; few customers, big tickets.
+  // mus is low on purpose: revenue per hour stays near the lokanta's per lira of plot price (see tests/sim/avm-magaza.test.ts).
+  giyim: { id: 'giyim', ad: 'Giyim mağazası', ikon: '👕', mus: 0.16, asama: ['Butik', 'Moda mağazası', 'Marka mağazası', 'Konsept mağaza', 'Martı Moda Evi'],
+    menu: [Y('tisort', 'Tişört', '👕', 180), Y('kot', 'Kot pantolon', '👖', 420), Y('gomlek', 'Gömlek', '👔', 320), Y('sweat', 'Kapüşonlu sweat', '🧥', 390),
+      Y('elbise', 'Elbise', '👗', 600), Y('spor_ayk', 'Spor ayakkabı', '👟', 850), Y('mont', 'Mont', '🧥', 950), Y('takim', 'Takım elbise', '🤵', 1600)],
+    esya: [A('askilik', 'Askılı reyon', '🧺', 30000, 1, { musteri: 0.15 }, 'Yeni sezon ortada döner: müşteri +%15'),
+      A('manken', 'Vitrin mankenleri', '🧍', 26000, 1, { musteri: 0.12 }, 'Kapıdan geçen içeri bakar: müşteri +%12'),
+      A('prova', 'Prova kabini', '🚪', 34000, 2, { fiyatK: 0.1 }, 'Deneyen alır: fiyatlar +%10'),
+      A('ayna', 'Boy aynası', '🪞', 18000, 2, { musteri: 0.1 }, 'Kendini beğenen tekrar gelir: müşteri +%10'),
+      A('ayakkabi', 'Ayakkabı reyonu', '👟', 45000, 3, { musteri: 0.14 }, 'Spor ve klasik ayakkabı duvarı: müşteri +%14'),
+      A('aksesuar', 'Aksesuar standı', '👜', 38000, 3, { fiyatK: 0.12 }, 'Çanta, şapka, kemer: fiyatlar +%12'),
+      A('led_vitrin', 'Işıklı vitrin panosu', '💡', 42000, 4, { musteri: 0.12 }, 'Kampanya ekranı: müşteri +%12'),
+      A('tasarim', 'Tasarımcı köşesi', '🧵', 110000, 5, { fiyatK: 0.2 }, 'Dikiş makinesi, özel dikim: fiyatlar +%20')] },
+  elektronik: { id: 'elektronik', ad: 'Elektronik mağazası', ikon: '📱', mus: 0.12, asama: ['Telefoncu', 'Elektronik', 'Teknoloji mağazası', 'Tekno market', 'Tekno Martı Plaza'],
+    menu: [Y('kulaklik', 'Kulaklık', '🎧', 400), Y('powerbank', 'Powerbank', '🔋', 550), Y('sarj_kablo', 'Şarj kablosu', '🔌', 140), Y('kilif', 'Telefon kılıfı', '📱', 170),
+      Y('hoparlor', 'Bluetooth hoparlör', '🔊', 950), Y('akilli_saat', 'Akıllı saat', '⌚', 1900), Y('tablet', 'Tablet', '💻', 2200), Y('telefon', 'Akıllı telefon', '📱', 3000)],
+    esya: [A('demo_masa', 'Deneme masası', '📱', 36000, 1, { musteri: 0.15 }, 'Telefonlar elde denenir: müşteri +%15'),
+      A('tamir', 'Tamir tezgâhı', '🛠️', 24000, 1, { musteri: 0.1 }, 'Ekran değişimi bekleyen alışveriş yapar: müşteri +%10'),
+      A('tv_duvar', 'TV duvarı', '📺', 60000, 2, { musteri: 0.14 }, 'Dev ekranlar sokaktan görünür: müşteri +%14'),
+      A('kulaklik_stand', 'Kulaklık standı', '🎧', 22000, 2, { fiyatK: 0.08 }, 'Dinleyen alır: fiyatlar +%8'),
+      A('konsol', 'Oyun konsolu köşesi', '🎮', 55000, 3, { musteri: 0.14 }, 'Gençler maç yapar: müşteri +%14'),
+      A('vr', 'VR deneme alanı', '🥽', 70000, 3, { fiyatK: 0.1 }, 'Gözlüğü takan cüzdanı açar: fiyatlar +%10'),
+      A('drone', 'Drone vitrini', '🚁', 48000, 4, { musteri: 0.1 }, 'Tavanda süzülen drone: müşteri +%10'),
+      A('led_e', 'Işıklı reklam panosu', '💡', 90000, 5, { fiyatK: 0.15 }, 'Lansman kampanyaları: fiyatlar +%15')] },
+  oyuncak: { id: 'oyuncak', ad: 'Oyuncakçı', ikon: '🧸', mus: 0.28, asama: ['Oyuncakçı', 'Oyuncak dükkânı', 'Oyuncak mağazası', 'Oyun dünyası', 'Oyuncak Dünyası Mega'],
+    menu: [Y('pelus', 'Peluş martı', '🧸', 140), Y('yapboz', 'Yapboz', '🧩', 160), Y('araba', 'Oyuncak araba', '🚗', 120), Y('bebek', 'Oyuncak bebek', '🪆', 280),
+      Y('kutu_oyun', 'Kutu oyunu', '🎲', 380), Y('yapi_seti', 'Yapı seti', '🧱', 450), Y('rc_araba', 'Uzaktan kumandalı araba', '🏎️', 650), Y('tren_seti', 'Tren seti', '🚂', 900)],
+    esya: [A('pelus_sepet', 'Peluş sepeti', '🧸', 18000, 1, { musteri: 0.12 }, 'Çocuklar kucaklar, anneler alır: müşteri +%12'),
+      A('balon', 'Balon köşesi', '🎈', 12000, 1, { musteri: 0.1 }, 'Kapıda renkli balonlar: müşteri +%10'),
+      A('tren_pist', 'Oyuncak tren pisti', '🚂', 40000, 2, { musteri: 0.15 }, 'Masada dönen tren: müşteri +%15'),
+      A('lego_duvar', 'Yapı seti duvarı', '🧱', 36000, 2, { fiyatK: 0.1 }, 'Kutu kutu setler: fiyatlar +%10'),
+      A('oyun_kale', 'Oyun kalesi', '🏰', 55000, 3, { musteri: 0.14 }, 'Kaydıraklı köşe: müşteri +%14'),
+      A('maskot', 'Dev martı maskotu', '🐦', 30000, 3, { musteri: 0.1 }, 'Fotoğraf çektiren çok: müşteri +%10'),
+      A('hediye_paket', 'Hediye paketi tezgâhı', '🎁', 26000, 4, { fiyatK: 0.12 }, 'Kurdeleli paket: fiyatlar +%12'),
+      A('led_o', 'Işıklı vitrin', '✨', 70000, 5, { fiyatK: 0.18 }, 'Yıldızlı tavan vitrini: fiyatlar +%18')] },
 };
 /** compatibility: menus by plot id (k1/k2 tests and older code) */
 export const KAFE_MENU: Record<string, KafeYemek[]> = { k1: ISLETME.kafe.menu, k2: ISLETME.bistro.menu };
 export const KAFE_MENU_LV = [0, 2, 4, 5, 6, 8];
 /** fixed plot id -> its business type */
-export const ARSA_ISLETME: Record<string, IsletmeId> = { k1: 'kafe', k2: 'bistro', k3: 'kirtasiye', k4: 'kantin', k5: 'lokanta', k6: 'kafeterya' };
+export const ARSA_ISLETME: Record<string, IsletmeId> = { k1: 'kafe', k2: 'bistro', k3: 'kirtasiye', k4: 'kantin', k5: 'lokanta', k6: 'kafeterya', k7: 'giyim', k8: 'elektronik', k9: 'oyuncak' };
 export const isletmeOf = (arsaId: string): Isletme => ISLETME[ARSA_ISLETME[arsaId] || 'kafe'];
 export const kafeMenu = (id: string, lv: number) => isletmeOf(id).menu.slice(0, KAFE_MENU_LV[Math.max(0, Math.min(5, lv))] || 2);
 export const KAFE_ESYA: KafeEsya[] = ISLETME.kafe.esya;

@@ -24,9 +24,11 @@ export interface IcView { update(dt: number): void; dispose(): void; /** id of t
 
 const HP = Math.PI / 2, O = { r: 0 };
 const FLOOR: Record<string, [string, string]> = { kafe: ['#9a6b45', '#7d5434'], bistro: ['#e6e0d4', '#2c3e57'], kirtasiye: ['#cfd8dc', '#b8c4c9'], okul: ['#c9b48a', '#b39e74'], lokanta: ['#e9e6e0', '#d4cfc6'],
-  kafeterya: ['#8fb3a0', '#7aa08c'], banka: ['#efe9df', '#c9a23a'], hastane: ['#e3eef2', '#cfdde3'], acil: ['#e3eef2', '#cfdde3'], morg: ['#9aa3a8', '#878f94'], kahvalti: ['#c8a27a', '#b08860'], balik: ['#d8e2e6', '#2f6f8f'], mutfak: ['#b9a78c', '#a59377'] };
+  kafeterya: ['#8fb3a0', '#7aa08c'], banka: ['#efe9df', '#c9a23a'], hastane: ['#e3eef2', '#cfdde3'], acil: ['#e3eef2', '#cfdde3'], morg: ['#9aa3a8', '#878f94'], kahvalti: ['#c8a27a', '#b08860'], balik: ['#d8e2e6', '#2f6f8f'], mutfak: ['#b9a78c', '#a59377'],
+  giyim: ['#e9e4da', '#d6cec0'], elektronik: ['#dfe4ea', '#c9d0d8'], oyuncak: ['#f3e7c9', '#e6d4a8'] };
 const WALL: Record<string, [string, string]> = { kafe: ['#f3e3c8', '#7a4a2a'], bistro: ['#e9f1f4', '#1d4f86'], kirtasiye: ['#f6f6ee', '#2b6fb8'], okul: ['#f4ead2', '#5f8f6a'], lokanta: ['#f2efe9', '#a2472f'],
-  kafeterya: ['#eef2f4', '#2f9e5a'], banka: ['#f4efe2', '#1f3a5f'], hastane: ['#f2f6f8', '#7fb4d8'], acil: ['#f2f6f8', '#d93a3a'], morg: ['#b9c0c4', '#5b6068'], kahvalti: ['#f3e3c8', '#7a4a2a'], balik: ['#e9f1f4', '#1d4f86'], mutfak: ['#f3ead6', '#3f7f64'] };
+  kafeterya: ['#eef2f4', '#2f9e5a'], banka: ['#f4efe2', '#1f3a5f'], hastane: ['#f2f6f8', '#7fb4d8'], acil: ['#f2f6f8', '#d93a3a'], morg: ['#b9c0c4', '#5b6068'], kahvalti: ['#f3e3c8', '#7a4a2a'], balik: ['#e9f1f4', '#1d4f86'], mutfak: ['#f3ead6', '#3f7f64'],
+  giyim: ['#f6f0ea', '#c94f6d'], elektronik: ['#eef2f6', '#2b6fb8'], oyuncak: ['#fff6e0', '#e8892b'] };
 
 let solid: T.MeshStandardMaterial | null = null, glass: T.MeshStandardMaterial | null = null, glow: T.MeshBasicMaterial | null = null, wallM: T.MeshStandardMaterial | null = null;
 function mats() {
@@ -102,7 +104,7 @@ const shelfGoods = (c: Ctx, w: number, rows: number, y0: number, dz: number, pal
 
 type Fn = (c: Ctx, it: IcItem) => void;
 /** wall-mounted items place themselves at it.y */
-const WALLY = new Set(['menuPano', 'tahta', 'pano', 'ekran', 'formaDuvar', 'kds', 'davlumbaz', 'asiliTava']);
+const WALLY = new Set(['menuPano', 'tahta', 'pano', 'ekran', 'formaDuvar', 'kds', 'davlumbaz', 'asiliTava', 'ledPano', 'tvDuvar']);
 const F: Record<string, Fn> = {
   tezgah: (c, it) => counter(c, it, it.c || '#7a3b1c'),
   bar: (c, it) => { counter(c, it, c.fine ? '#1f2a44' : '#2c3e57', c.fine ? '#c9a24a' : '#d8d2c4'); for (let i = 0; i < 4; i++) { const x = -it.w / 2 + 0.7 + i * (it.w - 1.4) / 3; c.b.cyl(0.18, 0.18, 0.06, '#7d5638', x, 0.75, it.d / 2 + 0.35, { seg: 12 }); c.b.cyl(0.04, 0.04, 0.72, '#9aa5b0', x, 0.37, it.d / 2 + 0.35, { seg: 6 }); } },
@@ -236,6 +238,85 @@ const F: Record<string, Fn> = {
       g2.fillStyle = '#e8f1f8'; g2.font = '700 20px system-ui,sans-serif'; if (!lines.length) { g2.fillStyle = '#7fa6c4'; g2.fillText('Bekleyen sipariş yok', 12, 70); } lines.slice(0, 6).forEach((t, i) => g2.fillText(t, 12, 62 + i * 31, 488)); tex.needsUpdate = true; } };
     c.an.kds.draw([]); const sc = new T.Mesh(new T.PlaneGeometry(it.w - 0.1, 0.85), new T.MeshBasicMaterial({ map: tex })); sc.position.set(0, 2.05, 0.04); c.grp.userData.curItem.add(sc); b.box(it.w, 0.05, 0.14, '#9aa5b0', 0, 1.52, 0.05); for (let i = 0; i < 6; i++) b.box(0.18, 0.2, 0.01, '#fbfaf6', -it.w / 2 + 0.2 + i * 0.3, 1.4, 0.13); },
   hazirlik: (c, it) => { const { b } = c; counter(c, it, '#9aa5b0', '#e9eef2'); b.box(0.5, 0.03, 0.3, '#d6aa78', -0.4, 1.07, 0); b.box(0.5, 0.03, 0.3, '#d6aa78', 0.5, 1.07, 0); for (let i = 0; i < 3; i++) b.cyl(0.05, 0.05, 0.04, ['#e0533c', '#6f9e4f', '#ffd23f'][i], -0.4 + i * 0.1, 1.11, 0, { seg: 8 }); b.box(0.3, 0.04, 0.04, '#c9ced6', 0.5, 1.1, 0); },
+  // ---- AVM mağazaları (2026-11-20: giyim / elektronik / oyuncak, content/ic-mekan.ts magazaLayout) ----
+  reyon: (c, it) => {
+    const { b, l } = c, w = it.w, d = it.d, z0 = -d / 2;
+    if (it.c === 'giyim') {   // wall rail: back panel, two rails, hanging clothes
+      b.box(w, 2.2, 0.05, '#ece6dc', 0, 1.1, z0 + 0.03); b.box(w, 0.12, 0.08, '#c94f6d', 0, 2.15, z0 + 0.06);
+      const P = ['#e0533c', '#2f5f9a', '#f4f2ec', '#3a3d42', '#c94f6d', '#7d6bb0', '#e9c46a', '#2f9e8f'];
+      for (const [y, n] of [[1.75, 0], [1.05, 3]] as [number, number][]) {
+        b.cyl(0.015, 0.015, w - 0.2, '#c9ced6', 0, y, z0 + 0.22, { rz: HP, seg: 6 });
+        for (let i = 0; i < Math.floor((w - 0.3) / 0.13); i++) { const x = -w / 2 + 0.2 + i * 0.13, col = P[(i + n + c.seed) % P.length]; b.box(0.035, 0.55, 0.34, col, x, y - 0.3, z0 + 0.22); b.box(0.035, 0.05, 0.12, '#c9ced6', x, y + 0.01, z0 + 0.22); }
+      }
+    } else {
+      const el = it.c === 'elektronik', body = el ? '#f4f6f8' : '#ffd23f', sh = el ? '#c9ced6' : '#e0533c';
+      b.box(w, 2.0, d, body, 0, 1.0, 0); for (let r = 0; r < 5; r++) b.box(w, 0.04, d + 0.02, sh, 0, 0.15 + r * 0.42, 0.01);
+      for (let r = 0; r < 4; r++) for (let i = 0; i < Math.floor((w - 0.2) / 0.24); i++) {
+        const x = -w / 2 + 0.2 + i * 0.24, y = 0.17 + r * 0.42, k = (i * 5 + r * 3 + c.seed) % 7;
+        if (el) { if (k < 3) { b.box(0.16, 0.22, 0.04, '#1d1d22', x, y + 0.11, d / 2 - 0.08); l.plane(0.13, 0.17, ['#7fd0ff', '#ffd23f', '#7fe0a8'][k], x, y + 0.12, d / 2 - 0.055); } else b.box(0.18, 0.14 + (k % 3) * 0.05, 0.22, ['#2a2d33', '#f4f2ec', '#3f4a6b', '#e0533c'][k % 4], x, y + 0.09, 0); }
+        else if (k < 2) b.sph(0.09, ['#e0533c', '#2f6fdb', '#49b96a'][k], x, y + 0.09, 0, { ws: 8, hs: 6 });
+        else if (k === 2) { b.sph(0.08, '#a8794e', x, y + 0.08, 0, { ws: 7, hs: 5 }); b.sph(0.06, '#a8794e', x, y + 0.2, 0, { ws: 7, hs: 5 }); }
+        else b.box(0.19, 0.16 + (k % 3) * 0.06, 0.24, ['#2f6fdb', '#49b96a', '#8a6bbf', '#e0533c', '#f4f2ec'][k % 5], x, y + 0.1, 0);
+      }
+    }
+  },
+  teshir: (c, it) => {
+    const { b, l } = c, w = it.w, d = it.d; b.box(w, 0.78, d, it.c === 'oyuncak' ? '#2f7fb3' : '#e9e4da', 0, 0.39, 0); b.box(w + 0.06, 0.04, d + 0.06, '#5a3b2a', 0, 0.8, 0);
+    if (it.c === 'oyuncak') return;   // the train track (esya) or a few boxes sit on it
+    for (let i = 0; i < 6; i++) {
+      const x = -w / 2 + 0.22 + (i % 2) * (w - 0.44), z = -d / 2 + 0.22 + Math.floor(i / 2) * (d - 0.44) / 2;
+      if (it.c === 'giyim') for (let k = 0; k < 4; k++) b.box(0.3, 0.05, 0.26, ['#e0533c', '#2f5f9a', '#f4f2ec', '#3a3d42', '#e9c46a'][(i + k) % 5], x, 0.85 + k * 0.05, z);
+      else { b.box(0.18, 0.02, 0.3, '#1d1d22', x, 0.83, z, { rx: -0.2 }); l.plane(0.15, 0.26, '#7fd0ff', x, 0.846, z, { rx: -HP - 0.2 }); }
+    }
+  },
+  depoRaf: (c, it) => { const { b } = c; b.box(it.w, 2.2, it.d, '#d8d2c4', 0, 1.1, 0); for (let r = 0; r < 5; r++) b.box(it.w, 0.03, it.d + 0.02, '#9aa5b0', 0, 0.2 + r * 0.44, 0.01);
+    shelfGoods(c, it.w - 0.2, 5, 0.22, it.d / 2 - 0.1, it.c === 'giyim' ? ['#e0533c', '#2f5f9a', '#f4f2ec', '#3a3d42', '#c94f6d'] : it.c === 'elektronik' ? ['#f4f2ec', '#2a2d33', '#3f4a6b', '#9aa5b0'] : ['#ffd23f', '#e0533c', '#2f6fdb', '#49b96a', '#8a6bbf']); },
+  paketMasa: (c, it) => { const { b } = c; b.box(0.42, 0.02, 0.32, '#f4f2ec', 0, 0.01, 0); b.cyl(0.04, 0.04, 0.4, it.c === 'oyuncak' ? '#e0533c' : '#c9a24a', -0.12, 0.05, -0.08, { rz: HP, seg: 8 });
+    for (let i = 0; i < 2; i++) { b.box(0.16, 0.2, 0.06, it.c === 'giyim' ? '#c94f6d' : it.c === 'elektronik' ? '#2b6fb8' : '#ffd23f', 0.05 + i * 0.12, 0.12, 0.06); b.tor(0.04, 0.008, '#3a3d42', 0.05 + i * 0.12, 0.24, 0.06, { ts: 10, arc: Math.PI }); } },
+  testMasa: (c) => { const { b, l } = c; b.box(0.36, 0.08, 0.26, '#3a3d42', 0, 0.04, 0); b.box(0.26, 0.18, 0.02, '#1d1d22', 0, 0.2, -0.06, { rx: -0.25 }); l.plane(0.22, 0.14, '#7fe0a8', 0, 0.2, -0.045, { rx: -0.25 }); b.cyl(0.006, 0.006, 0.3, '#e0533c', 0.15, 0.1, 0.05, { rz: 0.9, seg: 4 }); },
+  askilik: (c) => { const { b } = c, P = ['#e0533c', '#2f5f9a', '#f4f2ec', '#e9c46a', '#c94f6d', '#2f9e8f', '#3a3d42', '#7d6bb0'];
+    b.cyl(0.25, 0.25, 0.04, '#9aa5b0', 0, 0.02, 0, { seg: 14 }); b.cyl(0.025, 0.025, 1.5, '#c9ced6', 0, 0.77, 0, { seg: 6 }); b.tor(0.38, 0.015, '#c9ced6', 0, 1.5, 0, { rx: HP, ts: 20 });
+    for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; b.box(0.035, 0.6, 0.3, P[i % P.length], Math.cos(a) * 0.38, 1.18, Math.sin(a) * 0.38, { ry: -a }); } },
+  manken: (c, it) => { const { b } = c, top = it.c === 'b' ? '#2f5f9a' : '#c94f6d', bot = it.c === 'b' ? '#3a3d42' : '#c94f6d';
+    b.cyl(0.2, 0.2, 0.04, '#3a3d42', 0, 0.02, 0, { seg: 12 }); b.cyl(0.02, 0.02, 0.7, '#9aa5b0', 0, 0.4, 0, { seg: 5 });
+    b.cyl(0.13, it.c === 'b' ? 0.12 : 0.24, 0.55, bot, 0, it.c === 'b' ? 0.95 : 0.98, 0, { seg: 10 }); b.cyl(0.16, 0.12, 0.45, top, 0, 1.45, 0, { seg: 10 }); b.sph(0.1, '#f4f2ec', 0, 1.82, 0, { ws: 8, hs: 6 }); for (const s of [-1, 1]) b.cyl(0.035, 0.03, 0.5, top, s * 0.19, 1.42, 0, { seg: 6, rz: s * 0.15 }); },
+  prova: (c, it) => { const { b } = c, w = it.w, d = it.d; for (const s of [-1, 1]) b.box(0.05, 2.1, d, '#ece6dc', s * w / 2, 1.05, 0); b.box(w, 2.1, 0.05, '#ece6dc', 0, 1.05, -d / 2); b.box(w + 0.05, 0.06, d, '#5a3b2a', 0, 2.12, 0);
+    for (let i = 0; i < 7; i++) b.box(w / 7, 1.8, 0.04, i % 2 ? '#c94f6d' : '#a83e58', -w / 2 + (i + 0.5) * w / 7, 1.12, d / 2 - 0.05, { ry: (i % 2 - 0.5) * 0.3 }); b.box(0.3, 0.3, 0.02, '#c9a24a', -w / 2 + 0.25, 1.4, -d / 2 + 0.04); },
+  ayna: (c, it) => { c.b.box(it.w, 1.85, 0.05, '#c9a24a', 0, 1.05, 0); c.l.plane(it.w - 0.1, 1.72, '#d8eef6', 0, 1.05, 0.03); },
+  ayakkabi: (c, it) => { const { b } = c; b.box(it.w, 1.8, 0.04, '#5a3b2a', 0, 1.1, -it.d / 2 + 0.02);
+    for (let r = 0; r < 4; r++) { b.box(it.w - 0.1, 0.03, 0.26, '#e9e4da', 0, 0.45 + r * 0.38, 0, { rx: 0.2 }); for (let i = 0; i < 4; i++) b.box(0.12, 0.08, 0.22, ['#f4f2ec', '#1d1d22', '#e0533c', '#2f6fdb', '#a8794e'][(i + r) % 5], -it.w / 2 + 0.2 + i * (it.w - 0.4) / 3, 0.51 + r * 0.38, 0.02, { rx: 0.2 }); } },
+  aksesuar: (c) => { const { b } = c; b.cyl(0.22, 0.22, 0.04, '#3a3d42', 0, 0.02, 0, { seg: 12 }); b.cyl(0.025, 0.025, 1.7, '#c9a24a', 0, 0.87, 0, { seg: 6 });
+    for (let t = 0; t < 3; t++) for (let i = 0; i < 4; i++) { const a = i * HP + t * 0.6, x = Math.cos(a) * 0.2, z = Math.sin(a) * 0.2, y = 0.7 + t * 0.4, col = ['#e0533c', '#2f5f9a', '#e9c46a', '#a8794e'][(i + t) % 4];
+      if (t === 2) { b.cyl(0.1, 0.12, 0.08, col, x, y, z, { seg: 10 }); b.cyl(0.16, 0.16, 0.01, col, x, y - 0.04, z, { seg: 12 }); } else { b.box(0.18, 0.16, 0.07, col, x, y - 0.1, z, { ry: -a }); b.tor(0.06, 0.008, col, x, y, z, { ry: -a, ts: 10, arc: Math.PI }); } } },
+  ledPano: (c, it) => { const y = it.y || 1.5; c.b.box(it.w + 0.08, 0.68, 0.05, '#1d1d22', 0, y, 0); const tx = signTex(it.esya === 'led_vitrin' ? 'YENİ SEZON %30' : it.esya === 'led_e' ? 'YENİ MODEL ÇIKTI' : 'OYUN ZAMANI!', it.c || '#e0533c', '#ffffff', it.w / 0.6); const p = new T.Mesh(new T.PlaneGeometry(it.w, 0.6), new T.MeshBasicMaterial({ map: tx })); p.position.set(0, y, 0.03); c.grp.userData.curItem.add(p); },
+  dikis: (c) => { const { b } = c; b.box(0.4, 0.06, 0.2, '#f4f2ec', 0, 0.03, 0); b.box(0.08, 0.22, 0.14, '#f4f2ec', 0.14, 0.15, 0); b.box(0.34, 0.07, 0.14, '#f4f2ec', 0.0, 0.27, 0); b.box(0.03, 0.08, 0.03, '#c0392b', -0.14, 0.2, 0); b.cyl(0.04, 0.04, 0.03, '#2a2d33', 0.17, 0.2, 0.08, { rx: HP, seg: 10 });
+    b.cyl(0.05, 0.05, 0.35, '#c94f6d', -0.05, 0.05, -0.18, { rz: HP, seg: 10 }); },
+  demoMasa: (c, it) => { const { b, l } = c; b.box(it.w, 0.8, it.d, '#f4f6f8', 0, 0.4, 0); b.box(it.w + 0.04, 0.03, it.d + 0.04, '#2b6fb8', 0, 0.815, 0);
+    for (let i = 0; i < 4; i++) { const x = -it.w / 2 + 0.2 + (i % 2) * (it.w - 0.4), z = -it.d / 2 + 0.25 + Math.floor(i / 2) * (it.d - 0.5); b.box(0.05, 0.05, 0.05, '#9aa5b0', x, 0.85, z); b.box(0.09, 0.17, 0.012, '#1d1d22', x, 0.95, z, { rx: -0.3 }); l.plane(0.075, 0.15, ['#7fd0ff', '#ffd23f', '#7fe0a8', '#f2a2b3'][i], x, 0.95, z + 0.008, { rx: -0.3 }); } },
+  tamir: (c) => { const { b, l } = c; b.box(0.45, 0.01, 0.32, '#2f9e5a', 0, 0.005, 0); b.box(0.09, 0.012, 0.17, '#1d1d22', -0.08, 0.02, 0); l.plane(0.07, 0.14, '#3a3d42', 0.06, 0.03, 0, { rx: -HP }); for (let i = 0; i < 3; i++) b.cyl(0.006, 0.01, 0.13, ['#e0533c', '#ffd23f', '#2f6fdb'][i], 0.15, 0.015, -0.1 + i * 0.07, { rx: HP, seg: 5 }); },
+  tvDuvar: (c, it) => { const y = it.y || 1.75, sw = it.w / 2 - 0.08, sh = sw * 0.58; for (let i = 0; i < 4; i++) { const x = -it.w / 4 + (i % 2) * it.w / 2, yy = y + (i < 2 ? sh / 2 + 0.05 : -sh / 2 - 0.05); c.b.box(sw + 0.05, sh + 0.05, 0.05, '#111', x, yy, 0);
+    const mm = new T.MeshBasicMaterial({ color: '#2a8fd0' }), s = new T.Mesh(new T.PlaneGeometry(sw, sh), mm); s.position.set(x, yy, 0.03); c.grp.userData.curItem.add(s); c.an.screens.push(mm); } },
+  kulaklikStand: (c) => { const { b } = c; b.box(0.4, 1.3, 0.4, '#2a2d33', 0, 0.65, 0); for (let r = 0; r < 3; r++) for (const s of [-1, 1]) { const y = 0.6 + r * 0.32, col = ['#e0533c', '#f4f2ec', '#2b6fb8'][(r + (s > 0 ? 1 : 0)) % 3]; b.tor(0.08, 0.012, col, s * 0.12, y, 0.22, { ts: 12, arc: Math.PI }); for (const t of [-1, 1]) b.cyl(0.035, 0.035, 0.03, col, s * 0.12 + t * 0.08, y - 0.01, 0.22, { rz: HP, seg: 10 }); } },
+  konsol: (c, it) => { const { b, l } = c; b.box(it.w - 0.1, 0.4, 0.35, '#2a2d33', 0, 0.2, -it.d / 2 + 0.2); b.box(0.75, 0.45, 0.05, '#111', 0, 0.75, -it.d / 2 + 0.15); const mm = new T.MeshBasicMaterial({ color: '#2a8fd0' }), s = new T.Mesh(new T.PlaneGeometry(0.68, 0.38), mm); s.position.set(0, 0.75, -it.d / 2 + 0.18); c.grp.userData.curItem.add(s); c.an.screens.push(mm);
+    b.box(0.2, 0.04, 0.15, '#f4f2ec', 0.3, 0.42, -it.d / 2 + 0.2); for (const [x, col] of [[-0.25, '#e0533c'], [0.25, '#2b6fb8']] as [number, string][]) b.sph(0.24, col, x, 0.18, it.d / 2 - 0.3, { ws: 10, hs: 6, sy: 0.65 }); l.sph(0.02, '#7fe0a8', -0.3, 0.42, -it.d / 2 + 0.2, { ws: 4, hs: 3 }); },
+  vr: (c) => { const { b, l } = c; b.cyl(0.3, 0.3, 0.03, '#2a2d33', 0, 0.015, 0, { seg: 16 }); l.tor(0.29, 0.012, '#7fd0ff', 0, 0.035, 0, { rx: HP, ts: 20 }); b.cyl(0.03, 0.03, 1.1, '#9aa5b0', 0.22, 0.55, -0.2, { seg: 6 }); b.box(0.2, 0.09, 0.1, '#f4f2ec', 0.22, 1.12, -0.2); b.box(0.16, 0.05, 0.02, '#1d1d22', 0.22, 1.12, -0.145); },
+  drone: (c) => { const { b } = c; b.cyl(0.005, 0.005, 0.8, '#3a3d42', 0, 0.45, 0, { seg: 3 }); b.box(0.16, 0.05, 0.16, '#f4f2ec', 0, 0, 0);
+    for (let i = 0; i < 4; i++) { const a = Math.PI / 4 + i * HP, x = Math.cos(a) * 0.17, z = Math.sin(a) * 0.17; b.box(0.2, 0.02, 0.03, '#3a3d42', x / 2, 0, z / 2, { ry: -a }); const r = new T.Mesh(new T.CylinderGeometry(0.08, 0.08, 0.008, 10), lm('#9aa5b0')); r.position.set(x, 0.03, z); c.grp.userData.curItem.add(r); c.an.spin.push(r); } },
+  pelusSepet: (c, it) => { const { b } = c; b.cyl(it.w / 2, it.w / 2 - 0.06, 0.5, '#c8a06a', 0, 0.25, 0, { seg: 14 }); b.tor(it.w / 2, 0.03, '#a8794e', 0, 0.5, 0, { rx: HP, ts: 18 });
+    for (let i = 0; i < 7; i++) { const a = i * 0.9, r = i ? 0.2 : 0, x = Math.cos(a) * r, z = Math.sin(a) * r, y = i ? 0.55 : 0.7, gull = i % 3 === 0, col = gull ? '#f4f2ec' : ['#a8794e', '#f2a2b3', '#7fb4d8'][i % 3]; b.sph(0.12, col, x, y, z, { ws: 8, hs: 6 }); b.sph(0.08, col, x, y + 0.15, z, { ws: 8, hs: 6 }); if (gull) b.cone(0.025, 0.07, '#e8892b', x, y + 0.15, z + 0.09, { rx: HP, seg: 6 }); } },
+  balon: (c) => { const g = new T.Group(); c.b.cyl(0.12, 0.14, 0.12, '#9aa5b0', 0, 0.06, 0, { seg: 10 });
+    for (let i = 0; i < 6; i++) { const a = i * 1.05, x = Math.cos(a) * 0.15, z = Math.sin(a) * 0.15, y = 1.7 + (i % 3) * 0.18; part(g, SPH, ['#e0533c', '#ffd23f', '#2f6fdb', '#49b96a', '#c94f6d', '#8a6bbf'][i], x, y, z, 0.13, 0.16, 0.13); part(g, BOX, '#f4f2ec', x / 2, (y - 0.15) / 2 + 0.06, z / 2, 0.006, y - 0.2, 0.006); }
+    c.grp.userData.curItem.add(g); c.an.bob.push(g); },
+  trenPist: (c, it) => { const { b } = c, k = (it.d - 0.3) / 0.64; b.box(it.w - 0.08, 0.02, it.d - 0.08, '#6f9e4f', 0, 0.01, 0); b.tor(0.32, 0.015, '#7d4a2a', 0, 0.03, 0, { rx: HP, sy: k });
+    const g = new T.Group(); g.position.set(0, 0.03, 0); g.scale.set(1, 1, k); for (let i = 0; i < 3; i++) { const a = i * 0.45; part(g, BOX, ['#e0533c', '#2f6fdb', '#ffd23f'][i], Math.cos(a) * 0.32, 0.05, Math.sin(a) * 0.32, 0.08, 0.08, 0.12).rotation.y = -a; }
+    c.grp.userData.curItem.add(g); c.an.spin.push(g); b.cone(0.06, 0.12, '#49b96a', 0.05, 0.08, 0.05, { seg: 6 }); },
+  legoDuvar: (c, it) => { const { b } = c; b.box(it.w, 1.9, 0.04, '#f4f2ec', 0, 1.1, -it.d / 2 + 0.02); for (let r = 0; r < 4; r++) { b.box(it.w - 0.1, 0.03, 0.24, '#ffd23f', 0, 0.4 + r * 0.4, 0); for (let i = 0; i < 4; i++) b.box(0.22, 0.26, 0.08, ['#e0533c', '#2f6fdb', '#49b96a', '#ffd23f', '#8a6bbf'][(i + r * 2) % 5], -it.w / 2 + 0.17 + i * (it.w - 0.34) / 3, 0.55 + r * 0.4, 0.02); } },
+  oyunKale: (c, it) => { const { b } = c, w = it.w, d = it.d; b.box(w - 0.3, 0.9, d - 0.3, '#f2a2b3', 0, 0.45, 0); b.box(w - 0.3, 0.06, d - 0.3, '#ffd23f', 0, 0.92, 0);
+    for (const [x, z] of [[-1, -1], [1, -1], [-1, 1], [1, 1]] as [number, number][]) { b.cyl(0.13, 0.13, 1.3, '#f4f2ec', x * (w / 2 - 0.15), 0.65, z * (d / 2 - 0.15), { seg: 10 }); b.cone(0.17, 0.3, '#e0533c', x * (w / 2 - 0.15), 1.45, z * (d / 2 - 0.15), { seg: 10 }); }
+    b.box(0.3, 0.04, 0.9, '#2f6fdb', w / 2 - 0.05, 0.45, d / 2 - 0.25, { rx: 0.7 }); b.box(0.3, 0.4, 0.04, '#3a2416', 0, 0.3, d / 2 - 0.14); },
+  maskot: (c) => { const { b } = c; b.cyl(0.25, 0.25, 0.08, '#2f6fdb', 0, 0.04, 0, { seg: 14 }); b.sph(0.3, '#f4f2ec', 0, 0.48, 0, { ws: 12, hs: 8, sy: 1.2 }); b.sph(0.2, '#f4f2ec', 0, 0.98, 0.04, { ws: 10, hs: 8 });
+    b.cone(0.06, 0.2, '#e8892b', 0, 0.96, 0.27, { rx: HP, seg: 8 }); for (const s of [-1, 1]) { b.box(0.06, 0.4, 0.28, '#9aa5b0', s * 0.3, 0.55, -0.02, { rz: s * 0.3 }); b.sph(0.03, '#111', s * 0.08, 1.04, 0.18, { ws: 5, hs: 4 }); b.box(0.12, 0.03, 0.16, '#e8892b', s * 0.1, 0.1, 0.12); } },
+  hediye: (c) => { const { b } = c; for (const [x, z, s, col] of [[-0.1, -0.05, 0.18, '#e0533c'], [0.1, 0.05, 0.14, '#2f6fdb'], [-0.05, 0.05, 0.1, '#ffd23f']] as [number, number, number, string][]) { const y = col === '#ffd23f' ? 0.23 : s / 2; b.box(s, s, s, col, x, y, z); b.box(s + 0.005, s + 0.005, 0.02, '#f4f2ec', x, y, z); b.box(0.02, s + 0.005, s + 0.005, '#f4f2ec', x, y, z); b.tor(0.03, 0.008, '#f4f2ec', x, y + s / 2 + 0.02, z, { ts: 8 }); } },
 };
 
 /* ---------- one room ---------- */
@@ -266,7 +347,7 @@ function buildRoom(m: IcMekan, own: { lv: number; isci: number; esya: string[]; 
       wb.pop();
     };
     wall(W, 0, -D / 2 + 0.25, 0); wall(D, -W / 2 + 0.25, 0, HP); wall(D, W / 2 - 0.25, 0, -HP); wall(W, 0, D / 2 - 0.25, Math.PI, 1.7);
-    for (const [x, z, ry, len] of [[-W / 2 + 0.26, 0, HP, D], [W / 2 - 0.26, 0, -HP, D]] as [number, number, number, number][]) {   // windows on the side walls
+    for (const [x, z, ry, len] of (m.bina === 'avm' ? [] : [[-W / 2 + 0.26, 0, HP, D], [W / 2 - 0.26, 0, -HP, D]]) as [number, number, number, number][]) {   // windows on the side walls (none inside the mall: those walls are shared with the next shop)
       const n = Math.max(1, Math.floor((len - 1) / 2.4));
       for (let i = 0; i < n; i++) { const u = -len / 2 + (i + 0.5) * len / n; wb.push(mtx(x, 0, z, 0, ry, 0)); wb.box(1.1, 1.2, 0.04, '#fbfaf6', u, 1.75, 0.02); l.push(mtx(x, 0, z, 0, ry, 0)); l.plane(0.95, 1.05, '#bfe3f5', u, 1.75, 0.045); l.pop(); wb.pop(); }
     }
@@ -321,6 +402,7 @@ export function createIcMekan(d: IcDeps): IcView {
       t += dt; acc += dt;
       const hp = d.hero(); inside = null;
       for (const m of IC_MEKANLAR) if (icIcinde(m, hp, -0.1)) { inside = m.id; break; }
+      const bina = (inside ? IC_MEKANLAR.find(x => x.id === inside)!.bina : IC_MEKANLAR.find(x => x.bina && icIcinde(x, hp, 0.5))?.bina) || null;
       if (acc >= 0.3) {   // (re)build what is near, drop what is far
         acc = 0;
         const own = d.isletme(), sl = d.salon();
@@ -337,7 +419,7 @@ export function createIcMekan(d: IcDeps): IcView {
       const nk = d.night();
       for (const [id, r] of rooms) {
         const m = IC_MEKANLAR.find(x => x.id === id)!;
-        r.g.visible = !!m.salon || icIcinde(m, hp, 0.5);
+        r.g.visible = !!m.salon || icIcinde(m, hp, 0.5) || (!!bina && m.bina === bina);   // 2026-11-20: inside one AVM room the whole mall shows (the shell hides)
         if (!r.g.visible) continue;
         const a = r.an;
         for (const s of a.spin) s.rotation.y += dt * 2.2;

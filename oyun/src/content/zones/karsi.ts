@@ -6,7 +6,7 @@
  * lines) are paved strips that stay open in the walk grid; only buildings, stands, fences and the fountain block.
  */
 import type { PrefabDef, PrefabPlacement, PartDef, Rect } from '../../engine/api';
-import { IC_BY_ID, icCollidersLocal } from '../ic-mekan';
+import { IC_BY_ID, icCollidersLocal, icBinaCollidersLocal } from '../ic-mekan';
 
 type Def = PrefabDef;
 const box = (w: number, h: number, d: number, x: number, y: number, z: number, color: string, name?: string): PartDef => ({ shape: 'box', size: [w, h, d], pos: [x, y, z], color, name });
@@ -16,9 +16,9 @@ const R = (w: number, d: number, ox = 0, oz = 0): Rect => ({ x0: ox - w / 2, x1:
 const PAVE = '#c4aa80';
 
 /** A building with windows on the front (+z) and both side faces; the door on `door`. */
-function bld(id: string, w: number, d: number, h: number, wall: string, trim: string, door: '+z' | '-z' | '+x' | '-x', extra: PartDef[] = [], glb = false, ic?: string): Def {
+function bld(id: string, w: number, d: number, h: number, wall: string, trim: string, door: '+z' | '-z' | '+x' | '-x', extra: PartDef[] = [], glb = false, ic?: string, at?: { x: number; z: number }): Def {
   // 2026-11-09 "her binaya girilebilmeli": enterable buildings collide as walls with a door gap + their furniture (content/ic-mekan.ts)
-  if (glb) { void extra; return { id, parts: [box(w + 0.6, 0.12, d + 0.6, 0, 0.06, 0, '#b9b3a6', 'base')], colliders: ic && IC_BY_ID[ic] ? icCollidersLocal(IC_BY_ID[ic]) : [R(w, d)] }; }   // the whole building is a model (view/world/karsi-bina.ts)
+  if (glb) { void extra; return { id, parts: [box(w + 0.6, 0.12, d + 0.6, 0, 0.06, 0, '#b9b3a6', 'base')], colliders: at && ic ? icBinaCollidersLocal(ic, at.x, at.z) : ic && IC_BY_ID[ic] ? icCollidersLocal(IC_BY_ID[ic]) : [R(w, d)] }; }   // the whole building is a model (view/world/karsi-bina.ts)
   const parts: PartDef[] = [box(w, h, d, 0, h / 2, 0, wall, 'wall'), box(w + 0.5, 0.35, d + 0.5, 0, h + 0.17, 0, trim, 'roof')];
   const floors = Math.max(1, Math.floor((h - 1.2) / 3.0)), glass = '#9cc3d6';
   for (let f = 0; f < floors; f++) {
@@ -79,7 +79,7 @@ export function karsiPrefabs(): PrefabDef[] {
   defs.push(bld('kr.kirtasiye', 7.1, 3.6, 3.6, '#bfd8e8', '#2b6fb8', '+z', [], true, 'kirtasiye'));
   defs.push(bld('kr.okul', 18.3, 7.5, 8.0, '#e9c98f', '#a2472f', '+z', [], true, 'okul'));
   defs.push(bld('kr.kantin', 3.7, 2.8, 3.0, '#f6efe1', '#e0533c', '-x', [box(3.6, 0.15, 1.2, 0, 2.4, 1.9, '#e0533c')], true));
-  defs.push(bld('kr.avm', 16.9, 10.6, 9.5, '#cfd6e6', '#3f4a6b', '-z', [], true, 'avm'));
+  defs.push(bld('kr.avm', 16.9, 10.6, 9.5, '#cfd6e6', '#3f4a6b', '-z', [], true, 'avm', KARSI_AVM));   // 2026-11-20: four rooms (lokanta + 3 shops), every one with its own door
   defs.push(bld('kr.hastane', 16.9, 6.7, 12.0, '#f2f4f6', '#d93a3a', '-z', [...redCross(0, 10.0, 3.5)], true, 'hastane'));
   defs.push(bld('kr.acil', 3.3, 3.2, 3.6, '#f2f4f6', '#d93a3a', '-x', [], true, 'acil'));     // walls: view/world/karsi-bina.ts
   defs.push(bld('kr.morg', 3.3, 3.2, 3.2, '#c9ced6', '#5b6068', '-x', [], true, 'morg'));
@@ -100,6 +100,8 @@ export function karsiPrefabs(): PrefabDef[] {
 }
 
 export const KARSI_FOUNTAIN = { x: -3.9, z: 45 };
+/** the mall shell centre (view/world/karsi-bina.ts 'avm'); its rooms are the AVM strips of content/ic-mekan.ts */
+export const KARSI_AVM = { x: 20.15, z: 51.8 };
 export const KARSI_PITCH = { x: -39.4, z: 45.4, w: 25.2, d: 17.8 };
 const P = (id: string, prefab: string, x: number, z: number, rotY?: number): PrefabPlacement => ({ id, prefab, pos: { x, z }, ...(rotY ? { rotY } : {}) });
 export const KARSI_TREES: [number, number][] = [[-59.5, 34], [-59.5, 46], [-59.5, 55], [60.2, 36], [60.2, 46], [60.2, 57], [-44, 58.2], [-28, 58.2], [-10, 58.2], [3, 58.2], [18, 58.2], [34, 58.2], [47, 58.2], [-48, 31], [-30, 31], [-8, 31.5], [10, 31], [34, 31], [52, 31.2]];
@@ -120,7 +122,7 @@ export function karsiProps(): PrefabPlacement[] {
   out.push(P('kr-basket', 'kr.basket', 36, 38.9));
   out.push(P('kr-okul', 'kr.okul', 48.85, 37.25), P('kr-kantin', 'kr.kantin', 56.15, 42.8));
   out.push(P('kr-fence-sc1', 'kr.cit.x10', 37.5, 44.4), P('kr-fence-sc2', 'kr.cit.x10', 52.5, 44.4), P('kr-fence-sc3', 'kr.cit.z11', 58.2, 38.9), P('kr-fence-gate', 'kr.cit.x5', 45, 44.4), P('kr-fence-sc4', 'kr.cit.z11', 32.5, 38.9), P('kr-fence-sc5', 'kr.cit.x8', 36.1, 33.4));
-  out.push(P('kr-avm', 'kr.avm', 20.15, 51.8)   /* 2026-11-08 user: bank/AVM touched; AVM shallower and pushed south, 5.7 m gap */);
+  out.push(P('kr-avm', 'kr.avm', KARSI_AVM.x, KARSI_AVM.z)   /* 2026-11-08 user: bank/AVM touched; AVM shallower and pushed south, 5.7 m gap */);
   out.push(P('kr-metro', 'kr.metro', 8.5, 53.8));
   out.push(P('kr-hastane', 'kr.hastane', 46.95, 53.55), P('kr-acil', 'kr.acil', 57.3, 52.0), P('kr-morg', 'kr.morg', 57.3, 55.5), P('kr-ambpark', 'kr.ambpark', 35.4, 53.55));
   KARSI_TREES.forEach(([x, z], i) => out.push(P('kr-tree' + i, 'kr.treeblock', x, z)));
