@@ -126,6 +126,7 @@ import { createDisariLook, type DisariLookView } from './view/disari';
 import { createStadyumView } from './view/stadyum';
 import { createNightLights, roomLightsFor } from './view/world/night-lights';
 import { drawCostTable } from '../engine/perf/draw-cost';
+import { kutuda, kopyalar } from '../engine/perf/sahne-tara';
 import { createHedefCard, type HedefCard } from './ui/hedef-card';
 import { createFaz2Hud, type Faz2Hud } from './ui/faz2-hud';
 import { createStantLook, type StantLookView } from './view/world/stant-look';
@@ -693,6 +694,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     const camDt = introLeft > 0 && simDt > fdt * 2 + 0.05 ? Math.min(simDt, 1) : fdt;
     if (kirtasiyeFp) guard('kirtasiyeFp', () => {   // first-person behind the kırtasiye counter
       kirtasiyeFp.update();
+      input.freeze?.(kirtasiyeFp.active());   // PRF-10: behind the counter the hero stays put (camera input is ignored by the rig)
       const m = KT_IC.kirtasiye, W = m ? ktDim(m).W : 0;
       if (kirtasiyeFp.active() && m) { const e = ktWorld(m, W / 2 - 0.45, 0), to = ktWorld(m, -W / 2, 0); (cam as unknown as { fp(v: unknown): void }).fp({ x: e.x, y: 1.55, z: e.z, yaw: Math.atan2(to.x - e.x, to.z - e.z), pitch: -0.1 }); }
       else (cam as unknown as { fp(v: unknown): void }).fp(null);
@@ -840,6 +842,10 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   // derlemesinde (vite --mode olcum; tests/browser/cizim-butce.mjs --build) var, oyuncu derlemesinde ağaçtan atılır.
   if (import.meta.env.MODE !== 'production') reg('drawCost', (top = 20) => { const sun = (R as unknown as { sun?: { castShadow: boolean; shadow: { camera: Parameters<typeof drawCostTable>[1] } } }).sun; return drawCostTable(scene, cam.camera, sun?.castShadow ? sun.shadow.camera : null, top || 20); });
   if (import.meta.env.MODE !== 'production') reg('shadowCull', (on?: boolean) => { const r = R as unknown as { shadowCull?: boolean; shadowStats?: () => unknown }; if (on !== undefined && r.shadowCull !== undefined) r.shadowCull = !!on; return { on: r.shadowCull ?? false, ...(r.shadowStats?.() as object ?? {}) }; });   // PRF-06 A/B ölçüm kancası
+  if (import.meta.env.MODE !== 'production') reg('sahneKutu', (k: Parameters<typeof kutuda>[1], max?: number) => kutuda(scene, k, max));   // PRF-09 hayaletlenme tanısı
+  if (import.meta.env.MODE !== 'production') reg('sahneKopya', (max?: number) => kopyalar(scene, max));
+  if (import.meta.env.MODE !== 'production') reg('kameraNear', (v: number | null) => { (cam as unknown as { nearFixed?(v: number | null): void }).nearFixed?.(v ?? null); return cam.camera.near; });   // PRF-09 A/B
+  if (import.meta.env.MODE !== 'production') reg('heroPoz',() => { const o = H.object.position; return { x: +o.x.toFixed(3), y: +o.y.toFixed(3), z: +o.z.toFixed(3), camY: +cam.camera.position.y.toFixed(3), near: cam.camera.near }; });
   reg('lights', () => nightLights?.stats() ?? null);   // PRF-08: gece ışığı havuzu durumu
   reg('setTime', (h: number) => { sim.command({ kind: 'setTime', hour: h }); lastHour = -1; timeT = 0; guard('setTime', () => { R.setTime(sim.clock.hour, sim.clock.season); havaLook?.relight(); }); });
   reg('setStage', (n: number) => { sim.command({ kind: 'setStage', stage: n }); callWorld('setStage', sim.state.stage, sim.state.renewed); });

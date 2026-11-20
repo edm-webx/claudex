@@ -8,6 +8,7 @@
  */
 import * as T from 'three';
 import { Batch } from '../../../engine/prefab/batch';
+import { applyLookDefaults } from '../../../engine/render/look';
 import { shapeInto } from '../../../content/prefabs/iskele/decor-extra';
 import { HOME_AREAS, HOME_THEMES, homeItemById } from '../../../content/dekor-katalog';
 import { dekorEvApi } from '../../sim/dekor-ev';
@@ -72,6 +73,7 @@ export function createEvRoom(deps: EvRoomDeps): EvRoomView {
     try {
       renderer = new T.WebGLRenderer({ canvas, antialias: true });
       renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+      applyLookDefaults(renderer);   // PRF-04: same filmic output and exposure as the main scene (lamp highlights roll off instead of clipping)
     } catch (e) { console.warn('[ev-room] no webgl', e); renderer = null; }
     scene = new T.Scene();
     scene.add(new T.HemisphereLight('#fff4e0', '#7a5a40', 1.1));

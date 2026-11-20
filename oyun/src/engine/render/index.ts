@@ -18,6 +18,7 @@ import { createCameraRig, type MotorCameraRig } from '../camera';
 import { makeSky } from './sky';
 import { createShadowCull } from './shadow-cull';
 import { createWarmGate } from './warm-gate';
+import { applyLookDefaults } from './look';
 import { todAt, phaseAt, type Tod } from './tod';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
@@ -187,11 +188,16 @@ export function createRender(deps: RenderDeps): MotorRender {
     if (gate.held() && now > gateUntil) gate.release();   // safety: never hide anything longer than 3 s
     if (!gate.dirty() || !renderer) return;
     const pr = renderer.properties;
-    const got = gate.collect(sc, m => !(pr.get(m) as { currentProgram?: unknown }).currentProgram);
+    type Prog = { isReady(): boolean };
+    const got = gate.collect(sc, m => !(pr.get(m) as { currentProgram?: Prog }).currentProgram);
     if (!got.length) return;
-    gateN += got.length; deps.perf?.count('shaderBekletilen', gateN);
     gateUntil = now + 3000;
     void compileFor(sc, cam, got).then(() => { gate.release(got); });
+    // a new material instance whose program already exists (cache hit) is ready right after the sync part: show it this frame,
+    // only objects whose program is really still linking wait (else a view that respawns meshes would blink for a frame)
+    const ready = got.filter(o => { const mt = (o as T.Mesh).material; return (Array.isArray(mt) ? mt : [mt]).every(m => { const cp = (pr.get(m) as { currentProgram?: Prog }).currentProgram; return !!cp && cp.isReady(); }); });
+    if (ready.length) gate.release(ready);
+    if (got.length > ready.length) { gateN += got.length - ready.length; deps.perf?.count('shaderBekletilen', gateN); }
   };
   let gl2: WebGL2RenderingContext | null = null, gpuExt: { TIME_ELAPSED_EXT: number; GPU_DISJOINT_EXT: number } | null = null;
   let gpuQ: WebGLQuery | null = null; const gpuPending: WebGLQuery[] = [];
@@ -317,8 +323,7 @@ export function createRender(deps: RenderDeps): MotorRender {
         deps.perf?.meta('gpu', dbg ? String(c.getParameter(dbg.UNMASKED_RENDERER_WEBGL)) : 'bilinmiyor');
         deps.perf?.meta('gpuZamanOlcer', gpuExt ? 'var' : 'yok');
       } catch { /* headless */ }
-      renderer.outputColorSpace = T.SRGBColorSpace;
-      renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.98;
+      applyLookDefaults(renderer);   // sRGB + ACES filmic, exposure 0.98 (look.ts: the same output for every canvas in the game)
       renderer.shadowMap.type = T.PCFSoftShadowMap;
       renderer.shadowMap.enabled = true;
       wantAA = !!t.antialias;

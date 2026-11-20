@@ -39,10 +39,11 @@ function bench(id: string): Def { return { id, parts: [box(1.8, 0.08, 0.5, 0, 0.
 
 export function karsiPrefabs(): PrefabDef[] {
   const defs: Def[] = [];
-  const pave = (id: string, w: number, d: number, color = PAVE) => defs.push({ id, parts: [plane(w, d, 0.07, color)] });
+  // PRF-09: overlapping strips sat in one plane (y 0.07) and z-fought ("uzakta titreyip çift görünme"); each crossing layer is 4 mm up
+  const pave = (id: string, w: number, d: number, color = PAVE, y = 0.07) => defs.push({ id, parts: [plane(w, d, y, color)] });
   pave('kr.pave.wide', 124, 3.2); pave('kr.pave.s', 124, 2.2);
-  pave('kr.pave.gate', 14, 3.0); pave('kr.pave.e1', 26.6, 3.0); pave('kr.pave.v1', 3.0, 19); pave('kr.pave.v2', 6.3, 16); pave('kr.pave.h2', 25.6, 6);
-  pave('kr.plaza', 18.4, 24.4, '#c8ad82');
+  pave('kr.pave.gate', 14, 3.0, PAVE, 0.074); pave('kr.pave.e1', 26.6, 3.0, PAVE, 0.074); pave('kr.pave.v1', 3.0, 19, PAVE, 0.078); pave('kr.pave.v2', 6.3, 16, PAVE, 0.078); pave('kr.pave.h2', 25.6, 6, PAVE, 0.074);
+  pave('kr.plaza', 18.4, 24.4, '#c8ad82', 0.082);
   // tribün blocks: three steps with a crowd-free seat row
   const stand = (id: string, w: number, d: number, axis: 'z' | 'x'): Def => {
     const parts: PartDef[] = [];
@@ -63,7 +64,9 @@ export function karsiPrefabs(): PrefabDef[] {
     lines.push(box(0.1, 2.0, 0.1, sx * W / 2, 1.0, -1.6, '#f4f4f0'), box(0.1, 2.0, 0.1, sx * W / 2, 1.0, 1.6, '#f4f4f0'), box(0.1, 0.1, 3.3, sx * W / 2, 2.0, 0, '#f4f4f0'), box(1.2, 1.8, 3.2, sx * (W / 2 + 0.7), 0.95, 0, '#e8ecef'));
   }
   for (const [x, z] of [[-W / 2 - 1.5, -D / 2 - 1.5], [W / 2 + 1.5, -D / 2 - 1.5], [-W / 2 - 1.5, D / 2 + 1.5], [W / 2 + 1.5, D / 2 + 1.5]]) lines.push(box(0.2, 8, 0.2, x, 4, z, '#5b6068'), box(1.6, 0.5, 0.4, x, 8.1, z, '#fff7cf'));
-  defs.push({ id: 'kr.pitch', parts: lines });
+  // PRF-09: the floodlight masts and the goal nets are real things: they block like everything else that stands up (no walking through)
+  const pitchCol: Rect[] = [R(0.4, 0.4, -W / 2 - 1.5, -D / 2 - 1.5), R(0.4, 0.4, W / 2 + 1.5, -D / 2 - 1.5), R(0.4, 0.4, -W / 2 - 1.5, D / 2 + 1.5), R(0.4, 0.4, W / 2 + 1.5, D / 2 + 1.5), R(1.2, 3.2, -(W / 2 + 0.7), 0), R(1.2, 3.2, W / 2 + 0.7, 0)];
+  defs.push({ id: 'kr.pitch', parts: lines, colliders: pitchCol });
   // fountain: basin, rim, central column, water jets
   defs.push({ id: 'kr.fiskiye', parts: [cyl(2.9, 0.5, 2.9, 0, 0.25, 0, '#b9ad99', 24), cyl(2.5, 0.52, 2.5, 0, 0.27, 0, '#5fa8d0', 24), cyl(0.35, 1.8, 0.45, 0, 1.2, 0, '#b9ad99', 12),
     cyl(0.9, 0.2, 0.2, 0, 2.15, 0, '#b9ad99', 14), cyl(0.05, 1.4, 0.08, 0, 2.9, 0, '#bfe6f7', 6),

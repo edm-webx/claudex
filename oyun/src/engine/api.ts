@@ -326,6 +326,8 @@ export interface Input {
   setHand(h: 'left' | 'right'): void;
   /** Test hook `input(x,z)`: overrides joystick until cleared with null. */
   inject(move: Vec2 | null): void;
+  /** PRF-10: first-person counter: no hero movement from joystick/keys while on (taps still work). */
+  freeze?(on: boolean): void;
   /** Screen-space pick resolver (render.pick). */
   setPicker(fn: (p: ScreenPt) => string | null): void;
   readonly interactions: InteractionRegistry;

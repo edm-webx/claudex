@@ -5,6 +5,7 @@
 import type { Nav, Vec2 } from '../../../engine/api';
 import { angLerp } from '../../../engine/core';
 import type { Actor } from './types';
+import { zeminY } from '../../../content/ustgecit';
 
 export class Walker {
   path: Vec2[] = [];
@@ -35,6 +36,7 @@ export class Walker {
       this.moving = true;
     }
     a.speed = dt > 0 ? moved / dt : 0;
+    if (this.moving) a.y = zeminY(a.x, a.z);   // PRF-09: a walker on the footbridge climbs the same stair ramp as the hero
     return this.path.length > 0;
   }
   stop(): void { this.path.length = 0; this.moving = false; this.a.speed = 0; }
