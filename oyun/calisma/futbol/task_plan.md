@@ -28,3 +28,10 @@ Kaynak paketler: /mnt/project-files/sosisci-oyun/plan-2026-11-13/studyo/uzman-pa
 
 ## Durum
 - [ ] Motor  - [ ] Görsel  - [ ] Kulüp/lig  - [ ] Kontrol  - [ ] Birleştirme + qa + ekran görüntüleri  - [ ] Ana thread'e teslim
+
+## DURDURULDU 2026-11-20 18:41 (sahip kararı, limit tasarrufu)
+Tüm alt ajanlar durduruldu. Kodda hiçbir değişiklik commit'lenmedi; yalnızca iki yarım dosya kaldı, bunlar da dala alınmadı:
+- motor ajanı: sadece okuma/ön araştırma yaptı, kod yazmadı (oyun/calisma/futbol/hiz.ts boş taslak, worktree'de).
+- kontrol ajanı: src/game/ui/hali-saha-girdi.ts başlangıç iskeleti (worktree agent-ade8b9f61acd7a983, commit'siz).
+- görsel ve kulüp/lig ajanları: hiçbir dosya üretmedi.
+Devam emri gelince: iz tablosundaki 4 işi baştan başlat (motor opus, görsel opus, kulüp/kontrol sonnet). İlk adım: FUT-01 ölçüm düzeneği.
