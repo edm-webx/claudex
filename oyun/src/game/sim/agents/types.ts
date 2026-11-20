@@ -14,7 +14,7 @@ import type { Vec2, Vec3 } from '../../../engine/api';
 import type { ProductId } from '../schema';
 import type { FoodId } from '../../../content/yemek-menu';
 
-export type ActorKind = 'worker' | 'regular' | 'vip' | 'kapkac' | 'cat' | 'dog' | 'gull' | 'parrot';
+export type ActorKind = 'worker' | 'regular' | 'sakin' | 'vip' | 'kapkac' | 'cat' | 'dog' | 'gull' | 'parrot';
 
 export interface CarryItem<T extends string = ProductId> { type: T; tier: number; by?: number; carrier?: number; priceX?: number }
 

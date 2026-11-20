@@ -7,7 +7,7 @@
 import * as T from 'three';
 import type { Rules } from '../../sim/state';
 import { mulkApi } from '../../sim/mulk';
-import { BANKA, ARSALAR, DUKKAN_BY_ID, DUKKAN_STOK_MAX } from '../../../content/esya';
+import { BANKA, ARSALAR, DUKKAN_BY_ID } from '../../../content/esya';
 import type { Vec3, ScreenPt } from '../../../engine/api';
 import type { HtmlLabels, HtmlLabel } from '../../ui/labels';
 
@@ -63,7 +63,7 @@ export function createMulkView(d: MulkViewDeps): MulkView {
     plots.set(a.id, { g, dyn, key: '#', label: d.labels.label(), sign: '' });
   }
   const awning = (p: T.Object3D, w: number, c1: string, c2: string, z: number, y: number) => { const n = 8, sw = w / n; for (let i = 0; i < n; i++) { const o = box(p, sw, 0.1, 1.5, i % 2 ? c1 : c2, -w / 2 + sw * (i + 0.5), y, z); o.rotation.x = 0.28; } };
-  function build(p: PlotG, v: { tur: string | null; tip: string; lv: number; owned: boolean }, stok: number) {
+  function build(p: PlotG, v: { tur: string | null; tip: string; lv: number; owned: boolean }) {
     p.dyn.clear();
     const g = p.dyn;
     if (!v.owned) { cyl(g, 0.05, 1.9, '#7d5638', 2.4, 1.0, 1.7, 6); box(g, 1.4, 0.7, 0.08, '#ffd23f', 2.4, 1.9, 1.7, { emissive: '#4a3d08', emissiveIntensity: 0.3 }); return; }
@@ -86,8 +86,6 @@ export function createMulkView(d: MulkViewDeps): MulkView {
     awning(g, 5.0, t.renk, '#fbfaf6', 1.7, 2.55 + (v.lv >= 3 ? 0.1 : 0));
     box(g, 2.6, 0.55, 0.1, t.renk, 0, h - 0.1, 1.28, { emissive: t.renk, emissiveIntensity: 0.15 });  // sign plate
     box(g, 0.9, 1.9, 0.1, '#6b4a2e', 2.0, 1.0, 1.22);                                                   // door
-    const n = Math.min(12, Math.ceil(12 * stok / (DUKKAN_STOK_MAX[v.lv] || 1)));
-    for (let i = 0; i < n; i++) box(g, 0.42, 0.34, 0.42, i % 3 === 0 ? '#c9a05a' : i % 3 === 1 ? '#d9b06a' : '#b8884a', -1.6 + (i % 6) * 0.62, 1.15 + Math.floor(i / 6) * 0.36, 1.45);
     for (let i = 0; i < v.lv - 1; i++) box(g, 0.3, 0.3, 0.3, '#ffd23f', -2.3 + i * 0.5, h + 0.55, -0.5);   // level pips on the roof
   }
 
@@ -115,7 +113,7 @@ export function createMulkView(d: MulkViewDeps): MulkView {
       for (const pv of v.plots) {
         const p = plots.get(pv.id)!, mp = md.arsa.find(x => x.id === pv.id)!;
         const k = [pv.owned, pv.tur, pv.tip, pv.lv, 12].join('|');
-        if (k !== p.key) { p.key = k; if (!pv.sabit) build(p, pv, DUKKAN_STOK_MAX[pv.lv] || 1); }
+        if (k !== p.key) { p.key = k; if (!pv.sabit) build(p, pv); }
       }
       if (Math.hypot(d.hero().x - BANKA.x, d.hero().z - BANKA.z) < 26) put(bankL, BANKA.x, 4.8, BANKA.z + BANKA.d / 2 + 0.7, '🏦 ' + esc(BANKA.ad)); else bankL.hide();
       for (const pv of v.plots) {

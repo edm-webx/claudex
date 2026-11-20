@@ -83,11 +83,10 @@ export function installCalisan(K: Kernel): CalisanApi {
     K.spend(cost);
     say(w.id, rng.pick(KURS_GIDIS));
     takeOut(S, m, id);
-    const row: KursRow = { w, kurs: k.id, until: S.playT, total: 0 };
-    finishKurs(S, m, row);
-    K.stat('kurs');
-    // 2026-10-25 user: the course box stays on the SAME worker until they close it (train as often as wanted)
-    sel = { id };
+    // BUF-18: the worker really leaves for `sure` play seconds (shown in the Kurs tab) and comes back with the xp
+    m.kurs.push({ w, kurs: k.id, until: S.playT + k.sure, total: k.sure });
+    K.toast(w.name + ' ' + k.name + "'na gitti, " + Math.round(k.sure / 60 * 10) / 10 + ' dk sonra döner.', 'info');
+    K.stat('kurs'); sel = null; K.dirty();
     K.saveNow();
   }
   function finishKurs(S: GameState, m: CalisanSave, row: KursRow) {

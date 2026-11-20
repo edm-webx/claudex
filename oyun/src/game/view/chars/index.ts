@@ -24,6 +24,7 @@ import { ugY, onUg } from '../../../content/ustgecit';
 import * as T from 'three';
 import { CH } from './v2/chars-v2';
 import * as K from './v2/kit';
+import { makeUrunModel } from './urun-model';
 import type {
   Chars, CharsDeps, CharLook, HeroHandle, CrowdView, AnimalOpts, AnimLayerInput, ExprId, BrowId, Vec2, Vec3, SoAStore, Animator, GaitId, ActId,
 } from '../../../engine/api';
@@ -35,7 +36,7 @@ import type { MotorAnimator } from '../../../engine/anim';
 
 export const ITEM_LOOK: Record<string, { color: string; h: number }> = {
   doner: { color: '#f1dcae', h: 0.2 }, cay: { color: '#a3301a', h: 0.19 }, ayran: { color: '#fbfdff', h: 0.17 },
-  simit: { color: '#c8833c', h: 0.06 }, tost: { color: '#e8c27a', h: 0.08 }, gazoz: { color: '#5aa9d6', h: 0.22 },
+  simit: { color: '#c8833c', h: 0.06 }, tost: { color: '#e8c27a', h: 0.08 }, gazoz: { color: '#5aa9d6', h: 0.22 }, tahta: { color: '#a8794e', h: 0.1 },
 };
 const FACE_ROW = FACES.map(f => f.crowdRow), FAR_ROW = FACES.map(f => f.farRow);
 // 'count' ActId'de yok ama garsonun hesap sayma hareketi sim'den bu adla gelir (workers.ts); görünümde para sayma animasyonuna eşlenir
@@ -73,6 +74,7 @@ export function createChars(deps: CharsDeps): MotorChars {
   const handles = new Set<MotorHero>();
 
   function itemMesh(id: string): T.Object3D {
+    if (id.startsWith('urun:')) return makeUrunModel(id.slice(5));   // DKN-05: far-shore business items
     const o = itemFactory ? itemFactory(id) : null;
     if (o) return o;
     const L = ITEM_LOOK[id] || { color: '#e8e2d4', h: 0.12 };
