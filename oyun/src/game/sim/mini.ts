@@ -110,7 +110,7 @@ export function installMini(K: Kernel): MiniApi {
       if (m.free > 0) m.free--; else if (m.adUsed > 0) m.adUsed--;
       const perMin = Math.max(REWARD_FLOOR, K.incomePerMin() || 0);
       r.money = Math.max(5, Math.round(REWARD_MIN[stars] * perMin));
-      K.earn(r.money);
+      (K.earnTam || K.earn)(r.money);
       if (stars >= 3 && m.gold < GOLD_CAP) { m.gold++; K.state.gold += 1; r.gold = 1; }
       if (stars >= 2) {
         const left = COLLECTIBLES.filter(c => !m.coll.includes(c.id));

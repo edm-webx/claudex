@@ -30,7 +30,7 @@ export function installGizem(K: Kernel) {
     const g = z(); g.oku[id] = S.day; K.stat('ipucu'); K.addXP(40);
     K.toast(IPUCU_BY_ID[id].ikon + ' ' + IPUCU_BY_ID[id].baslik, 'good'); K.logEv('ipucu', { id });
     rt.sonIpucu = id;
-    if (id === 'oy') { K.earn(BITIS.para); S.gold += BITIS.altin; K.addXP(BITIS.xp); K.toast('Hikaye tamam! +' + BITIS.para + ' ₺ ve ' + BITIS.altin + ' Altın Simit', 'good'); }
+    if (id === 'oy') { (K.earnTam || K.earn)(BITIS.para); S.gold += BITIS.altin; K.addXP(BITIS.xp); K.toast('Hikaye tamam! +' + BITIS.para + ' ₺ ve ' + BITIS.altin + ' Altın Simit', 'good'); }
     K.saveNow(); return true;
   }
   K.addSystem({ id: 'gizem', order: 52, phase: 'sim', step() {

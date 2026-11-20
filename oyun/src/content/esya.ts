@@ -16,7 +16,7 @@ export const ESYALAR: Esya[] = [
   { id: 'tecrube_simit', ad: 'Tecrübe Simidi', ikon: '🥯', tur: 'tuketim', nadir: 1, blurb: 'Ye: tecrübe puanı kazan.' },
   { id: 'sans_simidi', ad: 'Şans Simidi', ikon: '🍀', tur: 'tuketim', nadir: 1, blurb: 'Ye: sıradaki sandıktan 1 eşya fazla çıkar.' },
   { id: 'altin_kupon', ad: 'Altın Simit Kuponu', ikon: '🎟️', tur: 'kozmetik', nadir: 2, blurb: 'Bozdur: 5 Altın Simit.' },
-  { id: 'kozmetik_tozu', ad: 'Kozmetik Tozu', ikon: '✨', tur: 'kozmetik', nadir: 1, blurb: 'Premium kıyafet için biriktir (yakında).' },
+  { id: 'kozmetik_tozu', ad: 'Kozmetik Tozu', ikon: '✨', tur: 'kozmetik', nadir: 1, blurb: 'Süs tozu: şimdilik yalnızca biriktirilir.' },
   { id: 'altin_anahtar', ad: 'Altın Anahtar', ikon: '🗝️', tur: 'anahtar', nadir: 2, blurb: 'Altın Sandık bununla açılır.' },
   { id: 'raf_kiti', ad: 'Raf Kiti', ikon: '🗄️', tur: 'uretim', nadir: 0, blurb: 'Dükkân yükseltmesi için gerekir.' },
   { id: 'tente_seti', ad: 'Tente Seti', ikon: '⛱️', tur: 'uretim', nadir: 1, blurb: 'Dükkân yükseltmesi (3. seviyeden sonra).' },

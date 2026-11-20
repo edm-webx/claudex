@@ -18,7 +18,7 @@ import { streakStep, streakMult } from './streak';
 import { setHit } from './sets';
 import { yatirimFx } from './yatirim';
 
-export function installEconomy(K: Kernel, addMoneyTo: (pile: MoneyStack[], v: number) => void): { sales: SalesApi; settleSale(c: Customer | null, items: Item[], opts?: { direct?: boolean; at?: Vec2 }): number; tipMult(): number; earn(v: number, at?: Vec2): void; earnTam(v: number): void; incomePerMin(): number } {
+export function installEconomy(K: Kernel, addMoneyTo: (pile: MoneyStack[], v: number) => void): { sales: SalesApi; settleSale(c: Customer | null, items: Item[], opts?: { direct?: boolean; at?: Vec2 }): number; tipMult(): number; earn(v: number, at?: Vec2): number; earnTam(v: number): void; incomePerMin(): number } {
   const rt = K.rt, S = K.state;
   const itemValue = (it: Item): number => price(it.type, it.tier || S.tiers[it.type] || 1) * (it.priceX || 1);
   const pay = (v: number) => {
@@ -27,12 +27,13 @@ export function installEconomy(K: Kernel, addMoneyTo: (pile: MoneyStack[], v: nu
   };
   // Faz 2: side income (anything that isn't a counter sale or a tip) is a faucet capped per game day
   const T = () => S.today as unknown as { sales?: number; bonus?: number; cost?: number };
-  const earn = (v: number, _at?: Vec2) => {
-    v = Math.max(0, Math.round(v)); if (!v) return;
+  const earn = (v: number, _at?: Vec2): number => {
+    v = Math.max(0, Math.round(v)); if (!v) return 0;
     const t = T(), cap = Math.max(BONUS_MIN, BONUS_FRAC * (t.sales || 0));
-    v = Math.min(v, Math.max(0, Math.round(cap - (t.bonus || 0)))); if (!v) return;
+    v = Math.min(v, Math.max(0, Math.round(cap - (t.bonus || 0)))); if (!v) return 0;
     t.bonus = (t.bonus || 0) + v;
     pay(v);
+    return v;   // toast'lar kırpılmış tutarı yazsın
   };
   /** Ingredients of the sold items (₺), paid out of the sale. */
   const costOf = (items: Item[]) => items.reduce((s, it) => s + itemValue(it) * (MALIYET[it.type] ?? 0.4), 0) * (1 - yatirimFx(S, 'hammadde'));

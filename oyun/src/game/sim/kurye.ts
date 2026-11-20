@@ -200,7 +200,7 @@ export function installKurye(K: Kernel): KuryeApi {
     }
     const tip = r.value * (stars - 2) * 0.08 * h.tipX * w.tipX;
     const money = Math.max(1, Math.round(r.value + Math.max(0, tip)));
-    K.earn(money);
+    (K.earnTam || K.earn)(money);   // toast tam tutarı söylüyor: günlük yan gelir tavanı kırpmasın
     K.stat('kuryeTeslim');
     m.earned += money; m.trips++; c.trips++; c.stars += stars; m.starSum += stars; m.starN++;
     const text = rng.pick(YORUMLAR[stars]);

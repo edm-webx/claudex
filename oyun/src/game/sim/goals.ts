@@ -96,8 +96,8 @@ export function installHedef(r: Rules): HedefApi {
       if (stat(d.stat) - s.base >= d.n) {
         s.doneAt = t; g.doneN++;
         const rw = rewardOf(d);
-        r.earn(rw);
-        r.toast(rng.pick(GOAL_DONE_LINES) + ': ' + d.text + '! +' + fmtMoney(rw), 'good');
+        const paid = r.earn(rw);   // günlük yan gelir tavanı kırpabilir: toast gerçek tutarı yazsın
+        r.toast(rng.pick(GOAL_DONE_LINES) + ': ' + d.text + '!' + (paid > 0 ? ' +' + fmtMoney(paid) : ''), 'good');
         r.stat('hedefDone');
       }
     }
