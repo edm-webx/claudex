@@ -53,6 +53,9 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     if (!g || typeof g !== 'object') { g = {} as Save; S.zones[RESTORAN_KEY] = g as unknown as Record<string, unknown>; }
     if (!Array.isArray(g.owned)) g.owned = [];
     if (!g.stock || typeof g.stock !== 'object') g.stock = {};
+    // eski kayıtlardaki kaldırılmış stant kimlikleri (kestane/mısır arabası) sessizce temizlenir
+    g.owned = g.owned.filter(id => STANTLAR.some(d => d.id === id));
+    for (const k of Object.keys(g.stock)) if (!STANTLAR.some(d => d.id === k)) delete g.stock[k];
     g.servis = Number.isFinite(g.servis) ? g.servis : SERVIS.start; g.no = g.no | 0; g.sold = g.sold | 0;
     return g;
   };

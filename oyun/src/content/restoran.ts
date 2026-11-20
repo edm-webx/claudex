@@ -24,17 +24,15 @@ export interface StantDef {
   stock: number;            // portions when full
   chance: number;           // impulse buy chance per paying counter customer
   hours?: [number, number]; // busy hours (chance ×1.6)
-  look: 'midye' | 'islak' | 'kestane' | 'misir' | 'kokorec' | 'dondurma' | 'kumpir' | 'lahmacun' | 'tatli' | 'simit' | 'cigkofte' | 'pizza' | 'waffle';
+  look: 'midye' | 'islak' | 'kokorec' | 'dondurma' | 'kumpir' | 'lahmacun' | 'tatli' | 'simit' | 'cigkofte' | 'pizza' | 'waffle';
   spot: number;             // index into STANT_SPOTS
   color: string;            // sign colour
 }
 /** false until the stand meshes / adisyon rail / panel ship: the sim stays installed but dormant (ara önizleme). */
 export const FAZ2_UI = true;
 export const TUM_STANTLAR: StantDef[] = [
-  { id: 'kestane', name: 'Kestane arabası', short: 'KESTANE', desc: 'Közde kestane, kağıt külahta. Soğuk akşamın en iyi arkadaşı.', stage: 2, cost: 9000, price: 60, maliyet: 0.35, stock: 20, chance: 0.18, hours: [15, 23], look: 'kestane', spot: 8, color: '#7b3f1d' },
   { id: 'midye', name: 'Midye tepsisi', short: 'MİDYE', desc: 'Limonlu dolma midye, porsiyonu 6 tane. Gece kuşları bayılır.', stage: 2, cost: 12000, price: 90, maliyet: 0.4, stock: 24, chance: 0.2, hours: [18, 24], look: 'midye', spot: 0, color: '#2b3a55' },
   { id: 'islak', name: 'Islak hamburger fanusu', short: 'ISLAK', desc: 'Buğulu camın içinde sarımsaklı soslu ıslak burgerler.', stage: 2, cost: 20000, price: 70, maliyet: 0.45, stock: 20, chance: 0.18, hours: [20, 24], look: 'islak', spot: 1, color: '#c0392b' },
-  { id: 'misir', name: 'Mısır arabası', short: 'MISIR', desc: 'Haşlama ya da közde. Tuz bol, sohbet bedava.', stage: 2, cost: 20000, price: 60, maliyet: 0.35, stock: 20, chance: 0.14, hours: [12, 19], look: 'misir', spot: 7, color: '#d68910' },
   { id: 'kokorec', name: 'Kokoreç tezgahı', short: 'KOKOREÇ', desc: 'Kekik kokusu iki iskele öteden duyulur.', stage: 3, cost: 80000, price: 180, maliyet: 0.45, stock: 16, chance: 0.12, hours: [21, 24], look: 'kokorec', spot: 3, color: '#6e2c00' },
   { id: 'dondurma', name: 'Maraş dondurması dolabı', short: 'DONDURMA', desc: 'Usta külahı verir, geri alır, yine verir. Müşteri ağlar, sonra güler.', stage: 4, cost: 150000, price: 80, maliyet: 0.3, stock: 30, chance: 0.16, hours: [13, 20], look: 'dondurma', spot: 4, color: '#2874a6' },
   { id: 'kumpir', name: 'Kumpir standı', short: 'KUMPİR', desc: 'Patates ne kadar büyükse hayaller o kadar büyük.', stage: 4, cost: 220000, price: 220, maliyet: 0.4, stock: 14, chance: 0.1, hours: [17, 23], look: 'kumpir', spot: 5, color: '#7d3c98' },
@@ -45,7 +43,7 @@ export const TUM_STANTLAR: StantDef[] = [
   { id: 'tatli', name: 'Baklava ve künefe vitrini', short: 'TATLI', desc: 'Fıstıklı baklava, sıcak künefe, yanında kaymak.', stage: 4, cost: 180000, price: 150, maliyet: 0.35, stock: 20, chance: 0.12, hours: [12, 23], look: 'tatli', spot: 10, color: '#7e5109' },
   { id: 'waffle', name: 'Waffle arabası', short: 'WAFFLE', desc: 'Çikolata, muz, renkli şeker. Ortaköy değil ama yakışır.', stage: 5, cost: 260000, price: 160, maliyet: 0.35, stock: 16, chance: 0.12, hours: [14, 24], look: 'waffle', spot: 11, color: '#d35400' },
 ];
-/** 2026-10-25 user: only the chestnut and corn carts stay for now (the rest crowded the pier and block the road); the others come back later as stations INSIDE the restaurant. */
+/** Stantlar şu an kapalı: kestane/mısır arabaları kalıcı kaldırıldı, diğerleri ileride restoranın İÇİNDE istasyon olarak dönebilir. */
 export const AKTIF_STANT: string[] = [];   // 2026-11-08 user: "kestane ve mısır arabasını komple kaldır"
 export const STANTLAR: StantDef[] = TUM_STANTLAR.filter(d => AKTIF_STANT.includes(d.id));
 /** Stand places in front of the büfe (stage >= 2 layout; x, z, rotY). Kept clear of the queue, door and window line. */

@@ -1502,7 +1502,8 @@ const TYPE_GEN: any = {
   midyeci(R?: any) { const L = baseLook(R, 'midyeci', { fem: 0.25, ages: [['young', 2], ['adult', 3]] });
     L.vendor.push('mussel'); hatOn(L, R, ['cap', 'bandana'], 0.5); L.apron = R.chance(0.6); L.accent2 = '#fbfbf8'; return L; },
   kestaneci(R?: any) { const L = baseLook(R, 'kestaneci', { fem: 0.25, ages: [['adult', 3], ['old', 2]], top: 'jacket', gait: 'slow' });
-    L.vendor.push('chestnut'); hatOn(L, R, ['beanie', 'kasket'], 0.6); return L; },
+    // 2026-11-08 sahip: kestane arabası komple kaldırıldı; Zeki (kuruyemişçi) arabasız, elde tezgah önünde durur
+    hatOn(L, R, ['beanie', 'kasket'], 0.6); return L; },
   kruvaziyer(R?: any) { const L = baseLook(R, 'kruvaziyer', { ages: [['adult', 3], ['old', 3], ['young', 1]], scarf: 0.2, gait: 'slow' });
     hatOn(L, R, ['cap', 'bucket', 'cap'], 0.9); R.chance(0.6); L.props.push('camera'); /* musteri-4: tourists always carry a camera */ if (R.chance(0.12)) L.props.push('flag'); if (R.chance(0.3)) L.bottomStyle = L.bottomStyle === 'skirt' ? 'skirt' : 'shorts';
     if (R.chance(0.25)) L.glasses = 'sun'; if (R.chance(0.3)) L.props.push('handbag'); return L; },

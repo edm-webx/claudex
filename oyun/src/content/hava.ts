@@ -86,7 +86,7 @@ export const WEATHER_PREF: Partial<Record<HavaKind, Partial<Record<ProductId, nu
   lodos: { cay: 1.2 },
 };
 
-/** Seasonal foods (yiyecek-6): sold from the small seasonal cart next to the kiosk, as an extra with a sale. */
+/** Seasonal foods (yiyecek-6): sold over the counter next to the kiosk, as an extra with a sale. */
 export interface SeasonFood { id: string; name: string; price: number; line: string }
 export const SEASON_FOODS: Record<HavaSeason | 'ramazan', SeasonFood[]> = {
   kis: [

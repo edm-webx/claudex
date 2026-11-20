@@ -46,7 +46,7 @@ export function createStantLook(d: StantLookDeps): StantLookView {
 
   function build(v: StantView): StandObj {
     const g = new T.Group(); const food: T.Object3D[] = [];
-    const custom = v.look === 'misir' || v.look === 'kestane';
+    const custom = false;   // kestane/mısır arabaları kaldırıldı (2026-11-08)
     const color = M(L(v.color));
     const top = (o: T.Object3D) => { food.push(o); g.add(o); };
     if (!custom) {
@@ -68,48 +68,6 @@ export function createStantLook(d: StantLookDeps): StantLookView {
         const bun = M(L('#d9a066'));
         for (let i = 0; i < 6; i++) top(mesh(cyl, bun, 0.15, 0.08, 0.15, -0.26 + (i % 3) * 0.26, 0.92 + Math.floor(i / 3) * 0.1, 0));
         g.add(mesh(box, glass, 0.9, 0.42, 0.46, 0, 1.08, 0));
-        break;
-      }
-      case 'misir': {
-        // 2026-10-25 user: the old cart looked awful. A proper street corn cart: red body, big wheels, steaming pot, cobs in a tray, striped umbrella.
-        const red = M(L('#c0392b')), cream = M(L('#fff3d6')), yel = M(L('#f4c20d')), steel = M(L('#c9d1d6')), dk = M(L('#2f2a26')), green = M(L('#5aa45a')), corn = M(L('#f6cf2a'));
-        g.add(mesh(box, red, 1.25, 0.55, 0.72, 0, 0.72, 0));
-        g.add(mesh(box, cream, 1.27, 0.07, 0.74, 0, 0.98, 0));                      // cream trim
-        g.add(mesh(box, wood, 1.34, 0.06, 0.8, 0, 1.04, 0));                        // counter top
-        g.add(mesh(box, yel, 1.0, 0.16, 0.02, 0, 0.7, 0.37));                       // front plate
-        for (const x of [-0.62, 0.62]) { const w = mesh(cyl, dk, 0.62, 0.07, 0.62, x, 0.31, 0.1); w.rotation.z = Math.PI / 2; g.add(w); const hub = mesh(cyl, steel, 0.2, 0.09, 0.2, x, 0.31, 0.1); hub.rotation.z = Math.PI / 2; g.add(hub); }
-        g.add(mesh(box, dk, 0.06, 0.06, 0.5, 0.0, 0.46, -0.55));                    // pull handle
-        g.add(mesh(cyl, steel, 0.52, 0.34, 0.52, -0.33, 1.24, 0.02));              // steaming pot
-        g.add(mesh(sph, steel, 0.54, 0.16, 0.54, -0.33, 1.42, 0.02));              // lid
-        g.add(mesh(sph, dk, 0.08, 0.06, 0.08, -0.33, 1.51, 0.02));
-        g.add(mesh(box, M(L('#8a5a3b')), 0.52, 0.06, 0.52, 0.34, 1.1, 0.04));       // cob tray
-        for (let i = 0; i < 6; i++) { const cx = 0.17 + (i % 3) * 0.17, cz = -0.08 + Math.floor(i / 3) * 0.22; const c = mesh(cyl, corn, 0.11, 0.34, 0.11, cx, 1.2, cz); c.rotation.z = Math.PI / 2; c.rotation.y = 0.15 * (i % 2 ? 1 : -1); top(c); const h = mesh(cyl, green, 0.12, 0.1, 0.12, cx + 0.2, 1.2, cz); h.rotation.z = Math.PI / 2; top(h); }
-        g.add(mesh(cyl, dk, 0.03, 1.55, 0.03, 0.3, 1.8, -0.2));                    // umbrella pole
-        const um = G(new T.ConeGeometry(0.5, 1, 12));
-        g.add(mesh(um, yel, 1.35, 0.3, 1.35, 0.3, 2.45, -0.2));
-        g.add(mesh(um, red, 0.86, 0.3, 0.86, 0.3, 2.47, -0.2));
-        g.add(mesh(sph, dk, 0.08, 0.08, 0.08, 0.2, 2.65, -0.28));
-        break;
-      }
-      case 'kestane': {
-        // roasted chestnut cart: dark cart, copper brazier with glowing coals, chestnuts on the grill, paper cones, burgundy striped awning
-        const bark = M(L('#4a2e1a')), copper = M(L('#b8733a')), coal = M(new T.MeshBasicMaterial({ color: '#ff6a1a' })), nut = M(L('#6b3a1f')), nut2 = M(L('#8a4a24')), paper = M(L('#f3e6c8')), bur = M(L('#8e2a2a')), cr = M(L('#fff0d2')), dk = M(L('#2f2a26')), steel = M(L('#b9c2c9'));
-        g.add(mesh(box, bark, 1.25, 0.55, 0.72, 0, 0.72, 0));
-        g.add(mesh(box, M(L('#6b4226')), 1.3, 0.06, 0.78, 0, 1.0, 0));
-        g.add(mesh(box, copper, 1.0, 0.1, 0.02, 0, 0.7, 0.37));
-        for (const x of [-0.62, 0.62]) { const w = mesh(cyl, dk, 0.6, 0.07, 0.6, x, 0.3, 0.1); w.rotation.z = Math.PI / 2; g.add(w); const hub = mesh(cyl, copper, 0.2, 0.09, 0.2, x, 0.3, 0.1); hub.rotation.z = Math.PI / 2; g.add(hub); }
-        g.add(mesh(cyl, copper, 0.56, 0.3, 0.56, -0.28, 1.17, 0));                  // brazier bowl
-        g.add(mesh(cyl, coal, 0.46, 0.02, 0.46, -0.28, 1.33, 0));                   // glowing coals
-        g.add(mesh(box, steel, 0.5, 0.02, 0.5, -0.28, 1.37, 0));                    // grill plate
-        for (let i = 0; i < 9; i++) top(mesh(sph, i % 2 ? nut : nut2, 0.1, 0.075, 0.12, -0.46 + (i % 3) * 0.17, 1.42, -0.17 + Math.floor(i / 3) * 0.17));
-        g.add(mesh(cyl, dk, 0.07, 0.9, 0.07, -0.52, 1.8, -0.28));                    // chimney
-        g.add(mesh(cyl, dk, 0.14, 0.05, 0.14, -0.52, 2.27, -0.28));
-        const cone = G(new T.ConeGeometry(0.5, 1, 8));
-        for (let i = 0; i < 4; i++) g.add(mesh(cone, paper, 0.16, 0.26, 0.16, 0.3 + (i % 2) * 0.2, 1.16, -0.1 + Math.floor(i / 2) * 0.2));
-        g.add(mesh(box, M(L('#f4efe6')), 0.34, 0.02, 0.5, 0.4, 1.04, 0.0));
-        for (const x of [-0.6, 0.6]) g.add(mesh(cyl, dk, 0.03, 1.2, 0.03, x, 1.6, 0.34));   // awning posts
-        for (let i = 0; i < 6; i++) g.add(mesh(box, i % 2 ? cr : bur, 0.21, 0.05, 0.95, -0.52 + i * 0.208, 2.2 - 0.02, 0.02));   // striped canopy
-        for (let i = 0; i < 6; i++) g.add(mesh(box, i % 2 ? cr : bur, 0.21, 0.14, 0.04, -0.52 + i * 0.208, 2.1, 0.5));          // valance
         break;
       }
       case 'kokorec': {

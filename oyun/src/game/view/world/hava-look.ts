@@ -163,20 +163,7 @@ export function createHavaLook(d: HavaLookDeps): HavaLookView {
   const flyPole = new T.Mesh(poleGeo, lam('#f2e6c8')); flyPole.scale.set(1, 0.5, 1); flyPole.position.y = -1.1; flyG.add(flyPole);
   const ringMat = M(new T.MeshBasicMaterial({ color: '#ffd23f', transparent: true, opacity: 0.8, depthWrite: false }));
   const ring = new T.Mesh(G(new T.RingGeometry(1.1, 1.35, 28)), ringMat); ring.rotation.x = -Math.PI / 2; ring.visible = false; ring.renderOrder = 4; pier.add(ring);
-  // seasonal cart (corner by the east lamp)
-  const cart = new T.Group(); cart.position.set(6.9, 0, 3.35); cart.rotation.y = -Math.PI / 2; cart.visible = false; pier.add(cart);   // 2026-11-08 user: seasonal cart removed from the pier (seasonal extras still sell over the counter)
-  const cartBody = new T.Mesh(G(new T.BoxGeometry(0.95, 0.55, 0.55)), lam('#c98a52')); cartBody.position.y = 0.55; cart.add(cartBody);
-  const wheelGeo = G(new T.CylinderGeometry(0.17, 0.17, 0.05, 10)); wheelGeo.rotateX(Math.PI / 2);
-  [-0.33, 0.33].forEach(x => { const w = new T.Mesh(wheelGeo, lam('#3b2a20')); w.position.set(x, 0.17, 0.3); cart.add(w); });
-  const cartTop = new T.Mesh(G(new T.BoxGeometry(1.05, 0.05, 0.62)), lam('#fbfaf6')); cartTop.position.y = 1.4; cart.add(cartTop);
-  [-0.46, 0.46].forEach(x => { const p = new T.Mesh(G(new T.CylinderGeometry(0.02, 0.02, 0.6, 4)), lam('#3b2a20')); p.position.set(x, 1.1, 0); cart.add(p); });
-  const cartGoods: T.Mesh[] = [];
   const goodGeo = G(new T.SphereGeometry(0.07, 6, 5));
-  const goodMat = M(new T.MeshLambertMaterial({ color: '#8a5d3b' }));
-  for (let i = 0; i < 9; i++) { const g = new T.Mesh(goodGeo, goodMat); g.position.set(-0.3 + (i % 3) * 0.3, 0.87, -0.15 + Math.floor(i / 3) * 0.15); cart.add(g); cartGoods.push(g); }
-  const smokeMat = M(new T.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.35, depthWrite: false }));
-  const smokes = [0, 1, 2].map(i => { const s = new T.Mesh(goodGeo, smokeMat); s.position.set(0, 1, 0); s.userData.t = i / 3; cart.add(s); return s; });
-  let cartFood = '';
   // Gece Pazarı stalls along the west railing
   const market = new T.Group(); market.visible = false; pier.add(market);
   const lanterns: T.Mesh[] = [];
@@ -424,15 +411,6 @@ export function createHavaLook(d: HavaLookDeps): HavaLookView {
         ring.visible = true; ring.position.set(fl.x, 0.04, fl.z); const s = 1 + Math.sin(t * 6) * 0.1; ring.scale.set(s, s, 1);
       }
     } else { flyG.visible = false; ring.visible = false; }
-    // seasonal cart: goods colour by food, smoke when hot food
-    if (v.food !== cartFood) {
-      cartFood = v.food;
-      const col = /kestane/i.test(v.food) ? '#7a4a2a' : /börek|pide/i.test(v.food) ? '#e0a957' : /karpuz/i.test(v.food) ? '#e0533c' : /dondurma|güllaç/i.test(v.food) ? '#f7e8d0' : /mısır/i.test(v.food) ? '#f2c94c' : /erik|çağla/i.test(v.food) ? '#8fc45a' : /lüfer/i.test(v.food) ? '#9fb3c2' : '#c98a52';
-      goodMat.color.set(col);
-    }
-    const hot = /kestane|börek|mısır|lüfer|pide/i.test(v.food);
-    smokes.forEach(s => { s.visible = hot; if (!hot) return; s.userData.t = (s.userData.t + dt * 0.35) % 1; const k = s.userData.t; s.position.set(Math.sin(k * 6) * 0.08, 0.95 + k * 0.9, 0); s.scale.setScalar(0.8 + k * 2.2); });
-    smokeMat.opacity = 0.35;
     // Gece Pazarı
     const night = d.hour() >= MARKET.fromH - 0.5;
     market.visible = v.market.today && night;

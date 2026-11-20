@@ -18,6 +18,8 @@ const BCOL = ['#e0533c', '#3fb5b0', '#ffd23f', '#7d6bb0'];
 export function createHaliSaha3D(o: {
   wrap: HTMLElement; chars: { makeHero(o: never): unknown } | null; esnaf: Record<string, unknown> | null;
   L: number; WD: number; m0: number; m1: number; colors: [string, string]; rival: [string, string]; clubName?: string; rivalName?: string;
+  /** 0..1 expected gate fill (sim/stadyum tahminDoluluk): the stands show it; undefined = the old fixed look */
+  doluluk?: number;
 }): HS3 | null {
   if (!o.chars) return null;
   const { L, WD } = o;
@@ -101,20 +103,21 @@ export function createHaliSaha3D(o: {
   type Stand = { x0: number; x1: number; z0: number; dz: number; rows: number; rotY: number; side: 'far' | 'w' | 'e' };
   const stands: Stand[] = [{ x0: -2, x1: L + 2, z0: -2.4, dz: -1, rows: 7, rotY: 0, side: 'far' }];
   const fanPos: { x: number; y: number; z: number; team: 0 | 1; ph: number }[] = [];
+  const fillP = o.doluluk == null ? 0.86 : Math.max(0.2, Math.min(0.97, 0.25 + 0.72 * o.doluluk));   // seat fill follows the gate fill
   for (const st of stands) for (let r = 0; r < st.rows; r++) {
     const z = st.z0 + st.dz * r * 0.85, y = 0.45 + r * 0.55;
     box(st.x1 - st.x0, 0.12, 0.85, tierM, (st.x0 + st.x1) / 2, y, z).receiveShadow = true;
     box(st.x1 - st.x0, y, 0.85, tierM, (st.x0 + st.x1) / 2, y / 2, z).castShadow = false;
     for (let x = st.x0 + 0.4; x < st.x1 - 0.2; x += 0.62) {
       const team: 0 | 1 = x < L * 0.45 ? 0 : x > L * 0.55 ? 1 : (Math.random() < 0.5 ? 0 : 1);
-      if (Math.random() < 0.86) fanPos.push({ x: x + (Math.random() - 0.5) * 0.12, y: y + 0.06, z, team, ph: Math.random() * 6 });
+      if (Math.random() < fillP) fanPos.push({ x: x + (Math.random() - 0.5) * 0.12, y: y + 0.06, z, team, ph: Math.random() * 6 });
     }
   }
   // end stands behind both goals (smaller, steeper)
   for (const [gx, sgn] of [[-3.2, -1], [L + 3.2, 1]] as const) for (let r = 0; r < 5; r++) {
     const x = gx + sgn * r * 0.85, y = 0.45 + r * 0.6;
     box(0.85, 0.12, WD + 2, tierM, x, y, WD / 2); box(0.85, y, WD + 2, tierM, x, y / 2, WD / 2).castShadow = false;
-    for (let z = -0.6; z < WD + 0.6; z += 0.62) if (Math.random() < 0.8 && (z < o.m0 - 1.5 || z > o.m1 + 1.5 || r > 1)) fanPos.push({ x: x + (Math.random() - 0.5) * 0.1, y: y + 0.06, z, team: sgn < 0 ? 0 : 1, ph: Math.random() * 6 });
+    for (let z = -0.6; z < WD + 0.6; z += 0.62) if (Math.random() < fillP * 0.93 && (z < o.m0 - 1.5 || z > o.m1 + 1.5 || r > 1)) fanPos.push({ x: x + (Math.random() - 0.5) * 0.1, y: y + 0.06, z, team: sgn < 0 ? 0 : 1, ph: Math.random() * 6 });
   }
   // roof over the main stand on trusses
   const roofM = mat('#d6dbe2', { metalness: 0.4, roughness: 0.5 });
@@ -184,6 +187,7 @@ export function createHaliSaha3D(o: {
 
   let t = 0, bz = 0, bvz = 0, lastOwner = -1;
   const camPos = new T.Vector3(L / 2, 14, WD + 14), camLook = new T.Vector3(L / 2, 0, WD / 2);
+  const camT = new T.Vector3();   // kare başına new Vector3 üretmemek için ortak hedef
   let w0 = 0, h0 = 0;
   return {
     render(s) {
@@ -225,8 +229,8 @@ export function createHaliSaha3D(o: {
       bshadow.position.set(s.ball.x, 0.02, s.ball.y);
       // camera follows the ball
       const bx = Math.max(7, Math.min(L - 7, s.ball.x));
-      if (s.portrait) { camPos.lerp(new T.Vector3(Math.max(-8, s.ball.x - 19), 21, WD / 2), 0.08); camLook.lerp(new T.Vector3(Math.min(L, s.ball.x + 4), 0, WD / 2), 0.08); cam.fov = 58; }
-      else { camPos.lerp(new T.Vector3(bx, 15, WD + 15), 0.08); camLook.lerp(new T.Vector3(bx, 0, WD / 2 + 0.5), 0.08); cam.fov = 40; }
+      if (s.portrait) { camPos.lerp(camT.set(Math.max(-8, s.ball.x - 19), 21, WD / 2), 0.08); camLook.lerp(camT.set(Math.min(L, s.ball.x + 4), 0, WD / 2), 0.08); cam.fov = 58; }
+      else { camPos.lerp(camT.set(bx, 15, WD + 15), 0.08); camLook.lerp(camT.set(bx, 0, WD / 2 + 0.5), 0.08); cam.fov = 40; }
       cam.updateProjectionMatrix();
       const sh = s.shake > 0 ? (Math.random() - 0.5) * s.shake * 2 : 0;
       cam.position.set(camPos.x + sh, camPos.y + sh * 0.5, camPos.z); cam.lookAt(camLook);
@@ -236,7 +240,10 @@ export function createHaliSaha3D(o: {
       heroes.forEach(h => { try { h?.dispose(); } catch { /* */ } });
       try { refHero?.dispose(); } catch { /* */ }
       disp.forEach(d => { try { d.dispose(); } catch { /* */ } });
-      ren.dispose(); cv.remove();
+      ren.dispose();
+      // ayrı WebGL bağlamı: art arda maç açıp kapatınca tarayıcı bağlam sınırı dolmasın
+      try { ren.forceContextLoss(); } catch { /* */ }
+      cv.remove();
     },
   };
 }

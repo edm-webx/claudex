@@ -140,6 +140,14 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
   }
   let kioskFloorMat: { color: T.Color } | null = null;   // survey 2026-10-24: büfe zemin tonu (sim zemin)
   let tod: Tod | null = null, night = 0;
+  /** state.renewed ile yerel renewed kümesi aynı mı? (her karede çağrılır: dizi/dize ayırmaz) */
+  const renewedSame = (arr: readonly string[] | undefined): boolean => {
+    let n = 0;
+    if (arr) for (let i = 0; i < arr.length; i++) { if (!renewed[arr[i]]) return false; n++; }
+    let m = 0;
+    for (let i = 0; i < PARTS.length; i++) if (renewed[PARTS[i]]) m++;
+    return n === m;
+  };
   const renewedCsv = () => PARTS.filter(p => renewed[p]).join(',');
   const tableStyle = (i: number) => stage >= 5 ? 5 : stage === 4 ? 4 : stage === 3 ? 3 : (i <= 1 ? 1 : 2);
 
@@ -392,11 +400,12 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
   let farX = -40, farDir = 1, farWait = 0;
 
   /* ---- night (v2 applyNight) + sea colours ---- */
+  const _sunDir = new T.Vector3();
   function applyTime(t: Tod) {
     tod = t; night = t.n;
     const U = (h.sea?.material as T.ShaderMaterial | undefined)?.uniforms;
     if (U) {
-      const el = t.el, az = t.az, sunDir = new T.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el)).normalize();
+      const el = t.el, az = t.az, sunDir = _sunDir.set(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el)).normalize();
       U.uDeep.value.copy(t.deep); U.uShallow.value.copy(t.sh); U.uSky.value.copy(t.sky2); U.uSunCol.value.copy(t.sun); U.uSunDir.value.copy(sunDir); U.uNight.value = night;
     }
     applyNight();
@@ -545,8 +554,7 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
     },
     update(state: GameState, dt: number) {
       if (state) {
-        const rk = (state.renewed || []).slice().sort().join(',');
-        if (state.stage !== stage || rk !== PARTS.filter(p => renewed[p]).slice().sort().join(',')) {
+        if (state.stage !== stage || !renewedSame(state.renewed)) {
           const added = (state.renewed || []).filter(p => !renewed[p]);
           if (state.stage === stage && added.length === 1) view.renew(added[0], true); else view.setStage(state.stage, state.renewed);
         }
