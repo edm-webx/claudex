@@ -12,6 +12,7 @@ import { createAnchorBook, layoutAnchors, type AnchorFn } from './anchors';
 import type { AgentEnv } from './env';
 import type { ActorRegistry, AgentHost } from './types';
 import { createKafe, type KafeSystem } from './kafe';
+import { createInsaat } from './isletme-insaat';
 import { createWorkers, type WorkersSystem } from './workers';
 import { createVip, type VipSystem } from './vip';
 import { createCats, type CatsSystem } from './cats';
@@ -56,7 +57,7 @@ export function createAgents(rules: Rules, opts: InstallOpts = {}): AgentsHandle
     emit: (name, data) => { rules.bus.emit(name, data as never); },
     shared: { followers: 0, tipBoostT: 0, dogDuty: false, dogBark: 0, dogPos: null, force: { reg: null, vip: false, kap: false, gull: false, sleep: false } },
   };
-  const workers = createWorkers(env), vip = createVip(env), cats = createCats(env), dog = createDog(env), parrot = createParrot(env), gulls = createGulls(env), kafe = createKafe(env, rules.rt as unknown as Record<string, unknown>);  // NPC Erim removed 2026-10-24 (user: sinir bozucu, tamamen sil)
+  const workers = createWorkers(env), vip = createVip(env), cats = createCats(env), dog = createDog(env), parrot = createParrot(env), gulls = createGulls(env), kafe = createKafe(env, rules.rt as unknown as Record<string, unknown>), insaat = createInsaat(env, rules.rt as unknown as Record<string, unknown>);  // NPC Erim removed 2026-10-24 (user: sinir bozucu, tamamen sil)
   const handle: AgentsHandle = {
     registry: reg, workers, vip, cats, gulls, dog, env,
     kafe,
@@ -74,7 +75,7 @@ export function createAgents(rules: Rules, opts: InstallOpts = {}): AgentsHandle
   cats.prime(rules.state);
   // registry tick bookkeeping runs first, then the systems (orders 40..46)
   rules.addSystem({ id: 'agents.begin', order: 39, phase: 'sim', step: () => reg.beginTick() });
-  for (const s of [workers, vip, cats, dog, parrot, gulls, kafe]) rules.addSystem(s);
+  for (const s of [workers, vip, cats, dog, parrot, gulls, kafe, insaat]) rules.addSystem(s);
   rules.addStateView(() => {
     const v = vip.current(), pam = cats.rows().find((c) => c.id === 'pamuk');
     const stareG = gulls.stare();

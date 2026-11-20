@@ -461,6 +461,7 @@ const ROLE_LOOK: any = {
   barista: { top: '#2b2b30', sleeves: 'short', apron: '#7a3b1c', bottom: '#2b2b30', hat: 'cap', hatColor: '#7a3b1c' },
   mudur: { top: '#f4f4f2', topStyle: 'suit', sleeves: 'long', vest: '#2b2b30', bottom: '#2b2b30', bowtie: '#c9a24a' },
   vale: { top: '#7a2430', topStyle: 'jacket', sleeves: 'long', bottom: '#1d1d22', hat: 'cap', hatColor: '#7a2430' },
+  usta: { top: '#e8892b', topStyle: 'overall', sleeves: 'long', bottom: '#e8892b', hat: 'helmet', hatColor: '#ffd23f', gloves: '#c9a24a', shoes: '#3b3430' },
   kurye: { top: '#3fb5b0', topStyle: 'jacket', accent: '#3fb5b0', sleeves: 'long', bottom: '#2f3a4a', hat: 'helmet', hatColor: '#3fb5b0', courierBox: true }
 };
 

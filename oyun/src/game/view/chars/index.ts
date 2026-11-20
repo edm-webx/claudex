@@ -36,7 +36,7 @@ import type { MotorAnimator } from '../../../engine/anim';
 
 export const ITEM_LOOK: Record<string, { color: string; h: number }> = {
   doner: { color: '#f1dcae', h: 0.2 }, cay: { color: '#a3301a', h: 0.19 }, ayran: { color: '#fbfdff', h: 0.17 },
-  simit: { color: '#c8833c', h: 0.06 }, tost: { color: '#e8c27a', h: 0.08 }, gazoz: { color: '#5aa9d6', h: 0.22 },
+  simit: { color: '#c8833c', h: 0.06 }, tost: { color: '#e8c27a', h: 0.08 }, gazoz: { color: '#5aa9d6', h: 0.22 }, tahta: { color: '#a8794e', h: 0.1 },
 };
 const FACE_ROW = FACES.map(f => f.crowdRow), FAR_ROW = FACES.map(f => f.farRow);
 // 'count' ActId'de yok ama garsonun hesap sayma hareketi sim'den bu adla gelir (workers.ts); görünümde para sayma animasyonuna eşlenir
