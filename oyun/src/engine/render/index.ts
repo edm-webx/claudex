@@ -18,6 +18,7 @@ import { createCameraRig, type MotorCameraRig } from '../camera';
 import { makeSky } from './sky';
 import { createShadowCull } from './shadow-cull';
 import { createWarmGate } from './warm-gate';
+import { applyLookDefaults } from './look';
 import { todAt, phaseAt, type Tod } from './tod';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
@@ -317,8 +318,7 @@ export function createRender(deps: RenderDeps): MotorRender {
         deps.perf?.meta('gpu', dbg ? String(c.getParameter(dbg.UNMASKED_RENDERER_WEBGL)) : 'bilinmiyor');
         deps.perf?.meta('gpuZamanOlcer', gpuExt ? 'var' : 'yok');
       } catch { /* headless */ }
-      renderer.outputColorSpace = T.SRGBColorSpace;
-      renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.98;
+      applyLookDefaults(renderer);   // sRGB + ACES filmic, exposure 0.98 (look.ts: the same output for every canvas in the game)
       renderer.shadowMap.type = T.PCFSoftShadowMap;
       renderer.shadowMap.enabled = true;
       wantAA = !!t.antialias;
