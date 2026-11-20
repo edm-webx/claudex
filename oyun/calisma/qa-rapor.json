@@ -1,0 +1,43 @@
+{
+ "schema": 1,
+ "mod": "tam",
+ "gecti": true,
+ "adimlar": [
+  {
+   "ad": "tip kontrolü",
+   "ok": true,
+   "sn": 6.8,
+   "son": ""
+  },
+  {
+   "ad": "sim kuralları",
+   "ok": true,
+   "sn": 0.1,
+   "son": ""
+  },
+  {
+   "ad": "birim ve sim testleri",
+   "ok": true,
+   "sn": 35.4,
+   "son": ""
+  },
+  {
+   "ad": "derleme",
+   "ok": true,
+   "sn": 5.6,
+   "son": ""
+  },
+  {
+   "ad": "paket sayfası",
+   "ok": true,
+   "sn": 0.2,
+   "son": ""
+  },
+  {
+   "ad": "dist denetimi",
+   "ok": true,
+   "sn": 0,
+   "son": ""
+  }
+ ]
+}
