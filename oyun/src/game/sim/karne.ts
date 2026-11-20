@@ -18,12 +18,13 @@ export function installKarne(K: Kernel) {
     const open = K.openProducts(), T0 = S.today!;
     const avgTier = open.reduce((s, p) => s + (S.tiers[p] - 1), 0) / Math.max(1, open.length);
     const angryFrac = T0.angry / Math.max(1, T0.customers + T0.angry);
+    const snv = ((S.zones.okul as { sinavlar?: number[] } | undefined)?.sinavlar || []).filter(Number.isFinite), sinav = snv.length ? snv.reduce((x, y) => x + y, 0) / snv.length / 100 : 0;   // school exam average (0..1) feeds the general score
     const regs = Object.values(S.regulars).reduce((s, r) => s + ((r.visits as number) || 0), 0);
     return {
       lezzet: clamp(0.15 + 0.08 * open.length + 0.25 * avgTier, 0, 1),
       hiz: clamp(1.1 * (1 - angryFrac) - 0.3 + 0.04 * K.hiredCount(), 0, 1),
       siklik: clamp(rt.siklik / 100, 0, 1),
-      sohret: clamp(T0.customers / 110 + 0.03 * regs + 0.01 * Object.keys(S.ach).length + 0.1 * (S.stage - 1), 0, 1),
+      sohret: clamp(T0.customers / 110 + 0.03 * regs + 0.01 * Object.keys(S.ach).length + 0.1 * (S.stage - 1) + 0.08 * sinav, 0, 1),
       temizlik: clamp(0.85 - T0.dirtyT / Math.max(60, P.GAME_DAY_S * Math.max(1, K.tablesBuilt())) * 1.5, 0.2, 1),
     };
   }
