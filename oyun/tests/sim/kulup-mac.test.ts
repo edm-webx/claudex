@@ -3,6 +3,8 @@ import { it, expect } from 'vitest';
 import { played } from './m1-helpers';
 import { STADYUM } from '../../src/content/esya';
 import { izleMac, KULUP_ODUL } from '../../src/game/sim/halisaha';
+import { tahminDoluluk } from '../../src/game/sim/stadyum';
+import { LIG_BY_ID } from '../../src/content/lig';
 
 const mk = () => { const sim = played(1) as any; sim.step(1); return { sim, S: sim.state, rt: sim.rules.rt, c: (x: any) => sim.command({ kind: 'mulk', ...x }) }; };
 it('kulüp maçı: bilet yok, kulüp adıyla lig maçı, galibiyet 3 puan ve para', () => {
@@ -14,6 +16,8 @@ it('kulüp maçı: bilet yok, kulüp adıyla lig maçı, galibiyet 3 puan ve par
   const m0 = S.money; sim.command({ kind: 'halisaha', op: 'sonuc', biz: 3, onlar: 1 });
   expect(S.money).toBeGreaterThanOrEqual(20000 + KULUP_ODUL.win);
   const t = rt.lig.model().tablo.flat().find((r: any) => r.ben); expect(t.p).toBe(3);
+  // gate fill is sold before this result (form going in = empty) and uses the rival's real strength
+  expect(S.zones.arsa.stad.doluluk).toBeCloseTo(tahminDoluluk(S.zones.arsa.stad.fiyat, [], LIG_BY_ID[mac.rival].guc), 5);
 });
 it('bahis: sonuç motorla sabit, tutarsa oran kadar öder', () => {
   const a = izleMac(12345), b = izleMac(12345); expect(a.skor).toEqual(b.skor);

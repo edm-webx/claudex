@@ -24,6 +24,7 @@ it('AI results are pure functions of season, round and clubs', () => {
 it('sim: a week forfeits without a match, a recorded match counts once, season ends with promotion swap', () => {
   const sim = played(1) as any; sim.step(1);
   const S = sim.state, lig = sim.rules.rt.lig;
+  S.zones.arsa = { ...(S.zones.arsa || {}), takim: { ad: 'Deneme SK', renk: '#e0533c', renk2: '#f2c230' } };   // the league runs only for a founded club
   expect(lig.model().tablo[1].length).toBe(6);
   // play round 0 for real (day 3) and try to submit it twice
   S.day = 3; const g = 0;
@@ -36,4 +37,13 @@ it('sim: a week forfeits without a match, a recorded match counts once, season e
   const m = lig.model();
   expect(m.sezon).toBe(2); expect(m.gecmis.length).toBe(1);
   expect(m.tablo[0].length).toBe(6); expect(m.tablo[1].length).toBe(6);
+});
+it('sim: kulüp kurulmadan lig işlemez: teklif yok, hükmen yazılmaz, tabloya satır eklenmez', () => {
+  const sim = played(1) as any; sim.step(1);
+  const S = sim.state, lig = sim.rules.rt.lig;
+  S.zones.arsa = { ...(S.zones.arsa || {}), takim: undefined };
+  S.day = 3; expect(lig.mac(3)).toBeNull(); expect(lig.siradaki(3)).toBeNull();
+  S.day = 3 + 7 * 3 + 1; sim.step(1);
+  expect(lig.model().benimMaclar.length).toBe(0);
+  expect(lig.model().tablo[1].every((r: any) => r.o === 0)).toBe(true);
 });

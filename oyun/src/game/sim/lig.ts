@@ -26,6 +26,7 @@ export function installLig(K: Kernel) {
     const t = (S.zones.arsa as { takim?: { ad: string; renk: string; renk2?: string; arma?: string } | null } | undefined)?.takim; if (!t) return;
     KULUP.ad = (t.arma ? t.arma + ' ' : '') + t.ad; KULUP.renk = [t.renk, t.renk2 || KULUP.renk[1]];
   }
+  const kulupVar = () => !!(S.zones.arsa as { takim?: unknown } | undefined)?.takim;
   const ad = (id: string) => { syncKulup(); return LIG_BY_ID[id]?.ad || id; };
 
   /** Player's fixture for game round g: opponent id and whether the player is home. */
@@ -36,6 +37,7 @@ export function installLig(K: Kernel) {
   }
   /** MacGunu-shaped offer for the match day of `day`, or null when the player has no fixture. */
   function mac(day: number) {
+    if (!kulupVar()) return null;   // no founded club, no league match (the UI promises "kulüp kurarsan maçlar lige sayılır")
     syncKulup();
     const g = turOfDay(day), f = fixture(g); if (!f || g < 0) return null;
     if (z().oynanan[`${f.s}-${f.k}`]) return null;
@@ -45,6 +47,7 @@ export function installLig(K: Kernel) {
 
   /** 2026-11-08: the club's next unplayed league fixture from `day` on (ticket matches at the gate play it early, so the points count). */
   function siradaki(day: number) {
+    if (!kulupVar()) return null;
     syncKulup(); const l = z();
     for (let g = Math.max(l.fin, turOfDay(day)); g < l.fin + SEZON_TUR; g++) {
       const f = fixture(g); if (!f || l.oynanan[`${f.s}-${f.k}`]) continue;
@@ -92,7 +95,7 @@ export function installLig(K: Kernel) {
   K.addSystem({ id: 'lig', order: 51, phase: 'sim', step() {
     if (!K.rt.started) return;
     const l = z();
-    while (MAC_GUNU_OFFSET + MAC_GUNU_EVERY * l.fin < S.day && l.fin < 400) { turKapat(l.fin); l.fin++; }
+    while (MAC_GUNU_OFFSET + MAC_GUNU_EVERY * l.fin < S.day && l.fin < 400) { if (kulupVar()) turKapat(l.fin); l.fin++; }   // no club: rounds pass without table rows or forfeits
   } });
 
   function model() {

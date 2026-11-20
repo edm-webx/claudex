@@ -8,6 +8,7 @@
  */
 import type { Kernel } from './state';
 import { TEAMS } from '../../content/traits';
+import { LIG_BY_ID } from '../../content/lig';
 import { stadSave, tahminDoluluk, kapiGeliri } from './stadyum';
 import { createMatch, FORMATIONS, rng } from './macmotor';
 
@@ -116,15 +117,16 @@ export function installHaliSaha(K: Kernel, lig?: { mac(day: number): (MacGunu & 
         const t = rt.uiLast.haliSahaMac as MacGunu | undefined; if (!t) return false;
         const biz = Math.min(30, Math.max(0, Math.round(Number(c.biz) || 0))), onlar = Math.min(30, Math.max(0, Math.round(Number(c.onlar) || 0)));
         delete rt.uiLast.haliSahaMac; if (rt.pauseWhy === 'halisaha') { rt.paused = false; rt.pauseWhy = ''; }
-        const ligOk = t.ligG != null && lig ? lig.sonuc(t.ligG, biz, onlar) : false; void ligOk;
+        const ar = S.zones.arsa as { takim?: unknown } | undefined, kulupMaci = !!ar?.takim && t.ligG != null;   // the founded club's own league match
+        if (t.ligG != null && lig) lig.sonuc(t.ligG, biz, onlar);
+        const formOnce = z.form || [];   // the gate is sold BEFORE this match's result: fill uses the form going in and the rival's real strength
         z.played++; z.goals += biz; recordStats(z, c.ist, biz, onlar);
-        const ar = S.zones.arsa as { takim?: unknown } | undefined;
-        if (ar?.takim && t.ligG != null) {   // gate receipts of the club's own league match
-          const st = stadSave(ar as never), dol = tahminDoluluk(st.fiyat, z.form || [], 55), gel = kapiGeliri(dol, st.fiyat);
+        if (kulupMaci) {   // gate receipts of the club's own league match
+          const st = stadSave(ar as never), dol = tahminDoluluk(st.fiyat, formOnce, LIG_BY_ID[t.rival]?.guc || 55), gel = kapiGeliri(dol, st.fiyat);
           st.doluluk = dol; st.son = gel; st.gelir += gel; st.maclar++; odul(gel); K.toast('🎟️ Kapı geliri: ' + gel.toLocaleString('tr') + ' ₺ (doluluk %' + Math.round(dol * 100) + ')', 'good');
         }
         K.stat('macOyun'); if (biz > onlar) K.stat('macGalibiyet');
-        if (ar?.takim && t.ligG != null) {   // own club in the league: bigger prize, league points
+        if (kulupMaci) {   // own club in the league: bigger prize, league points
           const pu = biz > onlar ? 3 : biz === onlar ? 1 : 0;
           if (biz > onlar) z.won++; else if (biz === onlar) z.drawn++; else z.lost++;
           odul(biz > onlar ? KULUP_ODUL.win : biz === onlar ? KULUP_ODUL.draw : KULUP_ODUL.loss); if (biz > onlar) S.gold += KULUP_ODUL.goldWin;
