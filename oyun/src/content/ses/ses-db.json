@@ -190,151 +190,89 @@
    ]
   },
   "coin": {
-   "pitchVar": 0.05,
-   "cooldown": 50,
+   "note": "Yumuşak para: tek sine, 440 Hz taban (kapı pentatonik oranla kaydırır).",
+   "pitchVar": 0,
+   "cooldown": 0,
+   "rev": 0.15,
    "layers": [
     {
      "k": "tone",
-     "f": 2350,
+     "wave": "sine",
+     "f": 440,
+     "a": 0.006,
+     "d": 0.32,
+     "v": 0.09,
      "harm": [
       1,
-      0,
-      0,
-      0.0,
-      0.3,
-      0,
-      0,
-      0,
-      0,
       0.12
-     ],
-     "a": 0.001,
-     "d": 0.22,
-     "v": 0.3
+     ]
     },
     {
      "k": "tone",
-     "f": 3150,
-     "a": 0.001,
-     "d": 0.12,
-     "v": 0.14,
-     "at": 0.035
+     "wave": "sine",
+     "f": 880,
+     "a": 0.006,
+     "d": 0.18,
+     "v": 0.015
     }
    ]
   },
   "cash": {
-   "cooldown": 120,
-   "rev": 0.12,
+   "note": "Yumuşak kasa: iki sine vuruş.",
+   "pitchVar": 0,
+   "cooldown": 0,
+   "rev": 0.15,
    "layers": [
     {
-     "k": "noise",
-     "color": "pink",
-     "filter": {
-      "type": "bp",
-      "f": 1800,
-      "q": 0.8
-     },
-     "a": 0.003,
-     "d": 0.09,
-     "v": 0.18
+     "k": "tone",
+     "wave": "sine",
+     "f": 440,
+     "a": 0.006,
+     "d": 0.24,
+     "v": 0.08
     },
     {
      "k": "tone",
-     "f": 1318,
-     "harm": [
-      1,
-      0.2,
-      0.25,
-      0,
-      0.1
-     ],
-     "a": 0.002,
-     "d": 0.5,
-     "v": 0.3,
-     "at": 0.04
-    },
-    {
-     "k": "tone",
-     "f": 1760,
-     "harm": [
-      1,
-      0.2,
-      0.25,
-      0,
-      0.1
-     ],
-     "a": 0.002,
-     "d": 0.7,
-     "v": 0.3,
-     "at": 0.12
-    },
-    {
-     "k": "burst",
-     "at": 0.05,
-     "n": 4,
-     "every": [
-      0.03,
-      0.06
-     ],
-     "layer": {
-      "k": "tone",
-      "f": 2600,
-      "harm": [
-       1,
-       0,
-       0,
-       0,
-       0.3
-      ],
-      "a": 0.001,
-      "d": 0.1,
-      "v": 0.12
-     }
+     "wave": "sine",
+     "f": 660,
+     "a": 0.006,
+     "d": 0.3,
+     "v": 0.07,
+     "at": 0.09
     }
    ]
   },
   "buy": {
-   "cooldown": 150,
+   "note": "Gerçek satın alma/işe alma: yumuşak 3 nota pentatonik.",
+   "pitchVar": 0,
+   "cooldown": 0,
    "rev": 0.2,
    "layers": [
     {
      "k": "tone",
-     "wave": "triangle",
-     "f": "C6",
-     "a": 0.003,
-     "d": 0.25,
-     "v": 0.3
+     "wave": "sine",
+     "f": 440,
+     "a": 0.006,
+     "d": 0.26,
+     "v": 0.08
     },
     {
      "k": "tone",
-     "wave": "triangle",
-     "f": "E6",
-     "a": 0.003,
-     "d": 0.25,
-     "v": 0.3,
-     "at": 0.07
+     "wave": "sine",
+     "f": 554,
+     "a": 0.006,
+     "d": 0.26,
+     "v": 0.08,
+     "at": 0.08
     },
     {
      "k": "tone",
-     "wave": "triangle",
-     "f": "G6",
-     "a": 0.003,
-     "d": 0.25,
-     "v": 0.3,
-     "at": 0.14
-    },
-    {
-     "k": "tone",
-     "f": "C7",
-     "harm": [
-      1,
-      0,
-      0.2
-     ],
-     "a": 0.003,
-     "d": 0.5,
-     "v": 0.3,
-     "at": 0.21
+     "wave": "sine",
+     "f": 660,
+     "a": 0.006,
+     "d": 0.34,
+     "v": 0.08,
+     "at": 0.16
     }
    ]
   },
@@ -343,25 +281,25 @@
    "layers": [
     {
      "k": "tone",
-     "wave": "sawtooth",
+     "wave": "triangle",
      "f": 190,
      "f1": 120,
      "a": 0.01,
      "d": 0.3,
-     "v": 0.3,
+     "v": 0.21,
      "filter": {
       "type": "lp",
-      "f": 900
+      "f": 700
      }
     },
     {
      "k": "tone",
-     "wave": "sawtooth",
+     "wave": "triangle",
      "f": 196,
      "f1": 124,
      "a": 0.01,
      "d": 0.3,
-     "v": 0.2,
+     "v": 0.14,
      "filter": {
       "type": "lp",
       "f": 700
@@ -441,14 +379,14 @@
    "layers": [
     {
      "k": "tone",
-     "wave": "sawtooth",
+     "wave": "triangle",
      "f": 116.5,
      "a": 0.18,
      "d": 0.4,
      "s": 0.85,
      "hold": 1.5,
      "r": 0.6,
-     "v": 0.32,
+     "v": 0.256,
      "detune": 6,
      "vib": {
       "rate": 4.2,
@@ -456,24 +394,24 @@
      },
      "filter": {
       "type": "lp",
-      "f": 700,
+      "f": 500,
       "q": 0.9
      }
     },
     {
      "k": "tone",
-     "wave": "sawtooth",
+     "wave": "triangle",
      "f": 174.6,
      "a": 0.2,
      "d": 0.4,
      "s": 0.85,
      "hold": 1.5,
      "r": 0.6,
-     "v": 0.2,
+     "v": 0.16,
      "detune": -5,
      "filter": {
       "type": "lp",
-      "f": 900,
+      "f": 500,
       "q": 0.9
      }
     },
@@ -490,14 +428,14 @@
      "s": 0.7,
      "hold": 1.5,
      "r": 0.5,
-     "v": 0.12
+     "v": 0.096
     },
     {
      "k": "omni",
      "patch": "vapur",
      "note": "Bb1",
      "hold": 1.6,
-     "v": 0.25
+     "v": 0.2
     }
    ]
   },
@@ -507,38 +445,38 @@
    "layers": [
     {
      "k": "tone",
-     "wave": "sawtooth",
-     "f": 2100,
-     "f1": 1150,
+     "wave": "triangle",
+     "f": 1638,
+     "f1": 897,
      "gt": 0.16,
      "a": 0.01,
      "d": 0.12,
      "s": 0.4,
      "hold": 0.15,
      "r": 0.04,
-     "v": 0.22,
+     "v": 0.132,
      "vib": {
       "rate": 28,
       "depth": 0.02
      },
      "filter": {
       "type": "bp",
-      "f": 2000,
+      "f": 1500,
       "q": 1.6
      }
     },
     {
      "k": "tone",
-     "wave": "sawtooth",
-     "f": 2250,
-     "f1": 1200,
+     "wave": "triangle",
+     "f": 1755,
+     "f1": 936,
      "gt": 0.14,
      "a": 0.01,
      "d": 0.1,
      "s": 0.4,
      "hold": 0.13,
      "r": 0.04,
-     "v": 0.18,
+     "v": 0.108,
      "at": 0.22,
      "vib": {
       "rate": 30,
@@ -546,26 +484,26 @@
      },
      "filter": {
       "type": "bp",
-      "f": 2100,
+      "f": 1575,
       "q": 1.6
      }
     },
     {
      "k": "tone",
-     "wave": "sawtooth",
-     "f": 2000,
-     "f1": 1300,
+     "wave": "triangle",
+     "f": 1560,
+     "f1": 1014,
      "gt": 0.1,
      "a": 0.01,
      "d": 0.08,
      "s": 0.3,
      "hold": 0.09,
      "r": 0.03,
-     "v": 0.12,
+     "v": 0.072,
      "at": 0.41,
      "filter": {
       "type": "bp",
-      "f": 2000,
+      "f": 1500,
       "q": 1.6
      }
     }
@@ -853,15 +791,15 @@
    "layers": [
     {
      "k": "tone",
-     "wave": "sawtooth",
+     "wave": "triangle",
      "f": 360,
      "f1": 230,
      "a": 0.004,
      "d": 0.09,
-     "v": 0.3,
+     "v": 0.21,
      "filter": {
       "type": "bp",
-      "f": 900,
+      "f": 675,
       "q": 1.4
      }
     },
@@ -875,20 +813,20 @@
      },
      "a": 0.003,
      "d": 0.06,
-     "v": 0.15
+     "v": 0.105
     },
     {
      "k": "tone",
-     "wave": "sawtooth",
+     "wave": "triangle",
      "f": 340,
      "f1": 220,
      "a": 0.004,
      "d": 0.1,
-     "v": 0.26,
+     "v": 0.182,
      "at": 0.17,
      "filter": {
       "type": "bp",
-      "f": 850,
+      "f": 638,
       "q": 1.4
      }
     }
@@ -899,40 +837,40 @@
    "layers": [
     {
      "k": "tone",
-     "wave": "square",
+     "wave": "triangle",
      "f": "E5",
      "a": 0.002,
      "d": 0.1,
-     "v": 0.12,
+     "v": 0.084,
      "filter": {
       "type": "lp",
-      "f": 3000
+      "f": 2200
      }
     },
     {
      "k": "tone",
-     "wave": "square",
+     "wave": "triangle",
      "f": "A5",
      "a": 0.002,
      "d": 0.1,
-     "v": 0.12,
+     "v": 0.084,
      "at": 0.05,
      "filter": {
       "type": "lp",
-      "f": 3000
+      "f": 2200
      }
     },
     {
      "k": "tone",
-     "wave": "square",
+     "wave": "triangle",
      "f": "D6",
      "a": 0.002,
      "d": 0.18,
-     "v": 0.12,
+     "v": 0.084,
      "at": 0.1,
      "filter": {
       "type": "lp",
-      "f": 3200
+      "f": 2200
      }
     }
    ]
@@ -1065,15 +1003,15 @@
    "layers": [
     {
      "k": "tone",
-     "wave": "square",
+     "wave": "triangle",
      "f": 300,
      "f1": 700,
      "a": 0.005,
      "d": 0.2,
-     "v": 0.1,
+     "v": 0.08,
      "filter": {
       "type": "lp",
-      "f": 2200
+      "f": 1600
      }
     }
    ]
@@ -1349,31 +1287,36 @@
    ]
   },
   "hesap": {
-   "cooldown": 400,
-   "note": "Hesap ödendi: bozuk para şakırtısı.",
+   "note": "Hesap ödendi: 2-3 yumuşak sine vuruşu (eski 2400 Hz bozuk para şakırtısı kaldırıldı).",
+   "pitchVar": 0,
+   "cooldown": 0,
+   "rev": 0.15,
    "layers": [
     {
-     "k": "burst",
-     "n": 6,
-     "every": [
-      0.03,
-      0.07
-     ],
-     "fJit": 0.25,
-     "layer": {
-      "k": "tone",
-      "f": 2400,
-      "harm": [
-       1,
-       0,
-       0,
-       0,
-       0.3
-      ],
-      "a": 0.001,
-      "d": 0.12,
-      "v": 0.14
-     }
+     "k": "tone",
+     "wave": "sine",
+     "f": 330,
+     "a": 0.006,
+     "d": 0.25,
+     "v": 0.08
+    },
+    {
+     "k": "tone",
+     "wave": "sine",
+     "f": 495,
+     "a": 0.006,
+     "d": 0.25,
+     "v": 0.08,
+     "at": 0.09
+    },
+    {
+     "k": "tone",
+     "wave": "sine",
+     "f": 660,
+     "a": 0.006,
+     "d": 0.32,
+     "v": 0.07,
+     "at": 0.18
     }
    ]
   },
@@ -1476,6 +1419,22 @@
      "a": 0.003,
      "d": 0.4,
      "v": 0.25
+    }
+   ]
+  },
+  "error": {
+   "note": "Hata/yetersiz bakiye: alçak kısa sine.",
+   "pitchVar": 0,
+   "cooldown": 250,
+   "layers": [
+    {
+     "k": "tone",
+     "wave": "sine",
+     "f": 220,
+     "f1": 196,
+     "a": 0.01,
+     "d": 0.12,
+     "v": 0.07
     }
    ]
   }

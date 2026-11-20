@@ -234,6 +234,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
 
   // ── ui, audio
   const audio: Audio | null = make('audio', () => createAudio({ platform, dress: dress ?? undefined }));
+  if (audio) Object.defineProperty(target, 'audio', { configurable: true, get: () => (audio as { debug?: () => unknown }).debug?.() });   // SNT-01: son 200 çalma kaydı + bus seviyeleri
   let ui: Ui | null = make('ui', () => createUi({ root: app, platform, audio: audio ?? undefined }));
   const uiReal = !!ui;
   if (!ui) ui = fallbackUi(app);

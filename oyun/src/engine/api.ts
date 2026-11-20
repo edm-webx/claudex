@@ -833,7 +833,7 @@ export interface UiDeps { root: HTMLElement; platform: Platform; audio?: Audio; 
 
 export interface AudioBus { volume: number; muted: boolean; }
 export interface Audio {
-  buses: { music: AudioBus; sfx: AudioBus; voice: AudioBus };
+  buses: { music: AudioBus; sfx: AudioBus; voice: AudioBus; ambience?: AudioBus; ui?: AudioBus };
   sfx(id: string, opts?: { at?: Vec2; vol?: number; pitch?: number }): void;
   music: { setZone(id: string): void; setPhase(p: DayPhase): void; setIntensity(v: number): void };
   ambience: { setListener(pos: Vec2): void };

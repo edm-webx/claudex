@@ -31,6 +31,11 @@ import SES_DB from '../../content/ses/ses-db.json';
 import { createBank, type Bank, type SesDb } from './msynth';
 import { createMusicPlayer } from './msynth/player';
 import { babble, type VoiceProfile } from './msynth/voice';
+import { createMoneyGate, isMoney } from './gate';
+
+/** One sfx() call as seen by tests / window.__marti.audio: which path produced the sound. */
+export type PlayPath = 'sample' | 'bank' | 'recipe' | 'fallback-pop' | 'gated' | 'silent';
+export interface PlayRecord { t: number; id: string; yol: PlayPath; at: boolean; vol: number }
 
 /** Engine audio with the ses extras (procedural music controls, grill ambience, radio jingle). */
 export interface MotorAudio extends Audio {
@@ -41,6 +46,10 @@ export interface MotorAudio extends Audio {
   speak(text: string, who?: string, mood?: 'ok' | 'happy' | 'angry'): void;
   /** Martı Synth bank (debug / editor sound list). */
   bank(): Bank | null;
+  /** Debug: last 200 sfx() calls, per-path counters, bus levels, active ducks. */
+  debug(): { log: PlayRecord[]; counts: Record<PlayPath, number>; buses: Record<string, { volume: number; muted: boolean }>; ambOn: boolean; bank: ReturnType<Bank['stats']> | null };
+  /** Generic ducking: lower the music (and optionally ambience) bus for `sec` seconds. */
+  duck(sec: number, depth?: number, ambience?: boolean): void;
 }
 
 type Ctx = AudioContext;
@@ -63,25 +72,32 @@ export function createAudio(deps: AudioDeps): MotorAudio {
   let grill: Vec2 | null = null;
   let bank: Bank | null = null;
   let ambWeather = 'acik', ambSeason = 'sonbahar';
+  let duckM = 1, duckA = 1;
+  const duckTimers: Array<ReturnType<typeof setTimeout>> = [];
+  const moneyGate = createMoneyGate();
+  const LOG_MAX = 200;
+  const playLog: PlayRecord[] = [];
+  const counts: Record<PlayPath, number> = { sample: 0, bank: 0, recipe: 0, 'fallback-pop': 0, gated: 0, silent: 0 };
+  const note = (id: string, yol: PlayPath, at: boolean, vol: number) => { counts[yol]++; playLog.push({ t: deps.platform.clock.now(), id, yol, at, vol }); if (playLog.length > LOG_MAX) playLog.shift(); };
 
-  function mkBus(name: 'music' | 'sfx' | 'voice', vol: number): BusImpl {
+  function mkBus(name: 'music' | 'sfx' | 'voice' | 'ambience' | 'ui', vol: number): BusImpl {
     let volume = vol, muted = false;
     const b: BusImpl = {
       node: null,
       get volume() { return volume; },
-      set volume(v: number) { volume = Math.max(0, Math.min(1, +v || 0)); apply(); },
+      set volume(v: number) { const nv = Math.max(0, Math.min(1, +v || 0)); if (nv > 0 && volume <= 0) muted = false; volume = nv; apply(); },   // slider pulled up from 0 = unmute (no mute/slider mismatch)
       get muted() { return muted; },
       set muted(m: boolean) { muted = !!m; apply(); },
     };
     function apply() {
       if (!b.node || !ac) return;
-      const extra = name === 'music' ? (ownMusic ? 0 : 0.6 + 0.4 * intensity) : 1;
+      const extra = (name === 'music' ? (ownMusic ? 0 : 0.6 + 0.4 * intensity) : 1) * (name === 'music' ? duckM : name === 'ambience' ? duckA : 1);
       try { b.node.gain.setTargetAtTime(muted ? 0 : volume * extra, ac.currentTime, 0.05); } catch { /* closed ctx */ }
     }
     (b as unknown as { apply: () => void }).apply = () => { apply(); if (name === 'music') syncLofi(); };
     return b;
   }
-  const buses = { music: mkBus('music', 0.8), sfx: mkBus('sfx', 1), voice: mkBus('voice', 1) };
+  const buses = { music: mkBus('music', 0.8), sfx: mkBus('sfx', 1), voice: mkBus('voice', 1), ambience: mkBus('ambience', 1), ui: mkBus('ui', 1) };
   const applyAll = () => { for (const b of Object.values(buses)) (b as unknown as { apply: () => void }).apply(); };
 
   function ensure(): Ctx | null {
@@ -91,14 +107,21 @@ export function createAudio(deps: AudioDeps): MotorAudio {
       if (!ac) return null;
       try { const n = navigator as unknown as { audioSession?: { type: string } }; if (n.audioSession) n.audioSession.type = 'ambient'; } catch { /* not iOS */ }
       master = ac.createGain(); master.gain.value = 0.5;
-      // limiter: üst üste binen sert sesler (square/sawtooth, kalabalık) çıkışı patlatmasın
-      try { const lim = ac.createDynamicsCompressor(); lim.threshold.value = -8; lim.knee.value = 6; lim.ratio.value = 12; lim.attack.value = 0.003; lim.release.value = 0.2; master.connect(lim); lim.connect(ac.destination); } catch { master.connect(ac.destination); }
+      // mix chain: master -> compressor (-14 dB, 3:1) -> brickwall-ish limiter -> ~9 kHz lowpass -> destination
+      try {
+        const comp = ac.createDynamicsCompressor(); comp.threshold.value = -14; comp.knee.value = 12; comp.ratio.value = 3; comp.attack.value = 0.01; comp.release.value = 0.25;
+        const lim = ac.createDynamicsCompressor(); lim.threshold.value = -3; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = 0.002; lim.release.value = 0.12;
+        const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 9000; lp.Q.value = 0.5;
+        master.connect(comp); comp.connect(lim); lim.connect(lp); lp.connect(ac.destination);
+      } catch { master.connect(ac.destination); }
       for (const b of Object.values(buses)) { b.node = ac.createGain(); b.node.connect(master); }
       try { bank = createBank(ac, SES_DB as unknown as SesDb); } catch { bank = null; }
       applyAll();
     } catch { ac = null; }
     return ac;
   }
+  const UI_IDS = new Set(['tik', 'ok', 'error', 'panelAc', 'panelKapat', 'sekme', 'slider', 'toggle', 'bildirim']);
+  const isUi = (id: string) => UI_IDS.has(id);
   const live = () => !!ac && !suspended && ac.state !== 'closed';
   const busOut = (b: BusImpl) => b.node as GainNode;
   const sfxSilent = () => !live() || buses.sfx.muted || buses.sfx.volume <= 0;
@@ -107,7 +130,7 @@ export function createAudio(deps: AudioDeps): MotorAudio {
   function tone(f: number, d: number, type: OscillatorType = 'sine', v = 0.2, slide = 0, delay = 0, out?: AudioNode) {
     if (sfxSilent() || !ac) return;
     const t = ac.currentTime + delay, o = ac.createOscillator(), g = ac.createGain();
-    o.type = type; o.frequency.setValueAtTime(f, t);
+    o.type = type === 'sawtooth' || type === 'square' ? 'triangle' : type; o.frequency.setValueAtTime(f, t);   // soft mix: no raw saw/square edges
     if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, f + slide), t + d);
     g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.001, t + d);
     o.connect(g); g.connect(out || busOut(buses.sfx)); o.start(t); o.stop(t + d + 0.03);
@@ -136,7 +159,6 @@ export function createAudio(deps: AudioDeps): MotorAudio {
       t += d + 0.015 + Math.random() * 0.03;
     }
   }
-  let coinGate = 0, coinRecent = 0, coinLast = 0;
   const PENTA = [330, 371, 440, 495, 554, 660];
   type Recipe = (out?: AudioNode) => void;
   const SFX: Record<string, Recipe> = {
@@ -148,12 +170,7 @@ export function createAudio(deps: AudioDeps): MotorAudio {
     // 2026-11-09 user: the money sound became very irritating after a while. Now a soft sine in a calm pentatonic scale
     // (A major pentatonic, 330-660 Hz, no harsh square/1.2 kHz), and it habituates: the more coins in the last seconds,
     // the quieter and rarer it gets, so a busy day is a gentle shimmer instead of a ping storm.
-    coin: o => {
-      const n = deps.platform.clock.now(); coinRecent = Math.max(0, coinRecent - (n - coinLast) / 1000 * 1.2); coinLast = n;
-      const gate = 160 + Math.min(coinRecent, 8) * 60; if (n - coinGate < gate) return; coinGate = n; coinRecent += 1;
-      const calm = 1 / (1 + coinRecent * 0.35), f = PENTA[Math.floor(Math.random() * PENTA.length)];
-      tone(f, 0.32, 'sine', 0.05 * calm, 0, 0, o); tone(f * 2, 0.18, 'sine', 0.012 * calm, 0, 0, o);
-    },
+    coin: o => { const f = PENTA[Math.floor(Math.random() * PENTA.length)]; tone(f, 0.32, 'sine', 0.05, 0, 0, o); tone(f * 2, 0.18, 'sine', 0.012, 0, 0, o); },   // fallback only: ses-db is the source, the money gate (gate.ts) limits both
     cash: o => { tone(440, 0.22, 'sine', 0.06, 0, 0, o); tone(660, 0.3, 'sine', 0.05, 0, 0.09, o); },
     buy: o => [440, 554, 660, 880].forEach((f, i) => tone(f, 0.26, 'sine', 0.07, 0, i * 0.08, o)),
     bad: o => tone(180, 0.25, 'sawtooth', 0.08, -60, 0, o),
@@ -291,12 +308,12 @@ export function createAudio(deps: AudioDeps): MotorAudio {
     weatherKey = key;
     if (weatherSrc && weatherG) { const s = weatherSrc, g = weatherG; try { g.gain.setTargetAtTime(0, ac.currentTime, 1.5); s.stop(ac.currentTime + 6); } catch { /* */ } }
     weatherSrc = null; weatherG = null;
-    if (key) loopTo(key, busOut(buses.sfx), ambWeather === 'firtina' ? 0.75 : key === 'ruzgar' ? 0.4 : 0.55, (s, g) => { if (weatherLoop() === key) { weatherSrc = s; weatherG = g; } else { try { s.stop(); } catch { /* */ } } });
+    if (key) loopTo(key, busOut(buses.ambience), ambWeather === 'firtina' ? 0.75 : key === 'ruzgar' ? 0.4 : 0.55, (s, g) => { if (weatherLoop() === key) { weatherSrc = s; weatherG = g; } else { try { s.stop(); } catch { /* */ } } });
   }
   function startAmbience() {
     if (ambOn || !ac || !live()) return;
     ambOn = true;
-    const out = busOut(buses.sfx);
+    const out = busOut(buses.ambience);
     const loop = sample(`amb.${zone || 'iskele'}`);
     if (loop) { const s = playBuffer(loop, out, 0.5, 1, true); if (s) ambNodes.push(s); }
     else if (zone === 'orman') loopTo('ruzgar', out, 0.16);        // leaves in the wind, no sea
@@ -416,11 +433,17 @@ export function createAudio(deps: AudioDeps): MotorAudio {
     bank: () => bank,
     sfx(id, opts) {
       try {
-        if (sfxSilent() || !ac) return;
-        let out: AudioNode = busOut(buses.sfx);
-        if (opts && (opts.at || opts.vol != null)) {
-          const g = ac.createGain(); let vol = opts.vol ?? 1;
-          if (opts.at) {
+        if (sfxSilent() || !ac) { note(id, 'silent', !!opts?.at, 0); return; }
+        let out: AudioNode = busOut(isUi(id) ? buses.ui : buses.sfx);
+        let vol = opts?.vol ?? 1, pitch = opts?.pitch ?? 1;
+        if (isMoney(id)) {   // single money gate: same habituation on every path (sample, bank, recipe)
+          const g = moneyGate.pass(deps.platform.clock.now());
+          if (!g) { note(id, 'gated', !!opts?.at, 0); return; }
+          vol *= g.vol; pitch *= g.pitch;
+        }
+        if (opts?.at || vol !== 1) {
+          const g = ac.createGain();
+          if (opts?.at) {
             const dx = opts.at.x - listener.x, dz = opts.at.z - listener.z, d = Math.hypot(dx, dz);
             vol *= 1 / (1 + d / 10);
             const p = ac.createStereoPanner(); p.pan.value = Math.max(-1, Math.min(1, dx / 12)); g.connect(p); p.connect(out);
@@ -428,11 +451,23 @@ export function createAudio(deps: AudioDeps): MotorAudio {
           g.gain.value = vol; out = g;
         }
         const buf = sample('sfx.' + id);
-        if (buf) { playBuffer(buf, out, 1, opts?.pitch ?? 1); return; }
-        if (id !== 'coin' && id !== 'cash' && id !== 'buy' && playId(id, out, opts?.pitch ?? 1)) return;   // money sounds: always the soft habituating synth, never the bright bank patches
-        (SFX[id] || SFX.pop)(out);
+        if (buf) { playBuffer(buf, out, 1, pitch); note(id, 'sample', !!opts?.at, vol); return; }
+        if (playId(id, out, pitch)) { note(id, 'bank', !!opts?.at, vol); return; }
+        if (SFX[id]) { SFX[id](out); note(id, 'recipe', !!opts?.at, vol); return; }
+        if (typeof console !== 'undefined' && (import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV) console.warn('[audio] unknown sfx id, falling back to pop:', id);
+        SFX.pop(out); note(id, 'fallback-pop', !!opts?.at, vol);
       } catch { /* never throw from audio */ }
     },
+    duck(sec, depth = 0.35, ambience = false) {
+      try {
+        if (!ac) return;
+        duckM = depth; if (ambience) duckA = Math.max(depth, 0.6);
+        applyAll();
+        duckTimers.push(setTimeout(() => { duckM = 1; duckA = 1; applyAll(); }, Math.max(0.1, sec) * 1000));
+        if (duckTimers.length > 8) clearTimeout(duckTimers.shift());
+      } catch { /* */ }
+    },
+    debug: () => ({ log: playLog.slice(), counts: { ...counts }, buses: Object.fromEntries(Object.entries(buses).map(([k, b]) => [k, { volume: b.volume, muted: b.muted }])), ambOn, bank: bank ? bank.stats() : null }),
     music: {
       setZone(id) { if (id === zone) return; zone = id; lofiPlace = id; try { lofi?.setPlace(id); refreshMusic(); if (ambOn && id !== 'ev') { stopAmbience(); startAmbience(); } } catch { /* ignore */ } },
       setPhase(p) { if (p === phase) return; phase = p; try { lofi?.setPhase(p); refreshMusic(); } catch { /* ignore */ } },

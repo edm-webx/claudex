@@ -26,8 +26,12 @@ export interface AudioMapDeps {
 }
 export interface AudioMap { update(): void; dispose(): void; }
 
+/** Sounds that lower the music (and for loud match sounds the ambience): [seconds, depth, ambience]. */
+const DUCK: Record<string, [number, number, boolean]> = { horn: [2.2, 0.35, false], confetti: [1.8, 0.4, false], whistle: [1.2, 0.5, true], whistleLong: [1.6, 0.5, true], crowdCheer: [2, 0.5, true], day: [1.8, 0.4, false], bell: [1, 0.5, false] };
+
 export function createAudioMap(deps: AudioMapDeps): AudioMap {
   const { bus, audio } = deps;
+  const ma = audio as Partial<MotorAudio>;
   const offs: Array<() => void> = [];
   let lastTransferSfx = -1e9;
   const clockNow = () => (typeof performance !== 'undefined' ? performance.now() : 0);
@@ -41,13 +45,13 @@ export function createAudioMap(deps: AudioMapDeps): AudioMap {
       if (name === 'transfer' || name === 'pick') { const now = clockNow(); if (now - lastTransferSfx < 160) return; lastTransferSfx = now; }
       const at = d && typeof d.x === 'number' && typeof d.z === 'number' ? { x: d.x, z: d.z } : undefined;
       try { audio.sfx(id, at ? { at } : undefined); } catch { /* audio is optional */ }
+      const dk = DUCK[id]; if (dk) { try { ma.duck?.(dk[0], dk[1], dk[2]); } catch { /* optional */ } }
     }) as () => void);
   }
   // ses-3: few voiced lines, only for regulars' hellos and big moments (engine rate limit: one per 10 s)
   for (const name of Object.keys(EVENT_VOICE)) {
     offs.push(bus.on(name, () => { try { audio.voice(EVENT_VOICE[name]); } catch { /* */ } }) as () => void);
   }
-  const ma = audio as Partial<MotorAudio>;
   const onRadio = () => { try { ma.jingle?.(); setTimeout(() => { try { audio.voice('radyo'); } catch { /* */ } }, 900); } catch { /* */ } };
   if (deps.root) { deps.root.addEventListener('sb:radio', onRadio); offs.push(() => deps.root?.removeEventListener('sb:radio', onRadio)); }
   let lastZone = '', lastPhase = '', lastEvent: string | null | undefined, lastWeather = '', crowdS = 0.5, slowT = 0;
