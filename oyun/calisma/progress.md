@@ -8,3 +8,6 @@
 - vitest: 211+ geçti, eski 6 kırmızı aynı (animals x2, faz2-restoran x2, regulars x2).
 ## Kalan
 Stadyum/Belgrad görsel zenginleştirme, HUD yeniden tasarım, büfe içi asset denetimi, halı saha 7v7 ve kulüp kadro/forma ekranı, çoklu oyuncu doğrulaması (bulutta yapılamaz).
+
+## Aşama 7 (Belgrad, sokaklar, ses) — 2026-11-20 18:40 DURDURULDU (kullanıcı, limit tasarrufu)
+Taban 4a36662. Dallar (origin): claude/project-thread-g3g2bo-a (ses para/mix: ses/gate.ts + api/audio/index/audio-map/boot/ses-db yarım, commit'li, qa YAPILMADI), -b (ambiyans/müzik: değişiklik yok), -c (sokak vatandaşları: değişiklik yok), -d (orman görsel: değişiklik yok), -f (gözlem botu: gozlem-lib.mjs + gozlem-sinama.mjs yarım). Plan: paketler studyo/uzman-paketleri.json, brif /tmp scratchpad ORTAK-BRIEF (kurallar: stok yok, gerçek işçi, hikâye/8x/kulübe KOSULLU, para sesi yumuşak). Devam emriyle: a'yı bitir (qa:hizli), sonra b, c, d, f.
