@@ -44,7 +44,7 @@ body .hd-hd i{background:#ffb627!important;color:#14213d!important;border:0!impo
 body .hd-main{border-bottom:1px solid rgba(255,255,255,.1)!important}
 body .hd-main .lb{color:#fff;font-size:15px}
 body .hd-main .sb,body .hd-sm .n{color:rgba(255,255,255,.85)!important}
-body .hd-bar{background:rgba(255,255,255,.12)!important;border:0!important;height:6px!important;border-radius:4px!important}
+body .hd-bar{background:rgba(255,255,255,.12)!important;border:0!important;height:8px!important;border-radius:4px!important}
 body .hd-bar u{background:linear-gradient(90deg,#2fbf71,#6ef2ab)!important}
 body .hd-amt,body .hd-sm .rw{color:#6ef2ab!important}
 body .hd-pin{background:rgba(255,255,255,.1)!important;border:0!important}

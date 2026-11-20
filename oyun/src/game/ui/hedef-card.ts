@@ -5,8 +5,6 @@
  *   button (cycles the pinned target), 2 small goals with progress. Header tap folds it (saved in the sim state).
  *   Re-renders only when its text signature changes (checked 4x per second).
  * - When `doneN` grows, the finished row flashes and coins fly to the money pill (v2 coins play the coin sound).
- * - Teselli: a centre card with a steaming tea glass, a comforting line and the gift; shown 2.5 s after the day ends
- *   (after the day card slid in), never while the weekly kasa count is up.
  */
 import { hedefApi, type GoalCardModel } from '../sim/goals';
 
@@ -53,12 +51,6 @@ const CSS = `
 .hd-sm.flash{animation:hd-flash .9s ease-out}
 @keyframes hd-flash{0%{background:#fff3a8;transform:scale(1.04)}100%{background:transparent;transform:none}}
 @keyframes hd-glow{from{filter:brightness(1)}to{filter:brightness(1.25)}}
-  padding:16px 16px 14px;text-align:center;color:var(--ink,#3b2a20);animation:hd-pop .45s cubic-bezier(.3,1.5,.5,1)}
-  border-radius:12px 12px 16px 16px / 8px 8px 22px 22px;background:linear-gradient(90deg,rgba(255,255,255,.55),rgba(255,255,255,.1) 40%,rgba(255,255,255,.4));overflow:hidden;
-  clip-path:polygon(0 0,100% 0,88% 48%,100% 100%,0 100%,12% 48%)}
-@keyframes hd-steam{0%{transform:translateY(8px) scaleX(1);opacity:0}30%{opacity:.9}100%{transform:translateY(-22px) scaleX(-1);opacity:0}}
-@keyframes hd-fade{from{opacity:0}to{opacity:1}}
-@keyframes hd-pop{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
 `;
 
 const PIN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6l-1 6 4 4H6l4-4z" fill="#e0533c"/><path d="M12 13v8"/></svg>';

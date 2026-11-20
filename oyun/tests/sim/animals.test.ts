@@ -24,6 +24,12 @@ describe('cats', () => {
     sb.step(2);
     expect(sb.h.cats.rows().length).toBeGreaterThanOrEqual(4);
   });
+  it('sleeping cats start on different spots', () => {
+    const sb = makeSandbox(2);
+    sb.step(2);
+    const r = sb.h.cats.rows().filter((c) => c.state === 'sleep');
+    for (let i = 0; i < r.length; i++) for (let j = i + 1; j < r.length; j++) expect(Math.hypot(r[i].x - r[j].x, r[i].z - r[j].z)).toBeGreaterThan(0.3);
+  });
 });
 describe('dog', () => {
   it('Karamel appears when state.dog is set and keeps position at the kasa', () => {
@@ -33,8 +39,8 @@ describe('dog', () => {
     expect(a).toBeTruthy();
     expect(['sit', 'sleep', 'wag', 'bark']).toContain(a.act);
   });
-  it('arrives the day after the first kapkaç', () => {
-    const sb = makeSandbox(4, (s) => { s.day = 5; s.karamelDay = 5; });
+  it('is in the game from the start: dogArrive fires on the first tick', () => {
+    const sb = makeSandbox(4);
     sb.step(1);
     expect(sb.events).toContain('dogArrive');
   });

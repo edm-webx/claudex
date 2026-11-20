@@ -55,7 +55,6 @@ export function createKapkac(env: AgentEnv): KapkacSystem {
           k.state = 'run'; k.t = 0; a.act = 'walk'; a.mood = 'impatient';
           k.wk.goTo(pointAlong(env.nav, a, farthestSpawn(env, pl), 15));
           host.toast(LINES.kapkac.shout, 'bad'); env.emit('kapkacGrab', { value: Math.round(k.value) });
-          if (!S.karamelDay) S.karamelDay = S.day + 1;
         }
         return;
       }

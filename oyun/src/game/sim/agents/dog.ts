@@ -1,5 +1,5 @@
 /**
- * Karamel (v2 updateDog): arrives once state.dog is set or on the day after the first kapkaç (karamelDay). Lies by the
+ * Karamel (v2 updateDog): is in the game from the start (state.dog is set and dogArrive emitted on the first tick). Lies by the
  * kasa pile; on duty 55 % of 40-80 s blocks (sits, wags when Sabri is within 1.5 m), off duty he sleeps. On duty he
  * barks the kapkaççı away (kapkac.ts reads env.shared.dogDuty / dogBark).
  */

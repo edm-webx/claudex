@@ -32,9 +32,13 @@ export function createCats(env: AgentEnv): CatsSystem {
     // 2026-10-25 user: no animals stuck up on roofs/awnings: cats only use low spots
     const spots = env.book.catSpots().filter((s) => s.a.y < 1.2);
     if (!spots.length) return;
-    const pick = def.id === 'pamuk' ? (spots.find((s) => s.name.endsWith('basket')) || spots[0])
-      : [spots.find((s) => s.name.endsWith('stool')), spots.find((s) => s.name.endsWith('bench')), spots.find((s) => s.name.endsWith('basket'))][cats.length % 3] || spots[0];
-    const spot = { x: pick.a.x, z: pick.a.z, y: pick.a.y };
+    // one cat per spot while free spots remain (4+ cats must not pile up on the same basket)
+    const free = spots.filter((s) => !cats.some((c) => Math.hypot(c.spot.x - s.a.x, c.spot.z - s.a.z) < 0.3));
+    const pool = free.length ? free : spots;
+    const pick = def.id === 'pamuk' ? (pool.find((s) => s.name.endsWith('basket')) || pool[0])
+      : [pool.find((s) => s.name.endsWith('stool')), pool.find((s) => s.name.endsWith('bench')), pool.find((s) => s.name.endsWith('basket'))][cats.length % 3] || pool[0];
+    const shared = !free.length || !free.includes(pick), off = shared ? 0.5 : 0, ang = cats.length * 2.1;   // spots ran out: curl up beside a neighbour, not on top
+    const spot = { x: pick.a.x + Math.cos(ang) * off, z: pick.a.z + Math.sin(ang) * off, y: pick.a.y };
     const a = env.reg.add('cat', def.id, { name: def.name, coat: def.coat }, spot, { name: def.name });
     a.y = a.py = spot.y; a.act = 'sleep'; a.rot = a.prot = pick.a.rotY;
     cats.push({ def, a, wk: new Walker(a, env.nav), state: 'sleep', t: 0, spot, petT: 0, nextVisit: S.playT + 80 + rng.next() * 60, heart: 0, tGive: 0 });
@@ -43,7 +47,7 @@ export function createCats(env: AgentEnv): CatsSystem {
     c.state = 'purr'; c.t = 0; c.heart = 2.5; c.petT = 0;
     env.host.heroAct('pet', 1.2);
     env.host.stat('pets'); if (c.def.id === 'pamuk') env.host.stat('petsPamuk');
-    env.host.heroSay(env.host.hero() === 'sabriye' ? 'Gel bakalım Pamuk hanım.' : 'Gel bakalım Pamuk hanım.', 1.6);
+    env.host.heroSay('Gel bakalım ' + c.def.name + '.', 1.6);
     env.host.tipBoost(60);
     if (!hasCat(S, c.def.id)) {
       (S.cats as unknown[]).push({ id: c.def.id });
