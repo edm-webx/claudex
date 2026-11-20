@@ -3,7 +3,7 @@
 // door or the stadium gate and opens the right tab.
 import { FORMATIONS } from '../sim/macmotor';
 import { mulkApi } from '../sim/mulk';
-import { ESYALAR, ESYA_BY_ID, SANDIKLAR, TARIFLER, DUKKAN_TIPLERI, DUKKAN_BY_ID, DUKKAN_STOK_MAX, dukkanMusteri, BANKA } from '../../content/esya';
+import { ESYALAR, ESYA_BY_ID, SANDIKLAR, DUKKAN_TIPLERI, DUKKAN_BY_ID, dukkanMusteri, BANKA } from '../../content/esya';
 
 interface Deps { root: HTMLElement; rules: () => { rt: unknown } | null; command(c: { kind: string; [k: string]: unknown }): void; sfx?(id: string): void }
 export interface MulkPanel { update(dt: number): void; open(tab?: Tab): void; close(): void; dispose(): void }
@@ -64,8 +64,6 @@ export function createMulkPanel(d: Deps): MulkPanel {
     const ids = Object.keys(m.esya).filter(i => ESYA_BY_ID[i] && m.esya[i] > 0);
     s += `<div class="mp-sec">Çantan <small>(${ids.length} çeşit)</small></div>`;
     s += ids.length ? `<div class="mp-grid">${ids.map(i => itemCard(i, m.esya[i], usable(i) ? `<button class="mp-b y" data-a="kullan" data-id="${i}">Kullan</button>` : '')).join('')}</div>` : '<div class="mp-note">Çanta boş. Maç oyna, ormanda mantar topla ya da günlük tahtayı bitir.</div>';
-    s += `<div class="mp-sec">Üretim <small>(malzeme biriktir, eşya üret)</small></div>`;
-    s += TARIFLER.map(r => { const ok = Object.entries(r.gir).every(([k, v]) => (m.esya[k] || 0) >= v); return `<div class="mp-row"><span class="mp-ic">${ESYA_BY_ID[r.cik].ikon}</span><div><b>${esc(ESYA_BY_ID[r.cik].ad)}</b><small>${Object.entries(r.gir).map(([k, v]) => `${v} ${esc(ESYA_BY_ID[k].ad)} (${m.esya[k] || 0})`).join(' + ')}</small></div><button class="mp-b g" data-a="uret" data-id="${r.id}"${ok ? '' : ' disabled'}>Üret</button></div>`; }).join('');
     return s;
   }
 
@@ -116,7 +114,7 @@ export function createMulkPanel(d: Deps): MulkPanel {
       if (a.tur === 'ev') { s += `<div class="mp-row"><span class="mp-ic">🏠</span><div><b>Evin (Arsa ${a.id.toUpperCase()})</b><small>Oda, mutfak, balkon, teras, kedi köşesi. Kapıya yaklaşıp gir.</small></div><button class="mp-b g" data-a="evAc" data-id="${a.id}"${a.yakin ? '' : ' disabled'}>${a.yakin ? 'Eve gir' : 'Kapıya git'}</button></div>`; continue; }
       const t = DUKKAN_BY_ID[a.tip], y = a.yukselt;
       s += `<div class="mp-row" style="align-items:flex-start"><span class="mp-ic">${a.sabit ? a.ikon : t.ikon}</span><div><b>${a.sabit ? (a.ikon || '') + ' ' + esc(a.ad) : esc(t.ad)} · ${a.lv}. seviye${a.sabit ? ' · ' + esc(a.asamaAd || '') : '' }${a.sabit ? '' : ' (Arsa ' + a.id.toUpperCase() + ')'}</b><small>~${a.musteriSaat || Math.round(dukkanMusteri(t, a.lv) * (1 + 0.4 * a.isci))} müşteri/saat · ${a.sat} satış · kasada ${tl(a.till)}${a.isci ? ' · 👷 ' + a.isci + ' işçi (saatlik ücret kasadan)' : ''}${a.yakin ? '' : ' (kasayı toplamak için içeri gir)'}</small></div>
-${a.isci < a.isciMax ? `<button class="mp-b" data-a="isciAl" data-id="${a.id}"${m.money >= a.isciFiyat ? '' : ' disabled'}>👷 İşçi tut · ${tl(a.isciFiyat)}</button>` : ''}${y ? `<button class="mp-b y" data-a="yukselt" data-id="${a.id}"${Object.entries(y.esya).every(([k, v]) => (m.esya[k] || 0) >= (v as number)) && m.money >= y.tl ? '' : ' disabled'}>⬆ ${tl(y.tl)} + ${Object.entries(y.esya).map(([k, v]) => v + ' ' + esc(ESYA_BY_ID[k].ad)).join(' + ')}</button>` : '<span class="mp-chip">En üst seviye</span>'}</div>`;
+${a.isci < a.isciMax ? `<button class="mp-b" data-a="isciAl" data-id="${a.id}"${m.money >= a.isciFiyat ? '' : ' disabled'}>👷 İşçi tut · ${tl(a.isciFiyat)}</button>` : ''}${y ? `<button class="mp-b y" data-a="yukselt" data-id="${a.id}"${m.money >= y.tl ? '' : ' disabled'}>⬆ ${tl(y.tl)}</button>` : '<span class="mp-chip">En üst seviye</span>'}</div>`;
       if (a.sabit) {   // 2026-11-08: the café's own menu, next dishes, equipment
         const own = new Set<string>(a.kesya || []);
         s += `<div class="mp-row" style="display:block;margin-top:-4px"><small><b>Menü</b> ${(a.menu || []).map((x: { ikon: string; ad: string; fiyat: number }) => `<span class="mp-chip">${x.ikon} ${esc(x.ad)} ${tl(x.fiyat)}</span>`).join(' ')}</small>
@@ -126,7 +124,6 @@ ${(a.menuSonraki || []).length ? `<small style="display:block;margin-top:4px;opa
 <small style="display:block;margin-top:4px">👷 İşçi ${a.isci}/${a.isciMax} (seviye arttıkça daha çok işçi çalışır)</small></div>`;
       }
     }
-    void DUKKAN_STOK_MAX;
     return s;
   }
 

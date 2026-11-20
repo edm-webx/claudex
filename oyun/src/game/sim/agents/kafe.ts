@@ -4,7 +4,7 @@
  * door, queue at the counter, show a patience bar via mood, get served by the PLAYER (stand at the machine, dwell) or by
  * the café's HIRED workers (real actors behind the counter: brew, hand over), pay into the café till, and half of them sit
  * down at a table for a while before they leave. No guest, no income: an unattended café with no workers earns nothing.
- * Numbers come from mulk.ts (`rt.kafeHost`): customers per hour, price, stock. Rooms: content/ic-mekan.ts kafe1 / kafe2.
+ * Numbers come from mulk.ts (`rt.kafeHost`): customers per hour, price. Rooms: content/ic-mekan.ts kafe1 / kafe2.
  */
 import type { System, SimCtx, Vec2 } from '../../../engine/api';
 import { IC_BY_ID, icWorld, icDim, icLayout } from '../../../content/ic-mekan';
@@ -14,7 +14,7 @@ import type { Actor } from './types';
 
 interface KafeHostApi {
   live: boolean; fp: boolean; pending: Record<string, number>; fpDone?: (arsa: string, ok: boolean) => void;
-  info(id: string): { lv: number; isci: number; stok: number; tema: string; fiyat: number; menu: string[] } | null;
+  info(id: string): { lv: number; isci: number; tema: string; fiyat: number; menu: string[] } | null;
   sell(id: string, bonus?: number): number;
 }
 const ROOMS: { arsa: string; room: string; bistro: boolean }[] = [{ arsa: 'k1', room: 'kafe1', bistro: false }, { arsa: 'k2', room: 'kafe2', bistro: true }, { arsa: 'k4', room: 'okul', bistro: false }, { arsa: 'k5', room: 'avm', bistro: false }, { arsa: 'k6', room: 'tesis', bistro: false }, { arsa: 'k3', room: 'kirtasiye', bistro: false }];

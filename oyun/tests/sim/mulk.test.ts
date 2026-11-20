@@ -194,3 +194,22 @@ it('kırtasiye tezgahı: odadan yürüyüp çıkınca tezgah kapanır ve sayaçl
   sim.command({ kind: 'teleport', x: IC_BY_ID.kirtasiye.x, z: IC_BY_ID.kirtasiye.z });
   c({ op: 'ktAc' }); expect((m.view() as any).kirtasiye.sat).toBe(0);
 });
+
+// DKN-01: no stock, no hidden unit cost, no production layer in shops
+import { ISLETME, DUKKAN_TIPLERI } from '../../src/content/esya';
+it('işletme menüsünde ve dükkân tiplerinde gizli maliyet/stok alanı yok', () => {
+  for (const i of Object.values(ISLETME)) for (const y of i.menu) expect('maliyet' in y).toBe(false);
+  for (const t of DUKKAN_TIPLERI) expect('maliyet' in t).toBe(false);
+});
+it('eski kayıttaki Plot.stok atılır, kasa ve işçi kalır; raf_kiti bozuk keseye döner; uret komutu yok', () => {
+  const { sim, m, S, c } = mk();
+  S.zones.arsa = { plots: { k1: { tur: 'dukkan', tip: 'kafe', lv: 2, stok: 500, till: 1234, sat: 3, fr: 0, isci: 1 } }, takim: null, lastH: 8 };
+  S.zones.envanter.esya.raf_kiti = 2; S.zones.envanter.esya.tente_seti = 1;
+  const mod = m.model() as any;
+  expect(JSON.stringify(S.zones.arsa)).not.toContain('stok');
+  expect(S.zones.arsa.plots.k1.till).toBe(1234); expect(S.zones.arsa.plots.k1.isci).toBe(1);
+  expect(S.zones.envanter.esya.raf_kiti).toBeUndefined(); expect(S.zones.envanter.esya.bozuk_kese).toBe(3);
+  const k1 = mod.arsa.find((a: any) => a.id === 'k1'); expect('stok' in k1).toBe(false); expect(k1.yukselt.esya).toBeUndefined();
+  c({ op: 'uret', id: 'raf_kiti' }); expect(S.zones.envanter.esya.raf_kiti).toBeUndefined();
+  void sim;
+});
