@@ -4,7 +4,7 @@
 import { writeFileSync, existsSync, cpSync } from 'node:fs';
 import { join } from 'node:path';
 
-const dist = 'dist';
+const dist = process.env.MARTI_DIST || 'dist';
 if (!existsSync(join(dist, 'game.js'))) { console.error('build-artifact: dist/game.js missing (run vite build first)'); process.exit(1); }
 
 const html = `<title>Sabri'nin Büfesi</title>

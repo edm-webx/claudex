@@ -862,6 +862,12 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   P.context(() => ({ x: +pos.x.toFixed(1), z: +pos.z.toFixed(1), saat: +sim.clock.hour.toFixed(1) }));
   reg('perfShow', (on = true) => P.show(!!on));
   reg('exportSave', () => save.exportCode());
+  // PRF-02 kırmızı sınama: sahneyi bilerek şişirir (görünür mesh'leri, kendi geometrisiyle, ebeveynine kopyalar). Yalnız tools/perf-gate.mjs --sisir kullanır.
+  reg('sisir', (n = 500) => {
+    const src: AnyRec[] = []; R.scene.traverse((o0: Object3D) => { const o = o0 as unknown as AnyRec; if (o.isMesh && o.visible && o.geometry && o.parent) src.push(o); });
+    let k = 0; for (let i = 0; i < (n || 0) && src.length; i++) { const o = src[i % src.length]; const c = (o.clone as () => AnyRec)(); c.geometry = (o.geometry as AnyRec & { clone(): unknown }).clone(); (o.parent as { add(x: unknown): void }).add(c); k++; }
+    return k;
+  });
   reg('importSave', async (code: string) => { const ok = await save.importCode(code); if (ok) { const r = await save.load(); sim.load(r.data); } return ok; });
   reg('loop', () => ({ tick: loop.tick, paused: loop.paused, pauseWhy: loop.pauseWhy, simTime: loop.simTime, ...loop.stats(), nav: nav.stats?.() }));
   for (const k of ['select', 'drag', 'save']) if (!(target.editor as AnyRec | undefined)?.[k]) reg(`editor.${k}`, () => { throw new Error('editor not loaded (?edit=1)'); });

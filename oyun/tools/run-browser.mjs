@@ -6,7 +6,7 @@ import { join } from 'node:path';
 const dir = 'tests/browser';
 const filter = process.argv[2] || '';
 if (!existsSync(dir)) { console.log('no browser tests yet'); process.exit(0); }
-const files = readdirSync(dir).filter(f => /(\.spec\.mjs|^bot-.*\.mjs)$/.test(f) && f.includes(filter)).sort();
+const files = readdirSync(dir).filter(f => /(\.spec\.mjs|^bot-.*\.mjs|^perf\.mjs)$/.test(f) && f.includes(filter)).sort();
 const globalRoot = execSync('npm root -g').toString().trim();
 const env = { ...process.env, NODE_PATH: [globalRoot, process.env.NODE_PATH].filter(Boolean).join(':') };
 let failed = 0;
