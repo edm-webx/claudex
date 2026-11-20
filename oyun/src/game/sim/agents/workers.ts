@@ -169,7 +169,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
         rt.loadT -= dt; if (rt.loadT > 0) return;
         rt.loadT = 0.4;
         if (a.carry.length) { rt.state = 'toCounter'; rt.wk.goTo(side(book.get('counter.standAt'), 0.5, 0)); return; }
-        if (!a.carry.length && host.masaClaim && !host.garsonOpen?.(rt.w.id).length) { const mj = host.masaClaim(rt.w.id); if (mj) { rt.job = { index: mj.id }; rt.jobKey = mj.kind; rt.state = 'toMasa'; rt.wk.goTo({ x: mj.x, z: mj.z + 0.95 }); if (mj.kind === 'hesap') a.carry.push({ type: 'cay', tier: 1 } as CarryItem); return; } }
+        if (!a.carry.length && host.masaClaim && !host.garsonOpen?.(rt.w.id).length) { const mj = host.masaClaim(rt.w.id); if (mj) { rt.job = { index: mj.id }; rt.jobKey = mj.kind; rt.state = 'toMasa'; rt.wk.goTo({ x: mj.x, z: mj.z + 0.95 }); return; } }
         if (!a.carry.length && host.garsonClaim && host.garsonClaim(rt.w.id, 0).length === 0 && !host.garsonOpen?.(rt.w.id).length) { const cap2 = Math.min(3, 1 + Math.floor(rankOf(rt.w.xp || 0) / 3) + (fx.carry ? 1 : 0)); const js = host.garsonClaim(rt.w.id, cap2); if (js.length) { rt.state = 'toPass'; rt.t = 0; rt.wk.goTo(side(book.get('counter.standAt'), 0.5, 0)); return; } }
         const p = garsonPick(rt);
         if (p) { rt.job = null; rt.jobKey = p; rt.state = 'toSrc'; rt.wk.goTo(side(book.stationStand(p), 0.55, 0.2)); return; }

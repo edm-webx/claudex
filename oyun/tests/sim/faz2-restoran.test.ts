@@ -33,3 +33,30 @@ describe('garson masa turu', () => {
     expect(sim.state.stats.hesapGetir || 0).toBeGreaterThan(0);
   });
 });
+describe('aşçı tezgah hesabı', () => {
+  it('tezgahta hazır tabak varken aşçı aynı ürünü gereksiz pişirmez', () => {
+    const sim: any = played(4);
+    for (let i = 0; i < 60; i++) sim.step(0.1);
+    sim.command({ kind: 'force', what: 'money', value: 2_000_000 });
+    for (const k of ['cay', 'ayran', 'simit', 'tabure1', 'tabure2', 'masa1', 'gazoz', 'masa2', 'tost']) sim.command({ kind: 'force', what: 'unlock', value: k });
+    sim.command({ kind: 'force', what: 'stage', value: 3 });
+    const api = restoranApi(sim.rules)!;
+    let checked = false;
+    for (let s = 0; s < 400 && !checked; s++) {
+      for (let i = 0; i < 10; i++) sim.step(0.1);
+      const r = sim.rules.rt; if (r.paused) { r.paused = false; r.pauseWhy = ''; }
+      const v = api.view();
+      const t = v.tickets.find(k => k.items.some(i => i.left > 0)); if (!t) continue;
+      const it = t.items.find(i => i.left > 0)!;
+      for (const p of Object.keys(r.counter)) r.counter[p] = [];
+      const first = (api as any).kitchenClaim(9001);
+      if (!first) continue;
+      (api as any).kitchenDone(9001, false);
+      // tezgahı o ürünle doldur: aynı ürün için artık yeni pişirme çıkmamalı
+      for (let n = 0; n < 8; n++) (r.counter[first] ||= []).push({ type: first, tier: 1 });
+      const again = (api as any).kitchenClaim(9002);
+      expect(again).not.toBe(first); checked = true; void it;
+    }
+    expect(checked).toBe(true);
+  });
+});

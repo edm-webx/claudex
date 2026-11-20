@@ -33,7 +33,7 @@ export interface MotorCameraRig extends CameraRig {
 export function createCameraRig(deps: CameraDeps): MotorCameraRig {
   const camera = new T.PerspectiveCamera(CAMERA_FOV, deps.aspect || 1, 0.1, 400);
   camera.position.set(0, 18, 14);
-  const CAM = { x: 0, z: 0, zoom: 1, intro: 0, pitch: CAMERA_PITCH, photo: false };
+  const CAM = { x: 0, z: 0, zoom: 1, intro: 0, introTotal: 3.2, pitch: CAMERA_PITCH, photo: false };
   const target = { x: 0, z: 0, y: 0 };
   let camY = 0;
   let yaw = 0, yawTo: number | null = null;
@@ -72,7 +72,7 @@ export function createCameraRig(deps: CameraDeps): MotorCameraRig {
     },
     intro(seconds = 3.2) {
       if (introResolve) introResolve();
-      CAM.intro = seconds;
+      CAM.intro = seconds; CAM.introTotal = Math.max(0.01, seconds);
       return new Promise<void>(resolve => { introResolve = resolve; });
     },
     photoMode(on: boolean) { CAM.photo = !!on; CAM.pitch = on ? CAMERA_PITCH - 0.25 : CAMERA_PITCH; },
@@ -100,7 +100,7 @@ export function createCameraRig(deps: CameraDeps): MotorCameraRig {
       if (tiltTo !== null) { tilt += (tiltTo - tilt) * (1 - Math.exp(-6 * dt)); if (Math.abs(tilt) < 0.002) { tilt = 0; tiltTo = null; } }
       let pitch = clamp(CAM.pitch + tilt, PITCH_MIN, PITCH_MAX);
       if (CAM.intro > 0) {
-        const k = easeInOut(1 - CAM.intro / 3.2); dist *= lerp(2.6, 1, k); pitch = lerp(1.25, CAM.pitch, k);
+        const k = easeInOut(1 - CAM.intro / CAM.introTotal); dist *= lerp(2.6, 1, k); pitch = lerp(1.25, CAM.pitch, k);
         CAM.intro -= dt;
         if (CAM.intro <= 0) { CAM.intro = 0; if (introResolve) { const r = introResolve; introResolve = null; r(); } }
       }

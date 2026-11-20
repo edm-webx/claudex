@@ -257,7 +257,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     }
     for (let i = masaJobs.length - 1; i >= 0; i--) {   // stale table visits fall back to the old timing
       const j = masaJobs[i], c = rt.customers.find(k => k.id === j.cid); j.t += dt;
-      if (!c || c.state === 'leave' || j.t > 18) { if (c) { const f = c as unknown as CF; if (j.kind === 'hesap') f.hesapBekle = false; else f.menuOk = true; } masaJobs.splice(i, 1); }
+      if (!c || c.state === 'leave' || j.t > (j.wid ? 30 : 18)) { if (c) { const f = c as unknown as CF; if (j.kind === 'hesap') f.hesapBekle = false; else f.menuOk = true; } masaJobs.splice(i, 1); }
     }
     for (let i = cooking.length - 1; i >= 0; i--) { cooking[i].t += dt; if (cooking[i].t > 40 || !tickets.includes(cooking[i].ticket)) cooking.splice(i, 1); }
     // garsons carry plates from the pass (counter stock) to the tables: a job is a plate taken off the counter, a garson walks it over
@@ -303,7 +303,8 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     },
     masaClaim(wid) {
       const j = masaJobs.find(k => k.wid === wid) || masaJobs.find(k => !k.wid); if (!j) return null;
-      j.wid = wid; const tb = rt.layout.tables[j.table]; return { id: j.id, kind: j.kind, x: tb?.x ?? 0, z: tb?.z ?? 0 };
+      j.wid = wid; j.t = 0;   // süre garsonun işi aldığı andan sayılır (yürürken silinmesin)
+      const tb = rt.layout.tables[j.table]; return { id: j.id, kind: j.kind, x: tb?.x ?? 0, z: tb?.z ?? 0 };
     },
     masaDone(wid, id) {
       const i = masaJobs.findIndex(k => k.id === id && k.wid === wid); if (i < 0) return;
@@ -315,8 +316,12 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     },
     kitchenClaim(wid) {
       if (cooking.some(c => c.wid === wid)) return null;
+      // tezgahtaki hazır tabaklar da hesaba katılır: toplam ihtiyaç - yoldaki işler - pişen - tezgah
+      const spare: Partial<Record<ProductId, number>> = {};
       for (const t of tickets) for (const p of Object.keys(t.want) as ProductId[]) {
-        const left = (t.want[p] || 0) - jobs.filter(j => j.ticket === t && j.p === p).length - cooking.filter(c => c.ticket === t && c.p === p).length;
+        spare[p] ??= rt.counter[p]?.length || 0;
+        let left = (t.want[p] || 0) - jobs.filter(j => j.ticket === t && j.p === p).length - cooking.filter(c => c.ticket === t && c.p === p).length;
+        const use = Math.min(Math.max(0, left), spare[p]!); spare[p]! -= use; left -= use;
         if (left > 0) { cooking.push({ wid, ticket: t, p, t: 0 }); return p; }
       }
       return null;

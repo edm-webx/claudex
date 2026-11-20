@@ -46,7 +46,7 @@ export function createInput(deps: InputDeps): Input {
 
   on(canvas, 'pointerdown', (e: PointerEvent) => {
     try { platform.audioCtx()?.resume?.(); } catch { /* ignore */ }
-    if (e.button === 1) { e.preventDefault(); midX = e.clientX; midY = e.clientY; midMoved = 0; return; }
+    if (e.button === 1) { e.preventDefault(); midX = e.clientX; midY = e.clientY; midMoved = 0; try { canvas.setPointerCapture(e.pointerId); } catch { /* ignore */ } return; }
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pts.size === 2) { const [a, b] = [...pts.values()]; pinchD = Math.hypot(a.x - b.x, a.y - b.y); twistA = angleOf(a, b); resetJoy(); return; }
     if (pid !== null) return;
@@ -90,7 +90,12 @@ export function createInput(deps: InputDeps): Input {
   on(canvas, 'pointerup', end);
   on(canvas, 'pointercancel', end);
   on(canvas, 'auxclick', (e: Event) => e.preventDefault());
-  on(canvas, 'wheel', (e: WheelEvent) => { zoomAcc *= 1 + Math.sign(e.deltaY) * 0.08; e.preventDefault(); }, { passive: false });
+  // tekerlek: bir fare çentiği (~100 px) = %8; trackpad küçük delta'larla orantılı akar (satır/sayfa modu pikseller normalize)
+  on(canvas, 'wheel', (e: WheelEvent) => {
+    const unit = e.deltaMode === 1 ? 33 : e.deltaMode === 2 ? 400 : 1;
+    const notch = Math.max(-3, Math.min(3, (e.deltaY * unit) / 100));
+    zoomAcc *= 1 + notch * 0.08; e.preventDefault();
+  }, { passive: false });
   const win = doc.defaultView;
   if (win) {
     on(win, 'keydown', (e: KeyboardEvent) => {
