@@ -562,7 +562,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     sim.state.settings.autoTier = t.name;
   };
   quality.onChange(applyTier);
-  quality.onScale?.(sc => make('render.setScale', () => { R.setScale?.(sc); return true; }));
+  quality.onScale?.(sc => make('render.setScale', () => { R.setScale?.(sc); P.count('olcekYuzde', Math.round(sc * 100)); return true; }));
   if (chars) make('crowd.setBudget', () => { chars.crowd.setBudget(quality.current().crowd); return true; });
   sim.state.settings.quality = quality.setting();
 

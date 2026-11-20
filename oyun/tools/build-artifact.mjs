@@ -10,7 +10,7 @@ if (!existsSync(join(dist, 'game.js'))) { console.error('build-artifact: dist/ga
 const html = `<title>Sabri'nin Büfesi</title>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <style>
-html,body{margin:0;height:100%;overflow:hidden;background:#c6e3f2;touch-action:none;-webkit-user-select:none;user-select:none;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;background:#c6e3f2;touch-action:none;-webkit-user-select:none;user-select:none;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 #app{position:fixed;inset:0}
 #c{display:block;width:100%;height:100%}
 #fail{display:none;position:fixed;inset:0;align-items:center;justify-content:center;padding:24px;text-align:center;background:#fdf3e1;color:#4a3524;font-size:18px;line-height:1.4}
