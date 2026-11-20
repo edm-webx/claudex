@@ -64,12 +64,14 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
   }
   const kalemAd = (r: Room, id: string) => (menuOf(r).find(m => m.id === id)?.ad || '').toLocaleLowerCase('tr');
   /** where a worker stands to make an item: the matching equipment's spot along the counter (staff side), else a fixed slot per station */
-  function istasyonNoktasi(r: Room, ist: IstasyonId, idx: number): Vec2 {
-    const g = geom(r), lay = icLayout(g.m), hit = lay.find(i => ISTASYON_LAYOUT_K[ist].includes(i.k));
-    const lo = g.cu + 0.2, hi = g.endU - 0.6;
+  /** position ALONG the counter of a station: the matching equipment's spot, else a fixed slot per station */
+  function istasyonA(r: Room, ist: IstasyonId): number {
+    const g = geom(r), hit = icLayout(g.m).find(i => ISTASYON_LAYOUT_K[ist].includes(i.k)), lo = g.cu + 0.2, hi = g.endU - 0.6;
     const a = hit && ist !== 'tezgah' && ist !== 'raf' ? (g.vert ? hit.v : hit.u) : lo + ((ISTASYON_SIRA.indexOf(ist) * 0.9) % Math.max(0.9, hi - lo));
-    return g.P(Math.max(lo, Math.min(hi, a + idx * 0.35)), -0.7);
+    return Math.max(lo, Math.min(hi, a));
   }
+  /** where a worker stands (staff side of the counter) to make an item of that station */
+  const istasyonNoktasi = (r: Room, ist: IstasyonId, idx: number): Vec2 => { const g = geom(r), a = istasyonA(r, ist); return g.P(Math.max(g.cu + 0.2, Math.min(g.endU - 0.6, a + idx * 0.35)), -0.7); };
   function spawnGuest(r: Room) {
     const g = geom(r), seed = Math.floor(rng.next() * 1e6), look = LOOKS[Math.floor(rng.next() * LOOKS.length)];
     const a = env.reg.add('regular', 'kafe-' + r.room + '-' + seed, { kind: 'regular', look: { lookType: look, lookSeed: seed }, seed }, g.door, { name: '' });
@@ -167,21 +169,26 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
   }
   const geomYaw = (r: Room) => { const m = IC_BY_ID[r.room], g = geom(r); const a = icWorld(m, 0, 0), b = g.vert ? icWorld(m, 1, 0) : icWorld(m, 0, -1); return Math.atan2(b.x - a.x, b.z - a.z); };   // facing the counter (-v)
 
-  // the player serves from the machine (dwell interaction = brewing time)
+  // the player serves from the station that makes what the first waiting guest asked for: stand there until the bar fills
   for (const r of rooms) {
-    const reg = () => {
-      const g = geom(r), id = 'kafeYap.' + r.room;
+    for (const ist of ISTASYON_SIRA) {
+      const g = geom(r), head = () => waiting(r).find(x => !x.claimed) || waiting(r)[0];
+      let work = 0, last = -99, who = 0;
       env.interactions.register({
-        id, pos: g.P(g.vert ? g.bv : g.cu, 0.85), radius: 1.0, kind: 'station', dwell: 2.2, interval: 2.2,
-        canAct: () => !!host()?.info(r.arsa) && waiting(r).length > 0,
-        act: () => {
-          const gu = waiting(r).find(x => !x.claimed) || waiting(r)[0]; if (!gu) return 'done';
-          const ad = kalemAd(r, gu.want), v = served(r, gu, 'player'); if (v) env.host.heroSay('Buyurun! ' + (ad ? ad.charAt(0).toLocaleUpperCase('tr') + ad.slice(1) + ' ' : '') + '+' + Math.round(v) + ' ₺ kasaya', 1.6);   // player feedback (the money lands in the till, collected from the cash register)
+        id: 'kafeIst.' + r.room + '.' + ist, pos: g.P(istasyonA(r, ist), 0.85), radius: 1.0, kind: 'station', dwell: 0.4, interval: 0.1,
+        canAct: () => { const gu = head(); return !!host()?.info(r.arsa) && !!gu && !!gu.want && kalemOf(gu.want).ist === ist; },
+        act: (_a, ctx) => {
+          const gu = head(), inf = host()?.info(r.arsa); if (!gu || !inf) return 'done';
+          const el = ctx.t - last < 0.5 ? ctx.t - last : 0.5; last = ctx.t;
+          if (who !== gu.a.id) { who = gu.a.id; work = 0; }
+          work += el * (1 + 0.12 * inf.lv) / kalemOf(gu.want).sure;
+          if (work < 1) return 'continue';
+          work = 0; const ad = kalemAd(r, gu.want), v = served(r, gu, 'player');
+          if (v) env.host.heroSay('Buyurun! ' + (ad ? ad.charAt(0).toLocaleUpperCase('tr') + ad.slice(1) + ' ' : '') + '+' + Math.round(v) + ' ₺ kasaya', 1.6);
           return waiting(r).length ? 'continue' : 'done';
         },
       });
-    };
-    reg();
+    }
   }
   const siparis = (r: Room) => waiting(r).slice(0, 4).map(gu => menuOf(r).find(m => m.id === gu.want)?.ad || '');
   let on = false;

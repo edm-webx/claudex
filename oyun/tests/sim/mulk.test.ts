@@ -95,9 +95,13 @@ it('kafe: müşteriler içeri gelir, hired worker ve oyuncu servis eder, para ka
   const kr = [ag.kafe?.rooms?.() ?? 1];
   expect(p.sat).toBe(0);
   // the player serves from the machine
-  const it0 = sim.interactions.get('kafeYap.kafe1'); expect(it0).toBeTruthy();
-  sim.command({ kind: 'teleport', x: it0.pos.x, z: it0.pos.z });
-  for (let i = 0; i < 120; i++) { sim.step(0.1); h.pending.k1 = Math.max(h.pending.k1 || 0, 1); }
+  // the player serves from the station of what the first guest asked for (turk_kahvesi -> kahve, demlik_cay -> cay)
+  for (let i = 0; i < 400; i++) {
+    sim.step(0.1); h.pending.k1 = Math.max(h.pending.k1 || 0, 1);
+    const want = sim.rules.rt.agents.kafe.siparisOf('kafe1')[0];
+    const it0 = sim.interactions.get('kafeIst.kafe1.' + (want === 'Demlik çay' ? 'cay' : 'kahve'));
+    if (want && it0) sim.command({ kind: 'teleport', x: it0.pos.x, z: it0.pos.z });
+  }
   expect(p.sat).toBeGreaterThan(0);
   // hired worker: real actor serves on its own
   sim.command({ kind: 'teleport', x: 0, z: 0 });

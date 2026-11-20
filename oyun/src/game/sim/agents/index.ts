@@ -11,7 +11,7 @@ import { createActorRegistry } from './registry';
 import { createAnchorBook, layoutAnchors, type AnchorFn } from './anchors';
 import type { AgentEnv } from './env';
 import type { ActorRegistry, AgentHost } from './types';
-import { createKafe } from './kafe';
+import { createKafe, type KafeSystem } from './kafe';
 import { createWorkers, type WorkersSystem } from './workers';
 import { createVip, type VipSystem } from './vip';
 import { createCats, type CatsSystem } from './cats';
@@ -22,6 +22,8 @@ import { pigeonArea, type PigeonArea } from './pigeons';
 
 export interface AgentsHandle {
   registry: ActorRegistry;
+  /** far-shore business rooms (DKN): queue orders etc. */
+  kafe: KafeSystem;
   workers: WorkersSystem; vip: VipSystem; cats: CatsSystem; gulls: GullsSystem;
   dog: ReturnType<typeof createDog>;
   /** Pigeon / flock home area for the view. */
@@ -57,6 +59,7 @@ export function createAgents(rules: Rules, opts: InstallOpts = {}): AgentsHandle
   const workers = createWorkers(env), vip = createVip(env), cats = createCats(env), dog = createDog(env), parrot = createParrot(env), gulls = createGulls(env), kafe = createKafe(env, rules.rt as unknown as Record<string, unknown>);  // NPC Erim removed 2026-10-24 (user: sinir bozucu, tamamen sil)
   const handle: AgentsHandle = {
     registry: reg, workers, vip, cats, gulls, dog, env,
+    kafe,
     pigeons: () => pigeonArea(book),
     force(what, value) {
       const f = env.shared.force;

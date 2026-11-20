@@ -6,6 +6,7 @@
  * (hired workers), seated guests, students, patients. Built only near the player, shown while inside (far side: the
  * exterior shell hides, view/world/karsi-bina.ts) or always for the glass büfe halls. Pure view, no sim, no colliders.
  */
+import { KAFE_TEMA, type TemaId } from '../../../content/kafe-tema';
 import * as T from 'three';
 import { mutfakEsya, mutfakCelik } from '../../../content/mutfak';
 import { Batch, mtx } from '../../../engine/prefab/batch';
@@ -249,14 +250,15 @@ function buildRoom(m: IcMekan, own: { lv: number; isci: number; esya: string[]; 
   const seed = m.id.split('').reduce((a, ch) => a * 31 + ch.charCodeAt(0), 7) >>> 0;
   const ctx: Ctx = { b, g, l, grp, m, an, seed: seed % 97, fine, lv: own?.lv || 0, owned: !!own };
   let [f1, f2] = FLOOR[m.tur], [w1, w2] = fine && hall ? ['#26304a', '#c9a24a'] : WALL[m.tur];
-  const TEMA: Record<string, [string, string, string, string]> = { retro: ['#7a3b1c', '#e8c27a', '#2f7d6d', '#e0533c'], modern: ['#d9d9d4', '#9aa0a6', '#f4f4f2', '#2b2b30'], bohem: ['#a0673a', '#d9a066', '#c46a4a', '#e9d3a8'], deniz: ['#e9e2cf', '#3f8fc9', '#f4f7fa', '#1d4f86'] };
-  if (own?.tema && TEMA[own.tema]) [f1, f2, w1, w2] = TEMA[own.tema];
+  const tp = own?.tema ? KAFE_TEMA[own.tema as TemaId] : undefined; if (tp) { [f1, f2] = tp.zemin; [w1, w2] = tp.duvar; }
   if (m.mutfak && mutfakCelik(stage)) { [f1, f2] = fine ? ['#2a2a30', '#c9a24a'] : ['#8d949a', '#7a8186']; [w1, w2] = fine ? ['#e8ecef', '#c9a24a'] : ['#e8ecef', '#9aa5b0']; }
   if (!hall) {
     // floor: base + pattern
     b.box(W - 0.02, 0.06, D - 0.02, f1, 0, -0.03, 0);
-    if (m.tur === 'kafe' || m.tur === 'kahvalti') for (let i = 1; i < Math.round(W / 0.22); i++) b.box(0.012, 0.004, D - 0.05, f2, -W / 2 + i * W / Math.round(W / 0.22), 0.002, 0);
-    else if (m.tur === 'bistro') for (let i = 0; i < Math.round(W / 0.6); i++) for (let j = 0; j < Math.round(D / 0.6); j++) if ((i + j) % 2) b.box(0.6, 0.004, 0.6, f2, -W / 2 + 0.3 + i * 0.6, 0.002, -D / 2 + 0.3 + j * 0.6);
+    const desen = tp ? tp.desen : m.tur === 'bistro' ? 'dama' : m.tur === 'kafe' || m.tur === 'kahvalti' ? 'cizgi' : 'tahta';
+    if (desen === 'cizgi') for (let i = 1; i < Math.round(W / 0.22); i++) b.box(0.012, 0.004, D - 0.05, f2, -W / 2 + i * W / Math.round(W / 0.22), 0.002, 0);
+    else if (desen === 'dama') { for (let i = 0; i < Math.round(W / 0.6); i++) for (let j = 0; j < Math.round(D / 0.6); j++) if ((i + j) % 2) b.box(0.6, 0.004, 0.6, f2, -W / 2 + 0.3 + i * 0.6, 0.002, -D / 2 + 0.3 + j * 0.6); }
+    else if (desen === 'fayans') { for (let i = 0; i < Math.round(W / 0.4); i++) for (let j = 0; j < Math.round(D / 0.4); j++) if ((i + j) % 2) b.box(0.36, 0.004, 0.36, f2, -W / 2 + 0.2 + i * 0.4, 0.002, -D / 2 + 0.2 + j * 0.4); }
     else for (let i = 1; i < Math.round(W / 0.8); i++) b.box(0.015, 0.004, D - 0.05, f2, -W / 2 + i * W / Math.round(W / 0.8), 0.002, 0);
     // walls: inward faces only (near walls cull away from the outside camera), wainscot, skirting, cut cap, windows
     const t = 0.25, wall = (len: number, x: number, z: number, ry: number, gap = 0) => {
