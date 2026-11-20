@@ -16,6 +16,8 @@ import { traitFx, traitId, workerSpeed } from './traits';
 import type { AgentEnv } from './env';
 import { zeminSave } from '../zemin';
 import { IC_BY_ID, icWorld, icDim } from '../../../content/ic-mekan';
+/** BUF-04: masa biletindeki yemek tipi. Ustalar/garsonlar yine taşıyıcı ProductId tabağıyla çalışır (kitchenClaim/garsonClaim ProductId döner); DishId yalnız restoran.ts biletinde. */
+export type { DishId, FoodId } from '../../../content/yemek-menu';
 
 interface WRt {
   w: WorkerSave; a: Actor; wk: Walker; st: ProductId | null;

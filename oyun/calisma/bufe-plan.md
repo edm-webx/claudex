@@ -12,3 +12,7 @@ W5 büyüme: BUF-19,20 (opus), BUF-22,21 (opus), BUF-30 (haiku)
 W6 kanıt: BUF-28 bot, BUF-29 perf (sonnet), ekran görüntüsü, qa, push.
 BUF-11/17/18 = kafe/çalışan kolu, onlara bırakıldı.
 Model: kritik sim/tasarım=opus, normal kod=sonnet, küçük/mekanik=haiku.
+
+## Notlar (DKN kolundan 18:47)
+- Gün sonu (BUF-26): işletme satışları S.today.sold içinde 'k:<menü id>' anahtarı (ad: ISLETME[..].menu); işletme maaşları rt.uiLast.isletmeMaas = {toplam, odenen, satirlar:[{ad,tutar,odenen}], gun} -> gun-sonu.ts kartına satır olarak ekle.
+- DKN kolu ukvrqf dalını kendi dalına merge etti; ben onların dalını merge etmem, entegrasyon ana thread'de.

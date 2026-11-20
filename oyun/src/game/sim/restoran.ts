@@ -10,6 +10,8 @@
 import { mutfakEtki } from '../../content/mutfak';
 import { ADISYON, ADISYON_LINES, SERVIS, FAZ2_UI } from '../../content/restoran';
 import { PRODUCTS } from '../../content/products';
+import { YEMEK } from '../../content/ekonomi2';
+import { DISH_BY_ID, acikYemekler, menuPano, tasiyiciOf, yemekAgirlik, type DishId, type MenuAsama } from '../../content/yemek-menu';
 import type { Vec2 } from '../../engine/api';
 import type { ProductId } from './schema';
 import type { Kernel, Customer, Item, Order } from './state';
@@ -17,14 +19,23 @@ import { clamp } from './util';
 
 export const RESTORAN_KEY = 'restoran';
 interface Save { servis: number; no: number }
-export interface Ticket { no: number; table: number; cid: number; want: Order; all: Order; t: number; max: number }
-export interface TicketView { no: number; table: number; items: { p: ProductId; name: string; n: number; left: number }[]; frac: number }
+/**
+ * Bilet kalemi: ya eski tezgâh ürünü (dish null) ya da menüdeki bir yemek (DishId). Yemek fiziksel olarak `p` taşıyıcı tabağı
+ * üzerinden akar (want/all ve usta/garson akışı ProductId ile çalışır), satışta yemeğin fiyatı geçer. Tadım menüsü: kurs>1, her servis ayrı kalem.
+ */
+export interface TicketLine { dish: DishId | null; p: ProductId; fiyat: number; done: boolean; kurs: number }
+export interface Ticket { no: number; table: number; cid: number; want: Order; all: Order; lines: TicketLine[]; t: number; max: number }
+export interface TicketView { no: number; table: number; items: { p: ProductId; dish: DishId | null; name: string; n: number; left: number }[]; frac: number }
 /** Kaldırılan stant sisteminden kalan boş sözleşme: stant-look.ts / world/index.ts / boot.ts temizlenene kadar. */
 export interface StantView { id: string; name: string; short: string; owned: boolean; buyable: boolean; cost: number; price: number; stock: number; max: number; x: number; z: number; ry: number; look: string; color: string }
 export interface RestoranView { active: boolean; tickets: TicketView[]; servis: number; stands: StantView[] }
 export interface RestoranApi {
   handle(c: { kind: string; [k: string]: unknown }): boolean;
   view(): RestoranView;
+  /** menü panosu: aşama aşama açılan yemek listesi (kilitliler 'Aşama N'de açılır') */
+  menu(): MenuAsama[];
+  /** şu an masa biletinde çıkabilecek yemekler (aşama açık + taşıyıcı ürün yapılı) */
+  openDishes(): DishId[];
   wantMasa(): boolean;
   update(dt: number): void;
   register(): void;
@@ -74,20 +85,36 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     }
     return -1;
   }
+  const builtNow = () => K.openProducts();
+  const dishesNow = () => { const b = builtNow(); return acikYemekler(S.stage || 1).filter(d => tasiyiciOf(d, b)); };
   function openTicket(c: Customer): void {
     if (!c.seat) return;
     const g = G();
+    const units: ProductId[] = [];
+    for (const p in c.order) for (let k = 0; k < (c.order[p as ProductId] || 0) && units.length < ADISYON.maxItems; k++) units.push(p as ProductId);
+    if (!units.length) units.push(K.openProducts()[0] || 'cay');
+    // menü: kalemlerin bir kısmı açık aşamanın yemeği (tip tercihine göre), kalanı eski ürünler; tadım menüsü tek siparişin kendisi
+    const b = builtNow(), avail = dishesNow(), pay = YEMEK.pay[Math.max(0, Math.min(9, (S.stage || 1) - 1))] ?? 0;
+    let lines: TicketLine[] = [], kursN = 1;
+    for (const u of units) {
+      if (avail.length && rng.next() < pay) {
+        const w: Record<string, number> = {}; for (const d of avail) w[d.id] = yemekAgirlik(d, c.typeId, u);
+        const d = DISH_BY_ID[rng.weighted(w)], p = tasiyiciOf(d, b)!;
+        if (d.kurs) { kursN = rng.int(d.kurs[0], d.kurs[1]); lines = Array.from({ length: kursN }, () => ({ dish: d.id, p, fiyat: Math.round(d.fiyat / kursN), done: false, kurs: kursN })); break; }
+        lines.push({ dish: d.id, p, fiyat: d.fiyat, done: false, kurs: 1 });
+      } else lines.push({ dish: null, p: u, fiyat: 0, done: false, kurs: 1 });
+    }
     const want: Order = {};
-    let n = 0;
-    for (const p in c.order) { const k = Math.min(c.order[p as ProductId] || 0, ADISYON.maxItems - n); if (k > 0) { want[p as ProductId] = k; n += k; } }
-    if (!Object.keys(want).length) want[K.openProducts()[0] || 'cay'] = 1;
+    for (const l of lines) add(want, l.p);
     c.order = { ...want }; c.got = {};
     g.no = (g.no % 99) + 1;
-    tickets.push({ no: g.no, table: c.seat.table, cid: c.id, want: { ...want }, all: { ...want }, t: 0, max: ADISYON.patience });
+    tickets.push({ no: g.no, table: c.seat.table, cid: c.id, want: { ...want }, all: { ...want }, lines, t: 0, max: ADISYON.patience + (kursN - 1) * YEMEK.kursSabir });
     K.logEv('ticket', { no: g.no, table: c.seat.table, x: c.x, z: c.z });
   }
   function deliver(t: Ticket, c: Customer, it: Item): void {
     const p = it.type;
+    const ln = t.lines.find(l => !l.done && l.p === p);
+    if (ln) { ln.done = true; if (ln.dish) { it.priceX = (it.priceX || 1) * ln.fiyat / PRODUCTS[p].base; K.stat('yemek_' + ln.dish); } }
     c.items.push(it); add(c.got, p);
     t.want[p] = Math.max(0, (t.want[p] || 0) - 1); if (!t.want[p]) delete t.want[p];
     K.logEv('serve', { x: c.x, z: c.z });
@@ -193,12 +220,22 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     if (rng.next() >= sh) return false;
     return freeTable() >= 0;
   }
+  function ticketItems(t: Ticket): TicketView['items'] {
+    const m = new Map<string, TicketView['items'][number]>();
+    for (const l of t.lines) {
+      const key = l.dish || l.p;
+      let it = m.get(key);
+      if (!it) { const d = l.dish ? DISH_BY_ID[l.dish] : null; it = { p: l.p, dish: l.dish, name: d ? (l.kurs > 1 ? d.ad + ' (' + l.kurs + ' servis)' : d.ad) : PRODUCTS[l.p].short, n: 0, left: 0 }; m.set(key, it); }
+      it.n++; if (!l.done) it.left++;
+    }
+    return [...m.values()];
+  }
   function view(): RestoranView {
     const g = G();
     return {
       active: active(), servis: Math.round(g.servis * 10) / 10,
       tickets: tickets.map(t => ({ no: t.no, table: t.table, frac: clamp(t.t / t.max, 0, 1),
-        items: (Object.keys(t.all) as ProductId[]).map(p => ({ p, name: PRODUCTS[p].short, n: t.all[p] || 0, left: t.want[p] || 0 })) })),
+        items: ticketItems(t) })),
       stands: [],
     };
   }
@@ -247,6 +284,8 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     },
     handle() { return false; },
     view, wantMasa, update, register,
+    menu: () => menuPano(S.stage || 1),
+    openDishes: () => dishesNow().map(d => d.id),
   };
   (rt as unknown as { restoran?: RestoranApi }).restoran = api;
   return api;

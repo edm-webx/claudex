@@ -8,6 +8,10 @@
 import type { Kernel } from './state';
 import { fmtMoney } from './util';
 import { SALON_ESYA_BY_ID } from '../../content/esya';
+import { yeniYemekler } from '../../content/yemek-menu';
+
+/** menüye o aşamada giren gerçek yemekler (content/yemek-menu.ts): toast ve SALON.yeni ile menü panosu hep aynı liste */
+const yeniAd = (stage: number): string[] => yeniYemekler(stage).map(d => d.ad);
 
 /** bought hall equipment multipliers (2026-11-09); a hall's items count only once that hall stands (W stage 6, E stage 7) */
 export function salonKat(esya: string[] | undefined, stage: number): { mis: number; adis: number } {
@@ -18,15 +22,15 @@ export function salonKat(esya: string[] | undefined, stage: number): { mis: numb
 
 /** guests per game hour, average ticket (₺), staff, new dishes, per stage (index = stage) */
 export const SALON: { mis: number; adisyon: number; ekip: number; yeni: string[] }[] = [
-  { mis: 0, adisyon: 0, ekip: 0, yeni: [] }, { mis: 0, adisyon: 0, ekip: 0, yeni: [] }, { mis: 0, adisyon: 0, ekip: 0, yeni: [] },
-  { mis: 10, adisyon: 45, ekip: 1, yeni: ['Demlik çay', 'Gözleme'] },
-  { mis: 18, adisyon: 60, ekip: 2, yeni: ['Maraş dondurma', 'Gazoz çeşitleri'] },
-  { mis: 30, adisyon: 80, ekip: 3, yeni: ['Kumpir', 'Limonata'] },
-  { mis: 46, adisyon: 160, ekip: 5, yeni: ['Serpme kahvaltı', 'Menemen', 'Sucuklu yumurta'] },
-  { mis: 64, adisyon: 300, ekip: 7, yeni: ['Hamsi tava', 'Levrek', 'Midye dolma'] },
-  { mis: 84, adisyon: 480, ekip: 9, yeni: ['Meze tabağı', 'Boğaz manzaralı akşam yemeği'] },
-  { mis: 104, adisyon: 750, ekip: 12, yeni: ['Izgara köfte', 'Şefin Adana\'sı', 'Kuzu tandır'] },
-  { mis: 130, adisyon: 1200, ekip: 16, yeni: ['Tadım menüsü', 'Lüfer buğulama', 'Fıstıklı katmer'] },
+  { mis: 0, adisyon: 0, ekip: 0, yeni: yeniAd(0) }, { mis: 0, adisyon: 0, ekip: 0, yeni: yeniAd(1) }, { mis: 0, adisyon: 0, ekip: 0, yeni: yeniAd(2) },
+  { mis: 10, adisyon: 45, ekip: 1, yeni: yeniAd(3) },
+  { mis: 18, adisyon: 60, ekip: 2, yeni: yeniAd(4) },
+  { mis: 30, adisyon: 80, ekip: 3, yeni: yeniAd(5) },
+  { mis: 46, adisyon: 160, ekip: 5, yeni: yeniAd(6) },
+  { mis: 64, adisyon: 300, ekip: 7, yeni: yeniAd(7) },
+  { mis: 84, adisyon: 480, ekip: 9, yeni: yeniAd(8) },
+  { mis: 104, adisyon: 750, ekip: 12, yeni: yeniAd(9) },
+  { mis: 130, adisyon: 1200, ekip: 16, yeni: yeniAd(10) },
 ];
 export const salonOf = (stage: number) => SALON[Math.max(0, Math.min(10, Math.round(stage) || 0))];
 
