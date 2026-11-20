@@ -5,6 +5,23 @@ import { defaultState } from '../../src/game/sim/schema';
 import { played, mkSim, fakePlatform, log } from './m1-helpers';
 
 describe('save', () => {
+  it('RNG akış durumları kayda yazılır ve yüklemede geri gelir (akışlar tohumdan baştan başlamaz)', async () => {
+    const sim = played(4); sim.step(30);
+    const fp = fakePlatform();
+    await createGameSave(sim, fp.platform, { log }).save('manual');
+    const adlar = sim.rng.names(); expect(adlar.length).toBeGreaterThan(0);
+    const beklenen = adlar.map(n => sim.rng.stream(n).getState());
+    const back = await createGameSave(mkSim(4), fp.platform, { log }).load();
+    const s2 = mkSim(4, back.data);
+    for (let i = 0; i < adlar.length; i++) expect(s2.rng.stream(adlar[i]).getState()).toEqual(beklenen[i]);
+  });
+  it('normalizeState 6-10. kademeyi 5e kısmaz, 10un üstünü kırpar', () => {
+    for (const [giren, beklenen] of [[8, 8], [10, 10], [11, 10], [0, 1]] as const) {
+      const d = defaultState(1); d.stage = giren;
+      normalizeState(d);
+      expect(d.stage).toBe(beklenen);
+    }
+  });
   it('saves GameState through the engine store and a new sim restores stations, tables, pile and money', async () => {
     const sim = played(3);
     for (const k of ['cay', 'ayran', 'tabure1']) sim.command({ kind: 'force', what: 'unlock', value: k });
@@ -43,7 +60,7 @@ describe('save', () => {
     d.money = -50; d.owned = null; d.workers = 'x'; delete d.week; d.stage = 99; d.tiers = { doner: 3 };
     const notes = normalizeState(d);
     expect(d.money).toBe(0); expect(d.owned).toEqual({}); expect(d.workers).toEqual([]); expect(d.week).toEqual({ earned: 0, customers: 0 });
-    expect(d.stage).toBe(5); expect(d.tiers.doner).toBe(3); expect(d.tiers.cay).toBe(1);
+    expect(d.stage).toBe(10); expect(d.tiers.doner).toBe(3); expect(d.tiers.cay).toBe(1);
     expect(notes.length).toBeGreaterThan(0);
   });
   it('resetSave returns to a fresh game, keeping the seed', () => {

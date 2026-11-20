@@ -38,7 +38,8 @@ export const ITEM_LOOK: Record<string, { color: string; h: number }> = {
   simit: { color: '#c8833c', h: 0.06 }, tost: { color: '#e8c27a', h: 0.08 }, gazoz: { color: '#5aa9d6', h: 0.22 },
 };
 const FACE_ROW = FACES.map(f => f.crowdRow), FAR_ROW = FACES.map(f => f.farRow);
-const V2ACT: Partial<Record<ActId, string>> = { cut: 'cut', pour: 'pour', serve: 'pour', sweep: 'wipe', sleep: 'sleep', phone: 'selfie', wave: 'wave', sit: 'sit', cheer: 'cheer', perform: 'talk', dance: 'dance' };
+// 'count' ActId'de yok ama garsonun hesap sayma hareketi sim'den bu adla gelir (workers.ts); görünümde para sayma animasyonuna eşlenir
+const V2ACT: Partial<Record<ActId | 'count', string>> = { count: 'count', cut: 'cut', pour: 'pour', serve: 'pour', sweep: 'wipe', sleep: 'sleep', phone: 'selfie', wave: 'wave', sit: 'sit', cheer: 'cheer', perform: 'talk', dance: 'dance' };
 const CROWD_ACT: Partial<Record<ActId, string>> = { sip: 'drink', eat: 'eat', wave: 'wave', sleep: 'sleep', phone: 'phone', cheer: 'cheer', perform: 'cheer', dance: 'dance', serve: 'point', grab: 'point' };
 const moving = (s: number) => s > 0.15;
 const v2speed = (s: number) => (moving(s) ? Math.min(1, s / 1.2) : 0);

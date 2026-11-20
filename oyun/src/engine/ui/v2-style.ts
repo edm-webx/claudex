@@ -241,7 +241,7 @@ position:fixed;inset:0;pointer-events:none;z-index:10;overflow:hidden;font-famil
 
 /* toasts */
 .sb-toasts{position:absolute;left:50%;top:calc(var(--hudb) + 44px);transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;z-index:40;width:min(calc(100% - 24px),420px)}
-.sb-toast{display:flex;align-items:center;gap:8px;background:var(--paper);border:2.5px solid var(--ink);border-radius:16px;padding:6px 14px 7px 6px;font:800 11px/1.2 var(--body);box-shadow:var(--shadow);max-width:100%;animation:sb-tin .28s cubic-bezier(.3,1.6,.5,1);transition:opacity .3s,transform .3s}
+.sb-toast{display:flex;align-items:center;gap:8px;background:var(--paper);border:2.5px solid var(--ink);border-radius:16px;padding:6px 14px 7px 6px;font:800 13px/1.2 var(--body);box-shadow:var(--shadow);max-width:100%;animation:sb-tin .28s cubic-bezier(.3,1.6,.5,1);transition:opacity .3s,transform .3s}
 .sb-toast.out{opacity:0;transform:translateY(-10px)}
 .sb-toast>i{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;flex:none;border:2px solid var(--ink);background:var(--blue)}
 .sb-toast>i svg{width:18px;height:18px}
@@ -363,7 +363,7 @@ position:fixed;inset:0;pointer-events:none;z-index:10;overflow:hidden;font-famil
 .sb-slot svg{width:34px;height:34px}
 .sb-slot.full{border-style:solid;border-color:var(--ink);background:#fff;cursor:pointer;pointer-events:auto}
 .sb-slot.full::after{content:"";position:absolute;top:-7px;right:-7px;width:20px;height:20px;border-radius:50%;background:var(--red) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Cpath d='M6 6l8 8M14 6l-8 8' stroke='white' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E") center/100%;border:2px solid var(--ink)}
-.sb-slot b{font:900 11px/1 var(--disp);color:rgba(59,42,32,.4)}
+.sb-slot b{font:900 13px/1 var(--disp);color:rgba(59,42,32,.7)}
 .sb-dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
 .sb-ditem{display:flex;flex-direction:column;gap:5px;align-items:stretch;padding:8px}
 .sb-ditem .dtop{display:flex;gap:8px;align-items:center}

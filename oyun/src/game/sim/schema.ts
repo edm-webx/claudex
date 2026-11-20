@@ -53,6 +53,8 @@ export interface GameState {
   tut: Record<string, number>; settings: SettingsSave;
   pile: number; floor: number; owedBack: number;
   siftahDate: string; lastSeen: number; rate: number;
+  /** RNG akışlarının sfc32 durumu (kayıt anında yazılır, yüklemede geri konur; eski kayıtlarda yok). */
+  rngState?: Record<string, [number, number, number, number]>;
   week: { earned: number; customers: number }; today: TodaySave | null;
   kapkacDay: number; karamelDay: number; teamDay: number; teamWin: boolean; tanidikDay: number;
   // Martı Motoru additions

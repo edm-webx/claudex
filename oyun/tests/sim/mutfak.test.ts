@@ -48,3 +48,15 @@ it('front roles (güvenlik, müzisyen, hostes...) walk to their posts out front 
   expect(mutfakEtki([{ role: 'muzisyen', xp: 0 }]).bahsis).toBeGreaterThan(0);
   expect(mutfakSlot('guvenlik', 3)).toBe(0); expect(mutfakSlot('guvenlik', 4)).toBe(1);
 });
+
+it('işe alınan işçinin görünümü müşteri tipine değil rol kıyafetine bağlı (lookType/önlük ezmesi yok)', async () => {
+  const { makeBoard } = await import('../../src/game/sim/agents/hiring');
+  const { createRngStreams } = await import('../../src/engine/core');
+  const sim = played(1) as any; sim.step(1); const S = sim.state;
+  S.stage = 10; S.playT = 0;
+  const host = { stationBuilt: () => true, tablesBuilt: () => 9 } as any;
+  const cards = makeBoard(S, host, createRngStreams(5).stream('hiring'));
+  const normal = cards.filter((c) => !c.legend);
+  expect(normal.length).toBeGreaterThan(0);
+  for (const c of normal) { expect(c.look.lookType).toBeUndefined(); expect(c.look.apron).toBeUndefined(); expect(typeof c.look.apronText).toBe('string'); }
+});

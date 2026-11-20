@@ -20,18 +20,30 @@ export function normalizeState(d: GameState, notes: string[] = []): string[] {
   if (!isObj(d.player)) d.player = def.player;
   if (!d.today) d.today = newToday();
   d.money = Math.max(0, Number(d.money) || 0); d.gold = Math.max(0, Math.floor(Number(d.gold) || 0));
-  d.stars = Math.max(0, Math.floor(Number(d.stars) || 0)); d.stage = Math.min(5, Math.max(1, Math.floor(Number(d.stage) || 1)));
+  d.stars = Math.max(0, Math.floor(Number(d.stars) || 0)); d.stage = Math.min(10, Math.max(1, Math.floor(Number(d.stage) || 1)));
   d.level = Math.max(1, Math.floor(Number(d.level) || 1)); d.day = Math.max(1, Math.floor(Number(d.day) || 1));
   d.playT = Math.max(0, Number(d.playT) || 0); d.dayT = Math.max(0, Number(d.dayT) || 0);
+  if (d.rngState !== undefined) {   // bozuk RNG durumu oyunu bozmasın: geçersizse at, akışlar tohumdan başlar
+    const ok = isObj(d.rngState) && Object.values(d.rngState).every(v => Array.isArray(v) && v.length === 4 && v.every(x => Number.isFinite(x)));
+    if (!ok) { delete d.rngState; notes.push('rngState'); }
+  }
   d.version = SAVE_VERSION;
   return notes;
+}
+
+/** RNG akışlarının durumunu kayda yaz: yükleme sonrası sandık/hava/müşteri dizisi tohumdan baştan başlamasın. */
+function snapshotRng(sim: SimFull): void {
+  if (!sim.rng) return;
+  const m: Record<string, [number, number, number, number]> = {};
+  for (const n of sim.rng.names()) m[n] = sim.rng.stream(n).getState();
+  sim.state.rngState = m;
 }
 
 export function createGameSave(sim: SimFull, platform: Pick<Platform, 'storage' | 'idb' | 'clock'>, o: { key?: string; log?: Logger } = {}): SaveStore<GameState> {
   return createSave<GameState>({
     key: o.key || SAVE_KEY, version: SAVE_VERSION, defaults: () => defaultState(sim.state.seed || 1), migrations: [],
     validate: d => normalizeState(d),
-    get: () => { sim.rules?.snapshot(platform.clock.wall()); return sim.state; },
+    get: () => { sim.rules?.snapshot(platform.clock.wall()); snapshotRng(sim); return sim.state; },
     platform, log: o.log,
   });
 }

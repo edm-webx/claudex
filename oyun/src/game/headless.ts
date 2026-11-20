@@ -107,6 +107,12 @@ export function createSim(o: SimOpts, extra: SimExtra = {}): SimFull {
   const dt = 1 / SIM_HZ;
   let tick = 0;
   const rng = createRngStreams(o.seed);
+  /** Kayıttaki RNG akış durumlarını geri koy (yoksa akışlar tohumdan başlar). */
+  const applyRngState = (st: GameState) => {
+    const m = st.rngState; if (!m || typeof m !== 'object') return;
+    for (const n of Object.keys(m)) { const v = m[n]; if (Array.isArray(v) && v.length === 4 && v.every(x => Number.isFinite(x))) rng.stream(n).setState([v[0], v[1], v[2], v[3]]); }
+  };
+  applyRngState(state);
   const bus = createBus<SimEvents>({ maxLog: 100000, clock: () => ({ tick, t: tick * dt }) });
   const world: World = createWorld({ log: extra.log });
   const scheduler = createScheduler({ perf: extra.perf, log: extra.log, now: extra.now });
@@ -176,6 +182,7 @@ export function createSim(o: SimOpts, extra: SimExtra = {}): SimFull {
     tick++;
   };
 
+  applyRngState(state);   // kurulum sırasında (kedi/deniz vb.) tüketilen çekimleri geri al: akış kayıttaki yerinden devam etsin
   const sim: SimFull = {
     get state() { return state; },
     world, bus, clock,
@@ -227,6 +234,7 @@ export function createSim(o: SimOpts, extra: SimExtra = {}): SimFull {
       const copy = JSON.parse(JSON.stringify(s)) as GameState;
       for (const k of Object.keys(state)) delete (state as unknown as Record<string, unknown>)[k];
       Object.assign(state, copy);
+      applyRngState(state);
       rules.restore();
       walk.teleport(state.player.x, state.player.z);
     },

@@ -68,7 +68,8 @@ function makeCandidate(s: GameState, rng: Rng, role: string, rarityId: string, l
   const name = rng.pick(NAMES[female ? 'f' : 'm']);
   const traits = TRAIT_IDS.filter((t) => (TRAITS[t].roles || []).includes(role) && t !== 'uykucu' && t !== 'fenomen' && t !== 'geveze');
   const traitId = rng.pick(traits.length ? traits : ['hamarat']);
-  const look: Record<string, unknown> = { lookType: role === 'garson' ? 'universiteli' : 'plaza', lookSeed: rng.int(1, 1e9), apron: '#1d5fa8', apronText: name.toLocaleUpperCase('tr') };
+  // lookType/apron verilmez: görünüm ROLE_LOOK'tan (rol kıyafeti) gelir, müşteri görünümüyle ezilmez; yalnız isim yazısı ve başörtüsü eklenir
+  const look: Record<string, unknown> = { apronText: name.toLocaleUpperCase('tr') };
   if (female && rng.chance(0.3)) look.headscarf = rng.pick(['yazma', 'loose', 'sport']);
   return {
     id: 'C' + (s.nextWid + 1000 * (s.boards || 0)) + '_' + rng.int(100, 999), name, role, roleLabel: ROLES[role].label, traitId, trait: traitCard(traitId),

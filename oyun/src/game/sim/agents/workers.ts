@@ -63,12 +63,17 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
     }
     return book.get('jobCorner');
   }
+  /** Eski kayıtlardaki müşteri tipi görünümü (lookType) rol kıyafetini ezmesin: lookType/lookSeed/önlük atılır, isim ve başörtüsü kalır. */
+  const rolGorunumu = (l?: Record<string, unknown>) => {
+    if (!l || l.lookType == null) return l;
+    const { lookType: _t, lookSeed: _s, apron: _a, ...rest } = l; void _t; void _s; void _a; return rest;
+  };
   function spawn(w: WorkerSave, S: GameState, instant: boolean): WRt {
     const role = ROLES[w.role];
     const st = (role && role.station ? role.station : null) as ProductId | null;
     const km = !!role?.mutfak, start = km ? icWorld(IC_BY_ID.mutfak, 0, icDim(IC_BY_ID.mutfak).D / 2 + 0.8) : book.get('jobCorner');
     const seed = (w.id * 977) % 10007;
-    const a = reg.add('worker', String(w.id), { kind: 'worker', role: w.role, look: (w as { look?: unknown }).look, seed }, start,
+    const a = reg.add('worker', String(w.id), { kind: 'worker', role: w.role, look: rolGorunumu((w as { look?: Record<string, unknown> }).look), seed }, start,
       { role: w.role, trait: traitId(w), name: w.name, rank: rankOf(w.xp || 0), rarity: w.rarity });
     const rt: WRt = {
       w, a, wk: new Walker(a, env.nav), st, state: 'arrive', t: 0, boostT: 0, boostX: 1, made: 0, nearT: 0, moraleCd: 30, pauseT: 0, workT: 0,
