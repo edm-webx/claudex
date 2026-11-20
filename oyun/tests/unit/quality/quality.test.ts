@@ -62,6 +62,33 @@ describe('quality', () => {
   });
 });
 
+describe('quality: oyun sırasında otomatik kademe bekler (PRF-03)', () => {
+  it('oyun sürerken düşüş kaydedilir ama uygulanmaz; duraklama anında uygulanır', () => {
+    const ls = memLs(); ls.setItem('marti-quality', JSON.stringify({ setting: 'auto', autoTier: 'sahane' }));
+    const q = createQuality({ platform: plat('', ls) }); const tiers: string[] = [];
+    q.onChange(t => tiers.push(t.name));
+    let playing = true; q.deferAuto!(() => playing);
+    for (let i = 0; i < 90 * 60; i++) q.feed(40, 1 / 60);
+    expect(tiers).toEqual([]); expect(q.current().name).toBe('sahane');
+    expect(q.scale!()).toBe(SCALE_MIN);   // in play the resolution scale carries the load
+    expect(JSON.parse(ls.getItem('marti-quality')!).autoTier).toBe('dengeli');   // next load starts lower
+    playing = false;
+    expect(q.flushAuto!()).toBe(true);
+    expect(tiers).toEqual(['dengeli']); expect(q.flushAuto!()).toBe(false);
+  });
+  it('duraklamadaysa hemen uygulanır; elle seçilen kademede bekleyen atılır', () => {
+    const ls = memLs(); ls.setItem('marti-quality', JSON.stringify({ setting: 'auto', autoTier: 'sahane' }));
+    const q = createQuality({ platform: plat('', ls) }); const tiers: string[] = [];
+    q.onChange(t => tiers.push(t.name)); q.deferAuto!(() => false);
+    for (let i = 0; i < 90 * 60; i++) q.feed(40, 1 / 60);
+    expect(tiers[0]).toBe('dengeli');
+    const q2 = createQuality({ platform: plat('', ls) }); let pl = true; q2.deferAuto!(() => pl);
+    for (let i = 0; i < 90 * 60; i++) q2.feed(40, 1 / 60);
+    q2.set('sahane'); pl = false;
+    expect(q2.flushAuto!()).toBe(false); expect(q2.current().name).toBe('sahane');
+  });
+});
+
 describe('quality: dinamik çözünürlük (PRF-12)', () => {
   const mk = (tier: string) => { const ls = memLs(); ls.setItem('marti-quality', JSON.stringify({ setting: 'auto', autoTier: tier })); return createQuality({ platform: plat('', ls) }); };
   const run = (q: ReturnType<typeof mk>, sec: number, ms: number, work = ms) => { for (let i = 0; i < sec * 60; i++) q.feed(ms, 1 / 60, work); };

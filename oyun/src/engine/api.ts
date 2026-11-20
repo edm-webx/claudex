@@ -255,6 +255,10 @@ export interface Quality {
   /** PRF-12: continuous resolution scale (SCALE_MIN..1) the render multiplies onto the tier's pixel ratio; auto mode only. */
   scale?(): number;
   onScale?(cb: (s: number) => void): Disposer;
+  /** PRF-03: while `inPlay()` is true an automatic tier change is only remembered (saved for the next load), not applied */
+  deferAuto?(inPlay: () => boolean): void;
+  /** PRF-03: applies a remembered automatic tier change now (pause/menu/hidden moment); true if one was applied */
+  flushAuto?(): boolean;
   batterySaver(on: boolean): void;         // forces 30 fps
   table: Readonly<Record<TierName, TierDef>>;
 }

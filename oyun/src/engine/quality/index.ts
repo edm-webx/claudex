@@ -12,6 +12,8 @@
  *   1 s buckets: bucket frame time > 1.1x target -> one step down (at most every 2 s); work time < 0.7x target for 3 s in a row
  *   and no step down in the last 6 s -> one step up. The slow layer (tier drop) only starts once the scale sits at SCALE_MIN;
  *   a tier change resets the scale to 1.
+ * PRF-03: with deferAuto(inPlay) set (boot), an automatic tier change during play is saved (next load starts there) but applied
+ *   only at flushAuto() - hidden tab or a full-screen overlay covering the world - because it relinks every material.
  */
 import type { Quality, QualityDeps, QualitySetting, TierDef, TierName, Disposer } from '../api';
 
@@ -51,6 +53,13 @@ export function createQuality(deps: QualityDeps): Quality {
     for (const cb of [...scaleSubs]) { try { cb(scale); } catch (e) { deps.log?.error('quality scale cb', e); } }
   };
   let battery = false;
+  // PRF-03: an auto tier change relinks every material (shadows + night-light pool). During play it waits for a pause/menu moment.
+  let inPlay: (() => boolean) | null = null, pendingAuto: TierName | null = null;
+  const autoApply = (n: TierName) => {
+    let playing = false; try { playing = !!inPlay?.(); } catch { playing = false; }
+    if (playing) { pendingAuto = n === cur ? null : n; return; }
+    pendingAuto = null; apply(n, 'auto');
+  };
 
   // watch state
   const buckets: number[] = []; // avg ms per completed 1 s bucket
@@ -99,12 +108,18 @@ export function createQuality(deps: QualityDeps): Quality {
         const avg = buckets.reduce((a, b) => a + b, 0) / buckets.length;
         const i = ORDER.indexOf(cur);
         if (avg > target * 1.5 && i > 0 && scale <= SCALE_MIN + 1e-6) {   // slow layer waits until the scale has hit the floor
-          lastChange = t; downThisSession = true; autoTier = ORDER[i - 1]; persist(); apply(autoTier, 'auto'); return; }
+          lastChange = t; downThisSession = true; autoTier = ORDER[i - 1]; persist(); autoApply(autoTier); return; }
       }
       // 2026-11-09 Chrome freeze: auto mode used to step back up after 120 calm seconds; a tier change toggles shadows,
       // which recompiles every material (multi-second freeze), then the heavier tier missed its target and stepped down
       // again: a freeze loop. Auto mode now only steps down within a session (the user can still pick a tier by hand).
-      if (calm >= 120 && cur !== 'sahane' && !downThisSession) { lastChange = t; autoTier = ORDER[ORDER.indexOf(cur) + 1]; persist(); apply(autoTier, 'auto'); }
+      if (calm >= 120 && cur !== 'sahane' && !downThisSession && !pendingAuto) { lastChange = t; autoTier = ORDER[ORDER.indexOf(cur) + 1]; persist(); autoApply(autoTier); }
+    },
+    deferAuto(fn) { inPlay = fn; },
+    flushAuto() {
+      if (!pendingAuto || setting !== 'auto') { pendingAuto = null; return false; }
+      const n = pendingAuto; pendingAuto = null; if (n === cur) return false;
+      apply(n, 'auto'); return true;
     },
     batterySaver(on) {
       if (battery === on) return;
