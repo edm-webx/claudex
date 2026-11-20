@@ -6,9 +6,9 @@ import { CAMERA_PITCH } from '../../../src/engine/api';
 
 const run = (hz: number, secs: number, target: (t: number) => { x: number; z: number; y?: number }) => {
   const r = createCameraRig({ aspect: 16 / 9 });
-  r.snap({ x: 0, z: 0 }); r.follow(target(0)); r.update(1 / hz, 1);
+  r.snap({ x: 0, z: 0 }); r.follow(target(0), 0); r.update(1 / hz, 1);
   const n = Math.round(secs * hz);
-  for (let i = 1; i <= n; i++) { r.follow(target(i / hz)); r.update(1 / hz, 1); }
+  for (let i = 1; i <= n; i++) { r.follow(target(i / hz), 1 / hz); r.update(1 / hz, 1); }
   return r;
 };
 
@@ -50,7 +50,7 @@ describe('kamera rig (PRF-10)', () => {
     r.turn(1.2); r.tilt(0.4); r.zoom = 2; r.recenter();
     for (let i = 0; i < 20; i++) r.update(1 / 60, 1);
     expect(r.camera.position.x).toBe(1); expect(r.camera.position.y).toBe(1.55);
-    r.fp(null); r.follow({ x: 5, z: 5 }); r.update(1 / 60, 1);
+    r.fp(null); r.follow({ x: 5, z: 5 }, 1 / 60); r.update(1 / 60, 1);
     expect(r.yaw).toBe(yaw0); expect(r.zoom).toBe(zoom0);
     expect(r.camera.position.distanceTo(pos0)).toBeLessThan(1e-6);
   });
