@@ -439,7 +439,7 @@ export function createMiniGames(d: MiniGamesDeps): MiniGamesView {
     };
     raf = requestAnimationFrame(frame);
     if (auto) { live = true; return; }
-    card(`<h3>${esc(title)}</h3><p>${esc(intro)}</p><p style="opacity:.75">${game.secs} saniye. Tek parmak yeter!</p><div class="row" style="grid-template-columns:1fr"><button class="sb-btn green" data-k="go">Başla!</button></div>`, k => { if (k === 'go') { live = true; sfx('buy'); } });
+    card(`<h3>${esc(title)}</h3><p>${esc(intro)}</p><p style="opacity:.75">${game.secs} saniye. Tek parmak yeter!</p><div class="row" style="grid-template-columns:1fr"><button class="sb-btn green" data-k="go">Başla!</button></div>`, k => { if (k === 'go') { live = true; sfx('pop'); } });
   }
   function card(html: string, on: (k: string) => void) {
     if (!ov) return;
@@ -487,7 +487,7 @@ export function createMiniGames(d: MiniGamesDeps): MiniGamesView {
     run(def.name, MICRO_MAKERS[id], def.how, score => {
       d.command({ kind: 'mini', op: 'micro', arg: score });
       const lm = api()?.lastMicro();
-      if (lm) { sfx(lm.ok ? 'cash' : 'pop'); }
+      if (lm) { sfx('pop'); }
       card(`<h3>${lm && lm.ok ? 'Usta işi!' : 'Olsun!'}</h3><p>${esc(lm ? lm.text : '')}</p><div class="row" style="grid-template-columns:1fr"><button class="sb-btn green" data-k="ok">Tamam</button></div>`, () => close());
     }, () => d.command({ kind: 'mini', op: 'microSkip' }), false);
   }

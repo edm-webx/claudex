@@ -20,9 +20,10 @@ export const EVENT_SFX: Record<string, SfxRule> = {
   pick: d => (d?.type === 'gazoz' ? 'fizz' : d?.type === 'cay' ? 'tik' : d?.type === 'tost' ? 'steamHiss' : 'pop'),
   // 2026-10-30 story + league + chests
   ipucu: 'ticket', sabriGitti: 'bad', ligMac: 'horn', ligYukseldi: 'confetti', sandikDustu: 'sparkle',
-  firstCut: 'cut', cayUsed: 'pour', sale: 'coin', siftah: 'coin', tip: 'coin', firstCollect: 'coin',
+  firstCut: 'cut', cayUsed: 'pour', sale: 'coin', tip: 'coin', firstCollect: 'coin',
   streak: 'streak', firstStreak: 'streak', rankUp: 'streak', ach: 'streak',
-  hire: 'buy', tier: 'buy', plaque: 'buy', star: 'buy', decorBuy: 'buy', tadilatStart: 'buy', sign: 'buy', unlock: 'buy', set: 'coin',
+  hire: 'buy', tier: 'buy', plaque: 'buy', star: 'buy', decorBuy: 'buy', tadilatStart: 'buy', sign: 'buy', unlock: 'buy',   // 'set'/'siftah' sessiz: aynı satışta 'sale' zaten coin çalıyor (tek satış = tek ses)
+ 
   level: 'day', dayEnd: 'day', tadilatDone: 'day', kasaDone: 'day',
   orderClaim: 'cash', welcomeCollect: 'cash',
   ferryHorn: 'horn', windowOpen: 'flash', ferryDock: 'splash',

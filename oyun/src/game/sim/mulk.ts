@@ -79,7 +79,7 @@ export function installMulk(K: Kernel) {
     let n = rng.int(sd.adet[0], sd.adet[1]); if (e.sans > 0) { e.sans--; n++; }
     const got: string[] = [];
     for (let i = 0; i < n; i++) { const it = pick(sd.havuz); give(it, 1); got.push(it); }
-    K.earn(tl); e.acilan++; K.stat('sandikAcildi');
+    (K.earnTam || K.earn)(tl); e.acilan++; K.stat('sandikAcildi');
     e.son = { sandik: sd.ad, tl, esya: got, t: S.playT };
     K.toast(sd.ikon + ' ' + sd.ad + ': +' + fmtMoney(tl) + ' ve ' + got.map(nm).join(', '), 'good');
   }
@@ -105,14 +105,14 @@ export function installMulk(K: Kernel) {
   function gunlukAl(id: string) {
     const e = env(), h = e.gunluk.liste.find(x => x.id === id);
     if (!h || h.alindi || h.sayi < h.hedef) return;
-    h.alindi = true; K.earn(h.odul); K.addXP(10); K.toast('📋 +' + fmtMoney(h.odul) + ' (' + h.ad + ')', 'good');
+    h.alindi = true; (K.earnTam || K.earn)(h.odul); K.addXP(10); K.toast('📋 +' + fmtMoney(h.odul) + ' (' + h.ad + ')', 'good');
     if (!e.gunluk.sandikAlindi && e.gunluk.liste.every(x => x.alindi)) { e.gunluk.sandikAlindi = true; giveChest('gumus', 'günlük tahta'); if (S.day % 7 === 0) { give('altin_anahtar', 1); K.toast('🗝️ Haftalık ödül: Altın Anahtar!', 'good'); } }
   }
 
   // ── items ──
   function kullan(id: string) {
     const it = ESYA_BY_ID[id]; if (!it || have(id) < 1) return;
-    if (id === 'bozuk_kese') { take(id); const v = rng.int(300, 1200) + S.level * 40; K.earn(v); K.toast('👛 Kesede ' + fmtMoney(v) + ' varmış!', 'good'); }
+    if (id === 'bozuk_kese') { take(id); const v = rng.int(300, 1200) + S.level * 40; (K.earnTam || K.earn)(v); K.toast('👛 Kesede ' + fmtMoney(v) + ' varmış!', 'good'); }
     else if (id === 'tecrube_simit') { take(id); K.addXP(30 + S.level * 5); K.toast('🥯 Tecrübe kazandın!', 'good'); }
     else if (id === 'sans_simidi') { take(id); env().sans++; K.toast('🍀 Sıradaki sandıktan 1 eşya fazla çıkacak.', 'good'); }
     else if (id === 'altin_kupon') { take(id); S.gold += 5; K.toast('🎟️ +5 Altın Simit', 'good'); }
@@ -147,7 +147,8 @@ export function installMulk(K: Kernel) {
   }
   /** day roll: loan interest grows the debt, savings earn a little */
   function faizGun() {
-    const k = arsa().kredi; if (k && k.borc > 0 && k.gun !== S.day) { const f = Math.ceil(k.borc * KREDI_FAIZ); k.borc += f; K.toast('🏦 Kredi faizi: +' + fmtMoney(f) + ' borç (toplam ' + fmtMoney(k.borc) + ')', 'bad'); }
+    // atlanan günlerin faizi de işlenir (uzun süre kapalı kalma / çok günlük atlama): bileşik, en çok 30 gün
+    const k = arsa().kredi; if (k && k.borc > 0 && k.gun !== S.day) { const gun = Math.max(1, Math.min(30, S.day - (k.gun || S.day))); let f = 0; for (let i = 0; i < gun; i++) { const d = Math.ceil((k.borc + f) * KREDI_FAIZ); f += d; } k.borc += f; K.toast('🏦 Kredi faizi' + (gun > 1 ? ' (' + gun + ' gün)' : '') + ': +' + fmtMoney(f) + ' borç (toplam ' + fmtMoney(k.borc) + ')', 'bad'); }
     if (k) k.gun = S.day;
     const b = banka(); if (b.tl >= 100) { const f = Math.floor(Math.min(b.tl, 5e6) * MEVDUAT_FAIZ); if (f > 0) { b.tl += f; b.dirty = true; bankaYedekle(b); } }
   }
@@ -223,6 +224,8 @@ export function installMulk(K: Kernel) {
     for (let i = 0; i < n; i++) { const u = KT_URUN[rng.int(0, KT_URUN.length - 1)]; istek[u.id] = (istek[u.id] || 0) + (u.id === 'fotokopi' ? rng.int(2, 10) : 1); }
     kt.mus = { ad: KT_MUSTERI[rng.int(0, KT_MUSTERI.length - 1)], istek, t: 0 }; kt.sepet = {};
   }
+  /** tezgahtan çıkış (düğme ya da odadan yürüyüp çıkma): özet ver, sayaçları sıfırla */
+  function ktBitir() { kt.on = false; kt.mus = null; K.toast('✏️ Tezgahtan çıktın: ' + kt.sat + ' satış, ' + fmtMoney(kt.ciro), 'good'); kt.ciro = 0; kt.sat = 0; kt.kacan = 0; kt.sepet = {}; kt.son = ''; }
   function ktOp(op: string, id: string) {
     if (op === 'ktAc') {
       if (!ktSahip()) { K.toast('Önce Martı Kırtasiye\'yi satın al.', 'info'); return; }
@@ -230,7 +233,7 @@ export function installMulk(K: Kernel) {
       kt.on = true; kt.mus = null; kt.bekle = 1.5; kt.sepet = {}; kt.son = ''; return;
     }
     if (!kt.on) return;
-    if (op === 'ktKapat') { kt.on = false; kt.mus = null; K.toast('✏️ Tezgahtan çıktın: ' + kt.sat + ' satış, ' + fmtMoney(kt.ciro), 'good'); kt.ciro = 0; kt.sat = 0; kt.kacan = 0; return; }
+    if (op === 'ktKapat') { ktBitir(); return; }
     if (!kt.mus) return;
     if (op === 'ktEkle' && KT_BY_ID[id]) { const need = (kt.mus.istek[id] || 0) - (kt.sepet[id] || 0); kt.sepet[id] = (kt.sepet[id] || 0) + (id === 'fotokopi' && need > 1 ? need : 1); return; }   // the copier runs the whole stack at once
     if (op === 'ktTemizle') { kt.sepet = {}; return; }
@@ -246,7 +249,7 @@ export function installMulk(K: Kernel) {
   }
   function ktStep(dt: number) {
     if (!kt.on) return;
-    if (!ktYakin()) { kt.on = false; kt.mus = null; return; }
+    if (!ktYakin()) { ktBitir(); return; }
     if (!kt.mus) { kt.bekle -= dt; if (kt.bekle <= 0) ktYeni(); return; }
     kt.mus.t += dt;
     if (kt.mus.t >= KT_SABIR) { kt.kacan++; kt.son = '✗ ' + kt.mus.ad + ' beklemekten sıkılıp gitti.'; kt.mus = null; kafeHost.fpDone?.('k3', false); kt.bekle = rng.range(2, 4); }

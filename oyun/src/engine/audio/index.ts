@@ -90,7 +90,9 @@ export function createAudio(deps: AudioDeps): MotorAudio {
       ac = deps.platform.audioCtx();
       if (!ac) return null;
       try { const n = navigator as unknown as { audioSession?: { type: string } }; if (n.audioSession) n.audioSession.type = 'ambient'; } catch { /* not iOS */ }
-      master = ac.createGain(); master.gain.value = 0.5; master.connect(ac.destination);
+      master = ac.createGain(); master.gain.value = 0.5;
+      // limiter: üst üste binen sert sesler (square/sawtooth, kalabalık) çıkışı patlatmasın
+      try { const lim = ac.createDynamicsCompressor(); lim.threshold.value = -8; lim.knee.value = 6; lim.ratio.value = 12; lim.attack.value = 0.003; lim.release.value = 0.2; master.connect(lim); lim.connect(ac.destination); } catch { master.connect(ac.destination); }
       for (const b of Object.values(buses)) { b.node = ac.createGain(); b.node.connect(master); }
       try { bank = createBank(ac, SES_DB as unknown as SesDb); } catch { bank = null; }
       applyAll();
@@ -155,6 +157,7 @@ export function createAudio(deps: AudioDeps): MotorAudio {
     cash: o => { tone(440, 0.22, 'sine', 0.06, 0, 0, o); tone(660, 0.3, 'sine', 0.05, 0, 0.09, o); },
     buy: o => [440, 554, 660, 880].forEach((f, i) => tone(f, 0.26, 'sine', 0.07, 0, i * 0.08, o)),
     bad: o => tone(180, 0.25, 'sawtooth', 0.08, -60, 0, o),
+    error: o => { tone(330, 0.12, 'triangle', 0.07, -60, 0, o); tone(247, 0.2, 'triangle', 0.06, -50, 0.1, o); },   // hatalı giriş / işlem: yumuşak iki notalı alçalış (pop'a düşmesin)
     wake: o => tone(300, 0.2, 'square', 0.06, 400, 0, o),
     flash: o => noise(0.12, 0.12, 6000, 1, 0, o),
     clean: o => noise(0.2, 0.08, 2600, 0.7, 0, o),

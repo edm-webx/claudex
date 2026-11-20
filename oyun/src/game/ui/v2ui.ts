@@ -362,7 +362,7 @@ U.coins = function (x, y, n, target) {
         { transform: `translate(${mx}px,${my}px) scale(1)`, opacity: 1, offset: 0.6 },
         { transform: `translate(${tx}px,${ty}px) scale(.7)`, opacity: 1 }
       ], { duration: 750 + i * 45, easing: 'ease-in-out', delay: i * 35 });
-      a.onfinish = () => { c.remove(); sfx('coin'); if (i === n - 1) { const mp = root.querySelector(".sb-money"); if (mp) bump(mp); }; };
+      a.onfinish = () => { c.remove(); if (i === 0) sfx('coin'); if (i === n - 1) { const mp = root.querySelector(".sb-money"); if (mp) bump(mp); }; };
     } catch (e) { c.remove(); }
   }
 };
@@ -982,7 +982,7 @@ U.ad = function (seconds) {
     root.appendChild(m);
     const ac = m.querySelector('.ac'), acs = ac.querySelector('span');
     const t0 = performance.now(); let fin = false, closed = false, autoT = 0, raf = 0;
-    const close = () => { if (closed) return; closed = true; clearTimeout(autoT); cancelAnimationFrame(raf); m.classList.add('out'); setTimeout(() => m.remove(), 200); adBusy = null; sfx('cash'); res(true); };
+    const close = () => { if (closed) return; closed = true; clearTimeout(autoT); cancelAnimationFrame(raf); m.classList.add('out'); setTimeout(() => m.remove(), 200); adBusy = null; res(true); };
     const tick = () => {
       const el = (performance.now() - t0) / 1000, left = total - el;
       ac.style.setProperty('--p', clamp(el / total, 0, 1).toFixed(3));

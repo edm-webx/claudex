@@ -19,23 +19,23 @@ const CSS = `
 .mp-tabs{display:flex;gap:5px;padding:0 14px 8px;overflow-x:auto;scrollbar-width:none}
 .mp-t{flex:none;min-height:42px;padding:0 12px;border:3px solid #3b2a20;border-radius:12px;background:#fff6e6;font:900 15px var(--disp);color:#3b2a20;cursor:pointer}.mp-t.on{background:#ffd23f}
 .mp-body{overflow-y:auto;padding:4px 14px 14px;flex:1}
-.mp-sec{font:900 15px var(--disp);margin:12px 0 6px;opacity:.85}
+.mp-sec{font:900 15px var(--disp);margin:12px 0 6px}
 .mp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
 .mp-it{border:3px solid #3b2a20;border-radius:14px;background:#fff;padding:8px 10px;display:flex;flex-direction:column;gap:3px;min-width:0}
 .mp-it.r1{background:#eaf6ff}.mp-it.r2{background:#fff3c4}
-.mp-it b{font:900 15px/1.15 var(--disp)}.mp-it small{font:700 12px/1.25 var(--body);opacity:.75}.mp-ic{font-size:26px;line-height:1}
-.mp-n{align-self:flex-end;font:900 14px var(--disp);background:#3b2a20;color:#fff;border-radius:9px;padding:0 8px;margin-top:-26px}
+.mp-it b{font:900 15px/1.15 var(--disp)}.mp-it small{font:700 13px/1.3 var(--body);opacity:.9}.mp-ic{font-size:26px;line-height:1}
+.mp-n{align-self:flex-end;font:900 14px var(--disp);background:#3b2a20;color:#fff;border-radius:9px;padding:0 8px}
 .mp-b{min-height:38px;padding:0 12px;border:3px solid #3b2a20;border-radius:11px;background:#fff6e6;font:900 14px var(--disp);color:#3b2a20;cursor:pointer;box-shadow:0 3px 0 #3b2a20}
 .mp-gise{background:#101c3a;color:#fff;border-radius:14px;padding:10px 12px;display:grid;gap:8px}.mp-gr{display:flex;align-items:center;gap:10px}.mp-gr span{font:800 11px var(--body);letter-spacing:.14em;text-transform:uppercase;opacity:.6;flex:1}.mp-gr b{font:900 22px var(--disp);min-width:96px;text-align:center;color:#ffb627}.mp-gise .mp-b{min-height:34px;width:38px;padding:0}.mp-gb{position:relative;height:26px;border-radius:9px;background:rgba(255,255,255,.12);overflow:hidden}.mp-gb i{position:absolute;inset:0 auto 0 0;background:linear-gradient(90deg,#2fbf71,#6ef2ab)}.mp-gb u{position:absolute;inset:0;display:grid;place-items:center;text-decoration:none;font:800 12px var(--body);color:#fff;text-shadow:0 1px 3px #000a}.mp-gs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.mp-gs span{background:rgba(255,255,255,.08);border-radius:10px;padding:6px 8px;font:800 10px var(--body);letter-spacing:.08em;text-transform:uppercase;opacity:.95}.mp-gs b{display:block;font:900 15px var(--disp);letter-spacing:0;text-transform:none;color:#6ef2ab;margin-top:3px}.mp-gise small{opacity:.6;font:700 11px var(--body)}.mp-kadro{display:flex;gap:12px;align-items:center;margin:6px 0}.mp-forma{width:74px;height:84px;border-radius:12px 12px 8px 8px;border:3px solid #16233b;position:relative;display:grid;place-items:center;clip-path:polygon(0 18%,22% 0,38% 8%,62% 8%,78% 0,100% 18%,100% 100%,0 100%);flex:none}.mp-forma b{font-size:26px;line-height:1;text-shadow:0 2px 0 #fff8}.mp-forma span{position:absolute;bottom:6px;font:900 15px var(--disp);color:#fff;text-shadow:0 2px 0 #0008}.mp-dz{display:flex;gap:6px;flex-wrap:wrap}.mp-dz .mp-b{min-height:34px;font-size:13px}.mp-sq{display:grid;gap:5px}.mp-pl{display:flex;align-items:center;gap:10px;background:#fff8;border-radius:10px;padding:5px 8px}.mp-pl i{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font:900 14px var(--disp);font-style:normal;border:2px solid #16233b;flex:none}.mp-pl small{display:block;font:700 11px var(--body);opacity:.7}
 .mp-pk{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:8px 0;font:800 12px var(--body)}.mp-pk span{min-width:70px;opacity:.7}.mp-sw{width:30px;height:30px;border-radius:50%;border:3px solid #3b2a20;cursor:pointer;padding:0;font-size:16px;background:#fff6e6}.mp-sw.wide{border-radius:10px}.mp-sw.on{outline:3px solid #ffd23f;outline-offset:1px}.mp-prev{height:54px;border:3px solid #3b2a20;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:30px;margin:6px 0;text-shadow:0 2px 0 #fff8}
 .mp-b.g{background:#8fd06b}.mp-b.y{background:#ffd23f}.mp-b.r{background:#ff8b7a}.mp-b:disabled{opacity:.45;cursor:not-allowed;box-shadow:none}
 .mp-row{display:flex;align-items:center;gap:8px;border:3px solid #3b2a20;border-radius:14px;background:#fff;padding:8px 10px;margin-bottom:7px;flex-wrap:wrap}
-.mp-row>div{flex:1;min-width:120px}.mp-row b{font:900 15px/1.2 var(--disp)}.mp-row small{display:block;font:700 12px/1.3 var(--body);opacity:.75}
+.mp-row>div{flex:1;min-width:120px}.mp-row b{font:900 15px/1.2 var(--disp)}.mp-row small{display:block;font:700 13px/1.3 var(--body);opacity:.9}
 .mp-bar{height:10px;border-radius:6px;background:#e7d9bf;border:2px solid #3b2a20;overflow:hidden;margin-top:4px}.mp-bar i{display:block;height:100%;background:#8fd06b}
 .mp-note{border:3px dashed #3b2a20;border-radius:14px;padding:12px;text-align:center;font:800 14px/1.4 var(--body);background:#fff6e6}
 .mp-in{box-sizing:border-box;width:100%;min-height:42px;border:3px solid #3b2a20;border-radius:11px;padding:4px 10px;font:800 16px var(--body);background:#fff;color:#3b2a20;margin:6px 0}
 .mp-son{border:3px solid #3b2a20;border-radius:14px;background:#fff3c4;padding:8px 12px;font:800 14px/1.4 var(--body);margin-bottom:8px}
-.mp-hint{position:fixed;left:50%;bottom:118px;transform:translateX(-50%);z-index:44;pointer-events:auto;min-height:54px;padding:0 22px;border-radius:18px;border:4px solid #3b2a20;background:#ffd23f;box-shadow:0 5px 0 #3b2a20;font:900 19px/1 var(--disp);color:#3b2a20;cursor:pointer;display:none;white-space:nowrap}
+.mp-hint{position:fixed;left:50%;bottom:184px;transform:translateX(-50%);z-index:44;pointer-events:auto;min-height:54px;padding:0 22px;border-radius:18px;border:4px solid #3b2a20;background:#ffd23f;box-shadow:0 5px 0 #3b2a20;font:900 19px/1 var(--disp);color:#3b2a20;cursor:pointer;display:none;white-space:nowrap}
 `;
 const esc = (s: unknown) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>)[c]);
 const tl = (n: number) => Math.round(n || 0).toLocaleString('tr') + ' ₺';
@@ -46,7 +46,7 @@ export function createMulkPanel(d: Deps): MulkPanel {
   const bg = document.createElement('div'); bg.className = 'mp-bg'; d.root.appendChild(bg);
   const hint = document.createElement('button'); hint.className = 'mp-hint'; d.root.appendChild(hint);
   let tab: Tab = 'envanter', key = '', openNow = false, t = 0, hintTab: Tab | null = null, pickPlot = '', pickTip = '', focus = '', ktMode = false;
-  const cmd = (c: Record<string, unknown>) => { d.command({ kind: 'mulk', ...c }); try { d.sfx?.('pick'); } catch { /* */ } key = ''; };
+  const cmd = (c: Record<string, unknown>) => { d.command({ kind: 'mulk', ...c }); try { d.sfx?.('pick'); } catch { /* */ } key = ''; t = 0; };
 
   const itemCard = (id: string, n: number, acts = '') => { const e = ESYA_BY_ID[id]; if (!e) return ''; return `<div class="mp-it r${e.nadir}"><span class="mp-ic">${e.ikon}</span><b>${esc(e.ad)}</b><small>${esc(e.blurb)}</small><span class="mp-n">×${n}</span>${acts}</div>`; };
   const usable = (id: string) => ['bozuk_kese', 'tecrube_simit', 'sans_simidi', 'altin_kupon'].includes(id);
@@ -54,14 +54,16 @@ export function createMulkPanel(d: Deps): MulkPanel {
   function envanter(m: M): string {
     let s = '';
     if (m.son) s += `<div class="mp-son">Son sandık: <b>${esc(m.son.sandik)}</b> · +${tl(m.son.tl)}${m.son.esya.length ? ' · ' + m.son.esya.map((i: string) => (ESYA_BY_ID[i]?.ikon || '') + ' ' + esc(ESYA_BY_ID[i]?.ad || i)).join(', ') : ''}</div>`;
-    const own = ((m.arsa || []) as M[]).filter(a => a.owned);
-    s += `<div class="mp-sec">İşletmelerin <small>(büfedeki gibi: seviye, işçi, kasa)</small></div>` + (own.length ? own.map(a => { const t = a.sabit ? null : DUKKAN_BY_ID[a.tip]; return `<div class="mp-row"><span class="mp-ic">${a.sabit ? esc(a.ikon || '🏪') : t ? t.ikon : '🏠'}</span><div><b>${esc(a.ad || (t ? t.ad : (a.tur === 'ev' ? 'Ev ' : 'Boş arsa ') + String(a.id).toUpperCase()))}</b><small>${a.lv}. seviye${a.isci ? ' · 👷 ' + a.isci + '/' + a.isciMax + ' işçi' : ''} · kasada ${tl(a.till)}${a.sat ? ' · ' + a.sat + ' satış' : ''}</small></div></div>`; }).join('') : '<div class="mp-note">Henüz işletmen yok: Mülk sekmesinden bir dükkan satın al.</div>');
+    const own = ((m.arsa || []) as M[]).filter(a => a.owned && (a.sabit || a.tur === 'dukkan'));   // ev ve boş arsa işletme değil
+    s += `<div class="mp-row"><span class="mp-ic">🌭</span><div><b>Sabri'nin Büfesi</b><small>${m.salon ? m.salon.stage + '. aşama' : 'İskelede'} · ana işletmen</small></div></div>`;
+    if (m.takim) s += `<div class="mp-row"><span class="mp-ic" style="background:${m.takim.renk};border-radius:12px">${m.takim.arma || '🛡️'}</span><div><b>${esc(m.takim.ad)}</b><small>Futbol kulübün · Koordinatör sekmesinde</small></div></div>`;
+    s += `<div class="mp-sec">İşletmelerin <small>(büfedeki gibi: seviye, işçi, kasa)</small></div>` + (own.length ? own.map(a => { const t = a.sabit ? null : DUKKAN_BY_ID[a.tip]; return `<div class="mp-row"><span class="mp-ic">${a.sabit ? esc(a.ikon || '🏪') : t ? t.ikon : '🏠'}</span><div><b>${esc(a.ad || (t ? t.ad : (a.tur === 'ev' ? 'Ev ' : 'Boş arsa ') + String(a.id).toUpperCase()))}</b><small>${a.lv}. seviye${a.isci ? ' · 👷 ' + a.isci + '/' + a.isciMax + ' işçi' : ''} · kasada ${tl(a.till)}${a.sat ? ' · ' + a.sat + ' satış' : ''}${a.asamaAd ? ' · ' + esc(a.asamaAd) : ''}${a.kesya && a.kesya.length ? ' · ' + a.kesya.length + ' alet' : ''}</small></div><button class="mp-b y" data-a="yonet" data-id="${a.id}">Yönet</button></div>`; }).join('') : '<div class="mp-note">Henüz işletmen yok: Mülk sekmesinden bir dükkan satın al' + (((m.arsa || []) as M[]).some(a => a.sabit) ? ' (ilki ' + Math.min(...((m.arsa || []) as M[]).filter(a => a.sabit).map(a => a.seviye)) + '. seviyede açılır).' : '.') + '</div>');
     s += `<div class="mp-sec">Sandıklar <small>(maç, orman, mülk geliri, günlük tahta ve seviye atlayınca düşer)</small></div>`;
     const ch = SANDIKLAR.filter(x => (m.sandik[x.id] || 0) > 0);
     s += ch.length ? ch.map(x => { const key = x.anahtar ? (m.esya[x.anahtar] || 0) > 0 : true; return `<div class="mp-row"><span class="mp-ic" style="font-size:30px">${x.ikon}</span><div><b>${esc(x.ad)} ×${m.sandik[x.id]}</b><small>${tl(x.tl[0])} - ${tl(x.tl[1])} ve ${x.adet[0]}-${x.adet[1]} eşya${x.anahtar ? ' · 🗝️ Altın Anahtar ister' : ''}</small></div><button class="mp-b g" data-a="sandikAc" data-id="${x.id}"${key ? '' : ' disabled'}>Aç</button></div>`; }).join('') : '<div class="mp-note">Sandığın yok. Maç oyna, ormanda mantar topla, günlük tahtayı bitir.</div>';
     const ids = Object.keys(m.esya).filter(i => ESYA_BY_ID[i] && m.esya[i] > 0);
     s += `<div class="mp-sec">Çantan <small>(${ids.length} çeşit)</small></div>`;
-    s += ids.length ? `<div class="mp-grid">${ids.map(i => itemCard(i, m.esya[i], usable(i) ? `<button class="mp-b y" data-a="kullan" data-id="${i}">Kullan</button>` : '')).join('')}</div>` : '<div class="mp-note">Çanta boş.</div>';
+    s += ids.length ? `<div class="mp-grid">${ids.map(i => itemCard(i, m.esya[i], usable(i) ? `<button class="mp-b y" data-a="kullan" data-id="${i}">Kullan</button>` : '')).join('')}</div>` : '<div class="mp-note">Çanta boş. Maç oyna, ormanda mantar topla ya da günlük tahtayı bitir.</div>';
     s += `<div class="mp-sec">Üretim <small>(malzeme biriktir, eşya üret)</small></div>`;
     s += TARIFLER.map(r => { const ok = Object.entries(r.gir).every(([k, v]) => (m.esya[k] || 0) >= v); return `<div class="mp-row"><span class="mp-ic">${ESYA_BY_ID[r.cik].ikon}</span><div><b>${esc(ESYA_BY_ID[r.cik].ad)}</b><small>${Object.entries(r.gir).map(([k, v]) => `${v} ${esc(ESYA_BY_ID[k].ad)} (${m.esya[k] || 0})`).join(' + ')}</small></div><button class="mp-b g" data-a="uret" data-id="${r.id}"${ok ? '' : ' disabled'}>Üret</button></div>`; }).join('');
     return s;
@@ -69,11 +71,11 @@ export function createMulkPanel(d: Deps): MulkPanel {
 
   function banka(m: M): string {
     const b = m.banka;
-    let s = `<div class="mp-row"><span class="mp-ic" style="font-size:34px">🏦</span><div><b>${esc(BANKA.ad)}</b><small>Hesabına bağlı ortak kasa: 4 karakterin de aynı parayı ve eşyayı görür.</small></div></div>`;
-    if (!b.yakin) return s + `<div class="mp-note">Bankaya erişmek için binanın önüne git.<br><b>Karşı yaka</b>, meydanın doğusu: üst geçitten karşıya geç.<br>Bankadaki mal: <b>${tl(b.tl)}</b> · ${Object.values(b.esya).reduce((a: number, n: any) => a + n, 0)} eşya</div>`;
+    let s = `<div class="mp-row"><span class="mp-ic" style="font-size:34px">🏦</span><div><b>${esc(BANKA.ad)}</b><small>Hesabına bağlı ortak kasa: 4 karakterin de aynı parayı ve eşyayı görür. Kredi borcu ise yalnız bu karakterin.</small></div></div>`;
+    if (!b.yakin) return s + `<div class="mp-note">Bankaya erişmek için binanın önüne git.<br><b>Karşı yaka</b>, meydanın doğusu: üst geçitten karşıya geç.<br>Bankadaki mal: <b>${tl(b.tl)}</b> · ${Object.values(b.esya).reduce((a: number, n: any) => a + n, 0)} eşya${(b.borc || 0) >= 1 ? `<br>Kredi borcun: <b>${tl(b.borc)}</b> / limit ${tl(b.limit || 0)} (günlük faiz %${Math.round((b.faiz || 0) * 100)} işliyor)` : ''}</div>`;
     s += `<div class="mp-sec">Para · bankada ${tl(b.tl)} · cebinde ${tl(m.money)}</div><div class="mp-row">${[1000, 10000, 100000].map(n => `<button class="mp-b" data-a="tlYatir" data-n="${n}"${m.money >= n ? '' : ' disabled'}>Yatır ${n / 1000}K</button>`).join('')}<button class="mp-b g" data-a="tlYatir" data-n="${Math.floor(m.money)}"${m.money >= 1 ? '' : ' disabled'}>Hepsini yatır</button></div>`;
     s += `<div class="mp-row">${[1000, 10000, 100000].map(n => `<button class="mp-b" data-a="tlCek" data-n="${n}"${b.tl >= n ? '' : ' disabled'}>Çek ${n / 1000}K</button>`).join('')}<button class="mp-b y" data-a="tlCek" data-n="${b.tl}"${b.tl >= 1 ? '' : ' disabled'}>Hepsini çek</button></div>`;
-    s += `<div class="mp-sec">Kredi · borç ${tl(b.borc || 0)} / limit ${tl(b.limit || 0)} · günlük faiz %${Math.round((b.faiz || 0) * 100)} · birikime günlük %${((b.mevduat || 0) * 100).toFixed(1)}</div><div class="mp-row">${[10000, 50000].map(n => `<button class="mp-b" data-a="krediAl" data-n="${n}"${(b.limit || 0) - (b.borc || 0) >= n ? '' : ' disabled'}>Kredi çek ${n / 1000}K</button>`).join('')}<button class="mp-b g" data-a="krediOde" data-n="${Math.min(b.borc || 0, Math.floor(m.money))}"${(b.borc || 0) >= 1 && m.money >= 1 ? '' : ' disabled'}>Borcu öde</button></div>`;
+    s += `<div class="mp-sec">Kredi · borç ${tl(b.borc || 0)} / limit ${tl(b.limit || 0)} · günlük faiz %${Math.round((b.faiz || 0) * 100)} · birikime günlük %${((b.mevduat || 0) * 100).toFixed(1)}</div><div class="mp-row">${[10000, 50000].map(n => `<button class="mp-b" data-a="krediAl" data-n="${n}"${(b.limit || 0) - (b.borc || 0) >= n ? '' : ' disabled'}>Kredi çek ${n / 1000}K</button>`).join('')}<button class="mp-b" data-a="krediAl" data-n="${Math.max(0, (b.limit || 0) - (b.borc || 0))}"${(b.limit || 0) - (b.borc || 0) >= 1 ? '' : ' disabled'}>Kalan limiti çek</button><button class="mp-b" data-a="krediOde" data-n="10000"${(b.borc || 0) >= 1 && m.money >= 1 ? '' : ' disabled'}>Öde 10K</button><button class="mp-b g" data-a="krediOde" data-n="${Math.min(b.borc || 0, Math.floor(m.money))}"${(b.borc || 0) >= 1 && m.money >= 1 ? '' : ' disabled'}>Borcu öde</button></div>`;
     const all = ESYALAR.filter(e => (m.esya[e.id] || 0) > 0 || (b.esya[e.id] || 0) > 0);
     s += `<div class="mp-sec">Eşya depo</div>` + (all.length ? all.map(e => `<div class="mp-row"><span class="mp-ic">${e.ikon}</span><div><b>${esc(e.ad)}</b><small>çantada ${m.esya[e.id] || 0} · bankada ${b.esya[e.id] || 0}</small></div><button class="mp-b" data-a="esyaYatir" data-id="${e.id}" data-n="${m.esya[e.id] || 0}"${(m.esya[e.id] || 0) ? '' : ' disabled'}>Yatır</button><button class="mp-b y" data-a="esyaCek" data-id="${e.id}" data-n="${b.esya[e.id] || 0}"${(b.esya[e.id] || 0) ? '' : ' disabled'}>Çek</button></div>`).join('') : '<div class="mp-note">Depo ve çanta boş.</div>');
     return s;
@@ -232,11 +234,11 @@ ${(a.menuSonraki || []).length ? `<small style="display:block;margin-top:4px;opa
   function paint(m: M) {
     const body = tab === 'envanter' ? envanter(m) : tab === 'banka' ? banka(m) : tab === 'gunluk' ? gunluk(m) : tab === 'mulk' ? mulk(m) : tab === 'lig' ? lig(m) : tab === 'defter' ? defter(m) : tab === 'salon' ? salon(m) : tab === 'okul' ? okul(m) : tab === 'avm' ? avm(m) : stadyum(m);
     const keep = (bg.querySelector('input[data-f="takim"]') as HTMLInputElement | null)?.value || '';
-    const sc = (bg.querySelector('.mp-body') as HTMLElement | null)?.scrollTop || 0;
+    const sc = (bg.querySelector('.mp-body') as HTMLElement | null)?.scrollTop || 0, tsc = (bg.querySelector('.mp-tabs') as HTMLElement | null)?.scrollLeft || 0;
     bg.innerHTML = `<div class="mp-card"><div class="mp-top"><h2>${TABS.find(x => x[0] === tab)![1]}</h2><span class="mp-chip">${tl(m.money)}</span><span class="mp-chip">🥨 ${m.gold}</span><button class="mp-x" data-a="close">✕</button></div>
 <div class="mp-tabs">${TABS.map(([k, l]) => `<button class="mp-t${tab === k ? ' on' : ''}" data-tab="${k}">${l}</button>`).join('')}</div><div class="mp-body">${body}</div></div>`;
     const i = bg.querySelector('input[data-f="takim"]') as HTMLInputElement | null; if (i) i.value = keep;
-    (bg.querySelector('.mp-body') as HTMLElement).scrollTop = sc;
+    (bg.querySelector('.mp-body') as HTMLElement).scrollTop = sc; (bg.querySelector('.mp-tabs') as HTMLElement).scrollLeft = tsc;
   }
 
   bg.addEventListener('pointerdown', e => e.stopPropagation());
@@ -245,21 +247,22 @@ ${(a.menuSonraki || []).length ? `<small style="display:block;margin-top:4px;opa
   bg.addEventListener('click', e => {
     if (e.target === bg) { api.close(); return; }
     const el = (e.target as HTMLElement).closest('button') as HTMLButtonElement | null; if (!el || el.disabled) return;
-    if (el.dataset.tab) { tab = el.dataset.tab as Tab; key = ''; return; }
+    if (el.dataset.tab) { tab = el.dataset.tab as Tab; key = ''; t = 0; return; }
     const a = el.dataset.a, id = el.dataset.id, n = Number(el.dataset.n) || 0;
     if (a === 'close') { api.close(); return; }
-    if (a === 'dukPick') { pickPlot = pickPlot === id ? '' : id!; key = ''; return; }
+    if (a === 'yonet') { tab = 'mulk'; focus = id || ''; key = ''; t = 0; return; }
+    if (a === 'dukPick') { pickPlot = pickPlot === id ? '' : id!; key = ''; t = 0; return; }
     if (a === 'kurEv') { cmd({ op: 'arsaKur', id, tur: 'ev' }); return; }
     if (a === 'kurDuk') { pickPlot = ''; cmd({ op: 'arsaKur', id, tur: 'dukkan', tip: el.dataset.tip }); return; }
-    if (a === 'kPick') { const k = el.dataset.k as 'c1' | 'c2' | 'arma'; club[k] = el.dataset.v!; key = ''; return; }
+    if (a === 'kPick') { const k = el.dataset.k as 'c1' | 'c2' | 'arma'; club[k] = el.dataset.v!; key = ''; t = 0; return; }
     if (a === 'takim') { cmd({ op: 'takim', name: (bg.querySelector('input[data-f="takim"]') as HTMLInputElement).value, renk: club.c1, renk2: club.c2, arma: club.arma }); return; }
     if (a === 'evAc') { cmd({ op: 'evAc', id }); api.close(); return; }
     if (a === 'kafeEsya') { cmd({ op: 'kafeEsya', id, e: el.dataset.e }); return; }
     if (a === 'tema') { cmd({ op: 'tema', id, e: el.dataset.e }); return; }
     if (a === 'salonEsya') { cmd({ op: 'salonEsya', e: el.dataset.e }); return; }
     if (a === 'bilet') { cmd({ op: 'bilet' }); api.close(); return; }
-    if (a === 'betK') { bet.k = el.dataset.v || ''; key = ''; return; }
-    if (a === 'betN') { bet.n = Number(el.dataset.v) || 500; key = ''; return; }
+    if (a === 'betK') { bet.k = el.dataset.v || ''; key = ''; t = 0; return; }
+    if (a === 'betN') { bet.n = Number(el.dataset.v) || 500; key = ''; t = 0; return; }
     if (a === 'izle') { cmd({ op: 'izle', bahis: bet.k || null, n: bet.k ? bet.n : 0 }); api.close(); return; }
     if (a) cmd({ op: a, id, n });
   });

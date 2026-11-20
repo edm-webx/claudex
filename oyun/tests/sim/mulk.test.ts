@@ -39,6 +39,13 @@ it('daily board: 3 goals, claim pays, all three give a chest', () => {
   for (const h of g.liste) c({ op: 'gunlukAl', id: h.id });
   expect(g.liste.every((h: any) => h.alindi)).toBe(true); expect(S.zones.envanter.sandik.gumus).toBe(1);
 });
+it('daily board reward is paid in full even when the daily side-income cap is used up', () => {
+  const { sim, S, c } = mk(); sim.step(1);
+  S.today.sales = 0; S.today.bonus = 1e9;           // cap exhausted: K.earn would pay 0
+  const g = S.zones.envanter.gunluk, h = g.liste[0]; h.sayi = h.hedef;
+  const m0 = S.money; c({ op: 'gunlukAl', id: h.id });
+  expect(S.money - m0).toBe(h.odul);
+});
 it('plots: buy needs level + money + the 3 plot limit; a shop sells stock into its till', () => {
   const { sim, m, S, c } = mk();
   const a1 = ARSALAR[0]; S.money = 5e6; S.level = 1; c({ op: 'arsaAl', id: 'a1' }); expect(S.zones.arsa?.plots?.a1).toBeUndefined();
@@ -120,6 +127,19 @@ it('banka: kredi çekilir, limit seviyeye bağlı, gün dönünce faiz borca ekl
   expect(k.borc).toBeGreaterThan(b0);
   S.money = 1e7; c({ op: 'krediOde', n: 1e9 }); expect(k.borc).toBe(0);
 });
+it('banka: kredi limiti aşılmaz, kalan limit kadar çekilir, atlanan günlerin faizi işlenir', async () => {
+  const { sim, S, c } = mk();
+  const { KREDI_LIMIT } = await import('../../src/game/sim/mulk');
+  sim.command({ kind: 'teleport', x: BANKA.kapi.x, z: BANKA.kapi.z });
+  const lim = KREDI_LIMIT(S.level);
+  S.money = 0; c({ op: 'krediAl', n: 1e9 });
+  const k = S.zones.arsa.kredi; expect(k.borc).toBe(lim);
+  c({ op: 'krediAl', n: 5000 }); expect(k.borc).toBe(lim);   // limit dolu: ek çekim yok
+  k.borc = 100000; k.gun = S.day - 3; S.zones.envanter.gunluk.gun = -1; sim.step(1);
+  // 3 günlük bileşik faiz: 100000 -> 103000 -> 106090 -> 109273
+  expect(k.borc).toBe(109273);
+  S.money = 5000; c({ op: 'krediOde', n: 3000 }); expect(k.borc).toBe(109273 - 3000);   // kısmi ödeme
+});
 it('okul: İngilizce soruları sınıfta sorulur, 10 cevapta sınav puanı ve genel puan oluşur', () => {
   const { sim, m, S, c } = mk();
   const o0 = () => (m.model() as any).okul;
@@ -150,4 +170,18 @@ it('kırtasiye tezgahı: müşteri listesi doğru verilince para, yanlışta sab
   for (const [id, n] of Object.entries(k.mus.istek) as [string, number][]) { if (id === 'fotokopi') c({ op: 'ktEkle', id }); else for (let i = 0; i < n; i++) c({ op: 'ktEkle', id }); }
   const m0 = S.money; c({ op: 'ktVer' }); expect(S.money).toBeGreaterThan(m0);
   c({ op: 'ktKapat' }); expect((m.view() as any).kirtasiye).toBeNull();
+});
+it('kırtasiye tezgahı: odadan yürüyüp çıkınca tezgah kapanır ve sayaçlar bir sonraki açılışa taşınmaz', () => {
+  const { sim, m, S, c } = mk(); S.level = 6; S.money = 500000;
+  c({ op: 'arsaAl', id: 'k3' });
+  sim.command({ kind: 'teleport', x: IC_BY_ID.kirtasiye.x, z: IC_BY_ID.kirtasiye.z });
+  c({ op: 'ktAc' });
+  for (let i = 0; i < 50 && !(m.view() as any).kirtasiye.mus; i++) sim.step(0.1);
+  const k = (m.view() as any).kirtasiye;
+  for (const [id, n] of Object.entries(k.mus.istek) as [string, number][]) { if (id === 'fotokopi') c({ op: 'ktEkle', id }); else for (let i = 0; i < n; i++) c({ op: 'ktEkle', id }); }
+  c({ op: 'ktVer' });
+  sim.command({ kind: 'teleport', x: IC_BY_ID.kirtasiye.x + 200, z: IC_BY_ID.kirtasiye.z + 200 }); sim.step(0.2);
+  expect((m.view() as any).kirtasiye).toBeNull();
+  sim.command({ kind: 'teleport', x: IC_BY_ID.kirtasiye.x, z: IC_BY_ID.kirtasiye.z });
+  c({ op: 'ktAc' }); expect((m.view() as any).kirtasiye.sat).toBe(0);
 });

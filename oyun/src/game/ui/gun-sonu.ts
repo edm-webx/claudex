@@ -28,18 +28,24 @@ export function createGunSonu(deps: { root: HTMLElement; rules: () => Rules | nu
   let wrap: HTMLDivElement | null = null, shownDay = -1;
   const close = () => { if (wrap) { wrap.remove(); wrap = null; } shownDay = -1; };
   function show(m: GunSonuModel) {
-    const g = deps.rules()?.rt.uiLast.giderSon as { day: number; kira: number; fatura: number; malzeme: number } | undefined;
+    const g = deps.rules()?.rt.uiLast.giderSon as { day: number; kira: number; fatura: number; malzeme: number; paid?: number } | undefined;
+    const gider = g && g.day === m.day ? g : undefined;
+    // Kasada para yetmediyse kesinti eksik: önce kira, kalanı fatura (gider.ts ile aynı sıra).
+    const kiraOd = gider ? Math.min(gider.kira, gider.paid ?? gider.kira + gider.fatura) : 0, faturaOd = gider ? (gider.paid ?? gider.kira + gider.fatura) - kiraOd : 0;
+    const eksik = !!gider && gider.paid !== undefined && gider.paid < gider.kira + gider.fatura;
+    // earned zaten personel payı ve malzeme düşülmüş NET tutardır; brüt satış = net + personel + malzeme.
+    const brut = Math.round(m.earned + (m.maas || 0) + (gider ? gider.malzeme : 0));
     close(); shownDay = m.day;
     const top = Object.entries(m.sold || {}).sort((a, b) => b[1] - a[1]).map(([k, n]) => [(PRODUCTS as Record<string, { name?: string }>)[k]?.name || k, n] as [string, number])[0];
     wrap = document.createElement('div'); wrap.className = 'gs-wrap';
     wrap.innerHTML = `<div class="gs-card"><div class="gs-moon">🌙</div><div class="gs-h">Kepenkler indi</div><div class="gs-sub">${m.day}. gün bitti. Saat 03:00, iskele sessiz.</div>
-      <div class="gs-sub" style="margin:0">Günün cirosu</div><div class="gs-ciro">${fmtMoney(m.earned)}</div>${m.record ? '<div class="gs-rec">Yeni rekor!</div>' : ''}
+      <div class="gs-sub" style="margin:0">Günün cirosu (net)</div><div class="gs-ciro">${fmtMoney(m.earned)}</div>${m.record ? '<div class="gs-rec">Yeni rekor!</div>' : ''}
       <div class="gs-row"><span>Müşteri</span><b>${m.customers}</b></div>
       <div class="gs-row"><span>Kızgın giden</span><b>${m.angry}</b></div>
       ${top ? `<div class="gs-row"><span>En çok satan</span><b>${top[0]} (${top[1]} adet)</b></div>` : ''}
-      ${m.ekip ? `<div class="gs-row"><span>Personel payı (${m.ekip} kişi, bahşiş kumbarası dahil)</span><b>−${fmtMoney(m.maas || 0)}</b></div>` : ''}
-      ${g && g.day === m.day ? `<div class="gs-row"><span>Kira</span><b>−${fmtMoney(g.kira)}</b></div><div class="gs-row"><span>Faturalar (elektrik, su, tüp)</span><b>−${fmtMoney(g.fatura)}</b></div><div class="gs-row"><span>Malzeme</span><b>−${fmtMoney(g.malzeme)}</b></div>` : ''}
-      <div class="gs-row"><span>Kasada</span><b>${fmtMoney(g && g.day === m.day ? Math.round(deps.rules()?.state.money ?? m.money) : m.money)}</b></div>
+      ${m.ekip || gider ? `<div class="gs-sub" style="margin:2px 0 4px;font-size:13px">Brüt satış ${fmtMoney(brut)}${m.ekip ? ' − personel payı ' + fmtMoney(m.maas || 0) : ''}${gider && gider.malzeme ? ' − malzeme ' + fmtMoney(gider.malzeme) : ''} = ciro</div>` : ''}
+      ${gider ? `<div class="gs-row"><span>Kira${eksik ? ' (kasa yetmedi)' : ''}</span><b>−${fmtMoney(kiraOd)}</b></div><div class="gs-row"><span>Faturalar (elektrik, su, tüp)</span><b>−${fmtMoney(faturaOd)}</b></div>` : ''}
+      <div class="gs-row"><span>Kasada</span><b>${fmtMoney(gider ? Math.round(deps.rules()?.state.money ?? m.money) : m.money)}</b></div>
       ${m.borc ? `<div class="gs-row"><span>Banka borcu (faiz işliyor)</span><b>${fmtMoney(m.borc)}</b></div>` : ''}
       <button class="gs-btn" type="button">Yeni güne başla ☀️</button></div>`;
     deps.root.appendChild(wrap);

@@ -45,16 +45,24 @@ export function installKarne(K: Kernel) {
     return best;
   }
   let kasa: { week: number; total: number; bonus: number; trophy: { id: string; name: string }; t: number } | null = null;
+  let kasaBekle: { week: number; total: number; bonus: number; trophy: { id: string; name: string } } | null = null;
   function weeklyCount(): void {
     const week = Math.floor((S.day - 1) / P.WEEK_GAME_DAYS);
     const bonus = Math.round(Math.max(150, K.incomePerMin() * P.KASA_MIN));
     const tr = TROPHIES[(week - 1) % TROPHIES.length];
     const total = Math.round(S.week.earned || 0);
     K.logEv('kasaStart', { week, total, bonus });
-    if (S.level < 7) { K.earn(bonus); K.toast('Hafta bitti! Kasa: ' + fmtMoney(total) + ', bonus ' + fmtMoney(bonus), 'good'); S.week = { earned: 0, customers: 0 }; K.stat('kasaCount'); return; }
+    if (S.level < 7) { (K.earnTam || K.earn)(bonus); K.toast('Hafta bitti! Kasa: ' + fmtMoney(total) + ', bonus ' + fmtMoney(bonus), 'good'); S.week = { earned: 0, customers: 0 }; K.stat('kasaCount'); return; }
+    kasaBekle = { week, total, bonus, trophy: { id: tr.id, name: tr.name } };
+    // Gün sonu kartı açıkken kasa sayımı üst üste binmesin: kart kapanınca (yeniGun) başlar.
+    if (rt.pauseWhy !== 'gunSonu') baslatKasa();
+  }
+  function baslatKasa(): void {
+    if (!kasaBekle) return;
+    const b = kasaBekle; kasaBekle = null;
     rt.paused = true; rt.pauseWhy = 'kasa';
-    kasa = { week, total, bonus, trophy: { id: tr.id, name: tr.name }, t: 0 };
-    rt.uiLast.kasaSayimi = { week, total, bonus, trophy: kasa.trophy };
+    kasa = { ...b, t: 0 };
+    rt.uiLast.kasaSayimi = { week: b.week, total: b.total, bonus: b.bonus, trophy: b.trophy };
   }
   function finishKasa(): void {
     if (!kasa) return;
@@ -79,18 +87,10 @@ export function installKarne(K: Kernel) {
     const T0 = S.today!, day = S.day;
     updateKarne();
     const link = worstLink();
-    let complaint: string = LINES.dayCard.good, fix: { label: string; cost: number } | null = null;
-    if (link && COMPLAINTS[link]) {
-      const cp = COMPLAINTS[link];
-      complaint = cp.text.replace('{station}', 'Döner');
-      const sol = K.slowSolution(link, link === 'production' || link === 'transport' ? 'doner' : undefined) as { cost?: number; info?: boolean };
-      if (sol && sol.cost && !sol.info) fix = { label: cp.fix, cost: sol.cost };
-    }
     const maas = Math.round(S.workers.reduce((a, w) => a + ((w as { paidToday?: number }).paidToday || 0), 0)), ekip = S.workers.length;
     S.workers.forEach(w => { (w as { paidToday?: number }).paidToday = 0; if (T0.angry < 3) w.morale = Math.min(100, (w.morale || 70) + 5); });
     // survey 2026-10-24 (reversed): at 03:00 the screen fades and the gün sonu card shows the day's ciro; the next
     // day starts behind it (morning) and the sim waits until the player presses "Yeni güne başla".
-    void complaint; void fix;
     const best = rt.dayHistory.reduce((m, d) => Math.max(m, d.earned), 0);
     if ((rt as unknown as { gunSonuCard?: boolean }).gunSonuCard) {
     rt.uiLast.gunSonu = { day, earned: Math.round(T0.earned), customers: T0.customers, angry: T0.angry, money: Math.round(S.money), record: Math.round(T0.earned) > best && day > 1, maas, ekip, sold: { ...((T0 as unknown as { sold?: Record<string, number> }).sold || {}) }, borc: Math.floor((S.zones.arsa as { kredi?: { borc?: number } } | undefined)?.kredi?.borc || 0) };
@@ -105,8 +105,9 @@ export function installKarne(K: Kernel) {
   }
   function update(dt: number): void {
     if (kasa) { kasa.t += dt; }
+    else if (kasaBekle && rt.pauseWhy !== 'gunSonu') baslatKasa();
     if (S.dayT >= P.GAME_DAY_S) endDay();
     const d = dirtyTables(); if (d) S.today!.dirtyT += dt * d;
   }
-  return { update, endDay, updateKarne, gradeScores, finishKasa, hasKasa: () => !!kasa, kasaTick(dt: number) { if (kasa) { kasa.t += dt; if (kasa.t > 30) finishKasa(); } } };
+  return { update, endDay, updateKarne, gradeScores, finishKasa, hasKasa: () => !!kasa, kasaTick(dt: number) { if (!kasa && kasaBekle && rt.pauseWhy !== 'gunSonu') baslatKasa(); if (kasa) { kasa.t += dt; if (kasa.t > 30) finishKasa(); } } };
 }

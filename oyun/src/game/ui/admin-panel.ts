@@ -55,7 +55,7 @@ export function createAdminPanel(d: Deps): AdminPanelView {
   let frozen = false, pollT = 3, susT = 1, namesT = 0, listT = 0, lists: { yasaklar: Satir[]; susturmalar: Satir[] } = { yasaklar: [], susturmalar: [] };
 
   const say = (t: string) => { msg = t; paint(); };
-  const run = async (f: () => Promise<string | null>, okText: string) => { const e = await f(); say(e ? '⚠ ' + e : '✓ ' + okText); try { d.sfx?.(e ? 'error' : 'buy'); } catch { /* */ } listT = 0; };
+  const run = async (f: () => Promise<string | null>, okText: string) => { const e = await f(); say(e ? '⚠ ' + e : '✓ ' + okText); try { d.sfx?.(e ? 'error' : 'pop'); } catch { /* */ } listT = 0; };
   const armed = (k: string) => arm === k;
 
   function ensureUi() {
