@@ -13,7 +13,7 @@
 import type { Vec2, Vec3 } from '../../../engine/api';
 import type { ProductId } from '../schema';
 
-export type ActorKind = 'worker' | 'regular' | 'vip' | 'kapkac' | 'cat' | 'dog' | 'gull' | 'parrot';
+export type ActorKind = 'worker' | 'regular' | 'sakin' | 'vip' | 'kapkac' | 'cat' | 'dog' | 'gull' | 'parrot';
 
 export interface CarryItem { type: ProductId; tier: number; by?: number; carrier?: number; priceX?: number }
 
