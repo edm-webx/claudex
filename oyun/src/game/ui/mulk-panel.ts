@@ -213,7 +213,7 @@ ${(a.menuSonraki || []).length ? `<small style="display:block;margin-top:4px;opa
 
   function avm(m: M): string {
     const a = m.avm as M, own = new Set<string>(a.alinan);
-    let h = `<div class="mp-row"><span class="mp-ic" style="font-size:34px">🛍</span><div><b>Martı AVM</b><small>Giyim ve kozmetik karakter dolabına girer; sinema ve eğlence tecrübe verir.</small></div></div>`;
+    let h = `<div class="mp-row"><span class="mp-ic" style="font-size:34px">🛍</span><div><b>Martı AVM</b><small>Giyim ve bakım ürünleri karakter dolabına girer (parfüm yalnız tecrübe verir); sinema ve eğlence tecrübe verir.</small></div></div>`;
     if (!a.yakin) h += '<div class="mp-note">Alışveriş için karşı yakadaki Martı AVM\'ye gir.</div>';
     for (const [k, ad] of [['giyim', 'Giyim'], ['kozmetik', 'Kozmetik'], ['sinema', 'Sinema'], ['eglence', 'Eğlence']]) {
       h += `<div class="mp-sec">${ad}</div><div class="mp-grid">` + (a.urun as M[]).filter(u => u.kat === k).map(u => `<div class="mp-it"><span class="mp-ic">${u.ikon}</span><b>${esc(u.ad)}</b><small>${esc(u.desc)}</small>${own.has(u.id) ? '<small>✓ dolapta</small>' : `<button class="mp-b g" data-a="avmAl" data-id="${u.id}"${a.yakin && m.money >= u.fiyat ? '' : ' disabled'}>${tl(u.fiyat)}</button>`}</div>`).join('') + '</div>';

@@ -19,7 +19,7 @@ import {
 } from '../../content/esya';
 import { IC_CANLI, icOfArsa, icIcinde, bankaGise, IC_BY_ID, icDim, icWorld } from '../../content/ic-mekan';
 import { OKUL_KELIME, OKUL_SINAV } from '../../content/okul';
-import { AVM_URUN, AVM_BY_ID } from '../../content/avm';
+import { AVM_URUN, AVM_BY_ID, AVM_GIY } from '../../content/avm';
 import { KT_URUN, KT_BY_ID, KT_MUSTERI, KT_SABIR } from '../../content/kirtasiye';
 export const KREDI_FAIZ = 0.03, MEVDUAT_FAIZ = 0.005, KREDI_LIMIT = (lv: number) => 25000 + lv * 15000;
 export const KAFE_TEMA: Record<string, string> = { retro: 'Retro', modern: 'Modern', bohem: 'Bohem', deniz: 'Deniz' };
@@ -212,7 +212,7 @@ export function installMulk(K: Kernel) {
     if (S.money < u.fiyat) { K.toast(u.ad + ' ' + fmtMoney(u.fiyat) + '.', 'bad'); return; }
     K.spend(u.fiyat); K.addXP(u.xp); K.stat('avm');
     if (kalici) o.alinan.push(id);
-    K.toast(u.ikon + ' ' + u.ad + (kalici ? ' alındı (karakter dolabında)' : ': keyifli vakit! +' + u.xp + ' tecrübe'), 'good'); K.saveNow();
+    K.toast(u.ikon + ' ' + u.ad + (kalici ? (AVM_GIY[id] ? ' alındı (karakter dolabında)' : ' alındı: keyifli, +' + u.xp + ' tecrübe') : ': keyifli vakit! +' + u.xp + ' tecrübe'), 'good'); K.saveNow();
   }
   // ── kırtasiye first-person counter (own the shop, stand inside, press "Tezgaha geç") ──
   type KtMus = { ad: string; istek: Record<string, number>; t: number };

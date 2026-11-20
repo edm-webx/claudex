@@ -223,7 +223,7 @@ export function createKulis(deps: {
         const dz = deps.dolap ? deps.dolap() : { owned: [], worn: {}, gold: 0 };
         const SL: Record<string, string> = { ust: 'Üst', alt: 'Alt', ayakkabi: 'Ayakkabı', aksesuar: 'Aksesuar', sapka: 'Şapka', kostum: 'Kostüm' };
         const avm = (deps.avm ? deps.avm() : []).filter(id => AVM_GIY[id]);
-        return `<div class="kl-h">Dolap</div>${avm.length ? `<div class="kl-l">Martı AVM'den aldıkların</div><div class="kl-row">${avm.map(id => `<button class="kl-ch" data-avm="${id}">${AVM_BY_ID[id].ikon} ${esc(AVM_BY_ID[id].ad)} · Giy</button>`).join('')}</div>` : '<div class="kl-sub">Martı AVM\'den aldığın kıyafetler burada giyilir.</div>'}<div class="kl-sub">Markalı kıyafetler Altın Simitle alınır. Giydiğin, gardrop seçiminin üstüne geçer. Kasanda ${dz.gold} Altın Simit var.</div>
+        return `<div class="kl-h">Dolap</div>${avm.length ? `<div class="kl-l">Martı AVM'den aldıkların</div><div class="kl-row">${avm.map(id => `<button class="kl-ch" data-avm="${id}">${AVM_BY_ID[id].ikon} ${esc(AVM_BY_ID[id].ad)} · Giy</button>`).join('')}</div>` : '<div class="kl-sub">Martı AVM\'den aldığın kıyafetler burada giyilir.</div>'}<div class="kl-sub">Markalı kıyafetler Altın Simitle alınır. AVM'den giydiğin parça, aynı yerdeki gardrop parçasının yerine geçer. Kasanda ${dz.gold} Altın Simit var.</div>
 ${KIYAFET_ZINCIRLER.map(z => `<div class="kl-l">${esc(z.name)} <small style="font:700 12px var(--body);opacity:.7">${esc(z.tagline)}</small></div><div class="kl-row">${KIYAFET_URUNLER.filter(u => u.zincir === z.id).map(u => {
           const own = dz.owned.includes(u.id), worn = dz.worn[u.slot] === u.id;
           return `<button class="kl-ch${worn ? ' on' : ''}" data-ky="${own ? (worn ? 'take' : 'wear') : 'buy'}" data-id="${u.id}" ${!own && dz.gold < u.gold ? 'style="opacity:.55"' : ''}><span style="display:inline-block;width:14px;height:14px;border-radius:50%;border:2px solid #3b2a20;vertical-align:-2px;background:${u.colors[0]}"></span> ${esc(u.name)} <small style="font:700 11px var(--body)">${SL[u.slot] || ''} · ${own ? (worn ? 'giyili ✓' : 'giy') : u.gold + ' 🥯'}</small></button>`;
@@ -287,7 +287,22 @@ ${e.sapka ? `<div class="kl-l">Şapka rengi</div>${sw('sapkaRenk', COLS, e.sapka
       const el = (e.target as HTMLElement).closest('button') as HTMLButtonElement | null; if (!el || !m) return;
       if (el.dataset.go) { finish(); return; }
       if (el.dataset.tab) { tab = el.dataset.tab as Tab; spin = 0; tap(); paint(); return; }
-      if (el.dataset.avm) { const g = AVM_GIY[el.dataset.avm]; if (g) set({ ...g }); return; }
+      if (el.dataset.avm) {
+        const g = AVM_GIY[el.dataset.avm];
+        if (g) {
+          // AVM parçası aynı yerdeki gardrop parçasının (ve kostümün) yerine geçer; yoksa gardrop katmanı (wornLook) AVM'yi ezerdi
+          const slots = new Set<string>();
+          if ('ust' in g || 'ustStil' in g) { slots.add('ust'); slots.add('kostum'); }
+          if ('alt' in g || 'altStil' in g) { slots.add('alt'); slots.add('kostum'); }
+          if ('sapka' in g) slots.add('sapka');
+          if ('ayakkabi' in g) { slots.add('ayakkabi'); slots.add('kostum'); }
+          const worn = deps.dolap ? deps.dolap().worn : {};
+          let taken = false;
+          for (const sl of slots) if (worn[sl]) { deps.command({ kind: 'kiyafet', op: 'take', id: worn[sl] }); taken = true; }
+          set({ ...g }); if (taken) { heroKey = ''; setTimeout(paint, 30); }
+        }
+        return;
+      }
       if (el.dataset.ky) { deps.command({ kind: 'kiyafet', op: el.dataset.ky, id: el.dataset.id }); tap(); heroKey = ''; setTimeout(paint, 30); return; }
       if (el.dataset.sinif) { const sn = SINIFLAR.find(x => x.id === el.dataset.sinif); if (sn) set({ sinif: sn.id, ...sn.kit }); return; }
       const k = el.dataset.k!, v = el.dataset.v!;

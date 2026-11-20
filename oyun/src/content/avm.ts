@@ -18,5 +18,7 @@ export const AVM_URUN: AvmUrun[] = [
 export const AVM_GIY: Record<string, Record<string, string>> = {
   gomlek_keten: { ustStil: 'shirt', ust: '#e9dcc0' }, esofman_mart: { ustStil: 'hoodie', ust: '#2f6f9a', altStil: 'pants', alt: '#2f6f9a' },
   deri_ceket: { ustStil: 'jacket', ust: '#2b2b33' }, sapka_kasket: { sapka: 'kasket', sapkaRenk: '#7d5638' }, spor_ayakkabi: { ayakkabi: '#fbf9f4' },
+  // bakım ürünleri de dolapta giyilir: karakterin sakalı/saçı toparlanır (parfümün görünür bir izi yok, yalnız tecrübe verir)
+  sakal_bakim: { sakalStil: 'kisa' }, sac_jole: { sac: 'short' },
 };
 export const AVM_BY_ID: Record<string, AvmUrun> = Object.fromEntries(AVM_URUN.map(u => [u.id, u]));

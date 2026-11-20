@@ -159,6 +159,13 @@ it('AVM: içeride alışveriş, kıyafet dolaba girer, sinema tecrübe verir', (
   const m1 = S.money; c({ op: 'avmAl', id: 'deri_ceket' }); expect(S.money).toBe(m1);
   c({ op: 'avmAl', id: 'film_doner' }); c({ op: 'avmAl', id: 'film_doner' }); expect(S.money).toBe(m1 - 1800);
 });
+it('AVM: giyim ve bakım ürünlerinin hepsi dolapta giyilebilir (AVM_GIY), yalnız parfüm hariç', async () => {
+  const { AVM_URUN, AVM_GIY } = await import('../../src/content/avm');
+  for (const u of AVM_URUN.filter(x => x.kat === 'giyim' || x.kat === 'kozmetik')) {
+    if (u.id === 'parfum_lodos') { expect(AVM_GIY[u.id], u.id).toBeUndefined(); continue; }
+    expect(Object.keys(AVM_GIY[u.id] || {}).length, u.id).toBeGreaterThan(0);
+  }
+});
 it('kırtasiye tezgahı: müşteri listesi doğru verilince para, yanlışta sabır düşer', () => {
   const { sim, m, S, c } = mk(); S.level = 6; S.money = 500000;
   c({ op: 'arsaAl', id: 'k3' });
