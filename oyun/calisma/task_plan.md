@@ -29,3 +29,8 @@ DÜZELTME: Yukarıdaki 2026-11-09 [x] işaretleri koddan doğrulandı; 262 anket
 Plan belgesi: https://claude.ai/artifact/F2BUtovpYYC5vMA5WC7QtC (8 aşama, 13 karar). Uzman paketleri: studyo/uzman-paketleri.json (213 paket: 173 İSTEK, 40 ÖNERİ), eleştirmenler: studyo/elestirmenler.json.
 Kırmızı çizgiler: stok yok; prop işçi yok; büfe iskelede yerinde büyür (zincir, kestane/mısır, müdavim, deniz platformu yok); para sesi yumuşak; ışık koyu, yazı okunur; ÖNERİ paketleri onaysız yapılmaz.
 Aşamalar (oturum): [ ] 0 Karar ve ölçüm (12-14) [ ] 1 Temizlik ve temel (60-70) [ ] 2 Akıcılık ve görsel omurga (50-55) [ ] 3 Gerçek çalışanlar ve canlı odalar (85-100) [ ] 4 Büfe 10 aşama ve işletmeler (110-130) [ ] 5 Futbol ve stadyum (50-55) [ ] 6 Dünya, orman, sokak, hikâye (130-150) [ ] 7 Karakter, arayüz filigranı, online (70-90).
+
+## UX thread (claude/project-thread-m0d31m), DURAKLATILDI 2026-11-20 18:40
+Yapıldı (ekranda DOĞRULANMADI, a1.png alındı ama bakılmadı): admin düğmesi .sb-hbtns içine taşındı (ui/admin-panel.ts), geniş ekranda panel sağ kanat olur ve --sr değişkenini yazar (HUD/dock/kartlar sola kayar). Test kancası: net/admin.ts `__adminUiTest(true)` yalnız ?noloop sayfasında.
+Sıradaki: (1) admin kanadını ekranda doğrula; (2) yazı min 14px + kontrast (yeni-hud.ts, hedef-card, v2-style); Hedefler kartı cam zemini daha opak, sol; sipariş paneli çakışması; (3) envanterde dükkan adları; (4) ana menüde "2.0" etiketi (v2ui.ts U.title .sb-sub yanına); (5) ilk 10 dk (tutorial.ts, ölü hedefler reg1/regular/herzaman); (6) karakter yaratıcı EN SON (kulis.ts, UX-15). Ana thread'e haber: engine/ui/index.ts toast() ve boot.ts'e dokunmadan önce yaz.
+Ekran aracı: /tmp/claude-0/s/cap.mjs (oturuma özel; tests/browser/shot.mjs benzeri).

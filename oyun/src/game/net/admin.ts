@@ -10,6 +10,8 @@ export interface Satir { id: string; ad: string; bitis: string | null; neden?: s
 
 let admin = false;
 export const adminMi = () => admin;
+// Yalnızca test sayfasında (?noloop) arayüzü sunucusuz denemek için: düğmeyi gösterir, sunucu yetkisi (RLS) yine yöneticiye özel kalır.
+if (typeof location !== 'undefined' && /[?&]noloop\b/.test(location.search)) (globalThis as Record<string, unknown>).__adminUiTest = (v: boolean) => { admin = v; };
 
 const aktif = (bitis: string | null) => !bitis || new Date(bitis).getTime() > Date.now();
 const bitisOf = (dk: number | null) => dk ? new Date(Date.now() + dk * 60000).toISOString() : null;
