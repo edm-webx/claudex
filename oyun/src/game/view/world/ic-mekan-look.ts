@@ -295,14 +295,14 @@ function buildRoom(m: IcMekan, own: { lv: number; isci: number; esya: string[]; 
   }
   // staff behind the counter: hired workers (owned) or the house staff
   const ctr = items.find(i => i.k === 'tezgah' || i.k === 'bar' || i.k === 'acikBufe');
-  if (ctr && !live && !empty) {
-    const n = m.salon ? (fine ? 3 : 2) : own ? Math.max(1, Math.min(3, own.isci || 1)) : 1;
+  if (ctr && !live && !empty && !m.salon) {   // halls (salon W/E) have no real hired crew: no prop staff, no prop waiters (red line)
+    const n = own ? Math.max(1, Math.min(3, own.isci || 1)) : 1;
     for (let i = 0; i < n; i++) {
       const p = person(i === 0 && (m.tur === 'kafe' || m.tur === 'bistro') && has.has(m.tur === 'kafe' ? 'barista' : 'kahve_bar') ? 'barista' : m.tur === 'lokanta' || m.salon || m.tur === 'kafeterya' ? (i === 0 ? 'chef' : 'staff') : 'staff', ctx.seed + i * 11, false, m.tur === 'bistro' ? '#1d4f86' : m.tur === 'kafeterya' ? '#2f9e5a' : '#7a3b1c');
       p.position.set(ctr.u - ctr.w / 2 + (i + 0.5) * ctr.w / n, 0, ctr.v - ctr.d / 2 - 0.45); cur.add(p); an.bob.push(p);
     }
-    // a waiter walks the room when the business has extra hands (or always in the halls)
-    const waiters = m.salon ? (fine ? 2 : 1) : own && own.isci >= 2 ? Math.min(2, own.isci - 1) : 0;
+    // a waiter walks the room when the business has extra hands 
+    const waiters = own && own.isci >= 2 ? Math.min(2, own.isci - 1) : 0;
     for (let i = 0; i < waiters; i++) { const p = person('staff', ctx.seed + 50 + i, false); cur.add(p); const yv = ctr.v + ctr.d / 2 + 0.9; an.walkers.push({ o: p, p: [[-W / 2 + 1.2, yv], [W / 2 - 1.2, yv], [W / 2 - 1.2, D / 2 - 1.4], [-W / 2 + 1.2, D / 2 - 1.4]], t: i * 2, sp: 0.8 }); }
   }
   if (m.tur === 'morg') an.flick.push(grp);

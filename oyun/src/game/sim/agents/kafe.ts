@@ -22,7 +22,7 @@ const LINES_IN = ['Selam, bir şey alabilir miyim?', 'Kahve kokusu buraya kadar 
 const LINES_OUT = ['Eline sağlık!', 'Çok güzel olmuş.', 'Yine geleceğiz!', 'Tam kıvamında.'];
 const LINES_ANGRY = ['Çok bekledim, gidiyorum!', 'Kimse yok mu?', 'Bu kadar beklenmez.'];
 
-interface Guest { a: Actor; st: 'in' | 'queue' | 'served' | 'toSeat' | 'sit' | 'out'; t: number; path: Vec2[]; slot: number; claimed: number; seat: Vec2 | null; want: string }
+interface Guest { a: Actor; st: 'in' | 'queue' | 'served' | 'toSeat' | 'sit' | 'out'; t: number; path: Vec2[]; slot: number; claimed: number; seat: Vec2 | null; tbl: number; face: number; want: string }
 interface Wk { a: Actor; idx: number; st: 'post' | 'brew' | 'hand'; t: number; guest: Guest | null; path: Vec2[] }
 interface Room { arsa: string; room: string; bistro: boolean; guests: Guest[]; wk: Wk[]; seatTaken: Set<number> }
 
@@ -39,7 +39,7 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
     /** a = position ALONG the counter, b = distance from the counter on the customer side (negative = staff side) */
     const P = (a: number, b: number): Vec2 => vert ? w(tz.u - b, a) : w(a, tz.v + b);
     const cu = vert ? tz.v - tz.w / 2 + 0.3 : tz.u - tz.w / 2 + 1.0, endU = vert ? tz.v + tz.w / 2 + 0.5 : tz.u + tz.w / 2 + 0.6;
-    const tables = lay.filter(i => i.k.startsWith('masa')).map(i => ({ u: i.u, v: i.v }));
+    const tables = lay.filter(i => i.k.startsWith('masa')).map(i => ({ u: i.u, v: i.v, k: i.k }));
     return { m, D, W, bv: tz.v, cu, endU, w, P, vert, door: w(0, D / 2 + 2.6), inside: w(0, D / 2 - 1.0), tables, sdv: D < 5 ? -0.6 : 0.7, wide: !vert && !(m.tur === 'kafe' || m.tur === 'bistro'), gap: vert ? 0.5 : 0.85, maxQ: vert ? 3 : 5 };
   };
   const slotU = (g: { cu: number; gap: number; vert: boolean }, i: number) => g.cu + (g.vert ? 0 : 0.7) + Math.max(0, i) * g.gap;
@@ -56,12 +56,12 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
     const g = geom(r), seed = Math.floor(rng.next() * 1e6), look = LOOKS[Math.floor(rng.next() * LOOKS.length)];
     const a = env.reg.add('regular', 'kafe-' + r.room + '-' + seed, { kind: 'regular', look: { lookType: look, lookSeed: seed }, seed }, g.door, { name: '' });
     const slot = r.guests.filter(x => x.st === 'queue' || x.st === 'in').length;
-    r.guests.push({ a, st: 'in', t: 0, path: approach(r, slot), slot, claimed: 0, seat: null, want: '' });
+    r.guests.push({ a, st: 'in', t: 0, path: approach(r, slot), slot, claimed: 0, seat: null, tbl: -1, face: 0, want: '' });
     if (rng.chance(0.4)) { a.say = LINES_IN[Math.floor(rng.next() * LINES_IN.length)]; a.sayT = 2.5; }
   }
   function leave(r: Room, gu: Guest, angry: boolean) {
     const g = geom(r); gu.st = 'out'; gu.t = 0; gu.claimed = 0; gu.path = [g.inside, g.door]; gu.a.mood = angry ? 'impatient' : 'happy';
-    if (gu.seat) { const i = g.tables.findIndex(t => { const p = g.w(t.u, t.v + g.sdv); return Math.hypot(p.x - gu.seat!.x, p.z - gu.seat!.z) < 0.01; }); if (i >= 0) r.seatTaken.delete(i); gu.seat = null; }
+    if (gu.seat) { if (gu.tbl >= 0) r.seatTaken.delete(gu.tbl); gu.seat = null; gu.tbl = -1; }
     gu.a.say = (angry ? LINES_ANGRY : LINES_OUT)[Math.floor(rng.next() * 3)]; gu.a.sayT = 2.2;
   }
   function served(r: Room, gu: Guest, by: 'player' | 'worker') {
@@ -70,8 +70,11 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
     const g = geom(r);
     const free = g.tables.map((_, i) => i).filter(i => !r.seatTaken.has(i));
     if (free.length && rng.chance(0.55)) {
-      const i = free[Math.floor(rng.next() * free.length)]; r.seatTaken.add(i); const p = g.w(g.tables[i].u, g.tables[i].v + g.sdv);
-      gu.st = 'toSeat'; gu.seat = p; gu.path = [g.w(g.tables[i].u + 0.9, g.bv + 1.6), g.w(g.tables[i].u + 0.9, g.tables[i].v + g.sdv), p]; gu.t = 0;
+      // sit ON the chair at the table's +u side (masa(): chair at u+0.68, masa4 corner u+0.48 / v+0.48) and face the table centre
+      const i = free[Math.floor(rng.next() * free.length)], t = g.tables[i], cu2 = t.k === 'masa4' ? 0.48 : 0.68, cv2 = t.k === 'masa4' ? 0.48 : 0;
+      r.seatTaken.add(i); const p = g.w(t.u + cu2, t.v + cv2), c0 = g.w(t.u, t.v);
+      gu.st = 'toSeat'; gu.seat = p; gu.tbl = i; gu.face = Math.atan2(c0.x - p.x, c0.z - p.z);
+      gu.path = [g.w(t.u + 1.0, g.bv + 1.6), g.w(t.u + 1.0, t.v + cv2), p]; gu.t = 0;
     } else leave(r, gu, false);
     gu.a.mood = 'happy'; gu.a.carry = [];
     return v;
@@ -85,7 +88,7 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
     while (r.wk.length < want) {
       const g = geom(r), idx = r.wk.length, seed = 31 * idx + (r.bistro ? 7 : 3), role = idx === 0 ? 'barista' : 'garson';
       const a = env.reg.add('worker', 'kafe-' + r.room + '-w' + idx, { kind: 'worker', role, seed }, g.w(0, g.D / 2 + 0.6), { role, name: 'Çalışan', rank: 0 });
-      r.wk.push({ a, idx, st: 'post', t: 0, guest: null, path: [g.inside, g.P(g.endU, 1.4), g.P(g.endU, -0.7), g.P(g.cu + (g.vert ? 0.6 : 2.3) + idx * (g.vert ? 0.5 : 1.4), -0.7)] });
+      r.wk.push({ a, idx, st: 'post', t: 0, guest: null, path: [g.inside, g.P(g.endU, 1.4), g.P(g.endU, -0.7), g.P(g.cu + (g.vert ? 0.6 : 1.5) + idx * (g.vert ? 0.5 : 1.4), -0.7)] });   // last point = postOf(): no back-slide on arrival
     }
   }
   const postOf = (r: Room, idx: number): Vec2 => { const g = geom(r); return g.P(g.cu + (g.vert ? 0.6 : 1.5) + idx * (g.vert ? 0.5 : 1.4), -0.7); };
@@ -106,8 +109,8 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
         if (Math.hypot(tp.x - a.x, tp.z - a.z) > 0.08) step1(a, tp, 1.4, dt), a.act = 'walk'; else { a.act = 'idle'; a.speed = 0; a.rot = geomYaw(r); }
         const left = 1 - gu.t / PAT; a.mood = left < 0.3 ? 'impatient' : 'ok';
         if (gu.t >= PAT && !gu.claimed) leave(r, gu, true);
-      } else if (gu.st === 'toSeat') { if (follow(a, gu.path, 1.4, dt)) { gu.st = 'sit'; gu.t = 0; a.act = 'sit'; a.speed = 0; } }
-      else if (gu.st === 'sit') { a.act = 'sit'; if (gu.t > 14 + (gu.slot % 3) * 3) { a.act = 'idle'; leave(r, gu, false); } }
+      } else if (gu.st === 'toSeat') { if (follow(a, gu.path, 1.4, dt)) { gu.st = 'sit'; gu.t = 0; a.act = 'sit'; a.speed = 0; a.rot = gu.face; } }
+      else if (gu.st === 'sit') { a.act = 'sit'; a.rot = gu.face; if (gu.t > 14 + (gu.slot % 3) * 3) { a.act = 'idle'; leave(r, gu, false); } }
       else if (gu.st === 'out') { if (follow(a, gu.path, 1.6, dt)) { env.reg.remove(a); r.guests.splice(i, 1); } }
     }
     // workers: take the oldest unclaimed waiting guest, brew at the machine, hand over
