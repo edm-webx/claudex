@@ -117,6 +117,8 @@ export interface Loop {
   readonly pauseWhy: string;
   readonly tick: number;           // sim ticks run so far
   readonly simTime: number;        // seconds of sim time run
+  /** PRF-14: sessiz yavaşlama sayacı. Kare başı üst sınırı aşıp bırakılan sim süresi (oyun zamanı kaybı) ve 250 ms kırpma. */
+  stats(): { slowFrames: number; lostMs: number; clampedFrames: number; maxStepsInFrame: number };
   /** Drive one frame manually at wall time `nowMs` (tests: render-rate independence). */
   frame(nowMs: number): void;
   /** Run whole fixed steps covering `sec` of sim time, no render (test hook `step(sec)`, `?noloop`). */
@@ -634,7 +636,10 @@ export interface Nav {
   setBlocked(rect: Rect, on: boolean): void;             // invalidates caches
   hash(cell?: number): SpatialHash;
   steering: Steering;
+  /** PRF-14: yol bulma sayaçları (yalnız sayı; sim sonucunu etkilemez). Yedek nav'da yok. */
+  stats?(): NavStats;
 }
+export interface NavStats { pathCalls: number; pathFails: number; expanded: number; maxExpanded: number; flowBuilds: number; flowHits: number; }
 export interface NavDeps { portals?: { zone: string; portal: Portal }[]; log?: Logger; }
 
 // ───────────────────────────── anim (C) ─────────────────────────────

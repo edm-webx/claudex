@@ -22,6 +22,7 @@ export function createLoop(o: LoopOpts): Loop {
   let paused = false, pauseWhy = '';
   let last = -1, acc = 0, tick = 0, simTime = 0;
   let pendingRenderDt = 0, advResidual = 0;
+  let slowFrames = 0, lostMs = 0, clampedFrames = 0, maxStepsInFrame = 0;
 
   const doStep = (): boolean => {
     try { o.step(dt); } catch (e) { o.onError?.('step', e); }
@@ -50,16 +51,18 @@ export function createLoop(o: LoopOpts): Loop {
     get pauseWhy() { return pauseWhy; },
     get tick() { return tick; },
     get simTime() { return simTime; },
+    stats: () => ({ slowFrames, lostMs: Math.round(lostMs), clampedFrames, maxStepsInFrame }),
     frame(nowMs) {
       if (paused) { last = nowMs; return; }
       if (last < 0) { last = nowMs; return; }
       let fms = nowMs - last; last = nowMs;
       if (fms < 0) fms = 0;
-      if (fms > 250) fms = 250;
+      if (fms > 250) { fms = 250; clampedFrames++; }
       acc += fms;
       let n = 0;
       while (acc >= dtMs - 1e-7 && n < maxSteps) { doStep(); acc -= dtMs; n++; }
-      if (n >= maxSteps && acc >= dtMs) acc = acc % dtMs; // drop excess: sim slows, never explodes
+      if (n > maxStepsInFrame) maxStepsInFrame = n;
+      if (n >= maxSteps && acc >= dtMs) { slowFrames++; lostMs += acc - (acc % dtMs); acc = acc % dtMs; } // drop excess: sim slows, never explodes (PRF-14: counted, not silent)
       if (acc < 0) acc = 0;
       pendingRenderDt += fms / 1000;
       // 30 fps mode is time based, not "every second rAF": a 120 Hz screen still renders ~30/s and a device whose rAF

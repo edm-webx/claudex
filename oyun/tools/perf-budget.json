@@ -1,0 +1,104 @@
+{
+  "_not": "PRF-02/PRF-14 performans bütçesi. 'sim' bölümü Node'da ölçülür (donanımdan bağımsız). Diğer bölümler perf-gate.mjs ölçümünden sonra yazılır.",
+  "sim": {
+    "tickP95Ms": 8,
+    "tickMaxMs": 25,
+    "pathCallsPerTickMax": 24
+  },
+  "kademe": {
+    "akici": {
+      "calls": 203.55,
+      "tris": 278206.85,
+      "programs": 79.35,
+      "geos": 451.95,
+      "texs": 144.9,
+      "heapMB": 111.65
+    },
+    "dengeli": {
+      "calls": 759,
+      "tris": 490924.65,
+      "programs": 152.95,
+      "geos": 479.55,
+      "texs": 161,
+      "heapMB": 109.02
+    },
+    "sahane": {
+      "calls": 779.7,
+      "tris": 499765.85,
+      "programs": 152.95,
+      "geos": 479.55,
+      "texs": 161,
+      "heapMB": 131.79
+    }
+  },
+  "boyut": {
+    "gameJsMB": 2.86,
+    "distMB": 7.41
+  },
+  "sahibinGpu": {
+    "_not": "PRF-01 perfRecord kayıtlarından sahibin PC/telefonunda doldurulur. SwiftShader süresinden ASLA türetilmez.",
+    "akici": {
+      "kareP95Ms": null
+    },
+    "dengeli": {
+      "kareP95Ms": null
+    },
+    "sahane": {
+      "kareP95Ms": null
+    }
+  },
+  "_temel": {
+    "tarih": "2026-11-20",
+    "pay": "%15 (heapMB %15x1.2: GC dalgalanması)",
+    "olculen": {
+      "akici": {
+        "calls": 177,
+        "_calls": "iskele",
+        "tris": 241919,
+        "_tris": "karsi-yaka",
+        "programs": 69,
+        "_programs": "karsi-yaka",
+        "geos": 393,
+        "_geos": "bufe-ici",
+        "texs": 126,
+        "_texs": "avm-ici",
+        "heapMB": 80.9,
+        "_heapMB": "bufe-ici"
+      },
+      "dengeli": {
+        "calls": 660,
+        "_calls": "iskele",
+        "tris": 426891,
+        "_tris": "karsi-yaka",
+        "programs": 133,
+        "_programs": "avm-ici",
+        "geos": 417,
+        "_geos": "bufe-ici",
+        "texs": 140,
+        "_texs": "avm-ici",
+        "heapMB": 79,
+        "_heapMB": "avm-ici"
+      },
+      "sahane": {
+        "calls": 678,
+        "_calls": "iskele",
+        "tris": 434579,
+        "_tris": "karsi-yaka",
+        "programs": 133,
+        "_programs": "avm-ici",
+        "geos": 417,
+        "_geos": "bufe-ici",
+        "texs": 140,
+        "_texs": "avm-ici",
+        "heapMB": 95.5,
+        "_heapMB": "karsi-yaka"
+      }
+    },
+    "boyut": {
+      "gameJsMB": 2.491,
+      "distMB": 6.443,
+      "dosya": 31
+    },
+    "olcum_ortami": "headless Chromium SwiftShader, 640x360, ?stage=10, rota: iskele, büfe içi, halı saha, orman, karşı yaka, AVM içi; çizim çağrısı/üçgen/program/geometri/doku/heap = rota üstü en büyük, her noktada 3 örnekten en büyük"
+  }
+}

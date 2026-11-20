@@ -119,6 +119,7 @@ export function createNav(deps: NavDeps = {}): Nav {
   const portals = deps.portals ? deps.portals.slice() : [];
   let anon = 0;
   let minCell = 0.5;
+  const st = { pathCalls: 0, pathFails: 0, expanded: 0, maxExpanded: 0, flowBuilds: 0, flowHits: 0 };
 
   const gridAt = (x: number, z: number): GridRec | null => {
     for (let i = 0; i < grids.length; i++) {
@@ -223,6 +224,7 @@ export function createNav(deps: NavDeps = {}): Nav {
     stamp[s] = run; gs[s] = 0; fs[s] = h(s); par[s] = -1;
     heap.n = 0; heap.push(s, fs[s]);
     let expanded = 0, found = false;
+    st.pathCalls++;
     while (heap.n > 0) {
       const c = heap.pop();
       if (closed[c] === run) continue;
@@ -244,7 +246,8 @@ export function createNav(deps: NavDeps = {}): Nav {
         }
       }
     }
-    if (!found) return [];
+    st.expanded += expanded; if (expanded > st.maxExpanded) st.maxExpanded = expanded;
+    if (!found) { st.pathFails++; return []; }
     const cells: number[] = [];
     for (let c = t; c !== -1; c = par[c]) cells.push(c);
     cells.reverse();
@@ -291,6 +294,7 @@ export function createNav(deps: NavDeps = {}): Nav {
     const f: FlowRec = {
       target: id, dirty: true, grid: null, dist: null, at: { x: 0, z: 0 },
       build() {
+        st.flowBuilds++;
         f.dirty = false;
         f.grid = null;
         const at = targets.get(id);
@@ -325,7 +329,7 @@ export function createNav(deps: NavDeps = {}): Nav {
         }
       },
       dirAt(p, out) {
-        if (f.dirty) f.build();
+        if (f.dirty) f.build(); else st.flowHits++;
         const r = f.grid, dist = f.dist;
         out.x = 0; out.z = 0;
         if (!r || !dist) return false;
@@ -560,6 +564,7 @@ export function createNav(deps: NavDeps = {}): Nav {
     },
     hash(cell = 1) { return createSpatialHash(cell); },
     steering,
+    stats: () => ({ ...st }),
   };
   return nav;
 }

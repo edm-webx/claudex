@@ -863,7 +863,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   reg('perfShow', (on = true) => P.show(!!on));
   reg('exportSave', () => save.exportCode());
   reg('importSave', async (code: string) => { const ok = await save.importCode(code); if (ok) { const r = await save.load(); sim.load(r.data); } return ok; });
-  reg('loop', () => ({ tick: loop.tick, paused: loop.paused, pauseWhy: loop.pauseWhy, simTime: loop.simTime }));
+  reg('loop', () => ({ tick: loop.tick, paused: loop.paused, pauseWhy: loop.pauseWhy, simTime: loop.simTime, ...loop.stats(), nav: nav.stats?.() }));
   for (const k of ['select', 'drag', 'save']) if (!(target.editor as AnyRec | undefined)?.[k]) reg(`editor.${k}`, () => { throw new Error('editor not loaded (?edit=1)'); });
 
   // ── hooks (v2 __bufe surface, M1)
