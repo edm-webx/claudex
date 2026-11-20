@@ -3,9 +3,12 @@ import type { Nav, Rng, SimCtx, Vec2, InteractionRegistry, Entity } from '../../
 import type { AnchorBook } from './anchors';
 import type { ActorRegistry, AgentHost } from './types';
 import type { EventName } from '../../events';
+import type { Rules } from '../state';
 
 export interface AgentEnv {
   host: AgentHost;
+  /** BUF-14/16: salon rolleri ve müfettiş kural çalışma anını (rt) okur; test harness'te kısmi olabilir */
+  rules: Rules;
   nav: Nav;
   book: AnchorBook;
   reg: ActorRegistry;

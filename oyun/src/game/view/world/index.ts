@@ -561,7 +561,10 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
         const tb = (state.zones as Record<string, { tier?: number; renk?: string }> | undefined)?.tabela;
         if (tb && (tb.tier !== signTier || tb.renk !== signRenk)) { signTier = tb.tier || 0; signRenk = tb.renk || signRenk; applyNight(); }
         const sg = state.sign as { text?: string; font?: string } | null;
-        if (sg && ((sg.text != null && sg.text !== signText) || (sg.font != null && sg.font !== signFont))) view.setSign(sg.text, sg.font);
+        // BUF-16: Martı yıldızı (1-3) aşama 7+ tabela yazısının sonunda
+        const mt = (state.zones as Record<string, { marti?: number }> | undefined)?.hijyen?.marti, ys = state.stage >= 7 && mt ? ' ' + '★'.repeat(Math.min(3, Math.max(1, mt))) : '';
+        if (sg && sg.text != null && (sg.text + ys !== signText || (sg.font != null && sg.font !== signFont))) view.setSign(sg.text + ys, sg.font);
+        else if (sg && sg.font != null && sg.font !== signFont) view.setSign(undefined, sg.font);
         // purchases -> stations, tables, decor (v2 restore/onLayout rules)
         const owned = state.owned || {}, tiers = (state.tiers || {}) as Record<string, number>;
         let key = stage + '#';

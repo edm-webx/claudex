@@ -180,7 +180,7 @@ position:fixed;inset:0;pointer-events:none;z-index:10;overflow:hidden;font-famil
 .sb-lab .bubble .bi .n{font:900 12px/1 var(--disp);margin-left:-2px}
 .sb-lab .bubble .bi .d{opacity:.3}
 .sb-lab .bubble .bt{max-width:134px;text-wrap:balance}
-.sb-lab .bubble .bp{width:100%;min-width:46px;height:7px;border-radius:4px;background:#e8dccb;overflow:hidden;border:1.5px solid rgba(59,42,32,.5);position:relative}
+.sb-lab .bubble .bp{width:100%;min-width:56px;height:9px;border-radius:4px;background:#e8dccb;overflow:hidden;border:1.5px solid rgba(59,42,32,.5);position:relative}
 .sb-lab .bubble .bp i{display:block;height:100%;background:var(--money);border-radius:3px}
 .sb-lab .bubble .bp::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 calc(25% - 1.5px),rgba(59,42,32,.55) calc(25% - 1.5px) 25%)}
 .sb-lab .bubble.mini{padding:4px 7px;border-radius:14px}

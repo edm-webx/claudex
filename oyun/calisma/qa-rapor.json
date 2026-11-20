@@ -1,25 +1,25 @@
 {
  "schema": 1,
  "mod": "hizli",
- "gecti": false,
+ "gecti": true,
  "adimlar": [
   {
    "ad": "tip kontrolü",
    "ok": true,
-   "sn": 15.4,
+   "sn": 5.3,
    "son": ""
   },
   {
    "ad": "sim kuralları",
    "ok": true,
-   "sn": 0.2,
+   "sn": 0.1,
    "son": ""
   },
   {
    "ad": "birim ve sim testleri",
-   "ok": false,
-   "sn": 106.1,
-   "son": "   ✓ büfe zemini > dirt grows over time and a wipe resets it to zero 606ms\n ✓ tests/sim/slots.test.ts  (2 tests) 80ms\n ✓ tests/sim/window-stock.test.ts  (1 test) 156ms\n ✓ tests/sim/mevsim.test.ts  (1 test) 2ms\n ✓ tests/sim/calisan-kurs.test.ts  (1 test) 628ms\n   ✓ kurs süre boyunca çalışanı götürür, sonra tecrübeyle geri getirir 628ms\n\n Test Files  1 failed | 61 passed (62)\n      Tests  1 failed | 286 passed (287)\n   Start at  19:00:39\n   Duration  105.28s (transform 4.82s, setup 0ms, collect 23.44s, tests 251.07s, environment 63ms, prepare 8.23s)\n\n⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯\n\n FAIL  tests/sim/yuk.test.ts > en kötü durum: tick maliyeti bütçe altında (p95 ve maks), sistem dağılımı raporlanır\nAssertionError: expected 167.81285200000002 to be less than 25\n ❯ tests/sim/yuk.test.ts:74:25\n     72|   // Maks bütçesi p99.9 üzerinden: ölçüm kutusundaki tek seferlik işle…\n     73|   // 6 ms) bütçeyi yanlış yere kırmasın. Gerçek bir sim regresyonu p99…\n     74|   expect(q(tot, 0.999)).toBeLessThan(B.tickMaxMs);\n       |                         ^\n     75|   expect(mx).toBeLessThan(B.tickMaxMs * 4);\n     76|   expect(maxCallsInTick).toBeLessThanOrEqual(B.pathCallsPerTickMax);\n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯"
+   "ok": true,
+   "sn": 37.1,
+   "son": ""
   }
  ]
 }

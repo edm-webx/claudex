@@ -61,6 +61,7 @@ function kur(stage: number) {
   sim.command({ kind: 'force', what: 'stage', value: stage });
   sim.state.workers.push({ id: 501, name: 'Nazlı', role: 'garson', xp: 0, morale: 70, traits: ['hamarat'] });
   if (stage >= 3) for (let i = 0; i < Math.min(5, Math.max(1, stage - 4)); i++) sim.state.workers.push({ id: 510 + i, name: 'Aşçı' + i, role: 'asci', xp: 0, morale: 70, traits: ['hamarat'] });   // BUF-05: yemek mutfakta pişer
+  if (stage >= 5) sim.state.workers.push({ id: 520, name: 'Bulaşıkçı', role: 'bulasikci', xp: 0, morale: 70, traits: ['hamarat'] });   // BUF-13: bulaşıkçı yoksa yığın masa silmeyi yavaşlatır
   return sim;
 }
 describe('masa bileti yemekleri', () => {
@@ -86,7 +87,7 @@ describe('masa bileti yemekleri', () => {
   it('aşama 10\'da tadım menüsü art arda servis olarak tamamlanır', () => {
     const sim = kur(10), api = restoranApi(sim.rules)!;
     let tadim = 0, hesap = 0;
-    for (let s = 0; s < 1500 && !tadim; s++) {
+    for (let s = 0; s < 4500 && !tadim; s++) {   // BUF-13: bulaşıkçı eklenince bilet dizisi kaydı; tadım menüsü seyrek, arama süresi uzatıldı
       for (let i = 0; i < 10; i++) sim.step(0.1);
       const r = sim.rules.rt; if (r.paused) { r.paused = false; r.pauseWhy = ''; }
       for (const p of ['cay', 'ayran', 'simit', 'tost', 'gazoz', 'doner']) { const b = (r.counter[p] ||= []); if (b.length < 6) b.push({ type: p, tier: 1 }); }

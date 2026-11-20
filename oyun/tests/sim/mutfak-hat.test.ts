@@ -1,6 +1,7 @@
 // BUF-05: mutfak hattı. Her yiyecek kendi istasyonunda pişer, aşçı en yakın boş istasyona yürür (uzmanlık yok, bekle-al), ikinci
 // ocak/ızgara hattı iki ve fazla aşçıyla devreye girer, tabak tepsiden (komi ya da aşçı taşır) pass rafına düşer, garson pass'tan alır,
 // şef hızı tek yerden sayılır. Deterministik: sabit tohum, rastgelelik yok.
+import { CITIZENS } from '../../src/content/citizens';
 import { describe, it, expect } from 'vitest';
 import { played, events } from './m1-helpers';
 import { makeSandbox, addWorker, stubHat } from './agents-harness';
@@ -181,7 +182,7 @@ describe('aşama 10 tam mutfak (gerçek sim, 30 dk)', () => {
     for (const k of ['cay', 'ayran', 'simit', 'tabure1', 'tabure2', 'masa1', 'gazoz', 'masa2', 'tost']) sim.command({ kind: 'force', what: 'unlock', value: k });
     sim.command({ kind: 'force', what: 'stage', value: 10 });
     let id = 600; const ise = (role: string, n: number) => { for (let i = 0; i < n; i++) sim.state.workers.push({ id: id++, name: role + i, role, xp: 0, morale: 70, traits: ['hamarat'] }); };
-    ise('garson', 4); ise('asci', 5); ise('komi', 4); ise('sef', 2);
+    ise('garson', 4); ise('asci', 5); ise('komi', 4); ise('sef', 2); ise('bulasikci', 2);   // BUF-13: bulaşıkçı yoksa yığın masa silmeyi yavaşlatır
     expect(mutfakEsya(sim.state.stage).length).toBe(15);
     const api = restoranApi(sim.rules)!, hat = api.hat!;
     const pg = mutfakDunya(MUTFAK_NOKTA.passGarson); let garsonPass = false;
@@ -189,6 +190,8 @@ describe('aşama 10 tam mutfak (gerçek sim, 30 dk)', () => {
     for (let s = 0; s < 18000; s++) {   // 1800 sn = 30 dk oyun
       sim.step(0.1);
       const r = sim.rules.rt; if (r.paused) { r.paused = false; r.pauseWhy = ''; }
+      // tatlı sever balayı çiftleri: tek 'pass' yemeği (Maraş dondurma) rastgele müşteri dağılımına bağlı kalmasın (tohum kaymasında da aynı kapsam)
+      if (s % 300 === 150 && !is.get('pass')) r.customersApi.spawnCustomer({ type: CITIZENS.find((t: { id: string }) => t.id === 'balayi'), n: 2, kind: 'masa' });
       const d = hat.durum();
       for (const c of d.cooking) is.set(c.ist, (is.get(c.ist) || 0) + 1);
       if (!garsonPass) garsonPass = ((sim.rules.v2State().workers as { role: string; pos: { x: number; z: number } }[]) || []).some(w => w.role === 'garson' && Math.hypot(w.pos.x - pg.x, w.pos.z - pg.z) < 0.5);

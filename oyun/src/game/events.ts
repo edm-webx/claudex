@@ -20,7 +20,12 @@ export const V2_EVENT_NAMES = [
 /** New engine/ecosystem events (not in v2). */
 export const ENGINE_EVENT_NAMES = [
   'ticket', 'serve', 'hesap', 'stantBuy', 'stantSale', 'stantRefill', 'dukkanAc', 'erimGlitch', 'erimBonk', // Faz 2
+  'kasaOde',         // BUF-12 { yontem: 'nakit' | 'kart', x, z }: customer paid at the till (yalnız görsel)
+  'kizginAyril',     // BUF-23 { x, z, masa, type }: sabrı biten müşteri masaya/tezgâha vurup kızgın ayrıldı
   'passBell',       // BUF-05 { no, p, x, z }: a plate landed on the kitchen pass (servis zili; ses SES-05)
+  'tavaCarpma',     // BUF-08 { ist, x, z }: a pan dish finished on a tava station (mutfak-hat ready)
+  'bulasikSes',     // BUF-08 { x, z }: dishwasher clink; emitter not yet wired (BUF-13 owns the dish pile trigger)
+  'canliMuzik',     // BUF-14 { x, z }: the musician is playing (live music cue; the sound layer owns the audio)
   'zoneState',      // { id, state }
   'save',           // { reason, ok, mode }
   'saveRepaired',   // { notes }

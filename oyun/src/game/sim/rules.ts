@@ -18,6 +18,7 @@ import { installSalon } from './salon';
 import { installGizem } from './gizem';
 import { installYetenek } from './yetenek';
 import { installZemin } from './zemin';
+import { installBulasik } from './bulasik';
 import { installHaliSaha } from './halisaha';
 import type { AmbientSystem, Bus, Entity, GameClock, InteractionRegistry, Nav, Rng, SimCtx, SoAStore, System, Vec2 } from '../../engine/api';
 import type { SimEvents } from '../events';
@@ -61,6 +62,8 @@ import { installDisari } from './disari';
 import { installDeniz } from './deniz';
 import { installHikaye } from './hikaye';
 import { installCalisan } from './calisan';
+import { installKurye } from './kurye';
+import { installHijyen } from './hijyen';
 import { applySetting } from './settings';
 import { normalizeState } from './save';
 import { hourOf, clamp } from './util';
@@ -178,6 +181,7 @@ export function createRules(d: RulesDeps): RulesFull {
   const mulkM = installMulk(K);
   const yetenekM = installYetenek(K);
   const zeminM = installZemin(K);
+  installBulasik(K);   // BUF-13: kirli tabak yığını (restoran / agents'tan önce: rt.bulasik)
   const ligM = installLig(K);
   installSalon(K);   // 2026-11-08 pier-wing seating income from stage 3
   const gizemM = installGizem(K);
@@ -187,7 +191,7 @@ export function createRules(d: RulesDeps): RulesFull {
   const miniM = installMini(K); // mini oyunlar + içecek ustalık hareketleri
   const yiyecekM = installYiyecek(K); // tarifler, Gezgin Aşçı, Deney Tezgahı, tazelik, Anlaşma Masası (yiyecek.ts)
   const havaM = installHava(K); // hava, mevsimler, etkinlikler, Gece Pazarı (hava.ts)
-  // Faz 2: paket servis (PaketMartı) kaldırıldı; kurye.ts kayıt uyumu için duruyor, kurulmuyor.
+  installKurye(K); installHijyen(K);   // BUF-15 paket servis (kurye, telefon siparişi) + BUF-16 hijyen, müfettiş sonucu, Martı yıldızı
   const kolM = installKoleksiyon(K); // koleksiyonlar, Altın Simit, Altın Fırın
   const disariM = installDisari(K, (x, z) => d.walk.teleport(x, z)); // Martıköy haritası, mahalleler, dolmuş, buluntular (disari.ts)
   const denizM = installDeniz(K, cu as never); // deniz canlıları, tekneler, güverte koşusu, iskele büyümesi (deniz.ts)
@@ -211,6 +215,7 @@ export function createRules(d: RulesDeps): RulesFull {
     rt.tables = rt.layout.tables.map(() => ({ built: false, seats: [{ occ: 0 }, { occ: 0 }], pile: [], dirty: 0, dirtyT: 0 }));
     for (const k of PRODUCT_IDS) rt.stations[k] = { built: k === 'doner', out: [], grabT: 0, opT: -99, prog: {} };
     for (const k of PRODUCT_IDS) rt.counter[k] = [];
+    rt.dirtyDishes = 0; rt.mutfakBusy = 0; rt.mutfakMop = false;
     rt.carry = []; rt.kasa = []; rt.floor = []; rt.pads.splice(0).forEach(p => d.interactions.unregister('pad.' + p.key));
     rt.queue = []; rt.winq = []; rt.window = null; rt.streak = 0; rt.slow = null; rt.slowCard = null;
     if (rt.customers.length) cu.clearAll();

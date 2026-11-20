@@ -14,6 +14,8 @@ import type { AnchorDef } from '../../../engine/api';
 import { itemGeo, moneyGeo, ITEM_HT, makeMarker } from '../../../content/prefabs/iskele/props';
 import { MAT } from '../../../content/prefabs/common/v2kit';
 import { padDef, padCost } from '../../../content/pads';
+import { mutfakDunya, mutfakUst } from '../../../content/ic-mekan';
+import { BULASIK } from '../../../content/mutfak';
 import { STATION_KINDS } from '../../../content/prefabs/iskele/layout';
 import type { StageLayout } from '../../../content/prefabs/iskele/layout';
 
@@ -124,7 +126,8 @@ export function createRtView(env: RtEnv): RtView {
     trayG.visible = rt.carry.length > 0; trayRect.visible = !master; trayRound.visible = master;
     if (trayG.visible) { trayG.position.set(hx, hy, hz); trayG.rotation.y = pp.rot; }
     const emit = (obj: object, key: string, to: Pt, rot: number, h: number, from: Pt | null, dur?: number, arc?: number) => { place(obj, key, to, rot, h, frame <= 2 ? null : from, dur, arc); };
-    const itemKey = (it: Item<string>) => it.type + ':' + Math.max(1, Math.min(4, it.tier || 1));
+    // BUF-06: oyuncunun elindeki mutfak tabağı (yemek kimliği) ürün modeli değil, sade tabak olarak çizilir
+    const itemKey = (it: Item<string>) => ((PROD as readonly string[]).includes(it.type) ? it.type + ':' + Math.max(1, Math.min(4, it.tier || 1)) : 'plate');
 
     // player hands (spawn from the station tray they came from is implicit: the same Item object flies)
     // animasyon-3: the stack sways a little against the hero's acceleration (damped spring, clamped), never falls
@@ -180,6 +183,15 @@ export function createRtView(env: RtEnv): RtView {
       }
       for (let k = tb.dirty; k < 8; k++) { const o = plateObjs.get('plate' + i + '.' + k); if (o) { const e = entries.get(o); if (e) { sinkAt(e, chest); entries.delete(o); } } }
     });
+    // BUF-13: kirli tabak yığını bulaşık istasyonunda (sim: rt.dirtyDishes; en çok BULASIK.gorunur disk, iki sütun, aşama 5'ten önce 0)
+    {
+      const n = Math.min(BULASIK.gorunur, rt.dirtyDishes || 0), top = mutfakUst('bulasik');
+      for (let k = 0; k < BULASIK.gorunur; k++) {
+        const key = 'dish.' + k; let o = plateObjs.get(key); if (!o) { o = {}; plateObjs.set(key, o); }
+        if (k < n) { const w = mutfakDunya([top[0] + (k % 2 ? 0.32 : -0.32), top[1]]); emit(o, 'plate', { x: w.x, y: 0.99 + Math.floor(k / 2) * 0.03, z: w.z }, 0, 0.04, null); }
+        else { const e = entries.get(o); if (e) entries.delete(o); }
+      }
+    }
     // customers' hands
     rt.customers.forEach(c => {
       if (!c.items.length) return;

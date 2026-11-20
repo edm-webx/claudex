@@ -85,7 +85,7 @@ export function installMoney(K: Kernel): { api: MoneyApi; addMoneyTo(pile: Money
         canAct: () => { const t = rt.tables[i]; return !!t && t.built && t.dirty > 0; },
         act: () => {
           const t = rt.tables[i]; if (!t) return 'done';
-          if (t.dirty > 0) { t.dirty = 0; t.dirtyT = 0; K.stat('cleaned'); }
+          if (t.dirty > 0) { (rt as unknown as { bulasik?: { masaSilindi(i: number): void } }).bulasik?.masaSilindi(i); t.dirty = 0; t.dirtyT = 0; K.stat('cleaned'); }
           return 'done';
         },
       });
