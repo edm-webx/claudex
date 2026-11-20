@@ -16,6 +16,7 @@ import * as T from 'three';
 import type { RenderPipeline, RenderDeps, TierDef, Season, WeatherState, RenderInfo, Vec3, ScreenPt, Disposer, DayPhase } from '../api';
 import { createCameraRig, type MotorCameraRig } from '../camera';
 import { makeSky } from './sky';
+import { createShadowCull } from './shadow-cull';
 import { todAt, phaseAt, type Tod } from './tod';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
@@ -47,6 +48,9 @@ export interface MotorRender extends RenderPipeline {
   readonly bloomOn: boolean;
   /** PRF-08: outdoor hemisphere multiplier (night-lights eases it to 0.85 inside a room); setTime and hava-look multiply it in. */
   hemiMul: number;
+  /** PRF-06: leave out shadow casters whose shadow cannot reach the camera view (default on; off only for A/B measurement) */
+  shadowCull: boolean;
+  shadowStats(): { casters: number; culled: number };
   /** PRF-12: dynamic resolution; multiplies the tier's pixel ratio (0.6..1). Resizes targets only, no shader relink. */
   setScale(s: number): void;
   /** PRF-03: parallel shader compile of everything visible, in both shadow states (so a later tier change links nothing). Never draws. */
@@ -154,6 +158,7 @@ export function createRender(deps: RenderDeps): MotorRender {
     if (!bloom) return; bloom.strength = 0.1 + 0.22 * night; bloom.threshold = 0.97 - 0.12 * night; bloom.radius = 0.3 + 0.08 * night; }   // 2026-11-08 user: glare made in-game text unreadable
 
   // sky environment map (PMREM from the sky dome): reflections on standard materials (Kenney models, metal props)
+  const sCull = createShadowCull();
   let pmrem: T.PMREMGenerator | null = null, envRT: T.WebGLRenderTarget | null = null, envKey = -1;
   const envSubs = new Set<(t: T.Texture | null) => void>();
   function refreshEnv() {
@@ -204,6 +209,8 @@ export function createRender(deps: RenderDeps): MotorRender {
     sun, hemi, sky,
     get bloomOn() { return !!composer; },
     hemiMul: 1,
+    shadowCull: true,
+    shadowStats: () => sCull.stats(),
     onEnv(cb) { envSubs.add(cb); try { cb(envRT ? envRT.texture : null); } catch { /* ignore */ } return () => { envSubs.delete(cb); }; },
     init(canvas: HTMLCanvasElement, t: TierDef) {
       if (renderer && canvasEl === canvas) { api.setTier(t); return; }
@@ -266,7 +273,11 @@ export function createRender(deps: RenderDeps): MotorRender {
       if (frameNo % 10 === 1) { const f = rig.focus(); api.setFocus(f.x, f.z); }
       if (frameNo % 30 === 2 || !envRT) refreshEnv();
       renderer.info.autoReset = false; renderer.info.reset();   // info() = everything drawn for this frame (composer passes, shadow pass)
-      const draw = () => { if (composer && rpass) { rpass.scene = sc; rpass.camera = cam; composer.render(); } else renderer!.render(sc, cam); };
+      // PRF-06: casters whose shadow cannot reach the view skip the shadow pass (same picture, fewer draws)
+      const draw = () => {
+        if (api.shadowCull) sCull.begin(sc, cam, sun);
+        try { if (composer && rpass) { rpass.scene = sc; rpass.camera = cam; composer.render(); } else renderer!.render(sc, cam); } finally { sCull.end(); }
+      };
       const pf = deps.perf;
       if (pf) {
         const rec = pf.recording;

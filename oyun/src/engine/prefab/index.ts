@@ -214,8 +214,8 @@ export function createPrefabs(deps: PrefabDeps): MotorPrefabSystem {
       const m = o as T.Mesh;
       if (!m.isMesh) return;
       const im = new T.InstancedMesh(m.geometry, m.material, 4);
+      // PRF-06: real frustum culling; the bounding sphere is dropped whenever instances move (three recomputes it from instanceMatrix)
       im.count = 0; im.castShadow = m.castShadow; im.receiveShadow = m.receiveShadow; im.name = id + ':inst';
-      im.frustumCulled = false;
       im.userData.prefab = id;
       parent.add(im); meshes.push(im); locals.push(m.matrixWorld.clone());
     });
@@ -228,7 +228,7 @@ export function createPrefabs(deps: PrefabDeps): MotorPrefabSystem {
       if (im.instanceMatrix.count >= need) return;
       const cap = Math.max(need, im.instanceMatrix.count * 2);
       const n = new T.InstancedMesh(im.geometry, im.material, cap);
-      n.count = im.count; n.castShadow = im.castShadow; n.receiveShadow = im.receiveShadow; n.name = im.name; n.frustumCulled = false; n.userData = { ...im.userData };
+      n.count = im.count; n.castShadow = im.castShadow; n.receiveShadow = im.receiveShadow; n.name = im.name; n.userData = { ...im.userData };
       for (let k = 0; k < im.count; k++) { im.getMatrixAt(k, _m); n.setMatrixAt(k, _m); }
       p.parent.remove(im); im.dispose(); p.parent.add(n); p.meshes[i] = n;
     });
@@ -237,7 +237,7 @@ export function createPrefabs(deps: PrefabDeps): MotorPrefabSystem {
     const pl = inst.placement;
     _p.set(pl.pos.x, pl.y || 0, pl.pos.z); _q.setFromAxisAngle(_up, pl.rotY || 0); _s.setScalar(pl.scale || 1);
     const base = new T.Matrix4().compose(_p, _q, _s);
-    p.meshes.forEach((im, i) => { _m.multiplyMatrices(base, p.locals[i]); im.setMatrixAt(slot, _m); im.instanceMatrix.needsUpdate = true; });
+    p.meshes.forEach((im, i) => { _m.multiplyMatrices(base, p.locals[i]); im.setMatrixAt(slot, _m); im.instanceMatrix.needsUpdate = true; im.boundingSphere = null; });
   }
   function poolAdd(p: Pool, inst: Inst) {
     const slot = p.slots.length; p.slots.push(inst);
@@ -250,7 +250,7 @@ export function createPrefabs(deps: PrefabDeps): MotorPrefabSystem {
     if (slot < 0) return;
     if (slot !== last) { const mv = p.slots[last]; p.slots[slot] = mv; mv._slot = slot; poolWrite(p, slot, mv); }
     p.slots.pop(); inst._slot = -1;
-    p.meshes.forEach(im => { im.count = p.slots.length; });
+    p.meshes.forEach(im => { im.count = p.slots.length; im.boundingSphere = null; });
     if (!p.slots.length) { p.meshes.forEach(im => { p.parent.remove(im); im.dispose(); }); pools.delete(p.key); }
   }
 

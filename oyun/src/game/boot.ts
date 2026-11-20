@@ -123,6 +123,7 @@ import { createAltinSimitFx, type AltinSimitFx } from './ui/altin-simit-fx';
 import { createDisariLook, type DisariLookView } from './view/disari';
 import { createStadyumView } from './view/stadyum';
 import { createNightLights, roomLightsFor } from './view/world/night-lights';
+import { drawCostTable } from '../engine/perf/draw-cost';
 import { createHedefCard, type HedefCard } from './ui/hedef-card';
 import { createFaz2Hud, type Faz2Hud } from './ui/faz2-hud';
 import { createStantLook, type StantLookView } from './view/world/stant-look';
@@ -821,6 +822,10 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     return { ...R.info(), buildMs: zones ? zones.buildMs() : 0, pending: zones ? zones.pending() : 0, timers: s.timers, counters: s.counters,
       particles: s.particles, fps: s.fps, frameP95: s.frameP95, heapMB: s.heapMB, warnings: s.warnings, tier: quality.current().name };
   });
+  // PRF-06: bölge/prefab başına çizim maliyeti tablosu (yalnız okur). game.js 2.5 MB sınırı yüzünden yalnız geliştirme ve ölçüm
+  // derlemesinde (vite --mode olcum; tests/browser/cizim-butce.mjs --build) var, oyuncu derlemesinde ağaçtan atılır.
+  if (import.meta.env.MODE !== 'production') reg('drawCost', (top = 20) => { const sun = (R as unknown as { sun?: { castShadow: boolean; shadow: { camera: Parameters<typeof drawCostTable>[1] } } }).sun; return drawCostTable(scene, cam.camera, sun?.castShadow ? sun.shadow.camera : null, top || 20); });
+  if (import.meta.env.MODE !== 'production') reg('shadowCull', (on?: boolean) => { const r = R as unknown as { shadowCull?: boolean; shadowStats?: () => unknown }; if (on !== undefined && r.shadowCull !== undefined) r.shadowCull = !!on; return { on: r.shadowCull ?? false, ...(r.shadowStats?.() as object ?? {}) }; });   // PRF-06 A/B ölçüm kancası
   reg('lights', () => nightLights?.stats() ?? null);   // PRF-08: gece ışığı havuzu durumu
   reg('setTime', (h: number) => { sim.command({ kind: 'setTime', hour: h }); lastHour = -1; timeT = 0; guard('setTime', () => { R.setTime(sim.clock.hour, sim.clock.season); havaLook?.relight(); }); });
   reg('setStage', (n: number) => { sim.command({ kind: 'setStage', stage: n }); callWorld('setStage', sim.state.stage, sim.state.renewed); });

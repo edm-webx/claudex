@@ -8,6 +8,7 @@ import * as T from 'three';
 import { zeminDetay } from '../../../engine/render/zemin-detay';
 import { loadGlb, fitClone } from './glb';
 import { UG, ugY } from '../../../content/ustgecit';
+import { mergeStatic } from '../../../engine/render/merge-static';
 
 export interface YolLookDeps { root: () => T.Object3D | null }
 export interface YolLookView { update(dt: number): void; dispose(): void }
@@ -181,9 +182,13 @@ const CAR_YAW = Math.PI / 2;   // Kenney cars face +z, the lane vehicles face +x
 export function createYolLook(d: YolLookDeps): YolLookView {
   const road = buildRoad(), stop = buildBusStop(), bridge = buildOverpass();
   const { group: vehicles, list } = buildVehicles();
+  // PRF-06: the street parts never move relative to their group: one draw per material (vehicles move as whole groups)
+  const portals = buildPortals();
+  for (const g of [road, stop, bridge, portals]) mergeStatic(g);
+  for (const v of list) mergeStatic(v.mesh);
   const holder = new T.Group(); holder.name = 'yolKok';
   holder.position.y = STREET_Y;
-  holder.add(road, stop, bridge, vehicles, buildPortals());
+  holder.add(road, stop, bridge, vehicles, portals);
   let t = 0;
   return {
     update(dt) {
