@@ -282,7 +282,7 @@ export function createMatch(o: MatchOpts = {}) {
       const d = Math.hypot(ball.x - p.x, ball.y - p.y); p.kickCd = 0.45;
       p.vx += (ball.x - p.x) / (d || 1) * 4; p.vy += (ball.y - p.y) / (d || 1) * 4;
       const o = ball.owner >= 0 ? pls[ball.owner] : null;
-      if (o && o.team !== human && d < 1.7) {
+      if (o && o.team !== human && !o.gk && d < 1.7) {   // kalecinin elindeki top çalınmaz
         if (o.boost <= 0 && R() < 0.45 + p.sk.tackle * 0.3 - (d - 0.8) * 0.25) { o.stun = 0.7; take(m.ctrl, true); sfx('kick'); }
         else p.stun = 0.25;   // missed: a short stumble, so spamming KAP doesn't work
       }
