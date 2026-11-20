@@ -46,7 +46,7 @@ const OKUL: Oda = {
     { id: 'ogretmen', rig: worker('ogretmen', 11), ad: 'Zeynep Öğretmen', ne: (s, faz) => {
       const i = s.i++;
       if (faz === 'teneffus') return i % 2 ? w(-3.0, -2.0) : { p: [-4.6, -1.7], act: 'idle', sn: [5, 9], f: S };
-      const ders: Step[] = [{ p: [-6.2, -3.15], act: 'perform', sn: [10, 14], f: S }, w(-2.9, -3.15), { p: [-2.9, -3.15], act: 'perform', sn: [6, 9], f: S }, w(-2.0, -2.2), { p: [-2.0, 0.9], act: 'idle', sn: [5, 8], f: WW }, w(-2.0, -2.2)];
+      const ders: Step[] = [{ p: [-6.2, -3.05], act: 'perform', sn: [10, 14], f: S }, w(-2.9, -3.05), { p: [-2.9, -3.05], act: 'perform', sn: [6, 9], f: S }, w(-2.0, -2.2), { p: [-2.0, 0.9], act: 'idle', sn: [5, 8], f: WW }, w(-2.0, -2.2)];
       return ders[i % 6];
     } },
     ...Array.from({ length: 12 }, (_, k) => ogrenci(k)),
