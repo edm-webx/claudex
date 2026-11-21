@@ -156,10 +156,26 @@ export function createUi(deps: UiDeps): Ui {
     toasts.appendChild(t);
     while (toasts.children.length > 1) toasts.firstChild!.remove();
     if (kind === 'bad') sfx('bad');
-    setTimeout(() => { t.classList.add('out'); setTimeout(() => { t.remove(); toastNext(); }, 320); }, 2200);
+    setTimeout(() => { t.classList.add('out'); setTimeout(() => { t.remove(); toastNext(); }, 320); }, 3200);
   }
+  // UX-05: son 30 bildirim zil düğmesinden tekrar okunabilir; kaçırılan bildirim kaybolmaz
+  const hist: Array<{ text: string; kind: string; at: number }> = [];
+  let unread = 0;
+  const bellBtn = mk('button', 'sb-ib sb-bell', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 21a2 2 0 0 0 4 0"/></svg><b class="sb-bell-n" hidden></b>');
+  bellBtn.setAttribute('aria-label', 'Bildirim geçmişi');
+  hud.querySelector('.sb-hbtns')?.prepend(bellBtn);
+  const notesEl = root.appendChild(mk('div', 'sb-notes'));
+  notesEl.hidden = true; notesEl.setAttribute('role', 'log');
+  function paintNotes() {
+    const dot = bellBtn.querySelector('.sb-bell-n') as HTMLElement;
+    dot.hidden = unread === 0; dot.textContent = unread > 9 ? '9+' : String(unread);
+    notesEl.innerHTML = hist.length ? hist.map(h => `<div class="n ${h.kind}"><span>${esc(h.text)}</span><small>${new Date(h.at).toLocaleTimeString('tr', { hour: '2-digit', minute: '2-digit' })}</small></div>`).join('') : '<div class="n"><span>Henüz bildirim yok.</span></div>';
+  }
+  bellBtn.addEventListener('click', () => { notesEl.hidden = !notesEl.hidden; if (!notesEl.hidden) { unread = 0; paintNotes(); } });
+  toasts.setAttribute('role', 'status'); toasts.setAttribute('aria-live', 'polite');
   function toast(text: string, kind: 'good' | 'bad' | 'info') {
     kind = kind || 'info';
+    if (text !== (hist[0]?.text)) { hist.unshift({ text, kind, at: Date.now() }); if (hist.length > 30) hist.length = 30; unread++; paintNotes(); }
     if (text === lastToast && toastBusy) return;
     if (kind === 'info' && toastQ.length >= 1) return;
     if (toastQ.length >= 3) toastQ.shift();

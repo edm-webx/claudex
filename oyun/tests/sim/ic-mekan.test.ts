@@ -1,9 +1,10 @@
 // 2026-11-09 "her binaya girilebilmeli": every building is a room with a door gap; businesses inside are bought from a level,
-// have their own menu + equipment; the büfe halls take equipment that raises the salon income; the bank works at the teller.
+// have their own menu + equipment; the büfe halls take equipment that raises the real salon bill / guest flow (BUF-19/20: no passive
+// income, see kanat-masalar.test.ts); the bank works at the teller.
 import { it, expect } from 'vitest';
 import { played } from './m1-helpers';
 import { mulkApi } from '../../src/game/sim/mulk';
-import { salonKat } from '../../src/game/sim/salon';
+import { salonKat, salonKatYan } from '../../src/game/sim/salon';
 import { IC_MEKANLAR, IC_BY_ID, icColliders, icWorld, icDim, icLayout, bankaGise } from '../../src/content/ic-mekan';
 import { ISLETME, ARSALAR, ARSA_ISLETME } from '../../src/content/esya';
 
@@ -47,13 +48,15 @@ it('school canteen: locked below level 3, bought inside the school, own menu, a 
   pl.till = 500; sim.step(0.5); expect(pl.till).toBeLessThan(1);   // collected inside
 });
 
-it('büfe halls: tools need the hall stage, raise the hourly salon income; the bank opens at the teller window', () => {
+it('büfe halls: tools need the hall stage, raise the real table bill on their side; the bank opens at the teller window', () => {
   const sim = played(1) as any; sim.step(1); const m = mulkApi(sim.rules)!, S = sim.state, c = (x: any) => sim.command({ kind: 'mulk', ...x });
   S.money = 1e7; S.stage = 5; c({ op: 'salonEsya', e: 'tas_firin' }); expect(S.zones.salon?.esya || []).toEqual([]);
   S.stage = 6; c({ op: 'salonEsya', e: 'tas_firin' }); c({ op: 'salonEsya', e: 'buz_tezgah' });   // east hall tool needs stage 7
   expect(S.zones.salon.esya).toEqual(['tas_firin']);
   expect(salonKat(S.zones.salon.esya, 6).adis).toBeCloseTo(1.1);
   expect(salonKat(['buz_tezgah'], 6).mis).toBe(1); expect(salonKat(['buz_tezgah'], 7).mis).toBeCloseTo(1.1);
+  // BUF-19/20: a tool works on its own side's tables (W: çay bahçesi + kahvaltı salonu + batı çatısı, E: dondurma + balık + doğu çatısı)
+  expect(salonKatYan(['tas_firin'], 6, 'W').adis).toBeCloseTo(1.1); expect(salonKatYan(['tas_firin'], 6, 'E').adis).toBe(1);
   const w = icWorld(IC_BY_ID.salonW, 0, 0); sim.command({ kind: 'teleport', x: w.x, z: w.z }); sim.step(0.3); expect(m.view().salonYakin).toBe('W');
   const g = bankaGise(); sim.command({ kind: 'teleport', x: g.x, z: g.z + 0.6 }); sim.step(0.3);
   S.money = 1000; c({ op: 'tlYatir', n: 400 }); expect(S.money).toBe(600);

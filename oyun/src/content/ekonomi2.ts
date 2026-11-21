@@ -25,8 +25,20 @@ export const TIER_COST_F = [0, 60, 250, 900];
 export const VENUE = { perStage: 0.04, perPlaque: 0.05, perStar: 0.02, siklikMax: 0.08, cap: 1.45 };
 export const STREAK = { step: 0.025, max: 4 };          // Sıcak Tezgah: at most +10 %
 export const SIFTAH_X = 1.5;
-/** Side income cap per game day: max(BONUS_MIN, BONUS_FRAC × today's sales). Extra is simply not paid. */
-export const BONUS_MIN = 250, BONUS_FRAC = 0.3;
+/**
+ * EKO-02: yalnız rastgele küçük bonuslar (bozuk para, kedi, şemsiye, dekor bahşişi) günlük tavana tabidir:
+ * tavan = max(BONUS_MIN, BONUS_FRAC x günlük hedef geliri). Günlük hedef geliri = dünkü kazanç ile bugünkü satışın büyüğü,
+ * yani gün başında (satış 0) tavan 250'ye düşmez. Dünden kullanılmayan pay (en çok bir günün tavanı kadar) devreder.
+ * Emek ödülleri (sandık, günlük tahta, hedef, hafta bonusu, hikaye, mini oyun, sınav) tavana girmez.
+ */
+export const BONUS_MIN = 600, BONUS_FRAC = 0.1;
+/** EKO-02: gelir defterinin sabit kaynak kimlikleri (S.today.src ve S.stats.kaynak_<id>). */
+export const KAYNAKLAR = ['tezgah', 'adisyon', 'bahsis', 'salon', 'isletme', 'mac', 'bahis', 'sinav', 'sandik', 'gorev', 'hedef', 'basarim', 'yildiz', 'tadilat', 'orman', 'faiz', 'diger'] as const;
+export type Kaynak = typeof KAYNAKLAR[number];
+export const KAYNAK_AD: Record<Kaynak, string> = {
+  tezgah: 'Tezgah satışı', adisyon: 'Adisyon', bahsis: 'Bahşiş', salon: 'Salon', isletme: 'İşletme kasası', mac: 'Maç', bahis: 'Bahis', sinav: 'Sınav', sandik: 'Sandık',
+  gorev: 'Görev ve sipariş', hedef: 'Hedef', basarim: 'Başarım', yildiz: 'Yıldız', tadilat: 'Tadilat', orman: 'Orman', faiz: 'Mevduat faizi', diger: 'Diğer',
+};
 /** Day end costs per kiosk stage (index = stage-1): rent, and utilities as a share of the day's sales. */
 export const GIDER = { kira: [0, 150, 550, 1900, 5600, 9000, 14000, 21000, 30000, 42000], fatura: 0.03, minSales: 1 };
 /** Offline: hours cap and rate per kepenk level (rate × idle income/min). */
@@ -40,3 +52,10 @@ export const STAGE_MULT = [1, 1.04, 1.08, 1.12, 1.16, 1.2, 1.24, 1.28, 1.32, 1.3
 export const STAGE_ARRIVAL = [0, 2.6, 5.5, 9, 13, 15.5, 18, 20.5, 23, 25.5];
 
 export const fmtTL = (v: number): string => Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' ₺';
+
+/**
+ * Yemek menüsü (content/yemek-menu.ts, BUF-04): masa biletinde bir kalemin yemek (DishId) olma payı, aşama başına (index = aşama-1).
+ * Kalan kalemler eski tezgâh ürünü olarak kalır (simit, çay, ayran...). Fiyatlar yemek-menu.ts'de; ortalama adisyon
+ * SALON.adisyon'a yakın tutulur (tests/sim/menu-asama.test.ts bandı korur). Gelir çok kayarsa önce bu payı kıs.
+ */
+export const YEMEK = { pay: [0, 0, 0.3, 0.4, 0.45, 0.5, 0.55, 0.6, 0.6, 0.65], /** tadım menüsünde ekstra servis başına bilet sabrı (sn) */ kursSabir: 22 };

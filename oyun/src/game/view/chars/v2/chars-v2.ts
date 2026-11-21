@@ -32,6 +32,7 @@ import * as T from 'three';
 import { crowdWeather } from '../weather-pose';
 import * as C from './kit';
 import { vrand } from './kit';
+import { akisKaydet } from '../../../../engine/render/doku-akis';
 
 export const CH: any = {};
 
@@ -461,6 +462,11 @@ const ROLE_LOOK: any = {
   barista: { top: '#2b2b30', sleeves: 'short', apron: '#7a3b1c', bottom: '#2b2b30', hat: 'cap', hatColor: '#7a3b1c' },
   mudur: { top: '#f4f4f2', topStyle: 'suit', sleeves: 'long', vest: '#2b2b30', bottom: '#2b2b30', bowtie: '#c9a24a' },
   vale: { top: '#7a2430', topStyle: 'jacket', sleeves: 'long', bottom: '#1d1d22', hat: 'cap', hatColor: '#7a2430' },
+  usta: { top: '#e8892b', topStyle: 'overall', sleeves: 'long', bottom: '#e8892b', hat: 'helmet', hatColor: '#ffd23f', gloves: '#c9a24a', shoes: '#3b3430' },
+  hemsire: { top: '#fbfbf8', topStyle: 'shirt', sleeves: 'short', bottom: '#5fa8d0', hat: 'bandana', hatColor: '#fbfbf8' },
+  doktor: { top: '#7fb8d8', topStyle: 'shirt', sleeves: 'long', apron: '#ffffff', bottom: '#3f5878' },
+  ogretmen: { top: '#e8e2d4', topStyle: 'cardigan', accent: '#7a5a3a', sleeves: 'long', bottom: '#4a4a55', glasses: 'round' },
+  gorevli: { top: '#fbfbf8', topStyle: 'shirt', sleeves: 'long', apron: '#5f9a8a', bottom: '#2d2d33' },
   kurye: { top: '#3fb5b0', topStyle: 'jacket', accent: '#3fb5b0', sleeves: 'long', bottom: '#2f3a4a', hat: 'helmet', hatColor: '#3fb5b0', courierBox: true }
 };
 
@@ -536,8 +542,9 @@ function drawPattern(g?: any, x?: any, y?: any, w?: any, h?: any, base?: any, al
     g.globalAlpha = 1;
   }
 }
-function heroAtlas(L?: any) {
-  return C.canvasTex(1024, 512, (g?: any) => {
+function heroAtlas(L?: any, k = 1) {
+  return C.canvasTex(1024 * k, 512 * k, (g?: any) => {
+    if (k !== 1) g.scale(k, k);   // PRF-15 doku akışı: same drawing at half scale for NPCs seen from afar (engine/render/doku-akis)
     g.fillStyle = '#ffffff'; g.fillRect(0, 0, 1024, 512);
     for (let e = 0; e < 6; e++) paintFace(g, (e % 3) * 128, Math.floor(e / 3) * 128, 128, L.faceSpec, EXPR_NAMES[e], L.skinColor);
     for (let c = 0; c < X_CELLS.length; c++) paintFaceX(g, 512 + (c % 4) * 128, Math.floor(c / 4) * 128, 128, L.faceSpec, c, L.skinColor, true);
@@ -671,7 +678,8 @@ function buildHeroMesh(L?: any) {
       if (L.mustache === 'thick' || L.mustache === 'curl') b.add(sph(thick * 0.75, 6, 5), on('head', { m: mT(sx * 0.088, mouthY + 0.018, R * 0.83), color: mc }));
     });
   }
-  if (L.beard === 'goatee') b.add(sph(0.05, 10, 8), on('head', { m: mTRS(0, mouthY - 0.065, R * 0.86, 0, 0, 0, 0.9, 1.2, 0.8), color: L.age === 'old' ? HAIRC.silver : hairC }));
+  if (L.beard === 'goateeLong') b.add(sph(0.045, 10, 8), on('head', { m: mTRS(0, mouthY - 0.085, R * 0.84, 0.18, 0, 0, 0.75, 1.9, 0.8), color: L.age === 'old' ? HAIRC.silver : hairC }));   // sivri keçi sakalı (UX-15: keçi ve çember artık farklı biçim)
+  else if (L.beard === 'goatee') b.add(sph(0.05, 10, 8), on('head', { m: mTRS(0, mouthY - 0.065, R * 0.86, 0, 0, 0, 0.9, 1.2, 0.8), color: L.age === 'old' ? HAIRC.silver : hairC }));
   else if (L.beard === 'short') b.add(sph(+(R * 1.012).toFixed(4), 14, 6, PI / 2 - 1.0, 2.0, PI * 0.6, PI * 0.3), on('head', { m: HM, color: L.age === 'old' ? HAIRC.silver : hairC }));
   else if (L.beard === 'sideburns') [-1, 1].forEach((s?: any) => b.add(sph(0.045, 8, 6), on('head', { m: mTRS(s * R * 0.84, mouthY + 0.06, R * 0.38, 0, 0, 0, 0.55, 1.9, 0.9), color: L.age === 'old' ? HAIRC.silver : hairC })));
   else if (L.beard) b.add(sph(+(R * 1.03).toFixed(4), 14, 6, PI / 2 - 1.15, 2.3, PI * 0.56, PI * 0.36), on('head', { m: HM, color: L.age === 'old' ? HAIRC.silver : hairC }));
@@ -761,10 +769,16 @@ Hero.prototype.setLook = function (this: any, look?: any) {
   if (this.preset && PRESETS[this.preset]) base = Object.assign({}, PRESETS[this.preset], look || {});
   const L = this.look = normLook(base, this.preset ? 'custom' : this.kind, this.role, this.seed);
   this.style = STYLE[L.style] || STYLE.def;
-  if (this.mesh) { this.rig.remove(this.mesh); this.mesh.geometry.dispose(); this.mesh.material.dispose(); if (this.tex) this.tex.dispose(); }
+  if (this.mesh) { this.rig.remove(this.mesh); this.mesh.geometry.dispose(); this.mesh.material.dispose(); if (this.akis) { this.akis.birak(); this.akis = null; } else if (this.tex) this.tex.dispose(); }
   const H = withSeg(SEG.hero, () => buildHeroMesh(L));
-  this.tex = heroAtlas(L);
-  const mat = new T.MeshLambertMaterial({ vertexColors: true, map: this.tex, alphaTest: 0.5 });
+  const mat = new T.MeshLambertMaterial({ vertexColors: true, alphaTest: 0.5 });
+  // PRF-15: NPC atlases (1024x512, 2.7 MB GPU each; 40+ on screen in the forest / across the road) stream their top level:
+  // half scale until the camera is close enough for it to show, the player's own heroes always full
+  if (this.kind === 'regular' || this.kind === 'worker') {
+    this.akis = akisKaydet({ obj: this.group, dpm: 160, ciz: (k: number) => heroAtlas(L, k), tak: (t: any) => { this.tex = t; mat.map = t; } });
+    this.tex = this.akis.tex;
+  } else this.tex = heroAtlas(L);
+  mat.map = this.tex;
   const mesh = new T.SkinnedMesh(H.geo, mat);
   mesh.add(H.B.root); mesh.castShadow = true; mesh.receiveShadow = true; mesh.frustumCulled = false;
   mesh.updateMatrixWorld(true);
@@ -956,7 +970,7 @@ Hero.prototype.apply = function (this: any) {
 Hero.prototype.dispose = function (this: any) {
   if (this.group.parent) this.group.parent.remove(this.group);
   if (this.mesh) { this.mesh.geometry.dispose(); this.mesh.material.dispose(); this.mesh.skeleton.dispose(); }
-  if (this.tex) this.tex.dispose();
+  if (this.akis) { this.akis.birak(); this.akis = null; } else if (this.tex) this.tex.dispose();
 };
 CH.makeHero = function (opts?: any) {
   try { return new (Hero as any)(opts || {}); }

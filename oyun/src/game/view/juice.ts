@@ -24,6 +24,7 @@ import type { Fx, Bus, HeroHandle, AnchorDef, Vec3, ScreenPt, SoAStore, EffectDe
 import { EFFECTS } from '../../content/effects';
 import { ACT_ORDER, AGENT_FLAG } from '../sim/schema';
 import { crowdWeather } from './chars/weather-pose';
+import { createFxNoktalar } from './world/fx-noktalar';
 
 export interface JuiceDeps {
   bus: Bus<any>;
@@ -43,6 +44,8 @@ export interface JuiceDeps {
   squashPop?: (o: T.Object3D, amount?: number) => void;
   /** Lodos-ish wind 0..1 (optional; falls back to crowdWeather.lean). */
   wind?: () => number;
+  /** GRS-07: game hour for the ambient effect points (dust motes in low sun) */
+  hour?: () => number;
 }
 export interface JuiceView { update(dt: number): void; dispose(): void; }
 
@@ -78,6 +81,7 @@ export function createJuice(d: JuiceDeps): JuiceView {
   // ── fx registry
   const fx = d.fx;
   if (fx) for (const def of [...Object.values(EFFECTS), ...Object.values(EXTRA_FX)]) { try { if (!fx.has(def.id)) fx.define(def); } catch { /* */ } }
+  const noktalar = createFxNoktalar({ fx, heroPos: d.heroPos, anchors: () => d.anchors(), hour: d.hour ?? (() => 12) });   // GRS-07: fountain, samovar, dust motes
   const at3 = (x: number, y: number, z: number): Vec3 => ({ x, y, z });
   const play = (id: string, p: Vec3, scale?: number, stopAfter?: number) => {
     if (!fx) return;
@@ -287,8 +291,10 @@ export function createJuice(d: JuiceDeps): JuiceView {
       custT -= dt;
       if (custT <= 0) { custT = 1.8 + Math.random() * 1.5; try { customers(); } catch { /* */ } }
       try { flagUpdate(dt); } catch { /* */ }
+      try { noktalar.update(dt); } catch { /* */ }
     },
     dispose() {
+      noktalar.dispose();
       offs.forEach(o => { try { o(); } catch { /* */ } }); offs.length = 0;
       for (const c of coins) c.el.remove(); coins.length = 0;
       mo?.disconnect(); style?.remove();

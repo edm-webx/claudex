@@ -1,7 +1,7 @@
 /**
  * engine/fx: effect building blocks (MOTOR §14). Owner: Builder C.
  * One pooled particle buffer drawn as ONE instanced, camera-facing quad mesh (1 draw call for all effects).
- * Sprites come from a 4x4 canvas atlas (`FX_SPRITES`); a dressing slot 'tex.fx.atlas' can replace it later.
+ * Sprites come from an 8x8 canvas atlas of 64 px cells (`FX_SPRITES`, GRS-07: was 4x4); a dressing slot 'tex.fx.atlas' can replace it later.
  *
  * Decisions (contract silent):
  * - CPU particle sim in typed arrays (no per-frame allocation); live cap = tier.particles (200/500/1000), extra
@@ -16,16 +16,18 @@
 import * as T from 'three';
 import type { EffectDef, Fx, FxDeps, FxHandle, TierDef, Vec3, ModuleBlock, EmitterBlock } from '../api';
 
-export const FX_SPRITES = { dot: 0, puff: 1, seed: 2, feather: 3, drop: 4, star: 5, rect: 6, heart: 7, z: 8, flake: 9, ring: 10, flash: 11 } as const;
+export const FX_SPRITES = { dot: 0, puff: 1, seed: 2, feather: 3, drop: 4, star: 5, rect: 6, heart: 7, z: 8, flake: 9, ring: 10, flash: 11,
+  /* GRS-07 */ smoke: 12, cloud: 13, spark: 14, mote: 15, flame: 16, droplet: 17, splash: 18, glow: 19, pollen: 20, bubble: 21 } as const;
+export const FX_ATLAS_COLS = 8;
 export type FxSprite = keyof typeof FX_SPRITES;
 const CAP_MAX = 1000;
 
 function makeAtlas(): T.Texture {
   try {
     if (typeof document === 'undefined') throw new Error('headless');
-    const c = document.createElement('canvas'); c.width = c.height = 256;
+    const c = document.createElement('canvas'); c.width = c.height = 64 * FX_ATLAS_COLS;
     const g = c.getContext('2d'); if (!g) throw new Error('no 2d');
-    const cell = (i: number, draw: (g: CanvasRenderingContext2D) => void) => { g.save(); g.translate((i % 4) * 64 + 32, Math.floor(i / 4) * 64 + 32); draw(g); g.restore(); };
+    const cell = (i: number, draw: (g: CanvasRenderingContext2D) => void) => { g.save(); g.translate((i % FX_ATLAS_COLS) * 64 + 32, Math.floor(i / FX_ATLAS_COLS) * 64 + 32); draw(g); g.restore(); };
     const radial = (r: number, a0: number) => { const gr = g.createRadialGradient(0, 0, 0, 0, 0, r); gr.addColorStop(0, `rgba(255,255,255,${a0})`); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, r, 0, Math.PI * 2); g.fill(); };
     g.fillStyle = '#fff';
     cell(0, () => radial(30, 1));
@@ -40,6 +42,17 @@ function makeAtlas(): T.Texture {
     cell(9, () => { g.strokeStyle = '#fff'; g.lineWidth = 5; g.lineCap = 'round'; for (let i = 0; i < 3; i++) { g.rotate(Math.PI / 3); g.beginPath(); g.moveTo(-24, 0); g.lineTo(24, 0); g.stroke(); } });
     cell(10, () => { g.strokeStyle = '#fff'; g.lineWidth = 6; g.beginPath(); g.arc(0, 0, 24, 0, Math.PI * 2); g.stroke(); });
     cell(11, () => radial(31, 0.9));
+    // GRS-07: smoke = five overlapping soft blobs (reads dark on light ground when tinted grey), cloud = wide flat steam bank
+    cell(12, () => { g.globalAlpha = 0.7; for (const [x, y, r] of [[-10, 6, 17], [9, 5, 16], [0, -8, 19], [-3, 14, 13], [12, -6, 12]]) { g.save(); g.translate(x, y); radial(r, 0.75); g.restore(); } g.globalAlpha = 1; });
+    cell(13, () => { g.save(); g.scale(1.9, 1); radial(30, 0.55); g.restore(); });
+    cell(14, () => { g.fillStyle = '#fff'; g.beginPath(); g.moveTo(0, -28); g.lineTo(3, 0); g.lineTo(0, 28); g.lineTo(-3, 0); g.closePath(); g.fill(); radial(12, 0.9); });
+    cell(15, () => radial(11, 0.9));
+    cell(16, () => { const gr = g.createLinearGradient(0, 26, 0, -28); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.55, 'rgba(255,255,255,0.8)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.beginPath(); g.moveTo(0, -28); g.bezierCurveTo(14, -6, 16, 10, 0, 26); g.bezierCurveTo(-16, 10, -14, -6, 0, -28); g.fill(); });
+    cell(17, () => { g.fillStyle = '#fff'; g.beginPath(); g.arc(0, 0, 16, 0, Math.PI * 2); g.fill(); radial(26, 0.5); });
+    cell(18, () => { const gr = g.createRadialGradient(0, 0, 8, 0, 0, 30); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(0.6, 'rgba(255,255,255,0.9)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, 30, 0, Math.PI * 2); g.fill(); });
+    cell(19, () => { radial(31, 0.5); radial(10, 1); });
+    cell(20, () => { radial(13, 0.95); g.fillStyle = '#fff'; g.beginPath(); g.arc(0, 0, 4, 0, Math.PI * 2); g.fill(); });
+    cell(21, () => { g.strokeStyle = 'rgba(255,255,255,0.9)'; g.lineWidth = 4; g.beginPath(); g.arc(0, 0, 20, 0, Math.PI * 2); g.stroke(); radial(20, 0.18); g.fillStyle = '#fff'; g.beginPath(); g.arc(-7, -7, 4, 0, Math.PI * 2); g.fill(); });
     const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace; return t;
   } catch {
     const t = new T.DataTexture(new Uint8Array([255, 255, 255, 255]), 1, 1); t.needsUpdate = true; return t;
@@ -59,7 +72,7 @@ void main() {
   mvPosition.xy += q;
   gl_Position = projectionMatrix * mvPosition;
   float f = iMisc.y;
-  vUv = (vec2(mod(f, 4.0), 3.0 - floor(f / 4.0)) + uv) * 0.25;
+  vUv = (vec2(mod(f, 8.0), 7.0 - floor(f / 8.0)) + uv) * 0.125;
   vCol = iCol;
   #include <fog_vertex>
 }`;

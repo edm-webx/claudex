@@ -148,4 +148,51 @@ describe('zones', () => {
     expect(d.portals[0].a.x).toBe(62);
     expect(zones.zoneAt({ x: 90, z: 9 })).toBe('test-sokak');
   });
+  // PRF-07: a zone in the camera view is built before it can show, beyond ZONE_DIST.warm; off-view it stays sim
+  it('view-aware streaming builds a zone in view out to the fog edge and records pops', () => {
+    let t = 0;
+    const { zones, scene } = setup({ now: () => t });
+    scene.fog = new T.Fog('#ffffff', 70, 190);
+    zones.register({ ...pier(), id: 'far', bounds: { x0: 40, z0: -10, x1: 60, z1: 10 }, minState: undefined });
+    const cam = new T.PerspectiveCamera(40, 16 / 9, 0.5, 400);
+    const frustumAt = (lookX: number) => { cam.position.set(0, 12, 0); cam.lookAt(lookX, 0, 0); cam.updateMatrixWorld(); return new T.Frustum().setFromProjectionMatrix(new T.Matrix4().multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse)); };
+    const run = (f: T.Frustum, n = 20) => { for (let i = 0; i < n; i++) { t += 16; zones.update({ x: 0, z: 0 }, f); } };
+    run(frustumAt(-50));                                        // looking away: 40 m, beyond 25 m -> not built
+    expect(zones.state('far')).toBe('sim');
+    zones.setViewAware(false); run(frustumAt(50));              // old rule: in view but 40 m away -> never built (an empty street)
+    expect(zones.state('far')).toBe('sim');
+    zones.setViewAware(true); run(frustumAt(50));
+    expect(zones.state('far')).toBe('warm');
+    expect(zones.popStats().popIn).toBe(1);                     // it was already on screen when the build finished (counted)
+    run(frustumAt(-50), 10);                                    // turned away: held for VIEW_HOLD s
+    expect(zones.state('far')).toBe('warm');
+    t += 5000; run(frustumAt(-50), 2);
+    expect(zones.state('far')).toBe('sim');
+    expect(zones.popStats(true).popOut).toBe(0);                // dropped while off screen: no pop
+    // grown box: the build starts while the zone is still just outside the picture -> no pop when it shows
+    zones.update({ x: 0, z: 0 }); run(frustumAt(-50), 2);
+    const realBox = new T.Box3(new T.Vector3(40, -1, -10), new T.Vector3(60, 14, 10)), grown = realBox.clone().expandByVector(new T.Vector3(14, 0, 14));
+    const lookX = [11, 12, 13, 14, 15, 16].find(x => { const f = frustumAt(x); return !f.intersectsBox(realBox) && f.intersectsBox(grown); });
+    expect(lookX).toBeDefined();
+    run(frustumAt(lookX!)); expect(zones.state('far')).toBe('warm'); expect(zones.popStats().popIn).toBe(0);
+    // without a frustum (tests, editor) the distance rule alone decides
+    t += 10000; zones.update({ x: 0, z: 0 }); zones.flush({ x: 0, z: 0 });
+    expect(zones.state('far')).toBe('sim');
+  });
+  it('a jump (teleport, bus ride) builds the landing zone inside the same frame; walking stays budgeted', () => {
+    let t = 0;
+    const { zones, prefab } = setup({ budget: 3, now: () => t });
+    const def = pier(); def.minState = undefined; def.props = Array.from({ length: 8 }, (_, i) => ({ id: 'j' + i, prefab: 'z.box', pos: { x: i - 4, z: 0 } }));
+    zones.register(def);
+    const origPlace = prefab.place.bind(prefab);
+    (prefab as { place: typeof prefab.place }).place = (pl, parent) => { t += 1; return origPlace(pl, parent); };
+    zones.update({ x: 300, z: 0 });                 // far away: cold
+    zones.update({ x: 0, z: 0 });                   // jump of 300 m into the zone
+    expect(zones.state('pier')).toBe('hot');        // whole build in this frame, no empty frames
+    expect(zones.pending()).toBe(0);
+    expect(zones.popStats().cutMs).toBeGreaterThanOrEqual(8);
+    zones.update({ x: 300, z: 0 }); zones.update({ x: 300, z: 0 });
+    for (let x = 40; x >= 0; x -= 2) zones.update({ x, z: 0 });   // walking in (2 m steps): budgeted, several frames
+    expect(zones.maxBuildMs(true)).toBeLessThanOrEqual(3);
+  });
 });

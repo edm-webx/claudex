@@ -3,7 +3,6 @@
  * Ported 1:1 from v2 data.js (numbers and Turkish text kept). Owner: Builder C (M1). Pure data, no imports of sim code.
  */
 
-import { YENI_MUDAVIMLER } from './musteri';
 
 export interface RegularDef { id: string; name: string; fromDay: number; hour: [number, number]; needs?: string; look: Record<string, unknown>; order: Record<string, number>; likes: string[]; voice: number; hint: string; story: string[]; /** musteri.ts extras: fallback order when `order` is not sellable yet, its hint, arrival greetings, idle lines while waiting, toast on a served visit */ alt?: Record<string, number>; altHint?: string; selam?: string[]; idle?: string[]; gift?: string; }
 export const REGULARS: RegularDef[] = [
@@ -123,5 +122,3 @@ export const REGULARS: RegularDef[] = [
   }
 ];
 
-// Müşteri istekleri ve yeni müdavimler (musteri-3): Nevzat, Defne, Saniye, Efe, Necmi.
-REGULARS.push(...YENI_MUDAVIMLER);

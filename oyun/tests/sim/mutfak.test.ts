@@ -2,13 +2,15 @@
 // (real walking actors inside the room) and speed the stations / raise tips.
 import { it, expect } from 'vitest';
 import { played } from './m1-helpers';
-import { mutfakEsya, mutfakSlot, mutfakEtki, MUTFAK_ISTASYON } from '../../src/content/mutfak';
+import { mutfakEsya, mutfakSlot, mutfakEtki, sefHizi, MUTFAK_ISTASYON } from '../../src/content/mutfak';
 import { roleOpen } from '../../src/game/sim/agents/hiring';
-import { makeSandbox, addWorker } from './agents-harness';
+import { makeSandbox, addWorker, stubHat } from './agents-harness';
 import { IC_BY_ID, icColliders, icIcinde } from '../../src/content/ic-mekan';
 
 it('stations unlock by stage and fill the room (15 at stage 10)', () => {
   expect(mutfakEsya(2)).toEqual([]); expect(mutfakEsya(3).sort()).toEqual(['cay_bar', 'ocak', 'pass']);
+  expect(MUTFAK_ISTASYON.every(i => ['pisir', 'pass', 'sef', 'bulasik', 'gorsel'].includes(i.islev))).toBe(true);   // BUF-05: işlev alanı
+  expect(MUTFAK_ISTASYON.find(i => i.id === 'soguk_oda')!.islev).toBe('gorsel');
   expect(mutfakEsya(10).length).toBe(MUTFAK_ISTASYON.length); expect(MUTFAK_ISTASYON.length).toBeGreaterThanOrEqual(15);
   const room = IC_BY_ID.mutfak; expect(room.z - room.wz / 2).toBeGreaterThan(-18);   // stays on the pier
   expect(icColliders(room).length).toBeGreaterThan(5);
@@ -21,15 +23,13 @@ it('kitchen roles: locked below their stage, slots grow, the crew helps', () => 
   expect(roleOpen(S, host, 'asci')).toBe(false);   // one slot at stage 3
   sim.step(2);
   expect(mutfakEtki([{ role: 'asci', xp: 0 }]).hiz).toBeGreaterThan(0); expect(mutfakEtki([{ role: 'kasiyer', xp: 0 }]).bahsis).toBeGreaterThan(0);
-  expect(mutfakEtki([{ role: 'sef', xp: 25000 }]).hiz).toBeGreaterThan(mutfakEtki([{ role: 'sef', xp: 0 }]).hiz);
+  expect(sefHizi([{ role: 'sef', xp: 25000 }])).toBeGreaterThan(sefHizi([{ role: 'sef', xp: 0 }]));   // BUF-05: şef hızı tek yerden
+  expect(mutfakEtki([{ role: 'sef', xp: 25000 }]).hiz).toBe(0);
 });
 
 it('a hired cook is a real actor: walks into the room, claims a ticket item, cooks it and puts the plate on the pass', () => {
   const sb = makeSandbox(1); sb.step(0.2);
-  const plates: string[] = [];
-  let claimed = 0;
-  sb.host.kitchenClaim = () => (claimed++ === 0 ? 'doner' : null);
-  sb.host.kitchenDone = (_w: number, ok: boolean) => { if (ok) plates.push('doner'); };
+  const hat = stubHat(sb, [{ ist: 'doner', p: 'doner' }]), plates = hat.passed;
   addWorker(sb, 'asci', 'hamarat');
   sb.step(1);
   const r0 = sb.h.workers.rows()[0]; expect(r0.role).toBe('asci');

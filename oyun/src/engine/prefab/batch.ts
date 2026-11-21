@@ -115,11 +115,15 @@ export class Batch {
   /** A box from two corners (x0..x1, y0..y1, z0..z1). */
   span(x0: number, x1: number, y0: number, y1: number, z0: number, z1: number, c: ColorLike, o: PrimOpts = {}): this { return this.box(Math.abs(x1 - x0), Math.abs(y1 - y0), Math.abs(z1 - z0), c, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2, o); }
   get empty(): boolean { return this.cnt === 0; }
+  /** GRS-06 baked contact AO: strength 0..1 of the darkening at the foot of upright faces (0 = off, the default; prefabs opt in) */
+  ao = 0;
+  /** height (batch-local metres) over which the foot darkening fades out */
+  static aoHeight = 0.55;
   geometry(): T.BufferGeometry {
     const g = new T.BufferGeometry();
     g.setAttribute('position', new T.Float32BufferAttribute(this.p, 3));
     g.setAttribute('normal', new T.Float32BufferAttribute(this.n, 3));
-    g.setAttribute('color', new T.Float32BufferAttribute(this.c, 3));
+    g.setAttribute('color', new T.Float32BufferAttribute(this.ao > 0 ? bakeFootAo(this.p, this.n, this.c, this.ao, Batch.aoHeight) : this.c, 3));
     g.setAttribute('uv', new T.Float32BufferAttribute(this.u, 2));
     g.setIndex(this.cnt > 65535 ? new T.Uint32BufferAttribute(this.i, 1) : new T.Uint16BufferAttribute(this.i, 1));
     g.computeBoundingSphere(); g.userData.atlas = true;
@@ -127,3 +131,20 @@ export class Batch {
   }
   mesh(mat: T.Material, cast = true, recv = true): T.Mesh { const m = new T.Mesh(this.geometry(), mat); m.castShadow = cast; m.receiveShadow = recv; return m; }
 }
+
+/**
+ * GRS-06: vertex-colour ambient occlusion at the foot of upright faces. A vertex at height y over the ground (batch-local y = 0)
+ * is darkened by `k * (1 - smoothstep(0, h, y)) * (1 - |ny|)`: side faces get a soft dark foot where they meet the floor, top and
+ * bottom faces are untouched, nothing above `h` changes. Pure function (returns a new array), unit-tested.
+ */
+export function bakeFootAo(p: ArrayLike<number>, n: ArrayLike<number>, c: ArrayLike<number>, k: number, h: number): number[] {
+  const out = new Array<number>(c.length);
+  for (let i = 0; i < c.length / 3; i++) {
+    const y = p[i * 3 + 1], up = Math.abs(n[i * 3 + 1]);
+    const t = clamp(y / h, 0, 1), f = 1 - k * (1 - t * t * (3 - 2 * t)) * (1 - up);
+    out[i * 3] = c[i * 3] * f; out[i * 3 + 1] = c[i * 3 + 1] * f; out[i * 3 + 2] = c[i * 3 + 2] * f;
+  }
+  return out;
+}
+/** GRS-06 default foot-AO strength for the iskele prefabs (kiosk, pier, stations) */
+export const FOOT_AO = 0.26;

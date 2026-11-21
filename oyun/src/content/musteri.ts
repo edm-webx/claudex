@@ -1,25 +1,7 @@
 /**
- * Müşteri istekleri ve yeni müdavimler (survey musteri-2, musteri-3, musteri-4, musteri-7, icecek-2).
- * Pure data: special request lines per product, tourist pronunciations, five new regulars (RegularDef format,
- * appended to REGULARS in regulars.ts). Used by src/game/sim/musteri.ts and src/game/sim/agents/regulars.ts.
+ * Turistler (survey musteri-4, musteri-7). Pure data: tourist pronunciations and guide wave. Used by src/game/sim/musteri.ts.
  */
-import type { RegularDef } from './regulars';
-
-/** Small extra wish on an order bubble (~1 in 6 queue orders). Key: product id. */
-export const REQUESTS: Record<string, string[]> = {
-  doner: ['soğansız', 'bol acılı', 'bol soslu', 'domatessiz'],
-  cay: ['açık olsun', 'demli olsun', 'tavşan kanı'],
-  ayran: ['bol köpüklü', 'buz gibi'],
-  simit: ['susamı bol', 'çıtır olsun'],
-  tost: ['bol kaşarlı', 'iyice kızarsın'],
-  gazoz: ['buz gibi', 'pipetli olsun'],
-};
-/** Odds that a fresh queue customer carries a request. */
-export const REQUEST_CHANCE = 1 / 6;
-/** Extra tip for serving a request order (fraction of the sale). */
-export const REQUEST_TIP = 0.10;
-export const REQUEST_THANKS = ['Tam istediğim gibi!', 'Eline sağlık usta!', 'Aynen böyle, harikasın!', 'Beni anladın ya, yeter!'];
-
+import type { ProductId } from '../game/sim/schema';
 /** Citizen types that count as tourists (cap + camera looks). */
 export const TOURIST_TYPES = ['kruvaziyer', 'turgrubu', 'gezgin'];
 /** Comic pronunciations per product, shown in the tourist's bubble. */
@@ -37,87 +19,98 @@ export const SABRI_GESTURE = ['(el kol hareketi) Yes yes, çok güzel!', '(baş 
 export const PHOTO_TOAST = 'Büfen fotoğraflandı! Turist albümüne girdin.';
 export const GUIDE_WAVE = { say: 'Rehber: Herkes bir şey alsın!', toast: 'Bayraklı rehber kafilesini getirdi! Toplu sipariş dalgası!' };
 
-export const YENI_MUDAVIMLER: RegularDef[] = [
-  {
-    id: 'nevzat', name: 'Emekli Kaptan Nevzat', fromDay: 1, hour: [7, 12],
-    look: { lookType: 'emekli', skin: 3, body: 'round', age: 'old', hair: 'short', hairColor: '#d8d8d8', mustache: 'thick', hat: 'captain', hatColor: '#1f2f4f', top: '#2e3a59', topStyle: 'jacket', accent: '#2e3a59', bottom: '#2e3a59', glasses: 'thick' },
-    order: { cay: 2 }, alt: { doner: 1 }, likes: ['denizci_can_simidi'], voice: 105,
-    hint: 'İki demli çay, kaptan usulü. Tavşan kanı, rüzgar poyraz!',
-    altHint: 'Çay ocağın yok mu daha? Bir dürüm ver bari, tayfa!',
-    selam: ['Günaydın tayfa! Pruva büfeye!', 'Selam reis! Deniz bugün yağ gibi.', 'Rıhtıma yanaştım evlat, demli bekliyorum!'],
-    idle: ['1974 kışı, Martı-3 vapurunu sisin içinden ben getirdim.', 'Bak şu vapura, düdüğü benim zamanımda daha kalındı.', 'Martılar beni tanır, eskiden simit atardım.', 'Demli çay denizcinin pusulasıdır evlat.'],
-    story: [
-      'Ben Kaptan Nevzat! Kırk yıl vapur sürdüm. Her sabah iki demli çay, aklında olsun.',
-      'Senin çayın benim gemideki çaya benziyor. O kadar demli değil ama yaklaşıyor. Her zamankinden!',
-      'Bir keresinde vapuru martı sürüsü takip etti, iskeleye kadar. Simit kokusundan. Her zamankinden!',
-      'Kaptan şapkamı sana emanet etsem mi diyorum. Şaka şaka, daha erken. Her zamankinden!',
-      'Sen bu büfenin kaptanısın artık evlat. Rotan açık olsun!'
-    ]
-  },
-  {
-    id: 'defne', name: 'Öğrenci Defne', fromDay: 2, hour: [11, 19],
-    look: { lookType: 'universiteli', skin: 2, body: 'slim', hair: 'ponytail', hairColor: '#3a2416', top: '#7d6bb0', topStyle: 'hoodie', bottom: '#3f5878', glasses: 'thick', back: 'pack', props: ['headphones'] },
-    order: { tost: 1, cay: 1 }, alt: { doner: 1 }, likes: [], voice: 215,
-    hint: 'Bir tost, bir çay! Beynim yandı, yakıt lazım!',
-    altHint: 'Tost makinen yoksa bir dürüm olur, ders çalışacağım!',
-    selam: ['Selam abi! Sınav haftası, beni kurtar!', 'Merhaba! Üç saat uyudum, çay lazım!', 'Abi bugün integral var, dua et!'],
-    idle: ['Türev neydi ya... martı türevi?', 'Notlarım rüzgarla uçmasın, tut şunu!', 'Tostun kokusu beynimi açıyor resmen.', 'Hoca "kolay soru" dedi. Kesin zor.'],
-    story: [
-      'Ben Defne, üniversitedeyim. Sınav haftası tost ve çay olmadan geçmez! Aklında tut.',
-      'Dün gece senin tost sayesinde iki ünite bitirdim. Her zamankinden!',
-      'Arkadaşlara söyledim, burası artık resmi çalışma mekanımız. Her zamankinden!',
-      'Sınavdan AA aldım! Tostun hakkı var bunda. Her zamankinden!',
-      'Mezun olunca da geleceğim abi, söz. Diplomamı tezgaha asarız!'
-    ]
-  },
-  {
-    id: 'saniye', name: 'Çiçekçi Saniye Teyze', fromDay: 2, hour: [9, 15],
-    look: { lookType: 'teyze', skin: 4, body: 'round', age: 'old', headscarf: 'yazma', scarfColor: '#f0d35a', top: '#8daa5b', topStyle: 'cardigan', bottom: '#5a4a6a', bottomStyle: 'skirt', props: ['bouquet'] },
-    order: { cay: 1, simit: 1 }, alt: { doner: 1 }, likes: ['saksi_sardunya'], voice: 280,
-    hint: 'Bir çay, bir de simit yavrum. Çiçeğin yanına yakışır.',
-    altHint: 'Daha çayın yok mu? Bir dürüm ver, çiçek de benden!',
-    gift: 'Saniye Teyze tezgaha taze bir çiçek bıraktı. Büfe mis gibi kokuyor!',
-    selam: ['Günaydın yavrum! Bugün papatyalar çok güzel.', 'Sana bir çiçek getirdim, bak bakayım!', 'Hayırlı işler evladım, çiçek gibi gün olsun!'],
-    idle: ['Bu sardunya senin tezgaha çok yakıştı.', 'Gül diken ister, büfe müşteri ister.', 'Lale mi koysak yarın, ne dersin?', 'Çiçeğe su, büfeye çay, ikisi de şart!'],
-    story: [
-      'Ben Saniye, köşedeki çiçekçiyim. Her gün sana bir çiçek getireceğim, çayımı da sen koyacaksın!',
-      'Dünkü karanfil solmamış, demek ki burada sevgi var. Her zamankinden!',
-      'Kocam rahmetli de böyle bir büfede çay içerdi. Her zamankinden!',
-      'Tezgahın çiçek bahçesine döndü yavrum, müşteriler bayılıyor. Her zamankinden!',
-      'Sana bir saksı ortanca aldım, büfenin önüne koyalım. Senin de bahçen olsun!'
-    ]
-  },
-  {
-    id: 'efe', name: 'Martı Dostu Efe', fromDay: 1, hour: [13, 18],
-    look: { lookType: 'okul', top: '#3fb5b0', bottom: '#3f5878', hat: 'cap', hatColor: '#e0533c', back: 'pack', props: ['simit'] },
-    order: { simit: 2 }, alt: { ayran: 1 }, likes: [], voice: 290,
-    hint: 'İki simit! Biri bana, biri martılara!',
-    altHint: 'Simit yok mu? O zaman ayran, martılar da içer mi acaba?',
-    gift: 'Efe martılara simit kırıntısı attı. Martılar bayram ediyor!',
-    selam: ['Abii! Martılar beni bekliyor!', 'Selam! Bugün yeni bir martıya isim koydum: Kaptan Kanat!', 'Okul bitti, martı saati!'],
-    idle: ['Bak bak, şu martı benim simidimi kaptı!', 'Martıların da bir patronu var biliyor musun?', 'Annem simidin yarısını ben yiyeyim dedi.', 'Kırıntı atınca hepsi dans ediyor!'],
-    story: [
-      'Ben Efe! Martıları besliyorum. İki simit lazım, biri bana biri onlara. Unutma!',
-      'Martılardan biri bugün elimden yedi! Her zamankinden!',
-      'Öğretmenime martıları anlattım, ödev oldu. Her zamankinden!',
-      'Martılara isim listesi yaptım, bak: Kanat, Lodos, Simitçi Bey. Her zamankinden!',
-      'Büyüyünce martı bilimcisi olacağım. Büfeni de martı istasyonu yaparız!'
-    ]
-  },
-  {
-    id: 'necmi', name: 'Besteci Necmi Abi', fromDay: 3, hour: [15, 22],
-    look: { lookType: 'muzisyen', skin: 5, body: 'mid', hair: 'curly', hairColor: '#2b1d14', mustache: 'curl', hat: 'beanie', hatColor: '#c94f6d', top: '#f0d35a', topStyle: 'shirt', vest: '#3c3a44', bottom: '#3c3a44' },
-    order: { ayran: 1, doner: 1 }, alt: { doner: 1 }, likes: ['nostalji_radyo'], voice: 160,
-    hint: 'Bir dürüm, bir ayran. Do-re-mi-dürüm!',
-    altHint: 'Ayran yoksa dürüm solo çalsın!',
-    selam: ['♪ Dım dım dıııım ♪ Selam maestro!', 'Yeni bestem hazır: Ayranın Ağıdı!', '♪ La la la ♪ Büfe senfonisi başlıyor!'],
-    idle: ['♪ Hım hım hıııım ♪', '♪ Vapuuur düdüğü, si bemol! ♪', 'Martılar korist olsa, ben şef!', '♪ Döner döner döööner, hayat döner ♪', 'Bu tezgahın ritmi var, dinle: tak tak tıss!'],
-    story: [
-      'Ben Necmi, besteciyim. Henüz kimse bilmiyor ama bilecek! Bir dürüm, bir ayran lütfen.',
-      'Dün gece sana bir şarkı yazdım: "Sabri\'nin Tezgahı, Do Majör". Her zamankinden!',
-      'Martılar bestemi dinlerken sustu. Bu bir iltifat bence. Her zamankinden!',
-      'Yeni bestem iskelede çalındı, iki kişi alkışladı! Biri sendin. Her zamankinden!',
-      'Albüm kapağına büfeni koyacağım. Adı da: "Her Zamankinden"!'
-    ]
-  }
-];
+// ───────── BUF-12 kasa, BUF-23 müşteri tipleri, BUF-24 gruplar ve yoğunluk (saf veri; sim/customers.ts kullanır) ─────────
+
+/**
+ * Kasiyer gerçek kasada (BUF-12): kasiyer yokken ödeme anında (eski davranış). Kasiyer kasa başındayken tezgâhtan ürünü alan
+ * müşteri kasa sırasına girer. İşlem süresi = (taban + kalem x kalemSayısı) x tipX / rütbeÇarpanı (RANKS[rank].x), yani seviye gerçekten hızlandırır.
+ * Kasa kuyruğu doluysa (maxKuyruk) müşteri yan kasadan hemen öder (tezgâh kuyruğu asla tıkanmaz).
+ */
+export const KASA = {
+  taban: 2.2, kalem: 0.4, maxKuyruk: 6,
+  /** ürünleri alan müşterinin sabrı kasaya girerken bu kadar patMax payı kadar tazelenir (yemeği aldı, daha hoşgörülü) */
+  sabirPayi: 0.25,
+  /** kasa kuyruğunda sabır bu çarpanla akar (tezgâh kuyruğundan yavaş) */
+  sabirAkis: 0.7,
+  /** kasiyerin yerinde sayılması için kasa duruşuna en çok bu kadar uzakta (m) */
+  yerindeM: 1.8,
+  /** kart ödeme animasyonu (yalnız görsel) */
+  kartAnimS: 0.9,
+};
+export const KASA_SOZ = {
+  hizli: ['Hemen geçiyorum!', 'Bir saniye, kasa açık.', 'Buyurun, hesap şu.'],
+  sinirli: ['Bu kasa hiç ilerlemiyor!', 'Ben kasada beklemeye gelmedim!', 'Ödeyeceğiz, ödeyeceğiz, yeter ki biri baksın!'],
+};
+
+/** Kasa duruşu (kasiyerin durduğu yer) kasa objesinin ve para yığınının arkası: bölge/yerleşim L.kasa'dan. */
+export function kasaDurus(kasa: { pos: { x: number; z: number }; pile: { x: number; z: number } }, i = 0): { x: number; z: number } {
+  return { x: kasa.pile.x + 0.75 + 1.05 * i, z: kasa.pile.z + 0.05 };
+}
+/** Kasa sırası noktaları: kasa objesinin önünde (kiosk dışı yol), 3'lü sütun + yan sütun. */
+export function kasaSiraNokta(kasa: { pos: { x: number; z: number } }, i: number): { x: number; z: number } {
+  return { x: kasa.pos.x + (i >= 3 ? 0.85 : 0), z: kasa.pos.z + 1.0 + 0.8 * (i % 3) };
+}
+/** Kasa işlem süresi (sn): kalem sayısı, müşteri tipi çarpanı, kasiyer rütbe çarpanı (RANKS[rank].x). */
+export const kasaSure = (kalem: number, rankX: number, tipX = 1): number => (KASA.taban + KASA.kalem * Math.max(1, kalem)) * tipX / Math.max(1, rankX);
+
+/**
+ * Müşteri tipi davranışları (BUF-23). Ekonomi hızı korunur: sabir < 1 YOK (ilk oturum eğrisi bozuluyordu; iş insanının acelesi zaten patience 1 ve hızlı kasa), ürün eğilimleri hafif. Anahtar: citizens/index.ts tip id'si; etiket oyuncunun gördüğü tür adı.
+ *  ye: yeme süresi çarpanı | sabir: sabır çarpanı | kasa: kasa işlem süresi çarpanı | kart: karta yatkınlık 0..1 (yalnız görsel)
+ *  urun: ürün tercih çarpanı (ucuz/pahalı eğilim) | sohbet: kasada sohbet satırları | buyuk: büyük grup şansı ve boyu
+ */
+export type TipEtiket = 'ogrenci' | 'aile' | 'cift' | 'yasli' | 'isinsani' | 'turist' | 'taraftar';
+export interface TipDavranis {
+  etiket: TipEtiket; ye: number; sabir: number; kasa: number; kart: number;
+  urun?: Partial<Record<ProductId, number>>; sohbet?: string[];
+  buyuk?: { sans: number; n: [number, number]; ad: string };
+}
+const SOHBET_YASLI = ['Bizim zamanımızda kasa defterdi evladım...', 'Hele bir dur, bozuk paramı arıyorum.', 'Nasılsın kızım, anan iyi mi?', 'Çay da güzeldi, sohbet de.'];
+export const TIP_DAVRANIS: Record<string, TipDavranis> = {
+  universiteli: { etiket: 'ogrenci', ye: 0.8, sabir: 1, kasa: 0.85, kart: 0.5, urun: { simit: 1.2, ayran: 1.15, gazoz: 1.1 }, buyuk: { sans: 0.06, n: [4, 6], ad: 'Doğum günü kalabalığı' } },
+  okul: { etiket: 'ogrenci', ye: 0.8, sabir: 1, kasa: 0.9, kart: 0.1, buyuk: { sans: 0.12, n: [5, 6], ad: 'Okul gezisi' } },
+  bebekarabali: { etiket: 'aile', ye: 1.15, sabir: 1.1, kasa: 1.15, kart: 0.7, buyuk: { sans: 0.2, n: [4, 6], ad: 'Aile sofrası' } },
+  teyze: { etiket: 'yasli', ye: 1.3, sabir: 1.1, kasa: 1.3, kart: 0.15, sohbet: SOHBET_YASLI },
+  emekli: { etiket: 'yasli', ye: 1.4, sabir: 1.1, kasa: 1.35, kart: 0.1, sohbet: SOHBET_YASLI },
+  turgrubu: { etiket: 'yasli', ye: 1.3, sabir: 1.1, kasa: 1.3, kart: 0.3, sohbet: SOHBET_YASLI },
+  balayi: { etiket: 'cift', ye: 1.5, sabir: 1.15, kasa: 1.1, kart: 0.8 },
+  isinsani: { etiket: 'isinsani', ye: 0.85, sabir: 1, kasa: 0.8, kart: 0.95, urun: { doner: 1.7, tost: 1.5, cay: 0.8, ayran: 0.9 } },
+  plaza: { etiket: 'isinsani', ye: 0.9, sabir: 1, kasa: 0.85, kart: 0.9, urun: { doner: 1.3, tost: 1.2 } },
+  kruvaziyer: { etiket: 'turist', ye: 1.0, sabir: 1, kasa: 1.25, kart: 0.7, buyuk: { sans: 0.1, n: [4, 6], ad: 'Tur kafilesi' } },
+  gezgin: { etiket: 'turist', ye: 1.0, sabir: 1, kasa: 1.2, kart: 0.6 },
+  taraftar: { etiket: 'taraftar', ye: 0.9, sabir: 1, kasa: 0.9, kart: 0.3, buyuk: { sans: 0.25, n: [4, 6], ad: 'Taraftar grubu' } },
+};
+export const TIP_DAVRANIS_VARSAYILAN: TipDavranis = { etiket: 'ogrenci', ye: 1, sabir: 1, kasa: 1, kart: 0.4 };
+export const davranisOf = (typeId: string): TipDavranis => TIP_DAVRANIS[typeId] || TIP_DAVRANIS_VARSAYILAN;
+
+/**
+ * Büyük gruplar (BUF-24): grup boyu 1..6, gövde sayısı grup kadar. Bir masa 2 kişilik: büyük grup yakın masaları birleştirir
+ * (6 kişi = 3 masa). Oyuncuyu bunaltmama: aynı anda en çok `esZamanli` büyük grup, kuyruk kısaysa gelir, sabır payı artar.
+ */
+export const GRUP = {
+  max: 6, masaKisi: 2,
+  /** aynı anda sahnede olabilecek büyük (>= 5 kişi) grup sayısı */
+  esZamanli: 2,
+  /** büyük grubun sabrına eklenen pay (kişi başı, üst sınır) */
+  sabirKisi: 0.08, sabirUst: 0.3,
+  /** büyük grup gelmek için tezgâh kuyruğu bu uzunluktan kısa olmalı */
+  kuyrukMax: 4,
+  /** masa birleştirme: ana masaya bu kadar metreden yakın masalar birleşir */
+  birlesM: 5.2,
+  /** hafta sonu ve maç dalgasında büyük grup şansı çarpanı */
+  haftaSonuX: 1.6, macDalgaX: 1.8,
+};
+/** Hafta sonu yoğunluğu (BUF-24): Cumartesi ve Pazar varış hızı çarpanı (11:00-24:00). Hafta içi 1 kalır. */
+export const HAFTA_SONU = { arrival: 1.2, from: 11, to: 24, say: 'Hafta sonu kalabalığı!' };
+/**
+ * Maç günü iki dalga (BUF-24): öncesi (maça hazırlık) ve sonrası (tribün dönüşü) çarpan; aralarda hafif yüksek taban.
+ * Eski düz x1.35 yerine geçer; günlük toplam yük aşağı yukarı aynı kalır, ama tepe noktaları dalga olur.
+ */
+export const MAC_DALGA = {
+  from: 11, to: 24, taban: 1.1, carpan: 1.6,
+  once: [14, 17.5] as [number, number], sonra: [19, 22.5] as [number, number],
+  say: { once: 'Maç öncesi dalgası: taraftarlar iskeleye doluyor!', sonra: 'Maç sonrası dalgası: tribün dönüşü!' },
+};
+/** hafta sonu x maç günü birlikte: toplam kalabalık çarpanı bu sınırı geçmez (açık bilet sınırı ve sabır payı korunur) */
+export const KALABALIK_UST = 1.8;
+export const macDalgaX = (h: number): number => (h < MAC_DALGA.from || h >= MAC_DALGA.to ? 1 : (h >= MAC_DALGA.once[0] && h < MAC_DALGA.once[1]) || (h >= MAC_DALGA.sonra[0] && h < MAC_DALGA.sonra[1]) ? MAC_DALGA.carpan : MAC_DALGA.taban);
+export const macDalgaAdi = (h: number): 'once' | 'sonra' | null => (h >= MAC_DALGA.once[0] && h < MAC_DALGA.once[1] ? 'once' : h >= MAC_DALGA.sonra[0] && h < MAC_DALGA.sonra[1] ? 'sonra' : null);

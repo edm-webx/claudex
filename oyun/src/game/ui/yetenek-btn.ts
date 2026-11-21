@@ -7,7 +7,7 @@ const CSS = `
 .yt-b.cd{background:#e9dcc4;filter:saturate(.4)}.yt-b.on{background:#8fd06b;animation:yt-p 1s infinite}
 @keyframes yt-p{50%{transform:scale(1.07)}}
 .yt-b svg{position:absolute;inset:-4px;width:74px;height:74px;transform:rotate(-90deg);pointer-events:none}
-.yt-b span{position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);white-space:nowrap;background:#3b2a20;color:#fff6e6;border-radius:999px;padding:1px 8px;font:900 12px/1.4 var(--disp)}
+.yt-b span{position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);white-space:nowrap;background:#3b2a20;color:#fff6e6;border-radius:999px;padding:1px 8px;font:900 13px/1.4 var(--disp)}
 `;
 export function createYetenekBtn(deps: { root: HTMLElement; rules: () => Rules | null; command: (c: { kind: string; [k: string]: unknown }) => unknown }) {
   const st = document.createElement('style'); st.textContent = CSS; deps.root.appendChild(st);

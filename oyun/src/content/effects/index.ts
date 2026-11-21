@@ -1,6 +1,9 @@
 /**
  * Effect definitions built from engine/fx blocks (MOTOR §14). Owner: Builder C.
- * Sprite frames: 0 dot, 1 puff, 2 seed, 3 feather, 4 drop, 5 star, 6 rect, 7 heart, 8 z, 9 flake, 10 ring, 11 flash.
+ * Sprite frames: 0 dot, 1 puff, 2 seed, 3 feather, 4 drop, 5 star, 6 rect, 7 heart, 8 z, 9 flake, 10 ring, 11 flash,
+ * GRS-07: 12 smoke, 13 cloud, 14 spark, 15 mote, 16 flame, 17 droplet, 18 splash, 19 glow, 20 pollen, 21 bubble.
+ * GRS-07 rule: smoke and steam use normal blending (they must never bloom over text), sparks are small and short, every stream has a
+ * tierScale (akıcı keeps about a third) and fx.ts caps the live total at tier.particles.
  * tierScale = count multiplier akici/dengeli/sahane. Streams without `duration` run until handle.stop().
  */
 import type { EffectDef } from '../../engine/api';
@@ -63,5 +66,75 @@ export const EFFECTS: Record<string, EffectDef> = {
     modules: [{ kind: 'velocity', dir: { x: 0, y: -1, z: 0 }, spread: 0.2, speed: [0.6, 1.0] }, { kind: 'wind', scale: 0.4 }, { kind: 'spin', speed: [0.5, 1.5] },
       { kind: 'sizeOverLife', stops: [[0, 0.05], [1, 0.05]] }, { kind: 'colorOverLife', stops: [[0, '#ffffff', 0], [0.1, '#ffffff', 0.9], [1, '#ffffff', 0.7]] }, { kind: 'sprite', atlas: 'fx', frames: [9] }],
     tierScale: [0.3, 0.6, 1] },
+
+  /* ───────── GRS-07: tek dilde buhar, duman, kıvılcım, su, toz ───────── */
+  // kitchen pass / hob steam: broad, slow, white
+  mutfakBuhar: { id: 'mutfakBuhar', life: [1.6, 2.6], emitters: [{ kind: 'stream', rate: 7, shape: 'disc', size: { x: 0.12, y: 0, z: 0.12 } }],
+    modules: [{ kind: 'velocity', dir: up, spread: 0.2, speed: [0.3, 0.5] }, { kind: 'drag', k: 0.5 }, { kind: 'wind', scale: 0.15 }, { kind: 'spin', speed: [0.1, 0.5] },
+      { kind: 'sizeOverLife', stops: [[0, 0.12], [1, 0.55]] }, { kind: 'colorOverLife', stops: [[0, '#ffffff', 0], [0.2, '#ffffff', 0.34], [1, '#f2f2f2', 0]] }, { kind: 'sprite', atlas: 'fx', frames: [13, 1] }],
+    tierScale: [0.4, 1, 1.4] },
+  // grill smoke: grey, rises faster, drifts; on the döner/ızgara tiers
+  izgaraDuman: { id: 'izgaraDuman', life: [1.8, 3.0], emitters: [{ kind: 'stream', rate: 6, shape: 'disc', size: { x: 0.1, y: 0, z: 0.1 } }],
+    modules: [{ kind: 'velocity', dir: up, spread: 0.25, speed: [0.45, 0.8] }, { kind: 'drag', k: 0.4 }, { kind: 'wind', scale: 0.5 }, { kind: 'spin', speed: [0.1, 0.6] },
+      { kind: 'sizeOverLife', stops: [[0, 0.1], [1, 0.5]] }, { kind: 'colorOverLife', stops: [[0, '#8a8782', 0], [0.15, '#7d7a76', 0.4], [1, '#a9a7a3', 0]] }, { kind: 'sprite', atlas: 'fx', frames: [12] }],
+    tierScale: [0.4, 1, 1.3] },
+  // sparks from fat on the coals: few, tiny, short
+  kivilcim: { id: 'kivilcim', life: [0.35, 0.8], emitters: [{ kind: 'stream', rate: 4, shape: 'disc', size: { x: 0.12, y: 0, z: 0.12 } }],
+    modules: [{ kind: 'velocity', dir: up, spread: 0.7, speed: [0.9, 1.9] }, { kind: 'gravity', g: -4.5 }, { kind: 'drag', k: 0.6 },
+      { kind: 'sizeOverLife', stops: [[0, 0.07], [1, 0.015]] }, { kind: 'colorOverLife', stops: [[0, '#ffe29a', 1], [0.5, '#ff9a3c', 0.9], [1, '#c8431c', 0]] }, { kind: 'sprite', atlas: 'fx', frames: [14, 15] }],
+    tierScale: [0.4, 1, 1.5] },
+  // hob flame tongue (gas ring)
+  ocakAlev: { id: 'ocakAlev', life: [0.25, 0.45], emitters: [{ kind: 'stream', rate: 14, shape: 'disc', size: { x: 0.07, y: 0, z: 0.07 } }],
+    modules: [{ kind: 'velocity', dir: up, spread: 0.12, speed: [0.35, 0.7] }, { kind: 'sizeOverLife', stops: [[0, 0.12], [0.5, 0.1], [1, 0.03]] },
+      { kind: 'colorOverLife', stops: [[0, '#ffd27a', 0.9], [0.5, '#ff8a2a', 0.8], [1, '#d6451a', 0]] }, { kind: 'sprite', atlas: 'fx', frames: [16] }],
+    tierScale: [0.5, 1, 1.3] },
+  // fryer bubbles
+  fritozKabarcik: { id: 'fritozKabarcik', life: [0.5, 0.9], emitters: [{ kind: 'stream', rate: 8, shape: 'box', size: { x: 0.25, y: 0, z: 0.2 } }],
+    modules: [{ kind: 'velocity', dir: up, spread: 0.15, speed: [0.1, 0.25] }, { kind: 'sizeOverLife', stops: [[0, 0.03], [0.6, 0.06], [1, 0.07]] },
+      { kind: 'colorOverLife', stops: [[0, '#ffe9a8', 0], [0.2, '#fff3c8', 0.75], [1, '#fff3c8', 0]] }, { kind: 'sprite', atlas: 'fx', frames: [21] }],
+    tierScale: [0.4, 1, 1.3] },
+  // samovar: thin steady column
+  semaverBuhar: { id: 'semaverBuhar', life: [1.3, 2.1], emitters: [{ kind: 'stream', rate: 8, shape: 'disc', size: { x: 0.04, y: 0, z: 0.04 } }],
+    modules: [{ kind: 'velocity', dir: up, spread: 0.12, speed: [0.3, 0.5] }, { kind: 'drag', k: 0.6 }, { kind: 'wind', scale: 0.3 }, { kind: 'spin', speed: [0.2, 0.7] },
+      { kind: 'sizeOverLife', stops: [[0, 0.06], [1, 0.3]] }, { kind: 'colorOverLife', stops: [[0, '#ffffff', 0], [0.15, '#ffffff', 0.4], [1, '#f4f4f4', 0]] }, { kind: 'sprite', atlas: 'fx', frames: [1, 13] }],
+    tierScale: [0.5, 1, 1.4] },
+  // ferry funnel: slow dark-grey column, big and lazy
+  bacaDumani: { id: 'bacaDumani', life: [3, 4.5], emitters: [{ kind: 'stream', rate: 2.5, shape: 'disc', size: { x: 0.3, y: 0, z: 0.3 } }],
+    modules: [{ kind: 'velocity', dir: up, spread: 0.15, speed: [0.5, 0.9] }, { kind: 'drag', k: 0.3 }, { kind: 'wind', scale: 0.7 }, { kind: 'spin', speed: [0.05, 0.3] },
+      { kind: 'sizeOverLife', stops: [[0, 0.45], [1, 2.2]] }, { kind: 'colorOverLife', stops: [[0, '#5c5a58', 0], [0.12, '#68665f', 0.5], [1, '#9a9893', 0]] }, { kind: 'sprite', atlas: 'fx', frames: [12] }],
+    tierScale: [0.4, 1, 1.2] },
+  // fountain: an arc of droplets that fall into the basin, plus a soft mist
+  fiskiye: { id: 'fiskiye', life: [0.75, 0.95], emitters: [{ kind: 'stream', rate: 34, shape: 'disc', size: { x: 0.04, y: 0, z: 0.04 } }],
+    modules: [{ kind: 'velocity', dir: up, spread: 0.2, speed: [2.6, 3.3] }, { kind: 'gravity', g: -7.5 },
+      { kind: 'sizeOverLife', stops: [[0, 0.07], [0.8, 0.06], [1, 0.04]] }, { kind: 'colorOverLife', stops: [[0, '#e8f6ff', 0.9], [1, '#bfe3f5', 0.2]] }, { kind: 'sprite', atlas: 'fx', frames: [17, 4] }],
+    tierScale: [0.5, 1, 1.4] },
+  // (played next to fiskiye by the ambient emitter: a child of a never-ending stream would never stop)
+  fiskiyeSis: { id: 'fiskiyeSis', life: [0.8, 1.2], emitters: [{ kind: 'stream', rate: 6, shape: 'disc', size: { x: 0.35, y: 0, z: 0.35 } }],
+    modules: [{ kind: 'velocity', dir: up, spread: 0.3, speed: [0.1, 0.3] }, { kind: 'sizeOverLife', stops: [[0, 0.2], [1, 0.5]] },
+      { kind: 'colorOverLife', stops: [[0, '#ffffff', 0], [0.3, '#f2fbff', 0.22], [1, '#ffffff', 0]] }, { kind: 'sprite', atlas: 'fx', frames: [13] }],
+    tierScale: [0.4, 1, 1.3] },
+  // dust motes hanging in a low sun shaft: tiny, slow, very faint
+  tozZerresi: { id: 'tozZerresi', life: [4, 7], emitters: [{ kind: 'stream', rate: 4, shape: 'box', size: { x: 10, y: 2.4, z: 10 } }],
+    modules: [{ kind: 'velocity', dir: { x: 0.3, y: 0.1, z: 0.2 }, spread: 0.9, speed: [0.03, 0.09] }, { kind: 'wind', scale: 0.1 },
+      { kind: 'sizeOverLife', stops: [[0, 0.04], [1, 0.04]] }, { kind: 'colorOverLife', stops: [[0, '#fff3d6', 0], [0.25, '#fff3d6', 0.4], [0.75, '#fff3d6', 0.4], [1, '#fff3d6', 0]] }, { kind: 'sprite', atlas: 'fx', frames: [15] }],
+    tierScale: [0.3, 0.7, 1] },
+  // evening fireflies and pollen (forest / park): hooks only, the forest view plays them
+  atesBocegi: { id: 'atesBocegi', life: [2.5, 4.5], emitters: [{ kind: 'stream', rate: 2.2, shape: 'box', size: { x: 8, y: 1.2, z: 8 } }],
+    modules: [{ kind: 'velocity', dir: { x: 0.2, y: 0.1, z: 0.1 }, spread: 1, speed: [0.1, 0.3] },
+      { kind: 'sizeOverLife', stops: [[0, 0.05], [0.5, 0.09], [1, 0.05]] }, { kind: 'colorOverLife', stops: [[0, '#d8ff7a', 0], [0.25, '#d8ff7a', 0.8], [0.5, '#d8ff7a', 0.15], [0.75, '#d8ff7a', 0.8], [1, '#d8ff7a', 0]] }, { kind: 'sprite', atlas: 'fx', frames: [19] }],
+    tierScale: [0.4, 1, 1.5] },
+  polen: { id: 'polen', life: [4, 7], emitters: [{ kind: 'stream', rate: 3, shape: 'box', size: { x: 10, y: 2, z: 10 } }],
+    modules: [{ kind: 'velocity', dir: { x: 0.4, y: 0.05, z: 0.2 }, spread: 0.8, speed: [0.1, 0.25] }, { kind: 'wind', scale: 0.4 }, { kind: 'spin', speed: [0.3, 1] },
+      { kind: 'sizeOverLife', stops: [[0, 0.05], [1, 0.05]] }, { kind: 'colorOverLife', stops: [[0, '#f5e27a', 0], [0.2, '#f5e27a', 0.7], [1, '#f5e27a', 0]] }, { kind: 'sprite', atlas: 'fx', frames: [20] }],
+    tierScale: [0.3, 0.7, 1] },
+  // rain splash on the ground (paired with rainDrop's streaks)
+  yagmurSicrama: { id: 'yagmurSicrama', life: [0.25, 0.4], emitters: [{ kind: 'stream', rate: 60, shape: 'box', size: { x: 18, y: 0, z: 18 } }],
+    modules: [{ kind: 'sizeOverLife', stops: [[0, 0.04], [1, 0.22]] }, { kind: 'colorOverLife', stops: [[0, '#dcecf7', 0.55], [1, '#dcecf7', 0]] }, { kind: 'sprite', atlas: 'fx', frames: [18] }],
+    tierScale: [0.2, 0.6, 1] },
+  // renovation dust around a crane / scaffold
+  insaatTozu: { id: 'insaatTozu', life: [1.0, 1.8], emitters: [{ kind: 'stream', rate: 9, shape: 'box', size: { x: 1.6, y: 0.2, z: 1.6 } }],
+    modules: [{ kind: 'velocity', dir: { x: 0, y: 0.3, z: 0 }, spread: 0.8, speed: [0.15, 0.4] }, { kind: 'drag', k: 1.2 }, { kind: 'wind', scale: 0.3 },
+      { kind: 'sizeOverLife', stops: [[0, 0.15], [1, 0.6]] }, { kind: 'colorOverLife', stops: [[0, '#cdbfa8', 0], [0.2, '#cdbfa8', 0.4], [1, '#cdbfa8', 0]] }, { kind: 'sprite', atlas: 'fx', frames: [12] }],
+    tierScale: [0.4, 1, 1.3] },
 };
 export default EFFECTS;

@@ -1,0 +1,101 @@
+{
+ "_not": "PRF-06 öncesi (4a36662 derlemesi, saat 12, seed 3, 960x540). renderer.info.render: gölge ve bloom geçişleri dahil. tests/browser/cizim-butce.mjs ile ölçüldü.",
+ "surum": "4a36662",
+ "tarih": "2026-11-20T18:48",
+ "BUTCE": {
+  "akici": {
+   "calls": 150,
+   "tris": 120000
+  },
+  "dengeli": {
+   "calls": 250,
+   "tris": 250000
+  }
+ },
+ "sonuc": {
+  "akici": {
+   "iskele-asama1": {
+    "calls": 101,
+    "tris": 54143,
+    "programs": 59
+   },
+   "iskele-asama10": {
+    "calls": 156,
+    "tris": 154500,
+    "programs": 62
+   },
+   "iskele-orta": {
+    "calls": 168,
+    "tris": 155663,
+    "programs": 62
+   },
+   "sokak": {
+    "calls": 170,
+    "tris": 241397,
+    "programs": 63
+   },
+   "karsi-yaka": {
+    "calls": 116,
+    "tris": 235911,
+    "programs": 63
+   },
+   "karsi-yaka-bati": {
+    "calls": 130,
+    "tris": 241933,
+    "programs": 65
+   },
+   "hali-saha": {
+    "calls": 85,
+    "tris": 26412,
+    "programs": 65
+   },
+   "orman": {
+    "calls": 116,
+    "tris": 183333,
+    "programs": 67
+   }
+  },
+  "dengeli": {
+   "iskele-asama1": {
+    "calls": 170,
+    "tris": 93784,
+    "programs": 160
+   },
+   "iskele-asama10": {
+    "calls": 424,
+    "tris": 293873,
+    "programs": 171
+   },
+   "iskele-orta": {
+    "calls": 442,
+    "tris": 295068,
+    "programs": 172
+   },
+   "sokak": {
+    "calls": 311,
+    "tris": 481917,
+    "programs": 174
+   },
+   "karsi-yaka": {
+    "calls": 211,
+    "tris": 449337,
+    "programs": 176
+   },
+   "karsi-yaka-bati": {
+    "calls": 212,
+    "tris": 420757,
+    "programs": 179
+   },
+   "hali-saha": {
+    "calls": 106,
+    "tris": 37663,
+    "programs": 183
+   },
+   "orman": {
+    "calls": 181,
+    "tris": 317671,
+    "programs": 190
+   }
+  }
+ }
+}

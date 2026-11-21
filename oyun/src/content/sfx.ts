@@ -32,6 +32,8 @@ export const EVENT_SFX: Record<string, SfxRule> = {
   kapkacGrab: 'bad', angry: 'bad', wake: 'wake',
   // Faz 2: restoran + stantlar + NPC Erim
   ticket: 'ticket', serve: 'serve', hesap: 'hesap', stantBuy: 'buy', stantSale: 'coin', stantRefill: 'pop', erimGlitch: 'glitch', erimBonk: 'bonk',
+  // BUF-08 mutfak sesleri: servis zili (pass), tava çarpması, bulaşık şıngırtısı (olayı henüz üretilmez, tetik hazır)
+  passBell: 'passBell', tavaCarpma: 'tavaCarpma', bulasikSes: 'bulasikSes',
 };
 
 /** ses-3: events that get a short voiced (grumble) line; the engine plays at most one per 10 s. */

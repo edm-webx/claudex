@@ -4,7 +4,7 @@
  * Port note: parameters are typed loosely (`any`) where v2 passed option bags; behaviour is unchanged.
  */
 import * as T from 'three';
-import { Batch, mtx, geoc, col, mixc, shade, clamp, lerp, easeInOut, PI, TAU, HP, roundBox } from '../../../engine/prefab/batch';
+import { Batch, mtx, geoc, col, mixc, shade, clamp, lerp, easeInOut, PI, TAU, HP, roundBox, FOOT_AO } from '../../../engine/prefab/batch';
 import { K, R, MAT, rnd, v2rng, rrect, fitText, txt, canvasTex, atlasTex, radialTex } from '../common/v2kit';
 import { extraDecorInto, applyPaint } from './decor-extra';
 import { EXTRA_SIZE, PAINT_SHAPES } from '../../dekor-katalog';
@@ -38,6 +38,7 @@ export function tulipGlass(b?: any, x?: any, y?: any, z?: any, s?: any, tea?: an
 }
 export function stationModel(kind?: any, tier?: any, stage?: any) {
   const A = new Batch(), TL = new Batch(), S: any = { A, TL, w: 1.1, d: 0.7, out: V3(), meat: null, steam: [], spin: null, glow: [] };
+  A.ao = FOOT_AO;   // GRS-06
   const out = stage === 1, tc = TRIM[tier - 1], gold = tier === 4;
   if (kind === 'doner') {
     if (out) {
