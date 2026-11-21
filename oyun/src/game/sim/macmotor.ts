@@ -661,8 +661,8 @@ export function createMatch(o: MatchOpts = {}) {
         }
         let tx = p.tx, ty = p.ty;
         if (ball.owner === i && Math.hypot(ball.x - p.x, ball.y - p.y) > 0.6) { tx = ball.x + ball.vx * 0.15; ty = ball.y + ball.vy * 0.15; }   // topu kovala
-        const dx = tx - p.x, dy = ty - p.y, d = Math.hypot(dx, dy), want = d > 0.3 ? Math.min(p.spd * bm, (d - 0.2) * 2.5) : 0;
-        surus(p, d > 0 ? dx / d * want : 0, d > 0 ? dy / d * want : 0, dt, p.gk ? 18 : 13, 20);
+        const dx = tx - p.x, dy = ty - p.y, d = Math.hypot(dx, dy), want = d > 0.3 ? Math.min(p.spd * bm * (p.gk ? 1 : 0.86 + p.sk.pace * 0.24), (d - 0.2) * 2.5) : 0;
+        surus(p, d > 0 ? dx / d * want : 0, d > 0 ? dy / d * want : 0, dt, p.gk ? 18 : 10 + p.sk.pace * 6, 20);
       }
       const ox = p.x, oy = p.y;
       p.x = clamp(p.x + p.vx * dt, 0.4, L - 0.4); p.y = clamp(p.y + p.vy * dt, 0.4, WD - 0.4); p.st.dist += Math.hypot(p.x - ox, p.y - oy);
@@ -699,7 +699,7 @@ export function createMatch(o: MatchOpts = {}) {
         if (hands && bs > 11 && m.shot && m.shot.team !== p.team) {   // a real shot on the keeper: catch or parry by speed and skill
           // tut / yumrukla / kaçır: hız, vücuttan uzaklık (dalışta gövde uzanır), yükseklik ve beceri
           const rx = ball.x - p.x, ry = ball.y - p.y, vv = ball.vx * ball.vx + ball.vy * ball.vy || 1, tc = Math.max(0, -(rx * ball.vx + ry * ball.vy) / vv), cd = Math.hypot(rx + ball.vx * tc, ry + ball.vy * tc);   // topun kaleciye en yakın geçeceği mesafe
-          const dd = cd, sv = clamp(0.98 - (bs - 10) * 0.04 - Math.max(0, dd - 0.3) * (p.dive > 0 ? 0.5 : 1.1) - Math.max(0, ball.z - 1.6) * 0.5 + (p.sk.gk - 0.5) * 0.8, 0.1, 0.95), u = R();
+          const dd = cd, sv = clamp(0.98 - (bs - 10) * 0.04 - Math.max(0, dd - 0.3) * (p.dive > 0 ? 0.5 : 1.1) - Math.max(0, ball.z - 1.6) * 0.5 + (p.sk.gk - 0.5) * 1.1, 0.1, 0.95), u = R();
           // 2026-11-21: gövdeye gelen top kalecinin içinden geçmez; kaçırırsa önüne seker (dönen top). Yalnız uzanarak yetişilen top geçebilir.
           if (u >= sv && dd > 0.4) { p.kickCd = 0.3; continue; }
           if (u >= sv) { const sp2 = bs * (0.18 + R() * 0.12); ball.vx = -Math.sign(ball.vx) * sp2 * 0.8 + (R() - 0.5) * 3; ball.vy = (R() - 0.5) * sp2; ball.vz = R() * 1.2; p.kickCd = 0.45; p.st.saves++; m.shot = null; ball.lastTouch = p.team; emit({ k: 'save', team: p.team }); sfx('post'); sfx('crowdOoh'); break; }
