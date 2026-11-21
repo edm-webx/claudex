@@ -76,7 +76,7 @@ export interface AgentHost {
   openProducts(): ProductId[];
   tablesBuilt(): number;
   /** Tables with dirty plates. */
-  dirtyTables(): { index: number; x: number; z: number }[];
+  dirtyTables(): { index: number; x: number; z: number; /** s the table has been dirty (BUF-28: cleaners take the oldest first) */ age?: number }[];
   cleanTable(index: number, workerId: number): void;
   /** Products the first queued customers still want, minus counter stock. */
   need(): Partial<Record<ProductId, number>>;

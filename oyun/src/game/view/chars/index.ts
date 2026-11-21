@@ -57,6 +57,8 @@ export interface MotorCrowd extends CrowdView {
   stats(): Record<string, unknown>;
   /** BUF-20: optional per-slot height (sim rt.agentY: çatı terası / merdiven); null = ground */
   heightOf: ((slot: number) => number) | null;
+  /** 2026-11-21: optional: hide a raised agent (height > 0.5) at x, z (the player is inside the salon whose roof is cut away) */
+  hideUp: ((x: number, z: number) => boolean) | null;
 }
 export interface MotorChars extends Chars {
   readonly crowd: MotorCrowd;
@@ -178,6 +180,7 @@ export function createChars(deps: CharsDeps): MotorChars {
     headPos(slot, out) { const id = slotId[slot]; if (id < 0) return false; const v = v2crowd.headPos(id); out.x = v.x; out.y = v.y; out.z = v.z; return true; },
     stats: () => v2crowd.stats(),
     heightOf: null,
+    hideUp: null,
     update(agents: SoAStore, dt: number, alpha: number) {
       const hi = Math.min(agents.hi, 256), flags = agents.u16('flags'), lod = agents.u8('lod');
       // choose up to budget slots: priority first, then the rest
@@ -185,6 +188,7 @@ export function createChars(deps: CharsDeps): MotorChars {
       for (let pass = 0; pass < 2 && n < budget; pass++) for (let i = 0; i < hi && n < budget; i++) {
         if (!agents.alive(i)) continue;
         const f = flags[i]; if (!(f & AGENT_FLAG.visible) || (f & AGENT_FLAG.hero)) continue;
+        if (crowd.hideUp && crowd.heightOf && crowd.heightOf(i) > 0.5 && crowd.hideUp(agents.f32('x')[i], agents.f32('z')[i])) continue;   // roof guests over a cut-away salon
         const pri = (f & (AGENT_FLAG.customer | AGENT_FLAG.queued | AGENT_FLAG.seated)) !== 0 || lod[i] === AGENT_LOD.A;
         if ((pass === 0) === pri) pick[n++] = i;
       }

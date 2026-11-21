@@ -5,7 +5,7 @@ import { describe, it, expect } from 'vitest';
 import { IC_BY_ID, icColliders, icDim, icLayout, icWorld, mutfakOda, mutfakBoy, mutfakStand, mutfakRota, mutfakDunya, mutfakIcine, mutfakVitrin, MUTFAK_YER, MUTFAK_NOKTA, IC_DUVAR, icIcinde } from '../../src/content/ic-mekan';
 import { MUTFAK_IST_BY_ID, mutfakEsya } from '../../src/content/mutfak';
 import { BUFE } from '../../src/content/prefabs/iskele/layout';
-import { buyumeEngel } from '../../src/game/view/world/bufe-buyume';
+import { buyumeEngel, GECIT, gecitIcinde } from '../../src/game/view/world/bufe-buyume';
 
 const ic = (st: number) => mutfakBoy(st).yari - IC_DUVAR;
 
@@ -53,6 +53,17 @@ describe('mutfak aşamayla büyür', () => {
     const n = (s: number) => icLayout(IC_BY_ID.mutfak, s).filter(i => i.solid && (i.asama ?? 0) <= s).length; expect(n(3)).toBeLessThan(n(6)); expect(n(6)).toBeLessThan(n(9));
   });
   it('bekleme noktası odanın içine çekilir', () => { expect(mutfakIcine([-6.3, -0.7], 3)[0]).toBeGreaterThan(-ic(3)); expect(mutfakIcine([-6.3, -0.7], 9)[0]).toBe(-6.3); });
+  it('servis geçidi (2026-11-21): büfe ile mutfak arası çatılı, yan duvarlı, batıda tek personel kapısı; pass ve mutfak kapısı içine açılır', () => {
+    const pg = mutfakDunya(MUTFAK_NOKTA.passGarson), kapi = icWorld(IC_BY_ID.mutfak, 0, icDim(IC_BY_ID.mutfak).D / 2 + 0.7);
+    expect(gecitIcinde(pg)).toBe(true); expect(gecitIcinde(kapi)).toBe(true);
+    for (const s of [3, 6, 9, 10]) {
+      const eng = buyumeEngel(s), blocked = (x: number, z: number) => eng.some(r => x > r.x0 && x < r.x1 && z > r.z0 && z < r.z1);
+      expect(blocked(GECIT.x0 + 0.1, (GECIT.kz0 + GECIT.kz1) / 2)).toBe(false);   // personel kapısı açık
+      for (const z of [GECIT.z0 + 0.2, GECIT.z1 - 0.2]) expect(blocked(GECIT.x0 + 0.1, z)).toBe(true);
+      for (const z of [-12.8, -11.8, -10.8]) expect(blocked(GECIT.x1 - 0.1, z)).toBe(true);   // doğu duvarı kapalı
+      expect(blocked(pg.x, pg.z)).toBe(false); expect(blocked(kapi.x, kapi.z)).toBe(false);
+    }
+  });
   it('pass penceresi büfe tezgâhının arkasında; garson noktası odanın dışında, yürüyüş yolunda; vitrin bölgesi büfeyi kapsar', () => {
     const pg = mutfakDunya(MUTFAK_NOKTA.passGarson), pa = mutfakDunya(MUTFAK_NOKTA.passAsci);
     expect(pg.x).toBeGreaterThan(BUFE.x0); expect(pg.x).toBeLessThan(BUFE.x1); expect(pg.z).toBeLessThan(BUFE.z0); expect(pg.z).toBeGreaterThan(-13.0);

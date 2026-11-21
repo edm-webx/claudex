@@ -316,15 +316,21 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
     const fx = traitFx(rt.w), a = rt.a;
     const speed = 2.4 * (1 + (fx.walk || 0));
     a.act = 'idle';
+    a.y = katY(S.stage || 1, a.x, a.z, (a.y || 0) > 0.5);   // 2026-11-21: temizlikçi de çatı terasına çıkar (garsonla aynı merdiven rotası)
     if (rt.state === 'idle') {
       if (rt.wk.walk(dt, speed)) { a.act = 'walk'; return; }
       const d = host.dirtyTables().filter((t) => !claimed(t.index, rt));
-      if (d.length) { rt.job = { index: d[0].index }; rt.state = 'toClean'; rt.wk.goTo(d[0]); return; }
+      if (d.length) {
+        // BUF-28: eskiden hep ilk (en düşük index) masa seçiliyordu: yüksek index'li kanat masaları yoğunlukta 200 sn+ kirli kalıyordu. Şimdi 45 sn'i geçen en eski masa, yoksa en yakın masa.
+        const eski = d.filter((t) => (t.age || 0) > 45).sort((p, q) => (q.age || 0) - (p.age || 0))[0];
+        const pick = eski || d.reduce((b, t) => (Math.hypot(t.x - a.x, t.z - a.z) < Math.hypot(b.x - a.x, b.z - a.z) ? t : b));
+        rt.job = { index: pick.index }; rt.state = 'toClean'; goVia(rt, masaCati(pick.index) ? sideOf(pick.index) : pick, pick.index); return;   // çatı masası: merdivenden, masanın yanına
+      }
       // 2026-10-24 user: "dükkanın içi kirli duruyor, temizlikçi paspas atsın": with tables clean, mop the kiosk floor
       if (zeminSave(S as unknown as { zones: Record<string, Record<string, unknown>> }).kir > 0.2) { rt.state = 'mop'; rt.t = 0; rt.loadT = 0; rt.jobKey = '0'; say(rt, rng.pick(['Paspas zamanı!', 'Basmayın, ıslak!', 'Pırıl pırıl olacak.']), 2.2); return; }
       // BUF-13: kiosk is clean: the kitchen floor (dirt from cooks and dishwashers, zemin.ts mutfakKir) is mopped next
       if (S.stage >= MUTFAK_MIN_STAGE && (zeminSave(S as unknown as { zones: Record<string, Record<string, unknown>> }).mutfakKir || 0) > 0.25) { rt.state = 'mopK'; rt.t = 0; rt.loadT = 0; rt.jobKey = '0'; say(rt, 'Mutfak kayganmış, paspas!', 2.2); return; }
-      const h = home(rt, S); if (!near2(a, h, 0.5)) rt.wk.goTo(h);
+      const h = home(rt, S); if (!near2(a, h, 0.5)) goVia(rt, h);   // çatıdaysa önce iner
       return;
     }
     if (rt.state === 'mopK') {
@@ -345,7 +351,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
       const spots = ['doner', 'cay', 'tost'].filter((k) => host.stationBuilt(k as ProductId)).map((k) => book.stationStand(k as ProductId) as Vec2).concat([book.get('counter.standAt') as Vec2]);
       const i = Number(rt.jobKey) || 0;
       if (rt.wk.walk(dt, speed * 0.8)) { a.act = 'walk'; return; }
-      if (rt.loadT === 0) { rt.loadT = 0.01; const sp = spots[i % spots.length]; rt.wk.goTo(side(sp, 0.5 - (i % 2), 0.45)); return; }
+      if (rt.loadT === 0) { rt.loadT = 0.01; const sp = spots[i % spots.length]; goVia(rt, side(sp, 0.5 - (i % 2), 0.45)); return; }
       a.act = 'sweep'; rt.loadT += dt;
       if (rt.loadT >= 2.2 / (1 + (fx.clean || 0))) {
         const z = zeminSave(S as unknown as { zones: Record<string, Record<string, unknown>> });
@@ -377,7 +383,23 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
   const ROW = mutfakKoridor().arka;   // aisle in front of the back-row stations
   const uvOf = (p: Vec2): [number, number] => [p.x - KM.x, p.z - KM.z];   // the room faces +z: u = x - room x, v = z - room z
   const KOMI_YAS = 6;   // a tray plate the komi leaves this long is taken by an idle cook
-  const kIdlePost = (rt: WRt): [number, number] => mutfakIcine(kIdlePost0(rt), env.rules.state.stage || 1);   // BUF-22: inside the stage room
+  /**
+   * BUF-22: inside the stage room. 2026-11-21 (denetçi: komi, bulaşıkçı ve boştaki aşçılar bulaşık hattının önünde omuz omuza üst üste
+   * duruyordu): fixed posts first (şef, devralınmış istasyonun aşçısı, ilk bulaşıkçı / barista), the rest slide along their aisle in
+   * 0.9 m steps until no other kitchen worker's post is closer than 0.75 m.
+   */
+  const kIdlePost = (rt: WRt): [number, number] => {
+    const st = env.rules.state.stage || 1, taken: [number, number][] = [], km = rows.filter((o) => ROLES[o.w.role]?.mutfak);
+    const sabit = (o: WRt) => o.w.role === 'sef' || (o.w.role === 'asci' && !!host.kitchenDevir?.(o.w.id)) || ((o.w.role === 'bulasikci' || o.w.role === 'barista') && km.filter((x) => x.w.role === o.w.role).indexOf(o) === 0);
+    for (const o of km) if (sabit(o)) { const q = mutfakIcine(kIdlePost0(o), st); if (o === rt) return q; taken.push(q); }
+    for (const o of km) {
+      if (sabit(o)) continue;
+      const b0 = mutfakIcine(kIdlePost0(o), st); let q = b0;
+      for (let k = 0; k < 10 && taken.some((t) => Math.hypot(t[0] - q[0], t[1] - q[1]) < 0.75); k++) q = mutfakIcine([b0[0] + (k % 2 ? 0.9 : -0.9) * (Math.floor(k / 2) + 1), b0[1]], st);
+      if (o === rt) return q; taken.push(q);
+    }
+    return mutfakIcine(kIdlePost0(rt), st);
+  };
   const kIdlePost0 = (rt: WRt): [number, number] => {
     const i = rows.filter((x) => x.w.role === rt.w.role).indexOf(rt);
     if (rt.w.role === 'bulasikci') { const [u, v] = mutfakStand('bulasik'); return [u - i * 1.2, v]; }   // BUF-22: bulaşık arka hatta
@@ -426,8 +448,10 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
   const acikSef = (rt: WRt, S: GameState) => (S.stage || 1) >= 9 && rows.find((x) => x.w.role === 'sef') === rt;
   const komiVar = () => rows.some((x) => x.w.role === 'komi');
   const kStand = (ist: string) => mutfakStand(ist);
-  const sefSay = (rt: WRt) => {   // şef pasoda: her tabak pass'a konunca seslenir
-    const s = rows.find((x) => x.w.role === 'sef'); if (!s) return;
+  let sefSira = 0;
+  const sefSay = (rt: WRt) => {   // şef pasoda: her tabak pass'a konunca seslenir (BUF-28: iki şef varsa sırayla, ikinci şef boş durmasın)
+    const sefler = rows.filter((x) => x.w.role === 'sef'); if (!sefler.length) return;
+    const s = sefler[sefSira++ % sefler.length];
     say(s, rng.pick(['Servis!', 'Sıcak tabak, servis!', 'Pass, servis lütfen!', 'Tabak hazır, alın!']), 1.8); void rt;
   };
   function kTake(rt: WRt, opt: { kendi?: boolean; yas?: number }): boolean {   // carry duty: reserve a tray plate, walk to its station

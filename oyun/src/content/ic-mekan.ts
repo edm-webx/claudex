@@ -31,7 +31,7 @@ export const IC_MEKANLAR: IcMekan[] = [
   { id: 'morg', ad: 'Morg', tur: 'morg', x: 57.3, z: 55.5, wx: 3.3, wz: 3.2, kapi: '-x', bina: 'morg', h: 3.1 },
   // büfe salonları on the pier (view/world/bufe-buyume.ts WB / EB), door on the promenade side
   { id: 'salonW', ad: 'Kahvaltı salonu', tur: 'kahvalti', x: -17.6, z: -13.9, wx: 10.8, wz: 6.6, kapi: '+z', salon: 'W', h: 3.4 },
-  // Sabri'nin mutfağı: behind the covered walkway behind the kiosk, door on the walkway side (view/world/bufe-buyume.ts shell)
+  // Sabri'nin mutfağı: the büfe's back kitchen, joined to the büfe by the roofed service passage (view/world/bufe-buyume.ts GECIT), door on the passage side
   { id: 'mutfak', ad: 'Sabri Mutfağı', tur: 'mutfak', x: 0, z: -15.2, wx: 18, wz: 4.4, kapi: '+z', mutfak: true, h: 3.4 },
   { id: 'salonE', ad: 'Balık lokantası', tur: 'balik', x: 15.6, z: -13.9, wx: 12, wz: 6.6, kapi: '+z', salon: 'E', h: 3.4 },
 ];
@@ -268,7 +268,7 @@ export function mutfakOda(stage: number): IcMekan {
   if (!o) { o = { ...IC_BY_ID.mutfak, wx: b.yari * 2 }; odaCache.set(key, o); }
   return o;
 }
-/** BUF-22: oyuncu büfede ya da arkasındaki yürüyüş yolundayken mutfağın çatısı kalkar, içi pass penceresi / camlı önden görünür */
+/** BUF-22: oyuncu büfede ya da arkasındaki servis geçidindeyken mutfağın içi çizilir (camlı ön / pass penceresinden görünür; 2026-11-21: çatı yalnız mutfağın içindeyken kalkar) */
 export const mutfakVitrin = (p: { x: number; z: number }): boolean => p.x > -10.5 && p.x < 10.5 && p.z > -13.2 && p.z < -3.6;
 const mutfakD = () => icDim(IC_BY_ID.mutfak).D;
 export const mutfakKoridor = () => { const D = mutfakD(); return { arka: -D / 2 + 1.5, on: D / 2 - 1.3 }; };

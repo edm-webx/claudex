@@ -507,7 +507,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
       const d = g.src === 'pass' ? passNokta() : tezgahNokta();
       return { id: g.id, tur: 'tabak', table: g.table, x: d.x, z: d.z, n };
     }
-    if (g.tur === 'sil') { const tb = rt.layout.tables[g.table]; return { id: g.id, tur: 'sil', table: g.table, x: tb?.x ?? 0, z: tb?.z ?? 0 }; }
+    if (g.tur === 'sil') { const y = masaYan(g.table); return { id: g.id, tur: 'sil', table: g.table, x: y.x, z: y.z }; }   // BUF-28: masanın yanına (merkez katı: garson 2.4 m+ uzakta durup 'ışınlanma' sayılıyordu)
     const y = masaYan(g.table); return { id: g.id, tur: g.tur, table: g.table, x: y.x, z: y.z };
   }
   function isAl(wid: number, o: { cap: number; at?: Vec2 }): IsAlSonuc | null {

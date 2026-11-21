@@ -24,6 +24,8 @@ it('pier wings: salon income and staff grow every stage from 3; growth stays on 
     expect(r.x0).toBeGreaterThan(-24); expect(r.x1).toBeLessThan(22.7); expect(r.z0).toBeGreaterThan(-18); expect(r.z1).toBeLessThan(4.4);
     const ferry = r.x1 > 8.6 && r.z1 > -9.2 && r.z0 < -4.8; expect(ferry).toBe(false);
     if (r.tag === 'buyume-bufemutfak') expect(r.z1).toBeLessThanOrEqual(-12.9);   // 2026-11-09 büfe mutfağı sits behind the covered walkway
+    else if (r.tag === 'buyume-bufe-ic') { expect(r.x0).toBeGreaterThan(3.4); expect(r.x1).toBeLessThan(4.2); expect(r.z1).toBeLessThan(-7.8); }   // 2026-11-21 büfe vitrini on the east wall, clear of the window post
+    else if (r.tag === 'buyume-gecit') { expect(r.z0).toBeGreaterThanOrEqual(-13.0); expect(r.z1).toBeLessThanOrEqual(-10.6); expect(Math.abs(r.x0) > 4.0 && Math.abs(r.x1) > 4.0).toBe(true); }   // 2026-11-21 service passage walls: only on the büfe's sides
     else { const inner = r.x1 > -10.3 && r.x0 < 8.3; expect(inner).toBe(false); }   // the kiosk area and walkways stay free
   }
   expect(buyumeEngel(10).length).toBeGreaterThan(buyumeEngel(5).length);

@@ -347,6 +347,7 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
     K.logEv('kasaOde', { yontem: c.odeme || 'nakit', x: c.x, z: c.z });
     payAndGo(c);
   }
+  let kasaRR = 0;
   function kasaGuncelle(dt: number) {
     if (!rt.kasaQueue.length) return;
     const T = kasalar(), L = rt.layout;
@@ -356,7 +357,9 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
       const c = rt.kasaQueue[i];
       if (c.state !== 'queue' || !near2(c, kasaSiraNokta(L.kasa, i), 0.45)) continue;
       c.kasaT = (c.kasaT || 0) + dt;
-      if (c.kasaT >= kasaSure(c.items.length, T.rankX[i] ?? 1, davranisOf(c.typeId).kasa)) { kasaOde(c, T.ids[i]); i--; }
+      // BUF-28: sıra gişelere dönüşümlü dağılır (i + kasaRR) % n: eskiden hep ilk gişeler çalışıyordu, üçüncü kasiyer kuyruk 3'ü bulmadıkça hiç işlem yapmıyordu
+      const d = T.n > 1 ? (i + kasaRR) % T.n : 0;
+      if (c.kasaT >= kasaSure(c.items.length, T.rankX[d] ?? 1, davranisOf(c.typeId).kasa)) { kasaOde(c, T.ids[d]); kasaRR++; i--; }
     }
   }
 

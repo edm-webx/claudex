@@ -27,6 +27,8 @@ export interface AgentsViewDeps {
   player: () => { x: number; z: number; moving: boolean };
   /** 2026-11-21 denetim: kameranın dibinden geçen martı ekranda büfeden büyük görünüyordu; havadaki martı kameraya 8 m'den yakınsa gizlenir */
   camera?: () => { position: { x: number; y: number; z: number } };
+  /** 2026-11-21: optional: hide a raised actor (y > 0.5) at x, z (roof terrace over a salon the player is inside: its roof is cut away) */
+  hideUp?: (x: number, z: number) => boolean;
   /** Optional: B's item meshes are wired through chars.setItemFactory by boot. */
 }
 export interface AgentsView extends GameView {
@@ -133,6 +135,8 @@ export function createAgentsView(deps: AgentsViewDeps): AgentsView {
           const cp = y > 1.5 ? deps.camera?.()?.position : undefined;
           if (cp && h.object.visible && (cp.x - x) ** 2 + (cp.y - y) ** 2 + (cp.z - z) ** 2 < 64) h.object.visible = false;
         }
+        if (r.gull < 0) h.object.visible = !(y > 0.5 && deps.hideUp?.(x, z));
+        if (r.gull >= 0) h.object.visible = r.gull < gullsNear || a.act === 'stare' || a.act === 'snatch' || a.carry.length > 0;
         if (r.animal) {
           (h as unknown as { setState(s: Record<string, unknown>): void }).setState(r.a.kind === 'gull' || r.a.kind === 'parrot' ? { mode: a.act, speed: Math.min(1, a.speed / 1.2) } : { act: a.act, speed: Math.min(1, a.speed / 1.2) });
         } else {

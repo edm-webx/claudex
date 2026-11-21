@@ -94,7 +94,7 @@ import { createOrmanView } from './view/orman';
 import { createOtobusHud } from './ui/otobus-hud';
 import { createMulkPanel } from './ui/mulk-panel';
 import { createKirtasiyeFp } from './ui/kirtasiye-fp';
-import { IC_BY_ID as KT_IC, icWorld as ktWorld, icDim as ktDim } from '../content/ic-mekan';
+import { IC_BY_ID as KT_IC, icWorld as ktWorld, icDim as ktDim, icIcinde as ktIcinde } from '../content/ic-mekan';
 import { createMulkView } from './view/mulk';
 import { bankaOku, bankaYaz } from './net/slots';
 import { bulutKapanisYaz } from './net/slots';
@@ -396,10 +396,13 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   };
 
   // ── agents view (workers, regulars, gurme, kapkaççı, cats, Karamel, gulls, pigeons, far flock)
+  /** 2026-11-21: the player is inside a büfe salon (its roof / upper floor is cut away, view/world/bufe-buyume.ts): people up on that roof would float */
+  const salonUstGizli = (x: number, z: number) => { for (const m of [KT_IC.salonW, KT_IC.salonE]) if (ktIcinde(m, pos, 0.2) && ktIcinde(m, { x, z }, 0.4)) return true; return false; };
   const agentsOf = (): AgentsHandle | null => (sim.rules.rt as unknown as { agents?: AgentsHandle }).agents ?? null;
   const agentsView: AgentsView | null = playMode && chars ? make('agentsView', () => createAgentsView({
     chars: chars as MotorChars, quality, agents: agentsOf,
     player: () => ({ x: pos.x, z: pos.z, moving: walk.speed > 0.15 }), camera: () => cam.camera,
+    hideUp: (x, z) => salonUstGizli(x, z),
   })) : null;
 
   // ── panels, labels, play view, audio map (play mode only)
@@ -616,10 +619,17 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
 
   // ── per-frame guarded calls
   const strikes = new Map<string, number>();
+  const gAgg = new Map<string, { n: number; sum: number; max: number }>();   // BUF-29: perfRecord açıkken her kare parçasının süresi (kapalıyken sıfır maliyet); hook 'perfGuard' okur
   const guard = (name: string, fn: () => void) => {
     const s = strikes.get(name) ?? 0;
     if (s >= 3) return;
-    try { fn(); } catch (e) {
+    try {
+      if (P.recording) {
+        const t0 = platform.clock.now(); fn(); const d = platform.clock.now() - t0;
+        let a = gAgg.get(name); if (!a) gAgg.set(name, a = { n: 0, sum: 0, max: 0 });
+        a.n++; a.sum += d; if (d > a.max) a.max = d;
+      } else fn();
+    } catch (e) {
       strikes.set(name, s + 1);
       log.error(`frame part ${name} threw`, e);
       if (s + 1 >= 3) P.warn(`Kapandı: ${name}`);
@@ -709,6 +719,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     });
     if (agentsView) guard('agents', () => { P.time('agents', () => agentsView.update(sim.state, fdt, alpha)); });
     if (huyMotion) guard('huyMotion', () => huyMotion.update(fdt));
+    if (chars && !(chars.crowd as MotorCrowd).hideUp) (chars.crowd as MotorCrowd).hideUp = salonUstGizli;   // 2026-11-21: çatıdakiler, çatısı kalkmış salonun içindeyken görünmez
     if (chars && !(chars.crowd as MotorCrowd).heightOf) (chars.crowd as MotorCrowd).heightOf = (slot: number) => (rt() as unknown as { agentY?: Float32Array }).agentY?.[slot] || 0;   // BUF-20: çatı terası müşterileri
     if (chars) guard('crowd', () => { P.time('crowd', () => { chars.crowd.update(sim.agents, fdt, alpha); chars.update(fdt, alpha); }); });
     if (carsi) guard('carsi', () => carsi.update(fdt));
@@ -942,6 +953,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   reg('perfReport', () => P.report());
   reg('perfRecord', (on = true) => { P.record(!!on); return P.recording; });
   reg('perfDump', () => P.dump());
+  reg('perfGuard', (reset = false) => { const o: Record<string, { n: number; ms: number; max: number }> = {}; for (const [k, a] of gAgg) o[k] = { n: a.n, ms: +(a.sum / Math.max(1, a.n)).toFixed(4), max: +a.max.toFixed(3) }; if (reset) gAgg.clear(); return o; });
   // PRF-02 kırmızı sınama: sahneyi bilerek şişirir (görünür mesh'leri, kendi geometrisiyle, ebeveynine kopyalar). Yalnız tools/perf-gate.mjs --sisir kullanır.
   reg('sisir', (n = 500) => {
     const src: AnyRec[] = []; R.scene.traverse((o0: Object3D) => { const o = o0 as unknown as AnyRec; if (o.isMesh && o.visible && o.geometry && o.parent) src.push(o); });
