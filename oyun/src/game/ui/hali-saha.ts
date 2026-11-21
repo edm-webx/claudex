@@ -15,7 +15,7 @@ import { olayBanner, restartBanner, restartIpucu, sesler, type MacOlay } from '.
 
 type Cmd = { kind: string; [k: string]: unknown };
 interface Izle { seed: number; s0: number; s1: number; f: [string, string]; oran: Record<string, number>; bahis: '1' | 'X' | '2' | null; n: number; halfS: number }
-interface MacInfo { iz?: Izle; team: string; name: string; colors: [string, string]; rival: string; rivalName: string; rivalColors: [string, string]; formasyon?: string; doluluk?: number }
+interface MacInfo { iz?: Izle; team: string; name: string; colors: [string, string]; rival: string; rivalName: string; rivalColors: [string, string]; formasyon?: string; doluluk?: number; ayar?: { skill: [number, number]; formations: [string, string]; names: [string[], string[]]; plan: [string, string] } }
 export interface HaliSahaDeps { root: HTMLElement; rules: () => { rt: { uiLast: Record<string, unknown> } } | null; command(c: Cmd): void; sfx?(id: string): void; chars?: { makeHero(o: never): unknown } | null; esnaf?: () => Record<string, unknown> | null }
 export interface HaliSahaView { update(): void; dispose(): void }
 
@@ -77,7 +77,7 @@ export function createHaliSaha(deps: HaliSahaDeps): HaliSahaView {
     const FKEYS = Object.keys(FORMATIONS), seed = (Date.now() & 0xfffff) | 1, iz = t.iz || null, HALF = iz ? iz.halfS : HALF_S;
     let speed = 1, acc = 0;
     // 2026-11-08 spectator mode: AI vs AI from the sim's seed with fixed 1/60 steps, so the replay matches the result the sim settled the bet on.
-    const M = iz ? createMatch({ seed: iz.seed, human: null, halfS: iz.halfS, skill: [iz.s0, iz.s1], formations: iz.f, names: [HOME_NAMES, AWAY_NAMES] }) : createMatch({ seed, human: 0, humanSlot: 3, formations: [FORMATIONS[t.formasyon || ''] ? (t.formasyon as string) : '2-2', FKEYS[seed % FKEYS.length] as string], names: [HOME_NAMES, AWAY_NAMES], halfS: HALF_S, skill: [0.6, 0.55 + (seed % 7) * 0.02] });
+    const M = iz ? createMatch({ seed: iz.seed, human: null, halfS: iz.halfS, skill: [iz.s0, iz.s1], formations: iz.f, names: [HOME_NAMES, AWAY_NAMES] }) : (t.ayar ? createMatch({ seed, human: 0, humanSlot: 3, formations: t.ayar.formations, names: [HOME_NAMES, AWAY_NAMES], halfS: HALF_S, skill: t.ayar.skill, plan: t.ayar.plan }) : createMatch({ seed, human: 0, humanSlot: 3, formations: [FORMATIONS[t.formasyon || ''] ? (t.formasyon as string) : '2-2', FKEYS[seed % FKEYS.length] as string], names: [HOME_NAMES, AWAY_NAMES], halfS: HALF_S, skill: [0.6, 0.55 + (seed % 7) * 0.02] }));
     const pls = M.pls, ball = M.ball, SABRI = 3;
     const colsOf = (team: number) => (team === 0 ? t.colors : t.rivalColors);
     // 2026-10-26 owner: a referee in every match, stepping in on taç / korner / aut.
