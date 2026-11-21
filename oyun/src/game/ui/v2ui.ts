@@ -6,6 +6,7 @@
 // Decisions: runs on the engine ui root (CSS and HUD come from engine/ui); `env` supplies sfx/buzz/unlock/emit so there
 // is no global SB; DOM events 'ui:open' / 'ui:close' are dispatched on ui.root like engine/ui does.
 import { TIER_PRICE_X } from '../../content/ekonomi2';
+import { KIOSK_STAGES } from '../../content/stages';
 import type { Ui } from '../../engine/api';
 import { ICONS, INK } from '../../engine/ui/v2-style';
 import { renderEsnaf, renderKomsuSection } from './esnaf-panel';
@@ -773,7 +774,8 @@ function renderKarne(m) {
   } else if (stars >= 5) s += `<div class="sb-card" style="text-align:center;font:900 16px/1.3 var(--disp)">Beş yıldız! Martıköy seninle gurur duyuyor.</div>`;
   return s;
 }
-const STAGES = [['Seyyar Araba', 'cart1'], ['Büfe', 'shop'], ['Çay Bahçesi', 'garden'], ['Lokanta', 'lokanta'], ['Aile Lokantası', 'lokanta'], ['İskele Terası', 'garden'], ['Balık Restoranı', 'lokanta'], ['Boğaz Restoranı', 'lokanta'], ['Şef Mutfağı', 'lokanta'], ['Fine Dining', 'lokanta']];
+const STAGE_ICON = ['cart1', 'shop', 'garden', 'garden', 'garden', 'lokanta', 'lokanta', 'lokanta', 'lokanta', 'lokanta'];
+const STAGES = KIOSK_STAGES.map((st, i) => [st.short, STAGE_ICON[i] || 'lokanta']);   // BUF-21: tek isim seti (content/stages.ts)
 function renderTadilat(m) {
   const stg = clamp(num(m.stage) ? m.stage : 1, 1, STAGES.length);
   const names = Array.isArray(m.stages) ? m.stages : null;

@@ -4,6 +4,7 @@
  * Dwell: `kasa` (radius 0.55 + magnet range), `table.<i>` (radius 1.5; tips within 0.75 + magnet, plates within 1.5)
  * and `floor.<n>` interactables, dwell 0.1 s then 4 stacks per 0.06 s (v2 took one stack per tick).
  */
+import { masaCati } from '../../content/kanat';
 import { DWELL_DEFAULTS } from '../../engine/api';
 import { P } from '../../content/economy';
 import type { Kernel, MoneyApi, MoneyStack } from './state';
@@ -82,7 +83,7 @@ export function installMoney(K: Kernel): { api: MoneyApi; addMoneyTo(pile: Money
       // dirty plates: a short stop to clean (dwell rule)
       K.interactions.register({
         id, pos, radius: 1.5, kind: 'table', dwell: DWELL_DEFAULTS.table, interval: 0.1,
-        canAct: () => { const t = rt.tables[i]; return !!t && t.built && t.dirty > 0; },
+        canAct: () => { const t = rt.tables[i]; return !!t && t.built && t.dirty > 0 && !masaCati(i); },   // BUF-20: çatı masasını garson siler
         act: () => {
           const t = rt.tables[i]; if (!t) return 'done';
           if (t.dirty > 0) { (rt as unknown as { bulasik?: { masaSilindi(i: number): void } }).bulasik?.masaSilindi(i); t.dirty = 0; t.dirtyT = 0; K.stat('cleaned'); }

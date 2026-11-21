@@ -22,7 +22,7 @@ describe('gün sonu raporu', () => {
     expect(m).toBeTruthy();
     expect(m.brut).toBe(5120); expect(m.birimMaliyet).toBe(800); expect(m.maas).toBe(120);
     expect(m.kisiler[0]).toMatchObject({ ad: w.name, maas: 120 });
-    expect(m.brut - m.birimMaliyet - m.maas + m.salon.gelir + m.yan).toBe(m.earned);
+    expect(m.brut - m.birimMaliyet - m.maas + m.yan).toBe(m.earned);   // BUF-19: salon masaları brüt satışın içinde (salon satırı bilgi)
     expect(m.salon).toEqual({ gelir: 300, misafir: 12 });
     expect(m.masa).toEqual({ servis: 4, bekleS: 25 });
     expect(m.gider.odenen).toBe(m.gider.kira + m.gider.fatura); expect(m.gider.ertelendi).toBe(0);

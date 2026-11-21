@@ -87,7 +87,7 @@ export function createMulkPanel(d: Deps): MulkPanel {
     const z = m.salon; if (!z) return '';
     if (z.stage < 6) return '<div class="mp-note">Salonlar büfe 6. aşamada (Kahvaltı salonu) açılır. Balık lokantası 7. aşamada.</div>';
     const own = new Set<string>(z.esya);
-    let s = `<div class="mp-row"><span class="mp-ic" style="font-size:30px">🍽</span><div><b>Salonlar · saatte ~${z.misSaat} misafir</b><small>Ortalama adisyon ${tl(z.adisyon)} · ekip ${z.ekip} kişi. Gelir her oyun saati cebine yazılır.</small></div></div>`;
+    let s = `<div class="mp-row"><span class="mp-ic" style="font-size:30px">🍽</span><div><b>Salon ve teraslar · ${z.masa ?? 0} masa</b><small>Bugün ${z.bugunMis ?? 0} misafir, ${tl(z.bugunGelir ?? 0)}. Gelir yalnız gerçek müşteriden: garson ve aşçı tut, masalar dolsun. Aletler misafiri ve adisyonu artırır.</small></div></div>`;
     for (const [k, ad, min] of [['W', '🍳 Kahvaltı salonu (batı)', 6], ['E', '🐟 Balık lokantası (doğu)', 7]] as [string, string, number][]) {
       s += `<div class="mp-sec">${ad}${z.stage < min ? ' · 🔒 ' + min + '. aşama' : ''}</div><div class="mp-grid">`;
       s += (z.liste as M[]).filter(e => e.salon === k).map(e => own.has(e.id) ? `<div class="mp-it"><span class="mp-ic">${e.ikon}</span><b>${esc(e.ad)}</b><small>✓ ${esc(e.desc)}</small></div>` : `<div class="mp-it"><span class="mp-ic">${e.ikon}</span><b>${esc(e.ad)}</b><small>${esc(e.desc)}${z.stage < e.asama ? ' · 🔒 ' + e.asama + '. aşama' : ''}</small><button class="mp-b g" data-a="salonEsya" data-e="${e.id}"${z.stage < e.asama || m.money < e.fiyat ? ' disabled' : ''}>${tl(e.fiyat)}</button></div>`).join('') + '</div>';

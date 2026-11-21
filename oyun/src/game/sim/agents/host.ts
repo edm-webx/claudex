@@ -1,4 +1,5 @@
 /** Adapter: A's `Rules` -> the narrow `AgentHost` the agents layer codes against. Pure. */
+import { masaCati } from '../../../content/kanat';
 import { pencereWid } from '../window';
 import { restoranApi } from '../restoran';
 import { teslimatApi } from '../kurye';
@@ -22,7 +23,7 @@ export function hostFromRules(r: Rules): AgentHost {
     tablesBuilt: () => rt.tables.filter((t) => t.built).length,
     dirtyTables: () => {
       const out: { index: number; x: number; z: number }[] = [];
-      rt.tables.forEach((t, i) => { if (t.built && t.dirty > 0) { const l = rt.layout.tables[i]; out.push({ index: i, x: l.x, z: l.z }); } });
+      rt.tables.forEach((t, i) => { if (t.built && t.dirty > 0 && !masaCati(i)) { const l = rt.layout.tables[i]; out.push({ index: i, x: l.x, z: l.z }); } });   // BUF-20: çatı masası garsonun (temizlikçi merdivene çıkmaz)
       return out;
     },
     cleanTable: (i) => { const t = rt.tables[i]; if (t && t.dirty > 0) { (rt as unknown as { bulasik?: { masaSilindi(i: number): void } }).bulasik?.masaSilindi(i); t.dirty = 0; t.dirtyT = 0; r.stat('cleaned'); } },
@@ -46,6 +47,7 @@ export function hostFromRules(r: Rules): AgentHost {
     tabakGeri: (w) => restoranApi(r)?.tabakGeri?.(w) ?? 0,
     isBirak: (w) => restoranApi(r)?.isBirak?.(w),
     passDurak: (w) => restoranApi(r)?.passDurak?.(w) ?? null,
+    garsonPost: (w) => restoranApi(r)?.garsonPost?.(w) ?? null,
     kitchenClaim: (w, o) => restoranApi(r)?.kitchenClaim?.(w, o) ?? null,
     kitchenDone: (w, ok) => restoranApi(r)?.kitchenDone?.(w, ok),
     kitchenIst: (w) => restoranApi(r)?.kitchenIst?.(w) ?? null,

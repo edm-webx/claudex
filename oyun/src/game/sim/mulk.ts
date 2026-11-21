@@ -31,6 +31,7 @@ export const KREDI_FAIZ = 0.03, MEVDUAT_FAIZ = 0.005, KREDI_LIMIT = (lv: number)
 export const KAFE_TEMA: Record<string, string> = { retro: 'Retro', modern: 'Modern', bohem: 'Bohem', deniz: 'Deniz' };
 import { fmtMoney } from './util';
 import { salonOf, salonKat } from './salon';
+import { kanatKurulu } from '../../content/kanat';
 
 export interface Hedef { id: string; ad: string; stat: string; hedef: number; sayi: number; odul: number; alindi: boolean }
 export interface Env {
@@ -500,7 +501,7 @@ export function installMulk(K: Kernel) {
       okul: (() => { const o = okulZ(), w = o.soru >= 0 ? OKUL_KELIME[o.soru] : null; return { soru: w ? w[0] : '', secenek: o.secenek.map(i => OKUL_KELIME[i][1]), cevap: o.cevap, dogru: o.dogru, sinav: OKUL_SINAV, son: o.son, sinavlar: [...o.sinavlar], genel: o.sinavlar.length ? Math.round(o.sinavlar.reduce((a, b) => a + b, 0) / o.sinavlar.length) : 0, yakin: okulYakin() }; })(),
       gizem: (rt.gizem as { model(): unknown } | undefined)?.model() ?? null,
       lig: (rt.lig as { model(): unknown } | undefined)?.model() ?? null,
-      salon: (() => { const st = S.stage || 1, d = salonOf(st), k = salonKat(salonZ().esya, st); return { stage: st, esya: [...salonZ().esya], liste: SALON_ESYA, yakin: salonYakin(), misSaat: Math.round(d.mis * k.mis), adisyon: Math.round(d.adisyon * k.adis), ekip: d.ekip }; })(),
+      salon: (() => { const st = S.stage || 1, d = salonOf(st), k = salonKat(salonZ().esya, st); return { stage: st, esya: [...salonZ().esya], liste: SALON_ESYA, yakin: salonYakin(), misSaat: Math.round(d.mis * k.mis), adisyon: Math.round(d.adisyon * k.adis), ekip: d.ekip, masa: kanatKurulu(st).length, bugunGelir: Math.round((S.today as unknown as { salonGelir?: number } | null)?.salonGelir || 0), bugunMis: Math.round((S.today as unknown as { salonMis?: number } | null)?.salonMis || 0) }; })(),
       hak: ARSA_HAK, sahip: ownedN(), takim: a.takim, stad: a.takim ? (() => { const s = stadSave(a as never), z = (S.zones.halisaha as { form?: string[] } | undefined)?.form || []; return { ...s, tahmin: tahminDoluluk(s.fiyat, z), kapasite: KAPASITE, min: FIYAT_MIN, max: FIYAT_MAX, formaylar: FORMASYONLAR }; })() : null, stadyum: { ...STADYUM, yakin: nearGate() },
     };
   }

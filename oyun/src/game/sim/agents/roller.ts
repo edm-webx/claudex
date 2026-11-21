@@ -13,6 +13,7 @@
  *   Yalnız sim zamanında çalışır: oyun kapalıyken gelir YOK (offline kararı).
  * Deterministik: rng 'roller'.
  */
+import { masaCati } from '../../../content/kanat';
 import type { Vec2 } from '../../../engine/api';
 import type { GameState, ProductId } from '../schema';
 import { RANKS, ROLES, rankOf } from '../../../content/ranks';
@@ -130,7 +131,7 @@ export function createRoller(env: AgentEnv) {
       rt.wk.face(book.queue(0), dt);
       // kapıdan geçen müşteriyi karşıla (kalabalık günde masasına götür)
       const kalab = hostesGunu();
-      const hedef = rt0.customers.find((c) => c.state !== 'leave' && Math.hypot(c.x - a.x, c.z - a.z) < 9 && (kalab && c.kind === 'masa' && c.state === 'toSeat' && !!c.seat) && !handled.has(c.id));
+      const hedef = rt0.customers.find((c) => c.state !== 'leave' && Math.hypot(c.x - a.x, c.z - a.z) < 9 && (kalab && c.kind === 'masa' && c.state === 'toSeat' && !!c.seat && !masaCati(c.seat.table)) && !handled.has(c.id));   // çatı masasına merdivenden kendisi çıkar
       if (hedef) { s.cid = hedef.id; handled.add(hedef.id); s.ph = 'goster'; const tb = rt0.layout.tables[hedef.seat!.table]; s.to = tb ? { x: tb.x + 0.9, z: tb.z + 0.9 } : counterAt(); rt.wk.goTo(s.to); say(rt, 'Buyurun, masanız hazır!', 2.4); return; }
       s.t += dt;
       if (s.t > 9) { s.t = 0; const g = rt0.customers.find((c) => c.state !== 'leave' && Math.hypot(c.x - a.x, c.z - a.z) < 5); if (g) { a.act = 'wave'; say(rt, rng.pick(['Hoş geldiniz!', 'Kaç kişisiniz?']), 2.2); host.stat('hostesKarsilama'); } }

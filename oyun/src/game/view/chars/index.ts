@@ -55,6 +55,8 @@ export interface MotorCrowd extends CrowdView {
   lookSeed(slot: number, seed: number): void;
   headPos(slot: number, out: Vec3): boolean;
   stats(): Record<string, unknown>;
+  /** BUF-20: optional per-slot height (sim rt.agentY: çatı terası / merdiven); null = ground */
+  heightOf: ((slot: number) => number) | null;
 }
 export interface MotorChars extends Chars {
   readonly crowd: MotorCrowd;
@@ -175,6 +177,7 @@ export function createChars(deps: CharsDeps): MotorChars {
     lookSeed(slot, seed) { slotSeed[slot] = seed; if (slotId[slot] >= 0) { v2crowd.remove(slotId[slot]); slotId[slot] = -1; } },
     headPos(slot, out) { const id = slotId[slot]; if (id < 0) return false; const v = v2crowd.headPos(id); out.x = v.x; out.y = v.y; out.z = v.z; return true; },
     stats: () => v2crowd.stats(),
+    heightOf: null,
     update(agents: SoAStore, dt: number, alpha: number) {
       const hi = Math.min(agents.hi, 256), flags = agents.u16('flags'), lod = agents.u8('lod');
       // choose up to budget slots: priority first, then the rest
@@ -199,7 +202,7 @@ export function createChars(deps: CharsDeps): MotorChars {
         }
         const a = ACT_ORDER[act[i]] as ActId, m = MOOD_ORDER[mood[i]], e = expr[i];
         let rot = PR[i]; { let d = RO[i] - rot; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; rot += d * alpha; }
-        set.x = PX[i] + (X[i] - PX[i]) * alpha; set.z = PZ[i] + (Z[i] - PZ[i]) * alpha; set.rot = rot;
+        set.x = PX[i] + (X[i] - PX[i]) * alpha; set.z = PZ[i] + (Z[i] - PZ[i]) * alpha; set.rot = rot; set.y = crowd.heightOf ? crowd.heightOf(i) : 0;
         set.speed = moving(SP[i]) ? Math.min(1, SP[i] / 0.9) : 0;
         set.sit = a === 'sit' || (flags[i] & AGENT_FLAG.seated) !== 0;
         set.carry = carry[i] > 0;

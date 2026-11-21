@@ -22,3 +22,9 @@ Tamam + commit: BUF-01,02,03 (1e9fd9c), 04 (fb4c323), 05 (ea27edd), 06,07,08,09,
 Dalga 4: BUF-26+27 bitti (yeşil, 352 test). BUF-12/23/24 (kasa, sabır, gruplar) ve BUF-14/15/16 (salon rolleri, kurye, hijyen/müfettiş) AJANLAR YARIDA KESİLDİ: ağaçta YARIM işler var, tsc/test kırmızı olabilir (bkz. WIP commit). Devam: önce `git diff HEAD~1` ile yarımları gör, tamamla, qa:hizli yeşile getir.
 Kalan: BUF-12,14,15,16,23,24 (yarım); BUF-25 (ambient.ts DNY kolunda, ana thread'e sorulacak); dalga 5 (BUF-19,20,22,21,30); dalga 6 (BUF-28 bot, 29 perf, ekran görüntüleri, qa:hizli, ana thread'e bildir). BUF-11/17/18 = kafe/çalışan kolu.
 Açık notlar: BUF-07 sabit 4'lük kirli tabak yığını ile BUF-13 rtview yığını çift çizim olabilir; tepsi/kumbara/bölge kalıcılığı yok (şema kararı); ekonomi testleri yeni ödeme gecikmesine göre yeniden ayarlanmalı.
+
+## DURUM (2026-11-21 00:40, kullanıcı "kaydet ve dur" dedi)
+Commit+push: BUF-01..10,12..16,13,23,24,26,27 (c9b9659), BUF-19/20 kanat/salon/çatı canlı (6d72cca, qa:hizli yeşil, 403 test).
+Dalga 5b (BUF-22 mutfak aşamayla büyüme, BUF-21 inşaat sahası + aşama adları, BUF-30 açılış töreni) opus ajanıyla BAŞLANDI, yarıda kesildi; WIP commit'te (tsc/test kırmızı olabilir). Devam: `git show --stat HEAD`, yarımı tamamla, qa:hizli, ekran görüntüleri (bufe22-*).
+Kalan: BUF-28 sim botu, BUF-29 perf, son ekran görüntüleri, qa, ana thread'e bildir; BUF-25 DNY kolunda; BUF-11/17/18 kafe/çalışan kolunda.
+Açık: salon içindeyken çatı ajanları görünür kalıyor; aşama 10 kanat hesap rakamları büyük (×290); BUF-07 sabit kirli tabak ile BUF-13 yığını çift çizim olabilir; vale park arabaları çizilmiyor; kumbara/bölge kalıcı değil (şema kararı).

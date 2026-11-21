@@ -14,7 +14,7 @@ it('stages run 1..10 with rising cost, time and arrival; stage 10 survives a set
   sim.command({ kind: 'setStage', stage: 5 }); sim.step(1);
   sim.state.stars = 5; sim.state.money = 20_000_000; sim.command({ kind: 'startTadilat' }); sim.step(1);
   expect((sim.state.tadilat as any)?.to).toBe(6);
-  const m = sim.state.money - (20_000_000 - KIOSK_STAGES[5].cost!); expect(m).toBeGreaterThanOrEqual(0); expect(m).toBeLessThan(5000);   // + a little salon income
+  const m = sim.state.money - (20_000_000 - KIOSK_STAGES[5].cost!); expect(m).toBeGreaterThanOrEqual(0); expect(m).toBeLessThan(5000);   // + a little real income (BUF-19/20: no passive salon income)
 });
 import { salonOf } from '../../src/game/sim/salon';
 import { buyumeEngel } from '../../src/game/view/world/bufe-buyume';
