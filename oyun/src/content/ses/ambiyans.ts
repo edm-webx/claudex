@@ -169,9 +169,22 @@ export function kapiTablosu(phase: DayPhase | string, dinleyici: Nokta, zone: st
     if (key.split('.')[0] === 'iskele') list.push({ id: 'izgara', loop: 'izgara', gain: 1, dyn: 'grill' });   // büfe döneri (seviye mesafeden)
     t[key] = list;
   }
+  for (const id in IC_ODA) t[id] = [{ id: IC_ODA[id].loop, loop: IC_ODA[id].loop, gain: IC_ODA[id].vol }];
   t['*'] = [];
   return t;
 }
+/**
+ * İç mekan oda tonları (ic-mekan id -> döngü): kafede kafe, lokantada lokanta, mutfakta mutfak; dış deniz/martı yok.
+ * Yalnız bulunulan iç mekanın döngüsü kurulur (kapı tek kapsam açar). vol = döngü kazancı (kısık, konuşmayı ezmez).
+ */
+export const IC_ODA: Record<string, { loop: string; vol: number }> = {
+  kafe1: { loop: 'ic_kafe', vol: 0.5 }, kafe2: { loop: 'ic_lokanta', vol: 0.45 }, tesis: { loop: 'ic_kafe', vol: 0.4 },
+  salonW: { loop: 'ic_kafe', vol: 0.45 }, salonE: { loop: 'ic_lokanta', vol: 0.45 }, avm: { loop: 'ic_lokanta', vol: 0.4 },
+  avm_moda: { loop: 'ic_avm', vol: 0.45 }, avm_tekno: { loop: 'ic_avm', vol: 0.45 }, avm_oyuncak: { loop: 'ic_avm', vol: 0.45 },
+  mutfak: { loop: 'ic_mutfak', vol: 0.5 }, okul: { loop: 'ic_okul', vol: 0.5 }, kirtasiye: { loop: 'ic_oda', vol: 0.4 },
+  banka: { loop: 'ic_oda', vol: 0.35 }, hastane: { loop: 'ic_hastane', vol: 0.45 }, acil: { loop: 'ic_hastane', vol: 0.4 },
+  morg: { loop: 'ic_hastane', vol: 0.3 }, ev: { loop: 'ic_oda', vol: 0.3 },
+};
 /** tablo imzası: değişmediyse kapıya yeniden verilmez */
 export const tabloImza = (t: Record<string, readonly KapiKatman[]>): string => Object.keys(t).sort().map(k => k + ':' + t[k].map(l => l.id).join(',')).join('|');
 

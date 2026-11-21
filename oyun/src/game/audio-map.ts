@@ -66,6 +66,9 @@ export function createAudioMap(deps: AudioMapDeps): AudioMap {
   }
   // SNT-14: müzisyen çalıyor (sim her ~12 sn bildirir): konumlu canlı müzik kaynağı, sessizlik 14 sn sonra
   offs.push(bus.on('canliMuzik', (d: any) => { if (d && typeof d.x === 'number' && typeof d.z === 'number') try { ma.canliMuzik?.({ x: d.x, z: d.z }); } catch { /* */ } }) as () => void);
+  // şimşek çaktığında (hava görünümü 'sb:simsek' yayar) gök gürültüsü gecikmeli gelir
+  const onSimsek = () => { try { ma.simsek?.(); } catch { /* */ } };
+  try { globalThis.addEventListener?.('sb:simsek', onSimsek); offs.push(() => globalThis.removeEventListener?.('sb:simsek', onSimsek)); } catch { /* */ }
   const onRadio = () => { try { ma.jingle?.(); setTimeout(() => { try { audio.voice('radyo'); } catch { /* */ } }, 900); } catch { /* */ } };
   if (deps.root) { deps.root.addEventListener('sb:radio', onRadio); offs.push(() => deps.root?.removeEventListener('sb:radio', onRadio)); }
   let lastInterior: string | null | undefined;

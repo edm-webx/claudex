@@ -49,6 +49,8 @@ export interface MotorAudio extends Audio {
   atmosphere: { setInterior(id: string | null): void; setTable(t: AmbienceTable): void; active(): string[]; live(): string[]; scope(): string };
   /** SNT-14: sim 'canliMuzik' (müzisyen çalıyor): konumlu canlı müzik kaynağı (ambiyans.ts). */
   canliMuzik(pos: Vec2): void;
+  /** Şimşek çaktı: gök gürültüsü 1-4 sn sonra gelir (ışık-ses gecikmesi); şimşek bildirilmezse rastgele seyrek gürültü. */
+  simsek(): void;
   /** SNT-07 debug / test: bölge döngü ağırlıkları ve son ambiyans olayları. */
   ambiyans(): { aktif: Record<string, number>; olaylar: { id: string; vol: number }[] };
   /** Arcade babble for a line of text in a character's voice (ses-db `voices`). */
@@ -483,6 +485,7 @@ export function createAudio(deps: AudioDeps): MotorAudio {
     },
     bank: () => bank,
     canliMuzik(pos) { amb.canli(pos); },
+    simsek() { amb.simsek(); },
     ambiyans: () => ({ aktif: amb.aktif(), olaylar: amb.olaylar() }),
     atmosphere: {
       setInterior(id) { atmoInterior = id; syncAtmo(); },
