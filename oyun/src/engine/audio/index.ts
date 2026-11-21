@@ -36,11 +36,12 @@ import { createMoneyGate, isMoney } from './gate';
 /** One sfx() call as seen by tests / window.__marti.audio: which path produced the sound. */
 export type PlayPath = 'sample' | 'bank' | 'recipe' | 'fallback-pop' | 'gated' | 'silent';
 export interface PlayRecord { t: number; id: string; yol: PlayPath; at: boolean; vol: number }
+import { heatLevel, HEAT_MAX, type IsiKaynagi } from './mutfak-ses';
 
 /** Engine audio with the ses extras (procedural music controls, grill ambience, radio jingle). */
 export interface MotorAudio extends Audio {
   music: Audio['music'] & { setEvent(id: string | null): void; setWeather(kind: string): void; duck(sec: number): void; layers(): string[] };
-  ambience: Audio['ambience'] & { setGrill(pos: Vec2 | null): void; setSeason(s: string): void };
+  ambience: Audio['ambience'] & { setGrill(pos: Vec2 | null): void; setSeason(s: string): void; setHeat(list: IsiKaynagi[]): void };
   jingle(): void;
   /** Arcade babble for a line of text in a character's voice (ses-db `voices`). */
   speak(text: string, who?: string, mood?: 'ok' | 'happy' | 'angry'): void;
@@ -70,6 +71,8 @@ export function createAudio(deps: AudioDeps): MotorAudio {
   let lofiPlace = 'iskele', lofiEvent: string | null = null, lofiWeather = 'acik';
   let hasSampleMusic = false;
   let grill: Vec2 | null = null;
+  // BUF-08: aktif pişiren mutfak istasyonları (cızırtı) ve davlumbaz uğultusu; kaynak yokken ikisi de sessiz
+  let heat: IsiKaynagi[] = [], heatG: GainNode | null = null, humG: GainNode | null = null;
   let bank: Bank | null = null;
   let ambWeather = 'acik', ambSeason = 'sonbahar';
   let duckM = 1, duckA = 1;
@@ -191,6 +194,10 @@ export function createAudio(deps: AudioDeps): MotorAudio {
     // ses / animasyon polish
     tik: o => { tone(3300, 0.05, 'sine', 0.06, 0, 0, o); tone(5100, 0.04, 'sine', 0.03, 0, 0.004, o); tone(2200, 0.06, 'triangle', 0.02, 0, 0.01, o); },
     steamHiss: o => { noise(0.55, 0.06, 5200, 0.4, 0, o); noise(0.3, 0.04, 8000, 0.6, 0.05, o); },
+    // BUF-08 mutfak: tepeler SES_TEPE değerlerinde (passBell 0.06, tavaCarpma 0.07, bulasikSes 0.04)
+    passBell: o => { tone(1318, 0.9, 'sine', 0.05, 0, 0, o); tone(2637, 0.9, 'sine', 0.012, 0, 0, o); },
+    tavaCarpma: o => { tone(420, 0.12, 'triangle', 0.035, -60, 0, o); noise(0.2, 0.025, 1800, 0.8, 0, o); noise(0.3, 0.01, 5200, 0.4, 0.02, o); },
+    bulasikSes: o => { tone(2200, 0.05, 'sine', 0.03, 0, 0, o); tone(3100, 0.05, 'sine', 0.03, 0, 0.07, o); },
     press: o => { tone(120, 0.08, 'square', 0.05, -40, 0, o); noise(0.05, 0.05, 900, 1, 0, o); },
     blow: o => noise(0.45, 0.035, 700, 0.6, 0, o),
     shutter: o => { for (let i = 0; i < 7; i++) noise(0.05, 0.05, 700 + i * 60, 3, i * 0.045, o); tone(90, 0.3, 'sawtooth', 0.02, -20, 0, o); },
@@ -395,6 +402,24 @@ export function createAudio(deps: AudioDeps): MotorAudio {
       n.start(t0); n.stop(t0 + 4.3);
     }
   }
+  /** BUF-08: ısı kaynaklarına göre cızırtı döngüsü (izgara örneği) ve kısık davlumbaz uğultusu (bandpass 140 Hz) */
+  function updateHeat() {
+    if (!ambOn || !ac) { heatG = null; humG = null; return; }
+    if (!heatG || !humG) {
+      heatG = ac.createGain(); heatG.gain.value = 0; heatG.connect(busOut(buses.sfx)); loopTo('izgara', heatG, 1);
+      humG = ac.createGain(); humG.gain.value = 0; humG.connect(busOut(buses.sfx));
+      const hb = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate), hc = hb.getChannelData(0);
+      for (let i = 0; i < hc.length; i++) hc[i] = Math.random() * 2 - 1;
+      const hs = ac.createBufferSource(), bp = ac.createBiquadFilter(); hs.buffer = hb; hs.loop = true;
+      bp.type = 'bandpass'; bp.frequency.value = 140; bp.Q.value = 0.7;
+      hs.connect(bp); bp.connect(humG); hs.start(ac.currentTime, Math.random() * 2); ambNodes.push(hs);
+    }
+    const lv = heatLevel(listener, heat);
+    try {
+      heatG.gain.setTargetAtTime(lv, ac.currentTime, 0.4);
+      humG.gain.setTargetAtTime(lv > 0 ? 0.03 * Math.min(1, (lv / HEAT_MAX) * 2) : 0, ac.currentTime, 0.6);
+    } catch { /* */ }
+  }
   function updateSizzle() {
     if (!sizzleG || !ac) return;
     const d = grill ? Math.hypot(grill.x - listener.x, grill.z - listener.z) : 99;
@@ -403,6 +428,7 @@ export function createAudio(deps: AudioDeps): MotorAudio {
   }
   function stopAmbience() {
     if (sizzleG) { try { sizzleG.disconnect(); } catch { /* */ } }
+    heatG = null; humG = null;
     sizzleG = null; weatherG = null; weatherSrc = null; weatherKey = '';
     ambOn = false; if (ambTimer) clearTimeout(ambTimer); ambTimer = null;
     for (const n of ambNodes) { try { n.stop(); } catch { /* already */ } }
@@ -478,7 +504,8 @@ export function createAudio(deps: AudioDeps): MotorAudio {
       layers() { return lofi && lofi.playing ? lofi.layers() : []; },
     },
     ambience: {
-      setListener(pos) { listener.x = pos.x; listener.z = pos.z; updateSizzle(); },
+      setListener(pos) { listener.x = pos.x; listener.z = pos.z; updateSizzle(); updateHeat(); },
+      setHeat(list) { heat = (list || []).map(k => ({ x: k.x, z: k.z, w: k.w })); updateHeat(); },
       setGrill(pos) { grill = pos ? { x: pos.x, z: pos.z } : null; updateSizzle(); },
       setSeason(v) { ambSeason = String(v || 'sonbahar'); },
     },

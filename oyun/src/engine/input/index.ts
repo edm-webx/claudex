@@ -7,12 +7,18 @@
  * - Tap = pointer moved < 12 px and released < 350 ms after down (v2). pickId comes from setPicker's resolver.
  * - pinch is a multiplicative zoom delta accumulated since the last poll (1 = none): >1 zooms out (v2: zoom *= d0/d).
  * - `hand` only affects UI layout (D reads it); joystick stays floating for both hands.
+ * - PRF-10: a two-finger twist turns the camera only after it passes a 9° dead zone (a pinch zoom no longer drifts the yaw);
+ *   Q/E turn the camera (1.8 rad/s, by wall-clock time between polls), R recenters; typing in a text field never does.
+ * - freeze(true) (first-person counter): the hero gets no movement from joystick or keys; taps and buttons still work.
  */
 import type { Input, InputDeps, InputState, TapEvent, Vec2, ScreenPt, Disposer } from '../api';
 import { createInteractions } from './interactions';
 export { createInteractions } from './interactions';
 
 const R0 = 46;
+/** two-finger twist dead zone (rad) and keyboard orbit speed (rad/s) */
+export const TWIST_DEAD = 0.16, KEY_ORBIT = 1.8;
+const typing = (e: Event) => { const t = e.target as HTMLElement | null; return !!t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable); };
 const JOY_CSS = '.sb-joy{position:fixed;left:0;top:0;width:96px;height:96px;margin:-48px 0 0 -48px;border-radius:50%;background:rgba(255,255,255,.18);border:3px solid rgba(255,255,255,.55);pointer-events:none;z-index:3}.sb-joy[hidden]{display:none}.sb-joy-k{position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:rgba(255,255,255,.85);box-shadow:0 2px 6px rgba(0,0,0,.25)}';
 
 export function createInput(deps: InputDeps): Input {
@@ -30,6 +36,7 @@ export function createInput(deps: InputDeps): Input {
   const pts = new Map<number, ScreenPt>();
   let pinchD = 0;
   let zoomAcc = 1;
+  let frozen = false, lastPoll = -1, twistSum = 0, twistOn = false;
   let orbitAcc = 0, tiltAcc = 0, twistA = 0, midX: number | null = null, midY: number | null = null, midMoved = 0, recenterReq = false;
   const angleOf = (a: ScreenPt, b: ScreenPt) => Math.atan2(b.y - a.y, b.x - a.x);
   const keys: Record<string, boolean> = {};
@@ -48,7 +55,7 @@ export function createInput(deps: InputDeps): Input {
     try { platform.audioCtx()?.resume?.(); } catch { /* ignore */ }
     if (e.button === 1) { e.preventDefault(); midX = e.clientX; midY = e.clientY; midMoved = 0; try { canvas.setPointerCapture(e.pointerId); } catch { /* ignore */ } return; }
     pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (pts.size === 2) { const [a, b] = [...pts.values()]; pinchD = Math.hypot(a.x - b.x, a.y - b.y); twistA = angleOf(a, b); resetJoy(); return; }
+    if (pts.size === 2) { const [a, b] = [...pts.values()]; pinchD = Math.hypot(a.x - b.x, a.y - b.y); twistA = angleOf(a, b); twistSum = 0; twistOn = false; resetJoy(); return; }
     if (pid !== null) return;
     pid = e.pointerId; sx = e.clientX; sy = e.clientY; moved = 0; downAt = platform.clock.now();
     try { canvas.setPointerCapture(e.pointerId); } catch { /* ignore */ }
@@ -61,7 +68,9 @@ export function createInput(deps: InputDeps): Input {
       const [a, b] = [...pts.values()];
       const d = Math.max(20, Math.hypot(a.x - b.x, a.y - b.y));
       zoomAcc *= pinchD / d; pinchD = d;
-      const ang = angleOf(a, b); let da = ang - twistA; da = Math.atan2(Math.sin(da), Math.cos(da)); orbitAcc += da; twistA = ang;
+      const ang = angleOf(a, b); let da = ang - twistA; da = Math.atan2(Math.sin(da), Math.cos(da)); twistA = ang;
+      if (twistOn) orbitAcc += da;
+      else if (Math.abs(twistSum += da) > TWIST_DEAD) { twistOn = true; orbitAcc += twistSum - Math.sign(twistSum) * TWIST_DEAD; }
       return;
     }
     if (e.pointerId !== pid) return;
@@ -69,7 +78,7 @@ export function createInput(deps: InputDeps): Input {
     const m = Math.hypot(dx, dy); moved = Math.max(moved, m);
     if (m > R0) { dx = dx / m * R0; dy = dy / m * R0; }
     jdx = dx / R0; jdy = dy / R0;
-    if (moved > 8) { joy.hidden = false; knob.style.transform = `translate(${dx}px,${dy}px)`; }
+    if (moved > 8 && !frozen) { joy.hidden = false; knob.style.transform = `translate(${dx}px,${dy}px)`; }
   });
   const end = (e: PointerEvent) => {
     if (midX !== null) { if (midMoved < 4) recenterReq = true; midX = null; midY = null; return; }
@@ -99,7 +108,10 @@ export function createInput(deps: InputDeps): Input {
   const win = doc.defaultView;
   if (win) {
     on(win, 'keydown', (e: KeyboardEvent) => {
-      const k = e.key.toLowerCase(); keys[k] = true;
+      const k = e.key.toLowerCase();
+      if (typing(e)) return;
+      keys[k] = true;
+      if (k === 'r' && !e.repeat && !e.ctrlKey && !e.metaKey) recenterReq = true;
       if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) e.preventDefault();
     });
     on(win, 'keyup', (e: KeyboardEvent) => { keys[e.key.toLowerCase()] = false; });
@@ -108,7 +120,8 @@ export function createInput(deps: InputDeps): Input {
 
   const compute = () => {
     let x: number, z: number;
-    if (injected) { x = injected.x; z = injected.z; }
+    if (frozen) { x = 0; z = 0; }
+    else if (injected) { x = injected.x; z = injected.z; }
     else {
       x = jdx; z = jdy;
       if (keys.a || keys.arrowleft) x -= 1;
@@ -127,6 +140,9 @@ export function createInput(deps: InputDeps): Input {
     state: compute,
     poll() {
       compute();
+      const now = platform.clock.now(), dtp = lastPoll < 0 ? 0 : Math.min(0.1, Math.max(0, (now - lastPoll) / 1000)); lastPoll = now;
+      if (keys.q) orbitAcc -= KEY_ORBIT * dtp;
+      if (keys.e) orbitAcc += KEY_ORBIT * dtp;
       st.taps = pending.splice(0, pending.length);
       st.pinch = zoomAcc; zoomAcc = 1;
       st.orbit = orbitAcc; orbitAcc = 0; st.tilt = tiltAcc; tiltAcc = 0;
@@ -136,6 +152,7 @@ export function createInput(deps: InputDeps): Input {
     onTap(cb) { tapSubs.add(cb); return () => { tapSubs.delete(cb); }; },
     setHand(h) { st.hand = h; },
     inject(m) { injected = m ? { x: m.x, z: m.z } : null; },
+    freeze(on: boolean) { if (on && !frozen) resetJoy(); frozen = !!on; },
     setPicker(fn) { picker = fn; },
     interactions,
     dispose() { offs.splice(0).forEach(f => f()); joy.remove(); style.remove(); },

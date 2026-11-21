@@ -2,7 +2,12 @@
  * Camera rig: 1:1 port of v2 game.js `updateCamera` (follow, pinch zoom, event pans, intro descent).
  * Decisions:
  * - follow(target, dt) only records the target; update(dt, alpha) does the v2 work once per render frame
- *   (pan blend, lerp factor min(1, dt*4), intro countdown, position/lookAt). follow+update = v2 updateCamera.
+ *   (pan blend, follow factor, intro countdown, position/lookAt). follow+update = v2 updateCamera.
+ * - PRF-10: the follow factor is exponential, 1 - exp(-4 dt) (v2's min(1, dt*4) at 60 Hz, but the same path at 30 or 144 Hz).
+ * - PRF-09: near plane follows the camera distance (dist * 0.08, 0.1..3 m; 0.05 in first person): the far/near ratio drops
+ *   from 4000 to ~300, so distant coplanar faces (roads, pavements, façades) stop z-fighting. Projection is rebuilt only
+ *   when the rounded value changes.
+ * - First person (fp): orbit, tilt and zoom input are ignored, so leaving the counter returns to the same follow view.
  *   Callers pass an already alpha-interpolated target (v2 used the interpolated player PL.vx/vz).
  * - The intro countdown runs on render dt (v2 decremented it in the sim step; visually identical).
  * - snap(target) jumps without lerp (v2 `updateCamera(dt, true)` on the first frames).
@@ -26,6 +31,8 @@ export interface MotorCameraRig extends CameraRig {
   readonly yaw: number;
   /** Orbit the view around the büfe by `delta` radians (immediate). */
   turn(delta: number): void;
+  /** dev/measurement only: pin the near plane (null = automatic) */
+  nearFixed(v: number | null): void;
   /** Ease the orbit back to the flat default angle. */
   recenter(): void;
 }
@@ -44,6 +51,11 @@ export function createCameraRig(deps: CameraDeps): MotorCameraRig {
   let snapNext = true;
   let fpv: { x: number; y: number; z: number; yaw: number; pitch?: number } | null = null;
   const frustum = new T.Frustum(), pv = new T.Matrix4();
+  let nearPin: number | null = null;
+  const setNear = (n: number) => {
+    const q = nearPin ?? Math.round(n * 20) / 20;
+    if (q !== camera.near) { camera.near = q; camera.updateProjectionMatrix(); }
+  };
 
   const baseDist = () => {
     const tanV = Math.tan(camera.fov * Math.PI / 360), asp = camera.aspect;
@@ -55,15 +67,16 @@ export function createCameraRig(deps: CameraDeps): MotorCameraRig {
     get fov() { return camera.fov; },
     get pitch() { return CAM.pitch; },
     get zoom() { return CAM.zoom; },
-    set zoom(z: number) { CAM.zoom = clamp(+z || 1, ZOOM_MIN, ZOOM_MAX); },
+    set zoom(z: number) { if (!fpv) CAM.zoom = clamp(+z || 1, ZOOM_MIN, ZOOM_MAX); },
     get introLeft() { return CAM.intro; },
     get yaw() { return yaw; },
-    turn(delta: number) { yaw += delta; },
+    turn(delta: number) { if (!fpv) yaw += delta; },
+    nearFixed(v) { nearPin = v; },
     /** dev/screenshot only: zoom without the ZOOM_MAX clamp */
     zoomRaw(z: number) { CAM.zoom = z; },
     fp(v) { if (!v && fpv) snapNext = true; fpv = v; },
-    tilt(delta: number) { tiltTo = null; tilt = clamp(tilt + delta, PITCH_MIN - CAM.pitch, PITCH_MAX - CAM.pitch); },
-    recenter() { yawTo = Math.round(yaw / (Math.PI * 2)) * Math.PI * 2; tiltTo = 0; },
+    tilt(delta: number) { if (fpv) return; tiltTo = null; tilt = clamp(tilt + delta, PITCH_MIN - CAM.pitch, PITCH_MAX - CAM.pitch); },
+    recenter() { if (fpv) return; yawTo = Math.round(yaw / (Math.PI * 2)) * Math.PI * 2; tiltTo = 0; },
     follow(t: Vec2) { target.x = t.x; target.z = t.z; target.y = (t as { y?: number }).y || 0; },
     snap(t: Vec2) { target.x = t.x; target.z = t.z; CAM.x = t.x; CAM.z = t.z; snapNext = true; },
     pan(at: Vec2, dur?: number) {
@@ -81,6 +94,7 @@ export function createCameraRig(deps: CameraDeps): MotorCameraRig {
     update(dt: number) {
       if (fpv) {
         const p = fpv.pitch ?? -0.12;
+        setNear(0.05);
         camera.position.set(fpv.x, fpv.y, fpv.z);
         camera.lookAt(fpv.x + Math.sin(fpv.yaw) * Math.cos(p), fpv.y + Math.sin(p), fpv.z + Math.cos(fpv.yaw) * Math.cos(p));
         camera.updateMatrixWorld(); return;
@@ -93,7 +107,7 @@ export function createCameraRig(deps: CameraDeps): MotorCameraRig {
         tx = lerp(tx, p.x, k); tz = lerp(tz, p.z, k);
         if (p.t >= p.dur) { pan = null; p.resolve(); }
       }
-      const f = snapNext ? 1 : Math.min(1, dt * 4);
+      const f = snapNext ? 1 : 1 - Math.exp(-4 * Math.max(0, dt));
       snapNext = false;
       CAM.x = lerp(CAM.x, tx, f); CAM.z = lerp(CAM.z, tz, f); camY = lerp(camY, target.y, f);   // footbridge: the camera rises with the hero
       let dist = baseDist();
@@ -108,6 +122,7 @@ export function createCameraRig(deps: CameraDeps): MotorCameraRig {
         yaw += (yawTo - yaw) * (1 - Math.exp(-6 * dt));
         if (Math.abs(yawTo - yaw) < 0.002) { yaw = 0; yawTo = null; }
       }
+      setNear(clamp(dist * 0.08, 0.1, 3));
       const off = Math.cos(pitch) * dist;
       camera.position.set(CAM.x + Math.sin(yaw) * off, Math.sin(pitch) * dist + camY, CAM.z + 0.4 + Math.cos(yaw) * off);
       camera.lookAt(CAM.x, 0.6 + camY, CAM.z + 0.4);

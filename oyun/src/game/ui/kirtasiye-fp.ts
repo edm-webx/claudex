@@ -41,6 +41,7 @@ export function createKirtasiyeFp(d: { root: HTMLElement; rules: () => Rules | n
     const el = (e.target as HTMLElement).closest('[data-op]') as HTMLElement | null; if (!el) return;
     cmd(el.dataset.op!, el.dataset.id || '');
   });
+  let lastLook = -1e9;
   function paint(k: KT) {
     const by = Object.fromEntries(k.urun.map(u => [u.id, u]));
     const m = k.mus;
@@ -54,6 +55,8 @@ ${k.son ? `<div class="kt-son">${esc(k.son)}</div>` : ''}
   return {
     active: () => on,
     update() {
+      // PRF-05: mulk view() builds the whole plot list; while the stationery shop is closed one look per quarter second is plenty
+      if (!on) { const now = performance.now(); if (now - lastLook < 250) return; lastLook = now; }
       const r = d.rules(); const m = r ? mulkApi(r as never) : null;
       const k = (m?.view() as { kirtasiye?: KT | null } | undefined)?.kirtasiye ?? null;
       on = !!k; wrap.style.display = on ? 'block' : 'none';

@@ -1,5 +1,5 @@
 /**
- * Worker roles, rarity, ranks, morale (v2 D.ROLES, D.RARITY, D.RANKS, D.MORALE).
+ * Worker roles, rarity, ranks (v2 D.ROLES, D.RARITY, D.RANKS). Morale was removed in BUF-02.
  * Ported 1:1 from v2 data.js (numbers and Turkish text kept). Owner: Builder C (M1). Pure data, no imports of sim code.
  */
 
@@ -48,9 +48,11 @@ export const ROLES: Record<string, RoleDef> = {
   }
 };
 // 2026-11-09 survey: kitchen crew (content/mutfak.ts holds the stage/slot rules; they work inside the büfe mutfağı room)
-for (const [id, label, base, on] of [['asci', 'Aşçı', 2600], ['komi', 'Komi (aşçı yardımcısı)', 1700], ['bulasikci', 'Bulaşıkçı', 1500], ['kasiyer', 'Kasiyer', 2300], ['sef', 'Şef', 7000],
-  ['guvenlik', 'Güvenlik', 2400, 1], ['muzisyen', 'Müzisyen', 2000, 1], ['hostes', 'Hostes', 2200, 1], ['barista', 'Barista', 2500, 1], ['mudur', 'Müdür', 9000, 1], ['vale', 'Vale', 1800, 1]] as [string, string, number, number?][])
+for (const [id, label, base, on] of [['asci', 'Aşçı', 2600], ['komi', 'Komi (aşçı yardımcısı)', 1700], ['bulasikci', 'Bulaşıkçı', 1500], ['kasiyer', 'Kasiyer', 2300, 1], ['sef', 'Şef', 7000],
+  ['guvenlik', 'Güvenlik', 2400, 1], ['muzisyen', 'Müzisyen', 2000, 1], ['hostes', 'Hostes', 2200, 1], ['barista', 'Barista', 2500], ['mudur', 'Müdür', 9000, 1], ['vale', 'Vale', 1800, 1]] as [string, string, number, number?][])
   ROLES[id] = { id, label, station: null, act: 'cut', base, mutfak: !on, on: !!on };   // stage/slot rules: content/mutfak.ts (front roles work out front)
+// BUF-15: kurye (paket servis): salonda ya da mutfakta değil, pass'tan paketi alıp bisikletle adrese gider (sim/kurye.ts); kadro content/mutfak.ts MUTFAK_ROL
+ROLES.kurye = { id: 'kurye', label: 'Kurye', station: null, act: 'idle', base: 2100, mutfak: false, on: false, kurye: true };
 export const ROLE_IDS: string[] = Object.keys(ROLES);
 export const ROLE_SLOTS: Record<string, number> = {
   "doner": 1,
@@ -116,38 +118,20 @@ export const RANKS: RankDef[] = [
   { id: "sef", name: "Usta Şef", xp: 17000, x: 2.0, wage: 0.058, look: "Çift sıra düğmeli ceket" },
   { id: "efsane", name: "Efsane", xp: 25000, x: 2.2, wage: 0.06, look: '"EFSANE" işlemeli önlük' },
 ];
-/** [from morale, label, speed factor] */
-export const MORALE: [number, string, number][] = [
-  [
-    80,
-    "Coşkulu",
-    1.1
-  ],
-  [
-    40,
-    "Normal",
-    1
-  ],
-  [
-    20,
-    "Küskün",
-    0.85
-  ],
-  [
-    0,
-    "Küs",
-    0.7
-  ]
-];
-export const MORALE_START = 70;
 export const JOB_REFRESH_COST = 250;
 /** Board auto-refresh period (s of play time). */
 export const BOARD_REFRESH_S = 300;
 
+/**
+ * BUF-09: how many plates a waiter carries from the pass to the tables (the ONE place this is defined).
+ * Level 1-3 (rank 0-2) carry 2, level 4+ (rank 3+) carry 3; a carry trait adds one, never above 3.
+ * (ROLES.garson.carry is the other job: station -> counter refills of the büfe.)
+ */
+export const GARSON_TASIMA = { taban: 2, ust: 3, ustRank: 3 };
+export function garsonTasima(rank: number, fxCarry = 0): number {
+  return Math.min(GARSON_TASIMA.ust, (rank >= GARSON_TASIMA.ustRank ? GARSON_TASIMA.ust : GARSON_TASIMA.taban) + (fxCarry ? 1 : 0));
+}
 export function rankOf(xp: number): number { let r = 0; RANKS.forEach((k, i) => { if (xp >= k.xp) r = i; }); return r; }
-// 2026-11-09 survey (p_moral: Hayır): morale no longer changes speed
-export function moraleFactor(_m: number): number { return 1; }
-export function moraleLabel(m: number): string { for (const r of MORALE) if (m >= r[0]) return r[1]; return 'Küs'; }
 /** Hire price: legends carry their own; random = role base x rarity x 1.2^(hired beyond 3), rounded to 50. */
 export function workerCost(role: string, rarity: string, hiredCount: number): number {
   const r = ROLES[role], k = RARITY[rarity] || RARITY.gri;

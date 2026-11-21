@@ -7,7 +7,9 @@
 import * as T from 'three';
 import type { Rules } from '../../sim/state';
 import { mulkApi } from '../../sim/mulk';
-import { BANKA, ARSALAR, DUKKAN_BY_ID, DUKKAN_STOK_MAX } from '../../../content/esya';
+import { BANKA, ARSALAR, DUKKAN_BY_ID } from '../../../content/esya';
+import { icBina } from '../../../content/ic-mekan';
+const AVM_ARSA = icBina('avm').map(m => m.arsa || '').sort((x, y) => (ARSALAR.find(a => a.id === x)?.x || 0) - (ARSALAR.find(a => a.id === y)?.x || 0));
 import type { Vec3, ScreenPt } from '../../../engine/api';
 import type { HtmlLabels, HtmlLabel } from '../../ui/labels';
 
@@ -63,7 +65,7 @@ export function createMulkView(d: MulkViewDeps): MulkView {
     plots.set(a.id, { g, dyn, key: '#', label: d.labels.label(), sign: '' });
   }
   const awning = (p: T.Object3D, w: number, c1: string, c2: string, z: number, y: number) => { const n = 8, sw = w / n; for (let i = 0; i < n; i++) { const o = box(p, sw, 0.1, 1.5, i % 2 ? c1 : c2, -w / 2 + sw * (i + 0.5), y, z); o.rotation.x = 0.28; } };
-  function build(p: PlotG, v: { tur: string | null; tip: string; lv: number; owned: boolean }, stok: number) {
+  function build(p: PlotG, v: { tur: string | null; tip: string; lv: number; owned: boolean }) {
     p.dyn.clear();
     const g = p.dyn;
     if (!v.owned) { cyl(g, 0.05, 1.9, '#7d5638', 2.4, 1.0, 1.7, 6); box(g, 1.4, 0.7, 0.08, '#ffd23f', 2.4, 1.9, 1.7, { emissive: '#4a3d08', emissiveIntensity: 0.3 }); return; }
@@ -86,8 +88,6 @@ export function createMulkView(d: MulkViewDeps): MulkView {
     awning(g, 5.0, t.renk, '#fbfaf6', 1.7, 2.55 + (v.lv >= 3 ? 0.1 : 0));
     box(g, 2.6, 0.55, 0.1, t.renk, 0, h - 0.1, 1.28, { emissive: t.renk, emissiveIntensity: 0.15 });  // sign plate
     box(g, 0.9, 1.9, 0.1, '#6b4a2e', 2.0, 1.0, 1.22);                                                   // door
-    const n = Math.min(12, Math.ceil(12 * stok / (DUKKAN_STOK_MAX[v.lv] || 1)));
-    for (let i = 0; i < n; i++) box(g, 0.42, 0.34, 0.42, i % 3 === 0 ? '#c9a05a' : i % 3 === 1 ? '#d9b06a' : '#b8884a', -1.6 + (i % 6) * 0.62, 1.15 + Math.floor(i / 6) * 0.36, 1.45);
     for (let i = 0; i < v.lv - 1; i++) box(g, 0.3, 0.3, 0.3, '#ffd23f', -2.3 + i * 0.5, h + 0.55, -0.5);   // level pips on the roof
   }
 
@@ -115,20 +115,22 @@ export function createMulkView(d: MulkViewDeps): MulkView {
       for (const pv of v.plots) {
         const p = plots.get(pv.id)!, mp = md.arsa.find(x => x.id === pv.id)!;
         const k = [pv.owned, pv.tur, pv.tip, pv.lv, 12].join('|');
-        if (k !== p.key) { p.key = k; if (!pv.sabit) build(p, pv, DUKKAN_STOK_MAX[pv.lv] || 1); }
+        if (k !== p.key) { p.key = k; if (!pv.sabit) build(p, pv); }
       }
       if (Math.hypot(d.hero().x - BANKA.x, d.hero().z - BANKA.z) < 26) put(bankL, BANKA.x, 4.8, BANKA.z + BANKA.d / 2 + 0.7, '🏦 ' + esc(BANKA.ad)); else bankL.hide();
       for (const pv of v.plots) {
         const p = plots.get(pv.id)!, a = ARSALAR.find(x => x.id === pv.id)!, mp = md.arsa.find(x => x.id === pv.id)!;
         if (Math.hypot(d.hero().x - a.x, d.hero().z - a.z) > 20) { p.label.hide(); continue; }
         const t = pv.tur === 'dukkan' ? DUKKAN_BY_ID[pv.tip] : null;
-        const txt = !pv.owned ? (a.sabit ? '☕ ' + (a.ad || 'Kafe') + ' · SATILIK · ' : '🏗️ SATILIK · ') + Math.round(mp.fiyat / 1000) + 'K ₺' + (md.level < mp.seviye ? ' · 🔒 ' + mp.seviye + '. sv' : '') : !pv.tur ? 'Boş arsa' : pv.tur === 'ev' ? '🏠 Evin' : (a.sabit ? '☕ ' + (a.ad || '') : (t ? t.ikon + ' ' + t.tabela : '')) + (pv.isci ? ' · 👷 ' + pv.isci : '') + (pv.till > 0 ? ' · 💰 ' + pv.till : '');
-        if (a.kapi) put(p.label, a.kapi.x - 1.2, 4.6, a.kapi.z, esc(txt)); else put(p.label, a.x, 4.2 + (pv.tur ? 0.6 : -1.2), a.z + (a.rotY ? -1.8 : 1.8), esc(txt));
+        const ik = (mp as { ikon?: string }).ikon || '☕', txt = !pv.owned ? (a.sabit ? ik + ' ' + (a.ad || 'Kafe') + ' · SATILIK · ' : '🏗️ SATILIK · ') + Math.round(mp.fiyat / 1000) + 'K ₺' + (md.level < mp.seviye ? ' · 🔒 ' + mp.seviye + '. sv' : '') : !pv.tur ? 'Boş arsa' : pv.tur === 'ev' ? '🏠 Evin' : (a.sabit ? ik + ' ' + (a.ad || '') : (t ? t.ikon + ' ' + t.tabela : '')) + (pv.isci ? ' · 👷 ' + pv.isci : '') + (pv.till > 0 ? ' · 💰 ' + pv.till : '');
+        const avm = AVM_ARSA.indexOf(a.id);   // 2026-11-20: four AVM doors 3.9 m apart: labels right over each door, staggered in height
+        if (a.kapi && avm >= 0) put(p.label, a.kapi.x, 4.4 + (avm % 2) * 0.75, a.kapi.z, esc(txt)); else if (a.kapi) put(p.label, a.kapi.x - 1.2, 4.6, a.kapi.z, esc(txt)); else put(p.label, a.x, 4.2 + (pv.tur ? 0.6 : -1.2), a.z + (a.rotY ? -1.8 : 1.8), esc(txt));
       }
       // solid walls: bank body and every built plot
       if ((solidT -= dt) <= 0 && d.setSolid) {
         solidT = 0.5;
-        const rects = [{ x0: BANKA.x - BANKA.w / 2, x1: BANKA.x + BANKA.w / 2, z0: BANKA.z - BANKA.d / 2, z1: BANKA.z + BANKA.d / 2 }];
+        // KAL-13: banka gövdesi artık burada tam dikdörtgen duvar OLMAZ; iç mekan duvarları kapı boşluğuyla zone çarpıştırıcılarından gelir (kr.banka, icCollidersLocal). Eski tam gövde kapıyı kapatıyordu, gezgin bot yakaladı.
+        const rects: { x0: number; x1: number; z0: number; z1: number }[] = [];
         for (const pv of v.plots) if (pv.tur && !pv.sabit) { const a = ARSALAR.find(x => x.id === pv.id)!; const s = a.rotY ? -1 : 1; rects.push({ x0: a.x - 2.6, x1: a.x + 2.6, z0: a.z - 2.2 - (s > 0 ? 0 : 0), z1: a.z + 0.9 }); if (a.rotY) { rects[rects.length - 1].z0 = a.z - 0.9; rects[rects.length - 1].z1 = a.z + 2.2; } }
         const k = JSON.stringify(rects); if (k !== solidKey) { solidKey = k; d.setSolid(rects); }
       }

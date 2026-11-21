@@ -6,18 +6,21 @@
  * Commands: { kind: 'zemin', op: 'temizle' } and { kind: 'zemin', op: 'desen', value }.
  */
 import type { Kernel } from './state';
+import { MUTFAK_KIR_HIZ, MUTFAK_MIN_STAGE } from '../../content/mutfak';
 
 export type ZeminDesen = 'ahsap' | 'fayans' | 'mermer';
 export const ZEMIN_DESENLER: ZeminDesen[] = ['ahsap', 'fayans', 'mermer'];
 // 2026-10-24: was 0.012 (full dirt in ~80 s of trade, the kiosk always looked filthy); now a full day of trade
 export const ZEMIN_RATE = { customer: 0.0025, idle: 0.0003 };   // dirt per second
 
-export interface ZeminSave { desen: ZeminDesen; kir: number; day?: number }
+/** mutfakKir (BUF-13): mutfak zemininin kiri 0..1; pişiren / yıkayan her işçi artırır, temizlikçi paspaslar. Eski kayıtta yok = 0. */
+export interface ZeminSave { desen: ZeminDesen; kir: number; day?: number; mutfakKir?: number }
 
 export function zeminSave(S: { zones: Record<string, Record<string, unknown>> }): ZeminSave {
   const z = (S.zones.zemin ||= { desen: 'ahsap', kir: 0 }) as unknown as ZeminSave;
   if (!ZEMIN_DESENLER.includes(z.desen)) z.desen = 'ahsap';
   if (typeof z.kir !== 'number' || !Number.isFinite(z.kir)) z.kir = 0;
+  if (z.mutfakKir != null && (typeof z.mutfakKir !== 'number' || !Number.isFinite(z.mutfakKir))) z.mutfakKir = 0;
   return z;
 }
 
@@ -27,9 +30,11 @@ export function installZemin(K: Kernel) {
     update(dt: number): void {
       const z = zeminSave(S);
       // Sabri mops up after closing: every new day starts with a clean floor
-      if (z.day !== S.day) { z.day = S.day; z.kir = 0; }
+      if (z.day !== S.day) { z.day = S.day; z.kir = 0; z.mutfakKir = 0; }
       const busy = (rt.customers || []).length > 0;
       z.kir = Math.min(1, z.kir + dt * (busy ? ZEMIN_RATE.customer : ZEMIN_RATE.idle));
+      // BUF-13: kitchen floor: dirt only while someone cooks or washes (480 s day, 2 busy workers: about 1.1)
+      if ((S.stage || 1) >= MUTFAK_MIN_STAGE && (rt.mutfakBusy || 0) > 0) z.mutfakKir = Math.min(1, (z.mutfakKir || 0) + dt * rt.mutfakBusy * MUTFAK_KIR_HIZ);
     },
     run(c: { op: string; value?: unknown }): boolean {
       const z = zeminSave(S);

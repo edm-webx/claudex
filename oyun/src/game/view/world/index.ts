@@ -27,6 +27,7 @@ import { testSokakZone } from '../../../content/zones/test-sokak';
 import { registerDisariZones, aptPrefabs } from '../../../content/zones/disari';
 import { karsiPrefabs } from '../../../content/zones/karsi';
 import { buyumeEngel } from './bufe-buyume';
+import { markReflected, type Reflector } from '../../../engine/render/reflect';
 import { stageLayout, STATION_KINDS, PARTS, TABLE_PADS, PAD_KEYS_FALLBACK, SEAT_H, WATER_Y, local2world, rectAABB, benchSeats, BENCHES, type StageLayout, type P3v, type Obstacle, staticObstacles } from '../../../content/prefabs/iskele/layout';
 import { paintKey } from '../../../content/dekor-katalog';
 import { stationBuilt, tableBuilt, decorBuild, itemGeo, ITEM_HT, moneyGeo, makeMarker, MARKERS, bez, FOOT, DECOR_SIZE } from '../../../content/prefabs/iskele/props';
@@ -38,6 +39,8 @@ import { BUFE } from '../../../content/prefabs/iskele/layout';
 import { ensureKit, MAT, radialTex } from '../../../content/prefabs/common/v2kit';
 import { mixc, col, clamp, lerp, easeInOut, HP, PI, TAU } from '../../../engine/prefab/batch';
 
+/** iskele prefabs drawn into the water reflection (GRS-05); the crowd, particles and small props stay out */
+const REFLECTED = ['skyline', 'boats', 'pier', 'kiosk', 'ferry', 'ferryFar'];
 export interface WorldViewDeps { render: RenderPipeline; zones: ZoneManager; prefab: PrefabSystem; dress: Dress; }
 export type FerryState = 'away' | 'arriving' | 'docked' | 'leaving';
 export interface WorldView extends GameView {
@@ -107,7 +110,7 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
   const floorTexCache = new Map<string, T.CanvasTexture>();
   /** survey 2026-10-24: real floor patterns (ahşap / fayans / mermer) with visible dirt stains. One texture spans 4 m. */
   function floorPatternTex(desen: string, kir: number): T.CanvasTexture {
-    const key = desen + ':' + kir; const hit = floorTexCache.get(key); if (hit) return hit;
+    const key = desen + ':' + kir; const hit = floorTexCache.get(key); if (hit) { floorTexCache.delete(key); floorTexCache.set(key, hit); return hit; }   // most recent last (PRF-15 trim)
     const N = 512, cv = document.createElement('canvas'); cv.width = cv.height = N; const g = cv.getContext('2d')!;
     let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
     if (desen === 'fayans') {
@@ -135,7 +138,7 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
       for (let k = 0; k < Math.round(24 * kir); k++) { const x = rnd() * N, y = rnd() * N, a = rnd() * 6.28; for (let s = 0; s < 4; s++) { g.beginPath(); g.ellipse(x + Math.cos(a) * s * 22, y + Math.sin(a) * s * 22, 6, 10, a, 0, Math.PI * 2); g.fill(); } }
       g.fillStyle = `rgba(80,60,40,${0.1 * kir})`; g.fillRect(0, 0, N, N);
     }
-    const t = new T.CanvasTexture(cv); t.colorSpace = T.SRGBColorSpace; t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(0.25, 0.25); t.anisotropy = 4;
+    const t = new T.CanvasTexture(cv); t.colorSpace = T.SRGBColorSpace; t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(0.25, 0.25); t.anisotropy = 4; t.userData.zeminDeseni = true;
     floorTexCache.set(key, t); return t;
   }
   let kioskFloorMat: { color: T.Color } | null = null;   // survey 2026-10-24: büfe zemin tonu (sim zemin)
@@ -178,8 +181,18 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
   let spkNext = 0;
   let decorGlow: T.Group | null = null;
 
+  /** GRS-05: planar reflection hooks (render.reflector exists on the real pipeline only) */
+  const rfx = render as unknown as { reflector?: Reflector; reflectSea?: T.Object3D | null; sky?: T.Object3D };
+  function markReflections() {
+    if (!rfx.reflector) return;
+    rfx.reflectSea = h.sea;
+    markReflected(rfx.sky);
+    for (const id of REFLECTED) markReflected(inner(id));
+    const root = zones.root('iskele'); root?.children.forEach(c => { if (/^karsi/i.test(c.name)) markReflected(c); });
+  }
   function refreshHandles() {
     const sea = inner('sea') as T.Mesh | null; h.sea = sea;
+    markReflections();
     const sk = inner('skyline');
     h.skySky = sk?.getObjectByName('skyline') ?? null; h.skyWin = sk?.getObjectByName('skylineWindows') ?? null; h.clouds = (sk?.getObjectByName('clouds') as T.Mesh) ?? null;
     const bo = inner('boats'); h.kayik = bo?.getObjectByName('kayik') ?? null; h.sail = bo?.getObjectByName('sail') ?? null;
@@ -476,7 +489,11 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
     const dt = Math.min(0.1, Math.max(0, +dtIn || 0)); time += dt;
     if (render.horizon != null && render.horizon !== lastHorizon) horizonVis();
     const U = (h.sea?.material as T.ShaderMaterial | undefined)?.uniforms;
-    if (U) U.uTime.value = time;
+    if (U) {
+      U.uTime.value = time;
+      const rf = rfx.reflector;
+      if (rf && U.uReflOn) { U.uReflect.value = rf.texture; U.uReflOn.value = rf.on && rf.texture ? 1 : 0; (U.uReflMat.value as T.Matrix4).copy(rf.matrix); }
+    }
     stepFerry(dt);
     if (farWait > 0) { farWait -= dt; if (h.far) h.far.visible = false; }
     else { if (h.far) h.far.visible = true; farX += farDir * dt * 3.2; if (Math.abs(farX) > 150) { farDir = -farDir; farWait = 20; } }
@@ -561,7 +578,10 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
         const tb = (state.zones as Record<string, { tier?: number; renk?: string }> | undefined)?.tabela;
         if (tb && (tb.tier !== signTier || tb.renk !== signRenk)) { signTier = tb.tier || 0; signRenk = tb.renk || signRenk; applyNight(); }
         const sg = state.sign as { text?: string; font?: string } | null;
-        if (sg && ((sg.text != null && sg.text !== signText) || (sg.font != null && sg.font !== signFont))) view.setSign(sg.text, sg.font);
+        // BUF-16: Martı yıldızı (1-3) aşama 7+ tabela yazısının sonunda
+        const mt = (state.zones as Record<string, { marti?: number }> | undefined)?.hijyen?.marti, ys = state.stage >= 7 && mt ? ' ' + '★'.repeat(Math.min(3, Math.max(1, mt))) : '';
+        if (sg && sg.text != null && (sg.text + ys !== signText || (sg.font != null && sg.font !== signFont))) view.setSign(sg.text + ys, sg.font);
+        else if (sg && sg.font != null && sg.font !== signFont) view.setSign(undefined, sg.font);
         // purchases -> stations, tables, decor (v2 restore/onLayout rules)
         const owned = state.owned || {}, tiers = (state.tiers || {}) as Record<string, number>;
         let key = stage + '#';
@@ -573,7 +593,11 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
         // survey 2026-10-24: floor pattern + dirt (sim/zemin.ts). Tint only: the tile and wood textures stay.
         if (kioskFloorMat) {
           const fk = (zm?.desen || 'ahsap') + ':' + Math.round((zm?.kir || 0) * 8);
-          if (fk !== floorKey) { floorKey = fk; const m = kioskFloorMat as T.MeshLambertMaterial; m.map = floorPatternTex(zm?.desen || 'ahsap', Math.round((zm?.kir || 0) * 8) / 8); m.color.set('#ffffff'); m.needsUpdate = true; }
+          if (fk !== floorKey) { floorKey = fk; const m = kioskFloorMat as T.MeshLambertMaterial, prev = m.map; m.map = floorPatternTex(zm?.desen || 'ahsap', Math.round((zm?.kir || 0) * 8) / 8); m.color.set('#ffffff'); m.needsUpdate = true;
+            // PRF-15: each dirt step (1/8) is its own 512x512 texture (1.4 MB with mips); only the current one stays on the GPU and at
+            // most 4 canvases stay cached (the dirt climbs during the day and drops on cleaning, so the cache only ever grew)
+            if (prev && prev !== m.map && prev.userData.zeminDeseni) prev.dispose();   // only our own floor textures (not a shared prefab map)
+            while (floorTexCache.size > 4) { const [k0, t0] = floorTexCache.entries().next().value as [string, T.CanvasTexture]; if (t0 === m.map) break; t0.dispose(); floorTexCache.delete(k0); } }
         }
         if (key !== lastStateKey) {
           lastStateKey = key;

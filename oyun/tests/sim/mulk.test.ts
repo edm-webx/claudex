@@ -95,13 +95,17 @@ it('kafe: müşteriler içeri gelir, hired worker ve oyuncu servis eder, para ka
   const kr = [ag.kafe?.rooms?.() ?? 1];
   expect(p.sat).toBe(0);
   // the player serves from the machine
-  const it0 = sim.interactions.get('kafeYap.kafe1'); expect(it0).toBeTruthy();
-  sim.command({ kind: 'teleport', x: it0.pos.x, z: it0.pos.z });
-  for (let i = 0; i < 120; i++) { sim.step(0.1); h.pending.k1 = Math.max(h.pending.k1 || 0, 1); }
+  // the player serves from the station of what the first guest asked for (turk_kahvesi -> kahve, demlik_cay -> cay)
+  for (let i = 0; i < 400; i++) {
+    sim.step(0.1); h.pending.k1 = Math.max(h.pending.k1 || 0, 1);
+    const want = sim.rules.rt.agents.kafe.siparisOf('kafe1')[0];
+    const it0 = sim.interactions.get('kafeIst.kafe1.' + (want === 'Demlik çay' ? 'cay' : 'kahve'));
+    if (want && it0) sim.command({ kind: 'teleport', x: it0.pos.x, z: it0.pos.z });
+  }
   expect(p.sat).toBeGreaterThan(0);
   // hired worker: real actor serves on its own
   sim.command({ kind: 'teleport', x: 0, z: 0 });
-  const sat0 = p.sat; p.isci = 2;
+  const sat0 = p.sat; c({ op: 'adminIsci', id: 'k1' }); c({ op: 'adminIsci', id: 'k1' });
   for (let i = 0; i < 900; i++) { sim.step(0.1); h.pending.k1 = Math.max(h.pending.k1 || 0, 1); }
   expect(p.sat).toBeGreaterThan(sat0 + 2);
   expect(kr).toBeDefined();
@@ -193,4 +197,23 @@ it('kırtasiye tezgahı: odadan yürüyüp çıkınca tezgah kapanır ve sayaçl
   expect((m.view() as any).kirtasiye).toBeNull();
   sim.command({ kind: 'teleport', x: IC_BY_ID.kirtasiye.x, z: IC_BY_ID.kirtasiye.z });
   c({ op: 'ktAc' }); expect((m.view() as any).kirtasiye.sat).toBe(0);
+});
+
+// DKN-01: no stock, no hidden unit cost, no production layer in shops
+import { ISLETME, DUKKAN_TIPLERI } from '../../src/content/esya';
+it('işletme menüsünde ve dükkân tiplerinde gizli maliyet/stok alanı yok', () => {
+  for (const i of Object.values(ISLETME)) for (const y of i.menu) expect('maliyet' in y).toBe(false);
+  for (const t of DUKKAN_TIPLERI) expect('maliyet' in t).toBe(false);
+});
+it('eski kayıttaki Plot.stok atılır, kasa ve işçi kalır; raf_kiti bozuk keseye döner; uret komutu yok', () => {
+  const { sim, m, S, c } = mk();
+  S.zones.arsa = { plots: { k1: { tur: 'dukkan', tip: 'kafe', lv: 2, stok: 500, till: 1234, sat: 3, fr: 0, isci: 1 } }, takim: null, lastH: 8 };
+  S.zones.envanter.esya.raf_kiti = 2; S.zones.envanter.esya.tente_seti = 1;
+  const mod = m.model() as any;
+  expect(JSON.stringify(S.zones.arsa)).not.toContain('stok');
+  expect(S.zones.arsa.plots.k1.till).toBe(1234); expect(S.zones.arsa.plots.k1.isci).toBe(1);
+  expect(S.zones.envanter.esya.raf_kiti).toBeUndefined(); expect(S.zones.envanter.esya.bozuk_kese).toBe(3);
+  const k1 = mod.arsa.find((a: any) => a.id === 'k1'); expect('stok' in k1).toBe(false); expect(k1.yukselt.esya).toBeUndefined();
+  c({ op: 'uret', id: 'raf_kiti' }); expect(S.zones.envanter.esya.raf_kiti).toBeUndefined();
+  void sim;
 });

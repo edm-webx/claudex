@@ -33,21 +33,10 @@ export function reskin(css: string): string {
   return o;
 }
 
-/** Scene grade: light contrast/saturation lift on the 3D canvas and a soft vignette so the world sits under the glass UI. */
-function installGrade(): void {
-  const add = () => {
-    if (document.getElementById('sb-grade')) return;
-    const st = document.createElement('style'); st.id = 'sb-grade';
-    st.textContent = 'canvas{filter:saturate(1.06) contrast(1.04)}#sb-vig{position:fixed;inset:0;pointer-events:none;z-index:5;background:radial-gradient(ellipse at 50% 45%,rgba(0,0,0,0) 66%,rgba(8,16,36,.16) 100%)}';
-    document.head.appendChild(st);
-    const v = document.createElement('div'); v.id = 'sb-vig'; document.body.appendChild(v);
-  };
-  if (document.body) add(); else document.addEventListener('DOMContentLoaded', add);
-}
+// GRS-01: the old scene grade (canvas CSS filter + #sb-vig DOM vignette over the UI) moved into the render GRADE pass (engine/render/look.ts).
 
 export function installSkin(): void {
   if (typeof HTMLStyleElement === 'undefined') return;
-  installGrade();
   const d = Object.getOwnPropertyDescriptor(Node.prototype, 'textContent');
   if (!d || !d.set || !d.get) return;
   const get = d.get, set = d.set;

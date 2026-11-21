@@ -109,12 +109,12 @@ describe('save', () => {
   it('migration v0 -> v1 fixture, pre-migration backup written first', async () => {
     const v0 = { money: -5, gold: 2, day: 4, tiers: { doner: 2 }, hero: 'sabri' }; // v0 fixture: no version field
     let backupSeenBeforeUp = false;
-    const t = mk({ migrations: [{ from: 0, to: 1, up: (o: any) => { backupSeenBeforeUp = [...t.db.m.keys()].some(k => k.startsWith('tst:pre:0:')); return { ...defaultState(1), ...o, tiers: { ...defaultState(1).tiers, ...o.tiers } }; } }] });
+    const t = mk({ migrations: [{ from: 0, to: 1, up: (o: any) => { backupSeenBeforeUp = [...t.db.m.keys()].some(k => k.startsWith('tst:pre:0:')); return { ...defaultState(1), ...o, tiers: { ...defaultState(1).tiers, ...o.tiers } }; } }, { from: 1, to: SAVE_VERSION, up: (o: any) => o }] });
     const json = JSON.stringify(v0);
     t.db.m.set('tst:s0', JSON.stringify({ seq: 1, at: 1, v: 0, sum: checksum(json), json }));
     const r = await t.save.load();
     expect(backupSeenBeforeUp).toBe(true);
-    expect(r.data.version).toBe(1);
+    expect(r.data.version).toBe(SAVE_VERSION);
     expect(r.data.day).toBe(4); expect(r.data.tiers.doner).toBe(2); expect(r.data.tiers.cay).toBe(1);
     expect(r.data.money).toBe(0);
     expect(r.repaired).toContain('migrated v0 -> v1');

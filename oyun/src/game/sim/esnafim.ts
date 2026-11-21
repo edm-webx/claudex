@@ -112,7 +112,7 @@ export function esnafHeroOpts(e: Partial<EsnafimSave>, worn: Record<string, unkn
   const look: Record<string, unknown> = {
     skin: z.ten, body: z.vucut, height: z.boy, girth: z.vucut === 'slim' ? 0.92 : z.vucut === 'round' ? 1.16 : 1.0,
     // short, bushy styles poke through a hat: under one they sit as a neat crop
-    hair: z.sapka && z.sapka !== 'bandana' && /^(short|sport|curly|wavy|afro|loose)$/.test(z.sac) ? 'buzz' : z.sac, hairColor: z.sacRenk, temples: null, beard: z.sakalStil === 'keci' || z.sakalStil === 'cember' ? 'goatee' : z.sakalStil === 'kisa' ? 'short' : z.sakalStil === 'favori' ? 'sideburns' : z.sakalStil ? z.sakalStil === 'tam' : !!z.sakal,
+    hair: z.sapka && z.sapka !== 'bandana' && /^(short|sport|curly|wavy|afro|loose)$/.test(z.sac) ? 'buzz' : z.sac, hairColor: z.sacRenk, temples: null, beard: z.sakalStil === 'keci' ? 'goateeLong' : z.sakalStil === 'cember' ? 'goatee' : z.sakalStil === 'kisa' ? 'short' : z.sakalStil === 'favori' ? 'sideburns' : z.sakalStil ? z.sakalStil === 'tam' : !!z.sakal,
     restCell: IFADE[z.ifade || ''] ?? undefined,
     mustache: z.sakalStil === 'cember' && z.biyik === 'yok' ? 'thin' : z.biyik === 'yok' ? false : z.biyik === 'kalin' ? 'thick' : z.biyik === 'burma' ? 'curl' : 'thin',
     faceSpec: { eye: z.goz, iris: z.gozRenk, brow: z.kas, blush: z.allik, freckles: z.cil ? 1 : 0, dimples: z.gamze ? 1 : 0, lips: z.ruj || undefined,

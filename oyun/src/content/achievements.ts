@@ -20,7 +20,7 @@ export const ACHIEVEMENTS: Ach[] = [
   { id: 'pestamal', title: 'Peştamal Kuşandık', text: 'İlk işçini Kalfa yap', stat: 'kalfa', goal: 1 },
   { id: 'altindis', title: 'Altın Dişli Gülüş', text: 'Bir işçiyi Usta yap', stat: 'usta', goal: 1 },
   { id: 'birdaha', title: 'Bir Çay Daha', text: 'Emekli amcaya tek seferde 3 çay ver', stat: 'emekli3', goal: 1 },
-  { id: 'herzaman', title: 'Her Zamankinden!', text: 'Bir müdavimin her zamankini doğru getir', stat: 'regularOk', goal: 1 },
+  { id: 'herzaman', title: 'Güler Yüzlü', text: '200 müşteriyi güler yüzle gönder', stat: 'served', goal: 200 },
   { id: 'biyik', title: 'Bıyıktan Bir Tel', text: 'Gurme Bülent Bey\'den tam puan al', stat: 'gurmePass', goal: 1 },
   { id: 'simitgezegen', title: 'Halka Simit Gezegeni', text: 'Simidi 4. kademeye çıkar', stat: 'simitK4', goal: 1 },
   { id: 'kepenk', title: 'Kepenk Açıldı', text: 'İlk Tadilat: paslı büfe açılsın', stat: 'tadilat', goal: 1 },

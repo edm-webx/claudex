@@ -50,10 +50,11 @@ import { createPrefabs } from '../engine/prefab';
 import { createZones } from '../engine/zones';
 import { createNav } from '../engine/nav';
 import { createAnim } from '../engine/anim';
+import { reflectBudget } from '../engine/render/reflect';
 import { createFx } from '../engine/fx';
 import { createUi } from '../engine/ui';
 import { createAudio } from '../engine/audio';
-import { createChars, type MotorChars } from './view/chars';
+import { createChars, type MotorChars, type MotorCrowd } from './view/chars';
 import { createAgentsView, type AgentsView } from './view/chars/agents-view';
 import { createWorldView } from './view/world';
 import { createHud } from './ui/hud';
@@ -75,6 +76,7 @@ import { defaultSign } from '../content/sign-fonts';
 import { createSim, openNav, lerpPose, type SimFull } from './headless';
 import { defaultState, SAVE_KEY, type GameState, type HeroId } from './sim/schema';
 import { createGameSave } from './sim/save';
+import { installBekci, type BekciHandle } from './sim/bekci';
 import { createGunSonu } from './ui/gun-sonu';
 import { createKulis } from './ui/kulis';
 import { createYetenekBtn } from './ui/yetenek-btn';
@@ -85,15 +87,19 @@ import { esnafHeroOpts, esnafimSave } from './sim/esnafim';
 import { createOnline } from './online';
 import { createAdminPanel } from './ui/admin-panel';
 import { PAD_KEYS } from '../content/pads';
-import { regionAt } from '../content/disari/martikoy';
+import { regionAt, REGIONS } from '../content/disari/martikoy';
+import { realmAt } from '../content/realm';
 import { createHaliSaha } from './ui/hali-saha';
 import { createOrmanView } from './view/orman';
 import { createOtobusHud } from './ui/otobus-hud';
 import { createMulkPanel } from './ui/mulk-panel';
 import { createKirtasiyeFp } from './ui/kirtasiye-fp';
-import { IC_BY_ID as KT_IC, icWorld as ktWorld, icDim as ktDim } from '../content/ic-mekan';
+import { IC_BY_ID as KT_IC, icWorld as ktWorld, icDim as ktDim, icIcinde as ktIcinde } from '../content/ic-mekan';
 import { createMulkView } from './view/mulk';
 import { bankaOku, bankaYaz } from './net/slots';
+import { bulutKapanisYaz } from './net/slots';
+import { createKayitDurum } from './net/kayit-durum';
+import { createKayitRozet } from './ui/kayit-rozet';
 import { panelModel, panelActions } from './sim/panels';
 import type { AgentsHandle } from './sim/agents';
 import { createFerryLook, type FerryLookView } from './view/world/ferry-look';
@@ -101,12 +107,16 @@ import { createYolLook, type YolLookView } from './view/world/yol-look';
 import { ugY, onUg } from '../content/ustgecit';
 import { createKarsiLook, type KarsiLookView } from './view/world/karsi-look';
 import { createKarsiBina, type BinaView } from './view/world/karsi-bina';
+import { createIsletmeInsaat, type InsaatView } from './view/world/isletme-insaat';
 import { createBufeBuyume, mevsimZorla, type BuyumeView } from './view/world/bufe-buyume';
-import { ARSALAR } from '../content/esya';
+import { createAcilis, type AcilisView } from './view/world/acilis';
+import { ARSALAR, ISLETME, ARSA_ISLETME } from '../content/esya';
 import { createKarsiYasam, type YasamView } from './view/world/karsi-yasam';
 import { createIcMekan, type IcView } from './view/world/ic-mekan-look';
 import { restoranApi } from './sim/restoran';
 import { MUTFAK_ROL_BY_ID } from '../content/mutfak';
+import { SES_ISTASYON } from '../content/mutfak-ses';
+import { mutfakDunya, mutfakStand } from '../content/ic-mekan';
 import { rankOf } from '../content/ranks';
 import { createIzgaraLook, type IzgaraLookView } from './view/world/izgara-look';
 import { cellRect } from '../content/izgara';
@@ -117,12 +127,17 @@ import { createReklam, type ReklamView } from './view/world/reklam';
 import { createHavaLook, type HavaLookView } from './view/world/hava-look';
 import { createDenizLook, type DenizLookView } from './view/world/deniz-look';
 import { createDenizUi, type DenizUiView } from './ui/deniz-ui';
-import { createCalisanLook, type CalisanLookView } from './view/world/calisan-look';
 import { createHuyMotion, type HuyMotionView } from './view/chars/huy-motion';
 import { createAltinSimitFx, type AltinSimitFx } from './ui/altin-simit-fx';
 import { createDisariLook, type DisariLookView } from './view/disari';
 import { createStadyumView } from './view/stadyum';
-import { createNightLights } from './view/world/night-lights';
+import { createNightLights, roomLightsFor } from './view/world/night-lights';
+import { createGorselSaat } from './boot-saat';
+import { drawCostTable } from '../engine/perf/draw-cost';
+import { kutuda, kopyalar } from '../engine/perf/sahne-tara';
+import { kaynakDokum } from '../engine/render/kaynak-dokum';
+import { akisZorla, akisDurum } from '../engine/render/doku-akis';
+import { yukleAdim, yukleBitti } from '../engine/render/yukle-ekran';
 import { createHedefCard, type HedefCard } from './ui/hedef-card';
 import { createFaz2Hud, type Faz2Hud } from './ui/faz2-hud';
 import { createStantLook, type StantLookView } from './view/world/stant-look';
@@ -149,6 +164,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const warnings: string[] = [];
   const target = ((window as unknown as { __marti?: AnyRec }).__marti ??= {});
   const hooks: TestHooks = createHooks({ target });
+  yukleAdim(0.3, 'Mahalle kuruluyor');   // PRF-11 yükleme ekranı: game.js indi ve çalışıyor
 
   let perf: PerfMeter | null = null;
   const warn = (name: string, e: unknown) => {
@@ -308,12 +324,17 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
 
   const karsiLook: KarsiLookView | null = playMode && zones ? make('karsiLook', () => createKarsiLook({ root: () => zones.root('iskele') ?? null })) : null;
   const karsiBina: BinaView | null = playMode && zones ? make('karsiBina', () => createKarsiBina({ root: () => zones.root('iskele') ?? null, night: () => nightK, camera: () => cam.camera, hero: () => walk.pos })) : null;
+  const isletmeInsaat: InsaatView | null = playMode && zones ? make('isletmeInsaat', () => createIsletmeInsaat({ root: () => zones.root('iskele') ?? null, night: () => nightK, tadilat: () => { const m = mulkApi(sim.rules); return m ? m.view().plots.flatMap(p => { const t = (p as { tadilat?: { left: number; total: number } | null }).tadilat; return p.sabit && p.owned && t ? [{ id: p.id, p: 1 - t.left / t.total }] : []; }) : []; } })) : null;
   const bufeBuyume: BuyumeView | null = playMode && zones ? make('bufeBuyume', () => createBufeBuyume({ root: () => zones.root('iskele') ?? null, night: () => nightK, stage: () => sim.state.stage, tadilat: () => { const t = sim.state.tadilat as unknown as { to: number; left: number; total: number } | null; return t ? { to: t.to, p: 1 - t.left / Math.max(1, t.total) } : null; }, takim: () => (sim.state.zones as { arsa?: { takim?: { ad: string; renk: string; renk2?: string } | null } }).arsa?.takim ?? null, hero: () => walk.pos })) : null;
+  // BUF-30: aşama açılış anı (kamera gezintisi, kurdele, ışık, dünya içi etiketler)
+  const acilis: AcilisView | null = playMode && zones ? make('acilis', () => createAcilis({ root: () => zones.root('iskele') ?? null, hero: () => walk.pos, ses: (id) => { try { audio?.sfx(id); } catch { /* */ } } })) : null;
+  if (acilis) sim.bus.on('tadilatDone', (e) => acilis.baslat(Number((e as { stage?: number } | undefined)?.stage) || sim.state.stage));
   // 2026-11-09 "her binaya girilebilmeli": interiors of every far-side building and the büfe halls
   const icMekan: IcView | null = playMode && zones ? make('icMekan', () => createIcMekan({ root: () => zones.root('iskele') ?? null, hero: () => walk.pos, night: () => nightK,
     isletme: () => { const m = mulkApi(sim.rules), o: Record<string, { lv: number; isci: number; esya: string[]; tema?: string }> = {}; if (m) for (const p of m.view().plots) if (p.sabit && p.owned) o[p.id] = { lv: p.lv, isci: p.isci, esya: (p as { esya?: string[] }).esya || [], tema: (p as { tema?: string }).tema || '' }; return o; },
     salon: () => ({ stage: sim.state.stage || 1, esya: ((sim.state.zones as { salon?: { esya?: string[] } }).salon?.esya) || [] }),
-    mutfak: () => ({ ekip: sim.state.workers.filter(w => MUTFAK_ROL_BY_ID[w.role]).map(w => ({ rol: w.role, rank: rankOf(w.xp || 0) })), kds: (restoranApi(sim.rules)?.view().tickets || []).slice(0, 6).map(k => '#' + k.no + '  Masa ' + (k.table + 1) + ' · ' + k.items.filter(i => i.left).map(i => i.left + '× ' + i.name).join(', ')) }) })) : null;
+    mutfak: () => { const rv = restoranApi(sim.rules)?.view(); return { ekip: sim.state.workers.filter(w => MUTFAK_ROL_BY_ID[w.role]).map(w => ({ rol: w.role, rank: rankOf(w.xp || 0) })), kds: (rv?.tickets || []).slice(0, 6).map(k => '#' + k.no + '  Masa ' + (k.table + 1) + ' · ' + k.items.filter(i => i.left).map(i => i.left + '× ' + i.name).join(', ')), pass: rv?.pass || [], ist: rv?.ist || {},
+      bilet: (rv?.tickets || []).map(k => ({ no: k.no, masa: k.table + 1, kalem: k.items.filter(i => i.left).map(i => i.left + '× ' + i.name), frac: k.frac })), zeminKir: ((sim.state.zones as { zemin?: { kir?: number } }).zemin?.kir) ?? 0 }; } })) : null;   // BUF-05: pass rafı + istasyon tepsileri
   const karsiYasam: YasamView | null = playMode && zones && chars ? make('karsiYasam', () => createKarsiYasam({ root: () => zones.root('iskele') ?? null, chars, hero: () => walk.pos, hour: () => sim.clock.hour, sfx: id => { try { audio?.sfx(id); } catch { /* */ } }, isci: () => { const m = mulkApi(sim.rules); return m ? m.view().plots.filter(p => p.sabit && p.owned).map(p => ({ id: p.id, n: p.isci, lv: p.lv, esya: (p as { esya?: string[] }).esya || [] })) : []; } })) : null;
   const yolLook: YolLookView | null = playMode && zones ? make('yolLook', () => createYolLook({ root: () => zones.root('iskele') ?? null })) : null;
 
@@ -376,10 +397,13 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   };
 
   // ── agents view (workers, regulars, gurme, kapkaççı, cats, Karamel, gulls, pigeons, far flock)
+  /** 2026-11-21: the player is inside a büfe salon (its roof / upper floor is cut away, view/world/bufe-buyume.ts): people up on that roof would float */
+  const salonUstGizli = (x: number, z: number) => { for (const m of [KT_IC.salonW, KT_IC.salonE]) if (ktIcinde(m, pos, 0.2) && ktIcinde(m, { x, z }, 0.4)) return true; return false; };
   const agentsOf = (): AgentsHandle | null => (sim.rules.rt as unknown as { agents?: AgentsHandle }).agents ?? null;
   const agentsView: AgentsView | null = playMode && chars ? make('agentsView', () => createAgentsView({
     chars: chars as MotorChars, quality, agents: agentsOf,
-    player: () => ({ x: pos.x, z: pos.z, moving: walk.speed > 0.15 }),
+    player: () => ({ x: pos.x, z: pos.z, moving: walk.speed > 0.15 }), camera: () => cam.camera,
+    hideUp: (x, z) => salonUstGizli(x, z),
   })) : null;
 
   // ── panels, labels, play view, audio map (play mode only)
@@ -443,7 +467,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
       earned: () => Number(sim.state.totalEarned) || 0,
       money: () => sim.state.money,
       setMoney: (n: number) => { sim.state.money = n; },
-      addKasa: (n: number, from: string) => { sim.state.money += n; sim.state.totalEarned += n; kasaToast += n; kasaFrom = from; },
+      addKasa: (n: number, from: string) => { sim.rules.credit!('diger', n); kasaToast += n; kasaFrom = from; },
       leave: () => { if (ownBackup) { sim.load(JSON.parse(ownBackup)); ownBackup = null; } guestWorld = false; },
     } })) : null;
   // 13:05 user: kullanıcı adı + şifre (giris.ts, net/supa.ts). A login pulls the newer cloud save; while signed in the
@@ -476,13 +500,31 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     setMoney: n => { sim.state.money = n; }, setGold: n => { sim.state.gold = n; }, editor: () => adminEditor(), stands: () => (restoranApi(sim.rules)?.view().stands ?? []).map(t => ({ id: t.id, name: t.name, owned: t.owned, x: t.x, z: t.z })), izgara: () => { const v = !(izgaraLook?.get()); izgaraLook?.set(v); return v; },
     resetMe: () => { void (async () => { try { sim.load(defaultState(seed ?? 1) as never); esnafimSave(sim.state).done = false; await save.save('manual'); if (hesap()) { const code = await save.exportCode(); await bulutYaz(code, 0, esnafimSave(sim.state), 1); } } finally { location.reload(); } })(); },
     command: c => command(c as never), setLevel: n => { sim.state.level = n; }, allPadKeys: () => PAD_KEYS.filter(k => k !== 'tadilat'),
-    isletme: () => { const S = sim.state, z = S.zones as { arsa?: { plots?: Record<string, { lv: number; isci?: number }>; takim?: { ad: string } | null } }, t = S.tadilat as unknown as { to: number; left: number } | null; return { stage: S.stage, tadilat: t ? { to: t.to, left: t.left } : null, money: S.money, gold: S.gold || 0, level: S.level, stars: S.stars, kafeler: ARSALAR.filter(a => a.sabit).map(a => ({ id: a.id, ad: a.ad || a.id, lv: z.arsa?.plots?.[a.id]?.lv || 0, isci: z.arsa?.plots?.[a.id]?.isci || 0 })), takim: z.arsa?.takim?.ad ?? null, mevsim: mevsimZorla() }; },
+    isletme: () => { const S = sim.state, z = S.zones as { arsa?: { plots?: Record<string, { lv: number; isci?: number; tadilat?: { to: number; left: number } }>; takim?: { ad: string } | null } }, t = S.tadilat as unknown as { to: number; left: number } | null; return { stage: S.stage, tadilat: t ? { to: t.to, left: t.left } : null, money: S.money, gold: S.gold || 0, level: S.level, stars: S.stars, kafeler: ARSALAR.filter(a => a.sabit).map(a => ({ id: a.id, ad: a.ad || a.id, lv: z.arsa?.plots?.[a.id]?.lv || 0, isci: z.arsa?.plots?.[a.id]?.isci || 0, asama: ISLETME[ARSA_ISLETME[a.id]].asama[(z.arsa?.plots?.[a.id]?.lv || 1) - 1] || '', tadilat: z.arsa?.plots?.[a.id]?.tadilat ? Math.ceil(z.arsa.plots[a.id].tadilat!.left) : 0 })), takim: z.arsa?.takim?.ad ?? null, mevsim: mevsimZorla() }; },
     setMevsim: k => mevsimZorla(k),
     setMuted: m => { sim.state.settings.muted = m; if (audio) for (const b of Object.values(audio.buses)) (b as { muted: boolean }).muted = m; } })) : null;
   // J2: back to the slot screen (save first, then sign out and reload: the login screen opens again)
   window.addEventListener('martikoy:karakter', () => { void (async () => { try { if (hesap() && saveOn()) { const code = await save.exportCode(); await bulutYaz(code, sim.state.playT || 0, esnafimSave(sim.state), sim.state.level || 1); } await cikisYap(); } finally { location.reload(); } })(); });
   let bulutT = 45;
-  const bulutPush = () => { if (!hesap() || !saveOn()) return; void save.exportCode().then(code => bulutYaz(code, sim.state.playT || 0, esnafimSave(sim.state), sim.state.level || 1).then(() => { try { const h = hesap(); if (h) localStorage.setItem('martikoy-cloud-synced', h.id); } catch { /* */ } })).catch(() => { /* next time */ }); };
+  // KAL-01: bulut yazımı durum makinesinden geçer (rozet, yeniden deneme, çevrimdışı); sonuç sunucu onayıdır
+  const kayitD = createKayitDurum({
+    gonder: async () => {
+      if (!hesap() || !saveOn()) return true;
+      const code = await save.exportCode();
+      const ok = await bulutYaz(code, sim.state.playT || 0, esnafimSave(sim.state), sim.state.level || 1);
+      if (ok) { try { const h = hesap(); if (h) localStorage.setItem('martikoy-cloud-synced', h.id); } catch { /* */ } }
+      return ok;
+    },
+    simdi: () => platform.clock.wall(), cevrimici: () => { try { return navigator.onLine !== false; } catch { return true; } },
+    zamanla: (fn, ms) => setTimeout(fn, ms), iptal: h => clearTimeout(h as ReturnType<typeof setTimeout>),
+  });
+  if (save.readOnly) kayitD.saltOkunur();   // depoda bu build'den yeni sürüm kaydı var: buluta da yazılmaz (yeni kayıt ezilmesin)
+  const bulutPush = () => { if (!hesap() || !saveOn()) return; if (save.readOnly) { kayitD.saltOkunur(); return; } kayitD.istek(); };
+  /** sekme kapanırken: asenkron zincire güvenme, keepalive isteği hemen at (gövde 60 KB'ı aşarsa atılmaz, normal yazım dener) */
+  const bulutKapanis = () => { try { if (!hesap() || !saveOn() || save.readOnly) return; void save.exportCode().then(code => { bulutKapanisYaz(code, sim.state.playT || 0, esnafimSave(sim.state), sim.state.level || 1); }); } catch { /* */ } };
+  addEventListener('pagehide', bulutKapanis);
+  addEventListener('online', () => kayitD.baglandi());
+  const kayitRozet = playMode && uiReal ? make('kayitRozet', () => createKayitRozet({ root: U.root, durum: kayitD, gorunur: () => !!hesap() && saveOn() })) : null;
   const yetenekBtn = playMode && uiReal ? make('yetenekBtn', () => createYetenekBtn({ root: U.root, rules: () => sim.rules, command: c => command(c as never) })) : null;
   const kulis = playMode && uiReal ? make('kulis', () => createKulis({ root: U.root, rules: () => sim.rules, command: c => command(c as never), chars: chars as never, sfx: id => { try { audio?.sfx(id); } catch { /* */ } },
     dolap: () => { const z = kiyafetSave(sim.state); return { owned: z.owned, worn: z.worn as Record<string, string>, gold: sim.state.gold || 0 }; }, worn: () => wornLook(), avm: () => ((sim.state.zones as { avm?: { alinan?: string[] } }).avm?.alinan) || [] })) : null;
@@ -499,8 +541,6 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     float: (x, z, text) => { const sp = { x: 0, y: 0 }; if (panels && project({ x, y: 2.6, z }, sp)) panels.v2.float(sp.x, sp.y, text, 'good'); },
   })) : null;
   // PaketMartı: counter tablet + parked courier bikes (view/world/kurye-look.ts) and the fiş / live map / Sen götür overlay (ui/kurye-ui.ts)
-  // Çalışanlar 2.0: Ayın Elemanı photo, pasta, çay köşesi, Dinlenme Bankı sitters (view/world/calisan-look.ts) + huy motion (view/chars/huy-motion.ts)
-  const calisanLook: CalisanLookView | null = playMode ? make('calisanLook', () => createCalisanLook({ scene, rules: () => sim.rules, chars: (chars as MotorChars) ?? null })) : null;
   const huyMotion: HuyMotionView | null = playMode && chars && agentsView ? make('huyMotion', () => createHuyMotion({ scene, chars: chars as MotorChars, agents: agentsOf, rigOf: id => agentsView.rigOf(id) })) : null;
   // Deniz: sea life, boats, extra animals, ferry rope/bump, glitter, kiosk exterior, table kinds, pier expansions (deniz-look.ts) + deck run / photo / boat offer cards and the ferry interior (deniz-ui.ts)
   const denizLook: DenizLookView | null = !FAZ2_LEAN && playMode && zones ? make('denizLook', () => createDenizLook({ root: () => zones.root('iskele') ?? null, rules: () => sim.rules, hour: () => sim.clock.hour })) : null;
@@ -509,6 +549,8 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   // Faz 2: Altın Fırın (collections) removed from the pier
   const altinFx: AltinSimitFx | null = panels ? make('altinFx', () => createAltinSimitFx({ root: U.root, rules: () => sim.rules })) : null;
   const nightLights = playMode && zones ? make('nightLights', () => createNightLights({ scene, zones })) : null;
+  // PRF-08: havuz kademeye göre (4/6/10), büfe floresanı aşamaya göre, iç mekanda hemi kısma
+  if (nightLights) make('nightLights.bind', () => { nightLights.bind({ stage: () => sim.state.stage, render: R as unknown as { hemiMul: number } }); nightLights.setTier(quality.current()); return true; });
   // Martıköy: neighbourhood labels, guide cat, ferris wheel, barrier, pier props (view/disari) 
   const disariLook: DisariLookView | null = ACIK_DUNYA && playMode && zones && labels ? make('disariLook', () => createDisariLook({
     scene, zones: zones as ZoneManager, labels, project, rules: () => sim.rules, hero: () => pos, hour: () => sim.clock.hour, command,
@@ -536,12 +578,18 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     weather: () => havaApi(sim.rules)?.view().kind ?? 'acik',
     season: () => havaApi(sim.rules)?.view().season ?? 'sonbahar',
     grill: () => { const a = zones?.anchors('iskele')?.['stations.doner']; return a ? a.pos : null; },
+    // BUF-08: mutfakta gerçekten pişiren istasyonlar (sim hattı 'pisiyor' diyorsa), yoksa boş: sessiz
+    kitchen: () => {
+      const ist = restoranApi(sim.rules)?.view().ist ?? {}, out: { x: number; z: number; w: number }[] = [];
+      for (const k in ist) { const s = SES_ISTASYON[k]; if (ist[k].d !== 'pisiyor' || !s) continue; const p = mutfakDunya(mutfakStand(k)); out.push({ x: p.x, z: p.z, w: s.w }); }
+      return out;
+    },
     root: uiReal ? U.root : null,
   })) : null;
   // ses / animasyon juice: particles, emotes, coin fly, unlock pop, flag, kepenk, haptics (view/juice.ts)
   const juice: JuiceView | null = playMode ? make('juice', () => createJuice({
     bus: sim.bus, fx, hero: () => H, heroPos: () => pos, speed: () => walk.speed,
-    anchors: () => zones?.anchors('iskele') ?? {}, zoneRoot: () => zones?.root('iskele') ?? null,
+    anchors: () => zones?.anchors('iskele') ?? {}, zoneRoot: () => zones?.root('iskele') ?? null, hour: () => sim.clock.hour,
     uiRoot: uiReal ? U.root : null, project, agents: () => sim.agents,
     crowdHead: chars ? (slot, out) => (chars as MotorChars).crowd.headPos(slot, out) : undefined,
     haptics: () => U.settings.haptics !== false && sim.state.settings.haptics !== false,
@@ -563,16 +611,26 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     sim.state.settings.autoTier = t.name;
   };
   quality.onChange(applyTier);
-  quality.onScale?.(sc => make('render.setScale', () => { R.setScale?.(sc); return true; }));
+  if (nightLights) quality.onChange(t => make('nightLights.setTier', () => { nightLights.setTier(t); return true; }));   // PRF-08: ışık sayısı yalnız kademe değişiminde
+  quality.onChange(() => { void R.warm?.(scene, cam.camera); });   // PRF-03: gölge + ışık havuzu değişti; yeni programlar paralel derlensin (kare içinde değil)
+  quality.onScale?.(sc => make('render.setScale', () => { R.setScale?.(sc); P.count('olcekYuzde', Math.round(sc * 100)); return true; }));
+  quality.onPostCut?.(cut => make('render.setPostCut', () => { R.setPostCut?.(cut); P.count('bloomKesik', cut ? 1 : 0); return true; }));   // PRF-12 ikinci basamak
   if (chars) make('crowd.setBudget', () => { chars.crowd.setBudget(quality.current().crowd); return true; });
   sim.state.settings.quality = quality.setting();
 
   // ── per-frame guarded calls
   const strikes = new Map<string, number>();
+  const gAgg = new Map<string, { n: number; sum: number; max: number }>();   // BUF-29: perfRecord açıkken her kare parçasının süresi (kapalıyken sıfır maliyet); hook 'perfGuard' okur
   const guard = (name: string, fn: () => void) => {
     const s = strikes.get(name) ?? 0;
     if (s >= 3) return;
-    try { fn(); } catch (e) {
+    try {
+      if (P.recording) {
+        const t0 = platform.clock.now(); fn(); const d = platform.clock.now() - t0;
+        let a = gAgg.get(name); if (!a) gAgg.set(name, a = { n: 0, sum: 0, max: 0 });
+        a.n++; a.sum += d; if (d > a.max) a.max = d;
+      } else fn();
+    } catch (e) {
       strikes.set(name, s + 1);
       log.error(`frame part ${name} threw`, e);
       if (s + 1 >= 3) P.warn(`Kapandı: ${name}`);
@@ -581,6 +639,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
 
   let camHold: Vec2 | null = null;
   let timeT = 0, lastHour = -1, simT = 0, camTick = sim.tick;
+  const gSaat = createGorselSaat(sim.clock.hour, sim.state.day);   // GRS-02: night held behind the gün sonu card, then a soft dawn
   cam.snap(walk.pos);
 
   const heroAct = (a: string) => (a === 'cut' || a === 'pour' ? a : (sim.rules.rt as unknown as { yetenek?: { dans?: boolean } }).yetenek?.dans ? 'dance' : 'idle');
@@ -604,16 +663,18 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (st.orbit) (cam as unknown as { turn(d: number): void }).turn(st.orbit);
     if (st.tilt) (cam as unknown as { tilt(d: number): void }).tilt(st.tilt);
     if (st.recenter) (cam as unknown as { recenter(): void }).recenter();
-    if (st.moving) camHold = null;
+    if (st.moving) { camHold = null; acilis?.atla(); }
     lerpPose(walk, alpha, pose);
     simT += fdt;
     if (zones) guard('zones', () => { P.begin('zones.build'); zones.update(pos, cam.frustum()); P.end('zones.build'); });
+    // 2026-11-21 denetim: kapalı diyarda (stadyum / orman) komşu bölgenin tezgâhları zeminsiz, boşlukta havada görünüyordu: diyar dışı bölge çizilmez
+    if (zones) guard('zones.diyar', () => { const rl = realmAt(pos.x); for (const rg of REGIONS) { const root = zones.root(rg.zone); if (root) root.visible = !rl || (rg.x0 >= rl.x0 && rg.x1 <= rl.x1); } });
     const df = sim.rules.rt.uiLast.decorFocus as { x: number; z: number; until: number } | undefined;   // Faz 2: show a bought decor item
     if (df && !(df as AnyRec).sparked) { (df as AnyRec).sparked = true; try { (W as unknown as { sparkle?(p: unknown, n?: number, c?: string): void }).sparkle?.({ x: df.x, y: 1.0, z: df.z }, 40, '#ffd23f'); } catch { /* */ } }
     if (df && sim.state.playT > df.until) { delete sim.rules.rt.uiLast.decorFocus; if ((df as AnyRec).reopen) cmd('openPanel', { id: 'dekor' }); }
     const inBufe = pos.x > BUFE.x0 && pos.x < BUFE.x1 && pos.z > BUFE.z0 && pos.z < BUFE.z1;   // Faz 2 (38): inside the büfe the camera centres on it
     const bufeFocus = { x: (BUFE.x0 + BUFE.x1) / 2, z: (BUFE.z0 + BUFE.z1) / 2 };
-    guard('camera.follow', () => cam.follow((t => onUg(t.x, t.z) ? { x: t.x, z: t.z, y: ugY(t.x, t.z) } : t)(df && sim.state.playT <= df.until ? df : camHold ?? (inBufe ? { x: pos.x + (bufeFocus.x - pos.x) * 0.25, z: pos.z + (bufeFocus.z - pos.z) * 0.25 } : pos)), fdt));
+    guard('camera.follow', () => cam.follow((t => onUg(t.x, t.z) ? { x: t.x, z: t.z, y: ugY(t.x, t.z) } : t)(acilis?.kamera() ?? (df && sim.state.playT <= df.until ? df : camHold ?? (inBufe ? { x: pos.x + (bufeFocus.x - pos.x) * 0.25, z: pos.z + (bufeFocus.z - pos.z) * 0.25 } : pos))), fdt));
     if (playMode) guard('sign', syncSign);
     guard('world', () => W.update(sim.state, fdt, alpha));
     if (ferryLook) guard('ferryLook', () => ferryLook.update(fdt));
@@ -621,6 +682,8 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (karsiLook) guard('karsiLook', () => karsiLook.update(fdt));
     if (karsiBina) guard('karsiBina', () => karsiBina.update(fdt));
     if (bufeBuyume) guard('bufeBuyume', () => bufeBuyume.update(fdt));
+    if (isletmeInsaat) guard('isletmeInsaat', () => isletmeInsaat.update(fdt));
+    if (acilis) guard('acilis', () => acilis.update(fdt));
     if (karsiYasam) guard('karsiYasam', () => karsiYasam.update(fdt));
     if (icMekan) guard('icMekan', () => icMekan.update(fdt));
     if (tipJar) guard('tipJar', () => tipJar.update(fdt));
@@ -629,6 +692,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (gunSonu) guard('gunSonu', () => gunSonu.update());
     if (kulis) guard('kulis', () => kulis.update(fdt));
     if (yetenekBtn) guard('yetenekBtn', () => yetenekBtn.update());
+    if (kayitRozet) guard('kayitRozet', () => kayitRozet.guncelle());
     if (online) guard('online', () => online.update(fdt));
     if (adminPanel) guard('adminPanel', () => adminPanel.update(fdt));
     if (kasaToast > 0 && (kasaT -= fdt) <= 0) { kasaT = 6; U.toast(kasaFrom + ' kasaya +' + Math.floor(kasaToast) + ' ₺ kattı!', 'good'); kasaToast = 0; }
@@ -643,7 +707,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (stadyumView) guard('stadyumView', () => stadyumView.update(fdt));
     if ((bankaT -= fdt) <= 0) { bankaT = 2; const b = bankaRt(); if (b?.dirty && hesap()) { b.dirty = false; void bankaYaz({ tl: b.tl, esya: b.esya }); } }
     if (otobusHud) guard('otobusHud', () => otobusHud.update(fdt));
-    if (nightLights) guard('nightLights', () => nightLights.update(pos, sim.clock.hour));
+    if (nightLights) guard('nightLights', () => nightLights.update(pos, gSaat.saat, fdt, roomLightsFor(icMekan?.icinde())));   // GRS-02: lamps follow the drawn hour (lit behind the gün sonu card, fade at dawn)
     if (playMode) guard('heroKind', syncHeroKind);
     guard('hero', () => {
       const r = rt();
@@ -656,7 +720,8 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     });
     if (agentsView) guard('agents', () => { P.time('agents', () => agentsView.update(sim.state, fdt, alpha)); });
     if (huyMotion) guard('huyMotion', () => huyMotion.update(fdt));
-    if (calisanLook) guard('calisanLook', () => calisanLook.update(fdt));
+    if (chars && !(chars.crowd as MotorCrowd).hideUp) (chars.crowd as MotorCrowd).hideUp = salonUstGizli;   // 2026-11-21: çatıdakiler, çatısı kalkmış salonun içindeyken görünmez
+    if (chars && !(chars.crowd as MotorCrowd).heightOf) (chars.crowd as MotorCrowd).heightOf = (slot: number) => (rt() as unknown as { agentY?: Float32Array }).agentY?.[slot] || 0;   // BUF-20: çatı terası müşterileri
     if (chars) guard('crowd', () => { P.time('crowd', () => { chars.crowd.update(sim.agents, fdt, alpha); chars.update(fdt, alpha); }); });
     if (carsi) guard('carsi', () => carsi.update(fdt));
     if (moments) guard('moments', () => moments.update(fdt));
@@ -669,8 +734,8 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (fx) guard('fx', () => fx.update(fdt));
     if (anim) guard('anim', () => anim.update(fdt));
     timeT -= fdt;
-    const hour = sim.clock.hour;
-    if (timeT <= 0 || (sim.timeFrozen && hour !== lastHour)) {
+    const hour = gSaat.update(sim.clock.hour, sim.state.day, !!sim.rules.rt.uiLast.gunSonu, fdt);
+    if (timeT <= 0 || gSaat.gecis || (sim.timeFrozen && hour !== lastHour)) {
       timeT = 0.2;
       if (hour !== lastHour) { lastHour = hour; guard('setTime', () => { R.setTime(hour, sim.clock.season); havaLook?.relight(); }); }
     }
@@ -681,6 +746,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     const camDt = introLeft > 0 && simDt > fdt * 2 + 0.05 ? Math.min(simDt, 1) : fdt;
     if (kirtasiyeFp) guard('kirtasiyeFp', () => {   // first-person behind the kırtasiye counter
       kirtasiyeFp.update();
+      input.freeze?.(kirtasiyeFp.active());   // PRF-10: behind the counter the hero stays put (camera input is ignored by the rig)
       const m = KT_IC.kirtasiye, W = m ? ktDim(m).W : 0;
       if (kirtasiyeFp.active() && m) { const e = ktWorld(m, W / 2 - 0.45, 0), to = ktWorld(m, -W / 2, 0); (cam as unknown as { fp(v: unknown): void }).fp({ x: e.x, y: 1.55, z: e.z, yaw: Math.atan2(to.x - e.x, to.z - e.z), pitch: -0.1 }); }
       else (cam as unknown as { fp(v: unknown): void }).fp(null);
@@ -698,6 +764,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (zones) { const pend = zones.pending(); if (pend === 0 && warmPend !== 0) { void R.warm?.(scene, cam.camera); } warmPend = pend; }
     // PRF-04: opaque full-screen overlays (halı saha, Sabri'nin evi, karakter oluşturma) hide the main canvas completely:
     // skip the main scene draw (shadow pass + bloom + ~1000 draw calls) so the fan stays quiet; the next frame after close draws as usual.
+    if (coverOpen()) quality.flushAuto?.();   // PRF-03: bekleyen otomatik kademe, dünya örtülüyken
     if (coverOpen()) P.count('overlayAtlanan', ++overlaySkipped);
     else guard('render', () => P.time('render', () => R.frame(scene, cam.camera, alpha)));
     if (tracing) traceBuf.push([synthT ?? t0, pos.x, pos.z, cam.camera.position.x, cam.camera.position.z]);
@@ -734,13 +801,19 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   platform.visibility.onChange(hidden => {
     if (hidden) {
       pause('hidden');
+      bulutKapanis();
       if (saveOn()) void save.save('hidden').then(bulutPush);
       if (audio) make('audio.suspend', () => { audio.suspend(true); return true; });
     } else {
       resume('hidden');
+      kayitD.baglandi();
       if (audio) make('audio.suspend', () => { audio.suspend(false); return true; });
     }
   });
+  // PRF-03: otomatik kademe değişimi oyun sırasında uygulanmaz (her materyal yeniden derlenir); sekme gizlenince ya da
+  // tam ekran pencere (halı saha, ev, karakter) ana sahneyi örterken uygulanır. Oyun içinde PRF-12 çözünürlük ölçeği çalışır.
+  quality.deferAuto?.(() => !pauses.size && !coverOpen());
+  platform.visibility.onChange(hidden => { if (hidden) quality.flushAuto?.(); });
   R.onContextLost(() => { pause('context'); sim.bus.emit('contextLost', undefined); });
   R.onContextRestored(() => { resume('context'); sim.bus.emit('contextRestored', undefined); guard('render', () => R.frame(scene, cam.camera, 1)); });
 
@@ -819,7 +892,20 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     return { ...R.info(), buildMs: zones ? zones.buildMs() : 0, pending: zones ? zones.pending() : 0, timers: s.timers, counters: s.counters,
       particles: s.particles, fps: s.fps, frameP95: s.frameP95, heapMB: s.heapMB, warnings: s.warnings, tier: quality.current().name };
   });
-  reg('setTime', (h: number) => { sim.command({ kind: 'setTime', hour: h }); lastHour = -1; timeT = 0; guard('setTime', () => { R.setTime(sim.clock.hour, sim.clock.season); havaLook?.relight(); }); });
+  // PRF-06: bölge/prefab başına çizim maliyeti tablosu (yalnız okur). game.js 2.5 MB sınırı yüzünden yalnız geliştirme ve ölçüm
+  // derlemesinde (vite --mode olcum; tests/browser/cizim-butce.mjs --build) var, oyuncu derlemesinde ağaçtan atılır.
+  // GRS-05: A/B ölçümü için yansıma geçişini aç/kapat ve durumunu oku (yalnız ölçüm/geliştirme derlemesi)
+  if (import.meta.env.MODE !== 'production') reg('yansima', (on?: boolean) => { const rf = (R as unknown as { reflector?: { setBudget(b: unknown): void; on: boolean; stats(): unknown } }).reflector; if (!rf) return null; if (on === false) rf.setBudget(null); else if (on === true) rf.setBudget(reflectBudget(quality.current().name)); return { on: rf.on, ...(rf.stats() as object) }; });
+  if (import.meta.env.MODE !== 'production') reg('drawCost', (top = 20) => { const sun = (R as unknown as { sun?: { castShadow: boolean; shadow: { camera: Parameters<typeof drawCostTable>[1] } } }).sun; return drawCostTable(scene, cam.camera, sun?.castShadow ? sun.shadow.camera : null, top || 20); });
+  if (import.meta.env.MODE !== 'production') reg('shadowCull', (on?: boolean) => { const r = R as unknown as { shadowCull?: boolean; shadowStats?: () => unknown }; if (on !== undefined && r.shadowCull !== undefined) r.shadowCull = !!on; return { on: r.shadowCull ?? false, ...(r.shadowStats?.() as object ?? {}) }; });   // PRF-06 A/B ölçüm kancası
+  if (import.meta.env.MODE !== 'production') reg('sahneKutu', (k: Parameters<typeof kutuda>[1], max?: number) => kutuda(scene, k, max));   // PRF-09 hayaletlenme tanısı
+  if (import.meta.env.MODE !== 'production') reg('sahneKopya', (max?: number) => kopyalar(scene, max));
+  if (import.meta.env.MODE !== 'production') reg('kaynakDokum', (derin?: number, max?: number) => kaynakDokum(scene, derin ?? 3, max ?? 40));   // PRF-15 doku/geometri baytı sahibine göre
+  if (import.meta.env.MODE !== 'production') reg('dokuAkis', (tam?: boolean) => { if (tam !== undefined) akisZorla(!!tam); return akisDurum(); });   // PRF-15 A/B: akış kapalıyken (hep tam) görüntü aynı mı
+  if (import.meta.env.MODE !== 'production') reg('kameraNear', (v: number | null) => { (cam as unknown as { nearFixed?(v: number | null): void }).nearFixed?.(v ?? null); return cam.camera.near; });   // PRF-09 A/B
+  if (import.meta.env.MODE !== 'production') reg('heroPoz',() => { const o = H.object.position; return { x: +o.x.toFixed(3), y: +o.y.toFixed(3), z: +o.z.toFixed(3), camY: +cam.camera.position.y.toFixed(3), near: cam.camera.near }; });
+  reg('lights', () => nightLights?.stats() ?? null);   // PRF-08: gece ışığı havuzu durumu
+  reg('setTime', (h: number) => { sim.command({ kind: 'setTime', hour: h }); lastHour = -1; timeT = 0; gSaat.sifirla(sim.clock.hour, sim.state.day); guard('setTime', () => { R.setTime(sim.clock.hour, sim.clock.season); havaLook?.relight(); }); });
   reg('setStage', (n: number) => { sim.command({ kind: 'setStage', stage: n }); callWorld('setStage', sim.state.stage, sim.state.renewed); });
   reg('setTier', (name: TierName) => quality.set(name));
   reg('moments', (what?: string, arg?: string) => { if (!moments) return null; if (what) moments.force(what as never, arg); return moments.info(); });
@@ -833,6 +919,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   reg('dbg', () => { const rt = sim.rules.rt as unknown as { pencereAt?: boolean; winShelf?: string[]; counter: Record<string, unknown[]> }; return { pencere: sim.state.zones.pencere, at: !!rt.pencereAt, shelf: rt.winShelf ?? [], counter: Object.fromEntries(Object.entries(rt.counter).map(([k, v]) => [k, v.length])) }; });
   reg('izgara', (on?: boolean) => { if (on !== undefined) izgaraLook?.set(!!on); return izgaraLook?.get() ?? null; });
   reg('hucre', (name: string) => cellRect(name));
+  reg('acilis', (to: number) => acilis?.baslat(Number(to)));   // dev: BUF-30 açılış anını yeniden oynat
   reg('teleport', (x: number, z: number) => { sim.command({ kind: 'teleport', x, z }); camHold = null; cam.snap(walk.pos); });
   reg('camera', (o: { x?: number; z?: number; zoom?: number; zoomRaw?: number; yaw?: number; tilt?: number } = {}) => {
     if (o.zoom !== undefined) cam.zoom = o.zoom;
@@ -851,7 +938,10 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     return rows.join('\n');
   });
   reg('zone', (id: string) => (zones ? { id, state: zones.state(id), def: !!zones.def(id), anchors: Object.keys(zones.anchors(id) ?? {}).length, pending: zones.pending() } : null));
+  reg('zonePop', (o: { reset?: boolean; viewAware?: boolean } = {}) => { const mz = zones as unknown as { popStats?(r?: boolean): unknown; setViewAware?(on: boolean): void } | null; if (!mz?.popStats) return null; if (o.viewAware !== undefined) mz.setViewAware?.(o.viewAware); return { ...(mz.popStats(!!o.reset) as object), states: zones!.states() }; });   // PRF-07 pop-in ölçümü (tests/browser/pop-in.mjs)
   reg('events', (since?: number) => sim.events(since));
+  // KAL-13: ?qa=1 ile oyun içi bekçi; anomaliler window.__marti.bekci.anomaliler() ile toplanır (üretimde kurulmaz)
+  if (params.raw.qa) make('bekci', () => { const b: BekciHandle = installBekci(sim.rules); reg('bekci', b); return b; });
   reg('save', () => save.save('manual'));
   reg('resetSave', () => save.wipe());
   reg('loseContext', () => R.loseContext());
@@ -864,6 +954,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   reg('perfReport', () => P.report());
   reg('perfRecord', (on = true) => { P.record(!!on); return P.recording; });
   reg('perfDump', () => P.dump());
+  reg('perfGuard', (reset = false) => { const o: Record<string, { n: number; ms: number; max: number }> = {}; for (const [k, a] of gAgg) o[k] = { n: a.n, ms: +(a.sum / Math.max(1, a.n)).toFixed(4), max: +a.max.toFixed(3) }; if (reset) gAgg.clear(); return o; });
   // PRF-02 kırmızı sınama: sahneyi bilerek şişirir (görünür mesh'leri, kendi geometrisiyle, ebeveynine kopyalar). Yalnız tools/perf-gate.mjs --sisir kullanır.
   reg('sisir', (n = 500) => {
     const src: AnyRec[] = []; R.scene.traverse((o0: Object3D) => { const o = o0 as unknown as AnyRec; if (o.isMesh && o.visible && o.geometry && o.parent) src.push(o); });
@@ -875,6 +966,8 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   P.context(() => ({ x: +pos.x.toFixed(1), z: +pos.z.toFixed(1), saat: +sim.clock.hour.toFixed(1) }));
   reg('perfShow', (on = true) => P.show(!!on));
   reg('exportSave', () => save.exportCode());
+  reg('kayitDurum', () => kayitD.gorunum());
+  reg('kayitIstek', () => { kayitD.istek(); });
   reg('importSave', async (code: string) => { const ok = await save.importCode(code); if (ok) { const r = await save.load(); sim.load(r.data); } return ok; });
   reg('loop', () => ({ tick: loop.tick, paused: loop.paused, pauseWhy: loop.pauseWhy, simTime: loop.simTime, ...loop.stats(), nav: nav.stats?.() }));
   for (const k of ['select', 'drag', 'save']) if (!(target.editor as AnyRec | undefined)?.[k]) reg(`editor.${k}`, () => { throw new Error('editor not loaded (?edit=1)'); });
@@ -882,6 +975,9 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   // ── hooks (v2 __bufe surface, M1)
   const cmd = (kind: string, extra: AnyRec = {}) => command({ kind, ...extra });
   reg('play', playHook);
+  // KAL-13 gezgin botlar: kayıtlı etkileşim noktaları ve (kapı kapalı fixture'ı için) yürünebilir ağda dikdörtgen kapatma
+  reg('etkilesimler', () => sim.rules.interactions.all().map(i => ({ id: i.id, x: +i.pos.x.toFixed(2), z: +i.pos.z.toFixed(2), radius: i.radius, kind: i.kind })));
+  reg('navKapat', (r: { x0: number; x1: number; z0: number; z1: number }, on = true) => { sim.nav.setBlocked(r, !!on); return true; });
   reg('path', (a: Vec2, b: Vec2) => { const p = sim.nav.path(a, b); return p && p.length ? p.map(q => ({ x: q.x, z: q.z })) : [{ x: b.x, z: b.z }]; });
   reg('log', () => sim.events(0).map(r => ({ ...((r.data as AnyRec) || {}), ev: r.name, t: +r.t.toFixed(2) })));
   Object.defineProperty(target, 'uiLast', { configurable: true, enumerable: true, get: () => sim.rules.rt.uiLast });
@@ -922,6 +1018,9 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   reg('applyTier', (name: TierName) => quality.set(name));
   reg('scale', () => quality.scale?.() ?? 1);
   reg('setScale', (v: number) => { R.setScale?.(v); return true; });   // PRF-12 ölçüm kancası (profil.mjs)
+  reg('setPostCut', (cut: boolean) => { R.setPostCut?.(!!cut); return true; });   // PRF-12 ölçüm kancası (profil.mjs)
+  reg('warmStats', () => (R as unknown as { warmStats?: () => unknown }).warmStats?.() ?? null);   // PRF-03: ısıtma/karede doğan shader sayısı
+  reg('warmBusy', () => !!((R as unknown as { warmStats?: () => { busy: boolean } }).warmStats?.().busy));
   reg('loseGl', (on = true) => { const e = R.renderer?.getContext().getExtension('WEBGL_lose_context') as { loseContext(): void; restoreContext(): void } | null; if (!e) return false; if (on) e.loseContext(); else e.restoreContext(); return true; });   // PRF-13: bağlam kaybı sınaması
   for (const what of ['ferry', 'gull', 'kapkac', 'regular', 'vip', 'endDay', 'money', 'gold', 'stars', 'sleep', 'offline', 'unlock']) {
     reg(`force.${what}`, (value?: number | string) => cmd('force', { what, value }));
@@ -966,10 +1065,14 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
 
   // ── first frame, then go
   if (playMode) guard('startFlow', startFlow);
+  // PRF-03: yükleme ekranı ısıtması: ilk kareden önce sahnedeki her şeyin shader'ı paralel derlenir (en çok 6 sn beklenir)
+  yukleAdim(0.8, 'Sahne hazırlanıyor');   // PRF-11: ısıtma süresince yükleme ekranı başlığın üstünde kalır
+  if (R.warm) await Promise.race([R.warm(scene, cam.camera), new Promise(res => setTimeout(res, 6000))]);
   renderFrame(1 / 30, 1);
   if (!params.noloop) loop.start();
   if (warnings.length) console.warn('[marti] fallbacks:', warnings.join('; '));
   hooks.setReady(true);
+  yukleBitti();
   void TIER_TABLE;
 }
 

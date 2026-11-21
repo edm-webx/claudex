@@ -4,6 +4,7 @@
  * are seen from far). Plus a glow colour. State: S.zones.tabela { tier, renk }. Command { kind: 'tabela', op, value }.
  */
 import type { Kernel } from './state';
+import { hijyenTalep } from './hijyen';
 
 export const TABELA = [
   { ad: 'Tahta tabela', fiyat: 0, musteri: 0, gece: 0, desc: 'Elle boyanmış, samimi.' },
@@ -19,9 +20,9 @@ export function tabelaSave(S: { zones: Record<string, Record<string, unknown>> }
   return z;
 }
 /** extra walk-in share for the hour (customers.ts multiplies arrivals by 1 + this) */
-export function tabelaFx(S: { zones: Record<string, Record<string, unknown>> }, hour: number): number {
+export function tabelaFx(S: { zones: Record<string, Record<string, unknown>>; day?: number }, hour: number): number {
   const t = TABELA[tabelaSave(S).tier] || TABELA[0];
-  return t.musteri + (hour >= 19 || hour < 4 ? t.gece : 0);
+  return t.musteri + (hour >= 19 || hour < 4 ? t.gece : 0) + hijyenTalep(S);   // BUF-16: müfettiş sonrası geçici talep
 }
 export function installTabela(K: Kernel) {
   const S = K.state;

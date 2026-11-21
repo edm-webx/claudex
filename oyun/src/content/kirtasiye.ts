@@ -8,4 +8,6 @@ export const KT_URUN: KtUrun[] = [
 ];
 export const KT_BY_ID: Record<string, KtUrun> = Object.fromEntries(KT_URUN.map(u => [u.id, u]));
 export const KT_MUSTERI = ['Öğrenci Elif', 'Emekli Hasan Bey', 'Ödev telaşlı Kerem', 'Öğretmen Nermin Hanım', 'Mimar Selin', 'Avukat Tarık', 'Minik Ayşe ve annesi', 'Muhtar Rıza'];
+/** EKO-03: kırtasiye tezgahı dakikalık gelir tavanı = TABAN + SEVIYE x oyuncu seviyesi (₺/dk). */
+export const KT_DK_TAVAN_TABAN = 1500, KT_DK_TAVAN_SEVIYE = 150;
 export const KT_SABIR = 28;   // s per customer
