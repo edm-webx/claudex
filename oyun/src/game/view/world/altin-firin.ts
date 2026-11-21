@@ -7,6 +7,7 @@
  * Reads only (kolApi(rules).view()); writes nothing to the sim, sends a command on tap.
  */
 import * as T from 'three';
+import { counterExtra } from '../../../content/prefabs/iskele/layout';
 import { kolApi } from '../../sim/koleksiyon';
 import type { Rules } from '../../sim/state';
 import type { HtmlLabels, HtmlLabel } from '../../ui/labels';
@@ -157,7 +158,7 @@ export function createAltinFirin(d: AltinFirinDeps): AltinFirinView {
           vit.visible = v.vitrin.length > 0;
         }
         const c = r.rt.layout.counter, vk = c.pos.x + ',' + c.pos.z + ',' + c.drop.y;
-        if (vk !== vitKey) { vitKey = vk; vit.position.set(c.pos.x + 0.62, c.drop.y, c.pos.z + 0.08); }
+        if (vk !== vitKey) { vitKey = vk; const q = counterExtra(r.rt.layout, 'vitrin'); vit.position.set(q.x, q.y, q.z); }
       }
       // glow pulse + floating showcase + sparkles
       const pulse = 0.6 + 0.4 * Math.sin(t * 2.4);

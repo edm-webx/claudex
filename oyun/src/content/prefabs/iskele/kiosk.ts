@@ -6,7 +6,7 @@
 import * as T from 'three';
 import { Batch, mtx, geoc, col, mixc, shade, clamp, lerp, easeInOut, PI, TAU, HP, roundBox } from '../../../engine/prefab/batch';
 import { K, R, MAT, rnd, v2rng, rrect, fitText, txt, canvasTex, atlasTex, radialTex } from '../common/v2kit';
-import { WATER_Y, SEAT_H, PIER, BUFE, GANG, WIN_Z, NEXT_SIGN, BENCHES, local2world as l2w, rectAABB, type Obstacle } from './layout';
+import { WATER_Y, SEAT_H, PIER, BUFE, GANG, WIN_Z, NEXT_SIGN, BENCHES, local2world as l2w, rectAABB, COUNTER_BOARD, type Obstacle } from './layout';
 const V3 = (x = 0, y = 0, z = 0): T.Vector3 => new T.Vector3(x, y, z);
 void [mtx, geoc, col, mixc, shade, clamp, lerp, easeInOut, PI, TAU, HP, roundBox, K, R, MAT, rnd, v2rng, rrect, fitText, txt, canvasTex, atlasTex, radialTex, WATER_Y, SEAT_H, PIER, BUFE, GANG, WIN_Z, NEXT_SIGN, BENCHES, l2w, rectAABB, V3];
 export type { Obstacle };
@@ -194,13 +194,17 @@ export function buildKiosk(stage?: any, rn?: any) {
     for (const x of [c0, c1]) for (const z of [cz0, cz1]) A.span(x - 0.015, x + 0.015, 1.06, ch + 0.02, z - 0.015, z + 0.015, ctrim, { r: 0.004 });
     A.span(c0, c1, ch, ch + 0.02, cz1 - 0.015, cz1 + 0.015, ctrim, { r: 0.004 }); A.span(c0, c1, ch, ch + 0.02, cz0 - 0.015, cz0 + 0.015, ctrim, { r: 0.004 });
     BU.span(c0 + 0.05, c1 - 0.05, ch - 0.02, ch - 0.005, cz0 + 0.04, cz0 + 0.08, '#fff3c9', { r: 0 });
-    // çay tray with tulip glasses on the left
-    A.cyl(0.2, 0.2, 0.015, '#b8bcc0', -1.1, 1.07, Z1 - 0.22, { seg: 20 });
-    for (let k = 0; k < 4; k++) { const a = k * PI / 2 + 0.4; A.cyl(0.035, 0.028, 0.09, '#a3301a', -1.1 + Math.cos(a) * 0.1, 1.12, Z1 - 0.22 + Math.sin(a) * 0.1, { seg: 10 }); }
-    // on the top, clear of the drop spot (x -0.25): napkin holder and sugar bowl on the left, menu stand by the vitrin
-    A.box(0.16, 0.12, 0.08, '#d9dde0', -1.85, 1.12, Z1 - 0.12, { r: 0.01 }); A.box(0.12, 0.1, 0.04, '#ffffff', -1.85, 1.15, Z1 - 0.12, { r: 0.005 });
-    A.cyl(0.07, 0.055, 0.08, '#e9e4da', -1.55, 1.1, Z1 - 0.15, { seg: 12 }); A.cyl(0.075, 0.075, 0.015, '#c9a227', -1.55, 1.145, Z1 - 0.15, { seg: 12 });
-    A.box(0.32, 0.22, 0.02, frame, 0.45, 1.18, Z1 - 0.1, { rx: -0.25, r: 0.01 }); A.label(0.28, 0.18, R.menuTiny, 0.45, 1.18, Z1 - 0.088, { rx: -0.25 });
+    // 2026-11-21 owner: "tezgahı çok dağınık, temiz görünmüyor". Level-designer pass: the top has three clear zones.
+    // West end: one steel condiment caddy (napkins + sugar), squared to the edge. Middle: a walnut serving board with a
+    // brass rim where the six product stacks land in one even row (view/world/rtview.ts COUNTER_SLOTS). East: the glass
+    // vitrin. The loose çay tray, sugar bowl, napkin holder and price card that sat in the stacks' path are gone; the
+    // brand plaque and medal case moved to the east low wall by the register (reklam.ts, altin-firin.ts).
+    A.box(0.3, 0.035, 0.16, '#9aa3a8', -1.88, 1.078, -4.9, { r: 0.01 });
+    A.box(0.13, 0.11, 0.07, '#d9dde0', -1.95, 1.15, -4.9, { r: 0.01 }); A.box(0.1, 0.09, 0.03, '#ffffff', -1.95, 1.17, -4.9, { r: 0.004 });
+    A.cyl(0.05, 0.042, 0.07, '#e9e4da', -1.8, 1.13, -4.9, { seg: 12 }); A.cyl(0.054, 0.054, 0.012, ctrim, -1.8, 1.17, -4.9, { seg: 12 });
+    A.span(COUNTER_BOARD.x0, COUNTER_BOARD.x1, 1.06, 1.068, COUNTER_BOARD.z0, COUNTER_BOARD.z1, nu ? '#4a2c18' : '#6b4a2e', { r: 0.004, uv: R.grain });
+    A.span(COUNTER_BOARD.x0 - 0.02, COUNTER_BOARD.x1 + 0.02, 1.06, 1.066, COUNTER_BOARD.z1, COUNTER_BOARD.z1 + 0.02, ctrim, { r: 0.003 });
+    A.span(COUNTER_BOARD.x0 - 0.02, COUNTER_BOARD.x1 + 0.02, 1.06, 1.066, COUNTER_BOARD.z0 - 0.02, COUNTER_BOARD.z0, ctrim, { r: 0.003 });
     // 12 cm deeper than the top on Sabri's side: leaning on it, the carried stack (0.36 m ahead at 1.0 m) stayed inside
     // the 1.06 m top and the tray looked like a ghost (2026-10-26). counter.standAt (-5.45) stays inside the drop zone.
     ob(DOOR.x1, 2.24, -5.18, BUFE.z1 + 0.06);
