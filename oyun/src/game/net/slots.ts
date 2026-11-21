@@ -43,7 +43,7 @@ export function kayitKilitle(k: Exclude<KayitKilidi, null>): void { if (!kilit) 
 export const aktifSlot = () => (typeof v.aktif === 'number' && v.aktif >= 0 && v.aktif < SLOT_N ? v.aktif : 0);
 /** true when the picked slot is empty: the boot starts a fresh character (kulis opens, the name is chosen once) */
 export const slotYeni = () => yeni;
-const bankaTemiz = (b?: Banka | null): Banka => ({ tl: Math.max(0, Math.floor(Number(b?.tl) || 0)), esya: Object.fromEntries(Object.entries(b?.esya || {}).filter(([, n]) => Number(n) > 0).map(([k, n]) => [k, Math.floor(Number(n))])), faizSaat: Math.max(0, Math.floor(Number(b?.faizSaat) || 0)) });
+const bankaTemiz = (b?: Banka | null): Banka => ({ tl: Math.max(0, Math.floor(Number(b?.tl) || 0)), esya: Object.fromEntries(Object.entries(b?.esya || {}).filter(([, n]) => Number(n) > 0).map(([k, n]) => [k, Math.floor(Number(n))])), ...(Number(b?.faizSaat) > 0 ? { faizSaat: Math.floor(Number(b?.faizSaat)) } : {}) });
 export const bankaOku = (): Banka => bankaTemiz(v.banka);
 const kopya = <T>(x: T): T => JSON.parse(JSON.stringify(x)) as T;
 
@@ -110,7 +110,7 @@ async function kosulluYaz(esnaf: unknown, aktifBizde: boolean): Promise<boolean>
     // bank: our delta since the last sync, applied on top of the server bank (the bank is shared by every tab/slot)
     const b = bankaTemiz(v.banka), fb = bankaTemiz(f.banka), esya: Record<string, number> = { ...fb.esya };
     for (const k of new Set([...Object.keys(b.esya), ...Object.keys(bankaTaban.esya)])) esya[k] = Math.max(0, (esya[k] || 0) + (b.esya[k] || 0) - (bankaTaban.esya[k] || 0));
-    const banka = bankaTemiz({ tl: fb.tl + b.tl - bankaTaban.tl, esya });
+    const banka = bankaTemiz({ tl: fb.tl + b.tl - bankaTaban.tl, esya, faizSaat: Math.max(fb.faizSaat || 0, b.faizSaat || 0) });   // EKO: hesap başına faiz damgası, ikisinin büyüğü
     bankaTaban = fb;
     const slots = f.slots!.slice(); slots[a] = benimSlot;
     v = { ...f, slots, banka, aktif: a };
