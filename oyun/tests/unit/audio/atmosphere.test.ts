@@ -73,3 +73,21 @@ describe('eşzamanlı ses tavanı', () => {
     expect(c.take(2000, 1000, 0)).toBe(true);
   });
 });
+
+describe('iç mekân oda tonları', () => {
+  it('mutfak/salon/kafe/hastane kendi tek kısık tonunu çalar; dış katman yok; çıkınca kapanır', () => {
+    for (const id of ['mutfak', 'salonW', 'salonE', 'kafe1', 'kafe2', 'avm', 'tesis', 'banka', 'hastane']) {
+      const f = fake(), a = createAtmosphere(f.host);
+      a.setZone('iskele'); a.tick(0, CTX); a.setInterior(id); a.tick(10, CTX);
+      expect(a.active().length, id).toBe(1);
+      expect(a.active()).not.toContain('deniz'); expect(a.active()).not.toContain('izgara');
+    }
+    const f = fake(), a = createAtmosphere(f.host); a.setInterior('mutfak'); a.tick(0, CTX);
+    expect(a.active()).toEqual(['mutfak_oda']);
+    a.setInterior('salonE'); a.tick(50, CTX); expect(a.active()).toEqual(['ic_mirilti']);
+  });
+  it('tablodaki her döngü ses-db.loops içinde var', async () => {
+    const db = (await import('../../../src/content/ses/ses-db.json')).default as { loops: Record<string, unknown> };
+    for (const defs of Object.values(DEFAULT_TABLE)) for (const d of defs) if (d.loop && d.loop !== 'crowdBed') expect(db.loops[d.loop], d.loop).toBeTruthy();
+  });
+});

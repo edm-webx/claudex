@@ -41,8 +41,15 @@ export const DEFAULT_TABLE: AmbienceTable = {
   halisaha: [{ id: 'kalabalik', loop: 'crowdBed', gain: 1, shots: [
     { id: 'clapChant', gain: 0.55, minS: 5, maxS: 9 }, { id: 'tribunDavul', gain: 0.55, minS: 6, maxS: 10 },
     { id: 'crowdCheer', gain: 0.55, minS: 8, maxS: 14 }, { id: 'crowdOoh', gain: 0.55, minS: 8, maxS: 14 }] }],
+  // iç mekânlar: dış deniz/martı yok; yalnız o odanın tonu (tek kısık döngü). Tablo anahtarı = ic-mekan id'si.
   ev: [], ic: [],
+  mutfak: [{ id: 'mutfak_oda', loop: 'mutfak_oda', gain: 0.5 }],
+  salonW: [{ id: 'ic_mirilti', loop: 'ic_mirilti', gain: 0.6, shots: [{ id: 'spoon', gain: 0.18, minS: 14, maxS: 30, pan: 0.5 }] }],
+  salonE: [{ id: 'ic_mirilti', loop: 'ic_mirilti', gain: 0.6, shots: [{ id: 'spoon', gain: 0.18, minS: 14, maxS: 30, pan: 0.5 }] }],
+  banka: [{ id: 'steril_oda', loop: 'steril_oda', gain: 0.6 }],
+  hastane: [{ id: 'steril_oda', loop: 'steril_oda', gain: 0.6 }],
 };
+for (const id of ['kafe1', 'kafe2', 'avm', 'tesis']) DEFAULT_TABLE[id] = DEFAULT_TABLE.salonW;
 DEFAULT_TABLE.stadyum = DEFAULT_TABLE.halisaha;
 
 export interface Atmosphere {

@@ -38,7 +38,7 @@ import { createAtmosphere, createVoiceCap, DEFAULT_TABLE, type Atmosphere, type 
 /** One sfx() call as seen by tests / window.__marti.audio: which path produced the sound. */
 export type PlayPath = 'sample' | 'bank' | 'recipe' | 'fallback-pop' | 'gated' | 'silent';
 export interface PlayRecord { t: number; id: string; yol: PlayPath; at: boolean; vol: number }
-import { heatLevel, HEAT_MAX, type IsiKaynagi } from './mutfak-ses';
+import { heatLevel, isiBolgeCarpani, HEAT_MAX, type IsiKaynagi } from './mutfak-ses';
 
 /** Engine audio with the ses extras (procedural music controls, grill ambience, radio jingle). */
 export interface MotorAudio extends Audio {
@@ -56,7 +56,7 @@ export interface MotorAudio extends Audio {
   /** Martı Synth bank (debug / editor sound list). */
   bank(): Bank | null;
   /** Debug: last 200 sfx() calls, per-path counters, bus levels, active ducks. */
-  debug(): { log: PlayRecord[]; counts: Record<PlayPath, number>; buses: Record<string, { volume: number; muted: boolean }>; ambOn: boolean; bank: ReturnType<Bank['stats']> | null };
+  debug(): { log: PlayRecord[]; counts: Record<PlayPath, number>; buses: Record<string, { volume: number; muted: boolean }>; ambOn: boolean; bank: ReturnType<Bank['stats']> | null; atmo: { scope: string; active: string[]; live: string[] } | null };
   /** Generic ducking: lower the music (and optionally ambience) bus for `sec` seconds. */
   duck(sec: number, depth?: number, ambience?: boolean): void;
 }
@@ -375,7 +375,7 @@ export function createAudio(deps: AudioDeps): MotorAudio {
     temel: () => DEFAULT_TABLE, disarida: () => !atmo || atmo.outdoor() === 1,
     muzikKis: v => lofi?.kis(v), rnd: Math.random,
   });
-  function syncAtmo() { if (!atmo) return; atmo.setZone(atmoZone); atmo.setInterior(atmoInterior); if (wxOut && ac) try { wxOut.gain.setTargetAtTime(atmo.outdoor() ? 1 : 0.2, ac.currentTime, 0.6); } catch { /* */ } }
+  function syncAtmo() { updateHeat(); if (!atmo) return; atmo.setZone(atmoZone); atmo.setInterior(atmoInterior); if (wxOut && ac) try { wxOut.gain.setTargetAtTime(atmo.outdoor() ? 1 : 0.2, ac.currentTime, 0.6); } catch { /* */ } }
   function startAmbience() {
     if (ambOn || !ac || !live()) return;
     ambOn = true;
@@ -438,7 +438,7 @@ export function createAudio(deps: AudioDeps): MotorAudio {
       bp.type = 'bandpass'; bp.frequency.value = 140; bp.Q.value = 0.7;
       hs.connect(bp); bp.connect(humG); hs.start(ac.currentTime, Math.random() * 2); ambNodes.push(hs);
     }
-    const lv = heatLevel(listener, heat);
+    const lv = heatLevel(listener, heat) * isiBolgeCarpani(atmoInterior);
     try {
       heatG.gain.setTargetAtTime(lv, ac.currentTime, 0.4);
       humG.gain.setTargetAtTime(lv > 0 ? 0.03 * Math.min(1, (lv / HEAT_MAX) * 2) : 0, ac.currentTime, 0.6);
@@ -527,7 +527,7 @@ export function createAudio(deps: AudioDeps): MotorAudio {
         if (duckTimers.length > 8) clearTimeout(duckTimers.shift());
       } catch { /* */ }
     },
-    debug: () => ({ log: playLog.slice(), counts: { ...counts }, buses: Object.fromEntries(Object.entries(buses).map(([k, b]) => [k, { volume: b.volume, muted: b.muted }])), ambOn, bank: bank ? bank.stats() : null }),
+    debug: () => ({ log: playLog.slice(), counts: { ...counts }, buses: Object.fromEntries(Object.entries(buses).map(([k, b]) => [k, { volume: b.volume, muted: b.muted }])), ambOn, bank: bank ? bank.stats() : null, atmo: atmo ? { scope: atmo.scope(), active: atmo.active(), live: atmo.live() } : null }),
     music: {
       setZone(id) { if (id === zone) return; zone = id; lofiPlace = id; atmoZone = id; try { amb.setZone(id); syncAtmo(); lofi?.setPlace(id); refreshMusic(); } catch { /* ignore */ } },
       setPhase(p) { if (p === phase) return; phase = p; try { amb.setPhase(p); lofi?.setPhase(p); refreshMusic(); } catch { /* ignore */ } },
