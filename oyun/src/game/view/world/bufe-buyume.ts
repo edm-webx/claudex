@@ -317,9 +317,8 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
     // rooftop sign over the kiosk
     { const tb = { g: new T.Group(), b: new Batch(), gl: new Batch(), lit: new Batch(), wm: new Batch() }; tb.g.name = 'tabela-B'; catis.push(tb);   // 2026-11-21: hides with the büfe cutaway (it floated over the open büfe and hid its inside)
       const mb = b, mg = grp; b = tb.b; grp = tb.g;
-      sign(fine ? 'SABRİ\'NİN SOFRASI' : 'SABRİ\'NİN BÜFESİ · 1987', 0, 5.4, -7.6, 7.0, 0, fine ? '#14192a' : '#e0533c', fine ? '#e8c76a' : '#fff6e6');
-      for (const x of [BUFE.x0 - 0.9, BUFE.x1 + 0.9]) { b.box(0.16, 5.3, 0.16, '#9aa2ab', x, 2.65, -7.75); b.box(0.5, 0.12, 0.5, '#6b727a', x, 0.06, -7.75); }   // 2026-11-21 görsel: koyu direk giriş eksenini kesiyordu → açık renk, büfe kenarından uzakta   // 2026-11-21: masts stand on the pier beside the büfe (the open büfe has no roof to stand on)
-      b.box(BUFE.x1 - BUFE.x0 + 1.8, 0.1, 0.1, '#9aa2ab', (BUFE.x0 + BUFE.x1) / 2, 5.4, -7.8);
+      sign(fine ? 'SABRİ\'NİN SOFRASI' : 'SABRİ\'NİN BÜFESİ · 1987', 0, 3.75, BUFE.z0 + 0.35, 7.0, 0, fine ? '#14192a' : '#e0533c', fine ? '#e8c76a' : '#fff6e6');   // 2026-11-21 görsel: direkler kalktı, tabela arka duvarın üstüne monte
+      for (const x of [-3.0, 3.0]) b.box(0.12, 0.7, 0.12, '#9aa2ab', x, 3.3, BUFE.z0 + 0.3);   // kısa çelik konsollar
       b = mb; grp = mg; }
   }
   /* 10: fine dining arrival */

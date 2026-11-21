@@ -106,7 +106,7 @@ function masa(c: Ctx, it: IcItem, n: number) {
   if (fine) { b.cyl(0.03, 0.04, 0.12, '#c9a24a', 0, 0.83, 0, { seg: 6 }); c.l.sph(0.035, '#ffcf6a', 0, 0.92, 0, { ws: 6, hs: 4 }); }
   const seats = cloth && !sm ? 4 : 2;
   for (let k = 0; k < seats; k++) {
-    const a = cloth && !sm ? k * HP + Math.PI / 4 : k * Math.PI + HP, r = sm ? 0.78 : 0.68, x = Math.sin(a) * r, z = Math.cos(a) * r;
+    const a = cloth && !sm ? k * HP : k * Math.PI + HP, r = sm ? 0.78 : 0.68, x = Math.sin(a) * r, z = Math.cos(a) * r;
     chair(b, x, z, a, chc);
     if (k < n) { const p = person('guest', c.seed + k * 7, true); p.position.set(x, 0, z); p.rotation.y = a + Math.PI; c.grp.userData.cur.add(p); if (k === 0) c.an.bob.push(p); }
   }
