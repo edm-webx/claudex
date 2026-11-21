@@ -498,7 +498,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
       else if (foreign || wiped) { sim.load(defaultState(seed ?? 1) as never); esnafimSave(sim.state).done = false; }
       if (slotFresh) esnafimSave(sim.state).done = false;
       else if (isNew) esnafimSave(sim.state).done = false;
-      { const bk = bankaOku(); (sim.rules.rt as unknown as { banka: unknown }).banka = { tl: bk.tl, esya: bk.esya, dirty: false }; }   // the account bank, shared by all 4 slots
+      { const bk = bankaOku(); (sim.rules.rt as unknown as { banka: unknown }).banka = { tl: bk.tl, esya: bk.esya, dirty: false, faizSaat: bk.faizSaat || 0, saat: Date.now() / 1000 }; }   // the account bank, shared by all 4 slots
       try { localStorage.setItem('martikoy-save-owner', me.id); if (c) localStorage.setItem('martikoy-cloud-synced', me.id); } catch { /* */ }
       if (isNew && !foreign) return;
       if ((foreign || wiped) && !(c && c.code)) void save.save('manual');
@@ -574,7 +574,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   if (mulkPanel) U.root.addEventListener('ui:open', e => { const id = (e as CustomEvent).detail as string; if (id === 'envanter') mulkPanel.open('envanter'); else if (id === 'mulk') mulkPanel.open('mulk'); });
   const mulkView = ACIK_DUNYA && playMode && labels ? make('mulkView', () => createMulkView({ scene, labels, project, rules: () => sim.rules, hero: () => pos, setSolid: r => nav.setSolids('mulk', r) })) : null;
   const stadyumView = ACIK_DUNYA && playMode && labels ? make('stadyumView', () => createStadyumView({ scene, labels, project, rules: () => sim.rules, hero: () => pos, setSolid: r => nav.setSolids('stadyum-kulup', r) })) : null;
-  const bankaRt = () => (sim.rules.rt as unknown as { banka?: { tl: number; esya: Record<string, number>; dirty: boolean } }).banka;
+  const bankaRt = () => (sim.rules.rt as unknown as { banka?: { tl: number; esya: Record<string, number>; dirty: boolean; faizSaat?: number; saat?: number } }).banka;
   let bankaT = 0;
   // 16:52 user: 42B bus from the stop across the büfe to Belgrad Ormanı (view/orman, ui/otobus-hud)
   const ormanView = ACIK_DUNYA && playMode ? make('ormanView', () => createOrmanView({ scene, rules: () => sim.rules, hero: () => pos, chars: chars as never, hour: () => sim.clock.hour, setSolid: r => nav.setSolids('otobus', r), camera: () => cam.camera })) : null;
@@ -721,7 +721,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (mulkPanel) guard('mulkPanel', () => mulkPanel.update(fdt));
     if (mulkView) guard('mulkView', () => mulkView.update(fdt));
     if (stadyumView) guard('stadyumView', () => stadyumView.update(fdt));
-    if ((bankaT -= fdt) <= 0) { bankaT = 2; const b = bankaRt(); if (b?.dirty && hesap()) { b.dirty = false; void bankaYaz({ tl: b.tl, esya: b.esya }); } }
+    if ((bankaT -= fdt) <= 0) { bankaT = 2; const b = bankaRt(); if (b && b.saat !== undefined) b.saat = Date.now() / 1000; if (b?.dirty && hesap()) { b.dirty = false; void bankaYaz({ tl: b.tl, esya: b.esya, faizSaat: b.faizSaat }); } }   // the sim is pure: the wall clock for the account-level interest stamp comes from here
     if (otobusHud) guard('otobusHud', () => otobusHud.update(fdt));
     if (nightLights) guard('nightLights', () => nightLights.update(pos, gSaat.saat, fdt, roomLightsFor(icMekan?.icinde())));   // GRS-02: lamps follow the drawn hour (lit behind the gün sonu card, fade at dawn)
     if (playMode) guard('heroKind', syncHeroKind);
@@ -884,6 +884,12 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
 
   // ── hooks (M0)
   const reg = (name: string, fn: unknown) => hooks.register(name, fn);
+  /**
+   * Cheat hooks (force.*, simCmd, ordersRefresh, force through `command`) only in dev builds or on a local test host (vite preview, bufe.test, file://).
+   * On a published build (itch.io, own domain) they are not registered: no console money. The admin panel keeps its own in-game command path.
+   */
+  const hileAcik = import.meta.env.MODE !== 'production' || /^(localhost|127\.0\.0\.1|bufe\.test|)$/.test(location.hostname);
+  const HILE_CMD = new Set(['force', 'ordersRefresh', 'setStage']);
   reg('step', (sec: number) => loop.advance(Number(sec) || 0));
   reg('render', () => loop.renderNow(1 / 30));
   reg('renderFrames', (n = 1, dt = 1 / 30) => { for (let i = 0; i < (n || 1); i++) renderFrame(dt || 1 / 30, 1); });
@@ -928,13 +934,13 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   if (import.meta.env.MODE !== 'production') reg('malzeme', (name: string) => { const o = scene.getObjectByName(name) as unknown as { material?: { type: string; opacity: number; envMap: unknown; envMapIntensity?: number }; visible: boolean } | undefined; const m = o?.material; return m ? { type: m.type, opacity: m.opacity, env: !!m.envMap, envK: m.envMapIntensity ?? null, visible: o!.visible } : null; });   // GRS-05 cam denetimi
   reg('gfx', () => ({ ...((R as unknown as { gfxState?: () => object }).gfxState?.() ?? {}), envK: glbEnvK() }));   // GRS-17: tier gözlem kancası
   reg('lights', () => nightLights?.stats() ?? null);   // PRF-08: gece ışığı havuzu durumu
-  reg('setTime', (h: number) => { sim.command({ kind: 'setTime', hour: h }); lastHour = -1; timeT = 0; gSaat.sifirla(sim.clock.hour, sim.state.day); guard('setTime', () => { R.setTime(sim.clock.hour, sim.clock.season); havaLook?.relight(); }); });
+  if (hileAcik) reg('setTime', (h: number) => { sim.command({ kind: 'setTime', hour: h }); lastHour = -1; timeT = 0; gSaat.sifirla(sim.clock.hour, sim.state.day); guard('setTime', () => { R.setTime(sim.clock.hour, sim.clock.season); havaLook?.relight(); }); });
   reg('havaZorla', (k: string) => { const h = (sim.state.zones as Record<string, { segs?: unknown[]; wDay?: number }>).hava; if (h) { h.segs = k ? [{ k, a: 8, b: 27 }] : []; h.wDay = sim.state.day; } return havaApi(sim.rules)?.view().kind ?? null; });   // DNY-19 test: bugünün havasını zorla (sağanak, kar, sicak...)
-  reg('setStage', (n: number) => { sim.command({ kind: 'setStage', stage: n }); callWorld('setStage', sim.state.stage, sim.state.renewed); });
+  if (hileAcik) reg('setStage', (n: number) => { sim.command({ kind: 'setStage', stage: n }); callWorld('setStage', sim.state.stage, sim.state.renewed); });
   reg('setTier', (name: TierName) => quality.set(name));
   reg('moments', (what?: string, arg?: string) => { if (!moments) return null; if (what) moments.force(what as never, arg); return moments.info(); });
   // dev only: force a sim command (unlock, ferry...) so a browser check can reach a scene
-  reg('simCmd', (what: string, value?: unknown) => {
+  if (hileAcik) reg('simCmd', (what: string, value?: unknown) => {
     if (what === 'hire') { sim.command({ kind: 'openJobBoard' } as never); const c = ((sim.state.jobCards || []) as { id: string }[])[0]; if (c) sim.command({ kind: 'hireCandidate', id: c.id, free: true } as never); return; }
     if (what === 'cmd') { sim.command(value as never); return; }
     if (what === 'pencere') { sim.command({ kind: 'pencere', wid: Number(value) } as never); return; }
@@ -1008,9 +1014,9 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   Object.defineProperty(target, 'S', { configurable: true, enumerable: true, get: () => sim.state });
   Object.defineProperty(target, 'rules', { configurable: true, enumerable: false, get: () => sim.rules });
   reg('seed', sim.state.seed);
-  reg('command', (c: Cmd) => command(c));
+  reg('command', (c: Cmd) => { if (!hileAcik && HILE_CMD.has(String((c as { kind?: unknown })?.kind))) return false; return command(c); });
   reg('claimOrder', (id: string) => cmd('claimOrder', { id }));
-  reg('ordersRefresh', () => cmd('ordersRefresh'));
+  if (hileAcik) reg('ordersRefresh', () => cmd('ordersRefresh'));
   reg('openPanel', (id: string) => cmd('openPanel', { id }));
   reg('closePanel', () => cmd('closePanel'));
   reg('panelModel', (id: string) => panelModel(id, sim.rules));
@@ -1046,7 +1052,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   reg('warmStats', () => (R as unknown as { warmStats?: () => unknown }).warmStats?.() ?? null);   // PRF-03: ısıtma/karede doğan shader sayısı
   reg('warmBusy', () => !!((R as unknown as { warmStats?: () => { busy: boolean } }).warmStats?.().busy));
   reg('loseGl', (on = true) => { const e = R.renderer?.getContext().getExtension('WEBGL_lose_context') as { loseContext(): void; restoreContext(): void } | null; if (!e) return false; if (on) e.loseContext(); else e.restoreContext(); return true; });   // PRF-13: bağlam kaybı sınaması
-  for (const what of ['ferry', 'gull', 'kapkac', 'regular', 'vip', 'endDay', 'money', 'gold', 'stars', 'sleep', 'offline', 'unlock']) {
+  if (hileAcik) for (const what of ['ferry', 'gull', 'kapkac', 'regular', 'vip', 'endDay', 'money', 'gold', 'stars', 'sleep', 'offline', 'unlock']) {
     reg(`force.${what}`, (value?: number | string) => cmd('force', { what, value }));
   }
   reg('ferryBoard', () => ({ board: ferryLook?.board() ?? null, info: rt().ferryInfo ?? null, view: ferryLook?.debug() ?? null }));

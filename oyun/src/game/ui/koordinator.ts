@@ -3,7 +3,8 @@
 // View only: reads rt.mulk model (sim/mulk.ts; .lig comes from sim/lig.ts) and sends { kind: 'mulk', op: bilet | takim | biletFiyat | formasyon | izle }.
 import { FORMATIONS } from '../sim/macmotor';
 import { mulkApi } from '../sim/mulk';
-import { BAHIS } from '../sim/halisaha';
+import { BAHIS, BAHIS_ARALIK, ODULLU_MAC_GUNLUK } from '../sim/halisaha';
+const fx = (v: number) => v.toFixed(2).replace('.', ',');
 import { KADRO } from '../sim/stadyum';
 
 interface Deps { root: HTMLElement; rules: () => { rt: unknown } | null; command(c: { kind: string; [k: string]: unknown }): void; sfx?(id: string): void }
@@ -100,7 +101,7 @@ export function createKoordinator(d: Deps): Koordinator {
 <div class="kd-bar"><i style="width:${dol}%"></i></div><small>Beklenen doluluk %${dol} (${Math.round(g.tahmin * g.kapasite)}/${g.kapasite} koltuk). Pahalı bilet az seyirci demek; galibiyet serisi ve güçlü rakip tribünü doldurur. Son maç ${tl(g.son)}, toplam ${tl(g.gelir)}.</small></div>`;
       }
     } else {
-      h += `<div class="kd-row"><span class="kd-ic">🎟️</span><div><b>Anlık maç · bilet ${tl(s.bilet)}</b><small>Kimse yoksa rakip yapay zeka. 2 yarı. Kulüp kurarsan maçlar kulübünün adıyla lige sayılır.</small></div><button class="kd-b g" data-a="bilet"${lbl(yakin && m.money >= s.bilet)}>Bilet al</button></div>`;
+      h += `<div class="kd-row"><span class="kd-ic">🎟️</span><div><b>Anlık maç · bilet ${tl(s.bilet)}</b><small>Kimse yoksa rakip yapay zeka. 2 yarı. Günde ilk ${ODULLU_MAC_GUNLUK} maç ödüllü, sonrası biletsiz ve ödülsüz dostluk maçı. Kulüp kurarsan maçlar kulübünün adıyla lige sayılır.</small></div><button class="kd-b g" data-a="bilet"${lbl(yakin && m.money >= s.bilet)}>Bilet al</button></div>`;
       const sw = (k: 'c1' | 'c2', v: string) => `<button class="kd-sw${club[k] === v ? ' on' : ''}" data-a="kPick" data-k="${k}" data-v="${v}" style="background:${v}" aria-label="renk ${v}"></button>`;
       h += `<div class="kd-h">Kulüp kur · ${tl(s.takim)}</div><div class="kd-row" style="display:block"><div><small>Ad, iki renk, arma ve flama. Bir kez seçilir; lig ve çetele bu kulüple tutulur.</small></div>
 <input class="kd-in" data-f="takim" maxlength="16" placeholder="Kulüp adı (en az 3 harf)" aria-label="Kulüp adı">
@@ -166,7 +167,7 @@ export function createKoordinator(d: Deps): Koordinator {
 
   function tribun(m: M): string {
     const yakin = !!m.stadyum.yakin, bb = (k: string, l: string) => `<button class="kd-b${bet.k === k ? ' y' : ''}" data-a="betK" data-v="${k}">${l}</button>`;
-    return `<div class="kd-row" style="display:block"><div><b>📣 Tribünden izle · küçük bahis</b><small>Mahalle takımlarının maçını tribünden izle. Tahminin tutarsa bahis × oran kadar kazanırsın; oranlar maç başında açıklanır. Günde en çok ${BAHIS.gunluk} bahis, ${tl(BAHIS.min)} - ${tl(BAHIS.max)} arası.</small></div>
+    return `<div class="kd-row" style="display:block"><div><b>📣 Tribünden izle · küçük bahis</b><small>Mahalle takımlarının maçını tribünden izle. Tahminin tutarsa bahis × oran kadar ödeme alırsın. Oranlar takımlara göre maç başında belli olur: ev sahibi ×${fx(BAHIS_ARALIK.ev[0])}-${fx(BAHIS_ARALIK.ev[1])}, berabere ×${fx(BAHIS_ARALIK.X)}, deplasman ×${fx(BAHIS_ARALIK.dep[0])}-${fx(BAHIS_ARALIK.dep[1])}. Kasa her zaman biraz önde. Günde en çok ${BAHIS.gunluk} bahis, ${tl(BAHIS.min)} - ${tl(BAHIS.max)} arası.</small></div>
 <div class="kd-pk"><span>Tahmin</span>${bb('1', 'Ev sahibi')}${bb('X', 'Berabere')}${bb('2', 'Deplasman')}${bb('', 'Bahissiz')}</div>
 <div class="kd-pk"><span>Bahis</span>${[100, 500, 1000, 5000].map(v => `<button class="kd-b${bet.n === v ? ' y' : ''}" data-a="betN" data-v="${v}">${tl(v)}</button>`).join('')}</div>
 <button class="kd-b g" data-a="izle"${lbl(yakin && (!bet.k || m.money >= bet.n))}>Tribüne geç</button></div>

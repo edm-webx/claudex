@@ -16,12 +16,12 @@ describe('istismar tavanları (saatte en fazla X ₺)', () => {
     const r = istismar('mevduat', { saniye: 3600 }); console.log('mevduat', JSON.stringify(r));
     expect(r.saatlik).toBeLessThanOrEqual(SAAT_TAVAN.mevduat);
   });
-  // EKO-07 (sahip kararı bekliyor: borç/kredi şimdilik kodlanmıyor). Bugün: limit 25.000 + 15.000*seviye, ödenmeyen kredi hiçbir şey kaybettirmez.
-  it.fails('kredi: ödemeden çekilen nakit tavanı (EKO-07 bekliyor)', () => {
+  // Ara çözüm (EKO-07 sahip kararı hâlâ bekliyor): limit = min(25.000 + 15.000*seviye, toplam kazancın %10'u), taban 10.000 ₺. Önce: ödenmeyen kredi saatte ~41.000 ₺, 19. seviyede 310.000 ₺ limit. Ölçüm: 11.109.
+  it('kredi: ödemeden çekilen nakit tavanı (kazanca bağlı limit)', () => {
     const r = istismar('kredi', { saniye: 3600 }); console.log('kredi', JSON.stringify(r));
     expect(r.saatlik).toBeLessThanOrEqual(SAAT_TAVAN.kredi);
   });
-  // Bahis: oran 0,9/olasılık ama maç motorunda ev sahibi ('1') oranın söylediğinden sık kazanıyor. Futbol kolunun alanı; günlük bahis sınırı (BAHIS.gunluk) sim/halisaha.ts'de.
+  // Bahis: oranlar motorun ölçülen sıklığından (BAHIS_MODEL, kasa payı 0,88); ayrıca günlük bahis sınırı (BAHIS.gunluk). Oran kalibrasyonu: tests/sim/bahis-oran.test.ts.
   it('bahis: en olası sonuca azami bahis tekrarının saatlik net kazancı (günlük bahis sınırı ile)', () => {
     const a = istismar('bahis', { tohum: 3, maclar: 30 }), b = istismar('bahis', { tohum: 5, maclar: 30 }); console.log('bahis', JSON.stringify(a), JSON.stringify(b));
     expect((a.saatlik + b.saatlik) / 2).toBeLessThanOrEqual(SAAT_TAVAN.bahis);

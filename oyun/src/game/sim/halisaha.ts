@@ -21,14 +21,29 @@ export const ODUL = { anlik: { win: 1500, draw: 600, loss: 250, goldWin: 1, gold
 export const MAC_ODUL = ODUL.anlik, KULUP_ODUL = ODUL.kulup;
 /** Spectator betting at the gate ("seyirciler izleyip ufak bahis yapabilir"): stake limits, bets per game day; odds come from the two sides' strength. */
 export const BAHIS = { min: 100, max: 5000, halfS: 60, gunluk: 10 };
+/**
+ * Bet odds model, calibrated on the engine (1500 seeded izleMac runs, 2026-11-21): home win ~0.44 at equal strength and +1.1 per skill point of
+ * difference, draw ~0.16, away the rest. KASA is the house share: every flat strategy returns about 0.88 per lira staked (tests/sim/bahis-oran.test.ts
+ * keeps each of '1', 'X', '2' under 1.0, so an engine change that shifts the real frequencies fails there before it becomes a money printer).
+ */
+export const BAHIS_MODEL = { ev0: 0.44, egim: 1.1, pD: 0.16, pMin: 0.2, pMax: 0.7, KASA: 0.88 } as const;
+/** Max rewarded halı saha matches (ticket or club) per game day: prize money, gold, gate receipts and the match chests stop after this; later ones are friendlies. */
+export const ODULLU_MAC_GUNLUK = 2;
+/** Rewarded matches still open today (also read by mulk.ts: past the cap the ticket is free, the match is a friendly). */
+export function odulluMacKaldi(z0: unknown, day: number): boolean { const z = (z0 || {}) as { odulGun?: number; odulN?: number }; return z.odulGun !== day || (z.odulN || 0) < ODULLU_MAC_GUNLUK; }
+export function bahisOran(s0: number, s1: number): Record<'1' | 'X' | '2', number> {
+  const M = BAHIS_MODEL, pH = Math.min(M.pMax, Math.max(M.pMin, M.ev0 + (s0 - s1) * M.egim)), pD = M.pD, pA = Math.max(0.12, 1 - pH - pD);
+  const o = (p: number) => Math.max(1.05, Math.round(M.KASA / p * 20) / 20);
+  return { '1': o(pH), X: o(pD), '2': o(pA) };
+}
+/** Odds span the panel shows before the bet (strengths are drawn 0.5-0.7 per side when the ticket is bought). */
+export const BAHIS_ARALIK = (() => { const a = bahisOran(0.7, 0.5), b = bahisOran(0.5, 0.7); return { ev: [a['1'], b['1']], X: a.X, dep: [b['2'], a['2']] }; })();
 
 /** Odds and the real result of a watched match (seeded, headless, same engine and fixed 1/60 step as the view). */
 export function izleMac(seed: number) {
   const R = rng(seed ^ 0x5bd1e995), s0 = 0.5 + R() * 0.2, s1 = 0.5 + R() * 0.2, FK = Object.keys(FORMATIONS);
   const f: [string, string] = [FK[Math.floor(R() * FK.length)], FK[Math.floor(R() * FK.length)]];
-  const pH = Math.min(0.68, Math.max(0.18, 0.4 + (s0 - s1) * 2.2)), pD = 0.22, pA = Math.max(0.12, 1 - pH - pD);
-  const o = (p: number) => Math.round(0.9 / p * 20) / 20;
-  const oran = { '1': o(pH), X: o(pD), '2': o(pA) } as Record<'1' | 'X' | '2', number>;
+  const oran = bahisOran(s0, s1);
   const m = createMatch({ seed, human: null, halfS: BAHIS.halfS, skill: [s0, s1], formations: f });
   for (let i = 0; i < 60 * BAHIS.halfS * 2 + 60 * 60 && !m.over; i++) m.step(1 / 60);
   const [a, b] = m.score; return { s0, s1, f, oran, sonuc: (a > b ? '1' : a === b ? 'X' : '2') as '1' | 'X' | '2', skor: [a, b] as [number, number] };
@@ -38,7 +53,7 @@ type Say = Record<string, number>;
 type Tahmin = '1' | 'X' | '2';
 interface Bahis { seed: number; bahis: Tahmin; n: number; oran: number }
 interface Save {
-  izlenen?: number; bekleyen?: number; bahis?: Bahis; tuz?: number; bahisGun?: number; bahisN?: number; bahisKazanc?: number;
+  izlenen?: number; bekleyen?: number; odulGun?: number; odulN?: number; bahis?: Bahis; tuz?: number; bahisGun?: number; bahisN?: number; bahisKazanc?: number;
   offerDay: number; played: number; won: number; drawn: number; lost: number; goals: number; conceded?: number; form?: string[]; team?: Say;
   players?: Record<string, Say>; oyuncu?: Record<string, Say>; sezon?: Record<string, Say>; rakip?: Record<string, Say & { ad?: unknown }>; rekor?: Say; son?: Record<string, unknown>;
 }
@@ -131,11 +146,13 @@ export function installHaliSaha(K: Kernel, lig?: LigIf) {
   const izleRng = K.rng('sim.izle');   // the watched match's seed is drawn when the ticket is bought, mixed with the save's salt: it cannot be precomputed
   const R = rt as unknown as RtX;
   const kulupVar = () => !!(S.zones.arsa as { takim?: unknown } | undefined)?.takim;
+  /** True while today's rewarded-match allowance (ODULLU_MAC_GUNLUK) is not used up. */
+  const odulHakki = (z: Save) => odulluMacKaldi(z, S.day);
   const lockClear = () => { if (rt.pauseWhy === 'halisaha') { rt.paused = false; rt.pauseWhy = ''; } };
 
   /** Pay or burn a settled bet; shared by the live result and by the load-time settlement of a bet whose match never finished on screen. */
   function bahisCoz(z: Save, b: { bahis: Tahmin | null; n: number; oran: number }, sonuc: Tahmin, skor: string, ozel = '') {
-    if (b.bahis && b.bahis === sonuc) { const kaz = Math.round(b.n * b.oran); odul(kaz); z.bahisKazanc = (z.bahisKazanc || 0) + kaz - b.n; K.toast(ozel + '🎉 Bahsi tutturdun (' + skor + ')! +' + kaz.toLocaleString('tr') + ' ₺', 'good'); }
+    if (b.bahis && b.bahis === sonuc) { const kaz = Math.round(b.n * b.oran); odul(kaz); z.bahisKazanc = (z.bahisKazanc || 0) + kaz - b.n; K.toast(ozel + '🎉 Bahsi tutturdun (' + skor + ')! Ödeme ' + kaz.toLocaleString('tr') + ' ₺ (net +' + (kaz - b.n).toLocaleString('tr') + ' ₺)', 'good'); }
     else if (b.bahis) { z.bahisKazanc = (z.bahisKazanc || 0) - b.n; K.toast(ozel + 'Bahis yattı: maç ' + skor + ' bitti. Haftaya!', 'info'); }
     else K.toast('Maç ' + skor + ' bitti. Güzel maçtı!', 'info');
   }
@@ -146,15 +163,20 @@ export function installHaliSaha(K: Kernel, lig?: LigIf) {
     delete rt.uiLast.haliSahaMac; lockClear();
     const kulup = kulupVar() && t.ligG != null;   // the founded club's own league match
     if (kulup && !(lig && lig.sonuc(t.ligG!, biz, onlar))) { K.toast('Bu lig maçı zaten kayıtlı: ikinci kez ödül ve puan yok.', 'info'); K.saveNow(); return true; }
-    const st = kulup ? stadSave(S.zones.arsa as never) : null, ode = kulup ? ODUL.kulup : ODUL.anlik, kapi = st ? kapiGeliri(t.doluluk ?? tahminDoluluk(st.fiyat, z.form || [], LIG_BY_ID[t.rival]?.guc || 55), st.fiyat) : 0;
+    const odullu = odulHakki(z); if (odullu) { z.odulN = (z.odulGun === S.day ? z.odulN || 0 : 0) + 1; z.odulGun = S.day; }
+    const st = kulup && odullu ? stadSave(S.zones.arsa as never) : null, ode = kulup ? ODUL.kulup : ODUL.anlik, kapi = st ? kapiGeliri(t.doluluk ?? tahminDoluluk(st.fiyat, z.form || [], LIG_BY_ID[t.rival]?.guc || 55), st.fiyat) : 0;
     z.played++; z.goals += biz; recordStats(z, c.ist, biz, onlar, { sezon: kulup ? Math.floor(t.ligG! / 5) : sezonOfDay(S.day), rakip: t.rival, rakipAd: t.rivalName, kapi, gun: S.day });
     if (st) {   // gate receipts: the fill was fixed when the match was offered (before kick-off), the cash comes in now
       const dol = t.doluluk ?? tahminDoluluk(st.fiyat, [], LIG_BY_ID[t.rival]?.guc || 55);
       st.doluluk = dol; st.son = kapi; st.gelir += kapi; st.maclar++; odul(kapi); K.toast('🎟️ Kapı geliri: ' + kapi.toLocaleString('tr') + ' ₺ (doluluk %' + Math.round(dol * 100) + ')', 'good');
     }
-    K.stat('macOyun'); if (biz > onlar) K.stat('macGalibiyet');
     const sonuc = biz > onlar ? 'win' : biz === onlar ? 'draw' : 'loss';
     if (sonuc === 'win') z.won++; else if (sonuc === 'draw') z.drawn++; else z.lost++;
+    if (!odullu) {   // past the daily cap: a friendly, ledger only (no prize, gold, gate, match chests)
+      K.toast('🤝 Dostluk maçı ' + biz + '-' + onlar + (kulup ? ' · Lig: +' + (sonuc === 'win' ? 3 : sonuc === 'draw' ? 1 : 0) + ' puan' : '') + '. Bugünkü ' + ODULLU_MAC_GUNLUK + ' ödüllü maç hakkın dolmuştu, ödül yarın.', 'info');
+      K.logEv('haliSaha', { op: 'sonuc', biz, onlar, dostluk: true }); K.saveNow(); return true;
+    }
+    K.stat('macOyun'); if (biz > onlar) K.stat('macGalibiyet');
     odul(ode[sonuc]); if (sonuc === 'win') S.gold += ode.goldWin; else if (sonuc === 'draw') S.gold += ode.goldDraw;
     const para = ode[sonuc].toLocaleString('tr') + ' ₺';
     if (kulup) K.toast((sonuc === 'win' ? '🏆 ' + t.name + ' kazandı ' : sonuc === 'draw' ? '🤝 Berabere ' : '😤 Kaybettik ') + biz + '-' + onlar + ' · Lig: +' + (sonuc === 'win' ? 3 : sonuc === 'draw' ? 1 : 0) + ' puan · +' + para, biz >= onlar ? 'good' : 'info');
@@ -192,7 +214,7 @@ export function installHaliSaha(K: Kernel, lig?: LigIf) {
     run(c: { op: string; biz?: unknown; onlar?: unknown; ist?: unknown; bahis?: unknown; n?: unknown }): boolean {
       const z = save();
       if (c.op === 'teklif') {
-        const kl = kulupVar() ? lig?.siradaki?.(S.day) : null;
+        const kl = kulupVar() && odulHakki(z) ? lig?.siradaki?.(S.day) : null;   // past the daily cap the club plays a friendly, not the next league round
         const mg = kl || macGunuOf(Math.max(MAC_GUNU_OFFSET, S.day)); rt.uiLast.haliSahaTeklif = { ...mg }; return true;
       }
       if (c.op === 'izle') {   // spectator ticket + bet: the result is fixed here by the seeded engine, the view only replays it
@@ -207,6 +229,7 @@ export function installHaliSaha(K: Kernel, lig?: LigIf) {
         rt.uiLast.haliSahaIzle = { ...tm, seed, s0: im.s0, s1: im.s1, f: im.f, oran: im.oran, bahis, n, halfS: BAHIS.halfS };
         R._izle = { sonuc: im.sonuc, skor: im.skor, bahis, n, oran: bahis ? im.oran[bahis] : 0, ad: [tm.name, tm.rivalName] };
         rt.paused = true; rt.pauseWhy = 'halisaha'; K.logEv('haliSaha', { op: 'izle', bahis, n });
+        if (n) K.saveNow();   // the stake, the pending bet and the advanced seed stream are on disk before the match is shown: a reload settles it, never refunds it
         return true;
       }
       if (c.op === 'izleSonuc') {

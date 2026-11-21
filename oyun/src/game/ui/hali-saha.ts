@@ -324,7 +324,7 @@ export function createHaliSaha(deps: HaliSahaDeps): HaliSahaView {
         const x = -w / 2, y = -need / 2;
         g.fillStyle = '#fdf3e1'; g.strokeStyle = '#3b2a20'; g.lineWidth = 4; rrect(x, y, w, need, 20); g.fill(); g.stroke();
         const r3 = M.score[0] > M.score[1] ? '1' : M.score[0] === M.score[1] ? 'X' : '2';
-        const res = iz ? (iz.bahis ? (iz.bahis === r3 ? 'Bahis tuttu! +' + Math.round(iz.n * iz.oran[iz.bahis]).toLocaleString('tr') + ' ₺' : 'Bahis yattı') : 'Maç bitti') : M.score[0] > M.score[1] ? 'Kazandın!' : M.score[0] === M.score[1] ? 'Berabere' : 'Kaybettin';
+        const res = iz ? (iz.bahis ? (iz.bahis === r3 ? 'Bahis tuttu! Ödeme ' + Math.round(iz.n * iz.oran[iz.bahis]).toLocaleString('tr') + ' ₺ (net +' + (Math.round(iz.n * iz.oran[iz.bahis]) - iz.n).toLocaleString('tr') + ' ₺)' : 'Bahis yattı') : 'Maç bitti') : M.score[0] > M.score[1] ? 'Kazandın!' : M.score[0] === M.score[1] ? 'Berabere' : 'Kaybettin';
         g.fillStyle = '#3b2a20'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.font = '900 30px system-ui,sans-serif'; g.fillText(res, 0, y + 38, w - 20);
         g.font = '900 40px system-ui,sans-serif'; g.fillText(M.score[0] + ' - ' + M.score[1], 0, y + 82);
         g.font = '700 16px system-ui,sans-serif'; g.fillText(t.name + (iz ? '' : ' & Sabri') + '  vs  ' + t.rivalName, 0, y + 116, w - 20);
