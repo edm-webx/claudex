@@ -220,9 +220,9 @@ export function createHaliSaha3D(o: {
 
   // ---- distant city silhouette with dim lit windows, a ring of trees outside the stands
   {
-    const winTex = kit.canvas(64, 128, (g, w, h) => { g.fillStyle = '#ffffff'; g.fillRect(0, 0, w, h); for (let y = 6; y < h - 4; y += 10) for (let x = 5; x < w - 4; x += 10) { const r = Math.random(); g.fillStyle = r < 0.32 ? '#ffd9a0' : r < 0.4 ? '#cfe0ff' : '#1b2233'; g.fillRect(x, y, 5, 6); } });
+    const winTex = kit.canvas(64, 128, (g, w, h) => { g.fillStyle = '#3a4256'; g.fillRect(0, 0, w, h); for (let y = 6; y < h - 4; y += 10) for (let x = 5; x < w - 4; x += 10) { const r = Math.random(); g.fillStyle = r < 0.32 ? '#ffd9a0' : r < 0.4 ? '#cfe0ff' : '#1b2233'; g.fillRect(x, y, 5, 6); } });
     winTex.wrapS = winTex.wrapT = T.RepeatWrapping; winTex.repeat.set(2, 3);
-    const bm = mat('#3a4256', { map: winTex, emissive: '#ffffff', emissiveMap: winTex, emissiveIntensity: 0.22, roughness: 0.9 });
+    const bm = mat('#ffffff', { map: winTex, emissive: '#ffffff', emissiveMap: winTex, emissiveIntensity: 0.22, roughness: 0.9 });
     const n = lo ? 40 : 80, bIM = new T.InstancedMesh(geo(new T.BoxGeometry(1, 1, 1)), bm, n), m4 = new T.Matrix4(), q = new T.Quaternion(), v = new T.Vector3(), sc = new T.Vector3(), c = new T.Color();
     for (let i = 0; i < n; i++) {
       const a = (i / n) * Math.PI * 2 + rnd() * 0.05, r = 85 + rnd() * 45, h = 8 + rnd() * rnd() * 40;

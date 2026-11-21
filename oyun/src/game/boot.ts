@@ -902,6 +902,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   if (import.meta.env.MODE !== 'production') reg('kaynakDokum', (derin?: number, max?: number) => kaynakDokum(scene, derin ?? 3, max ?? 40));   // PRF-15 doku/geometri baytı sahibine göre
   if (import.meta.env.MODE !== 'production') reg('dokuAkis', (tam?: boolean) => { if (tam !== undefined) akisZorla(!!tam); return akisDurum(); });   // PRF-15 A/B: akış kapalıyken (hep tam) görüntü aynı mı
   if (import.meta.env.MODE !== 'production') reg('kameraNear', (v: number | null) => { (cam as unknown as { nearFixed?(v: number | null): void }).nearFixed?.(v ?? null); return cam.camera.near; });   // PRF-09 A/B
+  if (import.meta.env.MODE !== 'production') reg('sahne', () => scene);   // dev: sahne ağacını sayfadan kurcalamak için (orman teşhisi)
   if (import.meta.env.MODE !== 'production') reg('heroPoz',() => { const o = H.object.position; return { x: +o.x.toFixed(3), y: +o.y.toFixed(3), z: +o.z.toFixed(3), camY: +cam.camera.position.y.toFixed(3), near: cam.camera.near }; });
   reg('lights', () => nightLights?.stats() ?? null);   // PRF-08: gece ışığı havuzu durumu
   reg('setTime', (h: number) => { sim.command({ kind: 'setTime', hour: h }); lastHour = -1; timeT = 0; gSaat.sifirla(sim.clock.hour, sim.state.day); guard('setTime', () => { R.setTime(sim.clock.hour, sim.clock.season); havaLook?.relight(); }); });

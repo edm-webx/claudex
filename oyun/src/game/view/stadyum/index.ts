@@ -14,6 +14,7 @@
  * the hero walks north of the pitch so it never hides Sabri.
  */
 import * as T from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { Rules } from '../../sim/state';
 import { mulkApi } from '../../sim/mulk';
 import type { Vec3, ScreenPt } from '../../../engine/api';
@@ -28,6 +29,8 @@ type Takim = { ad: string; renk: string; renk2?: string; arma?: string };
 const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>)[c]);
 const OFIS = { x: 417, z: 8.5, w: 8, d: 5 }, GISE = { x: 404.5, z: 9, w: 3.2, d: 2.2 };
 const PITCH = { x: 426, z: 19.5 };
+// playing surface of the mk.pitch prefab (content/zones/disari.ts): 30 x 15.4, z 11.8..27.2
+const PL = 30, PW = 15.4, PZ0 = 19.5 - PW / 2;
 // prefab stand (mk.stand at 426, 30.2, turned to face the pitch): 4 rows, 28 seats a row
 const LOW_ROWS = 4, LOW_COLS = 28;
 const R = (x: number, z: number, w: number, d: number): Rect => ({ x0: x - w / 2, x1: x + w / 2, z0: z - d / 2, z1: z + d / 2 });
@@ -72,6 +75,29 @@ export function createStadyumView(d: StadyumViewDeps): StadyumView {
       sg.position.set(x, 2.9, zb + 0.3); root.add(sg);
     }
   }
+  // paved concourse round the ground (the zone ground under it is flat khaki dirt) and crisp pitch markings as geometry
+  {
+    const pave = M('#a9adb2', { roughness: 0.93 }); zeminDetay(pave, { force: 1, ds: 0.55, ns: 0.7 });
+    const pv = new T.Mesh(kit.geo(new T.PlaneGeometry(60, 41)), pave); pv.rotation.x = -Math.PI / 2; pv.position.set(422, 0.015, 25.7); pv.receiveShadow = true; root.add(pv);
+    const kerb = M('#d7d3c8', { roughness: 0.85 }), b = boxBatch(kit);
+    b.box(kerb, PL + 1.2, 0.12, 0.25, PITCH.x, 0.06, PZ0 - 0.3);   // kerb along the open south touchline
+    b.flush(root, false);
+    const lw = 0.1, parts: T.BufferGeometry[] = [], x0 = PITCH.x - PL / 2, zc = PITCH.z;
+    const rect = (ax: number, az: number, bx: number, bz: number) => { const g = new T.PlaneGeometry(Math.abs(bx - ax) || lw, Math.abs(bz - az) || lw); g.rotateX(-Math.PI / 2); g.translate((ax + bx) / 2, 0, (az + bz) / 2); parts.push(g); };
+    const outline = (ax: number, az: number, bx: number, bz: number) => { rect(ax, az, bx, az + lw); rect(ax, bz - lw, bx, bz); rect(ax, az, ax + lw, bz); rect(bx - lw, az, bx, bz); };
+    const ring = (x: number, z: number, r0: number, r1: number, a0 = 0, a1 = Math.PI * 2) => { const g = new T.RingGeometry(r0, r1, 40, 1, a0, a1 - a0); g.rotateX(-Math.PI / 2); g.translate(x, 0, z); parts.push(g); };
+    outline(x0 + 0.1, PZ0 + 0.1, x0 + PL - 0.1, PZ0 + PW - 0.1); rect(PITCH.x - lw / 2, PZ0 + 0.1, PITCH.x + lw / 2, PZ0 + PW - 0.1);
+    ring(PITCH.x, zc, 2.4 - lw, 2.4); ring(PITCH.x, zc, 0, 0.15);
+    for (const s of [0, 1]) {
+      const ex = s ? x0 + PL - 0.1 : x0 + 0.1, dir = s ? -1 : 1;
+      outline(Math.min(ex, ex + dir * 5), zc - 4.6, Math.max(ex, ex + dir * 5), zc + 4.6);
+      outline(Math.min(ex, ex + dir * 1.7), zc - 2.8, Math.max(ex, ex + dir * 1.7), zc + 2.8);
+      ring(ex + dir * 4, zc, 0, 0.13);
+    }
+    for (const [cx, cz, a] of [[x0 + 0.1, PZ0 + 0.1, 0], [x0 + PL - 0.1, PZ0 + 0.1, Math.PI / 2], [x0 + PL - 0.1, PZ0 + PW - 0.1, Math.PI], [x0 + 0.1, PZ0 + PW - 0.1, -Math.PI / 2]] as const) ring(cx, cz, 0.5, 0.6, -a - Math.PI / 2, -a);
+    const lm = new T.Mesh(kit.geo(mergeGeometries(parts)), M('#f2f4ef', { roughness: 0.85, polygonOffset: true, polygonOffsetFactor: -2 })); parts.forEach(g => g.dispose());
+    lm.position.y = 0.035; lm.receiveShadow = true; root.add(lm);
+  }
   // floodlight masts aimed at the pitch
   for (const [x, z] of MASTS) buildMast(kit, root, x, z, z > 30 ? 17 : 14, PITCH);
   // parody ad boards on the inside of the three hedges: one atlas texture, one merged mesh
@@ -87,17 +113,17 @@ export function createStadyumView(d: StadyumViewDeps): StadyumView {
     };
     const backs: T.BufferGeometry[] = [];
     for (let i = 0; i < 12; i++) board(411.4 + 1.25 + i * 2.5, 27.15, 2.4, Math.PI);
-    for (let i = 0; i < 6; i++) { board(411.15, 11.6 + 1.25 + i * 2.6, 2.5, Math.PI / 2); board(440.85, 11.6 + 1.25 + i * 2.6, 2.5, -Math.PI / 2); }
+    for (let i = 0; i < 6; i++) { board(411.08, 12.0 + 1.25 + i * 2.5, 2.4, Math.PI / 2); board(440.92, 12.0 + 1.25 + i * 2.5, 2.4, -Math.PI / 2); }
     const bm = M('#ffffff', { map: atlas, emissive: '#ffffff', emissiveMap: atlas, emissiveIntensity: 0.18, roughness: 0.6 });
     const b = boxBatch(kit); parts.forEach(g => b.add(bm, g)); backs.forEach(g => b.add(M('#2a3038'), g)); b.flush(root, false);
   }
   // car park: asphalt, painted bays, crowd barriers with an entrance gap and a barrier arm, parked cars
   {
     const asph = M('#62666e', { roughness: 0.95 }); zeminDetay(asph, { force: 0, ds: 0.7, ns: 0.8 });
-    const ap = new T.Mesh(kit.geo(new T.PlaneGeometry(11.4, 17)), asph); ap.rotation.x = -Math.PI / 2; ap.position.set(398.2, 0.012, 23); ap.receiveShadow = true; root.add(ap);
+    const ap = new T.Mesh(kit.geo(new T.PlaneGeometry(11.4, 17)), asph); ap.rotation.x = -Math.PI / 2; ap.position.set(398.2, 0.018, 23); ap.receiveShadow = true; root.add(ap);
     const b = boxBatch(kit), paint = M('#e9e6dc', { roughness: 0.8 });
-    for (let i = 0; i <= 4; i++) { b.box(paint, 0.1, 0.01, 4.8, 393 + i * 2.5, 0.02, 29.0); if (i >= 2) b.box(paint, 0.1, 0.01, 4.8, 393 + i * 2.5, 0.02, 17.4); }
-    b.box(paint, 10, 0.01, 0.1, 398, 0.02, 26.6); b.box(paint, 5, 0.01, 0.1, 400.5, 0.02, 19.8);
+    for (let i = 0; i <= 4; i++) { b.box(paint, 0.1, 0.01, 4.8, 393 + i * 2.5, 0.024, 29.0); if (i >= 2) b.box(paint, 0.1, 0.01, 4.8, 393 + i * 2.5, 0.024, 17.4); }
+    b.box(paint, 10, 0.01, 0.1, 398, 0.024, 26.6); b.box(paint, 5, 0.01, 0.1, 400.5, 0.024, 19.8);
     for (const [x0, x1] of [[392.8, 397], [399.2, 403.6]]) { for (let x = x0; x < x1 - 0.1; x += 2.1) { const w = Math.min(2.1, x1 - x); b.box(steel, w, 0.05, 0.05, x + w / 2, 1.05, 14.2); b.box(steel, w, 0.05, 0.05, x + w / 2, 0.25, 14.2); for (let k = 1; k < 6; k++) b.box(steel, 0.025, 0.8, 0.025, x + k * w / 6, 0.65, 14.2); b.box(steel, 0.06, 1.1, 0.06, x, 0.55, 14.2); } }
     b.box(M('#d93a3a'), 0.3, 1.0, 0.3, 397.3, 0.5, 14.2); b.box(M('#f4f4f0'), 1.9, 0.08, 0.08, 398.2, 0.95, 14.2);
     for (const [x, z, ry, c] of CARS) {   // parked cars: body, cabin glass, roof, four tyres (local frame turned by ry)
