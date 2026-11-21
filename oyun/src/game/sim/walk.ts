@@ -9,19 +9,28 @@
  */
 import type { PlayerWalk, Nav, InteractionRegistry, Entity, SimCtx, Vec2 } from '../../engine/api';
 import { angLerp } from '../../engine/core';
+import { binis, katY, avmIcinde, type Yolculuk } from '../../content/avm-kat';
 const SOLID = { solids: true };
+type GameStatePlayer = { x: number; z: number; rot: number; kat?: number };
 
-export interface WalkDeps { nav: Nav; start: { x: number; z: number }; speed?: number; interactions?: InteractionRegistry; actor?: Entity; radius?: number; }
+/** katNav: Martı AVM katlarının çarpışması (yalnız dikdörtgen, content/avm-kat.ts); AVM dışında = nav */
+export interface WalkDeps { nav: Nav; start: { x: number; z: number; kat?: number }; speed?: number; interactions?: InteractionRegistry; actor?: Entity; radius?: number; katNav?: (kat: number) => Nav | null; }
 
-/** PlayerWalk plus the previous yaw, so the render side can interpolate rotation like position (v2 angLerp(prevRot, rot, a)). */
-export interface WalkFull extends PlayerWalk { readonly prevRot: number; }
+/** PlayerWalk plus the previous yaw, so the render side can interpolate rotation like position (v2 angLerp(prevRot, rot, a)).
+ *  kat / y / prevY: AVM katı ve yürüyen merdivende yükseklik (pos.kat da aynı katı taşır: iç mekân / arsa kontrolleri onu okur). */
+export interface WalkFull extends PlayerWalk { readonly prevRot: number; readonly kat: number; readonly y: number; readonly prevY: number; readonly binik: boolean; teleport(x: number, z: number, kat?: number): void; }
+/** yürüyen merdiven hızı (m/s, oyun için gerçeğinden hızlı) */
+export const MERDIVEN_HIZ = 2.4;
 
 /** class skills (sim/yetenek.ts) scale the player's top speed: Kurye's passive, Kurye/Sporcu actives */
 export const walkBoost = { x: 1 };
 export function createWalk(deps: WalkDeps): WalkFull {
   const maxSpeed = deps.speed ?? 4.6;
   const radius = deps.radius ?? 0.36;
-  const pos: Vec2 = { x: deps.start.x, z: deps.start.z };
+  const pos: Vec2 & { kat?: number } = { x: deps.start.x, z: deps.start.z };
+  let kat = Math.max(0, Math.round(deps.start.kat || 0)), y = katY(kat), prevY = y, ride: { y: Yolculuk; i: number } | null = null, rideCd = 0;
+  const setKat = (k: number) => { kat = k; if (k) pos.kat = k; else delete pos.kat; };
+  setKat(kat);
   const prev: Vec2 = { x: pos.x, z: pos.z };
   const to: Vec2 = { x: 0, z: 0 };
   const out: Vec2 = { x: 0, z: 0 };
@@ -37,9 +46,24 @@ export function createWalk(deps: WalkDeps): WalkFull {
   const w: WalkFull = {
     id: 'walk', order: 10, phase: 'sim',
     get pos() { return pos; }, get prev() { return prev; }, get rot() { return rot; }, get prevRot() { return prevRot; }, get speed() { return speed; },
-    teleport(x, z) { pos.x = prev.x = x; pos.z = prev.z = z; prevRot = rot; speed = 0; vx = 0; vz = 0; hist.length = 0; histT = histX = histZ = dwellSpeed = lastDx = lastDz = 0; sinceRev = Infinity; },
+    get kat() { return kat; }, get y() { return y; }, get prevY() { return prevY; }, get binik() { return !!ride; },
+    teleport(x, z, k?: number) { pos.x = prev.x = x; pos.z = prev.z = z; setKat(k === undefined ? 0 : Math.max(0, Math.round(k))); y = prevY = katY(kat); ride = null; prevRot = rot; speed = 0; vx = 0; vz = 0; hist.length = 0; histT = histX = histZ = dwellSpeed = lastDx = lastDz = 0; sinceRev = Infinity; },
     step(ctx: SimCtx) {
-      prev.x = pos.x; prev.z = pos.z; prevRot = rot;
+      prev.x = pos.x; prev.z = pos.z; prevRot = rot; prevY = y;
+      if (rideCd > 0) rideCd -= ctx.dt;
+      if (ride) {   // AVM yürüyen merdiveni: girdi yok, bant oyuncuyu taşır; uçta kat değişir
+        let left = MERDIVEN_HIZ * ctx.dt;
+        while (ride && left > 0) {
+          const t = ride.y.noktalar[ride.i], dx = t.x - pos.x, dz = t.z - pos.z, d = Math.hypot(dx, dz);
+          if (d > 1e-6) rot = Math.atan2(dx, dz);
+          if (d <= left) { pos.x = t.x; pos.z = t.z; y = t.y; left -= d; ride.i++; if (ride.i >= ride.y.noktalar.length) { setKat(ride.y.hedefKat); y = katY(kat); ride = null; rideCd = 0.8; } }
+          else { const k = left / d; pos.x += dx * k; pos.z += dz * k; y += (t.y - y) * k; left = 0; }
+        }
+        vx = vz = 0; speed = MERDIVEN_HIZ;
+        const p = ctx.state.player; p.x = pos.x; p.z = pos.z; p.rot = rot; if (kat) (p as typeof p & { kat?: number }).kat = kat; else delete (p as typeof p & { kat?: number }).kat;
+        if (deps.interactions) deps.interactions.update(deps.actor ?? 0, pos, speed, ctx);
+        return;
+      }
       let x = ctx.input.move.x, z = ctx.input.move.z;
       let m = Math.hypot(x, z);
       if (m > 1) { x /= m; z /= m; m = 1; }
@@ -49,8 +73,10 @@ export function createWalk(deps: WalkDeps): WalkFull {
       vx += (tvx - vx) * kv; vz += (tvz - vz) * kv;
       if (Math.abs(vx) + Math.abs(vz) > 0.04) {
         to.x = pos.x + vx * ctx.dt; to.z = pos.z + vz * ctx.dt;
-        const r = deps.nav.move(pos, to, radius, out, SOLID);
+        const nav = (avmIcinde(pos, 4) && deps.katNav?.(kat)) || deps.nav;   // Martı AVM diyarı: her katın kendi çarpışması
+        const r = nav.move(pos, to, radius, out, SOLID);
         pos.x = r.x; pos.z = r.z;
+        if (rideCd <= 0 && m > 0.12) { const b = binis(pos, kat, vx, vz); if (b) { ride = { y: b, i: 0 }; } }
       } else { vx = 0; vz = 0; }
       const dx = pos.x - prev.x, dz = pos.z - prev.z;
       speed = ctx.dt > 0 ? Math.sqrt(dx * dx + dz * dz) / ctx.dt : 0;
@@ -64,8 +90,8 @@ export function createWalk(deps: WalkDeps): WalkFull {
         if (moved) { lastDx = dx; lastDz = dz; }
         dwellSpeed = sinceRev < DWELL_WINDOW ? Math.min(speed, avg) : speed;
       }
-      const p = ctx.state.player;
-      p.x = pos.x; p.z = pos.z; p.rot = rot;
+      const p = ctx.state.player as GameStatePlayer;
+      p.x = pos.x; p.z = pos.z; p.rot = rot; if (kat) p.kat = kat; else delete p.kat;
       if (deps.interactions) deps.interactions.update(deps.actor ?? 0, pos, dwellSpeed, ctx);
     },
   };

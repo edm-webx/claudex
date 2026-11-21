@@ -11,7 +11,8 @@ import * as T from 'three';
 import { Batch, mtx } from '../../../engine/prefab/batch';
 import { v2rng } from '../../../content/prefabs/common/v2kit';
 import { useSkyEnv } from './glb';
-import { icBina, MAGAZA_RENK } from '../../../content/ic-mekan';
+import { icBina, AVM_TABELA } from '../../../content/ic-mekan';
+import { AVM, AVM_BINA } from '../../../content/avm-kat';
 
 export interface BinaDeps { root: () => T.Object3D | null; night: () => number; /** 2026-11-08 user: "3rd person burada pek yaramıyor": buildings between the camera and the player fade out */ camera?: () => T.Camera | null; hero?: () => { x: number; z: number } }
 export interface BinaView { update(dt: number): void; dispose(): void }
@@ -189,8 +190,6 @@ function build(s: Spec): T.Group {
 }
 
 /* ---------- the far side ---------- */
-const AVM_X = 20.15;
-const AVM_KAPI = icBina('avm').map(m => AVM_X - m.x);   // facade u runs against world x on this -z front
 const SPECS: Spec[] = [
   { id: 'kafe1', x: -17.5, z: 37.9, wx: 7, wz: 9.4, front: '+x', floors: 2, fh: 3.1, wall: '#f3d2a2', trim: '#fbf3e4', accent: '#c2551f', ground: 'shop', lit: 0.7, roof: 'flat',
     sign: { text: '☕ MEYDAN KAFE', bg: '#7a3b1c', fg: '#ffe9c4' }, win: { w: 1.1, h: 1.45, gap: 1.0, frame: '#fbf3e4', shutter: '#3f7d5a', flower: true }, extra: cafeTerrace },
@@ -202,8 +201,8 @@ const SPECS: Spec[] = [
     sign: { text: 'MARTIKÖY İLKOKULU', bg: '#fbf3e4', fg: '#a2472f', w: 8.4 }, win: { w: 1.5, h: 1.7, gap: 0.8, frame: '#fbfaf6' }, extra: schoolExtras },
   { id: 'kantin', x: 56.15, z: 42.8, wx: 3.7, wz: 2.8, front: '-x', floors: 1, fh: 3.0, wall: '#f6efe1', trim: '#e0533c', accent: '#e0533c', ground: 'hatch', lit: 0.5, roof: 'tile',
     sign: { text: 'KANTİN', bg: '#e0533c', fg: '#ffffff', w: 2.4 }, win: { w: 0.8, h: 0.9, gap: 0.8, frame: '#fbfaf6' } },
-  { id: 'avm', x: 20.15, z: 51.8, wx: 16.9, wz: 10.6, front: '-z', floors: 3, fh: 3.6, wall: '#d7dde8', trim: '#3f4a6b', accent: '#e0533c', ground: 'shop', lit: 0.8, roof: 'flat', curtain: true,
-    sign: { text: 'MARTI AVM', bg: '#e0533c', fg: '#ffffff', w: 8.0 }, win: { w: 2.2, h: 2.2, gap: 0.6, frame: '#3f4a6b' }, extra: mallExtras, doors: AVM_KAPI },
+  { id: 'avm', x: AVM_BINA.x, z: AVM_BINA.z, wx: AVM_BINA.wx, wz: AVM_BINA.wz, front: '-z', floors: 3, fh: 3.6, wall: '#d7dde8', trim: '#3f4a6b', accent: '#e0533c', ground: 'shop', lit: 0.8, roof: 'flat', curtain: true,
+    sign: { text: 'MARTI AVM', bg: '#e0533c', fg: '#ffffff', w: 8.0 }, win: { w: 2.2, h: 2.2, gap: 0.6, frame: '#3f4a6b' }, extra: mallExtras, doors: [-0.62, 0.62] },
   { id: 'hastane', x: 46.95, z: 53.55, wx: 16.9, wz: 6.7, front: '-z', floors: 4, fh: 3.0, wall: '#f2f4f6', trim: '#9aa5b0', accent: '#d93a3a', ground: 'entrance', lit: 0.65, roof: 'flat',
     sign: { text: 'DEVLET HASTANESİ', bg: '#ffffff', fg: '#d93a3a', w: 8.0 }, win: { w: 1.3, h: 1.5, gap: 0.7, frame: '#9fb9d0' }, extra: hospitalExtras },
   { id: 'acil', x: 57.3, z: 52.0, wx: 3.3, wz: 3.2, front: '-x', floors: 1, fh: 3.3, wall: '#f2f4f6', trim: '#d93a3a', accent: '#d93a3a', ground: 'entrance', lit: 0.9, roof: 'flat',
@@ -285,12 +284,18 @@ function bankExtras(k: Kit, L: Dim) {
   b.cyl(1.2, 1.2, 8.4, '#efe6d2', 0, L.y0 + 4.3, fz + 1.2, { seg: 3, rz: Math.PI / 2, sz: 0.5 });
   for (const sg of [-1, 1]) { b.cyl(0.06, 0.06, 2.6, '#2b2b2b', sg * 4.6, 1.3, fz + 2.6, { seg: 8 }); b.sph(0.2, '#ffe9a8', sg * 4.6, 2.75, fz + 2.6, { ws: 8, hs: 6 }); k.n.sph(0.32, '#ffd97a', sg * 4.6, 2.75, fz + 2.6, { ws: 8, hs: 6 }); }
 }
-/** 2026-11-20: the mall front has one door per business (content/ic-mekan.ts AVM strips) and each shop's name over its door */
+/** 2026-11-21 owner: the inside is its own map (content/avm-kat.ts): one glass double door under a canopy walks you in
+ * (sim/avm-gecis.ts), and every shop shows its sign on its own floor of the facade, where it sits inside */
 function mallExtras(k: Kit, L: Dim) {
-  const { b } = k, fz = L.d / 2, gh = Math.min(3.6 - 0.5, 2.9);
+  const { b, g } = k, fz = L.d / 2;
+  b.box(4.2, 0.16, 1.7, '#3f4a6b', 0, L.y0 + 2.75, fz + 0.85, O); b.box(4.2, 0.06, 0.08, '#e0533c', 0, L.y0 + 2.66, fz + 1.7, O);   // canopy
+  for (const sg of [-1, 1]) b.cyl(0.05, 0.05, 2.7, '#2b2f36', sg * 1.95, L.y0 + 1.35, fz + 1.62, { seg: 8 });
+  b.box(2.9, 0.02, 1.4, '#7a2b2b', 0, L.y0 + 0.01, fz + 0.75, O);   // entrance mat
+  g.plane(2.4, 0.5, '#e8f1f6', 0, L.y0 + 2.45, fz + 0.14);
   for (const m of icBina('avm')) {
-    const u = AVM_X - m.x, r = m.tur === 'giyim' || m.tur === 'elektronik' || m.tur === 'oyuncak' ? MAGAZA_RENK[m.tur] : { c: '#a2472f', txt: 'MARTI LOKANTASI' };
-    k.sign(r.txt, r.c, '#ffffff', Math.min(3.2, m.wx - 0.6), 0.48, u, L.y0 + gh + 0.47, fz + 1.38);
+    const r = AVM_TABELA[m.tur] || AVM_TABELA.avmLokanta, kat = m.kat || 0, sg = Math.sign(AVM.cx - m.x), front = m.z < (AVM.z0 + AVM.z1) / 2;
+    const u = sg * (front ? 7.0 : 5.0), w = front ? 1.75 : 1.85;
+    k.sign(r.txt, r.c, '#ffffff', w, 0.42, u, L.y0 + kat * 3.6 + (kat === 1 ? 2.2 : 3.05), fz + 0.2);
   }
   for (const [sg, c] of [[-1, '#ffd23f'], [1, '#2ec4c4']] as [number, string][]) { b.box(0.08, 5.5, 1.3, c, sg * (L.w / 2 + 0.05), L.H - 3.6, fz - 1.4, O); }
   for (const sg of [-1, 1]) { const u = sg * (L.w / 2 + 0.9); b.cyl(0.3, 0.3, 0.5, '#7d8a96', u, 0.25, fz + 0.9, { seg: 10 }); b.sph(0.38, '#5f8f4a', u, 0.75, fz + 0.9, { ws: 8, hs: 5 }); }

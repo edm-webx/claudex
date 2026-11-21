@@ -41,13 +41,22 @@ export const TUT: readonly TutStep[] = [
 /** UX-06: tek seferlik sakin ipuçları (kayıt: st.tut['ip_<id>']). Bir yere ilk girişte tek satır; sahip: "binaya ilk girişte ipucu çipi olsun". */
 export const IPUCU_ARALIK_S = 10;
 const KAFE_IPUCU = 'işletmenin aletleri Mülk düğmesinde, alınca içeride görünür.';
+const AVM_IPUCU = 'ayrı bir dükkân. Önündeki sarı karede durup satın alırsın, aletleri içerideki sarı karelerden kurarsın.';
 const BINA_IPUCU: Record<string, string> = {
   kafe1: 'Meydan Kafe: ' + KAFE_IPUCU,
   kafe2: 'Sahil Bistro: ' + KAFE_IPUCU,
-  avm: 'Martı AVM: giyim ve bakım ürünleri karakter dolabına girer.',
-  avm_moda: 'Martı Moda: ayrı bir işletme. Sahibiysen tezgaha geçip kendin satabilirsin.',
-  avm_tekno: 'Tekno Martı: ayrı bir işletme. Sahibiysen tezgaha geçip kendin satabilirsin.',
-  avm_oyuncak: 'Oyuncak Dünyası: ayrı bir işletme. Sahibiysen tezgaha geçip kendin satabilirsin.',
+  avm: 'Martı Lokantası: ' + AVM_IPUCU,
+  avm_moda: 'Martı Moda: ' + AVM_IPUCU,
+  avm_tekno: 'Tekno Martı: ' + AVM_IPUCU,
+  avm_oyuncak: 'Oyuncak Dünyası: ' + AVM_IPUCU,
+  avm_seker: 'Hacı Martı Şekerleme: ' + AVM_IPUCU,
+  avm_kahve: 'Telve Kahve Laboratuvarı: ' + AVM_IPUCU,
+  avm_baklava: 'Şerbetçi Baklava Sarayı: ' + AVM_IPUCU,
+  avm_dondurma: 'Maraşlı Martı Dondurma: ' + AVM_IPUCU,
+  avm_kuruyemis: 'Çıtırcı Kuruyemiş: ' + AVM_IPUCU,
+  avm_doner: 'Dürümcü Dayı: ' + AVM_IPUCU,
+  avm_kumpir: 'Kumpir Kulesi: ' + AVM_IPUCU,
+  avm_midye: 'Midyeci Mido: ' + AVM_IPUCU,
   tesis: 'Halı Saha Tesisleri: sahibi olduğun işletmeler Mülk düğmesinde.',
   salonW: 'Kahvaltı salonu: ekipmanı Mülk düğmesinde, Salonlar sekmesinde.',
   salonE: 'Balık lokantası: ekipmanı Mülk düğmesinde, Salonlar sekmesinde.',
@@ -65,8 +74,8 @@ const BOLGE_IPUCU: Record<string, string> = {
 };
 const inside = (m: IcMekan, p: Vec2) => Math.abs(p.x - m.x) < m.wx / 2 && Math.abs(p.z - m.z) < m.wz / 2;
 /** İlk karşılaşılan yeni yer için ipucu kimliği ve metni (yoksa null). Saf: test edilir. */
-export function ipucuFor(p: Vec2, seen: (id: string) => boolean): { id: string; text: string } | null {
-  const ic = IC_MEKANLAR.find(m => inside(m, p));
+export function ipucuFor(p: Vec2 & { kat?: number }, seen: (id: string) => boolean): { id: string; text: string } | null {
+  const ic = IC_MEKANLAR.find(m => inside(m, p) && (m.kat || 0) === (p.kat || 0));   // AVM katları üst üste: oyuncunun katındaki dükkân
   if (ic && !seen('bina_' + ic.id)) return { id: 'bina_' + ic.id, text: BINA_IPUCU[ic.id] ?? `${ic.ad}: içeri girdin.` };
   const r = regionAt(p.x);
   if (r && BOLGE_IPUCU[r.id] && !seen('bolge_' + r.id)) return { id: 'bolge_' + r.id, text: BOLGE_IPUCU[r.id] };

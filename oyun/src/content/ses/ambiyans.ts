@@ -184,6 +184,10 @@ export const IC_ODA: Record<string, { loop: string; vol: number }> = {
   mutfak: { loop: 'ic_mutfak', vol: 0.5 }, okul: { loop: 'ic_okul', vol: 0.5 }, kirtasiye: { loop: 'ic_oda', vol: 0.4 },
   banka: { loop: 'ic_oda', vol: 0.35 }, hastane: { loop: 'ic_hastane', vol: 0.45 }, acil: { loop: 'ic_hastane', vol: 0.4 },
   morg: { loop: 'ic_hastane', vol: 0.3 }, ev: { loop: 'ic_oda', vol: 0.3 },
+  // Martı AVM (2026-11-21): hol + yemek / tatlı dükkânları
+  avmHol: { loop: 'ic_avm', vol: 0.5 }, avm_seker: { loop: 'ic_kafe', vol: 0.4 }, avm_kahve: { loop: 'ic_kafe', vol: 0.45 }, avm_baklava: { loop: 'ic_kafe', vol: 0.4 },
+  avm_dondurma: { loop: 'ic_kafe', vol: 0.4 }, avm_kuruyemis: { loop: 'ic_avm', vol: 0.4 }, avm_doner: { loop: 'ic_lokanta', vol: 0.45 }, avm_kumpir: { loop: 'ic_lokanta', vol: 0.4 },
+  avm_midye: { loop: 'ic_lokanta', vol: 0.4 },
 };
 /** tablo imzası: değişmediyse kapıya yeniden verilmez */
 export const tabloImza = (t: Record<string, readonly KapiKatman[]>): string => Object.keys(t).sort().map(k => k + ':' + t[k].map(l => l.id).join(',')).join('|');

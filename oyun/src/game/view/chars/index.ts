@@ -102,7 +102,7 @@ export function createChars(deps: CharsDeps): MotorChars {
     let lastX = NaN, lastZ = NaN, velX = 0, velZ = 0, accX = 0, accZ = 0, sipT = 0;
     const h: MotorHero = {
       object, animator: animator as Animator, rig,
-      setPose(p: Vec2, rotY: number) { object.position.set(p.x, kind === 'hero' && onUg(p.x, p.z) ? ugY(p.x, p.z) : object.position.y, p.z); object.rotation.y = rotY; },
+      setPose(p: Vec2 & { y?: number }, rotY: number) { object.position.set(p.x, kind === 'hero' && onUg(p.x, p.z) ? ugY(p.x, p.z) : kind === 'hero' && p.y !== undefined ? p.y : object.position.y, p.z); object.rotation.y = rotY; },
       setInput(i) { Object.assign(inp, i); },
       setState(s) { extra = s; },
       setExpr(e: ExprId, brow?: BrowId) { if (rig.setFace) rig.setFace(EXPR_ORDER.indexOf(e), brow); },

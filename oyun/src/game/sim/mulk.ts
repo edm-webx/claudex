@@ -10,6 +10,7 @@
  *   arsa: arsaAl id | arsaKur id tur tip | yukselt id | evAc id
  *   stadyum (near the gate): bilet | takim name
  */
+import { installAvmKareler } from './avm-kareler';
 import { stadSave, tahminDoluluk, fiyatAyarla, FORMASYONLAR, KAPASITE, FIYAT_MIN, FIYAT_MAX } from './stadyum';
 import { odulluMacKaldi, ODULLU_MAC_GUNLUK } from './halisaha';
 import type { Kernel } from './state';
@@ -344,7 +345,7 @@ export function installMulk(K: Kernel) {
   (rt as Record<string, unknown>).kafeHost = kafeHost;
   const plotOf = (id: string): { a: Arsa; p: Plot | undefined } | null => { const a = ARSALAR.find(x => x.id === id); return a ? { a, p: arsa().plots[id] } : null; };
   /** at the door, or anywhere inside the business (2026-11-09: every building is enterable) */
-  const yakin = (ar: Arsa, extra = 0) => { if (dist(K.playerPos, arsaKapi(ar)) < KAPI_MENZIL + extra) return true; const m = icOfArsa(ar.id); return !!m && icIcinde(m, K.playerPos, -0.2); };
+  const yakin = (ar: Arsa, extra = 0) => { if ((ar.kat || 0) !== ((K.playerPos as { kat?: number }).kat || 0)) return false; if (dist(K.playerPos, arsaKapi(ar)) < KAPI_MENZIL + extra) return true; const m = icOfArsa(ar.id); return !!m && icIcinde(m, K.playerPos, -0.2); };
   const ownedN = () => ARSALAR.filter(a => !a.sabit && arsa().plots[a.id]).length;
   /** the plot the player is at: the room they stand in first, else the nearest door in reach (AVM doors are only 3.9 m apart) */
   const yakinArsa = (extra: number, sadeceSahip = false): Arsa | undefined => {
@@ -447,6 +448,8 @@ export function installMulk(K: Kernel) {
     K.spend(STADYUM.takim); a.takim = { ad, renk: HEX.test(r1 || '') ? r1! : '#e0533c', renk2: HEX.test(r2 || '') ? r2! : '#f2c230', arma: ARMALAR.includes(arma || '') ? arma : '🦅', kurulus: S.day }; K.toast('⚽ ' + ad + ' kuruldu!', 'good'); K.addXP(60); K.saveNow();
   }
 
+  // Martı AVM: dükkân satın alma ve alet kurma büfedeki gibi sarı karelerle (avm-kareler.ts)
+  const avmKare = installAvmKareler(K, { arsaAl, kafeEsya, plot: id => arsa().plots[id] as never });
   // ── tick: board roll, shops, level-up chests, collecting tills ──
   let acc = 0, lastLevel = S.level;
   K.addSystem({
@@ -456,6 +459,7 @@ export function installMulk(K: Kernel) {
       kafeHost.fp = kt.on; ktStep(ctx.dt);
       acc += ctx.dt; if (acc < 0.25) return;
       const dt = acc; acc = 0;
+      avmKare.sync();
       const e = env(); if (e.gunluk.gun !== S.day) { rollBoard(S.day); faizGun(); }
       if (S.level > lastLevel) { for (let l = lastLevel; l < S.level; l++) onStat('seviye', 1); }
       lastLevel = S.level;
@@ -499,6 +503,7 @@ export function installMulk(K: Kernel) {
       case 'izle': if (!nearGate()) { K.toast('Maçı izlemek için halı saha girişine git.', 'info'); break; } K.command({ kind: 'halisaha', op: 'izle', bahis: c.bahis, n: Number(c.n) || 0 } as never); break;
       // yönetici paneli (2026-11-08): kafe seviyesi / işçi / kulüp, kapı ve para şartı yok
       case 'adminKafe': { const q = plotOf(id); if (!q || !q.a.sabit) break; const lv = Math.max(0, Math.min(DUKKAN_MAX_SEVIYE, Math.round(n || 0))); if (!lv) delete arsa().plots[id]; else { q.p ? (q.p.lv = lv, delete q.p.tadilat) : (arsa().plots[id] = { tur: 'dukkan', tip: q.a.sabit, lv, till: 0, sat: 0, fr: 0, isci: 0 }); } K.saveNow(); break; }
+      case 'adminEsya': { const q = plotOf(id); if (q?.p && q.a.sabit) { q.p.esya = isletmeOf(id).esya.filter(e => e.lv <= q.p!.lv).map(e => e.id); K.saveNow(); } break; }   // admin / screenshot: every tool its level allows
       case 'adminIsci': { const q = plotOf(id); if (q?.p && q.a.sabit) { const kad = kadroOf(q.a, q.p); if (kad.length < isciMaxOf(q.a, q.p)) { const k = yeniKisi(rng, ARSA_ISLETME[q.a.id], q.p.lv); kad.push({ id: S.nextWid++, ad: k.ad, rol: k.r.rol, huy: k.huy, look: k.look, xp: 0, gun: S.day }); kadroSync(q.p); } K.saveNow(); } break; }
       case 'adminTakim': { const a = arsa(); if (!a.takim) { a.takim = { ad: String(c.name ?? '').replace(/[<>]/g, '').trim().slice(0, 16) || 'Martıköy Spor', renk: '#2f7fb3', renk2: '#ffd23f', kurulus: S.day }; K.saveNow(); } break; }
       case 'biletFiyat': { const a = arsa(); if (!a.takim) { K.toast('Önce kulüp kurmalısın.', 'info'); break; } fiyatAyarla(stadSave(a as never), n || Number(c.n) || 0); K.saveNow(); break; }

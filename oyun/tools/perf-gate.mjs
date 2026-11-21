@@ -37,7 +37,7 @@ let chromium; try { ({ chromium } = require('playwright')); } catch { ({ chromiu
 // ── yürüyüş rotası (koordinatlar oyun içeriğinden: büfe başlangıcı, kafe/AVM kapıları, halı saha kapısı, orman durağı)
 const ROTA = [
   ['iskele', 0, -8], ['bufe-ici', 0.2, -2.6], ['hali-saha', 399, 12.2], ['orman', 806, 9],
-  ['karsi-yaka', -30, 45], ['avm-ici', 18.5, 49.2],
+  ['karsi-yaka', -30, 45], ['avm-ici', 1200.15, 46.0],
 ];
 
 const mime = { '.js': 'text/javascript', '.html': 'text/html; charset=utf-8', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.json': 'application/json', '.glb': 'model/gltf-binary' };
