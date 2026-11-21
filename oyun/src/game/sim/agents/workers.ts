@@ -319,7 +319,12 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
     if (rt.state === 'idle') {
       if (rt.wk.walk(dt, speed)) { a.act = 'walk'; return; }
       const d = host.dirtyTables().filter((t) => !claimed(t.index, rt));
-      if (d.length) { rt.job = { index: d[0].index }; rt.state = 'toClean'; rt.wk.goTo(d[0]); return; }
+      if (d.length) {
+        // BUF-28: eskiden hep ilk (en düşük index) masa seçiliyordu: yüksek index'li kanat masaları yoğunlukta 200 sn+ kirli kalıyordu. Şimdi 45 sn'i geçen en eski masa, yoksa en yakın masa.
+        const eski = d.filter((t) => (t.age || 0) > 45).sort((p, q) => (q.age || 0) - (p.age || 0))[0];
+        const pick = eski || d.reduce((b, t) => (Math.hypot(t.x - a.x, t.z - a.z) < Math.hypot(b.x - a.x, b.z - a.z) ? t : b));
+        rt.job = { index: pick.index }; rt.state = 'toClean'; rt.wk.goTo(pick); return;
+      }
       // 2026-10-24 user: "dükkanın içi kirli duruyor, temizlikçi paspas atsın": with tables clean, mop the kiosk floor
       if (zeminSave(S as unknown as { zones: Record<string, Record<string, unknown>> }).kir > 0.2) { rt.state = 'mop'; rt.t = 0; rt.loadT = 0; rt.jobKey = '0'; say(rt, rng.pick(['Paspas zamanı!', 'Basmayın, ıslak!', 'Pırıl pırıl olacak.']), 2.2); return; }
       // BUF-13: kiosk is clean: the kitchen floor (dirt from cooks and dishwashers, zemin.ts mutfakKir) is mopped next
@@ -426,8 +431,10 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
   const acikSef = (rt: WRt, S: GameState) => (S.stage || 1) >= 9 && rows.find((x) => x.w.role === 'sef') === rt;
   const komiVar = () => rows.some((x) => x.w.role === 'komi');
   const kStand = (ist: string) => mutfakStand(ist);
-  const sefSay = (rt: WRt) => {   // şef pasoda: her tabak pass'a konunca seslenir
-    const s = rows.find((x) => x.w.role === 'sef'); if (!s) return;
+  let sefSira = 0;
+  const sefSay = (rt: WRt) => {   // şef pasoda: her tabak pass'a konunca seslenir (BUF-28: iki şef varsa sırayla, ikinci şef boş durmasın)
+    const sefler = rows.filter((x) => x.w.role === 'sef'); if (!sefler.length) return;
+    const s = sefler[sefSira++ % sefler.length];
     say(s, rng.pick(['Servis!', 'Sıcak tabak, servis!', 'Pass, servis lütfen!', 'Tabak hazır, alın!']), 1.8); void rt;
   };
   function kTake(rt: WRt, opt: { kendi?: boolean; yas?: number }): boolean {   // carry duty: reserve a tray plate, walk to its station

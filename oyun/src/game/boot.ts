@@ -578,10 +578,17 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
 
   // ── per-frame guarded calls
   const strikes = new Map<string, number>();
+  const gAgg = new Map<string, { n: number; sum: number; max: number }>();   // BUF-29: perfRecord açıkken her kare parçasının süresi (kapalıyken sıfır maliyet); hook 'perfGuard' okur
   const guard = (name: string, fn: () => void) => {
     const s = strikes.get(name) ?? 0;
     if (s >= 3) return;
-    try { fn(); } catch (e) {
+    try {
+      if (P.recording) {
+        const t0 = platform.clock.now(); fn(); const d = platform.clock.now() - t0;
+        let a = gAgg.get(name); if (!a) gAgg.set(name, a = { n: 0, sum: 0, max: 0 });
+        a.n++; a.sum += d; if (d > a.max) a.max = d;
+      } else fn();
+    } catch (e) {
       strikes.set(name, s + 1);
       log.error(`frame part ${name} threw`, e);
       if (s + 1 >= 3) P.warn(`Kapandı: ${name}`);
@@ -875,6 +882,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   reg('perfReport', () => P.report());
   reg('perfRecord', (on = true) => { P.record(!!on); return P.recording; });
   reg('perfDump', () => P.dump());
+  reg('perfGuard', (reset = false) => { const o: Record<string, { n: number; ms: number; max: number }> = {}; for (const [k, a] of gAgg) o[k] = { n: a.n, ms: +(a.sum / Math.max(1, a.n)).toFixed(4), max: +a.max.toFixed(3) }; if (reset) gAgg.clear(); return o; });
   // PRF-02 kırmızı sınama: sahneyi bilerek şişirir (görünür mesh'leri, kendi geometrisiyle, ebeveynine kopyalar). Yalnız tools/perf-gate.mjs --sisir kullanır.
   reg('sisir', (n = 500) => {
     const src: AnyRec[] = []; R.scene.traverse((o0: Object3D) => { const o = o0 as unknown as AnyRec; if (o.isMesh && o.visible && o.geometry && o.parent) src.push(o); });

@@ -22,8 +22,8 @@ export function hostFromRules(r: Rules): AgentHost {
     openProducts: () => PRODUCT_IDS.filter((p) => rt.stations[p]?.built),
     tablesBuilt: () => rt.tables.filter((t) => t.built).length,
     dirtyTables: () => {
-      const out: { index: number; x: number; z: number }[] = [];
-      rt.tables.forEach((t, i) => { if (t.built && t.dirty > 0 && !masaCati(i)) { const l = rt.layout.tables[i]; out.push({ index: i, x: l.x, z: l.z }); } });   // BUF-20: çatı masası garsonun (temizlikçi merdivene çıkmaz)
+      const out: { index: number; x: number; z: number; age: number }[] = [];
+      rt.tables.forEach((t, i) => { if (t.built && t.dirty > 0 && !masaCati(i)) { const l = rt.layout.tables[i]; out.push({ index: i, x: l.x, z: l.z, age: t.dirtyT || 0 }); } });   // BUF-20: çatı masası garsonun (temizlikçi merdivene çıkmaz)
       return out;
     },
     cleanTable: (i) => { const t = rt.tables[i]; if (t && t.dirty > 0) { (rt as unknown as { bulasik?: { masaSilindi(i: number): void } }).bulasik?.masaSilindi(i); t.dirty = 0; t.dirtyT = 0; r.stat('cleaned'); } },
