@@ -47,7 +47,7 @@ export function installMantar(K: Kernel) {
         z.taken.push(m.i);
         const def = MANTARLAR.find(x => x.id === m.id)!;
         if ('zehir' in def && def.zehir) { K.toast('Sinek mantarı! Kırmızı, beyaz benekli: ZEHİRLİ. Sepete koymadın, iyi ki.', 'bad'); continue; }
-        z.toplam++; S.money += def.price; K.addXP(3); K.stat('mantar');
+        z.toplam++; K.credit!('orman', def.price); K.addXP(3); K.stat('mantar');
         const left = items.length - 1;
         K.toast('🍄 ' + def.name + ' buldun! Ormancı Hüsnü aldı: +' + fmtMoney(def.price) + (left > 0 ? ' · ormanda ' + left + ' mantar daha var' : ' · bugünlük bitti, yarın yine gel'), 'good');
       }

@@ -34,7 +34,7 @@ export function installOffline(K: Kernel) {
     if (!pending) return;
     const v = pending.amount * (doubled ? 2 : 1); pending = null;
     rt.paused = false; rt.pauseWhy = ''; delete rt.uiLast.welcomeBack;
-    S.money += v; K.toast(LINES.welcome + ' +' + fmtMoney(v), 'good'); K.logEv('welcomeCollect', { doubled: !!doubled, v });
+    K.credit!('diger', v); K.toast(LINES.welcome + ' +' + fmtMoney(v), 'good'); K.logEv('welcomeCollect', { doubled: !!doubled, v });
     K.saveNow();
   }
   return { welcome, collect, idleRatePerMin, isPending: () => !!pending };

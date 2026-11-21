@@ -24,7 +24,7 @@ export type HeroId = 'sabri' | 'sabriye';
 export interface WorkerSave { id: number; name: string; role: string; xp: number; morale: number; traits: string[]; rarity?: string; [k: string]: unknown; }
 export interface CatSave { id: string; name?: string; trust?: number; [k: string]: unknown; }
 export interface DecorSlotSave { slot: string; item: string; rotY?: number; paint?: { material?: string; color?: string; pattern?: string; shape?: string }; [k: string]: unknown; }
-export interface TodaySave { earned: number; customers: number; angry: number; served: number; waitFrac: number; dirtyT: number; slow: Record<string, number>; sets: number; }
+export interface TodaySave { earned: number; customers: number; angry: number; served: number; waitFrac: number; dirtyT: number; slow: Record<string, number>; sets: number; /** EKO-02 gelir defteri: kaynak -> bugünkü ₺ (eski kayıtta yok = boş) */ src?: Record<string, number>; }
 export interface PlayerSave { zone: string; x: number; z: number; rot: number; }
 export interface CitizenSave { id: number; typeId: string; seed: number; home: string; job: string; schedule: string; zone: string; x: number; z: number; }
 export interface SettingsSave {

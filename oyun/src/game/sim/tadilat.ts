@@ -23,7 +23,7 @@ export function installTadilat(K: Kernel) {
     const t = S.tadilat as unknown as Tad; const to = t.to; S.tadilat = null;
     S.stage = to; S.renewed = [];
     (STAGE_TABLES[to] || []).forEach(i => K.setTableBuilt(i, true));
-    K.stat('tadilat'); K.addXP(P.XP.tadilat); S.gold += P.AS_TAD; S.money += 3000 * to;
+    K.stat('tadilat'); K.addXP(P.XP.tadilat); S.gold += P.AS_TAD; K.credit!('tadilat', 3000 * to);
     K.toast(LINES.tadilat.done + ' Artık: ' + KIOSK_STAGES[to - 1].short + '! Gelir ×' + P.TAD_TOTAL[to - 1] + (t.self ? ' (kendin kurdun, emeğin kazandı)' : ''), 'good');
     K.logEv('tadilatDone', { stage: to });
     K.bus.emit('stage', { stage: to });

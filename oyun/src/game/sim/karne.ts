@@ -34,7 +34,7 @@ export function installKarne(K: Kernel) {
     for (const g of GRADES) S.grades[g.id] = Math.max(S.grades[g.id] || 1, grade5(sc[g.id]));
     const st = starsFor(starReport());
     if (st > S.stars) {
-      for (let s = S.stars + 1; s <= st; s++) { S.gold += P.AS_STAR; S.money += 1500 * S.stage; K.addXP(P.XP.star); }
+      for (let s = S.stars + 1; s <= st; s++) { S.gold += P.AS_STAR; K.credit!('yildiz', 1500 * S.stage); K.addXP(P.XP.star); }
       S.stars = st; K.statMax('stars', st);
       K.toast('★ ' + st + '. yıldız! Büfe karnesi parlıyor.', 'good'); K.logEv('star', { stars: st });
     }
@@ -53,7 +53,7 @@ export function installKarne(K: Kernel) {
     const tr = TROPHIES[(week - 1) % TROPHIES.length];
     const total = Math.round(S.week.earned || 0);
     K.logEv('kasaStart', { week, total, bonus });
-    if (S.level < 7) { (K.earnTam || K.earn)(bonus); K.toast('Hafta bitti! Kasa: ' + fmtMoney(total) + ', bonus ' + fmtMoney(bonus), 'good'); S.week = { earned: 0, customers: 0 }; K.stat('kasaCount'); return; }
+    if (S.level < 7) { K.credit!('gorev', bonus); K.toast('Hafta bitti! Kasa: ' + fmtMoney(total) + ', bonus ' + fmtMoney(bonus), 'good'); S.week = { earned: 0, customers: 0 }; K.stat('kasaCount'); return; }
     kasaBekle = { week, total, bonus, trophy: { id: tr.id, name: tr.name } };
     // Gün sonu kartı açıkken kasa sayımı üst üste binmesin: kart kapanınca (yeniGun) başlar.
     if (rt.pauseWhy !== 'gunSonu') baslatKasa();
@@ -68,7 +68,7 @@ export function installKarne(K: Kernel) {
   function finishKasa(): void {
     if (!kasa) return;
     const k = kasa; kasa = null; rt.paused = false; rt.pauseWhy = ''; delete rt.uiLast.kasaSayimi;
-    S.money += k.bonus; S.gold += P.AS_WEEKLY; K.stat('kasaCount');
+    K.credit!('gorev', k.bonus); S.gold += P.AS_WEEKLY; K.stat('kasaCount');
     S.week = { earned: 0, customers: 0 };
     K.toast('Kasa sayıldı! Bonus ' + fmtMoney(k.bonus) + ' ve ' + P.AS_WEEKLY + ' Altın Simit. Kupa: ' + k.trophy.name, 'good');
     K.logEv('kasaDone', { week: k.week, bonus: k.bonus });
@@ -81,7 +81,7 @@ export function installKarne(K: Kernel) {
       const team = TEAMS.find(t => t.id === fan.team) || TEAMS[0];
       K.toast(S.teamWin ? team.name + ' kazandı! ' + fan.name + ' bugün %30 hızlı.' : team.name + ' berabere kaldı. ' + fan.name + ' biraz dalgın.', 'info');
     }
-    if (S.owedBack > 0) { const v = S.owedBack; S.owedBack = 0; K.earn(v); K.toast('Kapkaççı geri geldi: "Tamam abi, getirdim."', 'good'); }
+    if (S.owedBack > 0) { const v = S.owedBack; S.owedBack = 0; K.credit!('diger', v); K.toast('Kapkaççı geri geldi: "Tamam abi, getirdim."', 'good'); }
     K.syncOrders();
   }
   function endDay(): void {
@@ -94,7 +94,7 @@ export function installKarne(K: Kernel) {
     // day starts behind it (morning) and the sim waits until the player presses "Yeni güne başla".
     const best = rt.dayHistory.reduce((m, d) => Math.max(m, d.earned), 0);
     if ((rt as unknown as { gunSonuCard?: boolean }).gunSonuCard) {
-    rt.uiLast.gunSonu = { day, earned: Math.round(T0.earned), customers: T0.customers, angry: T0.angry, money: Math.round(S.money), record: Math.round(T0.earned) > best && day > 1, maas, ekip, sold: { ...((T0 as unknown as { sold?: Record<string, number> }).sold || {}) }, borc: Math.floor((S.zones.arsa as { kredi?: { borc?: number } } | undefined)?.kredi?.borc || 0) };
+    rt.uiLast.gunSonu = { day, earned: Math.round(T0.earned), customers: T0.customers, angry: T0.angry, money: Math.round(S.money), record: Math.round(T0.earned) > best && day > 1, maas, ekip, sold: { ...((T0 as unknown as { sold?: Record<string, number> }).sold || {}) }, borc: Math.floor((S.zones.arsa as { kredi?: { borc?: number } } | undefined)?.kredi?.borc || 0), src: { ...(T0.src || {}) } };
     rt.paused = true; rt.pauseWhy = 'gunSonu';
     }
     K.logEv('dayEnd', { day, customers: T0.customers, earned: Math.round(T0.earned), angry: T0.angry, money: Math.round(S.money), link });

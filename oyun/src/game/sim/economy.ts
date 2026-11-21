@@ -5,7 +5,7 @@
  */
 import { P, TIP_FRAC, decorKeyif } from '../../content/economy';
 import { yetenekFxOf } from './yetenek';
-import { MALIYET, BONUS_MIN, BONUS_FRAC } from '../../content/ekonomi2';
+import { MALIYET, BONUS_MIN, BONUS_FRAC, KAYNAKLAR, fmtTL } from '../../content/ekonomi2';
 import { price } from '../../content/products';
 import { RANKS, rankOf } from '../../content/ranks';
 import { TRAITS } from '../../content/traits';
@@ -18,23 +18,43 @@ import { streakStep, streakMult } from './streak';
 import { setHit } from './sets';
 import { yatirimFx } from './yatirim';
 
-export function installEconomy(K: Kernel, addMoneyTo: (pile: MoneyStack[], v: number) => void): { sales: SalesApi; settleSale(c: Customer | null, items: Item[], opts?: { direct?: boolean; at?: Vec2 }): number; tipMult(): number; earn(v: number, at?: Vec2): number; earnTam(v: number): void; incomePerMin(): number } {
+export function installEconomy(K: Kernel, addMoneyTo: (pile: MoneyStack[], v: number) => void): { sales: SalesApi; settleSale(c: Customer | null, items: Item[], opts?: { direct?: boolean; at?: Vec2 }): number; tipMult(): number; earn(v: number, at?: Vec2): number; earnTam(v: number, kaynak?: string): void; credit(kaynak: string, tutar: number, o?: { tavanli?: boolean; at?: Vec2 }): number; book(kaynak: string, tutar: number): void; cashIn(tutar: number): void; incomePerMin(): number } {
   const rt = K.rt, S = K.state;
   const itemValue = (it: Item): number => price(it.type, it.tier || S.tiers[it.type] || 1) * (it.priceX || 1);
-  const pay = (v: number) => {
-    S.money += v; S.today!.earned += v; S.week.earned += v; S.totalEarned += v; rt.incomeWin.push([S.playT, v]);
-    K.statMax('moneyMax', S.money);
+  // EKO-02: tek gelir kapısı. Para kaynağı ne olursa olsun deftere (S.today.src, S.stats.kaynak_*) ve S.today/S.week/totalEarned/gelir penceresine buradan yazılır.
+  const bilinen = new Set<string>(KAYNAKLAR);
+  // Gelir penceresi (incomePerMin) yalnız düzenli işten beslenir: ödül, sandık, hedef, faiz gibi tek seferlik paralar pencereye girmez.
+  // Yoksa "dakikalık gelir x dakika" ile ödenen ödüller kendi kendini büyütür (gelir gelir doğurur).
+  const duzenli = new Set<string>(['tezgah', 'adisyon', 'bahsis', 'salon', 'isletme']);
+  const book = (kaynak: string, v: number) => {
+    if (!(v > 0)) return;
+    const k = bilinen.has(kaynak) ? kaynak : 'diger', t = S.today!;
+    S.today!.earned += v; S.week.earned += v; S.totalEarned += v; if (duzenli.has(k)) rt.incomeWin.push([S.playT, v]);
+    const src = (t.src ||= {}); src[k] = (src[k] || 0) + v;
+    S.stats['kaynak_' + k] = (S.stats['kaynak_' + k] || 0) + v;
   };
-  // Faz 2: side income (anything that isn't a counter sale or a tip) is a faucet capped per game day
-  const T = () => S.today as unknown as { sales?: number; bonus?: number; cost?: number };
-  const earn = (v: number, _at?: Vec2): number => {
-    v = Math.max(0, Math.round(v)); if (!v) return 0;
-    const t = T(), cap = Math.max(BONUS_MIN, BONUS_FRAC * (t.sales || 0));
-    v = Math.min(v, Math.max(0, Math.round(cap - (t.bonus || 0)))); if (!v) return 0;
-    t.bonus = (t.bonus || 0) + v;
-    pay(v);
+  const cashIn = (v: number) => { if (!(v > 0)) return; S.money += v; K.statMax('moneyMax', S.money); };
+  const pay = (v: number, kaynak = 'tezgah') => { S.money += v; book(kaynak, v); K.statMax('moneyMax', S.money); };
+  // Yan gelir tavanı yalnız rastgele küçük bonuslara: max(600, %10 x günlük hedef geliri), dünden devreden pay ile.
+  const T = () => S.today as unknown as { sales?: number; bonus?: number; cost?: number; bonusDoldu?: boolean };
+  const bonusTavan = (): number => {
+    const t = T(), dun = rt.dayHistory.length ? rt.dayHistory[rt.dayHistory.length - 1].earned : 0;
+    const hedef = Math.max(dun, t.sales || 0), tavan = Math.max(BONUS_MIN, BONUS_FRAC * hedef);
+    return tavan + Math.min(tavan, Math.max(0, S.stats.bonusDevir || 0));
+  };
+  const credit = (kaynak: string, tutar: number, o: { tavanli?: boolean; at?: Vec2 } = {}): number => {
+    let v = Math.max(0, Math.round(tutar)); if (!v) return 0;
+    if (o.tavanli) {
+      const t = T(), kalan = Math.max(0, Math.round(bonusTavan() - (t.bonus || 0)));
+      if (v > kalan) { v = kalan; if (!t.bonusDoldu) { t.bonusDoldu = true; K.toast('Bugünlük bonus doldu.', 'info'); } }
+      if (!v) return 0;
+      t.bonus = (t.bonus || 0) + v;
+    }
+    pay(v, kaynak);
     return v;   // toast'lar kırpılmış tutarı yazsın
   };
+  K.bus.on('dayEnd', () => { const t = T(); S.stats.bonusDevir = Math.max(0, Math.round(bonusTavan() - (t.bonus || 0))); });
+  const earn = (v: number, at?: Vec2): number => credit('diger', v, { tavanli: true, at });
   /** Ingredients of the sold items (₺), paid out of the sale. */
   const costOf = (items: Item[]) => items.reduce((s, it) => s + itemValue(it) * (MALIYET[it.type] ?? 0.4), 0) * (1 - yatirimFx(S, 'hammadde'));
   function settleSale(c: Customer | null, items: Item[], opts: { direct?: boolean; at?: Vec2 } = {}): number {
@@ -69,8 +89,8 @@ export function installEconomy(K: Kernel, addMoneyTo: (pile: MoneyStack[], v: nu
     if (c && c.calm) K.stat('chatCalm');
     if (c && c.typeId === 'emekli' && (c.order.cay || 0) >= 3) K.statMax('emekli3', 1);
     K.addXP(1);
-    if (opts.direct) pay(value);
-    else { addMoneyTo(rt.kasa, value); S.today!.earned += value; S.week.earned += value; S.totalEarned += value; rt.incomeWin.push([S.playT, value]); }
+    if (opts.direct) pay(value, 'tezgah');
+    else { addMoneyTo(rt.kasa, value); book('tezgah', value); }
     K.logEv('sale', { value, n: items.length, streak: rt.streak, kind: c ? c.kind : '-' });
     return value;
   }
@@ -89,6 +109,6 @@ export function installEconomy(K: Kernel, addMoneyTo: (pile: MoneyStack[], v: nu
     const span = Math.min(180, Math.max(30, S.playT));
     return sum / (span / 60);
   };
-  return { sales: { settle: (items, o) => settleSale(null, items, o), itemValue }, settleSale, tipMult, earn, earnTam: (v: number) => { v = Math.max(0, Math.round(v)); if (v) pay(v); }, incomePerMin };
-  void r1; void TIP_FRAC;
+  return { sales: { settle: (items, o) => settleSale(null, items, o), itemValue }, settleSale, tipMult, earn, earnTam: (v: number, kaynak = 'diger') => { credit(kaynak, v); }, credit, book, cashIn, incomePerMin };
+  void r1; void TIP_FRAC; void fmtTL;
 }

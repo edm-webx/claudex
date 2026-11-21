@@ -9,7 +9,7 @@ export function installAchievements(K: Kernel): { stat(k: string, n?: number): v
       if (a.stat !== k || S.ach[a.id]) continue;
       if ((S.stats[k] || 0) >= a.goal) {
         S.ach[a.id] = Math.round(S.playT);
-        S.gold += P.AS_ACH; if (S.level >= 3) S.money += 600 * S.stage; K.addXP(P.XP.ach);   // 2026-10-25 user: quests pay coins too
+        S.gold += P.AS_ACH; if (S.level >= 3) K.credit!('basarim', 600 * S.stage); K.addXP(P.XP.ach);   // 2026-10-25 user: quests pay coins too
         K.logEv('ach', { id: a.id, title: a.title, text: a.text, reward: '+' + P.AS_ACH + ' Altın Simit' + (S.level >= 3 ? ' + ' + 600 * S.stage + ' ₺' : '') });
       }
     }

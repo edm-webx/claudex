@@ -225,7 +225,7 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
     c.items.length = 0;
     if (t && tip > 0) {
       addMoneyTo(t.pile, tip);
-      S.today!.earned += tip; S.week.earned += tip; S.totalEarned += tip; rt.incomeWin.push([S.playT, tip]);
+      K.book!('bahsis', tip);
       t.dirty++;
       K.stat('tips'); K.logEv('tip', { tip });
     }

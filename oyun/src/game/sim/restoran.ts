@@ -126,7 +126,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     if (c.n >= 2 && rng.next() < ADISYON.fightChance) { tip *= 2; cu.say(c, rng.pick(ADISYON_LINES.fight), 2.5); K.stat('hesapKavgasi'); }
     else if (rng.next() < 0.1) cu.say(c, rng.pick(ADISYON_LINES.served), 2);
     const tb = rt.tables[t.table];
-    if (tb && tip > 0) { addMoneyTo(tb.pile, tip); S.today!.earned += tip; S.week.earned += tip; S.totalEarned += tip; rt.incomeWin.push([S.playT, tip]); K.stat('tips'); }
+    if (tb && tip > 0) { addMoneyTo(tb.pile, tip); K.book!('bahsis', tip); K.stat('tips'); }
     g.servis = clamp(g.servis * (1 - SERVIS.weight) + 5 * (1 - used * 0.8) * SERVIS.weight, 0, 5);
     c.value = 0; c.state = 'eat'; c.t = 0; c.eatT = rng.range(ADISYON.eat[0], ADISYON.eat[1]);
     K.stat('adisyon'); K.logEv('hesap', { value, tip, x: c.x, z: c.z });
@@ -157,7 +157,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
       if (rng.next() >= d.chance * busy) continue;
       g.stock[d.id]--; g.sold++;
       const v = d.price;
-      addMoneyTo(rt.kasa, v); S.today!.earned += v; S.week.earned += v; S.totalEarned += v; rt.incomeWin.push([S.playT, v]);
+      addMoneyTo(rt.kasa, v); K.book!('tezgah', v);
       const tt = S.today as unknown as { sales?: number }; tt.sales = (tt.sales || 0) + v;
       K.stat('stant_' + d.id); K.logEv('stantSale', { id: d.id, v });
       return; // one impulse per guest

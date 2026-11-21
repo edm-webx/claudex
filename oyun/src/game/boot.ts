@@ -454,7 +454,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
       earned: () => Number(sim.state.totalEarned) || 0,
       money: () => sim.state.money,
       setMoney: (n: number) => { sim.state.money = n; },
-      addKasa: (n: number, from: string) => { sim.state.money += n; sim.state.totalEarned += n; kasaToast += n; kasaFrom = from; },
+      addKasa: (n: number, from: string) => { sim.rules.credit!('diger', n); kasaToast += n; kasaFrom = from; },
       leave: () => { if (ownBackup) { sim.load(JSON.parse(ownBackup)); ownBackup = null; } guestWorld = false; },
     } })) : null;
   // 13:05 user: kullanıcı adı + şifre (giris.ts, net/supa.ts). A login pulls the newer cloud save; while signed in the

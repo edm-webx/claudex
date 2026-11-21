@@ -44,6 +44,8 @@ export interface Kosu {
   asamaDk: Record<number, number>; seviyeDk: Record<number, number>; ilkIsletmeDk: number | null; ilkIsletmeGun: number | null;
   gunler: { gun: number; kazanc: number; musteri: number }[];
   toplam: number; kaynak: { tezgah: number; salon: number; isletme: number; diger: number };
+  /** EKO-02 gelir defteri: kaynak kimliği -> koşu boyunca toplam ₺ (S.stats.kaynak_*), her kaynak ayrı satır */
+  defter: Record<string, number>;
 }
 
 const plots = (S: any): Record<string, any> => ((S.zones.arsa as any)?.plots) || {};
@@ -60,6 +62,9 @@ function holdingHamle(sim: any, S: any, rt: any): void {
   const tampon = 3000;
   if (S.money >= aday.fiyat + tampon) sim.command({ kind: 'mulk', op: 'arsaAl', id: aday.id });
 }
+
+/** S.stats.kaynak_* -> { kaynak: ₺ } (EKO-02 gelir defteri). */
+const defterOku = (S: any): Record<string, number> => Object.fromEntries(Object.entries(S.stats as Record<string, number>).filter(([k]) => k.startsWith('kaynak_')).map(([k, v]) => [k.slice(7), Math.round(v)]));
 
 export function kosu(o: { tohum?: number; saniye: number; strateji?: Strateji; holding?: boolean; adimS?: number }): Kosu {
   const tohum = o.tohum ?? 3, strateji = o.strateji ?? 'normal', holding = o.holding !== false, adimS = o.adimS ?? ADIM_S;
@@ -105,7 +110,7 @@ export function kosu(o: { tohum?: number; saniye: number; strateji?: Strateji; h
       prev = { toplam, tezgah: tezgahK, salon: salonT, isletme: isletmeK, gider: giderK, satis: satisK };
     }
   }
-  return { strateji, tohum, saniye: o.saniye, satirlar, asamaDk, seviyeDk, ilkIsletmeDk, ilkIsletmeGun, gunler, toplam: S.totalEarned, kaynak: top };
+  return { strateji, tohum, saniye: o.saniye, satirlar, asamaDk, seviyeDk, ilkIsletmeDk, ilkIsletmeGun, gunler, toplam: S.totalEarned, kaynak: top, defter: defterOku(S) };
 }
 
 /** Birden çok tohumun ortalaması: aynı dakikadaki satırlar toplanıp bölünür, aşama dakikaları ortalanır (varılmayanlar atlanır). */
@@ -120,7 +125,8 @@ export function ortalama(kosular: Kosu[]): Kosu {
   const kaynak = { tezgah: 0, salon: 0, isletme: 0, diger: 0 }; for (const k of kosular) for (const key of Object.keys(kaynak) as (keyof typeof kaynak)[]) kaynak[key] += k.kaynak[key] / n;
   return { strateji: ilk.strateji, tohum: -1, saniye: ilk.saniye, satirlar, asamaDk: ortMap('asamaDk'), seviyeDk: ortMap('seviyeDk'),
     ilkIsletmeDk: il.length ? Math.round(il.reduce((a, b) => a + b, 0) / il.length * 10) / 10 : null, ilkIsletmeGun: ig.length ? Math.round(ig.reduce((a, b) => a + b, 0) / ig.length) : null,
-    gunler: ilk.gunler, toplam: kosular.reduce((t, k) => t + k.toplam, 0) / n, kaynak };
+    gunler: ilk.gunler, toplam: kosular.reduce((t, k) => t + k.toplam, 0) / n, kaynak,
+    defter: Object.fromEntries([...new Set(kosular.flatMap(k => Object.keys(k.defter)))].map(key => [key, Math.round(kosular.reduce((t, k) => t + (k.defter[key] || 0), 0) / n)])) };
 }
 
 /** Kaynak payları (0..1) toplam kazancın içinde. */
@@ -194,6 +200,7 @@ export function tablo(k: Kosu): string {
   L.push('dk | gün | aşama | sev | cep | toplam | net/saat | tezgah/salon/işletme/diğer | işletme');
   for (const s of k.satirlar) if (s.dk % 15 === 0) L.push([s.dk, s.gun, s.asama, s.seviye, s.para, s.toplam, s.netSaat, [s.tezgah, s.salon, s.isletme, s.diger].join('/'), s.isletmeSayisi].join(' | '));
   L.push('aşama dk: ' + JSON.stringify(k.asamaDk) + ' | seviye dk: ' + JSON.stringify(k.seviyeDk) + ' | ilk işletme: ' + (k.ilkIsletmeDk === null ? 'yok' : k.ilkIsletmeDk + ' dk, ' + k.ilkIsletmeGun + '. gün'));
+  L.push('gelir defteri (kaynak: ₺): ' + Object.entries(k.defter).sort((a, b) => b[1] - a[1]).map(([a, v]) => a + ' ' + v.toLocaleString('tr')).join(' | '));
   return L.join('\n');
 }
 export function egriHtml(kosular: Kosu[], baslik = 'Ekonomi eğrisi'): string {

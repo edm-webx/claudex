@@ -145,7 +145,7 @@ export function createRules(d: RulesDeps): RulesFull {
   const mo = installMoney(K);
   K.moneyApi = mo.api;
   const ec = installEconomy(K, mo.addMoneyTo);
-  K.salesApi = ec.sales; K.earn = ec.earn; K.earnTam = ec.earnTam; K.incomePerMin = ec.incomePerMin;
+  K.salesApi = ec.sales; K.earn = ec.earn; K.earnTam = ec.earnTam; K.credit = ec.credit; K.book = ec.book; K.cashIn = ec.cashIn; K.incomePerMin = ec.incomePerMin;
   const cu = installCustomers(K, ec.tipMult, mo.addMoneyTo, (c, items) => ec.settleSale(c, items));
   K.orderLeft = cu.orderLeft;
   const win = installWindow(K, cu, (c, items, o) => ec.settleSale(c, items, o));
@@ -373,7 +373,7 @@ export function createRules(d: RulesDeps): RulesFull {
         if (what === 'ferry') fe.force(v);
         else if (what === 'endDay') S.dayT = P.GAME_DAY_S - 0.05;
         else if (what === 'day') S.day = Math.max(S.day, Number(v) || 1);
-        else if (what === 'money') S.money += Number(v) || 0;
+        else if (what === 'money') K.cashIn!(Number(v) || 0);   // yönetici: gelir değil, cep girişi
         else if (what === 'gold') S.gold += Number(v) || 0;
         else if (what === 'tadilatBitir') { const t = S.tadilat as unknown as { left: number } | null; if (t) t.left = 0; }
         else if (what === 'level') S.level = Math.max(S.level, Number(v) || 1);

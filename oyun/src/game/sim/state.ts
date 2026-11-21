@@ -116,7 +116,13 @@ export interface Rules {
   /** günlük yan gelir tavanına tabi; gerçekten ödenen tutarı döndürür (tavan kırpabilir) */
   earn(v: number, at?: Vec2): number;
   /** 2026-11-08: prize / bet payout that is not a side-income faucet, so it skips the daily bonus cap (match prizes were cut to 250 ₺). */
-  earnTam?(v: number): void;
+  earnTam?(v: number, kaynak?: string): void;
+  /** EKO-02: tek gelir kapısı. Gelir defterine (S.today.src, S.stats.kaynak_*), S.today/S.week/totalEarned ve gelir penceresine yazar, cebe gerçekten ödenen tutarı döndürür. tavanli: günlük yan gelir tavanına tabi. */
+  credit?(kaynak: string, tutar: number, o?: { tavanli?: boolean; at?: Vec2 }): number;
+  /** EKO-02: yalnız deftere yazar, cebe dokunmaz (kasa/masa yığınına düşen satış ve bahşiş: para sonra toplanınca cashIn ile cebe girer). */
+  book?(kaynak: string, tutar: number): void;
+  /** EKO-02: gelir OLMAYAN cep girişi (yerden para toplama, kasa toplama, bankadan çekme, kredi, iade, yönetici): deftere yazılmaz. */
+  cashIn?(tutar: number): void;
   /** `1 + ...` venue multiplier (stage, plaque, stars, şıklık). */
   venueMult(): number;
   /** Hour of day 8..24. */

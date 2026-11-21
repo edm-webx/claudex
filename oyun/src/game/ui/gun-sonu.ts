@@ -2,16 +2,17 @@
 // day's ciro shows, and "Yeni güne başla" starts the next morning. Reads rt.uiLast.gunSonu; writes only the
 // 'yeniGun' command. Code-made DOM, Turkish text, no images.
 import { PRODUCTS } from '../../content/products';
+import { KAYNAK_AD } from '../../content/ekonomi2';
 import type { Rules } from '../sim/state';
 import { fmtMoney } from '../sim/util';
 
 export interface GunSonuView { update(): void; dispose(): void }
-interface GunSonuModel { day: number; earned: number; customers: number; angry: number; money: number; record: boolean; maas?: number; ekip?: number; sold?: Record<string, number>; borc?: number }
+interface GunSonuModel { day: number; earned: number; customers: number; angry: number; money: number; record: boolean; maas?: number; ekip?: number; sold?: Record<string, number>; borc?: number; src?: Record<string, number> }
 
 const CSS = `
 .gs-wrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:auto;background:rgba(6,8,22,0);transition:background 1.6s ease;z-index:60}
 .gs-wrap.on{background:rgba(6,8,22,.92)}
-.gs-card{opacity:0;transform:translateY(18px) scale(.97);transition:opacity .8s ease 1.1s,transform .8s ease 1.1s;background:#fdf3e1;color:#3b2a20;border-radius:22px;border:4px solid #3b2a20;box-shadow:0 10px 0 #3b2a20;padding:22px 24px 20px;width:min(360px,calc(100vw - 32px));text-align:center;font-family:var(--body)}
+.gs-card{opacity:0;transform:translateY(18px) scale(.97);transition:opacity .8s ease 1.1s,transform .8s ease 1.1s;background:#fdf3e1;color:#3b2a20;border-radius:22px;border:4px solid #3b2a20;box-shadow:0 10px 0 #3b2a20;padding:22px 24px 20px;width:min(360px,calc(100vw - 32px));max-height:calc(100dvh - 24px);overflow-y:auto;text-align:center;font-family:var(--body)}
 .gs-wrap.on .gs-card{opacity:1;transform:none}
 .gs-moon{font-size:40px;line-height:1;margin-bottom:4px}
 .gs-h{font:900 26px/1.1 var(--disp);margin:2px 0 2px}
@@ -37,6 +38,9 @@ export function createGunSonu(deps: { root: HTMLElement; rules: () => Rules | nu
     const brut = Math.round(m.earned + (m.maas || 0) + (gider ? gider.malzeme : 0));
     close(); shownDay = m.day;
     const top = Object.entries(m.sold || {}).sort((a, b) => b[1] - a[1]).map(([k, n]) => [(PRODUCTS as Record<string, { name?: string }>)[k]?.name || k, n] as [string, number])[0];
+    // EKO-02: paranın nereden geldiği, kaynak kaynak (gelir defteri)
+    const kaynaklar = Object.entries(m.src || {}).filter(([, v]) => v >= 1).sort((a, b) => b[1] - a[1]).slice(0, 6);
+    const kaynakHtml = kaynaklar.length ? `<div class="gs-sub" style="margin:8px 0 2px;font-size:13px">Para nereden geldi</div>` + kaynaklar.map(([k, v]) => `<div class="gs-row" style="padding:4px 2px;font-size:14px"><span>${(KAYNAK_AD as Record<string, string>)[k] || k}</span><b>${fmtMoney(v)}</b></div>`).join('') : '';
     wrap = document.createElement('div'); wrap.className = 'gs-wrap';
     wrap.innerHTML = `<div class="gs-card"><div class="gs-moon">🌙</div><div class="gs-h">Kepenkler indi</div><div class="gs-sub">${m.day}. gün bitti. Saat 03:00, iskele sessiz.</div>
       <div class="gs-sub" style="margin:0">Günün cirosu (net)</div><div class="gs-ciro">${fmtMoney(m.earned)}</div>${m.record ? '<div class="gs-rec">Yeni rekor!</div>' : ''}
@@ -45,6 +49,7 @@ export function createGunSonu(deps: { root: HTMLElement; rules: () => Rules | nu
       ${top ? `<div class="gs-row"><span>En çok satan</span><b>${top[0]} (${top[1]} adet)</b></div>` : ''}
       ${m.ekip || gider ? `<div class="gs-sub" style="margin:2px 0 4px;font-size:13px">Brüt satış ${fmtMoney(brut)}${m.ekip ? ' − personel payı ' + fmtMoney(m.maas || 0) : ''}${gider && gider.malzeme ? ' − malzeme ' + fmtMoney(gider.malzeme) : ''} = ciro</div>` : ''}
       ${gider ? `<div class="gs-row"><span>Kira${eksik ? ' (kasa yetmedi)' : ''}</span><b>−${fmtMoney(kiraOd)}</b></div><div class="gs-row"><span>Faturalar (elektrik, su, tüp)</span><b>−${fmtMoney(faturaOd)}</b></div>` : ''}
+      ${kaynakHtml}
       <div class="gs-row"><span>Kasada</span><b>${fmtMoney(gider ? Math.round(deps.rules()?.state.money ?? m.money) : m.money)}</b></div>
       ${m.borc ? `<div class="gs-row"><span>Banka borcu (faiz işliyor)</span><b>${fmtMoney(m.borc)}</b></div>` : ''}
       <button class="gs-btn" type="button">Yeni güne başla ☀️</button></div>`;

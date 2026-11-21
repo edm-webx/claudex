@@ -41,7 +41,7 @@ export function installMoney(K: Kernel): { api: MoneyApi; addMoneyTo(pile: Money
         id, pos: { x, z }, radius: 0.6, kind: 'pickup', dwell: 0, passBy: true, canAct: () => rt.floor.includes(f),
         act: () => {
           const i = rt.floor.indexOf(f);
-          if (i >= 0) { rt.floor.splice(i, 1); S.money += f.value; K.stat('moneyMax', 0); K.statMax('moneyMax', S.money); }
+          if (i >= 0) { rt.floor.splice(i, 1); K.cashIn!(f.value); K.stat('moneyMax', 0); K.statMax('moneyMax', S.money); }
           K.interactions.unregister(id);
           return 'done';
         },
@@ -53,7 +53,7 @@ export function installMoney(K: Kernel): { api: MoneyApi; addMoneyTo(pile: Money
   const collect = (pile: MoneyStack[], n: number): number => {
     let got = 0;
     for (let i = 0; i < n && pile.length; i++) got += pile.shift()!.value;
-    if (got > 0) { S.money += got; if (!S.tut.firstCollect) { S.tut.firstCollect = 1; K.logEv('firstCollect'); } K.statMax('moneyMax', S.money); }
+    if (got > 0) { K.cashIn!(got); if (!S.tut.firstCollect) { S.tut.firstCollect = 1; K.logEv('firstCollect'); } K.statMax('moneyMax', S.money); }
     return got;
   };
   let reg = false;
