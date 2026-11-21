@@ -22,7 +22,7 @@ const shot = async (name, [x, z, cx, cz, zr, yi, tilt]) => {
 await p.evaluate(() => { const M = window.__marti; M.setTime(11); M.step(2); M.izgara(false); M.simCmd('money', 9e9); M.simCmd('level', 2); M.closeJobBoard?.(); M.closePanel?.(); });
 // A) satılık: kilitli (seviye 2) ve açık (seviye 6) satın alma kareleri
 await p.evaluate(() => { const M = window.__marti; M.simCmd('level', 6); M.step(1); });
-await p.evaluate(() => { const v = document.getElementById('sb-vig'); if (v) v.style.display = 'none'; const st = document.createElement('style'); st.textContent = '#sb-vig,.tut-dim{display:none!important}'; document.head.appendChild(st); });
+await p.evaluate(() => { const v = document.getElementById('sb-vig'); if (v) v.style.display = 'none'; const st = document.createElement('style'); st.textContent = '#sb-vig,#sbui{visibility:hidden!important}'; document.head.appendChild(st); });
 await shot('a-kafeler-satilik', [-5.5, 44.7, -8, 44.7, 2.4, 0, 0.85]);
 await shot('a-kirtasiye-kantin', [37, 30.4, 38, 31.5, 2.6, 0, 0.85]);
 await p.evaluate(() => { const M = window.__marti; M.simCmd('level', 20); try { M.simCmd('cmd', { kind: 'setStage', stage: 7 }); } catch { /* */ }

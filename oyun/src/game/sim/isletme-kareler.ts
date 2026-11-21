@@ -48,9 +48,9 @@ export const SOKAK_Y = 0.11;
 const DIS_YER: Record<string, Vec2[]> = {
   kafe1: [{ x: -7.0, z: 36.0 }, { x: -7.0, z: 39.8 }, { x: -7.0, z: 41.6 }],
   kafe2: [{ x: -7.0, z: 49.6 }, { x: -7.0, z: 53.4 }, { x: -7.0, z: 47.8 }],
-  // büfe salonları: önlerindeki çit ve saksı sırası kareyi örtüyordu; terasın yan kenarına (0 = kullanılmaz, salon satın alınmaz)
-  salonW: [{ x: -21.4, z: -6.2 }, { x: -13.8, z: -8.0 }, { x: -13.8, z: -6.2 }],
-  salonE: [{ x: 21.4, z: -6.2 }, { x: 11.8, z: -8.0 }, { x: 11.8, z: -6.2 }],
+  // büfe salonları: önlerindeki çit ve saksı sırası kareyi örtüyordu; E terasın yan kenarına, W (yanında büfe bahçesinin çiti var) terasın önüne (0 = kullanılmaz, salon satın alınmaz)
+  salonW: [{ x: -21.4, z: -6.2 }, { x: -19.4, z: -2.7 }, { x: -15.8, z: -2.7 }],
+  salonE: [{ x: 21.4, z: -6.2 }, { x: 11.8, z: -7.9 }, { x: 11.8, z: -6.1 }],
 };
 export function disKareYerleri(m: IcMekan, bos?: (p: Vec2) => boolean): Vec2[] {
   if (DIS_YER[m.id]) return DIS_YER[m.id];
