@@ -227,6 +227,34 @@ export function createDoga(kit: Kit, root: T.Group): Doga {
     o.position.set(x, 0.075, z); o.scale.set(6.6, 1, 6.6); o.updateMatrix(); iPool.setMatrixAt(i, o.matrix);
   });
   for (const im of [iPost, iHead, iBulb, iPool]) { im.castShadow = false; im.receiveShadow = false; im.frustumCulled = false; root.add(im); }
+  // tavşanlar: gün boyu çayırlarda sıçrayarak gezer (instanced, 4 adet); yaklaşınca kaçar
+  const rbM = M(new T.MeshStandardMaterial({ color: '#b9a58a', roughness: 0.95 }));
+  const rbTailM = M(new T.MeshStandardMaterial({ color: '#f4efe6', roughness: 1 }));
+  const rbBody = G(new T.SphereGeometry(0.12, 7, 5)); rbBody.scale(1.4, 0.95, 0.95); rbBody.translate(0, 0.14, 0);
+  const rbHead = G(new T.SphereGeometry(0.075, 7, 5)); rbHead.translate(0.17, 0.22, 0);
+  const rbEar = G(new T.CylinderGeometry(0.015, 0.025, 0.17, 5)); rbEar.rotateZ(-0.25); rbEar.translate(0.16, 0.36, 0);
+  const rbTail = G(new T.SphereGeometry(0.045, 6, 4)); rbTail.translate(-0.18, 0.18, 0);
+  const RB = 4, rbParts = [[rbBody, rbM], [rbHead, rbM], [rbEar, rbM], [rbTail, rbTailM]].map(([g, m]) => { const im = new T.InstancedMesh(g as T.BufferGeometry, m as T.Material, RB); im.frustumCulled = false; root.add(im); return im; });
+  const rbHome: [number, number][] = [[808, 15], [834, 13.8], [858, 15.6], [846, 5.5]];
+  const rbPos = rbHome.map(h0 => ({ x: h0[0], z: h0[1], vx: 0, vz: 0, hop: 0 }));
+  // geyikler: şafakta ve günbatımında çayırda otlar; yaklaşılırsa koşarak uzaklaşır, sonra geri döner
+  const dM = M(new T.MeshStandardMaterial({ color: '#9a6a3e', roughness: 0.9 })), dLegM = M(new T.MeshStandardMaterial({ color: '#6f4a2a', roughness: 0.9 })), dBellyM = M(new T.MeshStandardMaterial({ color: '#d9c7a0', roughness: 0.9 })), antM = M(new T.MeshStandardMaterial({ color: '#d8cdb4', roughness: 0.8 }));
+  const gyBody = G(new T.SphereGeometry(0.5, 9, 7)); gyBody.scale(1.55, 0.72, 0.62);
+  const dBelly = G(new T.SphereGeometry(0.4, 8, 6)); dBelly.scale(1.4, 0.5, 0.55);
+  const dNeck = G(new T.CylinderGeometry(0.09, 0.15, 0.62, 6)); const gyHead = G(new T.SphereGeometry(0.13, 8, 6)); gyHead.scale(1.5, 1, 0.85);
+  const dLeg = G(new T.CylinderGeometry(0.035, 0.05, 0.78, 5)); dLeg.translate(0, -0.39, 0);
+  const dAnt = G(new T.CylinderGeometry(0.012, 0.02, 0.4, 4));
+  const mkDeer = (ant: boolean) => {
+    const g = new T.Group(), part = (geo: T.BufferGeometry, mat: T.Material, x: number, y: number, z: number, rz = 0) => { const m = new T.Mesh(geo, mat); m.position.set(x, y, z); m.rotation.z = rz; m.castShadow = true; g.add(m); return m; };
+    part(gyBody, dM, 0, 0.95, 0); part(dBelly, dBellyM, 0.05, 0.82, 0);
+    const neck = new T.Group(); neck.position.set(0.62, 1.05, 0); g.add(neck);
+    const nm = new T.Mesh(dNeck, dM); nm.position.set(0.14, 0.26, 0); nm.rotation.z = -0.62; neck.add(nm);
+    const hd = new T.Mesh(gyHead, dM); hd.position.set(0.42, 0.52, 0); neck.add(hd);
+    if (ant) for (const sz of [-1, 1]) { const a = new T.Mesh(dAnt, antM); a.position.set(0.38, 0.78, sz * 0.07); a.rotation.set(sz * 0.5, 0, -0.3); neck.add(a); }
+    const legs = [[0.42, 0.14], [0.42, -0.14], [-0.42, 0.14], [-0.42, -0.14]].map(([lx, lz]) => part(dLeg, dLegM, lx, 0.82, lz));
+    g.visible = false; root.add(g); return { g, neck, legs };
+  };
+  const deer = [{ ...mkDeer(true), home: [822.5, 14.6] as [number, number], off: 0, away: [0, 0] as [number, number], t0: 0 }, { ...mkDeer(false), home: [825.2, 15.6] as [number, number], off: 0, away: [0, 0] as [number, number], t0: 1.7 }];
   const nearTrails = trees.filter(t => t.z > -5 && t.z < 23);
 
   let t = 0, shown = true;
@@ -285,6 +313,38 @@ export function createDoga(kit: Kit, root: T.Group): Doga {
         for (const m of sqParts) m.setMatrixAt(s, o.matrix);
       }
       for (const m of sqParts) m.instanceMatrix.needsUpdate = true;
+      // tavşanlar
+      const rbOn = h > 5.5 && h < 21;
+      rbPos.forEach((r, i) => {
+        const dx = p.x - r.x, dz = p.z - r.z, dh = Math.hypot(dx, dz);
+        if (r.hop <= 0) {   // yeni sıçrama: yakındaysa uzaklaş, değilse evin etrafında rastgele
+          if (dh < 3.2) { const k = 1 / Math.max(0.5, dh); r.vx = -dx * k * 2.6; r.vz = -dz * k * 2.6; r.hop = 0.45; }
+          else if (R(Math.floor(t * 0.4) + i * 31) < 0.12) { const a = R(Math.floor(t * 0.4) * 7 + i) * 6.28; r.vx = Math.cos(a) * 1.5; r.vz = Math.sin(a) * 1.5; r.hop = 0.5; }
+          else { r.vx = r.vz = 0; r.hop = 0; }
+          const hx = rbHome[i][0] - r.x, hz = rbHome[i][1] - r.z; if (Math.hypot(hx, hz) > 6 && r.hop > 0) { r.vx = hx * 0.3; r.vz = hz * 0.3; }
+        }
+        let y = 0; if (r.hop > 0) { r.hop -= dt; r.x += r.vx * dt; r.z += r.vz * dt; y = Math.sin(Math.max(0, r.hop) / 0.5 * Math.PI) * 0.22; if (r.hop <= 0) r.hop = r.vx || r.vz ? -0.5 - R(i + Math.floor(t)) * 1.5 : 0; }
+        else if (r.hop < 0) r.hop += dt;
+        const ok = rbOn && !onTrail(r.x, r.z, -0.2) && !inPond(r.x, r.z, 0.5);
+        o.position.set(r.x, y, r.z); o.rotation.set(0, -Math.atan2(r.vz || 0.001, r.vx || 1), 0); o.scale.setScalar(ok ? 1 : 0); o.updateMatrix();
+        for (const im of rbParts) im.setMatrixAt(i, o.matrix);
+      });
+      for (const im of rbParts) im.instanceMatrix.needsUpdate = true;
+      // geyikler
+      const dOn = (h >= 5.5 && h < 9.5) || (h >= 17 && h < 20.5);
+      for (const d of deer) {
+        d.g.visible = dOn && d.off < 40;
+        if (!d.g.visible) { d.off = 0; continue; }
+        const hx = d.home[0], hz = d.home[1], dx = p.x - (hx + d.away[0] * d.off), dz = p.z - (hz + d.away[1] * d.off), dh = Math.hypot(dx, dz);
+        if (dh < 6.5 && d.off < 25) { if (d.off === 0) { const k = 1 / Math.max(0.5, Math.hypot(hx - p.x, hz - p.z)); d.away = [(hx - p.x) * k, (hz - p.z) * k]; } d.off += dt * 6.5; }
+        else if (dh > 16 && d.off > 0) d.off = Math.max(0, d.off - dt * 1.2);
+        const run = d.off > 0 && dh < 16 ? 1 : 0, ph = t * (run ? 11 : 0) + d.t0;
+        const x = hx + d.away[0] * d.off, z = hz + d.away[1] * d.off;
+        d.g.position.set(x, 0, z); d.g.rotation.y = d.off > 0 ? -Math.atan2(d.away[1], d.away[0]) : -0.6 + Math.sin(t * 0.07 + d.t0) * 0.5;
+        d.g.position.y = run ? Math.abs(Math.sin(ph)) * 0.12 : 0;
+        d.neck.rotation.z = run ? 0.1 : (Math.sin(t * 0.35 + d.t0) > 0.15 ? 0.95 : 0.1) + Math.sin(t * 1.3 + d.t0) * 0.03;   // başı indirip otlar
+        d.legs.forEach((l, k) => { l.rotation.z = run ? Math.sin(ph + (k % 2 ? Math.PI : 0) + (k > 1 ? 0.8 : 0)) * 0.7 : 0; });
+      }
       // pond: ripples and ducks (paddling by day, asleep by the reeds at night)
       rings.forEach((m, i) => { const k = ((t * 0.35 + i / 3) % 1); m.scale.setScalar(0.2 + k * 1.3); (m.material as T.MeshLambertMaterial).opacity = 0.35 * (1 - k) * (0.15 + 0.85 * B.day); });
       ducks.forEach((dk, i) => {
