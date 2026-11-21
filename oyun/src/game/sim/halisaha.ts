@@ -22,11 +22,11 @@ export const MAC_ODUL = ODUL.anlik, KULUP_ODUL = ODUL.kulup;
 /** Spectator betting at the gate ("seyirciler izleyip ufak bahis yapabilir"): stake limits, bets per game day; odds come from the two sides' strength. */
 export const BAHIS = { min: 100, max: 5000, halfS: 60, gunluk: 10 };
 /**
- * Bet odds model, calibrated on the engine (1500 seeded izleMac runs, 2026-11-21): home win ~0.44 at equal strength and +1.1 per skill point of
- * difference, draw ~0.16, away the rest. KASA is the house share: every flat strategy returns about 0.88 per lira staked (tests/sim/bahis-oran.test.ts
+ * Bet odds model, calibrated on the engine (3000 seeded izleMac runs, refit 2026-11-21): home win ~0.40 at equal strength and +0.6 per skill point of
+ * difference, draw ~0.22, away the rest. KASA is the house share: every flat strategy returns about 0.84 per lira (0.88 fits the 3000-run mean, but 400-seed samples scatter by +-0.06, so the extra margin keeps the test stable) staked (tests/sim/bahis-oran.test.ts
  * keeps each of '1', 'X', '2' under 1.0, so an engine change that shifts the real frequencies fails there before it becomes a money printer).
  */
-export const BAHIS_MODEL = { ev0: 0.44, egim: 1.1, pD: 0.16, pMin: 0.2, pMax: 0.7, KASA: 0.88 } as const;
+export const BAHIS_MODEL = { ev0: 0.40, egim: 0.6, pD: 0.22, pMin: 0.2, pMax: 0.7, KASA: 0.84 } as const;
 /** Max rewarded halı saha matches (ticket or club) per game day: prize money, gold, gate receipts and the match chests stop after this; later ones are friendlies. */
 export const ODULLU_MAC_GUNLUK = 2;
 /** Rewarded matches still open today (also read by mulk.ts: past the cap the ticket is free, the match is a friendly). */

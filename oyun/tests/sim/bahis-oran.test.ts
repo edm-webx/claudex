@@ -1,5 +1,5 @@
 // Bahis oranları motorla tutarlı mı: her düz stratejinin (hep '1', hep 'X', hep '2') geri dönüşü 1'in altında kalmalı.
-// Maç motoru değişip gerçek sıklıklar kayarsa burası kırılır: BAHIS_MODEL (sim/halisaha.ts) yeniden ölçülmeli (1500 tohumla ölçüm: 0,86 / 0,90 / 0,91).
+// Maç motoru değişip gerçek sıklıklar kayarsa burası kırılır: BAHIS_MODEL (sim/halisaha.ts) yeniden ölçülmeli (3000 tohumla ölçüm: 0,82 / 0,82 / 0,84).
 import { it, expect } from 'vitest';
 import { izleMac } from '../../src/game/sim/halisaha';
 
