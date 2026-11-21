@@ -128,7 +128,7 @@ export const AGENT_SCHEMA = {
 export type AgentField = keyof typeof AGENT_SCHEMA;
 
 export const GAIT_ORDER = ['normal', 'waddle', 'brisk', 'slow', 'shuffle', 'kid', 'run'] as const;
-export const ACT_ORDER = ['none', 'idle', 'walk', 'carry', 'cut', 'pour', 'serve', 'sit', 'sip', 'eat', 'wave', 'sleep', 'sweep', 'phone', 'grab', 'cheer', 'perform', 'dance', 'fish', 'read', 'walkdog', 'jog'] as const;   // DNY-02: sona ekleme
+export const ACT_ORDER = ['none', 'idle', 'walk', 'carry', 'cut', 'pour', 'serve', 'sit', 'sip', 'eat', 'wave', 'sleep', 'sweep', 'phone', 'grab', 'cheer', 'perform', 'dance', 'fish', 'read', 'walkdog', 'jog', 'play'] as const;   // DNY-02: sona ekleme
 export const MOOD_ORDER = ['happy', 'ok', 'impatient', 'sad', 'asleep'] as const;
 export const EXPR_ORDER = ['neutral', 'smile', 'grin', 'laugh', 'surprised', 'sleepy', 'pout', 'grumpy', 'love', 'wink', 'thinking', 'bliss'] as const;
 /** Zone index for the u8 `zone` field. Append only. */

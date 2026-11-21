@@ -55,7 +55,7 @@ export const GAIT_SPEED: Record<(typeof GAIT_ORDER)[number], number> = {
 
 const ACT = (a: (typeof ACT_ORDER)[number]) => ACT_ORDER.indexOf(a);
 const A_WALK = ACT('walk'), A_IDLE = ACT('idle'), A_SIT = ACT('sit'), A_PHONE = ACT('phone'), A_SIP = ACT('sip');
-const A_FISH = ACT('fish'), A_READ = ACT('read'), A_PERFORM = ACT('perform'), A_WAVE = ACT('wave');
+const A_FISH = ACT('fish'), A_READ = ACT('read'), A_PERFORM = ACT('play'), A_WAVE = ACT('wave');
 const M_OK = MOOD_ORDER.indexOf('ok'), M_HAPPY = MOOD_ORDER.indexOf('happy');
 const S_WALK = 0, S_PAUSE = 1, S_SIT = 2, S_IN = 4;
 const DEFAULT_AREA: Rect = { x0: -16, z0: -13, x1: 16, z1: 10 };
@@ -499,6 +499,7 @@ export function createAmbient(deps: AmbientDeps): AmbientSystem {
             if (w.state === S_SIT) { releaseSeat(w); flags[i] &= ~AGENT_FLAG.seated; standUp(w, i); }
             plan(w, rng, X, Z);
             if ((w.state as number) === S_WALK) act[i] = A_WALK;
+            else if ((w.state as number) !== S_SIT && (act[i] === A_READ || act[i] === A_SIP || act[i] === A_SIT)) act[i] = A_IDLE;   // stood up: no newspaper/cup left in a standing pose
           } else if (sokak && w.rol !== undefined && w.rol >= 0 && SOKAK_ROLLER[w.rol].id === 'muzisyen' && act[i] === A_PERFORM) listeners(w, i, rng);
           continue;
         }

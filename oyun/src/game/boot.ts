@@ -130,6 +130,7 @@ import { createDenizUi, type DenizUiView } from './ui/deniz-ui';
 import { createHuyMotion, type HuyMotionView } from './view/chars/huy-motion';
 import { createAltinSimitFx, type AltinSimitFx } from './ui/altin-simit-fx';
 import { createDisariLook, type DisariLookView } from './view/disari';
+import { createSokakLook } from './view/disari/sokak-look';   // DNY-02/03/19
 import { createStadyumView } from './view/stadyum';
 import { createNightLights, roomLightsFor } from './view/world/night-lights';
 import { createGorselSaat } from './boot-saat';
@@ -555,6 +556,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     scene, zones: zones as ZoneManager, labels, project, rules: () => sim.rules, hero: () => pos, hour: () => sim.clock.hour, command,
     makeCat: chars ? (o => (chars as MotorChars).makeCat(o)) : undefined,
   })) : null;
+  const sokakLook = playMode && chars ? make('sokakLook', () => createSokakLook({ scene, agents: () => sim.agents, crowd: (chars as MotorChars).crowd, makeDog: o => (chars as MotorChars).makeDog(o), hour: () => sim.clock.hour })) : null;   // DNY-02/03/19: sokak eşyaları + köpek
   // karar paketi G: Envanter / Mülk panel (banka, günlük tahta, arsa, stadyum); the bank mirrors the cloud account record
   const kirtasiyeFp = playMode && uiReal ? make('kirtasiyeFp', () => createKirtasiyeFp({ root: U.root, rules: () => sim.rules, command, sfx: id => { try { audio?.sfx(id); } catch { /* */ } } })) : null;
   const mulkPanel = playMode && uiReal ? make('mulkPanel', () => createMulkPanel({ root: U.root, rules: () => sim.rules, command, sfx: id => { try { audio?.sfx(id); } catch { /* */ } } })) : null;
@@ -722,6 +724,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (chars && !(chars.crowd as MotorCrowd).hideUp) (chars.crowd as MotorCrowd).hideUp = salonUstGizli;   // 2026-11-21: çatıdakiler, çatısı kalkmış salonun içindeyken görünmez
     if (chars && !(chars.crowd as MotorCrowd).heightOf) (chars.crowd as MotorCrowd).heightOf = (slot: number) => (rt() as unknown as { agentY?: Float32Array }).agentY?.[slot] || 0;   // BUF-20: çatı terası müşterileri
     if (chars) guard('crowd', () => { P.time('crowd', () => { chars.crowd.update(sim.agents, fdt, alpha); chars.update(fdt, alpha); }); });
+    if (sokakLook) guard('sokakLook', () => sokakLook.update(fdt));
     if (carsi) guard('carsi', () => carsi.update(fdt));
     if (moments) guard('moments', () => moments.update(fdt));
     if (dekorLook) guard('dekorLook', () => dekorLook.update(fdt));
@@ -905,6 +908,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   if (import.meta.env.MODE !== 'production') reg('heroPoz',() => { const o = H.object.position; return { x: +o.x.toFixed(3), y: +o.y.toFixed(3), z: +o.z.toFixed(3), camY: +cam.camera.position.y.toFixed(3), near: cam.camera.near }; });
   reg('lights', () => nightLights?.stats() ?? null);   // PRF-08: gece ışığı havuzu durumu
   reg('setTime', (h: number) => { sim.command({ kind: 'setTime', hour: h }); lastHour = -1; timeT = 0; gSaat.sifirla(sim.clock.hour, sim.state.day); guard('setTime', () => { R.setTime(sim.clock.hour, sim.clock.season); havaLook?.relight(); }); });
+  reg('havaZorla', (k: string) => { const h = (sim.state.zones as Record<string, { segs?: unknown[]; wDay?: number }>).hava; if (h) { h.segs = k ? [{ k, a: 8, b: 27 }] : []; h.wDay = sim.state.day; } return havaApi(sim.rules)?.view().kind ?? null; });   // DNY-19 test: bugünün havasını zorla (sağanak, kar, sicak...)
   reg('setStage', (n: number) => { sim.command({ kind: 'setStage', stage: n }); callWorld('setStage', sim.state.stage, sim.state.renewed); });
   reg('setTier', (name: TierName) => quality.set(name));
   reg('moments', (what?: string, arg?: string) => { if (!moments) return null; if (what) moments.force(what as never, arg); return moments.info(); });

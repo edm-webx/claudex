@@ -42,7 +42,7 @@ const FACE_ROW = FACES.map(f => f.crowdRow), FAR_ROW = FACES.map(f => f.farRow);
 // 'count' ActId'de yok ama garsonun hesap sayma hareketi sim'den bu adla gelir (workers.ts); görünümde para sayma animasyonuna eşlenir
 const V2ACT: Partial<Record<ActId | 'count', string>> = { count: 'count', cut: 'cut', pour: 'pour', serve: 'pour', sweep: 'wipe', sleep: 'sleep', phone: 'selfie', wave: 'wave', sit: 'sit', cheer: 'cheer', perform: 'talk', dance: 'dance' };
 const CROWD_ACT: Partial<Record<ActId, string>> = { sip: 'drink', eat: 'eat', wave: 'wave', sleep: 'sleep', phone: 'phone', cheer: 'cheer', perform: 'cheer', dance: 'dance', serve: 'point', grab: 'point' };
-Object.assign(CROWD_ACT, { read: 'photo', fish: 'point' });   // DNY-02/03: gazete iki elde, olta önde (sim ACT_ORDER eki)
+Object.assign(CROWD_ACT, { read: 'photo', fish: 'point', play: 'talk' });   // DNY-02/03: gazete iki elde, olta önde, saz çalan el (sim ACT_ORDER eki)
 const moving = (s: number) => s > 0.15;
 const v2speed = (s: number) => (moving(s) ? Math.min(1, s / 1.2) : 0);
 
