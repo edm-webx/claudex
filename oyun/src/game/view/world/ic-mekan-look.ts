@@ -6,6 +6,7 @@
  * (DKN-18): staff, guests, students, patients are real actors (sim/agents/kafe.ts, ic-sakin.ts); only the büfe halls' table guests remain (PROP_IZIN). Built only near the player, shown while inside (far side: the
  * exterior shell hides, view/world/karsi-bina.ts) or always for the glass büfe halls. Pure view, no sim, no colliders.
  */
+import { katY, avmIcinde } from '../../../content/avm-kat';
 import { KAFE_TEMA, type TemaId } from '../../../content/kafe-tema';
 import * as T from 'three';
 import { mutfakEsya, mutfakCelik, pisirIstasyonu, PASS_KAP } from '../../../content/mutfak';
@@ -346,7 +347,7 @@ const F: Record<string, Fn> = {
 /* ---------- one room ---------- */
 function buildRoom(m: IcMekan, own: { lv: number; isci: number; esya: string[]; tema?: string } | null, salonEsya: string[], fine: boolean, stage = 1, ekip: { rol: string; rank: number }[] = []): { g: T.Group; an: Anim } {
   const grp = new T.Group(); grp.name = 'ic-' + m.id; const cur = new T.Group(), curItem = new T.Group(); grp.add(cur); grp.userData.cur = cur;
-  const hall = !!m.salon, { W, D } = icDim(m), h = Math.min(3.2, m.h), y0 = 0.14;   // above the ground detail layer
+  const hall = !!m.salon, { W, D } = icDim(m), h = Math.min(3.2, m.h), y0 = 0.14 + katY(m.kat || 0);   // above the ground detail layer (AVM: the room's floor)
   grp.position.set(m.x, y0, m.z); grp.rotation.y = icYaw(m);
   const b = new Batch(), g = new Batch(), l = new Batch(), wb = new Batch();
   const an: Anim = { spin: [], fire: [], fish: [], screens: [], flick: [], bob: [], lamps: null };
@@ -434,6 +435,7 @@ function buildRoom(m: IcMekan, own: { lv: number; isci: number; esya: string[]; 
 
 export function createIcMekan(d: IcDeps): IcView {
   const holder = new T.Group(); holder.name = 'icMekan';
+  const avmHolder = new T.Group(); avmHolder.name = 'icMekanAvm';   // Martı AVM diyarı: iskele kökü orada gizli, odalar sahnede ayrı tutulur
   const rooms = new Map<string, { key: string; g: T.Group; an: Anim }>();
   let t = 0, inside: string | null = null, acc = 1;
   const keep = new Set<unknown>([BOX, SPH, TABAK, YEMEK, ...FX_GEOS]);
@@ -448,6 +450,7 @@ export function createIcMekan(d: IcDeps): IcView {
     update(dt) {
       const root = d.root(); if (!root) return;
       if (holder.parent !== root) root.add(holder);
+      const sahne = root.parent ?? root; if (avmHolder.parent !== sahne) sahne.add(avmHolder);
       t += dt; acc += dt;
       const hp = d.hero(); inside = null;
       const st0 = d.salon().stage, odaOf = (m: IcMekan) => (m.mutfak ? mutfakOda(st0) : m);   // BUF-22: the kitchen grows with the stage
@@ -463,13 +466,14 @@ export function createIcMekan(d: IcDeps): IcView {
           const o = m.arsa ? own[m.arsa] || null : null, fine = (!!m.salon || !!m.mutfak) && sl.stage >= 10, mk = m.mutfak ? d.mutfak() : null;
           const key = (o ? o.lv + ':' + o.isci + ':' + (o.tema || '') + ':' + [...o.esya].sort().join(',') : '-') + '|' + (m.salon ? sl.esya.filter(e => e).sort().join(',') + (fine ? 'F' : '') : '') + (mk ? 'M' + sl.stage + ':' + mk.ekip.map(e => e.rol + e.rank).join(',') : '');
           const r = rooms.get(m.id); if (r && r.key === key) continue;
-          kill(m.id); const nb = buildRoom(m, o, sl.esya, fine, sl.stage, mk ? mk.ekip : []); holder.add(nb.g); rooms.set(m.id, { key, g: nb.g, an: nb.an });
+          kill(m.id); const nb = buildRoom(m, o, sl.esya, fine, sl.stage, mk ? mk.ekip : []); (m.bina === 'avm' ? avmHolder : holder).add(nb.g); rooms.set(m.id, { key, g: nb.g, an: nb.an });
         }
       }
       const nk = d.night();
       for (const [id, r] of rooms) {
         const m = odaOf(IC_MEKANLAR.find(x => x.id === id)!);
-        r.g.visible = !!m.salon || icIcinde(m, hp, 0.5) || (!!bina && m.bina === bina) || (!!m.mutfak && mutfakVitrin(hp));   // AVM: whole mall shows inside; BUF-22: kitchen shows from the büfe / walkway
+        r.g.visible = m.bina === 'avm' ? avmIcinde(hp, 2) && (m.kat || 0) <= ((hp as { kat?: number }).kat || 0)   // AVM: floors up to the hero's (cutaway)
+          : !!m.salon || icIcinde(m, hp, 0.5) || (!!bina && m.bina === bina) || (!!m.mutfak && mutfakVitrin(hp));   // AVM: whole mall shows inside; BUF-22: kitchen shows from the büfe / walkway
         if (!r.g.visible) continue;
         const a = r.an;
         for (const s of a.spin) s.rotation.y += dt * 2.2;

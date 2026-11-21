@@ -3,6 +3,7 @@
  * Two item layers (H3): world/drop items (chest, match, forest, board) and production items (crafted from materials).
  * Character inventory vs account bank is a hard split: inventory = S.zones.envanter, bank = rt.banka (cloud, shared).
  */
+import { HOL, ODA_X, ODA_Z } from './avm-kat';
 export type EsyaTur = 'tuketim' | 'malzeme' | 'kozmetik' | 'anahtar';
 export interface Esya { id: string; ad: string; ikon: string; tur: EsyaTur; nadir: 0 | 1 | 2; blurb: string }
 export const ESYALAR: Esya[] = [
@@ -57,7 +58,8 @@ export const SANDIK_DUSER: { stat: string; her: number; sandik: string; ad: stri
 export const HALI_SAHA_KAPI = { x: -25.2, z: 45 };
 export const BANKA = { x: 11.7, z: 36.8, kapi: { x: 11.7, z: 41.8 }, w: 10, d: 8.4, ad: 'Martı Kasası Bankası' };
 /** sabit: a fixed building on the map (karşı yaka kafeler): buying the plot opens that shop at once; kapi = interaction point. */
-export interface Arsa { id: string; x: number; z: number; fiyat: number; seviye: number; rotY: number; sabit?: string; kapi?: { x: number; z: number }; ad?: string; once?: string }
+/** kat: Martı AVM katı (content/avm-kat.ts); kapı o katın holünde, oyuncu aynı katta olmalı */
+export interface Arsa { id: string; x: number; z: number; fiyat: number; seviye: number; rotY: number; sabit?: string; kapi?: { x: number; z: number }; ad?: string; once?: string; kat?: number }
 export const ARSALAR: Arsa[] = [
   { id: 'a1', x: 259.5, z: 0.4, fiyat: 60000, seviye: 3, rotY: 0 },
   { id: 'a2', x: 266.2, z: 0.4, fiyat: 150000, seviye: 5, rotY: 0 },
@@ -70,15 +72,27 @@ export const ARSALAR: Arsa[] = [
   // 2026-11-09: every business building can be bought from a level and run (interiors: content/ic-mekan.ts)
   { id: 'k3', x: 28, z: 35.2, fiyat: 140000, seviye: 4, rotY: Math.PI, sabit: 'kafe', kapi: { x: 28, z: 32.6 }, ad: 'Martı Kırtasiye' },
   { id: 'k4', x: 48.85, z: 37.25, fiyat: 110000, seviye: 3, rotY: Math.PI, sabit: 'kafe', kapi: { x: 48.85, z: 32.6 }, ad: 'Okul Kantini' },
-  // 2026-11-20 owner: Martı AVM is split into separate businesses (lokanta + three shops), each bought and run on its own;
-  // x / z = the room centre of content/ic-mekan.ts (AVM strips), kapi = in front of that room's own door on the -z front
-  { id: 'k5', x: 26.0, z: 51.8, fiyat: 450000, seviye: 6, rotY: Math.PI, sabit: 'kafe', kapi: { x: 26.0, z: 45.6 }, ad: 'Martı Lokantası (AVM)' },
   { id: 'k6', x: -54.1, z: 45.4, fiyat: 260000, seviye: 5, rotY: Math.PI / 2, sabit: 'kafe', kapi: { x: -51.0, z: 45.4 }, ad: 'Tesis Kafeteryası' },
-  { id: 'k7', once: 'k5', x: 21.45, z: 51.8, fiyat: 300000, seviye: 7, rotY: Math.PI, sabit: 'kafe', kapi: { x: 21.45, z: 45.6 }, ad: 'Martı Moda (AVM)' },
-  { id: 'k8', once: 'k5', x: 17.55, z: 51.8, fiyat: 380000, seviye: 8, rotY: Math.PI, sabit: 'kafe', kapi: { x: 17.55, z: 45.6 }, ad: 'Tekno Martı (AVM)' },
-  { id: 'k9', once: 'k5', x: 13.65, z: 51.8, fiyat: 260000, seviye: 7, rotY: Math.PI, sabit: 'kafe', kapi: { x: 13.65, z: 45.6 }, ad: 'Oyuncak Dünyası (AVM)' },
+  // 2026-11-20 owner: Martı AVM is split into separate businesses. 2026-11-21 owner: "her katında mağaza olsun, satın alıp işletelim, zamanla her
+  // yere hâkim olalım": 3 floors x 4 shops (content/ic-mekan.ts avmOdalar, content/avm-kat.ts). x / z = room centre, kapi = in front of the room's
+  // door in the central hall of that floor. Order of the holding path: the first AVM shop needs nothing else, the rest need one shop already
+  // in the mall (once: k7), the food court needs the lokanta first. Prices / levels climb with the floor; incomes: tests/sim/avm-magaza.test.ts.
+  ...avmArsalar(),
 ];
 export const ARSA_HAK = 3;
+function avmArsalar(): Arsa[] {   // (ARSALAR'dan önce çağrılır: sabitler içeride)
+  const W = HOL.x0 + 0.7, E = HOL.x1 - 0.7, F = ODA_Z.F, B = ODA_Z.B, xw = ODA_X.W, xe = ODA_X.E;   // inside the AVM realm (content/avm-kat.ts)
+  const a = (id: string, ad: string, kat: number, w: boolean, f: boolean, fiyat: number, seviye: number, once?: string): Arsa =>
+    ({ id, x: w ? xw : xe, z: f ? F : B, fiyat, seviye, rotY: w ? Math.PI / 2 : -Math.PI / 2, sabit: 'kafe', kapi: { x: w ? W : E, z: f ? F : B }, ad: ad + ' (AVM)', ...(once ? { once } : {}), ...(kat ? { kat } : {}) });
+  return [
+    a('k7', 'Martı Moda', 0, true, true, 300000, 7), a('k8', 'Tekno Martı', 0, true, false, 380000, 8, 'k7'),
+    a('k9', 'Oyuncak Dünyası', 0, false, true, 260000, 7, 'k7'), a('k10', 'Hacı Martı Şekerleme', 0, false, false, 220000, 6),
+    a('k11', 'Telve Kahve Laboratuvarı', 1, true, true, 340000, 7, 'k10'), a('k13', 'Şerbetçi Baklava Sarayı', 1, true, false, 360000, 8, 'k10'),
+    a('k12', 'Maraşlı Martı Dondurma', 1, false, true, 320000, 7, 'k10'), a('k14', 'Çıtırcı Kuruyemiş', 1, false, false, 300000, 7, 'k10'),
+    a('k5', 'Martı Lokantası', 2, true, true, 450000, 6), a('k15', 'Dürümcü Dayı', 2, true, false, 420000, 8, 'k5'),
+    a('k16', 'Kumpir Kulesi', 2, false, true, 400000, 8, 'k5'), a('k17', 'Midyeci Mido', 2, false, false, 440000, 9, 'k5'),
+  ];
+}
 export const arsaKapi = (a: Arsa) => a.kapi ?? { x: a.x, z: a.z + (a.rotY ? -3.0 : 3.0) };
 /** café workers (karşı yaka): hire price grows per worker; each adds +40% customers, restocks from the till, takes an hourly wage */
 export const ISCI_MAX = 3;
@@ -90,7 +104,8 @@ export const ISCI_MAX = 3;
 export interface KafeYemek { id: string; ad: string; ikon: string; fiyat: number }
 /** ic: shown inside (ic-mekan-look); teras: shown on the café terrace (karsi-yasam) */
 export interface KafeEsya { id: string; ad: string; ikon: string; fiyat: number; lv: number; musteri?: number; fiyatK?: number; desc: string; teras?: boolean }
-export type IsletmeId = 'kafe' | 'bistro' | 'kirtasiye' | 'kantin' | 'lokanta' | 'kafeterya' | 'giyim' | 'elektronik' | 'oyuncak';
+export type IsletmeId = 'kafe' | 'bistro' | 'kirtasiye' | 'kantin' | 'lokanta' | 'kafeterya' | 'giyim' | 'elektronik' | 'oyuncak'
+  | 'sekerci' | 'kahveci' | 'dondurma' | 'baklava' | 'kuruyemis' | 'donerci' | 'kumpir' | 'midye';
 export interface Isletme { id: IsletmeId; ad: string; ikon: string; asama: string[]; mus: number; menu: KafeYemek[]; esya: KafeEsya[] }
 const Y = (id: string, ad: string, ikon: string, fiyat: number): KafeYemek => ({ id, ad, ikon, fiyat });
 const A = (id: string, ad: string, ikon: string, fiyat: number, lv: number, o: Partial<KafeEsya>, desc: string): KafeEsya => ({ id, ad, ikon, fiyat, lv, ...o, desc });
@@ -201,12 +216,103 @@ export const ISLETME: Record<IsletmeId, Isletme> = {
       A('maskot', 'Dev martı maskotu', '🐦', 30000, 3, { musteri: 0.1 }, 'Fotoğraf çektiren çok: müşteri +%10'),
       A('hediye_paket', 'Hediye paketi tezgâhı', '🎁', 26000, 4, { fiyatK: 0.12 }, 'Kurdeleli paket: fiyatlar +%12'),
       A('led_o', 'Işıklı vitrin', '✨', 70000, 5, { fiyatK: 0.18 }, 'Yıldızlı tavan vitrini: fiyatlar +%18')] },
+  // 2026-11-21 Martı AVM katları (sahip: "her katında mağaza olsun, aynı mantık"): yemek / yemeğe yakın dükkânlar, NET fiyat, STOK YOK.
+  // Gelir bandı: arsa fiyatı başına saatlik gelir lokantanınkiyle aynı bantta (tests/sim/avm-magaza.test.ts).
+  sekerci: { id: 'sekerci', ad: 'Şekerci', ikon: '🍬', mus: 0.95, asama: ['Şekerci', 'Lokumcu', 'Şekerleme evi', 'Akide sarayı', 'Hacı Martı Konağı'],
+    menu: [Y('akide', 'Akide şekeri', '🍬', 22), Y('lokum', 'Güllü lokum', '🌹', 38), Y('pismaniye', 'Pişmaniye', '☁️', 45), Y('macun', 'Dört renk macun', '🍭', 30),
+      Y('kestane_sekeri', 'Kestane şekeri', '🌰', 70), Y('cikolata_el', 'El yapımı çikolata', '🍫', 65), Y('fistikli_lokum', 'Çifte kavrulmuş lokum', '💚', 85), Y('lokum_kutu', 'Hediyelik lokum kutusu', '🎁', 210)],
+    esya: [A('lokum_tezgah', 'Lokum kesme tezgâhı', '🔪', 16000, 1, { fiyatK: 0.1 }, 'Lokum gözünün önünde kesilir: fiyatlar +%10'),
+      A('cam_kavanoz', 'Cam kavanoz rafı', '🫙', 14000, 1, { musteri: 0.12 }, 'Rengârenk akideler camda parlar: müşteri +%12'),
+      A('macuncu', 'Macuncu tepsisi', '🍭', 12000, 2, { musteri: 0.1 }, 'Çubukta dört renk macun, çocuklar bayılır: müşteri +%10'),
+      A('pismaniye_tezgah', 'Pişmaniye çekme tezgâhı', '☁️', 30000, 2, { fiyatK: 0.12 }, 'Usta çekerken herkes izler: fiyatlar +%12'),
+      A('kestane_ocak', 'Kestane şekeri kazanı', '🌰', 26000, 3, { musteri: 0.12 }, 'Şurupta pişen kestane kokusu galeriye yayılır: müşteri +%12'),
+      A('hediye_kutu', 'Hediye kutusu standı', '🎁', 22000, 3, { fiyatK: 0.1 }, 'Bayramlık kurdeleli kutular: fiyatlar +%10'),
+      A('cikolata_vitrin', 'Çikolata vitrini', '🍫', 36000, 4, { musteri: 0.12 }, 'Soğuk camda pralinler: müşteri +%12'),
+      A('osmanli_tezgah', 'Pirinç sunum tepsisi', '👑', 80000, 5, { fiyatK: 0.2 }, 'Lale desenli pirinç tepside ikram: fiyatlar +%20')] },
+  kahveci: { id: 'kahveci', ad: 'Kahve dükkânı', ikon: '☕', mus: 1.05, asama: ['Kahve tezgâhı', 'Kahveci', 'Kahve atölyesi', 'Kavurma evi', 'Telve Laboratuvarı'],
+    menu: [Y('kumda_kahve', 'Kumda Türk kahvesi', '☕', 36), Y('dibek', 'Dibek kahvesi', '🫘', 40), Y('flat_white', 'Flat white', '🥛', 55), Y('menengic', 'Menengiç kahvesi', '🌰', 44),
+      Y('soguk_demleme', 'Soğuk demleme', '🧊', 60), Y('marti_latte', 'Martı desenli latte', '🐦', 66), Y('kahve_fal', 'Kahve + fal', '🔮', 90), Y('cekirdek', 'Paket çekirdek kahve', '🫘', 160)],
+    esya: [A('kum_ocak', 'Kum ocağı', '🔥', 16000, 1, { fiyatK: 0.1 }, 'Cezveler sıcak kumda köpürür: fiyatlar +%10'),
+      A('espresso_t', 'Çift gruplu espresso', '☕', 30000, 1, { musteri: 0.12 }, 'Sabah kuyruğu erir: müşteri +%12'),
+      A('degirmen', 'Taş değirmen', '⚙️', 14000, 2, { fiyatK: 0.08 }, 'Taze çekilmiş: fiyatlar +%8'),
+      A('dibek_havan', 'Dibek havanı', '🪵', 18000, 2, { musteri: 0.1 }, 'Tok tok sesi galeriden duyulur: müşteri +%10'),
+      A('demleme_bar', 'Demleme barı', '🧪', 34000, 3, { fiyatK: 0.12 }, 'V60, Chemex, laboratuvar havası: fiyatlar +%12'),
+      A('kavurucu', 'Kahve kavurma makinesi', '🫘', 55000, 3, { musteri: 0.15 }, 'Taze kavrulmuş kahve kokusu bütün kata yayılır: müşteri +%15'),
+      A('falci', 'Falcı köşesi', '🔮', 30000, 4, { musteri: 0.12 }, 'Fincanı kapatan bekler, falcı "yolculuk görüyorum" der: müşteri +%12'),
+      A('latte_sanat', 'Latte sanatı ustası', '🎨', 80000, 5, { fiyatK: 0.2 }, 'Köpükte martı, vapur, Galata: fiyatlar +%20')] },
+  dondurma: { id: 'dondurma', ad: 'Dondurmacı', ikon: '🍨', mus: 1.15, asama: ['Dondurma arabası', 'Dondurmacı', 'Maraş dondurması', 'Dondurma salonu', 'Maraşlı Martı Sarayı'],
+    menu: [Y('kulah', 'Sade külah', '🍦', 28), Y('kaymakli', 'Kaymaklı dondurma', '🍨', 38), Y('sakizli', 'Sakızlı dondurma', '🍧', 40), Y('sorbe', 'Limonlu sorbe', '🍋', 42),
+      Y('cikolatali_kup', 'Çikolatalı kup', '🍫', 50), Y('kesme_maras', 'Bıçakla kesme Maraş', '🔪', 72), Y('dondurmali_waffle', 'Dondurmalı waffle', '🧇', 85), Y('dev_kup', 'Martı kupu (7 top)', '🏆', 130)],
+    esya: [A('dondurma_vitrin', 'Dondurma vitrini', '🍨', 32000, 1, { musteri: 0.14 }, 'Kapaklı güğümler sıra sıra: müşteri +%14'),
+      A('dovme_kazan', 'Dövme kazanı', '🥄', 20000, 1, { fiyatK: 0.1 }, 'Uzun kaşıkla dövülür, metre metre uzar: fiyatlar +%10'),
+      A('sopa_sov', 'Şov sopası', '🎪', 12000, 2, { musteri: 0.12 }, 'Külahı verir, geri alır, herkes güler: müşteri +%12'),
+      A('kulah_kalip', 'Külah fırını', '🍦', 18000, 2, { fiyatK: 0.08 }, 'Çıtır taze külah: fiyatlar +%8'),
+      A('sorbe', 'Sorbe makinesi', '🍓', 26000, 3, { musteri: 0.1 }, 'Yazın en çok giden: müşteri +%10'),
+      A('waffle_mak_d', 'Waffle makinesi', '🧇', 22000, 3, { fiyatK: 0.12 }, 'Sıcak waffle soğuk dondurma: fiyatlar +%12'),
+      A('zil', 'Dondurmacı çanı', '🔔', 10000, 4, { musteri: 0.12 }, 'Çan çaldı mı bütün çocuklar koşar: müşteri +%12'),
+      A('kar_dolap', 'Maraş kar dolabı', '❄️', 75000, 5, { fiyatK: 0.2 }, 'Keçi sütü, salep, gerçek Maraş: fiyatlar +%20')] },
+  baklava: { id: 'baklava', ad: 'Baklavacı', ikon: '🥮', mus: 0.95, asama: ['Baklava tezgâhı', 'Baklavacı', 'Tatlıcı', 'Tatlı sarayı', 'Şerbetçi Sarayı'],
+    menu: [Y('sutlac', 'Fırın sütlaç', '🍮', 38), Y('kazandibi', 'Kazandibi', '🍮', 42), Y('baklava', 'Fıstıklı baklava', '🥮', 58), Y('tel_kadayif', 'Tel kadayıf', '🍯', 50),
+      Y('sobiyet', 'Şöbiyet', '🥮', 64), Y('kunefe_b', 'Künefe', '🧀', 82), Y('ekmek_kadayif', 'Kaymaklı ekmek kadayıfı', '🍯', 72), Y('baklava_tepsi', 'Bir tepsi baklava', '🎁', 330)],
+    esya: [A('tatli_vitrin_b', 'Tatlı vitrini', '🧁', 28000, 1, { musteri: 0.14 }, 'Tepsiler ışıkta parlar: müşteri +%14'),
+      A('serbet_kazan', 'Şerbet kazanı', '🍯', 14000, 1, { fiyatK: 0.08 }, 'Kıvamında şerbet: fiyatlar +%8'),
+      A('oklava', 'Oklava ve hamur masası', '🪵', 22000, 2, { fiyatK: 0.1 }, 'Kırk kat yufka elde açılır: fiyatlar +%10'),
+      A('tas_firin_b', 'Baklava fırını', '🔥', 50000, 2, { musteri: 0.12 }, 'Tereyağı kokusu koridora taşar: müşteri +%12'),
+      A('kaymak', 'Kaymak dolabı', '🥛', 22000, 3, { fiyatK: 0.1 }, 'Manda kaymağı yanında: fiyatlar +%10'),
+      A('kunefe_ocak', 'Künefe ocağı', '🧀', 30000, 3, { musteri: 0.12 }, 'Tel tel uzayan peynir: müşteri +%12'),
+      A('bakir_tepsi', 'Bakır tepsi duvarı', '🟠', 26000, 4, { musteri: 0.1 }, 'Duvarda dede yadigârı tepsiler: müşteri +%10'),
+      A('serbetci_usta', 'Usta tezgâhı', '👨‍🍳', 85000, 5, { fiyatK: 0.2 }, 'Antepli usta, yüzde yüz fıstık: fiyatlar +%20')] },
+  kuruyemis: { id: 'kuruyemis', ad: 'Kuruyemişçi', ikon: '🥜', mus: 1.0, asama: ['Çerezci', 'Kuruyemişçi', 'Kavurmacı', 'Kuruyemiş evi', 'Çıtırcı Kavurma Sarayı'],
+    menu: [Y('leblebi', 'Sarı leblebi', '🫘', 20), Y('ay_cekirdek', 'Ay çekirdeği', '🌻', 24), Y('kabak_cekirdek', 'Kabak çekirdeği', '🎃', 36), Y('kuru_kayisi', 'Kuru kayısı', '🍑', 52),
+      Y('findik', 'Kavrulmuş fındık', '🌰', 62), Y('karisik_cerez', 'Karışık çerez', '🥜', 78), Y('antep', 'Antep fıstığı', '🥜', 96), Y('cerez_sepet', 'Maç gecesi çerez sepeti', '🧺', 190)],
+    esya: [A('cuval', 'Çuval reyonu', '🧺', 12000, 1, { musteri: 0.12 }, 'Ağzı açık çuvallar, kepçe başında: müşteri +%12'),
+      A('terazi', 'Dijital terazi', '⚖️', 10000, 1, { fiyatK: 0.08 }, 'Gramı gramına: fiyatlar +%8'),
+      A('kavurma_kazan', 'Kavurma kazanı', '🔥', 36000, 2, { musteri: 0.15 }, 'Sıcak fıstık kokusu: müşteri +%15'),
+      A('cam_hazne', 'Cam hazneler', '🫙', 22000, 2, { fiyatK: 0.1 }, 'Kapaklı cam bölmeler: fiyatlar +%10'),
+      A('kuru_meyve', 'Kuru meyve kasaları', '🍑', 20000, 3, { musteri: 0.1 }, 'Kayısı, incir, dut: müşteri +%10'),
+      A('paket_mak', 'Paketleme makinesi', '📦', 26000, 3, { fiyatK: 0.1 }, 'Vakumlu paket: fiyatlar +%10'),
+      A('tadim', 'Tadım tabağı', '🥄', 12000, 4, { musteri: 0.12 }, 'Bir tane tadan bir kilo alır: müşteri +%12'),
+      A('kavurma_ustasi', 'Usta kavurma hattı', '👨‍🍳', 75000, 5, { fiyatK: 0.2 }, 'Çifte kavrulmuş, tuzu kıvamında: fiyatlar +%20')] },
+  donerci: { id: 'donerci', ad: 'Dönerci', ikon: '🌯', mus: 1.25, asama: ['Döner tezgâhı', 'Dönerci', 'Dürüm evi', 'Döner salonu', 'Dürümcü Dayı Holding'],
+    menu: [Y('ayran_d', 'Yayık ayran', '🥛', 20), Y('yarim_ekmek', 'Yarım ekmek döner', '🥖', 70), Y('tavuk_durum', 'Tavuk dürüm', '🌯', 72), Y('tombik', 'Tombik döner', '🥙', 88),
+      Y('et_durum', 'Et dürüm', '🌯', 110), Y('pilav_ustu', 'Pilav üstü döner', '🍛', 118), Y('dayi_iskender', 'Dayı usulü İskender', '🥩', 175), Y('metre_durum', 'Bir metre dürüm', '📏', 260)],
+    esya: [A('doner_ocak', 'Döner ocağı', '🔥', 36000, 1, { musteri: 0.15 }, 'Dönen döner camdan görünür: müşteri +%15'),
+      A('lavas_sac', 'Lavaş sacı', '🫓', 14000, 1, { fiyatK: 0.08 }, 'Sacdan sıcak lavaş: fiyatlar +%8'),
+      A('ayran_yayik', 'Ayran yayığı', '🥛', 12000, 2, { musteri: 0.1 }, 'Köpüklü yayık ayranı: müşteri +%10'),
+      A('tursu', 'Turşu bidonları', '🥒', 10000, 2, { musteri: 0.08 }, 'Yanında bol turşu: müşteri +%8'),
+      A('ikinci_sis', 'İkinci döner şişi', '🍢', 50000, 3, { musteri: 0.15 }, 'Biri tavuk biri et: müşteri +%15'),
+      A('pilav_kazan', 'Pilav kazanı', '🍚', 20000, 3, { fiyatK: 0.1 }, 'Tereyağlı pilav: fiyatlar +%10'),
+      A('led_d', 'Işıklı menü', '📺', 24000, 4, { fiyatK: 0.1 }, 'Fotoğraflı menü: fiyatlar +%10'),
+      A('dayi_bicak', 'Dayının elektrikli bıçağı', '🔪', 75000, 5, { fiyatK: 0.2 }, 'Kâğıt inceliğinde dilim: fiyatlar +%20')] },
+  kumpir: { id: 'kumpir', ad: 'Kumpirci', ikon: '🥔', mus: 1.1, asama: ['Kumpir arabası', 'Kumpirci', 'Ortaköy usulü', 'Kumpir evi', 'Kumpir Kulesi'],
+    menu: [Y('limonata_k', 'Ev limonatası', '🍋', 30), Y('citir_patates', 'Çıtır patates', '🍟', 45), Y('sade_kumpir', 'Tereyağlı kumpir', '🥔', 65), Y('kasarli_kumpir', 'Kaşarlı kumpir', '🧀', 80),
+      Y('sucuklu_kumpir', 'Sucuklu kumpir', '🌭', 102), Y('karisik_kumpir', 'Karışık kumpir', '🥔', 110), Y('tavuklu_kumpir', 'Tavuklu kumpir', '🍗', 115), Y('kule_kumpir', 'Kule kumpir (üç kat)', '🗼', 215)],
+    esya: [A('kumpir_firin', 'Kumpir fırını', '🔥', 32000, 1, { musteri: 0.14 }, 'Camda sıra sıra koca patatesler: müşteri +%14'),
+      A('malzeme_bar', 'Malzeme barı', '🥗', 26000, 1, { fiyatK: 0.1 }, 'Yirmi çeşit iç: fiyatlar +%10'),
+      A('limonata_dispenser', 'Limonata fıçısı', '🍋', 10000, 2, { musteri: 0.08 }, 'Buz gibi limonata: müşteri +%8'),
+      A('fritoz_k', 'Fritöz', '🍟', 20000, 2, { musteri: 0.1 }, 'Çıtır patates: müşteri +%10'),
+      A('ezme_tezgah', 'Tereyağı-kaşar ezme tezgâhı', '🧈', 18000, 3, { fiyatK: 0.1 }, 'Ortaköy usulü ezme: fiyatlar +%10'),
+      A('neon', 'Neon tabela', '💡', 22000, 3, { musteri: 0.12 }, 'Pembe neon "KUMPİR": müşteri +%12'),
+      A('kule_vitrin', 'Kule vitrini', '🗼', 40000, 4, { musteri: 0.12 }, 'Üç katlı kumpir camda döner: müşteri +%12'),
+      A('usta_k', 'Ortaköylü usta', '👨‍🍳', 75000, 5, { fiyatK: 0.2 }, 'Kırk yıllık usta: fiyatlar +%20')] },
+  midye: { id: 'midye', ad: 'Midyeci', ikon: '🦪', mus: 1.2, asama: ['Midye tablası', 'Midyeci', 'Midye & tava', 'Deniz mezecisi', 'Midyeci Mido Saray'],
+    menu: [Y('salgam', 'Şalgam', '🥤', 22), Y('midye_dolma', 'Midye dolma (5 tane)', '🦪', 42), Y('midye_tava', 'Midye tava', '🍤', 68), Y('balik_durum', 'Balık dürüm', '🐟', 85),
+      Y('kalamar', 'Kalamar tava', '🦑', 98), Y('karides_guvec', 'Karides güveç', '🍤', 135), Y('levrek_sis', 'Levrek şiş', '🍢', 155), Y('mido_tabak', 'Mido tabağı (30 midye)', '🏆', 230)],
+    esya: [A('midye_tabla', 'Midye tablası', '🦪', 14000, 1, { musteri: 0.14 }, 'Limonlu midye tepeleri: müşteri +%14'),
+      A('limon_sepet', 'Limon sepeti', '🍋', 6000, 1, { fiyatK: 0.06 }, 'Bol limon: fiyatlar +%6'),
+      A('tava_ocak', 'Tava ocağı', '🔥', 30000, 2, { musteri: 0.12 }, 'Çıtır tava: müşteri +%12'),
+      A('buz_tezgah_m', 'Buzlu deniz tezgâhı', '🧊', 36000, 2, { musteri: 0.12 }, 'Kalamar, karides, levrek buzda: müşteri +%12'),
+      A('guvec_firin', 'Güveç fırını', '🍲', 34000, 3, { fiyatK: 0.12 }, 'Kaşarlı karides güveç: fiyatlar +%12'),
+      A('ag_sus', 'Balıkçı ağı', '🎣', 10000, 3, { musteri: 0.08 }, 'Duvarda ağ ve şamandıralar: müşteri +%8'),
+      A('akvaryum_m', 'Istakoz akvaryumu', '🦞', 55000, 4, { musteri: 0.12 }, 'İçinde Mido\'nun ıstakozu Kemal: müşteri +%12'),
+      A('mido_tezgah', 'Mido\'nun altın tezgâhı', '👑', 85000, 5, { fiyatK: 0.2 }, 'Altın varaklı tepsi: fiyatlar +%20')] },
 };
 /** compatibility: menus by plot id (k1/k2 tests and older code) */
 export const KAFE_MENU: Record<string, KafeYemek[]> = { k1: ISLETME.kafe.menu, k2: ISLETME.bistro.menu };
 export const KAFE_MENU_LV = [0, 2, 4, 5, 6, 8];
 /** fixed plot id -> its business type */
-export const ARSA_ISLETME: Record<string, IsletmeId> = { k1: 'kafe', k2: 'bistro', k3: 'kirtasiye', k4: 'kantin', k5: 'lokanta', k6: 'kafeterya', k7: 'giyim', k8: 'elektronik', k9: 'oyuncak' };
+export const ARSA_ISLETME: Record<string, IsletmeId> = { k1: 'kafe', k2: 'bistro', k3: 'kirtasiye', k4: 'kantin', k5: 'lokanta', k6: 'kafeterya', k7: 'giyim', k8: 'elektronik', k9: 'oyuncak',
+  k10: 'sekerci', k11: 'kahveci', k12: 'dondurma', k13: 'baklava', k14: 'kuruyemis', k15: 'donerci', k16: 'kumpir', k17: 'midye' };
 export const isletmeOf = (arsaId: string): Isletme => ISLETME[ARSA_ISLETME[arsaId] || 'kafe'];
 export const kafeMenu = (id: string, lv: number) => isletmeOf(id).menu.slice(0, KAFE_MENU_LV[Math.max(0, Math.min(5, lv))] || 2);
 export const KAFE_ESYA: KafeEsya[] = ISLETME.kafe.esya;

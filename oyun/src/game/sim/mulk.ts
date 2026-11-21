@@ -337,7 +337,7 @@ export function installMulk(K: Kernel) {
   (rt as Record<string, unknown>).kafeHost = kafeHost;
   const plotOf = (id: string): { a: Arsa; p: Plot | undefined } | null => { const a = ARSALAR.find(x => x.id === id); return a ? { a, p: arsa().plots[id] } : null; };
   /** at the door, or anywhere inside the business (2026-11-09: every building is enterable) */
-  const yakin = (ar: Arsa, extra = 0) => { if (dist(K.playerPos, arsaKapi(ar)) < KAPI_MENZIL + extra) return true; const m = icOfArsa(ar.id); return !!m && icIcinde(m, K.playerPos, -0.2); };
+  const yakin = (ar: Arsa, extra = 0) => { if ((ar.kat || 0) !== ((K.playerPos as { kat?: number }).kat || 0)) return false; if (dist(K.playerPos, arsaKapi(ar)) < KAPI_MENZIL + extra) return true; const m = icOfArsa(ar.id); return !!m && icIcinde(m, K.playerPos, -0.2); };
   const ownedN = () => ARSALAR.filter(a => !a.sabit && arsa().plots[a.id]).length;
   /** the plot the player is at: the room they stand in first, else the nearest door in reach (AVM doors are only 3.9 m apart) */
   const yakinArsa = (extra: number, sadeceSahip = false): Arsa | undefined => {

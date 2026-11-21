@@ -22,6 +22,8 @@ import { createInteractions } from '../engine/input/interactions';
 import { createNav } from '../engine/nav';
 import { createAmbient } from './sim/ambient';
 import { createWalk, type WalkFull } from './sim/walk';
+import { holEngel, AVM } from '../content/avm-kat';
+import { icBina, icColliders } from '../content/ic-mekan';
 import { defaultState, AGENTS, AGENT_CAP, AGENT_SCHEMA, type GameState } from './sim/schema';
 import type { SimEvents, EventName } from './events';
 import { createRules, type RulesFull } from './sim/rules';
@@ -137,7 +139,17 @@ export function createSim(o: SimOpts, extra: SimExtra = {}): SimFull {
 
   const zp = o.content.zones?.iskele?.playerStart;
   const start: Vec2 = extra.startPos ?? (o.save ? { x: state.player.x, z: state.player.z } : zp ? { x: zp.x, z: zp.z } : { x: 0.2, z: -2.6 });
-  const walk = createWalk({ nav, start, interactions, actor: player });
+  // Martı AVM diyarı: her kat için yalnız dikdörtgen çarpışmalı ayrı nav (hol + o kattaki odalar)
+  const katNavs: (Nav | null)[] = [];
+  const katNav = (k: number): Nav | null => {
+    if (k < 0 || k >= AVM.KAT) return null;
+    if (katNavs[k] === undefined) {
+      try { const n = createNav({ log: extra.log }); n.setSolids('avm-kat', [...holEngel(k), ...icBina('avm').filter(m => (m.kat || 0) === k).flatMap(m => icColliders(m))]); katNavs[k] = n; }
+      catch { katNavs[k] = null; }
+    }
+    return katNavs[k];
+  };
+  const walk = createWalk({ nav, start: { ...start, kat: o.save && !extra.startPos ? state.player.kat : 0 }, interactions, actor: player, katNav });
   scheduler.add(walk);
   state.player.x = start.x; state.player.z = start.z;
 
@@ -212,7 +224,7 @@ export function createSim(o: SimOpts, extra: SimExtra = {}): SimFull {
           bus.emit('stage', { stage: state.stage });
           break;
         }
-        case 'teleport': walk.teleport(Number(c.x), Number(c.z)); state.player.x = walk.pos.x; state.player.z = walk.pos.z; break;
+        case 'teleport': walk.teleport(Number(c.x), Number(c.z), c.kat === undefined ? 0 : Number(c.kat)); state.player.x = walk.pos.x; state.player.z = walk.pos.z; break;
         default: extra.log?.warn('unknown command', c.kind);
       }
     },
@@ -236,15 +248,17 @@ export function createSim(o: SimOpts, extra: SimExtra = {}): SimFull {
       Object.assign(state, copy);
       applyRngState(state);
       rules.restore();
-      walk.teleport(state.player.x, state.player.z);
+      walk.teleport(state.player.x, state.player.z, state.player.kat || 0);
     },
   };
   return sim;
 }
 
 /** Render-side interpolation of the player pose between the previous and current sim tick (position and yaw). */
-export function lerpPose(w: PlayerWalk & { prevRot?: number }, alpha: number, out: { x: number; z: number; rot: number }): void {
+export function lerpPose(w: PlayerWalk & { prevRot?: number; y?: number; prevY?: number; kat?: number }, alpha: number, out: { x: number; z: number; rot: number; y?: number; kat?: number }): void {
   out.x = w.prev.x + (w.pos.x - w.prev.x) * alpha;
   out.z = w.prev.z + (w.pos.z - w.prev.z) * alpha;
   out.rot = angLerp(w.prevRot ?? w.rot, w.rot, alpha);
+  // Martı AVM katları: render yüksekliği (merdivende akıcı) + kat (görünümler aynı nesneyi okur)
+  if (w.y !== undefined) { const py = w.prevY ?? w.y; out.y = py + (w.y - py) * alpha; if (w.kat) out.kat = w.kat; else delete out.kat; }
 }

@@ -7,6 +7,7 @@
  * Also the lamp positions that are pure content: interior ceiling lamp grid (same grid as ic-mekan-look 'lamba') and the büfe floresan
  * per stage (same numbers as kiosk.ts K2.flo).
  */
+import { katY } from '../../../content/avm-kat';
 import { icDim, icWorld, icKapi, type IcMekan } from '../../../content/ic-mekan';
 import { BUFE } from '../../../content/prefabs/iskele/layout';
 
@@ -61,13 +62,13 @@ export function stepFade(s: FadeState, dt: number, tau = FADE_TAU): FadeState {
 export const smooth01 = (k: number): number => k * k * (3 - 2 * k);
 
 /** ceiling lamp grid of a room, world space, bulb height (same grid as ic-mekan-look 'lamba': one lamp per ~3.6 m). */
-export function icLambalar(m: IcMekan): { x: number; y: number; z: number }[] {
-  const { W, D } = icDim(m), h = Math.min(3.2, m.h);
+export function icLambalar(m: IcMekan): { x: number; y: number; z: number; kat?: number }[] {
+  const { W, D } = icDim(m), h = Math.min(3.2, m.h) + katY(m.kat || 0);   // AVM upper floors: the room's floor height
   const nx = Math.max(1, Math.round(W / 3.6)), nz = Math.max(1, Math.round(D / 3.6));
-  const out: { x: number; y: number; z: number }[] = [];
+  const out: { x: number; y: number; z: number; kat?: number }[] = [];
   for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) {
     const p = icWorld(m, -W / 2 + (i + 0.5) * W / nx, -D / 2 + (j + 0.5) * D / nz);
-    out.push({ x: p.x, y: h - 0.8, z: p.z });
+    out.push(m.kat ? { x: p.x, y: h - 0.8, z: p.z, kat: m.kat } : { x: p.x, y: h - 0.8, z: p.z });
   }
   return out;
 }

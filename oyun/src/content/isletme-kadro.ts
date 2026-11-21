@@ -17,6 +17,15 @@ export const ISLETME_ROL: Record<IsletmeId, IsletmeRol[]> = {
   giyim: [{ rol: 'danisman', ad: 'Satış danışmanı', huyRol: 'garson', gorunum: 'hostes', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }, { rol: 'vitrinci', ad: 'Vitrin sorumlusu', huyRol: 'komi', gorunum: 'gorevli', minLv: 3 }],
   elektronik: [{ rol: 'danisman', ad: 'Satış danışmanı', huyRol: 'garson', gorunum: 'hostes', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }, { rol: 'teknisyen', ad: 'Teknisyen', huyRol: 'komi', gorunum: 'gorevli', minLv: 2 }],
   oyuncak: [{ rol: 'danisman', ad: 'Satış danışmanı', huyRol: 'garson', gorunum: 'tost', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }],
+  // 2026-11-21 AVM katları: her dükkânın kendi ustası + kasiyeri/garsonu
+  sekerci: [{ rol: 'sekerci', ad: 'Şekerci ustası', huyRol: 'tost', gorunum: 'tost', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }, { rol: 'paketci', ad: 'Paketçi', huyRol: 'komi', gorunum: 'komi', minLv: 3 }],
+  kahveci: [{ rol: 'barista', ad: 'Barista', huyRol: 'cay', gorunum: 'barista', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }, { rol: 'kavurmaci', ad: 'Kavurmacı', huyRol: 'komi', gorunum: 'komi', minLv: 3 }],
+  dondurma: [{ rol: 'dondurmaci', ad: 'Maraşlı dondurmacı', huyRol: 'garson', gorunum: 'tost', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }],
+  baklava: [{ rol: 'tatlici', ad: 'Tatlı ustası', huyRol: 'asci', gorunum: 'asci', minLv: 1 }, { rol: 'garson', ad: 'Garson', huyRol: 'garson', gorunum: 'garson', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 2 }],
+  kuruyemis: [{ rol: 'tezgahci', ad: 'Tezgâhtar', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }, { rol: 'kavurmaci', ad: 'Kavurmacı', huyRol: 'tost', gorunum: 'tost', minLv: 1 }],
+  donerci: [{ rol: 'donerci', ad: 'Döner ustası', huyRol: 'asci', gorunum: 'asci', minLv: 1 }, { rol: 'garson', ad: 'Garson', huyRol: 'garson', gorunum: 'garson', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 2 }],
+  kumpir: [{ rol: 'kumpirci', ad: 'Kumpir ustası', huyRol: 'tost', gorunum: 'tost', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }, { rol: 'garson', ad: 'Garson', huyRol: 'garson', gorunum: 'garson', minLv: 2 }],
+  midye: [{ rol: 'midyeci', ad: 'Midyeci', huyRol: 'asci', gorunum: 'asci', minLv: 1 }, { rol: 'garson', ad: 'Garson', huyRol: 'garson', gorunum: 'garson', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 2 }],
 };
 /** wage is paid once at day end: same total as the old hourly cut (24 game hours) */
 export const ISCI_GUN_UCRET = ISCI_SAAT_UCRET * 24;

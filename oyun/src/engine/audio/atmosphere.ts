@@ -49,7 +49,10 @@ export const DEFAULT_TABLE: AmbienceTable = {
   banka: [{ id: 'steril_oda', loop: 'steril_oda', gain: 0.6 }],
   hastane: [{ id: 'steril_oda', loop: 'steril_oda', gain: 0.6 }],
 };
-for (const id of ['kafe1', 'kafe2', 'avm', 'tesis']) DEFAULT_TABLE[id] = DEFAULT_TABLE.salonW;
+for (const id of ['kafe1', 'kafe2', 'avm', 'tesis', 'avm_seker', 'avm_kahve', 'avm_baklava', 'avm_dondurma', 'avm_kuruyemis', 'avm_doner', 'avm_kumpir', 'avm_midye']) DEFAULT_TABLE[id] = DEFAULT_TABLE.salonW;
+// Martı AVM diyarı: holde dış deniz yok, kapalı çarşı mırıltısı (boot interior() -> 'avmHol'); mağazalar aynı ton, biraz kısık
+DEFAULT_TABLE.avmHol = [{ id: 'ic_mirilti', loop: 'ic_mirilti', gain: 0.75, shots: [{ id: 'spoon', gain: 0.1, minS: 25, maxS: 50, pan: 0.6 }] }];
+for (const id of ['avm_moda', 'avm_tekno', 'avm_oyuncak']) DEFAULT_TABLE[id] = [{ id: 'ic_mirilti', loop: 'ic_mirilti', gain: 0.45 }];
 DEFAULT_TABLE.stadyum = DEFAULT_TABLE.halisaha;
 
 export interface Atmosphere {
