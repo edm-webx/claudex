@@ -106,7 +106,7 @@ function kioskLayout(stage: number): StageLayout {   // stages 6-10 grow around 
   if (s3) { slots[1] = [-9.75, -7.35, HP, 's']; slots[2] = [-9.75, -4.45, HP, 's']; slots[3] = [-9.75, -1.4, HP, 'm']; slots[5] = [-5.2, -1.2, 0, 's']; }
   L.slots = slots.map(([x, z, r, s]) => ({ pos: P3(x as number, z as number), rotY: r as number, size: s as string }));
   L.walkways = [
-    [P3(-60, 7.6), P3(60, 7.6)], [P3(60, 10.0), P3(-60, 10.0)],
+    [P3(-49.5, 7.6), P3(49.5, 7.6)], [P3(49.5, 10.0), P3(-49.5, 10.0)],   // the ends are the locked construction sites (kilitli-bolge.ts)
     s3 ? [P3(2.5, 6.6), P3(6.6, 2.4), P3(7.0, -3.0), P3(7.0, -11.8), P3(-9.4, -11.95)]
        : [P3(2.5, 6.6), P3(6.6, 2.4), P3(7.0, -3.0), P3(7.0, -11.6), P3(-9.2, -11.8), P3(-9.3, -1.0), P3(-6.5, 3.4), P3(-3.0, 6.6)],
     s3 ? [P3(-3.0, 6.6), P3(-5.8, 2.8), P3(-5.8, -0.6)] : [P3(-1.8, 7.6), P3(-1.8, 3.6), P3(-4.6, 1.4)]
@@ -126,7 +126,7 @@ export function staticObstacles(): Obstacle[] {
   // stair side walls: the flights are entered only from their foot (south foot on the promenade, north foot on the far pavement)
   for (const sg of [-1, 1]) { const x0 = UG.x + sg * (UG.hw + 0.05), x1 = UG.x + sg * (UG.hw + 0.45); add(Math.min(x0, x1), Math.max(x0, x1), UG.zA + 0.6, 14.2, 'rail'); add(Math.min(x0, x1), Math.max(x0, x1), 28.4, UG.zD - 0.6, 'rail'); }
   PIER_LAMPS.forEach(([x, z]) => add(x - 0.22, x + 0.22, z - 0.22, z + 0.22, 'lamp'));
-  for (let x = -58; x <= 58; x += 10) if (x < PIER.x0 - 1 || x > PIER.x1 + 1) add(x - 0.22, x + 0.22, 4.83, 5.27, 'lamp');
+  for (let x = -48; x <= 48; x += 10) if (x < PIER.x0 - 1 || x > PIER.x1 + 1) add(x - 0.22, x + 0.22, 4.83, 5.27, 'lamp');
   [[22.05, -8.55], [22.05, -5.65], [21.9, -12.85], [-23.45, -17.5]].forEach(([x, z]) => add(x - 0.25, x + 0.25, z - 0.25, z + 0.25, 'bollard'));
   BENCHES.forEach(b => { const c = Math.cos(b.rotY), s = Math.sin(b.rotY), bx = b.pos.x - 0.28 * s, bz = b.pos.z - 0.28 * c, hx = Math.abs(c) * 0.95 + Math.abs(s) * 0.12, hz = Math.abs(s) * 0.95 + Math.abs(c) * 0.12; add(bx - hx, bx + hx, bz - hz, bz + hz, 'bench'); });
   [[-9.75, 3.75], [22.0, 3.75]].forEach(([x, z]) => add(x - 0.58, x + 0.58, z - 0.3, z + 0.3, 'prop'));

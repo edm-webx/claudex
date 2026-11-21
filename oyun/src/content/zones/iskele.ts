@@ -41,9 +41,8 @@ export function iskeleZone(): ZoneDef {
       { id: 'kiosk', prefab: 'iskele.kiosk', pos: { x: 0, z: 0 }, overrides: { stage: 1, renewed: '' } },
       { id: 'ferry', prefab: 'iskele.ferry', pos: { x: 0, z: 0 } },
       { id: 'ferryFar', prefab: 'iskele.ferryFar', pos: { x: 0, z: 0 } },
-      // pier-end apartments close both ends of the promenade (2026-11-02: the pier is the whole map)
-      { id: 'apt-e1', prefab: 'mk.apt.e1', pos: { x: 57.5, z: 6.8 } }, { id: 'apt-e2', prefab: 'mk.apt.e2', pos: { x: 57.5, z: 11.2 } },
-      { id: 'apt-w1', prefab: 'mk.apt.w1', pos: { x: -57.5, z: 6.8 } }, { id: 'apt-w2', prefab: 'mk.apt.w2', pos: { x: -57.5, z: 11.2 } },
+      // 2026-11-21: the pier-end apartments are gone; both promenade ends are locked municipal construction sites
+      // (content/kilitli-bolge.ts, view/world/insaat-sahasi.ts) that will open as new neighbourhoods when the iskele grows
       ...karsiProps(),
       // stools that were inside the v2 kiosk batch (stage 1 counter stool, stage 2 door stool); the view hides the other stage's one
       { id: 'tabure-s1', prefab: 'iskele.tabure-kucuk', pos: { x: 2.95, z: -0.95 } },

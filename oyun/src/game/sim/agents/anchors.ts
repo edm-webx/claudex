@@ -19,7 +19,7 @@ const FALLBACK: Record<string, [number, number, number?, number?]> = {
   'stations.cay.standAt': [0.2, -2.2], 'stations.cay.out': [0.2, -3.0], 'stations.cay': [0.2, -3.2],
   'stations.ayran.standAt': [1.0, -2.2], 'stations.simit.standAt': [1.8, -2.2], 'stations.tost.standAt': [-0.6, -2.2], 'stations.gazoz.standAt': [2.6, -2.2],
   'catSpots.awning': [-0.5, -3.0, 1.2], 'catSpots.basket': [0.8, -3.0, 0.9], 'catSpots.stool': [2.95, -0.95, 0.4], 'catSpots.bench': [-8, 4, 0.5],
-  'dogSpot': [3.9, -2.0], 'spawn.0': [-60, 8.8], 'spawn.1': [60, 8.8],
+  'dogSpot': [3.9, -2.0], 'spawn.0': [-50, 8.8], 'spawn.1': [50, 8.8],
 };
 
 export interface AnchorBook {
