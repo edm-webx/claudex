@@ -44,10 +44,4 @@ export const JAR_BASE = 8;
 export const JAR_PER_STAGE = 2;
 /** How long the jar sparkles in the world after it fills (sim seconds). */
 export const JAR_SPARKLE_S = 90;
-export const JAR_FULL_LINES = [
-  'Bahşiş kavanozu doldu! Çırakların morali tavan, eller hızlandı.',
-  'Kavanoz ağzına kadar! Ekipte bayram havası, herkes bir vites yukarı.',
-];
-export const JAR_FULL_ALONE = 'Bahşiş kavanozu doldu! Sabri ıslık çalarak çalışıyor.';
-export const JAR_REGULAR_LINE = 'Müdavim kavanoza bozukluk attı.';
 

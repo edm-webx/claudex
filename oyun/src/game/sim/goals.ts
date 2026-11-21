@@ -15,8 +15,7 @@
 import type { Rules } from './state';
 import type { ProductId } from './schema';
 import {
-  SMALL_GOALS, GOAL_NEXT_S, GOAL_DONE_LINES, JAR_BASE, JAR_PER_STAGE, JAR_SPARKLE_S, JAR_FULL_LINES, JAR_FULL_ALONE,
-  JAR_REGULAR_LINE, type SmallGoalDef,
+  SMALL_GOALS, GOAL_NEXT_S, GOAL_DONE_LINES, JAR_BASE, JAR_PER_STAGE, JAR_SPARKLE_S, type SmallGoalDef,
 } from '../../content/goals';
 import { padDef } from '../../content/pads';
 import { KIOSK_STAGES } from '../../content/stages';
@@ -158,19 +157,19 @@ export function installHedef(r: Rules): HedefApi {
 
   // ───────── tip jar ─────────
   const jarCap = () => JAR_BASE + JAR_PER_STAGE * clamp(S().stage, 1, 10);
-  function jarCoin(n: number, line?: string): void {
+  function jarCoin(n: number): void {
     const g = G();
     if (g.jarDay !== S().day) { g.jarDay = S().day; g.jar = 0; g.jarFull = false; }
     if (g.jarFull) return;
     g.jar += n;
-    void line;   // 2026-11-21: the counter jar (view) was removed on the owner's request, so no jar toasts
+    // 2026-11-21 owner: "kavanozu kaldır": the counter jar view is gone, so the jar no longer toasts (silent counter)
     if (g.jar >= jarCap()) {
       g.jar = jarCap(); g.jarFull = true; g.jarFullAt = S().playT;
       r.stat('jarFull');
     }
   }
   r.bus.on('tip', () => { jarCoin(1); });
-  r.bus.on('regularOk', () => { jarCoin(1, JAR_REGULAR_LINE); });
+  r.bus.on('regularOk', () => { jarCoin(1); });
 
   r.bus.on('dayEnd', (e) => {
     const g = G();
