@@ -187,7 +187,8 @@ export function createKulis(deps: {
   function body(e: EsnafimSave): string {
     switch (tab) {
       case 'kimlik': return `<div class="kl-h">Kulise hoş geldin!</div><div class="kl-sub">Perde açılmadan esnafını hazırla. Herkesin kendi dükkanı var.</div>
-<div class="kl-l">Adın${e.adKilit ? ' 🔒 <small>(bir kez seçilir, değişmez)</small>' : ' <small>(bir kez seçilir, sonra değişmez!)</small>'}</div><input class="kl-in" name="ad" maxlength="14" value="${esc(e.ad)}"${e.adKilit ? ' readonly' : ''}>
+<div class="kl-l">Adın${e.adKilit ? ' 🔒 <small>(bir kez seçilir, değişmez)</small>' : ' <small>(bir kez seçilir, sonra değişmez!)</small>'}</div><input class="kl-in" name="ad" maxlength="14" value="${esc(e.ad)}" placeholder="Adını yaz"${e.adKilit ? ' readonly' : ''}>
+<div class="kl-l">Bedenin <small style="font:700 13px var(--body);opacity:.7">(iki sade beden, gerisini sen süslersin)</small></div>${ch('tip', [['a', 'Erkek'], ['b', 'Kadın']], e.tip)}
 <div class="kl-l">Dükkanının adı</div><input class="kl-in" name="dukkan" maxlength="22" value="${esc(e.dukkan)}">
 <div class="kl-l">Sınıfın <small style="font:700 13px var(--body);opacity:.7">(her şeyi yapabilirsin, sınıfın en iyi olduğun iş)</small></div>
 <div class="kl-cls">${SINIFLAR.map(s => `<button class="kl-cl${s.id === e.sinif ? ' on' : ''}" data-sinif="${s.id}"><i>${s.icon}</i>${s.ad}<small>${s.desc}</small><b>${s.perk}</b><b style="color:#7d3c98">${YETENEK[s.id].icon} ${YETENEK[s.id].ad}</b></button>`).join('')}</div>`;
@@ -237,7 +238,6 @@ ${e.sapka ? `<div class="kl-l">Şapka rengi</div>${sw('sapkaRenk', COLS, e.sapka
 <div class="kl-l">Kravat</div>${sw('kravat', ['#c0392b', '#2e3a59', '#3fa35a', '#f2c230', '#7d3c98'], e.kravat, { none: true })}
 <div class="kl-l">Takı</div><div class="kl-row">${tog('kupe', e.kupe, 'Küpe')}</div>`;
       case 'vucut': return `<div class="kl-h">Boy aynası</div><div class="kl-sub">Kalıbını seç, gerisini sen süsle.</div>
-<div class="kl-l">Cinsiyet</div>${ch('tip', [['a', 'Erkek'], ['b', 'Kadın']], e.tip)}
 <div class="kl-l">Yapı</div>${ch('vucut', [['slim', 'İnce'], ['mid', 'Orta'], ['round', 'Tombul']], e.vucut)}
 <div class="kl-l">Boy</div>${ch('boy', [['0.92', 'Kısa'], ['1', 'Orta'], ['1.08', 'Uzun']], e.boy <= 0.95 ? '0.92' : e.boy >= 1.05 ? '1.08' : '1')}`;
     }
@@ -269,7 +269,7 @@ ${e.sapka ? `<div class="kl-l">Şapka rengi</div>${sw('sapkaRenk', COLS, e.sapka
   }
 
   function open(model: EsnafimSave) {
-    m = { ...model }; tab = model.done ? 'yuz' : 'kimlik'; heroKey = '';
+    m = { ...model }; if (!model.adKilit && !model.done) m.ad = ''; tab = model.done ? 'yuz' : 'kimlik'; heroKey = '';
     canvas = document.createElement('canvas'); canvas.className = 'kl-c'; deps.root.appendChild(canvas);
     tag = document.createElement('div'); tag.className = 'kl-tag'; deps.root.appendChild(tag);
     rnd = document.createElement('button'); rnd.className = 'kl-rnd'; rnd.textContent = '🎲 Rastgele'; deps.root.appendChild(rnd);
@@ -306,6 +306,7 @@ ${e.sapka ? `<div class="kl-l">Şapka rengi</div>${sw('sapkaRenk', COLS, e.sapka
       if (el.dataset.ky) { deps.command({ kind: 'kiyafet', op: el.dataset.ky, id: el.dataset.id }); tap(); heroKey = ''; setTimeout(paint, 30); return; }
       if (el.dataset.sinif) { const sn = SINIFLAR.find(x => x.id === el.dataset.sinif); if (sn) set({ sinif: sn.id, ...sn.kit }); return; }
       const k = el.dataset.k!, v = el.dataset.v!;
+      if (k === 'tip' && v === 'b') { set({ tip: 'b', sakalStil: 'yok', biyik: 'yok', sakal: false }); return; }   // iki beden: uyumsuz sakal/bıyık kalmasın
       if (el.dataset.null) { set({ [k]: null }); return; }
       if (el.dataset.bool) { set({ [k]: v === '1' }); return; }
       if (k === 'ten' || k === 'desen' || k === 'boy' || k === 'allik') { set({ [k]: Number(v) }); return; }
@@ -324,6 +325,11 @@ ${e.sapka ? `<div class="kl-l">Şapka rengi</div>${sw('sapkaRenk', COLS, e.sapka
 
   function finish() {
     if (!m) return;
+    if (!m.adKilit && !m.ad.trim()) {   // herkes kendi adını yazar: sabit ana karakter yok
+      tab = 'kimlik'; paint(); try { deps.sfx?.('error'); } catch { /* */ }
+      const inp = panel?.querySelector('input[name="ad"]') as HTMLInputElement | null; if (inp) { inp.focus(); inp.style.borderColor = '#e0533c'; }
+      return;
+    }
     deps.command({ kind: 'esnafim', op: 'set', data: { ad: m.ad, dukkan: m.dukkan } });
     deps.command({ kind: 'saveSign', text: m.dukkan, font: 'vapur' });
     deps.command({ kind: 'esnafim', op: 'done' });
