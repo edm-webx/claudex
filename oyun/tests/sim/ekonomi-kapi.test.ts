@@ -9,6 +9,7 @@ import { BANKA } from '../../src/content/esya';
 import { KAYNAKLAR, BONUS_MIN } from '../../src/content/ekonomi2';
 import { OKUL_KELIME, OKUL_GUNLUK_SINAV } from '../../src/content/okul';
 import { KT_DK_TAVAN_TABAN, KT_DK_TAVAN_SEVIYE } from '../../src/content/kirtasiye';
+import { P } from '../../src/content/economy';
 
 const mk = () => { const sim = played(1) as any; sim.step(1); const m = mulkApi(sim.rules)!; return { sim, m, S: sim.state, rt: sim.rules.rt, K: sim.rules, c: (x: any) => sim.command({ kind: 'mulk', ...x }) }; };
 const toasts = (sim: any) => sim.events(0).filter((e: any) => e.name === 'toast').map((e: any) => String((e.data as any)?.text ?? ''));
@@ -109,6 +110,17 @@ it('EKO-03: mevduat faizi %0,2, ana para tavanı 200.000, hesap başına günde 
   expect(rt.banka.tl).toBe(1_000_400);
   S.day = 6; gun(); expect(rt.banka.tl).toBe(1_000_400 + 400);
   expect(S.stats.kaynak_faiz).toBeGreaterThan(0);
+});
+it('mevduat faizi: hesap bankasında (duvar saati var) 4 karakterin farklı günü faizi çoğaltmaz, damga bulut kaydına yazılır', () => {
+  const { sim, S, rt, c } = mk();
+  sim.command({ kind: 'teleport', x: BANKA.kapi.x, z: BANKA.kapi.z });
+  S.money = 200_000; c({ op: 'tlYatir', n: 200_000 });
+  const gun = () => { S.zones.envanter.gunluk.gun = -1; sim.step(1); };
+  rt.banka.saat = 1_000_000; rt.banka.faizSaat = 0; S.day = 5; gun();
+  expect(rt.banka.tl).toBe(200_400); expect(rt.banka.faizSaat).toBe(1_000_000); expect(rt.banka.dirty).toBe(true);
+  // başka karakter (günü ileride, slot damgası yok), duvar saati aynı oyun günü içinde: faiz yok
+  delete rt.banka.faizGun; S.day = 40; gun(); expect(rt.banka.tl).toBe(200_400);
+  rt.banka.saat += P.GAME_DAY_S; S.day = 41; gun(); expect(rt.banka.tl).toBe(200_800);
 });
 it('EKO-03: borç varken kredi, limitin üstüne çıkmaz', () => {
   const { sim, S, c } = mk(); sim.command({ kind: 'teleport', x: BANKA.kapi.x, z: BANKA.kapi.z });

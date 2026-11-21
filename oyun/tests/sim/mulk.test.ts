@@ -137,7 +137,7 @@ it('banka: kredi limiti aşılmaz, kalan limit kadar çekilir, atlanan günlerin
   const { sim, S, c } = mk();
   const { KREDI_LIMIT } = await import('../../src/game/sim/mulk');
   sim.command({ kind: 'teleport', x: BANKA.kapi.x, z: BANKA.kapi.z });
-  const lim = KREDI_LIMIT(S.level);
+  const lim = KREDI_LIMIT(S.level, S.totalEarned);
   S.money = 0; c({ op: 'krediAl', n: 1e9 });
   const k = S.zones.arsa.kredi; expect(k.borc).toBe(lim);
   c({ op: 'krediAl', n: 5000 }); expect(k.borc).toBe(lim);   // limit dolu: ek çekim yok

@@ -12,7 +12,7 @@ import { hesap, veriOku, veriYaz, veriKapanisYaz } from './supa';
 export const SLOT_N = 4;
 export interface SlotOzet { ad: string; sinif: string; tip: string; level: number; playT: number; dukkan: string }
 export interface Slot extends SlotOzet { code: string }
-export interface Banka { tl: number; esya: Record<string, number> }
+export interface Banka { tl: number; esya: Record<string, number>; /** EKO: wall-clock second of the account's last deposit interest (all 4 slots share it) */ faizSaat?: number }
 interface Veri { code?: string; playT?: number; slots?: (Slot | null)[]; aktif?: number; banka?: Banka }
 
 let v: Veri = {}, yeni = false, loaded = false;
@@ -20,7 +20,7 @@ export const slotsHazir = () => loaded;
 export const aktifSlot = () => (typeof v.aktif === 'number' && v.aktif >= 0 && v.aktif < SLOT_N ? v.aktif : 0);
 /** true when the picked slot is empty: the boot starts a fresh character (kulis opens, the name is chosen once) */
 export const slotYeni = () => yeni;
-export const bankaOku = (): Banka => ({ tl: Math.max(0, Math.floor(v.banka?.tl || 0)), esya: { ...(v.banka?.esya || {}) } });
+export const bankaOku = (): Banka => ({ tl: Math.max(0, Math.floor(v.banka?.tl || 0)), esya: { ...(v.banka?.esya || {}) }, faizSaat: Math.max(0, Math.floor(Number(v.banka?.faizSaat) || 0)) });
 
 export function slotListesi(): (SlotOzet | null)[] {
   const out: (SlotOzet | null)[] = [];
@@ -98,6 +98,6 @@ export function bulutKapanisYaz(code: string, playT: number, esnaf: { ad?: strin
 export async function bankaYaz(b: Banka): Promise<void> {
   if (!hesap()) return;
   if (!loaded) await slotlariYukle();
-  v.banka = { tl: Math.max(0, Math.floor(b.tl)), esya: Object.fromEntries(Object.entries(b.esya).filter(([, n]) => n > 0)) };
+  v.banka = { tl: Math.max(0, Math.floor(b.tl)), esya: Object.fromEntries(Object.entries(b.esya).filter(([, n]) => n > 0)), faizSaat: Math.max(0, Math.floor(Number(b.faizSaat) || 0)) };
   await veriYaz(v as Record<string, unknown>, null);
 }

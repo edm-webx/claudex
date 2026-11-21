@@ -11,6 +11,7 @@
  *   stadyum (near the gate): bilet | takim name
  */
 import { stadSave, tahminDoluluk, fiyatAyarla, FORMASYONLAR, KAPASITE, FIYAT_MIN, FIYAT_MAX } from './stadyum';
+import { odulluMacKaldi, ODULLU_MAC_GUNLUK } from './halisaha';
 import type { Kernel } from './state';
 import {
   ESYA_BY_ID, SANDIK_BY_ID, GUNLUK_HAVUZ, SANDIK_DUSER, BANKA, ARSALAR, ARSA_HAK, arsaKapi, DUKKAN_BY_ID, DUKKAN_MAX_SEVIYE,
@@ -20,14 +21,16 @@ import {
 import { TRAITS } from '../../content/traits';
 import { asamaDef } from '../../content/isletme-asama';
 import { tadilatBasla, tadilatAdim, tadilatBitir, tadilatSure, aciklar, type TadilatState } from './isletme-asama';
-import { skipGold } from '../../content/economy';
+import { skipGold, P } from '../../content/economy';
 import { ISCI_GUN_UCRET, ILAN_YENILE_UCRET, ISLETME_ROL } from '../../content/isletme-kadro';
 import { ilanYap, kadroKur, yeniKisi, tohumluRng, strSeed, type Calisan, type IsKart } from './agents/isletme-kadro';
 import { IC_CANLI, icOfArsa, icIcinde, icHangi, icBina, bankaGise, IC_BY_ID, icDim, icWorld } from '../../content/ic-mekan';
 import { OKUL_KELIME, OKUL_SINAV, OKUL_GUNLUK_SINAV, OKUL_ODUL_ADIM, OKUL_ODUL_ASAMA, OKUL_ODUL_TAVAN, OKUL_TEKRAR_YOK } from '../../content/okul';
 import { AVM_URUN, AVM_BY_ID, AVM_GIY } from '../../content/avm';
 import { KT_URUN, KT_BY_ID, KT_MUSTERI, KT_SABIR, KT_DK_TAVAN_TABAN, KT_DK_TAVAN_SEVIYE } from '../../content/kirtasiye';
-export const KREDI_FAIZ = 0.03, MEVDUAT_FAIZ = 0.002, MEVDUAT_TAVAN = 200_000, KREDI_LIMIT = (lv: number) => 25000 + lv * 15000;
+export const KREDI_FAIZ = 0.03, MEVDUAT_FAIZ = 0.002, MEVDUAT_TAVAN = 200_000, KREDI_LIMIT = (lv: number, toplamKazanc = Infinity) => Math.floor(Math.min(25000 + lv * 15000, Math.max(KREDI_TABAN, toplamKazanc * KREDI_KAZANC_PAYI)));
+/** Loan cap until the owner's EKO-07 decision: the level formula, but never more than 10 % of lifetime earnings (floor 10.000 ₺), so an unpaid loan is a small advance, not a money tap. */
+export const KREDI_TABAN = 10_000, KREDI_KAZANC_PAYI = 0.1;
 export const KAFE_TEMA: Record<string, string> = { retro: 'Retro', modern: 'Modern', bohem: 'Bohem', deniz: 'Deniz' };
 import { fmtMoney } from './util';
 import { salonOf, salonKat } from './salon';
@@ -44,7 +47,7 @@ export interface Env {
 export const KAFE_ASAMA = ['Köşe kafe', 'Kafe', 'Bistro', 'Teraslı bistro', 'Gurme bistro'];
 export interface Plot { tur: 'ev' | 'dukkan' | null; tip: string; lv: number; till: number; sat: number; fr: number; isci?: number; tadilat?: TadilatState; kadro?: Calisan[]; ilan?: IsKart[]; ilanGun?: number; maas?: number; esya?: string[]; tema?: string }
 export interface ArsaSave { yedek?: { tl: number; esya: Record<string, number>; faizGun?: number }; plots: Record<string, Plot>; takim: { ad: string; renk: string; renk2?: string; arma?: string; kurulus?: number } | null; lastH: number; kredi?: { borc: number; gun: number } }
-export interface BankaRt { tl: number; esya: Record<string, number>; dirty: boolean; /** EKO-03: hesap düzeyi son faiz günü (karakter başına değil) */ faizGun?: number }
+export interface BankaRt { tl: number; esya: Record<string, number>; dirty: boolean; /** EKO-03: hesap düzeyi son faiz günü (karakter başına değil) */ faizGun?: number; /** wall-clock seconds, set by boot only for the account bank (headless: undefined, the game-day stamp alone rules) */ saat?: number; faizSaat?: number }
 
 const flo = (n: unknown) => Math.max(0, Math.floor(Number(n) || 0));
 const dist = (a: { x: number; z: number }, b: { x: number; z: number }) => Math.hypot(a.x - b.x, a.z - b.z);
@@ -151,7 +154,7 @@ export function installMulk(K: Kernel) {
     else if (op === 'esyaYatir') { if (!ESYA_BY_ID[id]) return; n = Math.min(n, have(id)); if (n < 1) return; take(id, n); b.esya[id] = flo(b.esya[id]) + n; K.toast('🏦 ' + n + ' ' + nm(id) + ' depoya kondu (tüm karakterlerin görür).', 'good'); }
     else if (op === 'esyaCek') { n = Math.min(n, flo(b.esya[id])); if (n < 1) return; b.esya[id] -= n; if (b.esya[id] <= 0) delete b.esya[id]; give(id, n); K.toast('🏦 ' + n + ' ' + nm(id) + ' çantana alındı.', 'good'); }
     else if (op === 'krediAl') {   // survey: loans with daily interest; hard but no bankruptcy (the debt only grows, nothing is seized)
-      const a = arsa(), k = (a.kredi ||= { borc: 0, gun: S.day }), lim = KREDI_LIMIT(S.level);
+      const a = arsa(), k = (a.kredi ||= { borc: 0, gun: S.day }), lim = KREDI_LIMIT(S.level, flo(S.totalEarned));
       n = Math.min(n, lim - k.borc); if (n < 1) { K.toast('Kredi limitin dolu (' + fmtMoney(lim) + ').', 'info'); return; }
       k.borc += n; K.cashIn!(n); K.toast('🏦 ' + fmtMoney(n) + ' kredi çekildi. Borç ' + fmtMoney(k.borc) + ', günlük faiz %' + KREDI_FAIZ * 100, 'good'); return;
     }
@@ -168,9 +171,11 @@ export function installMulk(K: Kernel) {
     if (k) k.gun = S.day;
     // EKO-03: mevduat faizi HESAP başına günde bir kez (banka kaydındaki faizGun damgası, karakter başına değil), ana para tavanı 200.000 ₺, oran %0,2
     const b = banka();
-    if (b.tl >= 100 && S.day > flo(b.faizGun)) {
+    // the game day is per character: with the account bank the boot also gives a wall clock, and the account record's faizSaat allows one payment per game-day length for all 4 slots together
+    const saatOk = b.saat === undefined || b.saat - flo(b.faizSaat) >= P.GAME_DAY_S * 0.9;
+    if (b.tl >= 100 && S.day > flo(b.faizGun) && saatOk) {
       const f = Math.floor(Math.min(b.tl, MEVDUAT_TAVAN) * MEVDUAT_FAIZ);
-      b.faizGun = S.day;
+      b.faizGun = S.day; if (b.saat !== undefined) { b.faizSaat = Math.floor(b.saat); b.dirty = true; }
       if (f > 0) { b.tl += f; b.dirty = true; K.book!('faiz', f); K.toast('🏦 Mevduat faizi: +' + fmtMoney(f) + ' (bankada ' + fmtMoney(b.tl) + ')', 'good'); }
       bankaYedekle(b);
     }
@@ -426,7 +431,8 @@ export function installMulk(K: Kernel) {
   const nearGate = () => dist(K.playerPos, STADYUM.kapi) < 5 || dist(K.playerPos, HALI_SAHA_KAPI) < 4.5;
   function bilet() {
     if (!nearGate()) { K.toast('Bileti Maç Koordinatörü verir: karşı yakada halı saha girişi (üst geçitten geç).', 'info'); return; }
-    if (arsa().takim) { K.toast('⚽ ' + arsa().takim!.ad + ' sahaya çıkıyor! Lig maçı, bilet yok.', 'good'); }   // own club: no ticket, it's your match
+    if (!odulluMacKaldi(S.zones.halisaha, S.day)) { K.toast('🤝 Bugünkü ' + ODULLU_MAC_GUNLUK + ' ödüllü maç hakkın doldu: bu bir dostluk maçı, bilet ve ödül yok. Ödüllü maçlar yarın.', 'info'); }
+    else if (arsa().takim) { K.toast('⚽ ' + arsa().takim!.ad + ' sahaya çıkıyor! Lig maçı, bilet yok.', 'good'); }   // own club: no ticket, it's your match
     else { if (S.money < STADYUM.bilet) { K.toast('Bilet ' + fmtMoney(STADYUM.bilet) + '.', 'bad'); return; } K.spend(STADYUM.bilet); K.toast('🎟️ Bilet alındı! Maç başlıyor.', 'good'); }
     K.command({ kind: 'halisaha', op: 'teklif' } as never); K.command({ kind: 'halisaha', op: 'kabul' } as never);
   }
@@ -512,7 +518,7 @@ export function installMulk(K: Kernel) {
     const e = env(), a = arsa(), b = banka();
     return {
       money: S.money, gold: S.gold, level: S.level, esya: { ...e.esya }, sandik: { ...e.sandik }, sans: e.sans, acilan: e.acilan, son: e.son,
-      banka: { tl: b.tl, esya: { ...b.esya }, yakin: nearBank(), borc: Math.floor(arsa().kredi?.borc || 0), limit: KREDI_LIMIT(S.level), faiz: KREDI_FAIZ, mevduat: MEVDUAT_FAIZ },
+      banka: { tl: b.tl, esya: { ...b.esya }, yakin: nearBank(), borc: Math.floor(arsa().kredi?.borc || 0), limit: KREDI_LIMIT(S.level, flo(S.totalEarned)), faiz: KREDI_FAIZ, mevduat: MEVDUAT_FAIZ },
       gunluk: e.gunluk.liste.map(h => ({ ...h })), gunlukSandik: e.gunluk.sandikAlindi,
       arsa: ARSALAR.map(x => { const p = a.plots[x.id]; return { id: x.id, ad: x.ad || '', sabit: x.sabit || '', fiyat: x.fiyat, seviye: x.seviye, once: x.once || '', onceAd: x.once ? (ARSALAR.find(o => o.id === x.once)?.ad || '') : '', onceOk: !x.once || !!a.plots[x.once], owned: !!p, tur: p?.tur ?? null, tip: p?.tip || '', lv: p?.lv || 0, till: Math.floor(p?.till || 0), sat: Math.floor(p?.sat || 0), isci: flo(p?.isci), kadro: p && x.sabit && p.tur === 'dukkan' ? kadroOf(x, p).map(c => ({ ...c, rolAd: ISLETME_ROL[ARSA_ISLETME[x.id]].find(r => r.rol === c.rol)?.ad || c.rol, huyAd: TRAITS[c.huy]?.name || '' })) : [], ilan: p && x.sabit && p.tur === 'dukkan' ? ilanOf(x, p) : [], maasGun: p && p.tur === 'dukkan' && x.sabit ? flo(p.isci) * ISCI_GUN_UCRET : 0, isciMax: isciMaxOf(x, p), isciFiyat: isciFiyat(flo(p?.isci)), menu: p && x.sabit ? ekon(x, p).menu : [], menuSonraki: p && x.sabit ? kafeMenu(x.id, Math.min(5, p.lv + 1)).slice(kafeMenu(x.id, p.lv).length) : [], kesya: p && x.sabit ? (p.esya || []) : [], tema: p?.tema || '', musteriSaat: p && p.tur === 'dukkan' ? Math.round(dukkanMusteri(DUKKAN_BY_ID[p.tip], p.lv) * ekon(x, p).musK * (1 + ISCI_MUSTERI * flo(p.isci))) : 0,
         yakin: yakin(x, 1.5), ikon: x.sabit ? isletmeOf(x.id).ikon : '', asamaAd: x.sabit && p ? isletmeOf(x.id).asama[p.lv - 1] || '' : '', aletler: x.sabit ? isletmeOf(x.id).esya : [], tadilat: p?.tadilat ? { ...p.tadilat, skipGold: skipGold(p.tadilat.left) } : null, sonraki: p && x.sabit && p.tur === 'dukkan' && p.lv < DUKKAN_MAX_SEVIYE ? { ad: isletmeOf(x.id).asama[p.lv] || '', sureS: tadilatSure(p.lv), aciklar: aciklar(x.id, p.lv) } : null, yukselt: p && p.tur === 'dukkan' && p.lv < DUKKAN_MAX_SEVIYE ? yukPrice(x, DUKKAN_BY_ID[p.tip], p.lv) : null }; }),

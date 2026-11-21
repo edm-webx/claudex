@@ -2,7 +2,7 @@
 import { it, expect } from 'vitest';
 import { played } from './m1-helpers';
 import { STADYUM } from '../../src/content/esya';
-import { izleMac, KULUP_ODUL, MAC_ODUL, ODUL, BAHIS, macAyari, ceteleOf, recordStats } from '../../src/game/sim/halisaha';
+import { izleMac, KULUP_ODUL, MAC_ODUL, ODUL, BAHIS, macAyari, ceteleOf, recordStats, ODULLU_MAC_GUNLUK, bahisOran, BAHIS_ARALIK } from '../../src/game/sim/halisaha';
 import { tahminDoluluk } from '../../src/game/sim/stadyum';
 import { LIG_BY_ID, KULUP, KULUP_GUC_TABAN, gucSkill } from '../../src/content/lig';
 import { kapiGeliri } from '../../src/game/sim/stadyum';
@@ -141,4 +141,28 @@ it('FUT-13: eski kayıt (yalnız ad anahtarlı players) okunur, kadro numarasın
   const c = ceteleOf(z)!; expect(c.oyuncu.find(p => p.no === 10)).toMatchObject({ gol: 5, asist: 2, oyun: 4 }); expect(c.oyuncu.find(p => p.no === 9)!.gol).toBe(2);
   expect(c.takim.sahiplik).toBe(50); expect(c.sezon).toEqual([]); expect(c.rekor.fark).toBeNull();
   recordStats(z as never, undefined, 3, 0, { sezon: 0 }); expect((z as any).oyuncu[10].goals).toBe(5); expect((z as any).rekor.fark).toBe(3);   // keeps counting on top
+});
+
+it('bahis: bahis konduğu anda kayıt istenir (yenileme öncesi kayıt yoksa iade hilesi doğardı)', () => {
+  const { sim, S, c } = mk(); S.money = 10000;
+  sim.command({ kind: 'teleport', x: STADYUM.kapi.x, z: STADYUM.kapi.z });
+  sim.rules.ext.takeDirty();
+  c({ op: 'izle', bahis: '1', n: 500 }); expect(sim.rules.ext.takeDirty()).toBe(true);
+});
+it('bahis: oranlar kasaya pay bırakır, panel aralığı gerçek oranları kapsar', () => {
+  for (const [a, b] of [[0.5, 0.7], [0.6, 0.6], [0.7, 0.5], [0.55, 0.65]]) {
+    const o = bahisOran(a, b); expect(1 / o['1'] + 1 / o.X + 1 / o['2']).toBeGreaterThan(1.1);
+    expect(o['1']).toBeGreaterThanOrEqual(BAHIS_ARALIK.ev[0]); expect(o['1']).toBeLessThanOrEqual(BAHIS_ARALIK.ev[1]);
+    expect(o['2']).toBeGreaterThanOrEqual(BAHIS_ARALIK.dep[0]); expect(o['2']).toBeLessThanOrEqual(BAHIS_ARALIK.dep[1]); expect(o.X).toBe(BAHIS_ARALIK.X);
+  }
+});
+it('maç ödülü günde ' + ODULLU_MAC_GUNLUK + ' kez: sonrası biletsiz dostluk maçı (para, altın, sandık yok), ertesi gün yeniden', () => {
+  const { sim, S, rt, c } = mk(); S.money = 100000;
+  sim.command({ kind: 'teleport', x: STADYUM.kapi.x, z: STADYUM.kapi.z });
+  const oyna = () => { c({ op: 'bilet' }); expect(rt.uiLast.haliSahaMac).toBeTruthy(); sim.command({ kind: 'halisaha', op: 'sonuc', biz: 5, onlar: 0 }); };
+  for (let i = 0; i < ODULLU_MAC_GUNLUK; i++) { const m0 = S.money, g0 = S.gold; oyna(); expect(S.money).toBe(m0 - STADYUM.bilet + ODUL.anlik.win); expect(S.gold).toBe(g0 + ODUL.anlik.goldWin); }
+  const m0 = S.money, g0 = S.gold, oyun0 = Number(S.stats.macOyun) || 0, oynanan0 = S.zones.halisaha.played;
+  oyna();
+  expect(S.money).toBe(m0); expect(S.gold).toBe(g0); expect(Number(S.stats.macOyun) || 0).toBe(oyun0); expect(S.zones.halisaha.played).toBe(oynanan0 + 1);
+  S.day += 1; const m1 = S.money; oyna(); expect(S.money).toBe(m1 - STADYUM.bilet + ODUL.anlik.win);
 });
