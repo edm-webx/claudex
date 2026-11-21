@@ -73,3 +73,6 @@ Açık: view/world/hava-look.ts:480 tarih rozeti 12.5px (ana thread alanı, bir 
 ### UX thread 4. tur 2026-11-21
 Yapıldı: her iç mekan için özel ipucu (tests/unit/ipucu.test.ts hepsini kapsar); ilk 10 dk sırası: çay > ilk işçi (isbul) > ayran/simit/tabure (first-session testi yeşil); sipariş paneli stage=6'da ekrana getirildi, rozetin altında çakışmıyor, 'Bekleyen sipariş yok' satırı okunur yapıldı, panel 156px.
 Kalan: saç/sakal mesh'leri (7 sakal etiketi 4 mesh, chars-v2.ts, SANAT rolü), canlı yüz önizlemesi, hava-look tarih rozeti 12.5px (ana thread).
+
+## 2026-11-21 sıra (ana şantiye)
+- Sona eklendi (AR-GE öncesi): EKO-05 turu: çok tohumlu ölçüm + büfe tezgâhı / sipariş fiyat ayarı, eğri hedefe ±%10 (şimdi 30/60/90. dk +%36/+%19/+%15).
