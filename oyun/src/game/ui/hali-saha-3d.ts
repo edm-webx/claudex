@@ -278,7 +278,7 @@ export function createHaliSaha3D(o: {
   let t = 0, bz = 0, bvz = 0, lastOwner = -1, frame = 0;
   const camPos = new T.Vector3(L / 2, 14, WD + 14), camLook = new T.Vector3(L / 2, 0, WD / 2);
   const camT = new T.Vector3();   // shared target vector: no new Vector3 per frame
-  let w0 = 0, h0 = 0, camPreset: string | null = null;
+  let w0 = 0, h0 = 0, camPreset: string | null = null, dbgKick: { i: number; u: number } | null = null;
   const PRESETS: Record<string, [number, number, number, number, number, number, number]> = {
     korner: [L - 0.6, 3.4, WD + 1.6, L - 11, 0.6, WD / 2 - 3, 56],
     kale: [-2.05, 2.5, WD / 2 + 0.4, 10, 0.4, WD / 2, 62],
@@ -287,7 +287,8 @@ export function createHaliSaha3D(o: {
   };
   // debug/test hook (tests/browser/halisaha-gorsel.mjs): fixed camera presets, fill, draw stats
   (o.wrap as unknown as { __hs3: unknown }).__hs3 = {
-    cam: (n: string | null) => { camPreset = n && PRESETS[n] ? n : null; },
+    cam: (n: string | null) => { camPreset = n && (PRESETS[n] || n === 'oyuncu') ? n : null; },
+    kick: (i: number | null, u = 0.75) => { dbgKick = i == null ? null : { i, u }; },   // test: hold player i in a kick pose (u 0..1)
     setFill, info: () => ({ calls: ren.info.render.calls, tris: ren.info.render.triangles, geos: ren.info.memory.geometries, tex: ren.info.memory.textures, fans: crowd.meshes.reduce((a, m) => a + m.count, 0), seats: crowd.total, tier }),
   };
   return {
@@ -297,9 +298,19 @@ export function createHaliSaha3D(o: {
       if (w !== w0 || h !== h0) { w0 = w; h0 = h; ren.setSize(w, h, false); cam.aspect = w / Math.max(1, h); cam.updateProjectionMatrix(); }
       s.pls.forEach((p, i) => {
         const hh = heroes[i]; if (!hh) return;
-        const sp = Math.hypot(p.vx, p.vy), act = p.act ?? '';
+        const sp = Math.hypot(p.vx, p.vy), dk = !!dbgKick && (dbgKick.i === i || dbgKick.i < 0), act = dk ? 'kick' : p.act ?? '';
         hh.setPose({ x: p.x, z: p.y }, Math.atan2(p.fx, p.fy)); hh.object.position.y = 0; hh.object.rotation.x = 0; hh.object.rotation.z = 0;   // 2026-11-21: setPose only sets rotation.y; the dive/tackle rotateZ/rotateX below piled up frame after frame and players rolled over   // 2026-11-08: setPose lifts heroes onto the world's overpass (ustgecit) whose x/z overlap this pitch, so players floated
-        hh.setInput({ speed: sp, carry: 0, act: p.stun > 0 ? 'idle' : act === 'celebrate' ? 'cheer' : sp > 0.3 ? 'walk' : 'idle', mood: p.stun > 0 ? 'sad' : 'happy', t });
+        // sprint (> 4.5 m/s) uses the rig's run cycle instead of a sped-up walk; the rig switches to it above 5.5 m/s
+        hh.setInput({ speed: sp > 4.5 ? Math.max(sp, 5.6) : sp, carry: 0, act: p.stun > 0 ? 'idle' : act === 'celebrate' ? 'cheer' : sp > 0.3 ? 'walk' : 'idle', mood: p.stun > 0 ? 'sad' : 'happy', t });
+        // kick (motor act 'kick', actT counts down from ~0.3 s): right leg back-swing then strike, on the rig's additive joints
+        const aj = (hh as unknown as { rig?: { addJ?: Record<string, number> } }).rig?.addJ;
+        if (aj) {
+          if (act === 'kick' && (dk || (p.actT ?? 0) > 0)) {
+            const u = dk ? dbgKick!.u : Math.min(1, Math.max(0, 1 - (p.actT ?? 0) / 0.3));
+            if (u < 0.35) { const a = u / 0.35; aj.rtX = 0.5 * a; aj.rkX = 1.2 * a; }
+            else { const w = (u - 0.35) / 0.65, sw = Math.sin(Math.min(1, w * 1.6) * Math.PI / 2); aj.rtX = 0.5 - 1.6 * sw * (1 - 0.4 * Math.max(0, w - 0.6)); aj.rkX = 1.2 * (1 - sw); }
+          } else { aj.rtX = 0; aj.rkX = 0; }
+        }
         hh.update(s.dt, 1);
         const dv = p.dive ?? 0;
         if (dv > 0 && p.diveDir) {   // keeper dive: roll toward the dive side, slide and lift off the turf while airborne
@@ -354,7 +365,8 @@ export function createHaliSaha3D(o: {
       ballM.rotation.z -= s.ball.vx * s.dt / 0.22; ballM.rotation.x += s.ball.vy * s.dt / 0.22;
       bshadow.position.set(bx, 0.02, s.ball.y); const shs = 1 / (1 + ballZ * 0.35); bshadow.scale.setScalar(shs); shM.opacity = 0.3 * shs;
       // camera follows the ball (or a fixed preset for tests)
-      if (camPreset) { const p = PRESETS[camPreset]; camPos.set(p[0], p[1], p[2]); camLook.set(p[3], p[4], p[5]); cam.fov = p[6]; }
+      if (camPreset === 'oyuncu' && s.pls[1]) { const q = s.pls[1]; camPos.set(q.x + 0.6, 1.3, q.y + 3.6); camLook.set(q.x, 0.8, q.y); cam.fov = 45; }   // test: side close-up of player 1
+      else if (camPreset) { const p = PRESETS[camPreset]; camPos.set(p[0], p[1], p[2]); camLook.set(p[3], p[4], p[5]); cam.fov = p[6]; }
       else {
         const cx = Math.max(7, Math.min(L - 7, s.ball.x));
         if (s.portrait) { camPos.lerp(camT.set(Math.max(-8, s.ball.x - 19), 21, WD / 2), 0.08); camLook.lerp(camT.set(Math.min(L, s.ball.x + 4), 0, WD / 2), 0.08); cam.fov = 58; }

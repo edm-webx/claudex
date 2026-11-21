@@ -58,3 +58,4 @@ Kalan: motor FUT-02+heat, görseli bitir ve ekranla doğrula, macAyari bağlama,
 - Çevre: mk.ground.pitchzone haki -> çim; view'de 190 m çim disk, ~230 park ağacı (2 instanced çizim), uzak apartman silueti (1 instanced çizim). Yalnız oyuncu stadyum diyarındayken (x 392..452) görünür.
 - Yuvarlanma kök nedeni (ui/hali-saha-3d.ts): setPose yalnız rotation.y yazıyor, dalış rotateZ ve müdahale rotateX her kare birikiyordu; artık her kare x/z sıfırlanıyor (hakem dahil).
 - Araç: tests/browser/stadyum-kus.mjs. Kanıt: asama7-kanit/stadyum-gorsel-2026-11-21/tur2-*.png
+- Şut/pas pozu: motor p.act 'kick' (actT ~0.3 sn geri sayar) artık sağ bacakta geri çekiş + vuruş (rig.addJ rtX/rkX). Hız > 4.5 m/s koşu döngüsü (rig 5.5 üstünde koşar, hız 5.6'ya yükseltilip verilir). Test kancası __hs3.kick(i|-1, u) ve __hs3.cam('oyuncu'). Kanıt tur2-sut-pozu.png (0 / geri çekiş / vuruş).
