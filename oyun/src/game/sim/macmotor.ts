@@ -4,6 +4,8 @@
  * Saha: x 0..L (takım 0 sağa, +x, hücum eder), y 0..WD. Kale ağızları y M0..M1, x=0 ve x=L.
  */
 export const L = 40, WD = 20, M0 = 8.2, M1 = 11.8;
+/** Ceza alanı: kale çizgisinden 6 m derin, y 5..15; penaltı noktası 4.5 m. */
+export const BOX_D = 6, BOX_Y0 = 5, BOX_Y1 = 15, PEN_D = 4.5;
 const clamp = (v: number, a: number, b: number) => (v < a ? a : v > b ? b : v);
 const len = (x: number, y: number) => Math.hypot(x, y) || 1e-6;
 export function rng(seed: number) { let a = seed >>> 0; return () => { a = (a + 0x6d2b79f5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
@@ -16,6 +18,8 @@ export interface Pl {
   name: string; num: number; stun: number; kickCd: number; think: number; tx: number; ty: number; spd: number; sk: Skill; st: Stats; hold: number;
   /** 2026-11-08: dribble burst (s left) and its cooldown; during a burst the carrier runs faster, knocks the ball longer and shrugs off tackles. */
   boost: number; cd2: number;
+  /** FUT-04: kaleci dalışı (kalan sn, >0 dalıyor) ve yönü (y ekseninde -1 | 1). */
+  dive: number; diveDir: -1 | 1;
 }
 export interface Ball { x: number; y: number; vx: number; vy: number; owner: number; lastTouch: 0 | 1; lastKicker: number }
 export type Ev = { k: 'sfx'; id: string } | { k: 'banner'; text: string; t: number } | { k: 'goal'; team: 0 | 1; scorer: number } | { k: 'end' } | { k: 'shake'; t: number };
@@ -42,7 +46,7 @@ export function createMatch(o: MatchOpts = {}) {
       const j = () => clamp(base + (R() - 0.5) * 0.24, 0.25, 0.95);
       const ax = team === 0 ? s.x : 1 - s.x, x = ax * L, y = s.y * WD;
       pls.push({ x, y, vx: 0, vy: 0, fx: team === 0 ? 1 : -1, fy: 0, team, gk: i === 0, role: s.role, ax: s.x, ay: s.y, name: names[team][i] || ('Oyuncu' + i), num: i === 0 ? 1 : [0, 4, 5, 10, 9][i] + (team ? -1 : 0),
-        stun: 0, kickCd: 0, think: R() * 0.2, tx: x, ty: y, spd: 6, hold: 0, boost: 0, cd2: 0, sk: { flair: R(), pace: j(), pass: j(), shoot: j(), tackle: j(), vision: j(), gk: j() }, st: emptySt() });
+        stun: 0, kickCd: 0, think: R() * 0.2, tx: x, ty: y, spd: 6, hold: 0, boost: 0, cd2: 0, dive: 0, diveDir: 1, sk: { flair: R(), pace: j(), pass: j(), shoot: j(), tackle: j(), vision: j(), gk: j() }, st: emptySt() });
     });
   }
   const ball: Ball = { x: L / 2, y: WD / 2, vx: 0, vy: 0, owner: -1, lastTouch: 0, lastKicker: -1 };
@@ -61,7 +65,7 @@ export function createMatch(o: MatchOpts = {}) {
 
   function kickoff(toTeam: 0 | 1) {
     m.restart = null; m.pass = null; m.shot = null;
-    pls.forEach(p => { const nx = p.team === 0 ? Math.min(p.ax * L, L / 2 - 1.5) : Math.max((1 - p.ax) * L, L / 2 + 1.5); p.x = nx; p.y = p.ay * WD; p.vx = p.vy = 0; p.stun = 0; p.tx = p.x; p.ty = p.y; });
+    pls.forEach(p => { const nx = p.team === 0 ? Math.min(p.ax * L, L / 2 - 1.5) : Math.max((1 - p.ax) * L, L / 2 + 1.5); p.x = nx; p.y = p.ay * WD; p.vx = p.vy = 0; p.stun = 0; p.dive = 0; p.tx = p.x; p.ty = p.y; });
     const t = pls.findIndex(p => p.team === toTeam && p.role === 'FWD') >= 0 ? pls.findIndex(p => p.team === toTeam && p.role === 'FWD') : pls.findIndex(p => p.team === toTeam && !p.gk);
     pls[t].x = L / 2 + (toTeam === 0 ? -0.7 : 0.7); pls[t].y = WD / 2;
     ball.x = L / 2; ball.y = WD / 2; ball.vx = ball.vy = 0; ball.owner = t; ball.lastTouch = toTeam; m.freeze = 1.2;
@@ -142,6 +146,38 @@ export function createMatch(o: MatchOpts = {}) {
     p.hold += p.think;
   }
 
+  const inBox = (team: 0 | 1, x: number, y: number) => Math.abs(x - ownX(team)) < BOX_D && y > BOX_Y0 && y < BOX_Y1;
+
+  /**
+   * FUT-04 kaleci durum makinesi: konumlan -> dar aç -> dal -> tut/yumrukla (top temasında) -> hızlı oyun (topu elindeyken).
+   * Konum: topun iki direğe bakışının açıortayı üzerinde, çizgiden 0.8 m (uzaktaki topçuyu izlemez, açıortay uzakta ağız ortasına
+   * yakın kalır). Dar aç: rakip taşıyıcı 9 m içinde ve ortadaysa açıortay boyunca en çok 2.6 m çıkar. Dal: kaleye giden şutu
+   * reaksiyon gecikmesinden (beceriye bağlı) sonra görür; vücuduna uzaksa o yana dalar. Ceza alanındaki serbest topa yalnız
+   * rakipten önce yetişecekse çıkar. Ceza alanından hiç çıkmaz.
+   */
+  function kaleciPlan(p: Pl, holder: Pl | null) {
+    if (p.dive > 0 || ball.owner === pls.indexOf(p)) return;
+    const team = p.team, dir = dirOf(team), og = ownX(team), bx = ball.x, by = ball.y, depth = Math.abs(bx - og);
+    const l0 = len(og - bx, M0 - by), l1 = len(og - bx, M1 - by), vx = (og - bx) / l0 + (og - bx) / l1, vy = (M0 - by) / l0 + (M1 - by) / l1;
+    const carrier = holder && holder.team !== team ? holder : null;
+    const line = carrier && depth < 9 && Math.abs(by - WD / 2) < 6 ? clamp(0.8 + (9 - depth) * 0.22, 0.8, 2.6) : 0.8;
+    const k = (og + dir * line - bx) / (Math.abs(vx) > 1e-3 ? vx : 1e-3);
+    p.tx = og + dir * line; p.ty = clamp(k > 0 ? by + vy * k : WD / 2, M0 + 0.15, M1 - 0.15); p.spd = 4.6 + p.sk.gk * 1.2;
+    if (ball.owner >= 0) return;
+    const towards = (team === 0 ? ball.vx < -3 : ball.vx > 3) && depth < 18;
+    if (towards && m.shot && m.shot.team !== team && 3 - m.shot.t > 0.08 + (1 - p.sk.gk) * 0.18) {
+      const tt = (p.x - ball.x) / (ball.vx || 1e-6), yc = ball.y + ball.vy * Math.max(0, tt), off = yc - p.y;
+      const run = 0.5 + 2 * tt;   // bu kadarına adım atarak yetişir, fazlasına dalar
+      if (tt > 0 && tt < 0.5 && Math.abs(off) > run && Math.abs(off) < 2.6 + p.sk.gk * 0.6 && yc > M0 - 0.6 && yc < M1 + 0.6) { p.dive = 0.45; p.diveDir = off < 0 ? -1 : 1; p.vy = clamp(Math.abs(off) / 0.35, 3, 7.5); return; }
+      p.tx = og + dir * 0.8; p.ty = clamp(yc, M0 - 0.4, M1 + 0.4); p.spd = 6.2 + p.sk.gk * 1.4; return;
+    }
+    if (inBox(team, bx, by) && Math.hypot(ball.vx, ball.vy) < 7) {
+      const eta = (q: Pl) => Math.hypot(q.x - bx, q.y - by) / (5.5 + q.sk.pace * 1.6);
+      let opp = 1e9; for (const o of pls) if (o.team !== team && !o.gk) opp = Math.min(opp, eta(o));
+      if (eta(p) < opp - 0.1) { p.tx = bx; p.ty = by; p.spd = 6.5; }
+    }
+  }
+
   // ---------- team plan (off-ball): runs every ~0.15 s, sets tx/ty/spd for everyone except the carrier / human
   function plan() {
     const holder = ball.owner >= 0 ? pls[ball.owner] : null;
@@ -157,23 +193,7 @@ export function createMatch(o: MatchOpts = {}) {
         if (p.role === 'FWD' && phase === 'atk') ax = Math.max(ax, 0.62 + (bp - 0.5) * 0.2);
         return [team === 0 ? ax * L : (1 - ax) * L, ay * WD];
       };
-      // goalkeeper (2026-11-08 rewrite, user: "rakip kaleci hala futbolcuyu takip ediyor"): the keeper no longer mirrors the carrier
-      // across the pitch. He stands on the bisector of the ball-to-goal angle a short way off his line, reacts with a small lag,
-      // only steps out (max 2.6 m, inside his box) to narrow a close one-on-one, and only rushes a loose ball inside his own box.
-      for (const p of mates) if (p.gk && !isHuman(pls.indexOf(p))) {
-        const og = ownX(team), bx = ball.x, by = ball.y, depth = Math.abs(bx - og);
-        const carrier = holder && holder.team !== team ? holder : null;
-        let line = 0.8;
-        if (carrier && depth < 9 && Math.abs(by - WD / 2) < 6) line = clamp(0.8 + (9 - depth) * 0.22, 0.8, 2.6);
-        const k = line / Math.max(depth, line + 0.5), ideal = WD / 2 + (by - WD / 2) * k;
-        p.tx = og + dir * line; p.ty = clamp(ideal, M0 + 0.15, M1 - 0.15); p.spd = 4.6 + p.sk.gk * 1.2;
-        if (ball.owner < 0) {
-          const towards = (team === 0 ? ball.vx < -3 : ball.vx > 3) && depth < 16;
-          const inBox = depth < 5.5 && Math.abs(by - WD / 2) < 5;
-          if (towards && m.shot && m.shot.t < 2.85) { const tt = (og + dir * 0.8 - ball.x) / (ball.vx || 1e-6); if (tt > 0) p.ty = clamp(ball.y + ball.vy * tt, M0 - 0.5, M1 + 0.5); p.tx = og + dir * 0.8; p.spd = 6.2 + p.sk.gk * 1.4; }
-          else if (inBox && Math.hypot(ball.vx, ball.vy) < 7 && eta(p, ball.x, ball.y) < Math.min(...opps.filter(o => !o.gk).map(o => eta(o, ball.x, ball.y))) - 0.1) { p.tx = ball.x; p.ty = ball.y; p.spd = 6.5; }
-        }
-      }
+      for (const p of mates) if (p.gk && !isHuman(pls.indexOf(p))) kaleciPlan(p, holder);
       if (phase === 'atk') {
         const sup = outf.slice().sort((a, b) => Math.hypot(a.x - holder!.x, a.y - holder!.y) - Math.hypot(b.x - holder!.x, b.y - holder!.y)).slice(0, 2);
         for (const p of outf) {
@@ -318,10 +338,12 @@ export function createMatch(o: MatchOpts = {}) {
       if (ball.owner >= 0 && pls[ball.owner].team === human && ball.owner !== m.ctrl && !pls[ball.owner].gk) m.ctrl = ball.owner;
     }
     m.planT -= dt; if (m.planT <= 0) { m.planT = 0.12 + R() * 0.06; plan(); }
+    else if (m.shot && ball.owner < 0) for (let i = 0; i < pls.length; i++) if (pls[i].gk && !isHuman(i)) kaleciPlan(pls[i], null);   // şuta her karede tepki
     pls.forEach((p, i) => {
       p.kickCd = Math.max(0, p.kickCd - dt); p.cd2 = Math.max(0, p.cd2 - dt); p.boost = Math.max(0, p.boost - dt);
       const bm = p.boost > 0 ? 1.4 : 1;
-      if (p.stun > 0) { p.stun -= dt; p.vx *= 0.9; p.vy *= 0.9; }
+      if (p.dive > 0) { p.dive -= dt; p.vy = p.diveDir * Math.abs(p.vy); p.vx *= 0.85; if (p.dive <= 0) { p.dive = 0; p.vy *= 0.2; p.stun = 0.3; } }
+      else if (p.stun > 0) { p.stun -= dt; p.vx *= 0.9; p.vy *= 0.9; }
       else if (m.restart && m.restart.taker === i) { p.vx = 0; p.vy = 0; if (!isHuman(i)) carrierAI(p, i, dt); }
       else if (isHuman(i)) {
         let ix = m.input.ix, iy = m.input.iy;
@@ -342,7 +364,8 @@ export function createMatch(o: MatchOpts = {}) {
       }
       const ox = p.x, oy = p.y;
       p.x = clamp(p.x + p.vx * dt, 0.4, L - 0.4); p.y = clamp(p.y + p.vy * dt, 0.4, WD - 0.4); p.st.dist += Math.hypot(p.x - ox, p.y - oy);
-      const s = Math.hypot(p.vx, p.vy); if (s > 0.6) { p.fx = p.vx / s; p.fy = p.vy / s; }
+      if (p.gk && !isHuman(i)) { const og = ownX(p.team), x1 = og + dirOf(p.team) * (BOX_D - 0.4); p.x = clamp(p.x, Math.min(og, x1), Math.max(og, x1)); p.y = clamp(p.y, BOX_Y0 + 0.4, BOX_Y1 - 0.4); }
+      const s = Math.hypot(p.vx, p.vy); if (s > 0.6 && p.dive <= 0) { p.fx = p.vx / s; p.fy = p.vy / s; }
     });
     for (let a = 0; a < pls.length; a++) for (let b = a + 1; b < pls.length; b++) {
       const A = pls[a], B = pls[b], dx = B.x - A.x, dy = B.y - A.y, d = Math.hypot(dx, dy);
@@ -366,7 +389,7 @@ export function createMatch(o: MatchOpts = {}) {
         return;
       }
       ball.x = clamp(rbx, 0.1, L - 0.1); ball.y = clamp(rby, 0.1, WD - 0.1); ball.vx = o.vx; ball.vy = o.vy;
-      if (!m.restart && o.boost <= 0) for (let qi = 0; qi < pls.length; qi++) {
+      if (!m.restart && o.boost <= 0 && !o.gk) for (let qi = 0; qi < pls.length; qi++) {
         const q = pls[qi]; if (q.team === o.team || q.stun > 0 || q.gk) continue;
         if (Math.hypot(q.x - ball.x, q.y - ball.y) < 0.85) {
           const humanCarries = human !== null && o.team === human && ball.owner === m.ctrl, rate = (humanCarries ? 1.3 : 2.4) * (0.6 + q.sk.tackle * 0.8) * (1.15 - o.sk.pace * 0.3);
@@ -387,15 +410,17 @@ export function createMatch(o: MatchOpts = {}) {
       const bs = Math.hypot(ball.vx, ball.vy);
       for (let i = 0; i < pls.length; i++) {
         const p = pls[i]; if (p.kickCd > 0 || p.stun > 0) continue;
-        const d = Math.hypot(p.x - ball.x, p.y - ball.y), reach = p.gk ? 1.25 : 0.75;
+        const hands = p.gk && inBox(p.team, p.x, p.y), d = Math.hypot(p.x - ball.x, p.y - ball.y), reach = hands ? (p.dive > 0 ? 1.6 : 1.25) : 0.75;
         if (d >= reach) continue;
-        if (p.gk && bs > 11 && m.shot && m.shot.team !== p.team) {   // a real shot on the keeper: catch or parry by speed and skill
-          const sv = clamp(0.97 - (bs - 12) * 0.03 + (p.sk.gk - 0.5) * 0.35 - Math.max(0, d - 0.55) * 0.55, 0.15, 0.95);   // far from his body = harder
-          if (R() > sv) { ball.vx = R() < 0.35 ? ball.vx * 0.5 : -ball.vx * 0.3 + (R() - 0.5) * 6; ball.vy = (R() - 0.5) * 9; p.kickCd = 0.4; p.st.saves++; m.shot = null; ball.lastTouch = p.team; sfx('post'); sfx('crowdOoh'); break; }
+        if (hands && bs > 11 && m.shot && m.shot.team !== p.team) {   // a real shot on the keeper: catch or parry by speed and skill
+          // tut / yumrukla / kaçır: hız, vücuttan uzaklık (dalışta gövde uzanır) ve beceri
+          const dd = p.dive > 0 ? Math.max(0, d - 0.9) : d, sv = clamp(1.05 - (bs - 10) * 0.035 - Math.max(0, dd - 0.45) * 0.9 + (p.sk.gk - 0.5) * 0.5, 0.1, 0.95), u = R();
+          if (u >= sv) { p.kickCd = 0.3; continue; }
+          if (u > sv * 0.55 || bs > 21) { ball.vx = R() < 0.35 ? ball.vx * 0.5 : -ball.vx * 0.3 + (R() - 0.5) * 6; ball.vy = (R() - 0.5) * 9; p.kickCd = 0.4; p.st.saves++; m.shot = null; ball.lastTouch = p.team; sfx('post'); sfx('crowdOoh'); break; }
           sfx('crowdOoh');
         }
-        if (bs < 15 || p.gk || R() < 0.35 + p.sk.pace * 0.2) {
-          take(i); if (p.gk) { p.kickCd = 0.6; p.think = 0.7; }
+        if (bs < 15 || hands || R() < 0.35 + p.sk.pace * 0.2) {
+          take(i); if (hands) { p.kickCd = 0.6; p.think = 0.7; p.dive = 0; }
           break;
         }
       }
