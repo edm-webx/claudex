@@ -187,6 +187,7 @@ describe('aşama 10 tam mutfak (gerçek sim, 30 dk)', () => {
     const api = restoranApi(sim.rules)!, hat = api.hat!;
     const pg = mutfakDunya(MUTFAK_NOKTA.passGarson); let garsonPass = false;
     const is = new Map<string, number>(); let maxPass = 0, cift = 0, maxFrac = 0, sonZil = 0, sonIlerleme = 0, enUzunSessiz = 0;
+    let serveN = 0, sonServe = 0; sim.rules.bus.on('serve', () => { serveN++; });   // BUF-19/20: kanat ve çatı masalarına uzun yürüyüş: masaya teslim de ilerleme
     for (let s = 0; s < 18000; s++) {   // 1800 sn = 30 dk oyun
       sim.step(0.1);
       const r = sim.rules.rt; if (r.paused) { r.paused = false; r.pauseWhy = ''; }
@@ -199,7 +200,7 @@ describe('aşama 10 tam mutfak (gerçek sim, 30 dk)', () => {
       for (const v of occ.values()) if (v > 1) cift++;
       maxPass = Math.max(maxPass, d.pass.length);
       const tk = api.view().tickets; for (const t of tk) maxFrac = Math.max(maxFrac, t.frac);
-      if (d.zil > sonZil || !tk.length) { sonZil = d.zil; sonIlerleme = s; } else enUzunSessiz = Math.max(enUzunSessiz, s - sonIlerleme);
+      if (d.zil > sonZil || serveN > sonServe || !tk.length) { sonZil = d.zil; sonServe = serveN; sonIlerleme = s; } else enUzunSessiz = Math.max(enUzunSessiz, s - sonIlerleme);
     }
     const d = hat.durum();
     for (const ist of PISIR10) expect(is.get(ist) || 0, ist).toBeGreaterThan(0);
@@ -207,7 +208,7 @@ describe('aşama 10 tam mutfak (gerçek sim, 30 dk)', () => {
     expect(cift).toBe(0);                       // bir istasyonda aynı anda tek iş
     expect(maxPass).toBeLessThanOrEqual(PASS_KAP);
     expect(d.asim).toBe(0);                     // hiçbir emniyet zaman aşımı tetiklenmedi: takılı iş yok
-    expect(enUzunSessiz).toBeLessThan(600);     // açık bilet varken 60 sn'den uzun pass sessizliği yok: ölü kilit yok
+    expect(enUzunSessiz).toBeLessThan(600);     // açık bilet varken 60 sn'den uzun sessizlik (ne pass zili ne masaya teslim) yok: ölü kilit yok
     expect(maxFrac).toBeLessThan(1);            // hiçbir masa bileti mutfak yüzünden zaman aşımına düşmedi
     expect(d.zil).toBeGreaterThan(100);
     expect(garsonPass).toBe(true);               // garson mutfağa girip pass rafından tabak aldı

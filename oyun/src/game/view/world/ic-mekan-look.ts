@@ -96,14 +96,15 @@ const chair = (b: Batch, x: number, z: number, a: number, c: string) => {
   for (const [dx, dz] of [[-0.15, -0.15], [0.15, -0.15], [-0.15, 0.15], [0.15, 0.15]]) b.box(0.03, 0.45, 0.03, '#3a3d42', x + dx, 0.22, z + dz);
 };
 function masa(c: Ctx, it: IcItem, n: number) {
-  const { b } = c, cloth = it.k === 'masa4', fine = c.fine, chc = fine ? '#6b1f2a' : c.m.tur === 'bistro' || c.m.tur === 'balik' ? '#1d4f86' : '#7d5638';
+  // BUF-20 salonMasa: büfe salonunun sim masası, iki sandalye sim koltuklarında (u ekseninde ±0.78), oturan yalnız gerçek müşteri
+  const sm = it.k === 'salonMasa', { b } = c, cloth = it.k === 'masa4' || sm, fine = c.fine, chc = fine ? '#6b1f2a' : c.m.tur === 'bistro' || c.m.tur === 'balik' ? '#1d4f86' : '#7d5638';
   b.cyl(0.05, 0.1, 0.72, '#2a2d33', 0, 0.36, 0, { seg: 8 }); b.cyl(cloth ? 0.5 : 0.4, cloth ? 0.5 : 0.4, 0.05, cloth ? '#fbfaf6' : '#d6aa78', 0, 0.74, 0, { seg: 16 });
   if (cloth) b.cyl(0.52, 0.55, 0.2, fine ? '#fbfaf6' : c.m.tur === 'balik' ? '#e8f1f6' : '#fbf3e4', 0, 0.65, 0, { seg: 16 });
   b.cyl(0.11, 0.11, 0.015, '#ffffff', 0.18, 0.775, 0.05, { seg: 12 }); b.cyl(0.035, 0.03, 0.1, '#c0392b', -0.12, 0.82, 0.1, { seg: 6 }); b.cyl(0.035, 0.03, 0.1, '#e9d27a', 0.05, 0.82, -0.14, { seg: 6 });
   if (fine) { b.cyl(0.03, 0.04, 0.12, '#c9a24a', 0, 0.83, 0, { seg: 6 }); c.l.sph(0.035, '#ffcf6a', 0, 0.92, 0, { ws: 6, hs: 4 }); }
-  const seats = cloth ? 4 : 2;
+  const seats = cloth && !sm ? 4 : 2;
   for (let k = 0; k < seats; k++) {
-    const a = cloth ? k * HP + Math.PI / 4 : k * Math.PI + HP, x = Math.sin(a) * 0.68, z = Math.cos(a) * 0.68;
+    const a = cloth && !sm ? k * HP + Math.PI / 4 : k * Math.PI + HP, r = sm ? 0.78 : 0.68, x = Math.sin(a) * r, z = Math.cos(a) * r;
     chair(b, x, z, a, chc);
     if (k < n) { const p = person('guest', c.seed + k * 7, true); p.position.set(x, 0, z); p.rotation.y = a + Math.PI; c.grp.userData.cur.add(p); if (k === 0) c.an.bob.push(p); }
   }
@@ -226,7 +227,7 @@ const F: Record<string, Fn> = {
   cekmece: (c, it) => { const { b } = c; b.box(it.w, 2.2, it.d, '#9aa5b0', 0, 1.1, 0); for (let r = 0; r < 3; r++) for (let i = 0; i < 3; i++) { const x = -it.w / 2 + (i + 0.5) * it.w / 3, y = 0.4 + r * 0.7; b.box(it.w / 3 - 0.08, 0.6, 0.03, '#c9ced6', x, y, it.d / 2 + 0.01); b.box(0.2, 0.04, 0.05, '#5b6068', x, y + 0.1, it.d / 2 + 0.04); b.box(0.12, 0.08, 0.01, '#fbfaf6', x - 0.2, y - 0.12, it.d / 2 + 0.03); } },
   otopsi: (c, it) => { const { b } = c; b.box(it.w, 0.06, it.d, '#c9ced6', 0, 0.9, 0); b.cyl(0.1, 0.14, 0.88, '#9aa5b0', 0, 0.44, 0, { seg: 8 }); b.box(it.w - 0.2, 0.22, it.d - 0.15, '#e9eef2', 0, 1.03, 0, { r: 0.08, s: 2 }); b.box(0.12, 0.08, 0.06, '#e8c8a8', it.w / 2 - 0.15, 0.95, 0.15); },
   // büfe salonları
-  gozleme: (c, it) => { const { b, g } = c; b.box(it.w, 0.8, it.d, '#8a5a3a', 0, 0.4, 0); b.cyl(0.38, 0.38, 0.04, '#2a2d33', 0, 0.84, 0, { seg: 18 }); b.cyl(0.32, 0.32, 0.01, '#e9c88a', 0, 0.87, 0, { seg: 18 }); b.cyl(0.015, 0.015, 0.7, '#e9e0c8', -0.45, 0.88, 0.1, { rz: HP, seg: 4 }); g.box(it.w, 0.8, 0.03, '#d8eef6', 0, 1.4, it.d / 2); const p = person('staff', c.seed + 77, true, '#c0392b'); p.position.set(0, 0, -it.d / 2 - 0.2); c.grp.userData.cur.add(p); c.an.bob.push(p); },
+  gozleme: (c, it) => { const { b, g } = c; b.box(it.w, 0.8, it.d, '#8a5a3a', 0, 0.4, 0); b.cyl(0.38, 0.38, 0.04, '#2a2d33', 0, 0.84, 0, { seg: 18 }); b.cyl(0.32, 0.32, 0.01, '#e9c88a', 0, 0.87, 0, { seg: 18 }); b.cyl(0.015, 0.015, 0.7, '#e9e0c8', -0.45, 0.88, 0.1, { rz: HP, seg: 4 }); g.box(it.w, 0.8, 0.03, '#d8eef6', 0, 1.4, it.d / 2); },   // BUF-20: gözlemeci figürü yok (salonda yalnız işe alınmış gerçek personel)
   balKaymak: (c, it) => { const { b } = c; b.box(it.w, 0.85, it.d, '#5a3b2a', 0, 0.42, 0); for (let i = 0; i < 4; i++) { const x = -it.w / 2 + 0.2 + i * (it.w - 0.4) / 3; b.cyl(0.12, 0.12, 0.04, '#fbfaf6', x, 0.88, 0, { seg: 12 }); b.box(0.14, 0.06, 0.1, i % 2 ? '#e8a52a' : '#fbf3e4', x, 0.92, 0); } b.box(0.3, 0.3, 0.06, '#e8a52a', 0, 1.1, -0.2); },
   sarkuteri: (c, it) => { F.vitrin(c, it); for (let i = 0; i < 5; i++) c.b.cyl(0.08, 0.08, 0.1, ['#f2d27a', '#e8c070', '#fbf3e4', '#6f9e4f', '#3a2416'][i], -it.w / 2 + 0.25 + i * (it.w - 0.5) / 4, 0.74, 0, { seg: 10 }); },
   buzTezgah: (c, it) => F.buzVitrin(c, it),
@@ -301,12 +302,13 @@ function buildRoom(m: IcMekan, own: { lv: number; isci: number; esya: string[]; 
   const live = !!own && !!m.arsa && IC_CANLI.includes(m.arsa), empty = !!m.arsa && !own; grp.userData.live = live || empty;   // owned: real actors; unsold: an empty shop, no statues   // café/bistro: guests and staff are real actors (agents/kafe.ts), not props
   for (const it of items) {
     if (it.esya && !has.has(it.esya)) continue;
+    if ((it.asama ?? 0) > stage) continue;   // BUF-20: aşama 10 fine dining masaları
     if (it.k === 'masaK' || it.k === 'masa2' || it.k === 'masa4') ti++;
-    const isMasa = it.k === 'masa2' || it.k === 'masa4', fn = F[it.k]; if (!fn && !isMasa) continue;
+    const isMasa = it.k === 'masa2' || it.k === 'masa4' || it.k === 'salonMasa', fn = F[it.k]; if (!fn && !isMasa) continue;
     grp.userData.cur = new T.Group(); grp.userData.curItem = grp.userData.cur;
     const iy = WALLY.has(it.k) ? 0 : it.y || 0;
     b.push(mtx(it.u, iy, it.v, 0, (it.ry || 0) * HP, 0)); g.push(b.st[b.st.length - 1].clone()); l.push(b.st[b.st.length - 1].clone());
-    if (isMasa) masa(ctx, it, live || empty ? 0 : Math.floor(((ti * 37 + ctx.seed) % 100) / 100 * (it.k === 'masa4' ? 4 : 2) * occ * 1.6 + (occ > 0.6 ? 1 : 0)));
+    if (isMasa) masa(ctx, it, live || empty || m.salon ? 0 : Math.floor(((ti * 37 + ctx.seed) % 100) / 100 * (it.k === 'masa4' ? 4 : 2) * occ * 1.6 + (occ > 0.6 ? 1 : 0)));
     else fn!(ctx, it);
     b.pop(); g.pop(); l.pop();
     const sub = grp.userData.cur as T.Group; sub.position.set(it.u, iy, it.v); sub.rotation.y = (it.ry || 0) * HP; cur.add(sub);

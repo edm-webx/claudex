@@ -27,6 +27,7 @@ import { P } from '../../content/economy';
 import { PRODUCT_IDS } from '../../content/products';
 import { CITIZENS } from '../../content/citizens';
 import { STAGE_TABLES } from '../../content/pads';
+import { kanatKurulu, KANAT_BASE } from '../../content/kanat';
 import { stageLayout } from '../../content/prefabs/iskele/layout';
 import { defaultState, type GameState, type ProductId } from './schema';
 import { emptyRuntime, type Kernel, type Rules, type Item, type Order } from './state';
@@ -334,6 +335,7 @@ export function createRules(d: RulesDeps): RulesFull {
       case 'setStage': {
         S.stage = clamp(Math.round(Number(c.stage)) || 1, 1, 10);
         for (let s = 2; s <= S.stage; s++) (STAGE_TABLES[s] || []).forEach(i => K.setTableBuilt(i, true));
+        { const on = new Set(kanatKurulu(S.stage)); for (let i = KANAT_BASE; i < rt.tables.length; i++) if (rt.tables[i].built && !on.has(i)) K.setTableBuilt(i, false); }   // BUF-19: aşama inince kanat masaları da kalkar
         K.onLayout(); K.refreshSiklik();
         d.bus.emit('stage', { stage: S.stage });
         return true;
@@ -384,7 +386,7 @@ export function createRules(d: RulesDeps): RulesFull {
         else if (what === 'stars') S.stars = Math.max(S.stars, Number(v) || 0);
         else if (what === 'offline') off.welcome(Number(v) || 0);
         else if (what === 'unlock') { const key = String(v); if (!S.owned[key]) K.unlock(key); }
-        else if (what === 'stage') { const to = clamp(Number(v) || 1, 1, 10); for (let st = S.stage + 1; st <= to; st++) (STAGE_TABLES[st] || []).forEach(i => K.setTableBuilt(i, true)); S.stage = to; K.bus.emit('stage', { stage: to }); K.onLayout(); }
+        else if (what === 'stage') { const to = clamp(Number(v) || 1, 1, 10); for (let st = S.stage + 1; st <= to; st++) (STAGE_TABLES[st] || []).forEach(i => K.setTableBuilt(i, true)); S.stage = to; { const on = new Set(kanatKurulu(to)); for (let i = KANAT_BASE; i < rt.tables.length; i++) if (rt.tables[i].built && !on.has(i)) K.setTableBuilt(i, false); } K.bus.emit('stage', { stage: to }); K.onLayout(); }
         else (rt as unknown as { forceAgent?: (w: string, v?: unknown) => void }).forceAgent?.(what, v);
         return true;
       }

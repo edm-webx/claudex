@@ -108,6 +108,8 @@ export interface AgentHost {
   isBirak?(wid: number): void;
   /** BUF-05: where the garson picks his claimed plates up: the kitchen pass (world point) or null (front counter) */
   passDurak?(wid: number): Vec2 | null;
+  /** BUF-19: boştaki garsonun bölge postu (kanat / salon bölgesi; yoksa null: tezgâh yanı) */
+  garsonPost?(wid: number): Vec2 | null;
   /** kitchen line (sim/mutfak-hat.ts): claim the oldest ticket item + a free station for it (nearest to `from`) */
   kitchenClaim?(wid: number, opt?: { from?: Vec2 }): FoodId | null;
   /** legacy one-step finish (ok) / give the job up (!ok) */

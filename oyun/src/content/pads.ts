@@ -1,5 +1,6 @@
 /** Pads (sarı kareler): unlock sequence and prices (v2 data.js D.PADS). Owner: Builder A. Pure data. */
 import { KIOSK_STAGES } from './stages';
+import { kanatYeni } from './kanat';
 import type { ProductId } from '../game/sim/schema';
 
 export interface PadDef2 { key: string; label: string; sub: string; price: number; kind: 'station' | 'table' | 'job' | 'window' | 'tray' | 'magnet' | 'tadilat'; station?: ProductId; table?: number; after: string[]; when?: string; minPlay?: number; stage?: number; }
@@ -31,5 +32,7 @@ export const padCost = (key: string, stage: number): number => {
   if (p.kind === 'tadilat') { const s = KIOSK_STAGES[stage || 1]; return s && s.cost ? s.cost : 0; }
   return p.price;
 };
-/** Stage 3 adds two tavla tables (slots 6 and 7) automatically */
-export const STAGE_TABLES: Record<number, number[]> = { 1: [], 2: [], 3: [6, 7] };
+/** Stage 3 adds two tavla tables (slots 6 and 7) automatically; BUF-19/20: every stage from 3 builds its wing / hall / roof tables
+ *  (content/kanat.ts, sim indices 8+). Derived from the stage only: nothing about them is saved. */
+export const STAGE_TABLES: Record<number, number[]> = { 1: [], 2: [], 3: [6, 7, ...kanatYeni(3)] };
+for (let s = 4; s <= 10; s++) STAGE_TABLES[s] = kanatYeni(s);

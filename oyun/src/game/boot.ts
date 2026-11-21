@@ -53,7 +53,7 @@ import { createAnim } from '../engine/anim';
 import { createFx } from '../engine/fx';
 import { createUi } from '../engine/ui';
 import { createAudio } from '../engine/audio';
-import { createChars, type MotorChars } from './view/chars';
+import { createChars, type MotorChars, type MotorCrowd } from './view/chars';
 import { createAgentsView, type AgentsView } from './view/chars/agents-view';
 import { createWorldView } from './view/world';
 import { createHud } from './ui/hud';
@@ -661,6 +661,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     });
     if (agentsView) guard('agents', () => { P.time('agents', () => agentsView.update(sim.state, fdt, alpha)); });
     if (huyMotion) guard('huyMotion', () => huyMotion.update(fdt));
+    if (chars && !(chars.crowd as MotorCrowd).heightOf) (chars.crowd as MotorCrowd).heightOf = (slot: number) => (rt() as unknown as { agentY?: Float32Array }).agentY?.[slot] || 0;   // BUF-20: çatı terası müşterileri
     if (chars) guard('crowd', () => { P.time('crowd', () => { chars.crowd.update(sim.agents, fdt, alpha); chars.update(fdt, alpha); }); });
     if (carsi) guard('carsi', () => carsi.update(fdt));
     if (moments) guard('moments', () => moments.update(fdt));

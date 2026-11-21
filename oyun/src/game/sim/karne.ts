@@ -103,7 +103,7 @@ export function installKarne(K: Kernel) {
     const netKar = Math.round(T0.earned) - (gider ? gider.odenen : 0);
     if ((rt as unknown as { gunSonuCard?: boolean }).gunSonuCard) {
     rt.uiLast.gunSonu = { day, earned: Math.round(T0.earned), customers: T0.customers, angry: T0.angry, money: Math.round(S.money), record: Math.round(T0.earned) > best && day > 1, maas, ekip, sold: { ...(TX.sold || {}) }, borc: Math.floor((S.zones.arsa as { kredi?: { borc?: number } } | undefined)?.kredi?.borc || 0), bahsis: bahsis ? { toplam: bahsis.toplam, kisi: bahsis.pay.length } : undefined,
-      brut, birimMaliyet, kisiler, salon: { gelir: salon, misafir: Math.round(TX.salonMis || 0) }, yan: yan - salon, gider, netKar,
+      brut, birimMaliyet, kisiler, salon: { gelir: salon, misafir: Math.round(TX.salonMis || 0) }, yan, gider, netKar,   /* BUF-19: kanat / salon masaları gerçek müşteriden öder: salon geliri brüt satışın İÇİNDE (salon satırı bilgi) */
       masa: { servis: TX.masaServis || 0, bekleS: TX.masaServis ? Math.round((TX.masaBekleS || 0) / TX.masaServis) : 0 },
       isletme: im && im.gun === day && im.satirlar && im.satirlar.length ? { toplam: Math.round(im.toplam || 0), odenen: Math.round(im.odenen || 0), satirlar: im.satirlar } : undefined,
       hijyen: hj && hj.day === day ? { not: hj.not, mufettis: hj.mufettis, marti: hj.marti } : undefined };

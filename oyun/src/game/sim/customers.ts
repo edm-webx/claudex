@@ -24,6 +24,7 @@ import { yatirimFx } from './yatirim';
 import { tabelaFx } from './tabela';
 import { yetenekFxOf } from './yetenek';
 import { RANKS } from '../../content/ranks';
+import { masaCati, catiAyak, catiYukari, catiAsagi, catiTaraf, katY } from '../../content/kanat';
 import { davranisOf, KASA, KASA_SOZ, kasaSure, kasaSiraNokta, GRUP, HAFTA_SONU, MAC_DALGA, macDalgaX, macDalgaAdi, KALABALIK_UST } from '../../content/musteri';
 
 const A_IDLE = ACT_ORDER.indexOf('idle'), A_WALK = ACT_ORDER.indexOf('walk'), A_CARRY = ACT_ORDER.indexOf('carry'), A_SIT = ACT_ORDER.indexOf('sit'), A_EAT = ACT_ORDER.indexOf('eat');
@@ -110,7 +111,16 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
     a.u8('zone')[slot] = 0;
     return slot;
   }
-  function goTo(c: Customer, to: Vec2): void { c.path = pathTo({ x: c.x, z: c.z }, to); }
+  function goTo(c: Customer, to: Vec2): void {
+    if ((c.y || 0) > 0.5) { const s = catiTaraf(c); c.path = [...catiAsagi(s, c), ...pathTo(catiAyak(s), to)]; return; }   // BUF-20: çatıdan önce merdivenden iner
+    c.path = pathTo({ x: c.x, z: c.z }, to);
+  }
+  /** masaya yürü: çatı terası masasına merdivenin ayağına kadar yerden, sonra basamaklar ve çatı koridoru (content/kanat.ts) */
+  function goSeat(c: Customer, table: number, to: Vec2): void {
+    const s = masaCati(table);
+    if (!s) { goTo(c, to); return; }
+    c.path = [...pathTo({ x: c.x, z: c.z }, catiAyak(s)), ...catiYukari(s, to)];
+  }
   function walkPath(c: Customer, dt: number, speed: number): boolean {
     let left = speed * dt; let moved = false;
     while (c.path.length && left > 0) {
@@ -148,9 +158,10 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
   function masaKume(n: number): number[] | null {
     const need = Math.max(1, Math.ceil(n / GRUP.masaKisi)), TL = rt.layout.tables;
     const frees: number[] = [];
-    for (let i = 0; i < rt.tables.length; i++) { const t = rt.tables[i]; if (t && t.built && t.dirty <= 0 && t.seats.every(sx => !sx.occ)) frees.push(i); }
+    const catiOk = S.workers.some(w => w.role === 'garson');   // BUF-20: çatı masasına yalnız garson varken oturulur (servis ve silme garsonun)
+    for (let i = 0; i < rt.tables.length; i++) { const t = rt.tables[i]; if (t && t.built && t.dirty <= 0 && t.seats.every(sx => !sx.occ) && (catiOk || !masaCati(i))) frees.push(i); }
     if (!frees.length) return null;
-    const near = (a: number) => frees.filter(b => b !== a && TL[a] && TL[b] && dist2d(TL[a], TL[b]) <= GRUP.birlesM).sort((p, q) => dist2d(TL[a], TL[p]) - dist2d(TL[a], TL[q]));
+    const near = (a: number) => frees.filter(b => b !== a && TL[a] && TL[b] && masaCati(a) === masaCati(b) && dist2d(TL[a], TL[b]) <= GRUP.birlesM)   // çatı ile salon masası birleşmez.sort((p, q) => dist2d(TL[a], TL[p]) - dist2d(TL[a], TL[q]));
     let best = frees[0];
     if (need > 1) { let bn = -1; for (const a of frees) { const k = Math.min(need - 1, near(a).length); if (k > bn) { bn = k; best = a; } } }
     return [best, ...(need > 1 ? near(best).slice(0, need - 1) : [])];
@@ -201,7 +212,7 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
     if (kind === 'masa' && kume) {
       seatCluster(c, kume); c.state = 'toSeat'; c.sit = true;
       const tb = rt.layout.tables[kume[0]];
-      goTo(c, seatPos(kume[0], 0) ?? { x: tb.x, z: tb.z });
+      goSeat(c, kume[0], seatPos(kume[0], 0) ?? { x: tb.x, z: tb.z });
     } else if (kind === 'q') { rt.queue.push(c); goTo(c, queueSpot(rt.queue.length - 1)); }
     else { rt.winq.push(c); goTo(c, winSpot(rt.winq.length - 1)); }
     if (o.say) say(c, o.say, 3);
@@ -236,7 +247,7 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
     let best: { t: number; free: number[] } | null = null;
     for (let i = 0; i < rt.tables.length; i++) {
       const t = rt.tables[i];
-      if (!t || !t.built || t.dirty > 0) continue;
+      if (!t || !t.built || t.dirty > 0 || masaCati(i)) continue;   // tezgâhtan alıp oturan çatıya çıkmaz (çatı masa servisi)
       const free = t.seats.map((s, k) => (s.occ ? -1 : k)).filter(k => k >= 0);
       if (!free.length) continue;
       if (!best || free.length > best.free.length) best = { t: i, free };
@@ -258,12 +269,12 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
     if (kume) {
       seatCluster(c, kume); c.state = 'toSeat';
       const tb = rt.layout.tables[kume[0]];
-      goTo(c, seatPos(kume[0], 0) ?? { x: tb.x, z: tb.z });
+      goSeat(c, kume[0], seatPos(kume[0], 0) ?? { x: tb.x, z: tb.z });
     } else if (fs) {
       const t = rt.tables[fs.t];
       c.seat = { table: fs.t, seat: fs.seat }; t.seats[fs.seat].occ = c.id; c.state = 'toSeat';
       const tb = rt.layout.tables[fs.t];
-      goTo(c, seatPos(fs.t, fs.seat) ?? { x: tb.x, z: tb.z });
+      goSeat(c, fs.t, seatPos(fs.t, fs.seat) ?? { x: tb.x, z: tb.z });
       let m = 0; t.seats.forEach(s => { if (!s.occ && m < c.members.length) { s.occ = c.id; m++; } });
     } else {
       if (c.sit) { rt.slowSeat = (rt.slowSeat || 0) + 1; S.today!.slow.seats = (S.today!.slow.seats || 0) + 1; if (rng.chance(0.08)) say(c, rng.pick(LINES.sit), 2); }
@@ -414,16 +425,21 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
         case 'toSeat': if (!walkPath(c, dt, 1.6)) { if (c.kind === 'masa') { c.state = 'wait'; c.t = 0; } else { c.state = 'eat'; c.t = 0; c.eatT = rng.range(6, 9) * (havaOf(rt)?.eatX() ?? 1) * davranisOf(c.typeId).ye; } } break;
         case 'wait': if (c.seat) { const tb = rt.layout.tables[c.seat.table]; if (tb) faceTo(c, tb, dt); } break; // restoran.ts runs the adisyon
         case 'eat': if (c.t >= c.eatT && !(c as unknown as { hesapBekle?: boolean }).hesapBekle) finishMeal(c); break;   // waits for the waiter's bill (restoran.ts)
-        case 'leave': if (!walkPath(c, dt, 1.8) || outOfSight(c)) removeCustomer(c); break;
+        case 'leave': if (!walkPath(c, dt, 1.8) || (outOfSight(c) && !((c.y || 0) > 0.05))) removeCustomer(c); break;   // BUF-20: çatıdaki / merdivendeki önce iner (gövde yerde gezinmeye döner)
       }
+      c.y = katY(S.stage || 1, c.x, c.z, (c.y || 0) > 0.5);
     }
   }
 
   const anyOfSpot = () => ({ x: 0, z: 0 });
   void anyOfSpot; void hourOf; void setById; void A_EAT;
   /** Write customers into the agents SoA (positions, gait, act, flags). */
+  /** BUF-20: per agent-slot height for the crowd view (çatı terası, merdiven); 0 everywhere else */
+  const agentY = new Float32Array(256);
+  (rt as unknown as { agentY?: Float32Array }).agentY = agentY;
   function syncAgents() {
     const a = K.agents;
+    agentY.fill(0);
     const X = a.f32('x'), Z = a.f32('z'), R = a.f32('rot'), SP = a.f32('speed'), ACT = a.u8('act'), MOOD = a.u8('mood'), CARRY = a.u8('carry'), FL = a.u16('flags');
     for (const c of rt.customers) {
       const sit = c.state === 'eat' || c.state === 'wait';
@@ -438,6 +454,8 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
         if (seated) FL[slot] |= AGENT_FLAG.seated;
         if (c.state === 'leave') FL[slot] |= AGENT_FLAG.leaving;
       };
+      const cy = c.y || 0;
+      if (cy > 0) for (const sl of [c.agent, ...c.members]) if (sl >= 0 && sl < 256) agentY[sl] = cy;
       let sp: Vec2 | null = null;
       if (sit && c.seat) sp = seatPos(c.seat.table, c.seat.seat);
       // 2026-11-02: seated guests face the table (they used to keep whatever heading they walked in with)

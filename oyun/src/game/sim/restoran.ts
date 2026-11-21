@@ -28,6 +28,8 @@ import { DWELL_DEFAULTS, type Vec2 } from '../../engine/api';
 import type { ProductId } from './schema';
 import type { Kernel, Customer, Item, Order, Plate } from './state';
 import { clamp } from './util';
+import { kanatOf, masaCati, kanatYanı, kanatFiyatX, kanatKurulu, KANAT_POST, type KanatBolge } from '../../content/kanat';
+import { salonKatYan } from './salon';
 
 export const RESTORAN_KEY = 'restoran';
 /** oyuncu mutfaktan çıktıktan sonra bu kadar sn hâlâ mutfakta sayılır (yeni biletler yemek içerebilir) */
@@ -94,6 +96,8 @@ export interface RestoranApi {
   // ── BUF-10 bölgeler + ortak bahşiş kumbarası ──
   /** masa kümeleri ve garson ataması (UI: bölge seçici bunu okur) */
   bolgeler?(): { id: string; masalar: number[]; komsu: string[]; garsonlar: number[] }[];
+  /** BUF-19: bölgesi bir kanat / salon olan garsonun boştaki postu (çay bahçesi: çay ocağı önü, çaycı) */
+  garsonPost?(wid: number): ({ bolge: KanatBolge } & Vec2) | null;
   /** garsonun bölgesi (null: bölgesiz / serbest) */
   bolgeOf?(wid: number): string | null;
   /** elle bölge ata: id bir bölge kimliği, '*' serbest, null otomatik. Çalışma anı (kayda yazılmaz). */
@@ -150,6 +154,9 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
   const add = (o: Record<string, number | undefined>, p: string, n = 1) => { o[p] = (o[p] || 0) + n; };
   const left = (t: Ticket) => Object.values(t.want).reduce<number>((s, n) => s + (n || 0), 0);
   const garsonlar = () => S.workers.filter(w => w.role === 'garson');
+  const salonEsya = () => ((S.zones?.salon as { esya?: string[] } | undefined)?.esya) || [];
+  /** kanat masasının tarafındaki salon aletleri (büfe masası: 1, 1) */
+  const kanatKat = (table: number) => { const km = kanatOf(table); return km ? salonKatYan(salonEsya(), S.stage || 1, kanatYanı(km.bolge)) : { mis: 1, adis: 1 }; };
   const tabakTasks = (t: Ticket, f: FoodId, eldeMi?: boolean) => gorevler.filter(g => g.tur === 'tabak' && g.ticket === t && g.p === f && (eldeMi === undefined || !!g.item === eldeMi)).length;
   // kumbara (BUF-10, sahip kararı 2026-11-09): bahşiş oyuncuya gelir olarak yazılmaz, garsonların ortak kumbarasında birikir,
   // gün sonunda paylaşılır. Çalışma anı: yeniden yüklemede o günün birikimi sıfırlanır (kalıcı alan schema kararı bekliyor).
@@ -170,7 +177,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
   function freeTable(): number {
     for (let i = 0; i < rt.tables.length; i++) {
       const t = rt.tables[i];
-      if (t && t.built && t.dirty <= 0 && t.seats.every(s => !s.occ) && !tickets.some(k => k.table === i)) return i;
+      if (t && t.built && t.dirty <= 0 && t.seats.every(s => !s.occ) && !tickets.some(k => k.table === i) && (!masaCati(i) || garsonlar().length)) return i;
     }
     return -1;
   }
@@ -222,7 +229,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     f.tipUsed = used; f.hesapBekle = true; f.hesapJob = false; f.hb = 0;
     if (rng.next() < 0.1) cu.say(c, rng.pick(ADISYON_LINES.served), 2);
     g.servis = clamp(g.servis * (1 - SERVIS.weight) + 5 * (1 - used * 0.8) * SERVIS.weight, 0, 5);
-    c.value = 0; c.state = 'eat'; c.t = 0; c.eatT = rng.range(ADISYON.eat[0], ADISYON.eat[1]);
+    c.value = 0; c.state = 'eat'; c.t = 0; c.eatT = rng.range(ADISYON.eat[0], ADISYON.eat[1]) / kanatKat(t.table).mis;   // BUF-19: salon aleti misafir çarpanı masayı da çevirir
     K.stat('adisyon');
     { const T = S.today as unknown as { masaServis?: number; masaBekleS?: number } | null; if (T) { T.masaServis = (T.masaServis || 0) + 1; T.masaBekleS = (T.masaBekleS || 0) + t.t; } }   // gün sonu raporu: masa servis sayısı ve ortalama bekleme
   }
@@ -236,11 +243,17 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     if (!f.hesapBekle) return;
     f.hesapBekle = false;
     gorevSil(c.id, 'hesap');
+    // BUF-19/20: kanat / salon / çatı masası: hesap = kalemler x kanat fiyat çarpanı x o tarafın salon aleti adisyon çarpanı
+    const km = c.seat ? kanatOf(c.seat.table) : null, TX = S.today as unknown as { salonGelir?: number; salonMis?: number } | null;
+    const x = km ? kanatFiyatX(S.stage || 1) * kanatKat(c.seat!.table).adis : 1;
+    if (km) for (const it of c.items) it.priceX = (it.priceX || 1) * x;
     const value = settle(c, c.items.slice());
+    if (km && TX) { TX.salonGelir = (TX.salonGelir || 0) + value; TX.salonMis = (TX.salonMis || 0) + c.n; K.stat('salonMasa'); }
     const used = f.tipUsed ?? 1;
     let tipF = ADISYON.tip[ADISYON.tip.length - 1][1];
     for (const [u, k] of ADISYON.tip) if (used <= u) { tipF = k; break; }
-    let tip = Math.round(value * tipF * (1 + mutfakEtki(S.workers).bahsis));
+    // bahşiş kalemlerin çıplak değerinden (salon fiyat çarpanı bahşiş kavanozunu şişirmez)
+    let tip = Math.round(value / x * tipF * (1 + mutfakEtki(S.workers).bahsis));
     if (c.n >= 2 && rng.next() < ADISYON.fightChance) { tip *= 2; cu.say(c, rng.pick(ADISYON_LINES.fight), 2.5); K.stat('hesapKavgasi'); }
     else if (garsonla) cu.say(c, rng.pick(ADISYON_LINES.hesap), 1.8);
     if (!garsonla) { cu.say(c, rng.pick(ADISYON_LINES.kendi), 2); K.stat('hesapKendisi'); }
@@ -268,6 +281,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     if (!FAZ2_UI) return;
     // table service plates
     rt.layout.tables.forEach((tb, i) => {
+      if (masaCati(i)) return;   // BUF-20: çatı terası masalarına yalnız garson çıkar (oyuncu merdivenden çıkamaz, aşağıdan servis yok)
       const id = 'servis.' + i, ex = K.interactions.get(id);
       if (ex) { ex.pos = { x: tb.x, z: tb.z }; return; }
       K.interactions.register({
@@ -384,7 +398,8 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     const key = ws.join(',') + '|' + built.join(',') + '|' + [...elle].map(([w, b]) => w + ':' + b).join(',') + '|' + S.stage;
     if (key === bolgeKey) return;
     bolgeKey = key;
-    bolgeList = bolgeleriKur(rt.layout.tables, built, ws.length);
+    // çatı masaları salonun tam üstünde: kümelemede ayrı dursunlar diye denize doğru kaydırılmış konumla (yalnız bölge hesabı)
+    bolgeList = bolgeleriKur(rt.layout.tables.map((tb, i) => (masaCati(i) ? { x: tb.x, z: tb.z - 12 } : tb)), built, ws.length);
     atama = bolgeAtamasi(ws, bolgeList, elle);
   }
   const masaBolgesi = (table: number) => bolgeList.find(b => b.masalar.includes(table))?.id ?? null;
@@ -470,8 +485,11 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     hat.update(dt);
   }
   function wantMasa(): boolean {
-    if (!FAZ2_UI || !active() || tickets.length >= ADISYON.maxOpen + Math.max(0, Math.floor(((S.stage || 1) - 4) / 2))) return false;
-    const sh = (ADISYON.share[(S.stage || 1) - 1] ?? 0) + Math.max(0, G().servis - 3) * SERVIS.sharePerStar;
+    const st = S.stage || 1, kn = kanatKurulu(st).length;
+    // BUF-19: kanat masaları kadar açık bilet payı (4 masaya 1, garson sayısını geçmez) ve salon aletlerinin misafir çarpanı masa müşterisi payına
+    if (!FAZ2_UI || !active() || tickets.length >= ADISYON.maxOpen + Math.max(0, Math.floor((st - 4) / 2)) + Math.min(Math.floor(kn / 4), garsonlar().length)) return false;
+    const mk = Math.max(salonKatYan(salonEsya(), st, 'W').mis, salonKatYan(salonEsya(), st, 'E').mis);
+    const sh = Math.min(0.85, ((ADISYON.share[st - 1] ?? 0) + (kn ? 0.1 : 0)) * mk + Math.max(0, G().servis - 3) * SERVIS.sharePerStar);
     if (rng.next() >= sh) return false;
     return freeTable() >= 0;
   }
@@ -521,10 +539,10 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
         return sonuc(made[0]);
       }
       if (tur === 'sil') {
-        if (S.workers.some(w => w.role === 'temizlik')) continue;   // temizlikçi varsa masa silme onun (BUF-13)
+        const tmz = S.workers.some(w => w.role === 'temizlik');   // temizlikçi varsa masa silme onun (BUF-13); çatı masası yine garsonun (BUF-20)
         let best: { i: number; ic: boolean; yas: number } | null = null;
         rt.tables.forEach((t, i) => {
-          if (!t || !t.built || !(t.dirty > 0) || gorevler.some(g => g.tur === 'sil' && g.table === i)) return;
+          if (!t || !t.built || !(t.dirty > 0) || gorevler.some(g => g.tur === 'sil' && g.table === i) || (tmz && !masaCati(i))) return;
           const r = bolgeKurali(wid, i, t.dirtyT); if (!r.ok) return;
           if (!best || (r.ic && !best.ic) || (r.ic === best.ic && t.dirtyT > best.yas + 1e-9)) best = { i, ic: r.ic, yas: t.dirtyT };
         });
@@ -666,6 +684,15 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     debug: () => ({ gorevler: gorevler.length, tepsi: gorevler.filter(g => g.item).length, claimed: gorevler.filter(g => g.wid).length, isinlanma }),
     bolgeler() { bolgeYenile(); return bolgeList.map(b => ({ id: b.id, masalar: [...b.masalar], komsu: [...b.komsu], garsonlar: [...atama].filter(([, z]) => z === b.id).map(([w]) => w) })); },
     bolgeOf(wid) { bolgeYenile(); return atama.get(wid) ?? null; },
+    garsonPost(wid) {
+      bolgeYenile(); const z = atama.get(wid); if (!z) return null;
+      const b = bolgeList.find(x => x.id === z); if (!b) return null;
+      const say: Partial<Record<KanatBolge, number>> = {};
+      for (const i of b.masalar) { const km = kanatOf(i); if (km) say[km.bolge] = (say[km.bolge] || 0) + 1; }
+      const enCok = (Object.keys(say) as KanatBolge[]).sort((p, q) => (say[q] || 0) - (say[p] || 0))[0];
+      if (!enCok || (say[enCok] || 0) * 2 < b.masalar.length) return null;   // bölgenin çoğu büfe önündeyse tezgâh yanında bekler
+      return { bolge: enCok, ...KANAT_POST[enCok] };
+    },
     bolgeAta(wid, id) {
       if (!garsonlar().some(w => w.id === wid)) return false;
       if (id === null) elle.delete(wid);

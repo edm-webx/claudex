@@ -63,7 +63,7 @@ export function createGunSonu(deps: { root: HTMLElement; rules: () => Rules | nu
     if (m.maas) parts.push(row(`Personel maaşı (${m.ekip || kisiler.length} kişi)`, eksi(m.maas)));
     for (const k of kisiler) if (k.maas > 0 || k.bahsis > 0) parts.push(row(esc(k.ad), `<b>${fmtMoney(k.maas)}${bahsisKisi(k)}</b>`, 'sub'));
     if (m.bahsis && m.bahsis.toplam > 0) parts.push(`<div class="gs-not">Bahşiş kumbarası ${fmtMoney(m.bahsis.toplam)}: ${m.bahsis.kisi} kişiye eşit paylaşıldı, kasandan çıkmaz.</div>`);
-    if (m.salon && m.salon.gelir > 0) parts.push(row(`Salon ve teras geliri (${m.salon.misafir} misafir)`, `<b class="gs-arti">+${fmtMoney(m.salon.gelir)}</b>`));
+    if (m.salon && m.salon.gelir > 0) parts.push(row(`Salon ve teras masaları (${m.salon.misafir} misafir, brüte dahil)`, `<b>${fmtMoney(m.salon.gelir)}</b>`));
     if (m.yan && Math.abs(m.yan) >= 1) parts.push(row('Diğer gelir', `<b class="${m.yan < 0 ? 'gs-eksi' : 'gs-arti'}">${m.yan < 0 ? '−' : '+'}${fmtMoney(Math.abs(m.yan))}</b>`));
     parts.push(row('Günün cirosu (net)', `<b>${fmtMoney(m.earned)}</b>`, 'tot'));
     if (m.record) parts.push('<div class="gs-rec">Yeni rekor!</div>');

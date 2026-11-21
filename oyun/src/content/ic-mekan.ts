@@ -9,7 +9,7 @@
 export type Yon = '+x' | '-x' | '+z' | '-z';
 export type IcTur = 'kafe' | 'bistro' | 'kirtasiye' | 'okul' | 'lokanta' | 'kafeterya' | 'banka' | 'hastane' | 'acil' | 'morg' | 'kahvalti' | 'balik' | 'mutfak';
 export interface IcMekan { id: string; ad: string; tur: IcTur; x: number; z: number; wx: number; wz: number; kapi: Yon; arsa?: string; bina?: string; salon?: 'W' | 'E'; mutfak?: boolean; h: number }
-export interface IcItem { k: string; u: number; v: number; w: number; d: number; ry?: number; solid?: boolean; esya?: string; y?: number; txt?: string; c?: string }
+export interface IcItem { k: string; u: number; v: number; w: number; d: number; ry?: number; solid?: boolean; esya?: string; y?: number; txt?: string; c?: string; /** büfe salonu: o aşamada kurulur (BUF-20 aşama 10 masaları) */ asama?: number }
 export interface Rect { x0: number; x1: number; z0: number; z1: number }
 
 export const IC_MEKANLAR: IcMekan[] = [
@@ -58,6 +58,12 @@ export const icKapi = (m: IcMekan, off = 0.6) => icWorld(m, 0, icDim(m).D / 2 + 
 /* ---------- layouts (door frame) ---------- */
 const it = (k: string, u: number, v: number, w: number, d: number, o: Partial<IcItem> = {}): IcItem => ({ k, u, v, w, d, ...o });
 const masa = (u: number, v: number, k = 'masa2') => it(k, u, v, 0.8, 0.8, { solid: true });
+/**
+ * BUF-20: büfe salonlarının masaları sim masasıdır (content/kanat.ts KANAT_MASALAR salonW / salonE, aynı u/v ızgarası): koltuklar
+ * u ekseninde ±0.78, garson v+0.95'te. Kapıya yakın iki masa aşama 10'da (fine dining) kurulur.
+ */
+const SALON_U = [-3.9, -1.9, 1.9, 3.9], SALON_V = [-0.2, 1.6];
+const salonMasalar = (): IcItem[] => SALON_V.flatMap(v => SALON_U.map(u => it('salonMasa', u, v, 0.9, 0.8, { solid: true, ...(v > 1 && Math.abs(u) < 3 ? { asama: 10 } : {}) })));
 
 function kafeLayout(W: number, D: number, bistro: boolean): IcItem[] {
   const bv = -D / 2 + 1.2, o: IcItem[] = [
@@ -147,7 +153,7 @@ function hastaneLayout(W: number, D: number): IcItem[] {
 function kahvaltiLayout(W: number, D: number): IcItem[] {
   return [
     it('lamba', 0, 0, W, D), it('acikBufe', -1.2, -D / 2 + 1.0, 5.2, 0.8, { solid: true }), it('menuPano', -1.2, -D / 2 + 0.27, 3.2, 0.05, { y: 2.5, txt: 'SERPME KAHVALTI' }),
-    masa(-4.0, 0.2, 'masa4'), masa(-4.0, 2.1, 'masa4'), masa(-2.1, 1.2, 'masa4'), masa(2.2, 1.2, 'masa4'), masa(4.1, 0.2, 'masa4'), masa(4.1, 2.1, 'masa4'),
+    ...salonMasalar(),
     it('semaverDev', -W / 2 + 0.6, -D / 2 + 0.6, 0.8, 0.8, { esya: 'semaver_dev' }), it('tasFirin', 3.9, -D / 2 + 0.75, 2.0, 1.1, { esya: 'tas_firin' }),
     it('gozleme', 2.0, -D / 2 + 0.75, 1.4, 0.9, { esya: 'gozleme' }), it('balKaymak', -W / 2 + 0.45, -1.25, 1.4, 0.6, { esya: 'bal_kaymak', ry: 1 }),
     it('sarkuteri', W / 2 - 0.45, -1.25, 1.6, 0.7, { esya: 'sarkuteri', ry: 3 }),
@@ -156,10 +162,10 @@ function kahvaltiLayout(W: number, D: number): IcItem[] {
 function balikLayout(W: number, D: number): IcItem[] {
   return [
     it('lamba', 0, 0, W, D), it('bar', -2.4, -D / 2 + 1.0, 5.0, 0.8, { solid: true }), it('menuPano', -2.4, -D / 2 + 0.27, 3.2, 0.05, { y: 2.5, txt: 'GÜNÜN BALIĞI' }),
-    masa(-4.2, 0.4, 'masa4'), masa(-4.2, 2.3, 'masa4'), masa(-2.2, 1.4, 'masa4'), masa(2.2, 1.0, 'masa4'), masa(2.6, -0.9, 'masa4'), masa(4.5, 0.4, 'masa4'),
+    ...salonMasalar(),
     it('buzTezgah', 1.6, -D / 2 + 0.8, 2.4, 0.9, { esya: 'buz_tezgah' }), it('mangal', 4.6, -D / 2 + 0.65, 1.4, 0.8, { esya: 'mangal_e' }),
     it('akvaryum', -W / 2 + 0.32, 0.4, 3.6, 0.45, { esya: 'akvaryum_e', ry: 1 }), it('mezeDolap', W / 2 - 0.4, 1.6, 1.8, 0.6, { esya: 'meze_dolap', ry: 3 }),
-    it('piyano', 4.3, 2.4, 1.6, 1.2, { esya: 'piyano_s' }),
+    it('piyano', 4.4, -1.45, 1.6, 1.0, { esya: 'piyano_s' }),
   ];
 }
 function acilLayout(W: number, D: number): IcItem[] {
@@ -242,12 +248,12 @@ export function icLayout(m: IcMekan): IcItem[] {
   cache.set(m.id, o); return o;
 }
 
-/** World-space colliders: walls with the door gap plus solid furniture. */
-export function icColliders(m: IcMekan): Rect[] {
+/** World-space colliders: walls with the door gap plus solid furniture (`stage`: büfe salonunda o aşamada kurulmamış masa yok). */
+export function icColliders(m: IcMekan, stage = 99): Rect[] {
   const { W, D } = icDim(m), t = IC_DUVAR, g = IC_KAPI / 2, o: Rect[] = [];
   o.push(rectW(m, -W / 2, W / 2, -D / 2, -D / 2 + t), rectW(m, -W / 2, -W / 2 + t, -D / 2, D / 2), rectW(m, W / 2 - t, W / 2, -D / 2, D / 2));
   o.push(rectW(m, -W / 2, -g, D / 2 - t, D / 2), rectW(m, g, W / 2, D / 2 - t, D / 2));
-  for (const i of icLayout(m)) if (i.solid) { const sw = (i.ry || 0) % 2 ? i.d : i.w, sd = (i.ry || 0) % 2 ? i.w : i.d; o.push(rectW(m, i.u - sw / 2, i.u + sw / 2, i.v - sd / 2, i.v + sd / 2)); }
+  for (const i of icLayout(m)) if (i.solid && (i.asama ?? 0) <= stage) { const sw = (i.ry || 0) % 2 ? i.d : i.w, sd = (i.ry || 0) % 2 ? i.w : i.d; o.push(rectW(m, i.u - sw / 2, i.u + sw / 2, i.v - sd / 2, i.v + sd / 2)); }
   return o;
 }
 /** Same, relative to the building centre (prefab-local colliders for an unrotated placement). */

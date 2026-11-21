@@ -36,6 +36,8 @@ export interface Customer {
   patience: number; patMax: number;
   sit: boolean; mood: 'happy' | 'ok' | 'angry';
   x: number; z: number; rot: number; speed: number;
+  /** BUF-20: height above the pier (çatı terası / merdiven, content/kanat.ts katY); runtime only */
+  y?: number;
   path: Vec2[];
   /** agents SoA slot (-1: logical only, no body) and party member slots */
   agent: number; members: number[];
