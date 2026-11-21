@@ -11,6 +11,7 @@
  * - hash() = FNV-1a over stable JSON of GameState + player pose + agents SoA (0..hi) + every RNG stream state + tick.
  * - Without a real Nav (C) a trivial open-floor nav is used, so headless always runs.
  */
+import { EGLENCE_KAT, eglenceEngel } from '../content/avm-eglence';
 import type {
   Sim, SimOpts, SimCtx, GameClock, DayPhase, Season, Vec2, Nav, AnchorDef, AmbientSystem, InteractionRegistry,
   PerfMeter, Logger, PlayerWalk, Scheduler, SoAStore, Entity, TickInput, EventRecord, SimCommand, World, FlowField, SpatialHash, WalkGrid,
@@ -144,7 +145,7 @@ export function createSim(o: SimOpts, extra: SimExtra = {}): SimFull {
   const katNav = (k: number): Nav | null => {
     if (k < 0 || k >= AVM.KAT) return null;
     if (katNavs[k] === undefined) {
-      try { const n = createNav({ log: extra.log }); n.setSolids('avm-kat', [...holEngel(k), ...icBina('avm').filter(m => (m.kat || 0) === k).flatMap(m => icColliders(m))]); katNavs[k] = n; }
+      try { const n = createNav({ log: extra.log }); n.setSolids('avm-kat', [...holEngel(k), ...icBina('avm').filter(m => (m.kat || 0) === k).flatMap(m => icColliders(m)), ...(k === EGLENCE_KAT ? eglenceEngel() : [])]); katNavs[k] = n; }
       catch { katNavs[k] = null; }
     }
     return katNavs[k];

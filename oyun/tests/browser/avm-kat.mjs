@@ -29,13 +29,15 @@ const SPOTS = {
   kat1: [C - 2.6, 55.8, 1, C, 51, 3.2, 0, 1.0], kat1b: [C - 2.6, 55.8, 1, C, 51, 2.2, 2, 0.75],
   kat2: [C - 2.6, 55.8, 2, C, 51, 3.2, 0, 1.0], kat2b: [C + 2.6, 49.5, 2, C, 51, 2.2, 2, 0.75],
   dukkan: [C - 4.4, 49.15, 1, C - 6.5, 49.15, 1.6, 1, 0.8],
+  eglence: [C, 47.0, 3, C, 51, 3.2, 0, 1.0, 17.4], sinema: [C - 3.4, 50, 3, C - 7, 51.8, 2.0, 1, 0.75, 11.0], sahne: [C + 2.5, 51.8, 3, C + 6, 51.8, 2.0, 3, 0.7, 17.4], gise: [C - 5, 46.2, 3, C - 6, 45.5, 1.6, 0, 0.7, 10.1],
 };
 const ids = (process.argv[3] || Object.keys(SPOTS).join(',')).split(',');
 for (const id of ids) {
+  if (id === 'yukleme') { await p.evaluate(() => { const M = window.__marti; M.setTime(19.5); M.teleport(20.15, 45.75, 0); for (let k = 0; k < 4; k++) { M.step(0.2); M.renderFrames(2, 0.1); } }); await p.waitForTimeout(450); await p.screenshot({ path: join(out, 'avm-yukleme.png') }); console.log('ok yukleme'); continue; }
   const s = SPOTS[id]; if (!s) { console.log('?', id); continue; }
-  const [x, z, kat, cx, cz, zr, yi, tilt] = s;
+  const [x, z, kat, cx, cz, zr, yi, tilt, saat] = s;
   try {
-    await p.evaluate(([x, z, kat, cx, cz, zr, yi, tilt]) => { const M = window.__marti; M.teleport(x, z, kat); for (let k = 0; k < 6; k++) { M.step(0.5); M.renderFrames(3, 0.1); } M.camera({ x: cx, z: cz, zoomRaw: zr, yaw: yi * Math.PI / 2, tilt }); for (let k = 0; k < 16; k++) { M.step(0.1); M.renderFrames(2, 0.1); } }, [x, z, kat, cx, cz, zr, yi, tilt]);
+    await p.evaluate(([x, z, kat, cx, cz, zr, yi, tilt, saat]) => { const M = window.__marti; if (saat) M.setTime(saat); M.teleport(x, z, kat); if (saat) for (let k = 0; k < 30; k++) M.step(0.5); for (let k = 0; k < 6; k++) { M.step(0.5); M.renderFrames(3, 0.1); } M.camera({ x: cx, z: cz, zoomRaw: zr, yaw: yi * Math.PI / 2, tilt }); for (let k = 0; k < 16; k++) { M.step(0.1); M.renderFrames(2, 0.1); } }, [x, z, kat, cx, cz, zr, yi, tilt, saat]);
     await p.waitForTimeout(700); await p.screenshot({ path: join(out, `avm-${id}.png`), timeout: 300000 }); console.log('ok', id);
   } catch (e) { console.log('ERR', id, e.message.slice(0, 200)); }
 }
