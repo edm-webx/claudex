@@ -65,7 +65,7 @@ export function installHedef(r: Rules): HedefApi {
   const realmNow = () => realmAt(r.playerPos.x)?.id || 'iskele';
   const def = (id: string): SmallGoalDef | undefined => SMALL_GOALS.find(d => d.id === id);
   // EKO-05: gelire bağlı ödülün tavanı 16x (aşama 1) / 5x (aşama 2+) taban ödül. Büfe salon/kanat geliriyle hedefler 2,6x sık biter; tavansız ödül 30. dk'da 48k ₺ (eskiden 9k) ödüyordu.
-  const rewardOf = (d: SmallGoalDef) => round5(Math.max(d.reward, Math.min((r.rt.rate || 0) * d.min, d.reward * (S().stage >= 2 ? 5 : 16))));
+  const rewardOf = (d: SmallGoalDef) => round5(Math.max(d.reward, Math.min((r.rt.rate || 0) * d.min, d.reward * (S().stage >= 2 ? 5 : 6))));
 
   // ───────── small goals ─────────
   const eligible = (d: SmallGoalDef, g: HedefSave): boolean => {
