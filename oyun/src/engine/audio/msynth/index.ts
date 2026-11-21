@@ -94,6 +94,19 @@ export function createBank(ac: BaseAudioContext, db: SesDb, budget = STREAM_BUDG
     if (front && queue.length) queue.splice(1, 0, job); else queue.push(job);
     pump();
   }
+  /** Gerçek kayıt: fetch + decodeAudioData (stereo, 48 kHz kalır); başarısızsa false -> sentez yedek. Aynı anahtar tek indirme. */
+  function fromFile(key: string, cache: Map<string, AudioBuffer>, file: string, cb: (b: AudioBuffer) => void, fallback: (cb: (b: AudioBuffer) => void) => void) {
+    const hit = cache.get(key); if (hit) { use.set(hit, ++tick); cb(hit); return; }
+    const w = waiting.get(key); if (w) { w.push(cb); return; }
+    waiting.set(key, [cb]);
+    const f = (globalThis as unknown as { fetch?: (u: string) => Promise<{ ok: boolean; arrayBuffer(): Promise<ArrayBuffer> }> }).fetch;
+    const fail = () => { const cbs = waiting.get(key) || []; waiting.delete(key); for (const c of cbs) fallback(c); };   // dosya yok/çözülemedi: sentez yedek
+    if (!f) { fail(); return; }
+    f('ses/' + file).then(r => { if (!r.ok) throw new Error('http'); return r.arrayBuffer(); })
+      .then(ab => ac.decodeAudioData(ab))
+      .then(b => { cache.set(key, b); use.set(b, ++tick); evict(b); const cbs = waiting.get(key) || []; waiting.delete(key); for (const c of cbs) { try { c(b); } catch { /* listener */ } } })
+      .catch(fail);
+  }
   const bank: Bank = {
     db,
     hasSfx: id => !!db.sfx[id],
@@ -111,8 +124,8 @@ export function createBank(ac: BaseAudioContext, db: SesDb, budget = STREAM_BUDG
       last.set(id, now); return true;
     },
     pitchVar: id => db.sfx[id]?.pitchVar ?? 0,
-    loop(id, cb) { const def = db.loops[id]; if (!def) return; enqueue('L:' + id, loopC, () => renderLoopGen(id, def, rc(SR_LOOP)), SR_LOOP, cb, true); },
-    track(id, cb) { const t = db.music.tracks[id]; if (!t) return; enqueue('M:' + id, trackC, () => renderTrackGen(id, t, SR_LOOP), SR_LOOP, cb); },
+    loop(id, cb) { const def = db.loops[id]; if (!def) return; if (def.file) { fromFile('L:' + id, loopC, def.file, cb, c => enqueue('L:' + id, loopC, () => renderLoopGen(id, def, rc(SR_LOOP)), SR_LOOP, c, true)); return; } enqueue('L:' + id, loopC, () => renderLoopGen(id, def, rc(SR_LOOP)), SR_LOOP, cb, true); },
+    track(id, cb) { const t = db.music.tracks[id]; if (!t) return; if (t.file) { fromFile('M:' + id, trackC, t.file, cb, c => enqueue('M:' + id, trackC, () => renderTrackGen(id, t, SR_LOOP), SR_LOOP, c)); return; } enqueue('M:' + id, trackC, () => renderTrackGen(id, t, SR_LOOP), SR_LOOP, cb); },
     prewarm() {
       const ids = Object.keys(db.sfx).filter(id => !sfxC.has(id));
       let i = 0;

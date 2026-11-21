@@ -35,4 +35,6 @@ writeFileSync(join(dist, 'index.html'), html);
 if (existsSync('public/modeller')) cpSync('public/modeller', join(dist, 'modeller'), { recursive: true });
 // Poly Haven CC0 ground textures: public/doku -> dist/doku
 if (existsSync('public/doku')) cpSync('public/doku', join(dist, 'doku'), { recursive: true });
+// Ses: gerçek kayıtlar (CC0, Opus): public/ses -> dist/ses (ses-db loops/tracks `file` alanı; yoksa sentez yedek)
+if (existsSync('public/ses')) cpSync('public/ses', join(dist, 'ses'), { recursive: true });
 console.log('build-artifact: dist/index.html written');

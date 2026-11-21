@@ -23,3 +23,23 @@ describe('bank LRU', () => {
   }, 10000);
 });
 void vi;
+
+describe('bank: gerçek kayıt dosyası', () => {
+  const mk = (file: string) => ({ version: 1, patches: {}, sfx: {}, music: { tracks: {} } as never, voices: {}, loops: { k: { file, dur: 1, layers: [{ k: 'noise', v: 0.2, d: 1 }] } } }) as unknown as SesDb;
+  const decAc = { ...fakeAc, decodeAudioData: async () => ({ length: 96000, numberOfChannels: 2, sampleRate: 48000, duration: 2 }) as unknown as AudioBuffer } as unknown as BaseAudioContext;
+  it('dosya indirilip çözülür (stereo) ve önbelleğe girer; sentez çalışmaz', async () => {
+    const f = vi.fn(async () => ({ ok: true, arrayBuffer: async () => new ArrayBuffer(8) }));
+    vi.stubGlobal('fetch', f);
+    const b = createBank(decAc, mk('deniz.opus')); let got: AudioBuffer | null = null;
+    b.loop('k', x => { got = x; }); await flush();
+    expect(f).toHaveBeenCalledWith('ses/deniz.opus'); expect(got!.numberOfChannels).toBe(2); expect(b.stats().loops).toBe(1);
+    vi.unstubAllGlobals();
+  });
+  it('dosya yoksa (404) sentez yedeği devreye girer', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: false, arrayBuffer: async () => new ArrayBuffer(0) })));
+    const b = createBank(decAc, mk('yok.opus')); let got: AudioBuffer | null = null;
+    b.loop('k', x => { got = x; }); await flush();
+    expect(got!.numberOfChannels).toBe(1); expect(got!.sampleRate).toBe(24000);
+    vi.unstubAllGlobals();
+  }, 10000);
+});
