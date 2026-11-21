@@ -4,7 +4,7 @@
  * Port note: parameters are typed loosely (`any`) where v2 passed option bags; behaviour is unchanged.
  */
 import * as T from 'three';
-import { Batch, mtx, geoc, col, mixc, shade, clamp, lerp, easeInOut, PI, TAU, HP, roundBox } from '../../../engine/prefab/batch';
+import { Batch, mtx, geoc, col, mixc, shade, clamp, lerp, easeInOut, PI, TAU, HP, roundBox, FOOT_AO } from '../../../engine/prefab/batch';
 import { K, R, MAT, rnd, v2rng, rrect, fitText, txt, canvasTex, atlasTex, radialTex } from '../common/v2kit';
 import { WATER_Y, SEAT_H, PIER, BUFE, GANG, WIN_Z, NEXT_SIGN, BENCHES, local2world as l2w, rectAABB, type Obstacle } from './layout';
 const V3 = (x = 0, y = 0, z = 0): T.Vector3 => new T.Vector3(x, y, z);
@@ -44,6 +44,7 @@ export function tree(b?: any, x?: any, z?: any, s = 1) {
 export function buildPier() {
   LAMPS.length = 0;
   const A = new Batch(), P = new Batch(), S = new Batch(), BU = new Batch(), F = new Batch();
+  A.ao = FOOT_AO;   // GRS-06
   const pilings: any[] = [];
   // far scenery goes into F (no shadow casting, keeps the shadow pass light)
   const near = (x: any) => Math.abs(x) > 16 ? F : A;

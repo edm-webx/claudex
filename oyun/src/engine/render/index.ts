@@ -27,6 +27,7 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { akisGuncelle } from './doku-akis';
+import { createReflector, reflectBudget, type Reflector } from './reflect';
 
 export { todAt, phaseAt, TOD } from './tod';
 export type { Tod } from './tod';
@@ -59,6 +60,9 @@ export interface MotorRender extends RenderPipeline {
   /** PRF-06: leave out shadow casters whose shadow cannot reach the camera view (default on; off only for A/B measurement) */
   shadowCull: boolean;
   shadowStats(): { casters: number; culled: number };
+  /** GRS-05: planar water reflection. The sea view hands over its mesh (hidden during the mirrored pass) and reads texture/matrix/on each frame. */
+  readonly reflector: Reflector;
+  reflectSea: T.Object3D | null;
   /** PRF-12: dynamic resolution; multiplies the tier's pixel ratio (0.6..1). Resizes targets only, no shader relink. */
   setScale(s: number): void;
   /** PRF-03: parallel shader compile of everything visible, in both shadow states (so a later tier change links nothing). Never draws. */
@@ -294,6 +298,7 @@ export function createRender(deps: RenderDeps): MotorRender {
   // screen-space pick list (no mesh raycast)
   const picks = new Map<string, { p: T.Vector3; r: number }>();
   const _v = new T.Vector3(), _v2 = new T.Vector3();
+  const reflector = createReflector(-1.0);   // WATER_Y of the iskele sea
 
   function size(): { w: number; h: number } {
     const c = canvasEl;
@@ -330,6 +335,8 @@ export function createRender(deps: RenderDeps): MotorRender {
     get lightTint() { return composer ? NO_TINT : look.tint; },
     hemiMul: 1,
     weatherSat: 1,
+    reflector,
+    reflectSea: null,
     shadowCull: true,
     shadowStats: () => sCull.stats(),
     onEnv(cb) { envSubs.add(cb); try { cb(envRT ? envRT.texture : null); } catch { /* ignore */ } return () => { envSubs.delete(cb); }; },
@@ -363,6 +370,7 @@ export function createRender(deps: RenderDeps): MotorRender {
       tier = t;
       if (wantAA !== null && !!t.antialias !== wantAA) deps.log?.info('[render] antialias change applies on next load');
       applyShadows(t);
+      reflector.setBudget(reflectBudget(t.name));
       if (renderer) renderer.setPixelRatio(Math.min((typeof window !== 'undefined' && window.devicePixelRatio) || 1, t.pixelRatio) * resScale);
       setupPost(t);
       // GRS-02: akıcı skips the cloud noise in the sky shader (a uniform, no relink); the gradient, sun, stars and moon stay
@@ -419,6 +427,11 @@ export function createRender(deps: RenderDeps): MotorRender {
         const nb = scanProgs('draw', sc);
         if (nb > 0 && frameNo > 1) pf.mark('compile', `${nb} shader karede derlendi, toplam ${progList().length}: ${lastDrawBorn.slice(-nb).join(' ')}`);
       } else { draw(); scanProgs('draw', sc); }
+      // GRS-05: mirrored water pass after the main draw (shadow map is fresh); the sea samples it next frame
+      if ((cam as T.PerspectiveCamera).isPerspectiveCamera && api.reflectSea && api.reflectSea.visible) {
+        const rd = () => reflector.render(renderer!, sc, cam as T.PerspectiveCamera, api.reflectSea);
+        if (pf) pf.time('render.reflect', rd); else rd();
+      }
       const ri = renderer.info;
       lastInfo.calls = ri.render.calls; lastInfo.tris = ri.render.triangles;
       lastInfo.geos = ri.memory.geometries; lastInfo.texs = ri.memory.textures;
@@ -479,7 +492,7 @@ export function createRender(deps: RenderDeps): MotorRender {
     dispose() {
       timeSubs.clear(); picks.clear(); gate.dispose();
       if (composer) { composer.passes.forEach(ps => { try { ps.dispose(); } catch { /* */ } }); composer.dispose(); composer = null; }
-      envRT?.dispose(); envRT = null; pmrem?.dispose(); pmrem = null;
+      envRT?.dispose(); envRT = null; pmrem?.dispose(); pmrem = null; reflector.dispose();
       if (renderer) { renderer.dispose(); renderer = null; }
     },
   };

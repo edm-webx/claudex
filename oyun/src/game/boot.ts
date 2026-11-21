@@ -50,6 +50,7 @@ import { createPrefabs } from '../engine/prefab';
 import { createZones } from '../engine/zones';
 import { createNav } from '../engine/nav';
 import { createAnim } from '../engine/anim';
+import { reflectBudget } from '../engine/render/reflect';
 import { createFx } from '../engine/fx';
 import { createUi } from '../engine/ui';
 import { createAudio } from '../engine/audio';
@@ -570,7 +571,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   // ses / animasyon juice: particles, emotes, coin fly, unlock pop, flag, kepenk, haptics (view/juice.ts)
   const juice: JuiceView | null = playMode ? make('juice', () => createJuice({
     bus: sim.bus, fx, hero: () => H, heroPos: () => pos, speed: () => walk.speed,
-    anchors: () => zones?.anchors('iskele') ?? {}, zoneRoot: () => zones?.root('iskele') ?? null,
+    anchors: () => zones?.anchors('iskele') ?? {}, zoneRoot: () => zones?.root('iskele') ?? null, hour: () => sim.clock.hour,
     uiRoot: uiReal ? U.root : null, project, agents: () => sim.agents,
     crowdHead: chars ? (slot, out) => (chars as MotorChars).crowd.headPos(slot, out) : undefined,
     haptics: () => U.settings.haptics !== false && sim.state.settings.haptics !== false,
@@ -862,6 +863,8 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   });
   // PRF-06: bölge/prefab başına çizim maliyeti tablosu (yalnız okur). game.js 2.5 MB sınırı yüzünden yalnız geliştirme ve ölçüm
   // derlemesinde (vite --mode olcum; tests/browser/cizim-butce.mjs --build) var, oyuncu derlemesinde ağaçtan atılır.
+  // GRS-05: A/B ölçümü için yansıma geçişini aç/kapat ve durumunu oku (yalnız ölçüm/geliştirme derlemesi)
+  if (import.meta.env.MODE !== 'production') reg('yansima', (on?: boolean) => { const rf = (R as unknown as { reflector?: { setBudget(b: unknown): void; on: boolean; stats(): unknown } }).reflector; if (!rf) return null; if (on === false) rf.setBudget(null); else if (on === true) rf.setBudget(reflectBudget(quality.current().name)); return { on: rf.on, ...(rf.stats() as object) }; });
   if (import.meta.env.MODE !== 'production') reg('drawCost', (top = 20) => { const sun = (R as unknown as { sun?: { castShadow: boolean; shadow: { camera: Parameters<typeof drawCostTable>[1] } } }).sun; return drawCostTable(scene, cam.camera, sun?.castShadow ? sun.shadow.camera : null, top || 20); });
   if (import.meta.env.MODE !== 'production') reg('shadowCull', (on?: boolean) => { const r = R as unknown as { shadowCull?: boolean; shadowStats?: () => unknown }; if (on !== undefined && r.shadowCull !== undefined) r.shadowCull = !!on; return { on: r.shadowCull ?? false, ...(r.shadowStats?.() as object ?? {}) }; });   // PRF-06 A/B ölçüm kancası
   if (import.meta.env.MODE !== 'production') reg('sahneKutu', (k: Parameters<typeof kutuda>[1], max?: number) => kutuda(scene, k, max));   // PRF-09 hayaletlenme tanısı

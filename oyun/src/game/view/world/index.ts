@@ -27,6 +27,7 @@ import { testSokakZone } from '../../../content/zones/test-sokak';
 import { registerDisariZones, aptPrefabs } from '../../../content/zones/disari';
 import { karsiPrefabs } from '../../../content/zones/karsi';
 import { buyumeEngel } from './bufe-buyume';
+import { markReflected, type Reflector } from '../../../engine/render/reflect';
 import { stageLayout, STATION_KINDS, PARTS, TABLE_PADS, PAD_KEYS_FALLBACK, SEAT_H, WATER_Y, local2world, rectAABB, benchSeats, BENCHES, type StageLayout, type P3v, type Obstacle, staticObstacles } from '../../../content/prefabs/iskele/layout';
 import { paintKey } from '../../../content/dekor-katalog';
 import { stationBuilt, tableBuilt, decorBuild, itemGeo, ITEM_HT, moneyGeo, makeMarker, MARKERS, bez, FOOT, DECOR_SIZE } from '../../../content/prefabs/iskele/props';
@@ -38,6 +39,8 @@ import { BUFE } from '../../../content/prefabs/iskele/layout';
 import { ensureKit, MAT, radialTex } from '../../../content/prefabs/common/v2kit';
 import { mixc, col, clamp, lerp, easeInOut, HP, PI, TAU } from '../../../engine/prefab/batch';
 
+/** iskele prefabs drawn into the water reflection (GRS-05); the crowd, particles and small props stay out */
+const REFLECTED = ['skyline', 'boats', 'pier', 'kiosk', 'ferry', 'ferryFar'];
 export interface WorldViewDeps { render: RenderPipeline; zones: ZoneManager; prefab: PrefabSystem; dress: Dress; }
 export type FerryState = 'away' | 'arriving' | 'docked' | 'leaving';
 export interface WorldView extends GameView {
@@ -178,8 +181,18 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
   let spkNext = 0;
   let decorGlow: T.Group | null = null;
 
+  /** GRS-05: planar reflection hooks (render.reflector exists on the real pipeline only) */
+  const rfx = render as unknown as { reflector?: Reflector; reflectSea?: T.Object3D | null; sky?: T.Object3D };
+  function markReflections() {
+    if (!rfx.reflector) return;
+    rfx.reflectSea = h.sea;
+    markReflected(rfx.sky);
+    for (const id of REFLECTED) markReflected(inner(id));
+    const root = zones.root('iskele'); root?.children.forEach(c => { if (/^karsi/i.test(c.name)) markReflected(c); });
+  }
   function refreshHandles() {
     const sea = inner('sea') as T.Mesh | null; h.sea = sea;
+    markReflections();
     const sk = inner('skyline');
     h.skySky = sk?.getObjectByName('skyline') ?? null; h.skyWin = sk?.getObjectByName('skylineWindows') ?? null; h.clouds = (sk?.getObjectByName('clouds') as T.Mesh) ?? null;
     const bo = inner('boats'); h.kayik = bo?.getObjectByName('kayik') ?? null; h.sail = bo?.getObjectByName('sail') ?? null;
@@ -476,7 +489,11 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
     const dt = Math.min(0.1, Math.max(0, +dtIn || 0)); time += dt;
     if (render.horizon != null && render.horizon !== lastHorizon) horizonVis();
     const U = (h.sea?.material as T.ShaderMaterial | undefined)?.uniforms;
-    if (U) U.uTime.value = time;
+    if (U) {
+      U.uTime.value = time;
+      const rf = rfx.reflector;
+      if (rf && U.uReflOn) { U.uReflect.value = rf.texture; U.uReflOn.value = rf.on && rf.texture ? 1 : 0; (U.uReflMat.value as T.Matrix4).copy(rf.matrix); }
+    }
     stepFerry(dt);
     if (farWait > 0) { farWait -= dt; if (h.far) h.far.visible = false; }
     else { if (h.far) h.far.visible = true; farX += farDir * dt * 3.2; if (Math.abs(farX) > 150) { farDir = -farDir; farWait = 20; } }
