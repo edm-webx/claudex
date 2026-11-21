@@ -200,7 +200,7 @@ export interface SchedulerDeps { perf?: PerfMeter; log?: Logger; now?: () => num
 export type SaveReason = 'interval' | 'purchase' | 'hidden' | 'manual';
 export interface BackupInfo { id: string; kind: 'daily' | 'premigration' | 'slot'; at: number; version: number; bytes: number; }
 export interface Migration { from: number; to: number; up(old: any): any; }
-export interface SaveLoadResult<S> { data: S; from: 'idb' | 'ls' | 'backup' | 'fresh'; repaired: string[]; }
+export interface SaveLoadResult<S> { data: S; from: 'idb' | 'ls' | 'backup' | 'fresh'; repaired: string[]; /** KAL-02: depoda bu build'den YENİ sürümde bir kayıt var; salt-okunur moda geçildi, yazılmaz. */ newerVersion?: number; }
 export interface SaveStore<S> {
   load(): Promise<SaveLoadResult<S>>;
   save(reason: SaveReason): Promise<boolean>;
@@ -213,6 +213,8 @@ export interface SaveStore<S> {
   restore(id: string): Promise<boolean>;
   wipe(): Promise<void>;               // resetSave hook
   readonly mode: 'idb' | 'ls' | 'memory';
+  /** KAL-02: yeni sürüm kaydı görüldü; save() hiçbir şey yazmaz (yeni kayıt ezilmesin). wipe/importCode/restore kilidi açar. */
+  readonly readOnly?: boolean;
 }
 export interface SaveOpts<S> {
   key: string;                          // e.g. 'marti-bufe'

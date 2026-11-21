@@ -3,6 +3,7 @@ import type { Platform, SaveStore, Logger } from '../../engine/api';
 import { createSave } from '../../engine/save';
 import { defaultState, defaultSettings, newToday, SAVE_KEY, SAVE_VERSION, type GameState } from './schema';
 import type { SimFull } from '../headless';
+import { normalizeZones } from './zones-norm';
 
 const isObj = (v: unknown): v is Record<string, unknown> => !!v && typeof v === 'object' && !Array.isArray(v);
 
@@ -16,6 +17,7 @@ export function normalizeState(d: GameState, notes: string[] = []): string[] {
   d.settings = { ...defaultSettings(), ...(isObj(d.settings) ? d.settings : {}) };
   for (const k of ['owned', 'padPaid', 'stats', 'ach', 'regulars', 'tut', 'zones'] as const) if (!isObj(d[k])) { (d as unknown as Record<string, unknown>)[k] = {}; notes.push('obj ' + k); }
   for (const k of ['workers', 'renewed', 'cats', 'decorOwned', 'decorSlots', 'citizens'] as const) if (!Array.isArray(d[k])) { (d as unknown as Record<string, unknown>)[k] = []; notes.push('arr ' + k); }
+  normalizeZones(d.zones, notes);
   if (!isObj(d.week)) d.week = { earned: 0, customers: 0 };
   if (!isObj(d.player)) d.player = def.player;
   if (!d.today) d.today = newToday();
@@ -39,9 +41,21 @@ function snapshotRng(sim: SimFull): void {
   sim.state.rngState = m;
 }
 
+/** v1 -> v2: ölü zones.zincir ve Plot.stok silinir (stok/zincir kırmızı çizgi); gerisini normalizeState onarır. Premigration yedeği engine/save'de. */
+export const MIGRATIONS = [{
+  from: 1, to: 2,
+  up(old: Record<string, unknown>): Record<string, unknown> {
+    const z = isObj(old.zones) ? old.zones : (old.zones = {}) as Record<string, unknown>;
+    delete z.zincir;
+    const pl = isObj(z.arsa) && isObj(z.arsa.plots) ? z.arsa.plots : null;
+    if (pl) for (const id of Object.keys(pl)) { const p = pl[id]; if (isObj(p)) delete p.stok; }
+    return old;
+  },
+}];
+
 export function createGameSave(sim: SimFull, platform: Pick<Platform, 'storage' | 'idb' | 'clock'>, o: { key?: string; log?: Logger } = {}): SaveStore<GameState> {
   return createSave<GameState>({
-    key: o.key || SAVE_KEY, version: SAVE_VERSION, defaults: () => defaultState(sim.state.seed || 1), migrations: [],
+    key: o.key || SAVE_KEY, version: SAVE_VERSION, defaults: () => defaultState(sim.state.seed || 1), migrations: MIGRATIONS,
     validate: d => normalizeState(d),
     get: () => { sim.rules?.snapshot(platform.clock.wall()); snapshotRng(sim); return sim.state; },
     platform, log: o.log,

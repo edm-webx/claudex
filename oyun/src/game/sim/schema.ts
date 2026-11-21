@@ -10,7 +10,8 @@
  */
 import type { SoASchema } from '../../engine/api';
 
-export const SAVE_VERSION = 1;
+/** 2: zones doğrulayıcısı + ölü veri göçü (zones.zincir, Plot.stok silinir); bkz. sim/save.ts migrations. */
+export const SAVE_VERSION = 2;
 export const SAVE_KEY = 'marti-bufe';
 /** v2 localStorage key (import in local dev). */
 export const V2_SAVE_KEY = 'sabrinin-bufesi-v2';
