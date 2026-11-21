@@ -493,7 +493,7 @@ export function createHavaLook(d: HavaLookDeps): HavaLookView {
         if (key !== chipKey) {
           chipKey = key;
           const sub = v.market.open ? 'Gece Pazarı açık' : v.dateText;
-          chip.innerHTML = `<div style="font-size:16px">${v.icon} ${v.kind === 'acik' ? v.dateText.split(' ').slice(0, 2).join(' ') : v.name}</div><div style="font-size:12.5px;opacity:.8">${sub.replace(/[<>&]/g, '')}</div>`;
+          chip.innerHTML = `<div style="font-size:16px">${v.icon} ${v.kind === 'acik' ? v.dateText.split(' ').slice(0, 2).join(' ') : v.name}</div><div style="font-size:13px;opacity:.8">${sub.replace(/[<>&]/g, '')}</div>`;
         }
         chip.style.opacity = r.rt.panel ? '0' : '1';
       }
