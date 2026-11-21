@@ -1,5 +1,4 @@
 /** Adapter: A's `Rules` -> the narrow `AgentHost` the agents layer codes against. Pure. */
-import { masaCati } from '../../../content/kanat';
 import { pencereWid } from '../window';
 import { restoranApi } from '../restoran';
 import { teslimatApi } from '../kurye';
@@ -23,7 +22,7 @@ export function hostFromRules(r: Rules): AgentHost {
     tablesBuilt: () => rt.tables.filter((t) => t.built).length,
     dirtyTables: () => {
       const out: { index: number; x: number; z: number; age: number }[] = [];
-      rt.tables.forEach((t, i) => { if (t.built && t.dirty > 0 && !masaCati(i)) { const l = rt.layout.tables[i]; out.push({ index: i, x: l.x, z: l.z, age: t.dirtyT || 0 }); } });   // BUF-20: çatı masası garsonun (temizlikçi merdivene çıkmaz)
+      rt.tables.forEach((t, i) => { if (t.built && t.dirty > 0) { const l = rt.layout.tables[i]; out.push({ index: i, x: l.x, z: l.z, age: t.dirtyT || 0 }); } });   // BUF-20 / 2026-11-21: çatı masasını temizlikçi de siler (merdivenden çıkar, workers.ts goVia çatı rotası)
       return out;
     },
     cleanTable: (i) => { const t = rt.tables[i]; if (t && t.dirty > 0) { (rt as unknown as { bulasik?: { masaSilindi(i: number): void } }).bulasik?.masaSilindi(i); t.dirty = 0; t.dirtyT = 0; r.stat('cleaned'); } },

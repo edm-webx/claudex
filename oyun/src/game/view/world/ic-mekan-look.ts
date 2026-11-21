@@ -101,7 +101,7 @@ const chair = (b: Batch, x: number, z: number, a: number, c: string) => {
 };
 function masa(c: Ctx, it: IcItem, n: number) {
   // BUF-20 salonMasa: büfe salonunun sim masası, iki sandalye sim koltuklarında (u ekseninde ±0.78), oturan yalnız gerçek müşteri
-  const sm = it.k === 'salonMasa', { b } = c, cloth = it.k === 'masa4' || sm, fine = c.fine, chc = fine ? '#6b1f2a' : c.m.tur === 'bistro' || c.m.tur === 'balik' ? '#1d4f86' : '#7d5638';
+  const sm = it.k === 'salonMasa', { b } = c, cloth = it.k === 'masa4' || sm, fine = c.fine, chc = c.m.tur === 'balik' ? '#14325a' : c.m.tur === 'kahvalti' ? (fine ? '#5a3b2a' : '#7d5638') : fine ? '#6b1f2a' : c.m.tur === 'bistro' ? '#1d4f86' : '#7d5638';   // 2026-11-21: salon chairs contrast with their rug
   b.cyl(0.05, 0.1, 0.72, '#2a2d33', 0, 0.36, 0, { seg: 8 }); b.cyl(cloth ? 0.5 : 0.4, cloth ? 0.5 : 0.4, 0.05, cloth ? '#fbfaf6' : '#d6aa78', 0, 0.74, 0, { seg: 16 });
   if (cloth) b.cyl(0.52, 0.55, 0.2, fine ? '#fbfaf6' : c.m.tur === 'balik' ? '#e8f1f6' : '#fbf3e4', 0, 0.65, 0, { seg: 16 });
   b.cyl(0.11, 0.11, 0.015, '#ffffff', 0.18, 0.775, 0.05, { seg: 12 }); b.cyl(0.035, 0.03, 0.1, '#c0392b', -0.12, 0.82, 0.1, { seg: 6 }); b.cyl(0.035, 0.03, 0.1, '#e9d27a', 0.05, 0.82, -0.14, { seg: 6 });
@@ -300,9 +300,10 @@ function buildRoom(m: IcMekan, own: { lv: number; isci: number; esya: string[]; 
     for (const s of [-1, 1]) b.box(0.12, 2.4, 0.3, w2, s * 0.92, 1.2, D / 2 - 0.15); b.box(1.96, 0.16, 0.3, w2, 0, 2.45, D / 2 - 0.15);   // door frame
     b.box(1.2, 0.02, 0.8, '#9a1f2a', 0, 0.003, D / 2 - 0.8);   // door mat
   } else {
-    b.box(W - 0.6, 0.012, D - 0.8, fine ? '#6b1f2a' : '#b5523a', 0, 0.006, 0.1);   // rug
-    b.box(W - 0.75, 0.014, D - 0.95, fine ? '#c9a24a' : '#e9c88a', 0, 0.008, 0.1);
-    b.box(W - 0.9, 0.016, D - 1.1, fine ? '#6b1f2a' : '#b5523a', 0, 0.01, 0.1);
+    // rug (2026-11-21: own identity per hall, chairs must read on it): kahvaltı warm wood / cream, balık sea blue / white; fine adds a gold edge
+    const [r1, r2, r3] = m.tur === 'balik' ? [fine ? '#c9a24a' : '#1d4f86', '#f4f7fa', '#9cc7dd'] : [fine ? '#c9a24a' : '#b08860', '#f3e3c8', '#e2c99c'];
+    b.box(W - 0.6, 0.012, D - 0.8, r1, 0, 0.006, 0.1); b.box(W - 0.75, 0.014, D - 0.95, r2, 0, 0.008, 0.1); b.box(W - 0.9, 0.016, D - 1.1, r3, 0, 0.01, 0.1);
+    if (m.tur === 'balik') for (let i = 1; i < 6; i++) b.box(W - 0.95, 0.004, 0.06, '#f4f7fa', 0, 0.019, -D / 2 + 0.65 + i * (D - 1.1) / 6);   // wave stripes
   }
   const has = new Set(m.salon ? salonEsya : m.mutfak ? mutfakEsya(stage) : own?.esya || []);
   const items = icLayout(m, stage), occ = own ? Math.min(0.9, 0.35 + 0.12 * own.lv) : m.salon ? (fine ? 0.85 : 0.65) : 0.4;
@@ -409,7 +410,7 @@ export function createIcMekan(d: IcDeps): IcView {
         for (const w of a.walkers) { const P = w.p, n = P.length, i0 = Math.floor(w.t) % n, i1 = (i0 + 1) % n, L = Math.max(0.5, Math.hypot(P[i1][0] - P[i0][0], P[i1][1] - P[i0][1])); w.t = (w.t + dt * w.sp / L) % n; const f = w.t - Math.floor(w.t); w.o.position.set(P[i0][0] + (P[i1][0] - P[i0][0]) * f, Math.abs(Math.sin(t * 8)) * 0.03, P[i0][1] + (P[i1][1] - P[i0][1]) * f); w.o.rotation.y = Math.atan2(P[i1][0] - P[i0][0], P[i1][1] - P[i0][1]); }
         if ((a.kds || a.pasTabak || a.istTabak) && (a.kdsT = (a.kdsT || 0) - dt) <= 0) {
           a.kdsT = 0.7; const mk = d.mutfak(); a.kds?.draw(mk.kds); a.bilet?.set(mk.bilet || []);
-          if (a.yigin) a.yigin.set(mk.kirliTabak ?? 4); if (a.tabela) a.tabela.visible = (mk.zeminKir ?? 0) >= ZEMIN_ISLAK;
+          if (a.yigin) a.yigin.set(mk.kirliTabak ?? 0);   // 2026-11-21: tek kaynak rtview (BUF-13 rt.dirtyDishes); sabit 4'lük yığın onunla üst üste çiziliyordu if (a.tabela) a.tabela.visible = (mk.zeminKir ?? 0) >= ZEMIN_ISLAK;
           // BUF-05: pass rack plates (oldest first) and station trays/pans from the sim, colour = the food on it
           if (a.pasTabak) a.pasTabak.forEach((t, i) => { const f = mk.pass?.[i]; t.g.visible = !!f; if (f) t.food.material = lm(yemekRenk(f)); });
           if (a.istTabak) { a.pisiyor!.length = 0; for (const [id, t] of a.istTabak) { const s = mk.ist?.[id]; t.g.visible = s?.d === 'hazir'; t.buhar.visible = s?.d === 'pisiyor'; if (s) t.food.material = lm(yemekRenk(s.p)); if (t.buhar.visible) a.pisiyor!.push(t.buhar); }

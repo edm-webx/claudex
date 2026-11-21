@@ -25,6 +25,8 @@ export interface AgentsViewDeps {
   /** Live agents handle (rules.rt.agents); null before the sim exists. */
   agents: () => AgentsHandle | null;
   player: () => { x: number; z: number; moving: boolean };
+  /** 2026-11-21: optional: hide a raised actor (y > 0.5) at x, z (roof terrace over a salon the player is inside: its roof is cut away) */
+  hideUp?: (x: number, z: number) => boolean;
   /** Optional: B's item meshes are wired through chars.setItemFactory by boot. */
 }
 export interface AgentsView extends GameView {
@@ -126,6 +128,7 @@ export function createAgentsView(deps: AgentsViewDeps): AgentsView {
         h.object.position.y = y;
         if (r.props) for (const k in r.props) r.props[k].visible = a.fx === k;
         if (r.bag) { r.bag.visible = a.fx === 'bag'; r.bag.rotation.y = Math.sin(performance.now() / 260) * 0.12; }
+        if (r.gull < 0) h.object.visible = !(y > 0.5 && deps.hideUp?.(x, z));
         if (r.gull >= 0) h.object.visible = r.gull < gullsNear || a.act === 'stare' || a.act === 'snatch' || a.carry.length > 0;
         if (r.animal) {
           (h as unknown as { setState(s: Record<string, unknown>): void }).setState(r.a.kind === 'gull' || r.a.kind === 'parrot' ? { mode: a.act, speed: Math.min(1, a.speed / 1.2) } : { act: a.act, speed: Math.min(1, a.speed / 1.2) });

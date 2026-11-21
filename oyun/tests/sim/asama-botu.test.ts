@@ -239,7 +239,7 @@ const rapor = (k: ReturnType<typeof kos>) => ({
   surum: 1, aciklama: 'BUF-28 aşama botu: aşama 1-10, 14 rol, her aşama 3 oyun günü; deterministik (tohum sabit, duvar saati yok)', tohum: TOHUM, gunAsama: GUN_ASAMA, sonAsama: k.S.stage, toplamGun: k.S.day - 1, simSn: r0(k.t),
   esikSn: ESIK, ihlalSayisi: Object.values(k.sayim).reduce((a, b) => a + b, 0), ihlalTur: k.sayim, ihlaller: k.ihlal, asiriYukOlayi: k.yuk,
   enUzunBeklemeSn: Object.fromEntries(Object.entries(k.enYas).map(([a, b]) => [a, r0(b)])),
-  bilinenSinir: { catiMasaKirliEnUzunSn: r0(Math.max(...k.ast.map(a => a.catiKirliEnYas))), not: 'çatı masasını yalnız garson siler (BUF-20); yoğun serviste silme önceliği en alta düşer, temizlikçi merdivene çıkmaz' },
+  bilinenSinir: { catiMasaKirliEnUzunSn: r0(Math.max(...k.ast.map(a => a.catiKirliEnYas))), not: 'çatı masasını garson ve temizlikçi siler (temizlikçi de merdivenden çıkar, 2026-11-21; önce yalnız garson: 1000-2400 sn kirli kalıyordu)' },
   istatistik: Object.fromEntries(['isinlanma', 'garsonZamanAsimi', 'tabakDustu', 'paketTeslim', 'paketSiparis', 'tabakYikandi', 'guvenlikRonda', 'hostesKarsilama', 'hostesMasaGosterdi', 'valeAnahtar', 'valePark', 'mudurVekil', 'mudurIs', 'mudurKasa'].map(a => [a, k.S.stats[a] || 0])),
   asamalar: k.ast.map(a => ({ ...a, siparisYemek: [...a.siparisYemek].sort(), siparisYemekSayisi: a.siparisYemek.size })),
   roller: k.rolOzet, calisanlar: k.calisanlar,
@@ -289,8 +289,9 @@ describe('BUF-28 aşama botu: 1 -> 10, 14 rol, 30 oyun günü', () => {
     }
     expect(ast[9].menuAcik).toBeGreaterThanOrEqual(20);
     expect(ast[9].siparisYemek.size).toBeGreaterThan(ast[3].siparisYemek.size);
-    // bilinen sınır (rapora yazılır, hata değil): çatı masası yoğunlukta saatlerce kirli kalır (BUF-20: yalnız garson siler); yine de siliniyor
+    // çatı masası: garson ve (2026-11-21) temizlikçi siler; eskiden yoğunlukta 1000-2400 sn kirli kalıyordu
     expect(S.stats.garsonSildi || 0).toBeGreaterThan(0);
+    expect(Math.max(...ast.map(a => a.catiKirliEnYas)), 'çatı masası kirli kalma süresi (temizlikçi de çıkar)').toBeLessThan(300);
   }, 180_000);
 
   it('denetçi kırık senaryoyu yakalar: garson alınmazsa masa işleri 30 sn işlenmeyen iş olarak raporlanır', () => {
