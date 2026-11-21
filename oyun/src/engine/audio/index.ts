@@ -343,6 +343,12 @@ export function createAudio(deps: AudioDeps): MotorAudio {
         stop() { stopped = true; for (const n of [src, extra]) { try { n?.stop(); } catch { /* */ } } try { fadeG.disconnect(); } catch { /* */ } if (def.dyn === 'grill') sizzleG = null; },
       };
     },
+    // bölge terk edildi: 60 sn içinde dönülmezse döngü tamponu önbellekten bırakılır (LRU bütçesine ek olarak)
+    release(def) {
+      if (!def.loop || def.loop === 'crowdBed') return;
+      const id = def.loop;
+      setTimeout(() => { try { if (!atmo || !atmo.live().some(l => l === def.id)) bank?.drop('loop', id); } catch { /* */ } }, 60000);
+    },
     shoot(_def, s) {
       if (!live() || !ac || !ambOn || !voiceCap.take(deps.platform.clock.now(), 2500, 0)) return;
       const pan = ac.createStereoPanner(), g = ac.createGain(), pr = s.pan ?? 0.8;
