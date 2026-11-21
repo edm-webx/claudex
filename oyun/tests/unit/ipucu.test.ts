@@ -9,6 +9,6 @@ describe('ipucuFor', () => {
   it('ormanda bölge ipucu', () => { expect(ipucuFor({ x: 830, z: 9 }, none)?.id).toBe('bolge_orman'); });
   it('her iç mekanın özel metni var', async () => {
     const { IC_MEKANLAR } = await import('../../src/content/ic-mekan');
-    for (const m of IC_MEKANLAR) { const h = ipucuFor({ x: m.x, z: m.z }, () => false); expect(h?.id, m.id).toBe('bina_' + m.id); expect(h?.text, m.id).not.toMatch(/içeri girdin\.$/); }
+    for (const m of IC_MEKANLAR) { const h = ipucuFor({ x: m.x, z: m.z, kat: m.kat }, () => false); expect(h?.id, m.id).toBe('bina_' + m.id); expect(h?.text, m.id).not.toMatch(/içeri girdin\.$/); }
   });
 });

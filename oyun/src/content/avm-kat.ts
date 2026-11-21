@@ -77,6 +77,12 @@ export function binis(p: { x: number; z: number }, kat: number, vx: number, vz: 
   return null;
 }
 
+/** giriş lobisinin katı eşyaları (dünya): danışma bankosu (batı), iki büyük saksı, iki bank sırası; görünüm de buradan çizer */
+export const LOBI_DEKOR: { k: 'danisma' | 'saksi' | 'bank'; x: number; z: number; w: number; d: number }[] = [
+  { k: 'danisma', x: AVM.x0 + 2.4, z: 45.2, w: 2.4, d: 0.8 },
+  { k: 'saksi', x: AVM.x0 + 0.7, z: AVM.z0 + 0.7, w: 0.9, d: 0.9 }, { k: 'saksi', x: AVM.x1 - 0.7, z: AVM.z0 + 0.7, w: 0.9, d: 0.9 },
+  { k: 'bank', x: AVM.x1 - 2.6, z: 45.5, w: 2.2, d: 0.55 }, { k: 'saksi', x: AVM.x1 - 4.2, z: 45.5, w: 0.7, d: 0.7 },
+];
 /* ---------- çarpışma ---------- */
 const R = (x0: number, x1: number, z0: number, z1: number): Rect => ({ x0, x1, z0, z1 });
 const T = 0.25;
@@ -84,7 +90,7 @@ const T = 0.25;
 export function holEngel(kat: number): Rect[] {
   // arka duvar (hol), merdiven bloğu, lobinin iki yan duvarı, cam cephe (zeminde ortada kapı; önünde rüzgârlık duvarı)
   const o: Rect[] = [R(HOL.x0, HOL.x1, AVM.z1 - T, AVM.z1), R(MERD.kx0, MERD.kx1, MERD.on, MERD.arka), R(AVM.x0, AVM.x0 + T, AVM.z0, LOBI_Z1), R(AVM.x1 - T, AVM.x1, AVM.z0, LOBI_Z1)];
-  if (kat === 0) o.push(R(AVM.x0, GIRIS_KAPI.x0, AVM.z0, AVM.z0 + T), R(GIRIS_KAPI.x1, AVM.x1, AVM.z0, AVM.z0 + T), R(GIRIS_KAPI.x0 - 0.6, GIRIS_KAPI.x1 + 0.6, AVM.z0 - 1.9, AVM.z0 - 1.65));
+  if (kat === 0) o.push(...LOBI_DEKOR.map(d => R(d.x - d.w / 2, d.x + d.w / 2, d.z - d.d / 2, d.z + d.d / 2)), R(AVM.x0, GIRIS_KAPI.x0, AVM.z0, AVM.z0 + T), R(GIRIS_KAPI.x1, AVM.x1, AVM.z0, AVM.z0 + T), R(GIRIS_KAPI.x0 - 0.6, GIRIS_KAPI.x1 + 0.6, AVM.z0 - 1.9, AVM.z0 - 1.65));
   else o.push(R(AVM.x0, AVM.x1, AVM.z0, AVM.z0 + T));
   return o;
 }

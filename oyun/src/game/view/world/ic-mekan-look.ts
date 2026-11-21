@@ -18,6 +18,7 @@ import { createFx, fanlar, asiliTavalar, biletRayi, menuPanosu, tabakYigini, isl
 
 export interface IcDeps {
   root: () => T.Object3D | null; hero: () => { x: number; z: number }; night: () => number;
+  /** the scene: Martı AVM rooms live there (the iskele zone root may be unloaded inside the AVM realm) */ sahne?: () => T.Object3D | null;
   /** owned fixed businesses by plot id */ isletme: () => Record<string, { lv: number; isci: number; esya: string[]; tema?: string }>;
   salon: () => { stage: number; esya: string[] };
   /** büfe mutfağı: hired kitchen staff + the live ticket lines for the KDS screen; BUF-05: pass rafı tabakları + istasyon durumu (sim restoranApi.view()) */
@@ -32,10 +33,14 @@ const HP = Math.PI / 2, O = { r: 0 };
 const ZEMIN_ISLAK = 0.55;
 const FLOOR: Record<string, [string, string]> = { kafe: ['#9a6b45', '#7d5434'], bistro: ['#e6e0d4', '#2c3e57'], kirtasiye: ['#cfd8dc', '#b8c4c9'], okul: ['#c9b48a', '#b39e74'], lokanta: ['#e9e6e0', '#d4cfc6'],
   kafeterya: ['#8fb3a0', '#7aa08c'], banka: ['#efe9df', '#c9a23a'], hastane: ['#e3eef2', '#cfdde3'], acil: ['#e3eef2', '#cfdde3'], morg: ['#9aa3a8', '#878f94'], kahvalti: ['#c8a27a', '#b08860'], balik: ['#d8e2e6', '#2f6f8f'], mutfak: ['#b9a78c', '#a59377'],
-  giyim: ['#e9e4da', '#d6cec0'], elektronik: ['#dfe4ea', '#c9d0d8'], oyuncak: ['#f3e7c9', '#e6d4a8'] };
+  giyim: ['#e9e4da', '#d6cec0'], elektronik: ['#dfe4ea', '#c9d0d8'], oyuncak: ['#f3e7c9', '#e6d4a8'],
+  sekerci: ['#f3e3e6', '#e6c9cf'], kahveci: ['#8a5f3e', '#74492c'], dondurma: ['#f4f1ea', '#e8ddd0'], baklava: ['#e9dfc8', '#c9a23a'], kuruyemis: ['#c8a27a', '#b08860'],
+  donerci: ['#d9cfc0', '#a2472f'], kumpir: ['#efe3c4', '#d8c39a'], midye: ['#dfe9ec', '#2f6f8f'], avmLokanta: ['#e9e6e0', '#d4cfc6'] };
 const WALL: Record<string, [string, string]> = { kafe: ['#f3e3c8', '#7a4a2a'], bistro: ['#e9f1f4', '#1d4f86'], kirtasiye: ['#f6f6ee', '#2b6fb8'], okul: ['#f4ead2', '#5f8f6a'], lokanta: ['#f2efe9', '#a2472f'],
   kafeterya: ['#eef2f4', '#2f9e5a'], banka: ['#f4efe2', '#1f3a5f'], hastane: ['#f2f6f8', '#7fb4d8'], acil: ['#f2f6f8', '#d93a3a'], morg: ['#b9c0c4', '#5b6068'], kahvalti: ['#f3e3c8', '#7a4a2a'], balik: ['#e9f1f4', '#1d4f86'], mutfak: ['#f3ead6', '#3f7f64'],
-  giyim: ['#f6f0ea', '#c94f6d'], elektronik: ['#eef2f6', '#2b6fb8'], oyuncak: ['#fff6e0', '#e8892b'] };
+  giyim: ['#f6f0ea', '#c94f6d'], elektronik: ['#eef2f6', '#2b6fb8'], oyuncak: ['#fff6e0', '#e8892b'],
+  sekerci: ['#fff3f5', '#c94f6d'], kahveci: ['#efe2cf', '#5a3a22'], dondurma: ['#fbf7f0', '#e0533c'], baklava: ['#f6edd8', '#2f6b3a'], kuruyemis: ['#f3e6cf', '#8a5a3c'],
+  donerci: ['#f4ece0', '#a2472f'], kumpir: ['#fff4dc', '#e8892b'], midye: ['#eef5f7', '#1d4f86'], avmLokanta: ['#f2efe9', '#a2472f'] };
 
 let solid: T.MeshStandardMaterial | null = null, glass: T.MeshStandardMaterial | null = null, glow: T.MeshBasicMaterial | null = null, wallM: T.MeshStandardMaterial | null = null;
 function mats() {
@@ -127,6 +132,102 @@ type Fn = (c: Ctx, it: IcItem) => void;
 /** wall-mounted items place themselves at it.y */
 const WALLY = new Set(['menuPano', 'tahta', 'pano', 'ekran', 'formaDuvar', 'kds', 'davlumbaz', 'asiliTava', 'mutfakMenu', 'ledPano', 'tvDuvar']);
 const F: Record<string, Fn> = {
+  // ---- 2026-11-21 Martı AVM yemek / tatlı dükkânları (content/ic-mekan.ts avmOdaLayout) ----
+  kavanoz: (c, it) => {   // floor shelf (y 0) of glass jars, or a small row of jars on a counter (y > 0)
+    const { b, g } = c, flo = !(it.y || 0), P: Record<string, string[]> = { seker: ['#f2a2b3', '#ffd23f', '#7fd1c7', '#c94f6d'], akide: ['#e0533c', '#ffd23f', '#2f9e5a', '#f4f2ec'], kahve: ['#5a3a22', '#7a4a2a', '#3a2416', '#9a6b45'], demleme: ['#3a2416', '#d9c4a0', '#5a3a22', '#e8e2d4'], cerez: ['#c99a5b', '#e9d27a', '#8a5a3c', '#6f9e4f'], tursu: ['#9bbf3a', '#c0392b', '#e9d27a', '#6f9e4f'] };
+    const pal = P[it.c || 'seker'] || P.seker, rows = flo ? 3 : 1, n = Math.max(2, Math.round(it.w / 0.26));
+    if (flo) { b.box(it.w, 1.5, 0.05, '#e8dcc6', 0, 0.75, -it.d / 2 + 0.03); for (let r = 0; r <= rows; r++) b.box(it.w, 0.03, it.d, '#a87a52', 0, 0.06 + r * 0.46, 0); for (const sx of [-1, 1]) b.box(0.04, 1.5, it.d, '#8a6040', sx * (it.w / 2 - 0.02), 0.75, 0); }
+    for (let r = 0; r < rows; r++) for (let i = 0; i < n; i++) {
+      const x = -it.w / 2 + 0.15 + i * (it.w - 0.3) / (n - 1), y = (flo ? 0.08 + r * 0.46 : 0) + 0.11;
+      b.cyl(0.075, 0.075, 0.13, pal[(i + r) % pal.length], x, y, 0.02, { seg: 10 }); g.cyl(0.085, 0.085, 0.2, '#e6f3f8', x, y + 0.03, 0.02, { seg: 10 }); b.cyl(0.07, 0.07, 0.03, '#c9a23a', x, y + 0.15, 0.02, { seg: 10 });
+    }
+  },
+  tepsiTezgah: (c, it) => {   // a tray of the house product on the counter: lokum, macun, künefe, baklava, midye, lemons, butter...
+    const { b } = c, k = it.c || '', P: Record<string, string[]> = { lokum: ['#f2a2b3', '#fbfaf6', '#9bd36b'], macun: ['#e0533c', '#ffd23f', '#2f9e5a', '#7d6bb0'], altin: ['#c9a23a', '#e9c46a'], kunefe: ['#e8892b', '#f4d35e'], baklava: ['#d8a24a', '#6f9e4f'], midye: ['#2a2d33', '#e9a46a'], limon: ['#f4e04d', '#9bbf3a'], tereyag: ['#f6e7a1', '#e9d27a'], cerez: ['#c99a5b', '#8a5a3c'] };
+    const pal = P[k] || P.lokum; b.box(it.w, 0.03, it.d, k === 'altin' || k === 'kunefe' ? '#b87333' : '#c9ced6', 0, 0.015, 0); b.box(it.w, 0.04, 0.02, '#9aa5b0', 0, 0.04, it.d / 2 - 0.01); b.box(it.w, 0.04, 0.02, '#9aa5b0', 0, 0.04, -it.d / 2 + 0.01);
+    const nx = Math.max(3, Math.round(it.w / 0.09)), nz = Math.max(2, Math.round(it.d / 0.1));
+    for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) {
+      const x = -it.w / 2 + 0.06 + i * (it.w - 0.12) / (nx - 1), z = -it.d / 2 + 0.07 + j * (it.d - 0.14) / Math.max(1, nz - 1), col = pal[(i * 3 + j) % pal.length];
+      if (k === 'midye') { b.sph(0.035, '#1f2226', x, 0.05, z, { ws: 6, hs: 4, sy: 0.5 }); b.sph(0.022, '#e9a46a', x, 0.065, z, { ws: 5, hs: 3 }); }
+      else if (k === 'limon') b.sph(0.04, col, x, 0.06, z, { ws: 7, hs: 5 });
+      else if (k === 'kunefe' && (i + j) % 3) { b.cyl(0.07, 0.07, 0.03, '#e8892b', x, 0.05, z, { seg: 10 }); }
+      else b.box(0.06, 0.04, 0.06, col, x, 0.05, z);
+    }
+  },
+  hamurMasa: (c, it) => {   // marble work table: pişmaniye pulled by hand / yufka with a long rolling pin
+    const { b } = c; b.box(it.w, 0.06, it.d, '#ecebe6', 0, 0.86, 0); for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.box(0.05, 0.84, 0.05, '#9aa5b0', sx * (it.w / 2 - 0.06), 0.42, sz * (it.d / 2 - 0.06));
+    b.box(it.w - 0.1, 0.02, it.d - 0.1, '#9aa5b0', 0, 0.16, 0);
+    if (it.c === 'yufka') { b.cyl(0.24, 0.24, 0.01, '#f6efd9', -0.12, 0.895, 0, { seg: 18 }); b.cyl(0.018, 0.018, it.w * 0.9, '#c8a27a', 0.05, 0.92, 0.12, { rz: HP, seg: 6 }); }
+    else { for (let i = 0; i < 5; i++) b.sph(0.07, '#f8f1dc', -it.w / 2 + 0.16 + i * 0.13, 0.93, (i % 2) * 0.1 - 0.05, { ws: 7, hs: 5, sy: 0.7 }); b.box(0.3, 0.12, 0.2, '#e0533c', it.w / 2 - 0.2, 0.95, 0.1); }
+  },
+  kazan: (c, it) => {   // copper cauldron on a burner: kestane, döğme dondurma, pilav
+    const { b, l } = c, k = it.c || '', top = it.y ? 0 : 0.42, r = Math.min(it.w, it.d) * 0.42;
+    if (!it.y) { b.box(it.w, top, it.d, '#2a2d33', 0, top / 2, 0, { r: 0.03, s: 2 }); l.plane(0.1, 0.04, '#ff7a3a', 0, 0.2, it.d / 2 + 0.005); }
+    b.cyl(r, r * 0.85, 0.32, k === 'dovme' ? '#c9ced6' : '#b87333', 0, top + 0.16, 0, { seg: 16 });
+    b.cyl(r * 0.92, r * 0.92, 0.02, k === 'kestane' ? '#6b3a20' : k === 'dovme' ? '#fbfaf6' : '#f2ead8', 0, top + 0.3, 0, { seg: 16 });
+    if (k === 'kestane') for (let i = 0; i < 7; i++) b.sph(0.035, '#5a2e16', Math.cos(i) * r * 0.5, top + 0.33, Math.sin(i) * r * 0.5, { ws: 6, hs: 4 });
+    if (k === 'dovme') b.cyl(0.015, 0.015, 0.7, '#c8a27a', r * 0.3, top + 0.55, 0, { rz: 0.5, seg: 5 });
+  },
+  kumOcak: (c, it) => {   // sand-heated cezve stove: copper tray of hot sand, cezves sunk in it, glowing edge
+    const { b, l } = c; b.box(it.w, 0.1, it.d, '#7a4a2a', 0, 0.05, 0); b.box(it.w - 0.06, 0.05, it.d - 0.06, '#e2c58f', 0, 0.12, 0); l.box(it.w - 0.02, 0.012, 0.012, '#ff8a3a', 0, 0.1, it.d / 2 - 0.01);
+    for (let i = 0; i < 3; i++) { const x = -it.w / 2 + 0.14 + i * (it.w - 0.28) / 2; b.cyl(0.045, 0.06, 0.1, '#b87333', x, 0.17, 0.02, { seg: 10 }); b.cyl(0.008, 0.008, 0.16, '#5a3a22', x + 0.08, 0.2, 0.02, { rz: 1.2, seg: 4 }); }
+  },
+  degirmen: (c) => { const { b } = c; b.box(0.2, 0.22, 0.2, '#b87333', 0, 0.11, 0); b.cyl(0.07, 0.09, 0.08, '#c9a23a', 0, 0.26, 0, { seg: 10 }); b.cyl(0.01, 0.01, 0.12, '#2a2d33', 0.05, 0.33, 0, { rz: HP, seg: 4 }); b.sph(0.025, '#5a3a22', 0.11, 0.33, 0, { ws: 6, hs: 4 }); },
+  kavurucu: (c, it) => {   // drum roaster: black body, copper drum, cooling tray with beans / nuts
+    const { b, l } = c, s = it.c === 'kucuk' ? 0.8 : 1; b.box(it.w * 0.6, 0.85 * s, it.d, '#2a2d33', -it.w * 0.18, 0.42 * s, 0, { r: 0.03, s: 2 });
+    b.cyl(0.2 * s, 0.2 * s, it.d * 0.8, '#b87333', -it.w * 0.18, 0.95 * s, 0, { rx: HP, seg: 14 }); b.cone(0.1 * s, 0.25 * s, '#9aa5b0', -it.w * 0.18, 1.22 * s, 0, { rx: Math.PI, seg: 10 });
+    b.cyl(it.w * 0.2, it.w * 0.2, 0.08, '#9aa5b0', it.w * 0.28, 0.62 * s, 0, { seg: 16 }); b.cyl(it.w * 0.18, it.w * 0.18, 0.02, '#6b3a20', it.w * 0.28, 0.67 * s, 0, { seg: 16 });
+    b.box(0.04, 0.6 * s, 0.04, '#2a2d33', it.w * 0.28, 0.3 * s, 0); l.plane(0.08, 0.05, '#ff7a3a', -it.w * 0.18, 0.3 * s, it.d / 2 + 0.005);
+  },
+  falci: (c) => {   // fortune-teller corner: low brass table, two cushions, a cup turned upside down on its saucer
+    const { b } = c; b.cyl(0.24, 0.24, 0.03, '#c9a23a', 0, 0.42, 0, { seg: 16 }); b.cyl(0.03, 0.05, 0.4, '#7a4a2a', 0, 0.2, 0, { seg: 8 });
+    b.cyl(0.05, 0.05, 0.01, '#fbfaf6', 0.05, 0.44, 0, { seg: 10 }); b.cyl(0.03, 0.025, 0.04, '#fbfaf6', 0.05, 0.465, 0, { seg: 10 });
+    for (const sx of [-1, 1]) b.box(0.32, 0.12, 0.32, sx < 0 ? '#7d2b4a' : '#1d4f86', sx * 0.4, 0.06, 0.05, { r: 0.05, s: 2 });
+    b.sph(0.05, '#e9c46a', -0.08, 0.47, -0.06, { ws: 8, hs: 6 });
+  },
+  bakirDuvar: (c, it) => {   // wall rail with hanging copper: cezves or baklava trays
+    const { b } = c; b.cyl(0.012, 0.012, it.w, '#7a4a2a', 0, 0.1, 0, { rz: HP, seg: 5 });
+    const n = it.c === 'cezve' ? 7 : 4; for (let i = 0; i < n; i++) { const x = -it.w / 2 + 0.12 + i * (it.w - 0.24) / (n - 1);
+      if (it.c === 'cezve') { b.cyl(0.04, 0.055, 0.09, '#b87333', x, -0.02, 0.03, { seg: 10 }); b.cyl(0.006, 0.006, 0.14, '#5a3a22', x, 0.05, 0.03, { seg: 4 }); }
+      else b.cyl(0.17, 0.17, 0.02, '#b87333', x, -0.12, 0.02, { rx: HP, seg: 18 }); }
+  },
+  dondurmaTezgah: (c, it) => {   // Maraş ice-cream counter: steel body, deep lidded wells, the long paddle, a cone rack
+    const { b, g, l } = c; b.box(it.w, 0.9, it.d, '#c9ced6', 0, 0.45, 0, { r: 0.02, s: 2 }); b.box(it.w, 0.04, it.d, '#9aa5b0', 0, 0.92, 0);
+    const P = ['#fbfaf6', '#6b3a20', '#f2a2b3', '#9bd36b', '#ffd23f']; for (let i = 0; i < 5; i++) { const x = -it.w / 2 + 0.16 + i * (it.w - 0.32) / 4; b.cyl(0.1, 0.1, 0.04, '#5b6068', x, 0.95, 0, { seg: 12 }); b.sph(0.085, P[i], x, 0.96, 0, { ws: 9, hs: 5, sy: 0.5 }); b.cyl(0.105, 0.105, 0.02, '#c9a23a', x, 1.01, -0.09, { rx: -1.1, seg: 12 }); }
+    b.cyl(0.015, 0.015, 0.9, '#c8a27a', it.w / 2 - 0.15, 1.25, 0.05, { rz: 0.35, seg: 5 }); g.box(it.w - 0.1, 0.3, 0.02, '#e6f3f8', 0, 1.12, it.d / 2 - 0.02); l.box(it.w - 0.1, 0.02, 0.02, '#fff3d6', 0, 0.88, it.d / 2 + 0.01);
+    for (let i = 0; i < 5; i++) b.cone(0.03, 0.12, '#d8a24a', -it.w / 2 + 0.1 + i * 0.06, 0.98, it.d / 2 - 0.08, { rx: Math.PI, seg: 8 });
+  },
+  dondurmaSov: (c, it) => {   // wall show: crossed paddles and a fake giant cone, or the brass bell of the tease show
+    const { b } = c;
+    if (it.c === 'zil') { b.cyl(0.012, 0.012, 0.2, '#7a4a2a', 0, 0.1, 0.04, { seg: 4 }); b.cone(0.09, 0.13, '#c9a23a', 0, -0.02, 0.06, { seg: 12 }); b.sph(0.02, '#7a4a2a', 0, -0.09, 0.06, { ws: 5, hs: 4 }); return; }
+    for (const sg of [-1, 1]) b.box(it.w * 0.55, 0.05, 0.02, '#c8a27a', 0, 0, 0.03, { rz: sg * 0.45 }); b.cone(0.12, 0.38, '#d8a24a', 0, -0.05, 0.08, { rx: Math.PI, seg: 10 }); b.sph(0.12, '#fbfaf6', 0, 0.17, 0.08, { ws: 9, hs: 6 }); b.sph(0.1, '#f2a2b3', 0, 0.3, 0.08, { ws: 9, hs: 6 });
+  },
+  terazi: (c) => { const { b, l } = c; b.box(0.36, 0.08, 0.3, '#2a2d33', 0, 0.04, 0, { r: 0.02, s: 2 }); b.cyl(0.14, 0.14, 0.015, '#c9ced6', 0, 0.09, 0.02, { seg: 16 }); b.box(0.16, 0.12, 0.03, '#2a2d33', 0, 0.14, -0.12); l.plane(0.12, 0.05, '#7fe0a8', 0, 0.15, -0.104); },
+  cuval: (c, it) => {   // open jute sacks of nuts / dried fruit with scoops
+    const { b } = c, P = it.c === 'meyve' ? ['#e8892b', '#7a2a1d', '#d8a24a', '#6f9e4f'] : ['#c99a5b', '#e9d27a', '#8a5a3c', '#6f9e4f'], n = it.w > 0.82 ? 4 : 3;
+    for (let i = 0; i < n; i++) { const x = n === 4 ? (i % 2 - 0.5) * it.w * 0.5 : -it.w / 2 + 0.14 + i * (it.w - 0.28) / 2, z = n === 4 ? (Math.floor(i / 2) - 0.5) * it.d * 0.5 : 0;
+      b.cyl(0.13, 0.15, 0.5, '#b89a68', x, 0.25, z, { seg: 10 }); b.cyl(0.15, 0.13, 0.08, '#a88a58', x, 0.52, z, { seg: 10 }); b.sph(0.12, P[i % 4], x, 0.5, z, { ws: 8, hs: 5, sy: 0.4 }); }
+    b.box(0.05, 0.03, 0.12, '#c9ced6', 0, 0.56, 0, { rx: 0.4 });
+  },
+  lavasSac: (c, it) => { const { b, l } = c; b.box(it.w, 0.1, it.d, '#2a2d33', 0, 0.05, 0); b.cyl(it.w * 0.42, it.w * 0.44, 0.03, '#1f1813', 0, 0.12, 0, { seg: 18 }); b.cyl(it.w * 0.32, it.w * 0.32, 0.005, '#f2dfb0', 0, 0.14, 0, { seg: 18 }); l.plane(0.08, 0.03, '#ff7a3a', 0, 0.05, it.d / 2 + 0.005); },
+  yayik: (c, it) => {   // copper ayran churn with a tap and a stack of copper cups
+    const { b } = c; b.cyl(0.18, 0.2, 0.8, '#b87333', 0, 0.4, 0, { seg: 14 }); b.tor(0.19, 0.015, '#c9a23a', 0, 0.62, 0, { rx: HP, ts: 18 }); b.cyl(0.1, 0.16, 0.12, '#b87333', 0, 0.86, 0, { seg: 12 });
+    b.cyl(0.015, 0.015, 0.12, '#c9a23a', 0, 0.2, 0.2, { rx: HP, seg: 5 }); b.sph(0.03, '#f6f6f2', 0, 0.86, 0, { ws: 6, hs: 4 });
+    for (let i = 0; i < 4; i++) b.cyl(0.04, 0.035, 0.07, '#b87333', it.w / 2 - 0.08, 0.035 + i * 0.075, -0.12, { seg: 8 });
+  },
+  kumpirFirin: (c, it) => {   // potato oven: black steel box, glass door, potatoes on racks, warm glow
+    const { b, g, l } = c; b.box(it.w, 0.9, it.d, '#2a2d33', 0, 0.45, 0, { r: 0.03, s: 2 }); b.box(it.w, 0.04, it.d, '#c9ced6', 0, 0.92, 0);
+    g.plane(it.w - 0.2, 0.5, '#ffd9a0', 0, 0.5, it.d / 2 + 0.005); l.plane(it.w - 0.24, 0.46, '#ffb35a', 0, 0.5, it.d / 2 + 0.002);
+    for (let r = 0; r < 2; r++) for (let i = 0; i < 5; i++) b.sph(0.07, '#a87a3a', -it.w / 2 + 0.2 + i * (it.w - 0.4) / 4, 0.36 + r * 0.24, 0, { ws: 7, hs: 5, sx: 1.4 });
+    b.box(it.w - 0.2, 0.03, 0.03, '#c9a23a', 0, 0.8, it.d / 2 + 0.03);
+  },
+  agSus: (c, it) => {   // fishing net on the wall with floats, a starfish and a little anchor
+    const { b } = c; for (let i = 0; i < 6; i++) b.box(0.012, 0.6, 0.01, '#8a7a5a', -it.w / 2 + 0.1 + i * (it.w - 0.2) / 5, 0, 0.02, { rz: (i % 2 ? 0.25 : -0.25) });
+    for (let j = 0; j < 4; j++) b.box(it.w * 0.9, 0.01, 0.01, '#8a7a5a', 0, -0.25 + j * 0.17, 0.02);
+    for (let i = 0; i < 4; i++) b.sph(0.045, i % 2 ? '#e0533c' : '#fbfaf6', -it.w / 2 + 0.2 + i * (it.w - 0.4) / 3, 0.3, 0.04, { ws: 8, hs: 6 });
+    b.box(0.14, 0.03, 0.02, '#e8892b', it.w * 0.28, -0.12, 0.04, { rz: 0.6 }); b.box(0.14, 0.03, 0.02, '#e8892b', it.w * 0.28, -0.12, 0.04, { rz: -0.6 });
+    b.box(0.03, 0.22, 0.02, '#5b6068', -it.w * 0.3, -0.1, 0.04); b.tor(0.06, 0.012, '#5b6068', -it.w * 0.3, -0.2, 0.04, { arc: Math.PI, rz: Math.PI, ts: 10 });
+  },
   tezgah: (c, it) => counter(c, it, it.c || '#7a3b1c'),
   bar: (c, it) => { counter(c, it, c.fine ? '#1f2a44' : '#2c3e57', c.fine ? '#c9a24a' : '#d8d2c4'); for (let i = 0; i < 4; i++) { const x = -it.w / 2 + 0.7 + i * (it.w - 1.4) / 3; c.b.cyl(0.18, 0.18, 0.06, '#7d5638', x, 0.75, it.d / 2 + 0.35, { seg: 12 }); c.b.cyl(0.04, 0.04, 0.72, '#9aa5b0', x, 0.37, it.d / 2 + 0.35, { seg: 6 }); } },
   acikBufe: (c, it) => { counter(c, it, c.fine ? '#1f2a44' : '#8a5a3a', '#f4f2ec'); const P = ['#ffd23f', '#e0533c', '#6f9e4f', '#f2e6c8', '#c94f6d', '#3a2416', '#fbfaf6']; for (let i = 0; i < 9; i++) { const x = -it.w / 2 + 0.35 + i * (it.w - 0.7) / 8; c.b.cyl(0.16, 0.14, 0.04, '#ffffff', x, 1.07, 0, { seg: 12 }); c.b.sph(0.1, P[i % P.length], x, 1.1, 0, { ws: 7, hs: 4, sy: 0.4 }); } c.g.box(it.w - 0.1, 0.02, 0.6, '#d8eef6', 0, 1.42, 0.02); for (const s of [-1, 1]) c.b.box(0.04, 0.4, 0.04, '#c9ced6', s * (it.w / 2 - 0.1), 1.24, 0.25); },
@@ -448,9 +549,9 @@ export function createIcMekan(d: IcDeps): IcView {
   return {
     icinde: () => inside,
     update(dt) {
-      const root = d.root(); if (!root) return;
-      if (holder.parent !== root) root.add(holder);
-      const sahne = root.parent ?? root; if (avmHolder.parent !== sahne) sahne.add(avmHolder);
+      const root = d.root(), sahne = d.sahne?.() ?? root?.parent ?? null; if (!root && !sahne) return;
+      if (root && holder.parent !== root) root.add(holder);
+      if (sahne && avmHolder.parent !== sahne) sahne.add(avmHolder);
       t += dt; acc += dt;
       const hp = d.hero(); inside = null;
       const st0 = d.salon().stage, odaOf = (m: IcMekan) => (m.mutfak ? mutfakOda(st0) : m);   // BUF-22: the kitchen grows with the stage
@@ -472,7 +573,7 @@ export function createIcMekan(d: IcDeps): IcView {
       const nk = d.night();
       for (const [id, r] of rooms) {
         const m = odaOf(IC_MEKANLAR.find(x => x.id === id)!);
-        r.g.visible = m.bina === 'avm' ? avmIcinde(hp, 2) && (m.kat || 0) <= ((hp as { kat?: number }).kat || 0)   // AVM: floors up to the hero's (cutaway)
+        r.g.visible = m.bina === 'avm' ? avmIcinde(hp, 2) && (m.kat || 0) === ((hp as { kat?: number }).kat || 0)   // AVM: only the hero's floor (upper floors cut away, lower rooms sit under this floor's slab)
           : !!m.salon || icIcinde(m, hp, 0.5) || (!!bina && m.bina === bina) || (!!m.mutfak && mutfakVitrin(hp));   // AVM: whole mall shows inside; BUF-22: kitchen shows from the büfe / walkway
         if (!r.g.visible) continue;
         const a = r.an;

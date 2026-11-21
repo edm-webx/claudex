@@ -95,7 +95,8 @@ export function createRtView(env: RtEnv): RtView {
   group.add(binG);
   // Martı AVM diyarı: iskele kökü orada gizli; AVM kareleri ve halka sahnede ayrı bir grupta (katın yüksekliğinde)
   const avmGrp = new T.Group(); avmGrp.name = 'rtviewAvm';
-  function ensureAttached() { const r = env.root(); if (r && group.parent !== r) { group.parent?.remove(group); r.add(group); } const sc = r?.parent; if (sc && avmGrp.parent !== sc) sc.add(avmGrp); return !!r; }
+  let sc0: T.Object3D | null = null;   // the scene, remembered: the iskele zone root unloads while the hero is inside the AVM realm
+  function ensureAttached() { const r = env.root(); if (r && group.parent !== r) { group.parent?.remove(group); r.add(group); } if (r?.parent) sc0 = r.parent; if (sc0 && avmGrp.parent !== sc0) sc0.add(avmGrp); return !!r || !!sc0; }
 
   function place(obj: object, key: string, to: Pt, rot: number, h: number, from: Pt | null, dur = 0.28, arc = 0.5) {
     let e = entries.get(obj);

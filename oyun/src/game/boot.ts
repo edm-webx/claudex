@@ -114,6 +114,7 @@ import { createBufeBuyume, mevsimZorla, type BuyumeView } from './view/world/buf
 import { createAcilis, type AcilisView } from './view/world/acilis';
 import { ARSALAR, ISLETME, ARSA_ISLETME } from '../content/esya';
 import { createKarsiYasam, type YasamView } from './view/world/karsi-yasam';
+import { createAvmIc, type AvmIcView } from './view/world/avm-ic';
 import { createIcMekan, type IcView } from './view/world/ic-mekan-look';
 import { restoranApi } from './sim/restoran';
 import { MUTFAK_ROL_BY_ID } from '../content/mutfak';
@@ -316,6 +317,13 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const tutorial: Tutorial | null = playMode ? make('tutorial', () => installTutorial(sim.rules)) : null;
 
   const pose: { x: number; z: number; rot: number; y?: number; kat?: number } = { x: 0, z: 0, rot: 0 };
+  let lastPoseX = 0, lastPoseZ = 0, perdeEl: HTMLDivElement | null = null;
+  const perde = () => {
+    try {
+      if (!perdeEl) { perdeEl = document.createElement('div'); perdeEl.style.cssText = 'position:fixed;inset:0;background:#0b0d12;pointer-events:none;z-index:40;opacity:0;transition:opacity .45s ease-out'; document.body.appendChild(perdeEl); }
+      const el = perdeEl; el.style.transition = 'none'; el.style.opacity = '1'; void el.offsetWidth; el.style.transition = 'opacity .45s ease-out'; el.style.opacity = '0';
+    } catch { /* */ }
+  };
   const pos: Vec2 = pose; // same object: pos.x/pos.z are the interpolated ground position
   const walk = sim.walk;
 
@@ -338,7 +346,8 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const acilis: AcilisView | null = playMode && zones ? make('acilis', () => createAcilis({ root: () => zones.root('iskele') ?? null, hero: () => walk.pos, ses: (id) => { try { audio?.sfx(id); } catch { /* */ } } })) : null;
   if (acilis) sim.bus.on('tadilatDone', (e) => acilis.baslat(Number((e as { stage?: number } | undefined)?.stage) || sim.state.stage));
   // 2026-11-09 "her binaya girilebilmeli": interiors of every far-side building and the büfe halls
-  const icMekan: IcView | null = playMode && zones ? make('icMekan', () => createIcMekan({ root: () => zones.root('iskele') ?? null, hero: () => walk.pos, night: () => nightK,
+  const avmIc: AvmIcView | null = playMode && zones ? make('avmIc', () => createAvmIc({ root: () => scene, hero: () => walk.pos, night: () => nightK })) : null;   // Martı AVM içi (ayrı diyar)
+  const icMekan: IcView | null = playMode && zones ? make('icMekan', () => createIcMekan({ root: () => zones.root('iskele') ?? null, sahne: () => scene, hero: () => walk.pos, night: () => nightK,
     isletme: () => { const m = mulkApi(sim.rules), o: Record<string, { lv: number; isci: number; esya: string[]; tema?: string }> = {}; if (m) for (const p of m.view().plots) if (p.sabit && p.owned) o[p.id] = { lv: p.lv, isci: p.isci, esya: (p as { esya?: string[] }).esya || [], tema: (p as { tema?: string }).tema || '' }; return o; },
     salon: () => ({ stage: sim.state.stage || 1, esya: ((sim.state.zones as { salon?: { esya?: string[] } }).salon?.esya) || [] }),
     mutfak: () => { const rv = restoranApi(sim.rules)?.view(); return { ekip: sim.state.workers.filter(w => MUTFAK_ROL_BY_ID[w.role]).map(w => ({ rol: w.role, rank: rankOf(w.xp || 0) })), kds: (rv?.tickets || []).slice(0, 6).map(k => '#' + k.no + '  Masa ' + (k.table + 1) + ' · ' + k.items.filter(i => i.left).map(i => i.left + '× ' + i.name).join(', ')), pass: rv?.pass || [], ist: rv?.ist || {},
@@ -410,7 +419,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const agentsOf = (): AgentsHandle | null => (sim.rules.rt as unknown as { agents?: AgentsHandle }).agents ?? null;
   const agentsView: AgentsView | null = playMode && chars ? make('agentsView', () => createAgentsView({
     chars: chars as MotorChars, quality, agents: agentsOf,
-    player: () => ({ x: pos.x, z: pos.z, moving: walk.speed > 0.15 }), camera: () => cam.camera,
+    player: () => ({ x: pos.x, z: pos.z, moving: walk.speed > 0.15, kat: (pos as { kat?: number }).kat }), camera: () => cam.camera,
     hideUp: (x, z) => salonUstGizli(x, z),
   })) : null;
 
@@ -677,6 +686,9 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (st.recenter) (cam as unknown as { recenter(): void }).recenter();
     if (st.moving) { camHold = null; acilis?.atla(); }
     lerpPose(walk, alpha, pose);
+    // Martı AVM kapısı / büyük ışınlanma: kamera kaymasın, ekran kısa bir an kararıp açılsın
+    if (Math.hypot(pose.x - lastPoseX, pose.z - lastPoseZ) > 15) { cam.snap(pos); camHold = null; perde(); }
+    lastPoseX = pose.x; lastPoseZ = pose.z;
     simT += fdt;
     if (zones) guard('zones', () => { P.begin('zones.build'); zones.update(pos, cam.frustum()); P.end('zones.build'); });
     // 2026-11-21 denetim: kapalı diyarda (stadyum / orman) komşu bölgenin tezgâhları zeminsiz, boşlukta havada görünüyordu: diyar dışı bölge çizilmez
@@ -698,6 +710,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (acilis) guard('acilis', () => acilis.update(fdt));
     if (karsiYasam) guard('karsiYasam', () => karsiYasam.update(fdt));
     if (icMekan) guard('icMekan', () => icMekan.update(fdt));
+    if (avmIc) guard('avmIc', () => avmIc.update(fdt));
     if (tipJar) guard('tipJar', () => tipJar.update(fdt));
     if (stantLook) guard('stantLook', () => stantLook.update(fdt));
     if (faz2Hud) guard('faz2Hud', () => faz2Hud.update(fdt));

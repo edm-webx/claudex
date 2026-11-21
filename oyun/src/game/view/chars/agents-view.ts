@@ -18,13 +18,14 @@ import type { Actor } from '../../sim/agents/types';
 import { FLOCK } from '../../sim/agents/pigeons';
 import type { MotorChars } from './index';
 import * as K from './v2/kit';
+import { avmIcinde, katY, HOL } from '../../../content/avm-kat';
 
 export interface AgentsViewDeps {
   chars: MotorChars;
   quality: Quality;
   /** Live agents handle (rules.rt.agents); null before the sim exists. */
   agents: () => AgentsHandle | null;
-  player: () => { x: number; z: number; moving: boolean };
+  player: () => { x: number; z: number; moving: boolean; kat?: number };
   /** 2026-11-21 denetim: kameranın dibinden geçen martı ekranda büfeden büyük görünüyordu; havadaki martı kameraya 8 m'den yakınsa gizlenir */
   camera?: () => { position: { x: number; y: number; z: number } };
   /** 2026-11-21: optional: hide a raised actor (y > 0.5) at x, z (roof terrace over a salon the player is inside: its roof is cut away) */
@@ -126,6 +127,8 @@ export function createAgentsView(deps: AgentsViewDeps): AgentsView {
       }
       ensure(agents);
       const gullsNear = deps.quality.current().gullsNear;
+      // AVM: kahraman hangi kattaysa üst katlar kesik çizilir; o katlardaki işçi/müşteri de gizlenir (yoksa bina dışında havada görünürler)
+      const pl = deps.player(), avmIc = avmIcinde(pl, 2), avmUst = avmIc ? katY(pl.kat || 0) + 1 : 0, avmAlt = avmIc ? katY(pl.kat || 0) - 1 : 0;
       for (const r of rows.values()) {
         const a = r.a, h = r.h;
         const x = a.px + (a.x - a.px) * alpha, z = a.pz + (a.z - a.pz) * alpha, y = a.py + (a.y - a.py) * alpha;
@@ -139,7 +142,7 @@ export function createAgentsView(deps: AgentsViewDeps): AgentsView {
           const cp = y > 1.5 ? deps.camera?.()?.position : undefined;
           if (cp && h.object.visible && (cp.x - x) ** 2 + (cp.y - y) ** 2 + (cp.z - z) ** 2 < 64) h.object.visible = false;
         }
-        if (r.gull < 0) h.object.visible = !(y > 0.5 && deps.hideUp?.(x, z));
+        if (r.gull < 0) h.object.visible = !(y > 0.5 && deps.hideUp?.(x, z)) && !(avmUst && y > avmUst) && !(avmIc && y < avmAlt && (x < HOL.x0 || x > HOL.x1));   // alt kat dükkânları bu katın döşemesi altında
         if (r.gull >= 0) h.object.visible = r.gull < gullsNear || a.act === 'stare' || a.act === 'snatch' || a.carry.length > 0;
         if (r.animal) {
           (h as unknown as { setState(s: Record<string, unknown>): void }).setState(r.a.kind === 'gull' || r.a.kind === 'parrot' ? { mode: a.act, speed: Math.min(1, a.speed / 1.2) } : { act: a.act, speed: Math.min(1, a.speed / 1.2) });
