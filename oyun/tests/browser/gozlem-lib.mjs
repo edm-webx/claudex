@@ -40,6 +40,7 @@ export function ornekleyici(M, esik) {
       }
       return canli;
     },
+    sifirla() { onceki.clear(); solidSay.clear(); },   // bölge/ışınlanma sonrası: slotlar yeniden kullanılır, eski konumlarla kıyaslama yanlış alarm verir
     sizintiOrnek(n) { sizinti.push(n); },
     bosAjan() { return olay.length === 0; },
   };
