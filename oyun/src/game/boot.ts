@@ -109,6 +109,7 @@ import { ugY, onUg } from '../content/ustgecit';
 import { createKarsiLook, type KarsiLookView } from './view/world/karsi-look';
 import { createKarsiBina, type BinaView } from './view/world/karsi-bina';
 import { createIsletmeInsaat, type InsaatView } from './view/world/isletme-insaat';
+import { createInsaatSahasi, type InsaatSahasiView } from './view/world/insaat-sahasi';
 import { createBufeBuyume, mevsimZorla, type BuyumeView } from './view/world/bufe-buyume';
 import { createAcilis, type AcilisView } from './view/world/acilis';
 import { ARSALAR, ISLETME, ARSA_ISLETME } from '../content/esya';
@@ -332,6 +333,8 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const karsiLook: KarsiLookView | null = playMode && zones ? make('karsiLook', () => createKarsiLook({ root: () => zones.root('iskele') ?? null })) : null;
   const karsiBina: BinaView | null = playMode && zones ? make('karsiBina', () => createKarsiBina({ root: () => zones.root('iskele') ?? null, night: () => nightK, camera: () => cam.camera, hero: () => walk.pos })) : null;
   const isletmeInsaat: InsaatView | null = playMode && zones ? make('isletmeInsaat', () => createIsletmeInsaat({ root: () => zones.root('iskele') ?? null, night: () => nightK, tadilat: () => { const m = mulkApi(sim.rules); return m ? m.view().plots.flatMap(p => { const t = (p as { tadilat?: { left: number; total: number } | null }).tadilat; return p.sabit && p.owned && t ? [{ id: p.id, p: 1 - t.left / t.total }] : []; }) : []; } })) : null;
+  // 2026-11-21: promenadın iki ucunda kilitli belediye inşaat sahaları (content/kilitli-bolge.ts); çit oyuncuyu durdurur
+  const insaatSahasi: InsaatSahasiView | null = playMode && zones ? make('insaatSahasi', () => createInsaatSahasi({ root: () => zones.root('iskele') ?? null, night: () => nightK, hero: () => walk.pos, state: () => sim.state, setSolid: r => nav.setSolids('kilitli-bolge', r) })) : null;
   const bufeBuyume: BuyumeView | null = playMode && zones ? make('bufeBuyume', () => createBufeBuyume({ root: () => zones.root('iskele') ?? null, night: () => nightK, stage: () => sim.state.stage, tadilat: () => { const t = sim.state.tadilat as unknown as { to: number; left: number; total: number } | null; return t ? { to: t.to, p: 1 - t.left / Math.max(1, t.total) } : null; }, takim: () => (sim.state.zones as { arsa?: { takim?: { ad: string; renk: string; renk2?: string } | null } }).arsa?.takim ?? null, hero: () => walk.pos })) : null;
   // BUF-30: aşama açılış anı (kamera gezintisi, kurdele, ışık, dünya içi etiketler)
   const acilis: AcilisView | null = playMode && zones ? make('acilis', () => createAcilis({ root: () => zones.root('iskele') ?? null, hero: () => walk.pos, ses: (id) => { try { audio?.sfx(id); } catch { /* */ } } })) : null;
@@ -557,6 +560,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const altinFx: AltinSimitFx | null = panels ? make('altinFx', () => createAltinSimitFx({ root: U.root, rules: () => sim.rules })) : null;
   const nightLights = playMode && zones ? make('nightLights', () => createNightLights({ scene, zones })) : null;
   // PRF-08: havuz kademeye göre (4/6/10), büfe floresanı aşamaya göre, iç mekanda hemi kısma
+  if (nightLights && insaatSahasi) make('nightLights.insaat', () => { nightLights.addSource('insaat-sahasi', () => insaatSahasi.lambalar()); return true; });
   if (nightLights) make('nightLights.bind', () => { nightLights.bind({ stage: () => sim.state.stage, render: R as unknown as { hemiMul: number } }); nightLights.setTier(quality.current()); return true; });
   // Martıköy: neighbourhood labels, guide cat, ferris wheel, barrier, pier props (view/disari) 
   const disariLook: DisariLookView | null = ACIK_DUNYA && playMode && zones && labels ? make('disariLook', () => createDisariLook({
@@ -694,6 +698,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (karsiBina) guard('karsiBina', () => karsiBina.update(fdt));
     if (bufeBuyume) guard('bufeBuyume', () => bufeBuyume.update(fdt));
     if (isletmeInsaat) guard('isletmeInsaat', () => isletmeInsaat.update(fdt));
+    if (insaatSahasi) guard('insaatSahasi', () => insaatSahasi.update(fdt));
     if (acilis) guard('acilis', () => acilis.update(fdt));
     if (karsiYasam) guard('karsiYasam', () => karsiYasam.update(fdt));
     if (icMekan) guard('icMekan', () => icMekan.update(fdt));

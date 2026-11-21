@@ -90,12 +90,12 @@ export function buildPier() {
   S.span(-80, 80, -0.32, 0, PIER.z1, 13.5, '#ffffff', { r: 0, world: 4 });
   A.span(-80, PIER.x0, -1.6, -0.3, PIER.z1, PIER.z1 + 0.5, '#a9a094', { r: 0 }); A.span(PIER.x1, 80, -1.6, -0.3, PIER.z1, PIER.z1 + 0.5, '#a9a094', { r: 0 });
   A.span(-80, PIER.x0, -0.06, 0.06, PIER.z1 + 0.02, PIER.z1 + 0.42, '#e2dbd0', { r: 0.02 }); A.span(PIER.x1, 80, -0.06, 0.06, PIER.z1 + 0.02, PIER.z1 + 0.42, '#e2dbd0', { r: 0.02 });
-  railLine(A, -62, PIER.z1 + 0.22, PIER.x0 - 0.2, PIER.z1 + 0.22); railLine(A, PIER.x1 + 0.2, PIER.z1 + 0.22, 62, PIER.z1 + 0.22);
+  railLine(A, -52, PIER.z1 + 0.22, PIER.x0 - 0.2, PIER.z1 + 0.22); railLine(A, PIER.x1 + 0.2, PIER.z1 + 0.22, 52, PIER.z1 + 0.22);   // beyond ±52: construction sites
   A.span(-80, 80, -0.3, 0.12, 13.5, 14.0, '#bdb3a5', { r: 0.03 });
   F.span(-80, 80, -0.3, 0.05, 14.0, 62, '#9cc47a', { r: 0 });
   // the far side of the road is built by content/zones/karsi.ts
-  for (let x = -58; x <= 58; x += 10) if (x < PIER.x0 - 1 || x > PIER.x1 + 1) lampPost(near(x), BU, x, 5.05);
-  [-50, -40, -30, -20, -12, 12, 21, 31, 41, 51].forEach((x, i) => { if (i % 2) bench(near(x), x, 5.95, PI); });
+  for (let x = -48; x <= 48; x += 10) if (x < PIER.x0 - 1 || x > PIER.x1 + 1) lampPost(near(x), BU, x, 5.05);
+  [-50, -40, -30, -20, -12, 12, 21, 31, 41].forEach((x, i) => { if (i % 2) bench(near(x), x, 5.95, PI); });
   [[-14, 9.6], [12.5, 9.6]].forEach(([x, z]) => { A.box(2.2, 0.35, 1.0, '#bdb3a5', x, 0.17, z, { r: 0.05 }); for (let k = 0; k < 8; k++) A.ico(0.2, ['#e0533c', '#f2a2b3', '#ffd23f', '#ffffff'][k % 4], x - 0.85 + k * 0.24, 0.42, z + (k % 2 ? 0.2 : -0.2), { d: 0 }); });
   return { A, P, S, BU, F, pilings };
 }

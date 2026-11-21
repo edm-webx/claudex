@@ -52,8 +52,11 @@ function rolProps(): Record<string, T.Object3D> {
   // BUF-21 tadilat ustası: omuzda kalas, elde çekiç
   const kalas = new T.Group(); kalas.add(box(0.14, 0.06, 2.0, '#c8955a', 0.24, 1.52, 0.1)); kalas.rotation.y = 0.15;
   const cekic = new T.Group(); cekic.add(box(0.04, 0.32, 0.04, '#7a4a2a', 0.3, 0.95, 0.28), box(0.16, 0.07, 0.07, '#5b6068', 0.3, 1.1, 0.28));
-  for (const g of [bike, saz, araba, klips, kalas, cekic]) g.visible = false;
-  return { bike, saz, araba, klips, kalas, cekic };
+  // belediye işçileri (kilitli inşaat sahaları): elde kürek, bayrakçının kırmızı bayrağı
+  const kurek = new T.Group(); kurek.add(box(0.04, 1.1, 0.04, '#8a5a2b', 0.3, 0.75, 0.3), box(0.24, 0.3, 0.03, '#5b6068', 0.3, 0.18, 0.34)); kurek.rotation.x = 0.35;
+  const bayrak = new T.Group(); bayrak.add(box(0.03, 0.9, 0.03, '#d9d2bd', 0.32, 1.25, 0.2), box(0.02, 0.32, 0.42, '#e0322b', 0.32, 1.52, 0.42));
+  for (const g of [bike, saz, araba, klips, kalas, cekic, kurek, bayrak]) g.visible = false;
+  return { bike, saz, araba, klips, kalas, cekic, kurek, bayrak };
 }
 
 export function resolveLook(chars: MotorChars, look: Record<string, unknown> | undefined): Record<string, unknown> | undefined {
