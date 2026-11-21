@@ -1,6 +1,7 @@
 // BUF-25: vatandaşlar acıkır; acıkan, sokaktaki en yakın vatandaş büfeye kendi isteğiyle gelir (gövdesi ve konumu korunur).
 import { describe, it, expect } from 'vitest';
 import { sokakRun } from './sokak-harness';
+import { SOKAK_KAPI } from '../../src/content/sokak';
 import { AGENT_FLAG } from '../../src/game/sim/schema';
 
 describe('vatandaş açlığı (BUF-25)', () => {
@@ -30,5 +31,23 @@ describe('vatandaş açlığı (BUF-25)', () => {
   it('aynı tohum aynı acıkan vatandaşı seçer', () => {
     const pick = (seed: number) => { const r = sokakRun(seed, 13); r.tick(30 * 200); return r.amb.recruitHungry!({ x: 0, z: 8 }, 1000); };
     expect(pick(9)).toBe(pick(9));
+  }, 120000);
+
+  it('acıkan vatandaş dükkân kapısına yürür, varınca içeri girer (ışınlanma yok), kimse kapıdan vazgeçirilmez', () => {
+    const r = sokakRun(7, 13);
+    r.tick(30 * 200);
+    const door = SOKAK_KAPI[0];
+    const X = r.s.f32('x'), Z = r.s.f32('z');
+    const sl = r.amb.sendHungry!(door, 1000);
+    expect(sl).toBeGreaterThanOrEqual(0);
+    expect(r.amb.visitStatus!(sl)).toBe('walk');
+    let prev = { x: X[sl], z: Z[sl] }, jump = 0, st = 'walk';
+    for (let i = 0; i < 30 * 180 && st === 'walk'; i++) {
+      r.tick(1); st = r.amb.visitStatus!(sl);
+      if (st === 'walk') { jump = Math.max(jump, Math.hypot(X[sl] - prev.x, Z[sl] - prev.z)); prev = { x: X[sl], z: Z[sl] }; }
+    }
+    expect(st).toBe('in');
+    expect(jump).toBeLessThan(0.5);
+    expect(r.amb.visitStatus!(sl)).toBe('lost');   // bir kez bildirildi
   }, 120000);
 });

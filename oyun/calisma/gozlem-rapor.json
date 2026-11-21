@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "zaman": "2026-11-21T16:37:17.750Z",
+ "zaman": "2026-11-21T16:44:43.687Z",
  "mod": "hizli",
  "ozet": {
   "bug": 0,
@@ -28,7 +28,7 @@
    "tris": 384593,
    "ms": 100,
    "fps": 11.5,
-   "heapMB": 61,
+   "heapMB": 68.9,
    "canli": 48,
    "gorunur": 29,
    "yakin": 19
@@ -40,7 +40,7 @@
    "tris": 674651,
    "ms": 100,
    "fps": 11.5,
-   "heapMB": 61,
+   "heapMB": 68.9,
    "canli": 48,
    "gorunur": 25,
    "yakin": 21
@@ -49,10 +49,10 @@
    "yer": "orman-durak",
    "saat": 13,
    "calls": 252,
-   "tris": 392982,
+   "tris": 392926,
    "ms": 100,
    "fps": 11.8,
-   "heapMB": 61,
+   "heapMB": 68.9,
    "canli": 48,
    "gorunur": 1,
    "yakin": 0
