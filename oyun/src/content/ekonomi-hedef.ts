@@ -33,12 +33,14 @@ export const HEDEF_GIDER_ORAN: { asama: number; band: [number, number] }[] = [
 ];
 
 /**
- * Bugünkü denge (ölçüm 2026-11-21, tohum 3 ve 7 ortalaması, 'normal' bot, 8 dakikalık gün): 30/60/90. dakikada toplam kazanç
- * 62k / 163k / 284k ₺. Mevcut-bant: ölçülen değerin altı %35, üstü %45. Bu bant EKO-05 dengeyi değiştirene dek gerilemeyi yakalar.
+ * Bugünkü denge (ölçüm 2026-11-21, EKO-02 sonrası, tohum 3 ve 7 ortalaması, 'normal' bot, 8 dakikalık gün): 30/60/90. dakikada toplam kazanç
+ * 76k / 207k / 355k ₺. (EKO-02 öncesi 62k / 163k / 284k: sipariş, yıldız, başarım, tadilat ödülleri artık toplama yazılıyor ve hedef ödülleri
+ * günlük 250 ₺ tavandan çıktı. Gelir penceresi yalnız düzenli işi saydığı için ödül ödülü büyütmüyor.) Mevcut-bant: ölçülen değerin altı %35, üstü %40.
+ * Bu bant EKO-05 dengeyi değiştirene dek gerilemeyi yakalar.
  * ZAMAN ÖLÇÜSÜ: oyun dakikası (S.playT). Anahtar: dakika, değer: [min, max] toplam kazanç (₺).
  */
 export const MEVCUT_TOPLAM_KAZANC: Record<number, [number, number]> = {
-  30: [40_000, 90_000], 60: [105_000, 235_000], 90: [185_000, 410_000],
+  30: [50_000, 107_000], 60: [135_000, 290_000], 90: [230_000, 500_000],
 };
 /** Bugünkü denge: 2. aşamaya varış penceresi (dk). */
 export const MEVCUT_ASAMA2_DK: [number, number] = [28, 62];
@@ -50,7 +52,7 @@ export const MEVCUT_ASAMA2_DK: [number, number] = [28, 62];
  * kredi: tek seferde alınan ham nakit, ilk saatte kazanılan toplam gelirden büyük olamaz (EKO-07 sahibi netleştirince).
  */
 export const SAAT_TAVAN = {
-  okul: 30_000,
+  okul: 36_000,   // kusursuz bot: 3 sınav x 100 puan x 12 x 1,1 = 3.960 ₺/gün x 8 gün = 31.680, üstüne sınav başarımlarının ödülü (ölçüm: 34.010). Önceki: ~720.000
   mevduat: 5_000,
   bahis: 40_000,
   kredi: 20_000,

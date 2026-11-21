@@ -6,13 +6,13 @@ import { istismar } from './ekonomi-harness';
 import { SAAT_TAVAN } from '../../src/content/ekonomi-hedef';
 
 describe('istismar tavanları (saatte en fazla X ₺)', () => {
-  // EKO-03: günlük 3 ödüllü sınav. Bugün: 10 doğru = 4.000 ₺, sınırsız tekrar -> ~720.000 ₺/saat.
-  it.fails('okul sınavı: saatlik gelir tavanı (EKO-03 bekliyor)', () => {
-    const r = istismar('okul', { saniye: 1800 }); console.log('okul', JSON.stringify(r));
+  // EKO-03 kapattı: günde 3 ödüllü sınav (4. ve sonrası deneme), ödül = puan x 12 x aşama çarpanı. Önce: 10 doğru = 4.000 ₺, sınırsız tekrar -> ~720.000 ₺/saat.
+  it('okul sınavı: saatlik gelir tavanı (ölçüm 34.010 ₺, önce ~720.000)', () => {
+    const r = istismar('okul', { saniye: 3600 }); console.log('okul', JSON.stringify(r));
     expect(r.saatlik).toBeLessThanOrEqual(SAAT_TAVAN.okul);
   });
-  // EKO-03: mevduat tavanı 200k, %0,2. Bugün: tavan 5M, günlük %0,5 -> 1M ana paraya ~40.000 ₺/saat.
-  it.fails('mevduat faizi: saatlik gelir tavanı (EKO-03 bekliyor)', () => {
+  // EKO-03 kapattı: ana para tavanı 200k, günlük %0,2, hesap başına günde bir kez. Önce: tavan 5M, günlük %0,5 -> 1M ana paraya ~40.000 ₺/saat.
+  it('mevduat faizi: saatlik gelir tavanı', () => {
     const r = istismar('mevduat', { saniye: 3600 }); console.log('mevduat', JSON.stringify(r));
     expect(r.saatlik).toBeLessThanOrEqual(SAAT_TAVAN.mevduat);
   });
