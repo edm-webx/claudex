@@ -124,7 +124,8 @@ export function createHaliSaha(deps: HaliSahaDeps): HaliSahaView {
       wrap.appendChild(help);
     }
     function hideHelp() { help?.remove(); help = null; helpOto = true; }
-    showHelp();
+    // Kart yalnız ilk iki maçın açılışında kendiliğinden çıkar (sahayı kapatmasın); sonra H ya da ? ile açılır.
+    try { const n = +(localStorage.getItem('hsYardimN') || 0); if (n < 2) { localStorage.setItem('hsYardimN', String(n + 1)); showHelp(); } } catch { showHelp(); }
 
     // screen <-> field (portrait screens turn the pitch so we attack upward)
     let sc = 10, ox = 0, oy = 0, portrait = false;
