@@ -178,6 +178,34 @@ export const MANTARLAR = [
 ] as const;
 export const MANTAR_PER_DAY = 14;
 
+/**
+ * Belgrad Ormanı layout (2026-11-21 DNY-10, boyut aynı): trails, places and the "every 25-30 m something" points.
+ * Shared by the zone props (content/zones/disari.ts), the view (view/orman) and the mushroom placement (sim/mantar.ts).
+ * Walkable band x 800..880, z -10..28; three east-west trails at TRAILS_Z, cross paths at CROSS (x, z0, z1).
+ */
+export const ORMAN = {
+  x0: 800, x1: 880,
+  trailsZ: [-2, 9, 18] as const,
+  cross: [[818, -2, 18], [850, -2, 18], [870, 9, 18], [862, -4.4, -2]] as [number, number, number][],
+  cesme: { x: 838, z: 16.5 },
+  gol: { x: 862, z: -6.8, rx: 4.0, rz: 2.3 },
+  kamp: { x: 816, z: -6.6 },
+  anit: { x: 873, z: 13.4 },
+  pano: [{ x: 828, z: 6.9 }, { x: 866, z: 6.9 }],
+  yon: [{ x: 818.6, z: 11.2 }, { x: 851.4, z: 11.2 }, { x: 850.8, z: 0.2 }],
+  bank: [{ x: 857.5, z: -3.9 }, { x: 842, z: 6.9 }, { x: 878, z: 15.6 }],
+  /** the 42B stop's gravel bus bay (the bus pulls in along z ~6.5) */
+  yol: { x: 800, z: 6.4, w: 26 },
+} as const;
+/** Şoför Necmi's lines (42B), one picked per stop/ride. */
+export const NECMI_LINES = [
+  'Orman, Stadyum, İskele! Buyrun, kapı açık.',
+  'Arkaya ilerleyelim, kapı önünü boşaltalım!',
+  'Ormanda mantar varmış diyorlar, sepetini unutma.',
+  'Kartını bas, cam kenarı boş, manzara bedava.',
+  'Ağır ağır gidiyoruz, yolcumuz çiçek.',
+];
+
 /** "Ask a citizen" lines: {to} = target name, {dir} = direction word. */
 export const ASK_LINES = [
   { who: 'Simitçi Cemal Amca', line: '{to} mu? {dir} dümdüz, martıları takip et!' },

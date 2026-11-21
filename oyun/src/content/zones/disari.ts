@@ -10,7 +10,7 @@
  * Registered by registerDisariZones() from the world view (same pattern as test-sokak).
  */
 import type { ZoneDef, PrefabDef, PrefabPlacement, PartDef, Rect } from '../../engine/api';
-import { BAND, REGION_BY_ID, SIDE_SHOPS, SIGNS, type RegionId } from '../disari/martikoy';
+import { BAND, REGION_BY_ID, SIDE_SHOPS, SIGNS, ORMAN, type RegionId } from '../disari/martikoy';
 
 const WATER_Y = -1.05;
 const Z0 = BAND.z0, Z1 = BAND.z1;
@@ -205,11 +205,40 @@ export function disariPrefabs(): PrefabDef[] {
   defs.push(house('mk.kosk.b', 8, 6, 6, '#cfe0ef', '#7e8b8f', 1, [box(8.4, 0.2, 2, 0, 2.6, 3.8, '#7e8b8f', 'balcony')]));
   defs.push({ id: 'mk.bikes', parts: [box(4, 0.1, 0.1, 0, 0.6, 0, '#3b3b3b'), ...[-1.5, -0.5, 0.5, 1.5].flatMap((x, i) => [cyl(0.32, 0.05, 0.32, x, 0.34, -0.4, '#2b2b2b', 10), cyl(0.32, 0.05, 0.32, x, 0.34, 0.4, '#2b2b2b', 10), box(0.08, 0.5, 0.8, x, 0.62, 0, ['#e0533c', '#3fb5b0', '#ffd23f', '#8c5a9a'][i])])], colliders: [R(4, 1)] });
   // Belgrad Ormanı (16:52 user): oaks and pines, a stone fountain, mangal spots, picnic tables, logs, rocks, a trail
-  g('mk.ground.orman', 110, 64, '#6f9e55', 0.014);   // 2026-11-21 denetim: kenardaki ağaçların altı boşluk kalmasın (zemin yürünebilir alandan geniş) g('mk.trail', 84, 3.2, '#b89a6a', 0.02);
-  defs.push({ id: 'mk.oak', parts: [cyl(0.32, 2.6, 0.45, 0, 1.3, 0, '#6b4a2e', 8), cyl(0.12, 1.2, 0.16, 0.5, 2.6, 0.2, '#6b4a2e', 6), sph(2.0, 0, 4.0, 0, '#4f8a3a', 10), sph(1.5, 1.2, 4.6, 0.6, '#5f9e48', 9), sph(1.4, -1.1, 4.3, -0.5, '#467f33', 9), sph(1.2, 0.2, 5.3, -0.8, '#6aa94f', 8)], colliders: [R(1.0, 1.0)] });
-  defs.push({ id: 'mk.pine.tall', parts: [cyl(0.16, 2.2, 0.22, 0, 1.1, 0, '#5a3d26', 7), cyl(0, 2.4, 1.6, 0, 2.8, 0, '#2f6e44', 9), cyl(0, 2.1, 1.25, 0, 4.0, 0, '#3a7d4e', 9), cyl(0, 1.7, 0.85, 0, 5.1, 0, '#468a58', 8)], colliders: [R(0.7, 0.7)] });
+  g('mk.ground.orman', 110, 64, '#6f9e55', 0.014);   // 2026-11-21 denetim: kenardaki ağaçların altı boşluk kalmasın (zemin yürünebilir alandan geniş)
+  // DNY-10: the trail prefab sat inside the comment above, so the forest had no trails at all
+  g('mk.trail', 84, 3.2, '#b89a6a', 0.02);
+  g('mk.trail.v', 2.4, 20, '#b39466', 0.024); g('mk.trail.v9', 2.4, 9, '#b39466', 0.024); g('mk.trail.v3', 2.2, 3, '#b39466', 0.024);
+  g('mk.orman.yol', ORMAN.yol.w, 3.4, '#a59a88', 0.022);
+  // DNY-10 forest variety: every tree/rock/stump kind is instanced (one draw call per part material for the whole forest)
+  defs.push({ id: 'mk.birch', instanced: true, parts: [cyl(0.13, 3.4, 0.17, 0, 1.7, 0, '#ece8de', 8), box(0.3, 0.06, 0.3, 0, 1.0, 0, '#3b3530'), box(0.28, 0.05, 0.28, 0, 2.1, 0, '#3b3530'),
+    sph(1.15, 0, 3.9, 0, '#8fc25a', 8), sph(0.9, 0.6, 4.6, 0.3, '#a3cf68', 7), sph(0.85, -0.5, 4.4, -0.4, '#7cb34c', 7)], colliders: [R(0.6, 0.6)] });
+  defs.push({ id: 'mk.kayin', instanced: true, parts: [cyl(0.36, 3.0, 0.5, 0, 1.5, 0, '#8a8478', 8), sph(2.4, 0, 4.6, 0, '#3e7a35', 10), sph(1.7, 1.5, 4.1, 0.8, '#4a8a3c', 9),
+    sph(1.6, -1.4, 4.3, -0.6, '#356c2e', 9), sph(1.3, 0.3, 6.0, 0.2, '#58994a', 8)], colliders: [R(1.1, 1.1)] });
+  defs.push({ id: 'mk.pine.b', instanced: true, parts: [cyl(0.14, 2.0, 0.2, 0, 1.0, 0, '#4f3624', 7), cyl(0, 2.8, 1.3, 0, 3.0, 0, '#25603b', 8), cyl(0, 2.3, 0.95, 0, 4.4, 0, '#2d6d43', 8),
+    cyl(0, 1.7, 0.6, 0, 5.6, 0, '#38794d', 7)], colliders: [R(0.6, 0.6)] });
+  defs.push({ id: 'mk.stump', instanced: true, parts: [cyl(0.36, 0.45, 0.44, 0, 0.22, 0, '#6b4a2e', 9), cyl(0.33, 0.02, 0.33, 0, 0.455, 0, '#cfa877', 9), cyl(0.1, 0.12, 0.16, 0.3, 0.06, 0.15, '#5a3d26', 6)], colliders: [R(0.8, 0.8)] });
+  defs.push({ id: 'mk.rock.b', instanced: true, parts: [sph(1.0, 0, 0.35, 0, '#8a877f', 5), sph(0.7, 0.8, 0.25, 0.4, '#9d998f', 5), sph(0.55, -0.7, 0.2, -0.3, '#7d7a72', 5), sph(0.35, 0.2, 0.9, -0.2, '#6f8f4a', 5)], colliders: [R(2.0, 1.5)] });
+  defs.push({ id: 'mk.orman.gol', parts: [sph(0.4, -4.0, 0.08, 0.3, '#8d8a84', 5), sph(0.32, 3.9, 0.06, -0.6, '#a29e96', 5), sph(0.36, 1.5, 0.06, 2.3, '#8d8a84', 5), sph(0.3, -2.2, 0.05, -2.1, '#a29e96', 5)],
+    colliders: [R(ORMAN.gol.rx * 2, ORMAN.gol.rz * 1.2), R(ORMAN.gol.rx * 1.4, ORMAN.gol.rz * 2)] });
+  defs.push({ id: 'mk.cadir', parts: [{ shape: 'cyl', size: [0, 1.5, 1.35], pos: [0, 0.75, 0], rot: [0, Math.PI / 4, 0], color: '#e8742c', segments: 4 }, box(0.5, 0.9, 0.05, 0, 0.45, 0.93, '#3b2a20'),
+    box(2.0, 0.02, 2.0, 0, 0.01, 0, '#5a6b3a')], colliders: [R(2.2, 2.2)] });
+  defs.push({ id: 'mk.cadir.b', parts: [{ shape: 'cyl', size: [0, 1.3, 1.2], pos: [0, 0.65, 0], rot: [0, Math.PI / 4, 0], color: '#3fb5b0', segments: 4 }, box(0.45, 0.8, 0.05, 0, 0.4, 0.83, '#24464a')], colliders: [R(2.0, 2.0)] });
+  defs.push({ id: 'mk.kamp.ates', parts: [...[0, 1, 2, 3, 4, 5, 6, 7].map(i => sph(0.17, Math.cos(i * 0.785) * 0.5, 0.08, Math.sin(i * 0.785) * 0.5, i % 2 ? '#8d8a84' : '#a29e96', 5)),
+    { shape: 'box', size: [0.7, 0.1, 0.1], pos: [0, 0.1, 0], rot: [0, 0.5, 0], color: '#4a3320' }, { shape: 'box', size: [0.7, 0.1, 0.1], pos: [0, 0.14, 0], rot: [0, -0.7, 0], color: '#3b2a1a' }, cyl(0.38, 0.02, 0.38, 0, 0.03, 0, '#2b2622', 10)], colliders: [R(1.3, 1.3)] });
+  defs.push({ id: 'mk.orman.pano', parts: [box(0.12, 2.3, 0.12, -1.0, 1.15, 0, '#6b4a2e'), box(0.12, 2.3, 0.12, 1.0, 1.15, 0, '#6b4a2e'), box(2.2, 1.3, 0.08, 0, 1.5, 0, '#5a3d26', 'pano'),
+    { shape: 'box', size: [2.6, 0.08, 0.7], pos: [0, 2.36, -0.05], rot: [0.25, 0, 0], color: '#4f7a3a' }], colliders: [R(2.2, 0.5)] });
+  defs.push({ id: 'mk.orman.yon', parts: [box(0.13, 2.5, 0.13, 0, 1.25, 0, '#6b4a2e'), cyl(0.09, 0.14, 0.09, 0, 2.55, 0, '#4f3624', 6),
+    box(1.3, 0.26, 0.05, 0.45, 2.15, 0.07, '#c9a46a', 'y0'), box(1.3, 0.26, 0.05, -0.45, 1.8, 0.07, '#c9a46a', 'y1'), box(1.3, 0.26, 0.05, 0.45, 1.45, 0.07, '#c9a46a', 'y2')], colliders: [R(0.4, 0.4)] });
+  defs.push({ id: 'mk.orman.bank', parts: [box(1.6, 0.08, 0.45, 0, 0.46, 0, '#9a6a42'), box(1.6, 0.36, 0.06, 0, 0.78, -0.22, '#8a5a32'), box(0.1, 0.44, 0.4, -0.7, 0.22, 0, '#5a3d26'), box(0.1, 0.44, 0.4, 0.7, 0.22, 0, '#5a3d26')], colliders: [R(1.7, 0.6)] });
+  defs.push({ id: 'mk.orman.anit', parts: [cyl(0.8, 4.4, 1.15, 0, 2.2, 0, '#5e4330', 10), cyl(0.3, 2.2, 0.42, 1.2, 4.4, 0.3, '#5e4330', 7), cyl(0.28, 2.0, 0.4, -1.1, 4.6, -0.4, '#5e4330', 7),
+    sph(3.3, 0, 6.6, 0, '#3f7a32', 11), sph(2.4, 2.4, 6.0, 1.0, '#4d8b3c', 10), sph(2.4, -2.3, 6.2, -0.9, '#356a2b', 10), sph(2.0, 0.4, 8.4, -0.5, '#5d9d48', 9),
+    ...[0, 1, 2, 3, 4].map(i => { const a = i * 1.257 + 0.3; return { shape: 'box' as const, size: [1.3, 0.22, 0.3] as [number, number, number], pos: [Math.cos(a) * 1.2, 0.1, Math.sin(a) * 1.2] as [number, number, number], rot: [0, -a, 0] as [number, number, number], color: '#5e4330' }; })],
+    colliders: [R(2.4, 2.4)] });
+  defs.push({ id: 'mk.oak', instanced: true, parts: [cyl(0.32, 2.6, 0.45, 0, 1.3, 0, '#6b4a2e', 8), cyl(0.12, 1.2, 0.16, 0.5, 2.6, 0.2, '#6b4a2e', 6), sph(2.0, 0, 4.0, 0, '#4f8a3a', 10), sph(1.5, 1.2, 4.6, 0.6, '#5f9e48', 9), sph(1.4, -1.1, 4.3, -0.5, '#467f33', 9), sph(1.2, 0.2, 5.3, -0.8, '#6aa94f', 8)], colliders: [R(1.0, 1.0)] });
+  defs.push({ id: 'mk.pine.tall', instanced: true, parts: [cyl(0.16, 2.2, 0.22, 0, 1.1, 0, '#5a3d26', 7), cyl(0, 2.4, 1.6, 0, 2.8, 0, '#2f6e44', 9), cyl(0, 2.1, 1.25, 0, 4.0, 0, '#3a7d4e', 9), cyl(0, 1.7, 0.85, 0, 5.1, 0, '#468a58', 8)], colliders: [R(0.7, 0.7)] });
   defs.push({ id: 'mk.bush', parts: [sph(0.7, 0, 0.45, 0, '#4f8a3a', 8), sph(0.55, 0.6, 0.38, 0.2, '#5f9e48', 7), sph(0.5, -0.55, 0.35, -0.1, '#467f33', 7)] });
-  defs.push({ id: 'mk.rock', parts: [sph(0.7, 0, 0.25, 0, '#8d8a84', 6), sph(0.45, 0.6, 0.18, 0.3, '#a29e96', 6)], colliders: [R(1.2, 1.0)] });
+  defs.push({ id: 'mk.rock', instanced: true, parts: [sph(0.7, 0, 0.25, 0, '#8d8a84', 6), sph(0.45, 0.6, 0.18, 0.3, '#a29e96', 6)], colliders: [R(1.2, 1.0)] });
   defs.push({ id: 'mk.log', parts: [{ shape: 'cyl', size: [0.28, 2.6, 0.3], pos: [0, 0.3, 0], rot: [0, 0, Math.PI / 2], color: '#7a5634', segments: 9 }, { shape: 'cyl', size: [0.22, 0.02, 0.22], pos: [1.31, 0.3, 0], rot: [0, 0, Math.PI / 2], color: '#d9b98a', segments: 9 }], colliders: [R(2.6, 0.6)] });
   defs.push({ id: 'mk.orman.cesme', parts: [box(2.6, 2.2, 0.9, 0, 1.1, 0, '#cfc6b2', 'stone'), box(2.9, 0.3, 1.1, 0, 2.35, 0, '#a89c84', 'cap'), cyl(0.3, 0.3, 0.3, 0, 2.7, 0, '#a89c84', 8),
     box(1.6, 0.9, 0.06, 0, 1.45, 0.47, '#b8ad96', 'kitabe'), cyl(0.04, 0.3, 0.04, -0.5, 1.0, 0.6, '#b08d3a', 6), cyl(0.04, 0.3, 0.04, 0.5, 1.0, 0.6, '#b08d3a', 6),
@@ -384,23 +413,64 @@ export function adalarZone(): ZoneDef {
     { rect: { x0, x1: x0 + 0.6, z0: -14, z1: 26 }, cost: 0 }, { rect: { x0: x1 - 0.6, x1, z0: -14, z1: 26 }, cost: 0 }, { rect: { x0, x1, z0: 24, z1: 26 }, cost: 0 }];
   return base('adalar', -14, 26, props, paint, 'barinak', null);
 }
+/** DNY-10 (2026-11-21): same size, much fuller forest. Trails + cross paths, clearings (mangal, kamp, gölet), an old
+ *  monument oak, info boards and signposts every ~25 m; trees of five kinds placed by a seeded hash away from trails
+ *  and places. Every solid thing has a collider (sim/mantar.ts reads them through ormanEngeller()). */
+const oh = (n: number) => { let x = (n * 2654435761) >>> 0; x ^= x >>> 15; x = Math.imul(x, 2246822519) >>> 0; x ^= x >>> 13; return (x >>> 0) / 4294967296; };
 export function ormanZone(): ZoneDef {
-  const x0 = 800, x1 = 880, mx = 840;
-  const props: PrefabPlacement[] = [P('ground', 'mk.ground.orman', mx, 9), P('trail', 'mk.trail', mx, 9), P('tabela', 'mk.orman.tabela', 812, 13.6),
-    P('cesme', 'mk.orman.cesme', 838, 16.5), P('m0', 'mk.mangal', 826, 2.4), P('pk0', 'mk.piknik', 823, 1.0), P('o0', 'mk.ortu', 829, 4.0),
-    P('m1', 'mk.mangal', 856, 2.0), P('pk1', 'mk.piknik', 859, 0.6), P('o1', 'mk.ortu', 852, 3.6), P('m2', 'mk.mangal', 868, 17.6), P('o2', 'mk.ortu', 865, 15.2),
-    P('log0', 'mk.log', 846, 12.6), P('log1', 'mk.log', 874, 7.0, 0.6), P('rock0', 'mk.rock', 818, 4.2), P('rock1', 'mk.rock', 862, 13.6), P('cop0', 'mk.cop', 815, 13.0), P('cop1', 'mk.cop', 848, 4.4),
-    // 2026-10-25: more of the forest: two extra hiking trails, three more mangal families with picnic tables, rocks, logs
-    P('trail2', 'mk.trail', mx, -2.0), P('trail3', 'mk.trail', mx, 18.0),
-    P('m3', 'mk.mangal', 838, -3.2), P('pk3', 'mk.piknik', 835, -4.6), P('o3', 'mk.ortu', 842, -1.4),
+  const x0 = ORMAN.x0, x1 = ORMAN.x1, mx = (x0 + x1) / 2, O = ORMAN;
+  const props: PrefabPlacement[] = [P('ground', 'mk.ground.orman', mx, 9), P('yol', 'mk.orman.yol', O.yol.x, O.yol.z), P('tabela', 'mk.orman.tabela', 812, 13.6),
+    P('cesme', 'mk.orman.cesme', O.cesme.x, O.cesme.z), P('gol', 'mk.orman.gol', O.gol.x, O.gol.z), P('anit', 'mk.orman.anit', O.anit.x, O.anit.z),
+    // mangal clearings (families in view/orman follow these)
+    P('m0', 'mk.mangal', 826, 2.4), P('pk0', 'mk.piknik', 823, 1.0), P('o0', 'mk.ortu', 829, 4.0),
+    P('m1', 'mk.mangal', 856, 2.0), P('pk1', 'mk.piknik', 859, 0.6), P('o1', 'mk.ortu', 853.4, 3.8), P('m2', 'mk.mangal', 865, 14.2), P('o2', 'mk.ortu', 861.6, 13.0),
+    P('m3', 'mk.mangal', 838, -4.6), P('pk3', 'mk.piknik', 834.6, -6.0), P('o3', 'mk.ortu', 842, -5.8),
     P('m4', 'mk.mangal', 872, 5.4), P('pk4', 'mk.piknik', 875, 4.0), P('m5', 'mk.mangal', 846, 21.5), P('pk5', 'mk.piknik', 849, 22.8),
-    P('log2', 'mk.log', 829, -0.8, 0.3), P('log3', 'mk.log', 858, 19.4, -0.4), P('rock2', 'mk.rock', 806, -1.0), P('rock3', 'mk.rock', 877, 18.0), P('rock4', 'mk.rock', 840, 25.0)];
-  const trees: [number, number, string][] = [];
-  for (let i = 0; i < 26; i++) { const x = 803 + i * 3.0 + (i % 3) * 0.7, k = i % 2 ? 'mk.oak' : 'mk.pine.tall'; trees.push([x, 22 + (i % 4) * 1.6, k], [x + 1.4, -5 - (i % 3) * 1.5, i % 3 ? 'mk.pine.tall' : 'mk.oak']); }
-  [[832, 9.8], [844, 19.8], [850, 7.4], [870, 12.2], [834, 3.2], [816, 18.4], [876, 19.4]].forEach(([x, z], i) => trees.push([x, z, i % 2 ? 'mk.oak' : 'mk.pine.tall']));
-  trees.forEach(([x, z, k], i) => props.push(P('t' + i, k, x, z)));
-  [[820, 20.5], [841, 0.2], [863, 21.0], [872, -1.5], [829, 19.6], [853, 18.8]].forEach(([x, z], i) => props.push(P('bush' + i, 'mk.bush', x, z)));
-  return base('orman', -10, 28, props, frame(x0, x1, -10, 28, true, true).concat([{ rect: { x0, x1: x0 + 0.6, z0: -10, z1: 28 }, cost: 0 }, { rect: { x0: x1 - 0.6, x1, z0: -10, z1: 28 }, cost: 0 }]), 'tepe', null);
+    // kamp alanı
+    P('cadir0', 'mk.cadir', O.kamp.x - 2.6, O.kamp.z - 1.0, 0.25), P('cadir1', 'mk.cadir.b', O.kamp.x + 3.0, O.kamp.z - 1.6, -0.3), P('ates', 'mk.kamp.ates', O.kamp.x + 0.4, O.kamp.z + 1.2),
+    P('klog0', 'mk.log', O.kamp.x - 1.6, O.kamp.z + 2.2, 0.15), P('klog1', 'mk.log', O.kamp.x + 2.6, O.kamp.z + 1.4, 1.35),
+    P('log0', 'mk.log', 846, 12.6), P('log1', 'mk.log', 874, 7.0, 0.6), P('log2', 'mk.log', 829, 0.9, 0.3), P('log3', 'mk.log', 858, 21.2, -0.4),
+    P('rock0', 'mk.rock', 821.5, 4.6), P('rock1', 'mk.rock', 857, 14.6), P('rock2', 'mk.rock', 806, -4.4), P('rock3', 'mk.rock', 877.5, 20.6), P('rock4', 'mk.rock', 840, 25.0),
+    P('rockb0', 'mk.rock.b', 867.8, -4.6), P('rockb1', 'mk.rock.b', 828, 21.4), P('rockb2', 'mk.rock.b', 811, 3.0), P('rockb3', 'mk.rock.b', 846, -7.6),
+    P('cop0', 'mk.cop', 815, 13.0), P('cop1', 'mk.cop', 847.6, 4.4), P('cop2', 'mk.cop', 869, 10.9)];
+  for (const z of O.trailsZ) props.push(P('trail' + z, 'mk.trail', mx, z));
+  O.cross.forEach(([x, za, zb], i) => { const L = zb - za; props.push(P('tv' + i, L > 15 ? 'mk.trail.v' : L > 6 ? 'mk.trail.v9' : 'mk.trail.v3', x, (za + zb) / 2)); });
+  O.pano.forEach((p, i) => props.push(P('pano' + i, 'mk.orman.pano', p.x, p.z)));
+  O.yon.forEach((p, i) => props.push(P('yon' + i, 'mk.orman.yon', p.x, p.z)));
+  O.bank.forEach((p, i) => props.push(P('bank' + i, 'mk.orman.bank', p.x, p.z)));
+  [[820, 20.5], [841, 0.2], [863, 21.0], [873, -4.6], [829, 19.6 + 1.4], [854, 21.4], [806.5, 15.4], [833, 13.8], [876.5, 1.2]].forEach(([x, z], i) => props.push(P('bush' + i, 'mk.bush', x, z)));
+  [[836.5, 21.6], [862.4, 4.2], [813, 20.8], [878, -2.4 + 6.6], [824.6, 13.4], [843.6, 1.4]].forEach(([x, z], i) => props.push(P('stump' + i, 'mk.stump', x, z)));
+  // trees: keep clear of trails, cross paths, the bus bay and every placed thing
+  const busy: [number, number, number][] = props.filter(p => !/^(ground|trail|tv|yol)/.test(p.id)).map(p => [p.pos.x, p.pos.z, p.prefab === 'mk.orman.anit' ? 3.6 : p.prefab === 'mk.orman.gol' ? 5.2 : 1.3]);
+  busy.push([876, 21.5, 1.6], [O.kamp.x, O.kamp.z, 4.2], [847.5, 22.2, 3.0], [806, 9, 4.5]);
+  const free = (x: number, z: number, r: number) => x > x0 + 1.2 && x < x1 - 1.2
+    && O.trailsZ.every(t => Math.abs(z - t) > 2.3) && O.cross.every(([cx, za, zb]) => Math.abs(x - cx) > 1.9 || z < za - 1 || z > zb + 1)
+    && !(x < O.yol.x + O.yol.w / 2 + r && Math.abs(z - O.yol.z) < 1.7 + r) && busy.every(([bx, bz, br]) => Math.hypot(x - bx, z - bz) > br + r);
+  const kinds = ['mk.pine.tall', 'mk.pine.tall', 'mk.oak', 'mk.kayin', 'mk.birch', 'mk.pine.b', 'mk.oak', 'mk.birch', 'mk.pine.tall', 'mk.kayin'];
+  let n = 0;
+  const tree = (x: number, z: number, k: number) => { const kind = kinds[Math.floor(oh(k + 7) * kinds.length)], r = kind === 'mk.kayin' ? 1.4 : 1.0; if (!free(x, z, r)) return; props.push(P('t' + n++, kind, x, z, oh(k + 9) * 6.28)); busy.push([x, z, r + 0.25]); };
+  // two staggered edge rows north and south (south rows open for the kamp and gölet clearings), then the inner scatter
+  for (let i = 0; i < 34; i++) { const x = x0 + 1.6 + i * 2.35 + oh(i + 1) * 1.2; tree(x, 22.4 + oh(i + 3) * 2.0, i); tree(x + 1.1, 25.2 + oh(i + 5) * 2.4, i + 100); }
+  for (let i = 0; i < 34; i++) { const x = x0 + 1.4 + i * 2.35 + oh(i + 11) * 1.2; tree(x, -5.6 - oh(i + 13) * 1.6, i + 200); tree(x + 1.1, -8.0 - oh(i + 15) * 1.6, i + 300); }
+  for (let i = 0; i < 260; i++) tree(x0 + 3 + oh(i + 400) * (x1 - x0 - 6), -3.6 + oh(i + 500) * 27, i + 600);
+  const paint = frame(x0, x1, -10, 28, true, true).concat([{ rect: { x0, x1: x0 + 0.6, z0: -10, z1: 28 }, cost: 0 }, { rect: { x0: x1 - 0.6, x1, z0: -10, z1: 28 }, cost: 0 }]);
+  return base('orman', -10, 28, props, paint, 'tepe', null);
+}
+/** World-space collider rects of the forest zone (props x prefab colliders, rotation folded into an AABB). Pure, cached. */
+let _engel: Rect[] | null = null;
+export function ormanEngeller(): Rect[] {
+  if (_engel) return _engel;
+  const defs = new Map(disariPrefabs().map(d => [d.id, d] as const)), out: Rect[] = [];
+  for (const p of ormanZone().props) {
+    const d = defs.get(p.prefab); if (!d?.colliders) continue;
+    const c = Math.cos(p.rotY || 0), s = Math.sin(p.rotY || 0);
+    for (const r of d.colliders) {
+      const xs: number[] = [], zs: number[] = [];
+      for (const [lx, lz] of [[r.x0, r.z0], [r.x1, r.z0], [r.x0, r.z1], [r.x1, r.z1]]) { xs.push(p.pos.x + lx * c + lz * s); zs.push(p.pos.z - lx * s + lz * c); }
+      out.push({ x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs) });
+    }
+  }
+  return (_engel = out);
 }
 export function disariZones(): ZoneDef[] { return [sahilZone(), yokusZone(), meydanZone(), barinakZone(), geceZone(), stadyumZone(), tersaneZone(), metroZone(), tepeZone(), adalarZone(), ormanZone()]; }
 
