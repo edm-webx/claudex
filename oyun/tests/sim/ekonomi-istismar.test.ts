@@ -21,8 +21,8 @@ describe('istismar tavanları (saatte en fazla X ₺)', () => {
     const r = istismar('kredi', { saniye: 3600 }); console.log('kredi', JSON.stringify(r));
     expect(r.saatlik).toBeLessThanOrEqual(SAAT_TAVAN.kredi);
   });
-  // Bahis: oran 0,9/olasılık ama maç motorunda ev sahibi ('1') oranın söylediğinden sık kazanıyor. Futbol kolunun alanı; EKO-03 günlük bahis sınırı da koyar.
-  it.fails('bahis: en olası sonuca azami bahis tekrarının saatlik net kazancı (futbol kolu + EKO-03 bekliyor)', () => {
+  // Bahis: oran 0,9/olasılık ama maç motorunda ev sahibi ('1') oranın söylediğinden sık kazanıyor. Futbol kolunun alanı; günlük bahis sınırı (BAHIS.gunluk) sim/halisaha.ts'de.
+  it('bahis: en olası sonuca azami bahis tekrarının saatlik net kazancı (günlük bahis sınırı ile)', () => {
     const a = istismar('bahis', { tohum: 3, maclar: 30 }), b = istismar('bahis', { tohum: 5, maclar: 30 }); console.log('bahis', JSON.stringify(a), JSON.stringify(b));
     expect((a.saatlik + b.saatlik) / 2).toBeLessThanOrEqual(SAAT_TAVAN.bahis);
   });
