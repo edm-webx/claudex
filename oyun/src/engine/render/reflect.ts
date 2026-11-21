@@ -13,20 +13,23 @@ import type { TierName } from '../api';
 export const REFLECT_LAYER = 1;
 export interface ReflectBudget { scale: number; every: number }
 /** Resolution scale (vs the drawing buffer) and frame interval; null = no reflection pass in this tier. */
-export function reflectBudget(tier: TierName | string): ReflectBudget | null {
-  if (tier === 'sahane') return { scale: 0.5, every: 1 };
-  if (tier === 'dengeli') return { scale: 0.25, every: 2 };
-  return null;
+export function reflectBudget(tier: TierName | string | { name: string; flags?: Record<string, boolean> }): ReflectBudget | null {
+  // GRS-17: the tier flags decide (reflect / reflectHi); a bare name maps to the table's flags (tests, tools)
+  const f = typeof tier === 'string' ? (tier === 'sahane' ? { reflect: true, reflectHi: true } : tier === 'dengeli' ? { reflect: true } : {}) as Record<string, boolean> : (tier.flags ?? {});
+  if (!f.reflect) return null;
+  return f.reflectHi ? { scale: 0.5, every: 1 } : { scale: 0.25, every: 2 };
 }
 /** Marks a whole subtree as reflected (layers are not inherited, so each node is enabled). Returns the node count. */
 export function markReflected(root: T.Object3D | null | undefined): number {
   let n = 0;
-  root?.traverse(o => { o.layers.enable(REFLECT_LAYER); n++; });
+  root?.traverse(o => { if (o.userData.noReflect) return; o.layers.enable(REFLECT_LAYER); n++; });   // GRS-06 contact planes stay out
   return n;
 }
 
 export interface Reflector {
   readonly matrix: T.Matrix4;
+  /** the mirrored camera (the sky's horizon test skips it: render.horizon must follow the player's camera only) */
+  readonly camera: T.PerspectiveCamera;
   readonly texture: T.Texture | null;
   /** true when the last frame produced a usable image */
   readonly on: boolean;
@@ -49,6 +52,7 @@ export function createReflector(planeY: number): Reflector {
 
   const api: Reflector = {
     matrix,
+    camera: vcam,
     get texture() { return rt ? rt.texture : null; },
     get on() { return on; },
     resMul: 1,

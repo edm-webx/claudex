@@ -244,7 +244,8 @@ export interface TierDef {
   particles: number;             // 200 / 500 / 1000
   buildBudgetMs: number;         // 3 / 4 / 6
   maxLiveZones: number;          // hot+warm cap 2 / 3 / 4
-  heroes: number;                // individual rigs 12 / 16 / 16
+  /** GRS-17: render-scale floor (Dengeli 1.0, Şahane 1.5): a DPR 1 screen still gets a sharper Şahane (renderScale) */
+  pixelRatioMin?: number;
   flags: Record<string, boolean>; // render upgrades (MOTOR §11), e.g. cloudShadows, bloom
 }
 export interface Quality {
@@ -769,6 +770,10 @@ export interface EffectDef {
   children?: { effect: string; delay: number }[];
   tierScale?: [number, number, number];   // count multiplier akici/dengeli/sahane
   duration?: number;                      // stream length in s; undefined = until stopped
+  /** GRS-07: additive glow (sparks, fireflies) in the same single draw (premultiplied alpha) */
+  additive?: boolean;
+  /** GRS-07: continuous ambient stream (steam, smoke, fountain): may use at most 60% of the tier cap, event effects keep the rest */
+  ambient?: boolean;
 }
 export interface FxHandle { readonly alive: boolean; stop(): void; moveTo(at: Vec3): void; }
 export interface Fx {

@@ -8,7 +8,7 @@ import * as T from 'three';
 import type { Chars } from '../../../engine/api';
 import * as K from '../chars/v2/kit';
 import { createMatch, L as ML, WD as MW } from '../../sim/macmotor';
-import { KARSI_FOUNTAIN, KARSI_PITCH } from '../../../content/zones/karsi';
+import { KARSI_PITCH } from '../../../content/zones/karsi';
 import { ARSALAR, arsaKapi } from '../../../content/esya';
 import { insaatYer } from '../../../content/isletme-insaat';
 
@@ -129,10 +129,7 @@ export function createKarsiYasam(d: YasamDeps): YasamView {
     const m = new T.PointsMaterial({ color, size, transparent: true, opacity: op, depthWrite: false, blending: add ? T.AdditiveBlending : T.NormalBlending, sizeAttenuation: true });
     const p = new T.Points(g, m); p.frustumCulled = false; holder.add(p); return p;
   };
-  const NJ = 260, jets = pts(NJ, 0.12, '#cfeeff'), mist = pts(60, 0.55, '#ffffff', false, 0.16);
-  const jv = Array.from({ length: NJ }, () => ({ t: Math.random() * 2, a: Math.random() * Math.PI * 2, k: Math.floor(Math.random() * 7), s: rnd(0.8, 1.2) }));
-  const steam = pts(70, 0.3, '#ffffff', false, 0.22), steamV = Array.from({ length: 70 }, (_, i) => ({ t: Math.random() * 3, src: i % 3 }));
-  const pollen = pts(90, 0.09, '#fff3b0'), polV = Array.from({ length: 90 }, () => ({ x: rnd(-24, 12), y: rnd(0.5, 4), z: rnd(33, 56), ph: Math.random() * 6 }));
+  // GRS-07: fountain jets/mist, tea steam and pollen are engine/fx effects now (fx-noktalar.ts: one draw for every particle)
   const glowPts = pts(8, 2.4, '#ffd890', true, 0.0);
   const LAMPS: [number, number][] = [[-12.2, 33.6], [5.6, 33.6], [-12.2, 56.4], [5.6, 56.4], [-23, 33], [30.8, 40], [-24, 57]];
 
@@ -251,19 +248,6 @@ export function createKarsiYasam(d: YasamDeps): YasamView {
       holder.visible = near; if (!near) return;
       if (!built) build();
       dt = Math.min(dt, 0.1); tt += dt;
-      // fountain
-      { const F = KARSI_FOUNTAIN, a = jets.geometry.attributes.position as T.BufferAttribute;
-        for (let i = 0; i < NJ; i++) { const j = jv[i]; j.t += dt * j.s; if (j.t > 1.6) { j.t = 0; j.a = Math.random() * 6.28; j.k = Math.floor(Math.random() * 7); }
-          const ring = j.k < 6, ang = ring ? j.k * 1.047 + (j.a - 3.14) * 0.05 : j.a, r0 = ring ? 1.5 : 0.1, vr = ring ? 0.9 : 0.35 + (j.a % 1) * 0.3, vy = ring ? 4.2 : 6.4;
-          const r = r0 + vr * j.t, y = 0.7 + vy * j.t - 4.9 * j.t * j.t * (ring ? 1 : 1.0);
-          a.setXYZ(i, F.x + Math.cos(ang) * r, Math.max(0.55, y), F.z + Math.sin(ang) * r); }
-        a.needsUpdate = true;
-        const m = mist.geometry.attributes.position as T.BufferAttribute; for (let i = 0; i < 60; i++) { const q = (tt * 0.25 + i / 60) % 1, ang = i * 2.4; m.setXYZ(i, F.x + Math.cos(ang) * (0.8 + q * 2.2), 1.0 + q * 2.4, F.z + Math.sin(ang) * (0.8 + q * 2.2)); } m.needsUpdate = true; }
-      // steam from tea
-      { const a = steam.geometry.attributes.position as T.BufferAttribute; const src: [number, number][] = [[-11.4, 53.2], [-11.4 + 0.6, 53.4], [-7.8, 34.9]];
-        steamV.forEach((s, i) => { s.t = (s.t + dt * 0.5) % 3; const [sx, sz] = src[s.src]; a.setXYZ(i, sx + Math.sin(tt + i) * 0.12 * s.t, 1.9 + s.t * 0.7 - (s.src === 2 ? 0.7 : 0), sz + Math.cos(tt * 0.8 + i) * 0.1 * s.t); }); a.needsUpdate = true; (steam.material as T.PointsMaterial).opacity = 0.22; }
-      // pollen / leaves
-      { const a = pollen.geometry.attributes.position as T.BufferAttribute; polV.forEach((p, i) => { p.x += dt * 0.35; p.y += Math.sin(tt * 0.7 + p.ph) * dt * 0.25; if (p.x > 14) p.x = -26; a.setXYZ(i, p.x, 0.6 + Math.abs(p.y) % 3.8, p.z + Math.sin(tt * 0.5 + p.ph) * 0.6); }); a.needsUpdate = true; (pollen.material as T.PointsMaterial).opacity = night ? 0.15 : 0.7; }
       (glowPts.material as T.PointsMaterial).opacity = night ? 0.85 : 0;
       // morg
       { if (night && (hour >= 22 || hour < 5.5)) { morgLight.visible = Math.sin(tt * 23) * Math.sin(tt * 7.3) > -0.15; (morgLight.material as T.MeshLambertMaterial).color.set(Math.random() < 0.08 ? '#ffffff' : '#ff2a1a');

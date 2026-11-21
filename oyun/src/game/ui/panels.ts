@@ -22,6 +22,8 @@ export interface PanelsDeps {
   /** M0 perf meter ("Hız ölçer" + "Raporu kopyala"), shown in the ayarlar panel when given (integrator). */
   perf?: { visible(): boolean; show(on: boolean): void; copy(): void };
   fonts?: unknown[];
+  /** GRS-17: current tier for the 'Otomatik: Şu an ...' line */
+  quality?: { current(): { label: string } };
 }
 export interface Panels { update(): void; v2: V2UiApi; open(id: string): void; dispose(): void; }
 
@@ -128,7 +130,7 @@ export function createPanels(deps: PanelsDeps): Panels {
     let model = models.panelModel(id, rules());
     if (id === 'ayarlar') {
       const st = S().settings || {};
-      model = { ...model, vol: deps.audio ? { music: deps.audio.buses.music.volume, sfx: deps.audio.buses.sfx.volume, voice: deps.audio.buses.voice.volume } : null, ownMusic: !!st.ownMusic, haptic: ui.settings.haptics !== false, hand: (st.hand || ui.settings.hand) === 'left' ? 'sol' : 'sag', perf: deps.perf ? deps.perf.visible() : undefined };
+      model = { ...model, vol: deps.audio ? { music: deps.audio.buses.music.volume, sfx: deps.audio.buses.sfx.volume, voice: deps.audio.buses.voice.volume } : null, ownMusic: !!st.ownMusic, haptic: ui.settings.haptics !== false, hand: (st.hand || ui.settings.hand) === 'left' ? 'sol' : 'sag', perf: deps.perf ? deps.perf.visible() : undefined, tierNow: deps.quality?.current().label ?? null };
     }
     v2.open(id, model, actionsFor(id));
   }

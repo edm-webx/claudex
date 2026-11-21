@@ -36,6 +36,8 @@ import { createRtView, type RtView } from './rtview';
 import type { Rules } from '../../sim/state';
 import { partPos } from '../../../content/prefabs/iskele/kiosk';
 import { BUFE } from '../../../content/prefabs/iskele/layout';
+import { useSkyEnv } from './glb';
+import { setZeminSky } from '../../../engine/render/zemin-islak';
 import { ensureKit, MAT, radialTex } from '../../../content/prefabs/common/v2kit';
 import { mixc, col, clamp, lerp, easeInOut, HP, PI, TAU } from '../../../engine/prefab/batch';
 
@@ -180,6 +182,7 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
   sparkles.frustumCulled = false; sparkles.visible = false; sparkles.renderOrder = 8; sparkles.name = 'sparkles';
   let spkNext = 0;
   let decorGlow: T.Group | null = null;
+  let kioskGlassMat: T.MeshStandardMaterial | null = null;
 
   /** GRS-05: planar reflection hooks (render.reflector exists on the real pipeline only) */
   const rfx = render as unknown as { reflector?: Reflector; reflectSea?: T.Object3D | null; sky?: T.Object3D };
@@ -200,6 +203,12 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
     h.ferry = inner('ferry'); h.gangway = h.ferry?.getObjectByName('gangway') ?? null; h.ferryGlow = h.ferry?.getObjectByName('ferryGlow') ?? null;
     h.far = inner('ferryFar'); h.farGlow = h.far?.getObjectByName('ferryGlow') ?? null;
     const k = inner('kiosk'); h.kiosk = k;
+    // GRS-05: the büfe window is a Standard glass with the sky env (content cannot import the view's glb env, so the swap is here)
+    const kg = k?.getObjectByName('kioskGlass') as T.Mesh | undefined;
+    if (kg && !(kg.material as T.MeshStandardMaterial).isMeshStandardMaterial) {
+      kioskGlassMat ||= new T.MeshStandardMaterial({ color: '#cfeaf4', roughness: 0.06, metalness: 0.1, transparent: true, opacity: 0.30, depthWrite: false });
+      useSkyEnv(kioskGlassMat, 'glass'); kg.material = kioskGlassMat;
+    }
     h.sign = (k?.getObjectByName('sign') as T.Mesh) ?? null; h.flo = (k?.getObjectByName('floresan') as T.Mesh) ?? null; h.floPool = (k?.getObjectByName('floPool') as T.Mesh) ?? null;
     const fl = (k?.getObjectByName('kioskFloor') as T.Mesh | undefined) ?? null;
     if (fl && fl.material && !Array.isArray(fl.material)) { fl.material = (fl.material as T.Material).clone(); kioskFloorMat = fl.material as T.MeshStandardMaterial | T.MeshBasicMaterial; floorKey = ''; }
@@ -421,6 +430,7 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
       const el = t.el, az = t.az, sunDir = _sunDir.set(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el)).normalize();
       U.uDeep.value.copy(t.deep); U.uShallow.value.copy(t.sh); U.uSky.value.copy(t.sky2); U.uSunCol.value.copy(t.sun); U.uSunDir.value.copy(sunDir); U.uNight.value = night;
     }
+    setZeminSky(t.sky2);   // GRS-05: wet ground sheen reflects the current sky
     applyNight();
   }
   function applyNight() {

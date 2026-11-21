@@ -98,7 +98,7 @@ export function makeSea(mask?: any) {
           for (int k = -2; k <= 2; k++) { float wk = 1.0 - abs(float(k)) * 0.2; rs += texture2D(uReflect, ruv + vec2(0.0, float(k)) * sm).rgb * wk; ws += wk; }
           vec3 rcol = min(rs / ws, vec3(1.4));
           vec2 ins = smoothstep(vec2(0.0), vec2(0.05), ruv) * smoothstep(vec2(1.0), vec2(0.95), ruv);
-          float rw = (0.22 + 0.5 * pow(1.0 - clamp(dot(n, V), 0.0, 1.0), 1.6)) * ins.x * ins.y * (1.0 - smoothstep(0.55, 0.92, m)) * (1.0 - 0.45 * uFerryOn * ff);
+          float rw = min(0.9, (0.22 + 0.5 * pow(1.0 - clamp(dot(n, V), 0.0, 1.0), 1.6)) * (1.0 + 0.6 * uNight)) * ins.x * ins.y * (1.0 - smoothstep(0.55, 0.92, m)) * (1.0 - 0.45 * uFerryOn * ff);
           col = mix(col, rcol, rw);
         }
         // small elongated whitecaps (filled, sparse) and a soft swell tint

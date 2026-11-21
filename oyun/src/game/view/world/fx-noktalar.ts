@@ -1,9 +1,10 @@
 /**
- * GRS-07: dünyada sabit duran sürekli efekt noktaları (fıskiye, semaver buharı, ışıkta toz). Tek parçacık sistemi (engine/fx, 1 çağrı)
+ * GRS-07: dünyada sabit duran sürekli efekt noktaları (karşı yaka fıskiyesi, çaycı ve semaver buharı, polen). Tek parçacık sistemi (engine/fx, 1 çağrı)
  * kullanılır; nokta yalnızca kahraman menzildeyken çalışır (uzakta üretim yok), menzilden çıkınca akış durdurulur. Tier başına
  * sayı çarpanı ve toplam tavan fx'in kendisindedir (tier.particles). Yalnız görünüm; sim'e dokunmaz.
  */
 import type { Fx, FxHandle, Vec3 } from '../../../engine/api';
+import { KARSI_FOUNTAIN } from '../../../content/zones/karsi';
 
 export interface FxNokta {
   id: string;
@@ -16,17 +17,23 @@ export interface FxNokta {
   olcek?: number;
   /** oyun saati aralığı [a, b) (24 üstü gece yarısından sonra); yoksa her saat */
   saat?: [number, number][];
-  /** kahramanı izleyen nokta (toz zerresi) */
+  /** kahramanı izleyen nokta (polen) */
   kahraman?: boolean;
+  /** kahraman bu z aralığındayken (kahraman izleyen noktalar için) */
+  bolge?: { z0: number; z1: number };
 }
 
 export const FX_NOKTALARI: readonly FxNokta[] = [
-  { id: 'fiskiye', efekt: ['fiskiye', 'fiskiyeSis'], at: { x: -16.5, y: 1.0, z: 14.4 }, menzil: 34 },
+  // karşı yaka meydanı fıskiyesi (karsi-yasam.ts'teki 4 Points çiziminin yerine): orta fışkırma, kubbe kolları, çevresinde hafif sis
+  { id: 'fiskiye', efekt: ['fiskiye', 'fiskiyeKol', 'fiskiyeSis'], at: { x: KARSI_FOUNTAIN.x, y: 0.6, z: KARSI_FOUNTAIN.z }, menzil: 34 },
+  // çaycı arabaları (karşı yaka)
+  { id: 'cayci1', efekt: ['steam'], at: { x: -11.1, y: 1.9, z: 53.3 }, menzil: 24, olcek: 0.8 },
+  { id: 'cayci2', efekt: ['steam'], at: { x: -7.8, y: 1.2, z: 34.9 }, menzil: 24, olcek: 0.8 },
+  // iskele semaveri
   { id: 'semaver', efekt: ['semaverBuhar'], anchor: 'stations.cay.out', dy: 0.15, menzil: 22 },
-  // alçak güneşte havada uçuşan toz: sabah ve akşamüstü, kahramanın çevresinde
-  { id: 'toz', efekt: ['tozZerresi'], at: { x: 0, y: 1.4, z: 0 }, kahraman: true, menzil: 1e9, saat: [[7, 10.5], [16, 19.5]] },
+  // karşı yaka polen (gündüz, kahramanın çevresinde, yalnız meydan tarafında)
+  { id: 'polen', efekt: ['polen'], at: { x: 0, y: 1.6, z: 0 }, kahraman: true, menzil: 1e9, saat: [[8, 18]], bolge: { z0: 30, z1: 60 } },
 ];
-
 export function saatIcinde(saat: [number, number][] | undefined, h: number): boolean {
   if (!saat) return true;
   const g = ((h % 24) + 24) % 24;
@@ -66,7 +73,7 @@ export function createFxNoktalar(d: FxNoktalarDeps, noktalar: readonly FxNokta[]
       const hr = d.hour();
       for (const n of noktalar) {
         const r = run.get(n.id), p = where(n, hero);
-        const want = !!p && saatIcinde(n.saat, hr) && menzildeMi((p.x - hero.x) ** 2 + (p.z - hero.z) ** 2, n.menzil, !!r);
+        const want = !!p && saatIcinde(n.saat, hr) && menzildeMi((p.x - hero.x) ** 2 + (p.z - hero.z) ** 2, n.menzil, !!r) && (!n.bolge || (hero.z >= n.bolge.z0 && hero.z <= n.bolge.z1));
         if (r && (!want || r.h.some(h => !h.alive))) { stopAll(n.id); if (!want) continue; }
         if (want && p && !run.has(n.id)) {
           const at = { x: p.x, y: p.y, z: p.z };

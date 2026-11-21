@@ -21,6 +21,8 @@ export const FX_SPRITES = { dot: 0, puff: 1, seed: 2, feather: 3, drop: 4, star:
 export const FX_ATLAS_COLS = 8;
 export type FxSprite = keyof typeof FX_SPRITES;
 const CAP_MAX = 1000;
+/** GRS-07: share of the tier cap that continuous (ambient) streams may hold */
+export const AMBIENT_SHARE = 0.6;
 
 function makeAtlas(): T.Texture {
   try {
@@ -62,8 +64,8 @@ function makeAtlas(): T.Texture {
 const VERT = /* glsl */`
 attribute vec4 iPos;   // xyz, size
 attribute vec4 iCol;   // rgb, alpha
-attribute vec2 iMisc;  // rotation, frame
-varying vec2 vUv; varying vec4 vCol;
+attribute vec3 iMisc;  // rotation, frame, additive (GRS-07)
+varying vec2 vUv; varying vec4 vCol; varying float vAdd;
 #include <fog_pars_vertex>
 void main() {
   float c = cos(iMisc.x), s = sin(iMisc.x);
@@ -73,18 +75,29 @@ void main() {
   gl_Position = projectionMatrix * mvPosition;
   float f = iMisc.y;
   vUv = (vec2(mod(f, 8.0), 7.0 - floor(f / 8.0)) + uv) * 0.125;
-  vCol = iCol;
+  vCol = iCol; vAdd = iMisc.z;
   #include <fog_vertex>
 }`;
 const FRAG = /* glsl */`
-uniform sampler2D map;
-varying vec2 vUv; varying vec4 vCol;
+uniform sampler2D map; uniform vec3 uTint;
+varying vec2 vUv; varying vec4 vCol; varying float vAdd;
 #include <fog_pars_fragment>
+// GRS-07: premultiplied output (blend One, OneMinusSrcAlpha). add = 0: rgb*a + dst*(1-a), the same as the old alpha blend;
+// add = 1: rgb*a + dst (glow) in the same draw. Smoke/steam follow the light (uTint, night), sparks keep their own glow.
 void main() {
   vec4 t = texture2D(map, vUv);
-  gl_FragColor = vec4(vCol.rgb * t.rgb, vCol.a * t.a);
-  if (gl_FragColor.a < 0.01) discard;
-  #include <fog_fragment>
+  vec3 rgb = vCol.rgb * t.rgb; float a = vCol.a * t.a;
+  if (a < 0.01) discard;
+  rgb *= mix(uTint, vec3(1.0), vAdd);
+  #ifdef USE_FOG
+    #ifdef FOG_EXP2
+      float fogFactor = 1.0 - exp(- fogDensity * fogDensity * vFogDepth * vFogDepth);
+    #else
+      float fogFactor = smoothstep(fogNear, fogFar, vFogDepth);
+    #endif
+    rgb = mix(rgb, fogColor, fogFactor);
+  #endif
+  gl_FragColor = vec4(rgb * a, a * (1.0 - vAdd));
   #include <colorspace_fragment>
 }`;
 
@@ -97,6 +110,7 @@ interface Compiled {
   size: [number, number][];
   spin: [number, number];
   frames: number[];
+  add: number; amb: boolean;
   flash: { r: number; g: number; b: number; intensity: number; dur: number } | null;
 }
 interface Inst {
@@ -106,7 +120,7 @@ interface Inst {
 
 const tmpC = new T.Color();
 function compile(d: EffectDef): Compiled {
-  const c: Compiled = { def: d, life: d.life, vel: null, g: 0, drag: 0, wind: 0, col: [{ t: 0, r: 1, g: 1, b: 1, a: 1 }, { t: 1, r: 1, g: 1, b: 1, a: 0 }], size: [[0, 0.1], [1, 0.1]], spin: [0, 0], frames: [0], flash: null };
+  const c: Compiled = { def: d, life: d.life, vel: null, g: 0, drag: 0, wind: 0, col: [{ t: 0, r: 1, g: 1, b: 1, a: 1 }, { t: 1, r: 1, g: 1, b: 1, a: 0 }], size: [[0, 0.1], [1, 0.1]], spin: [0, 0], frames: [0], add: d.additive ? 1 : 0, amb: !!d.ambient, flash: null };
   for (const m of d.modules as ModuleBlock[]) {
     switch (m.kind) {
       case 'velocity': c.vel = { dir: m.dir, spread: m.spread, speed: m.speed }; break;
@@ -132,6 +146,10 @@ export interface MotorFx extends Fx {
   /** Stop every instance and clear particles (zone leave, tests). */
   clear(): void;
   capacity(): number;
+  /** GRS-07: light colour for smoke/steam (render.onTime: night tint, floor 0.70); additive particles ignore it */
+  setAmbient(r: number, g: number, b: number): void;
+  /** live particles of ambient (continuous) effects */
+  liveAmbient(): number;
 }
 
 export function createFx(deps: FxDeps): MotorFx {
@@ -142,6 +160,7 @@ export function createFx(deps: FxDeps): MotorFx {
   const vx = new Float32Array(CAP_MAX), vy = new Float32Array(CAP_MAX), vz = new Float32Array(CAP_MAX);
   const age = new Float32Array(CAP_MAX), life = new Float32Array(CAP_MAX), rot = new Float32Array(CAP_MAX), spin = new Float32Array(CAP_MAX), frame = new Float32Array(CAP_MAX), sizeK = new Float32Array(CAP_MAX);
   const owner: (Compiled | null)[] = new Array(CAP_MAX).fill(null);
+  let nAmb = 0;
   let n = 0, cap = 500, tierScale = 1, tierIdx = 1, clock = 0, windX = 1, windZ = 0;
   const insts: Inst[] = [];
   const geo = new T.InstancedBufferGeometry();
@@ -149,12 +168,13 @@ export function createFx(deps: FxDeps): MotorFx {
   geo.index = quad.index; geo.setAttribute('position', quad.attributes.position); geo.setAttribute('uv', quad.attributes.uv);
   const aPos = new T.InstancedBufferAttribute(new Float32Array(CAP_MAX * 4), 4).setUsage(T.DynamicDrawUsage);
   const aCol = new T.InstancedBufferAttribute(new Float32Array(CAP_MAX * 4), 4).setUsage(T.DynamicDrawUsage);
-  const aMisc = new T.InstancedBufferAttribute(new Float32Array(CAP_MAX * 2), 2).setUsage(T.DynamicDrawUsage);
+  const aMisc = new T.InstancedBufferAttribute(new Float32Array(CAP_MAX * 3), 3).setUsage(T.DynamicDrawUsage);
   geo.setAttribute('iPos', aPos); geo.setAttribute('iCol', aCol); geo.setAttribute('iMisc', aMisc);
   geo.instanceCount = 0;
   const mat = new T.ShaderMaterial({
-    uniforms: T.UniformsUtils.merge([T.UniformsLib.fog, { map: { value: null } }]),
+    uniforms: T.UniformsUtils.merge([T.UniformsLib.fog, { map: { value: null }, uTint: { value: new T.Color(1, 1, 1) } }]),
     vertexShader: VERT, fragmentShader: FRAG, transparent: true, depthWrite: false, fog: true,
+    blending: T.CustomBlending, blendSrc: T.OneFactor, blendDst: T.OneMinusSrcAlphaFactor, blendEquation: T.AddEquation,
   });
   mat.uniforms.map.value = makeAtlas();
   // plain Mesh + InstancedBufferGeometry: the instance count comes from geo.instanceCount (no instanceMatrix).
@@ -165,11 +185,13 @@ export function createFx(deps: FxDeps): MotorFx {
   function setTier(t: TierDef) {
     cap = Math.min(CAP_MAX, t.particles); tierIdx = t.name === 'akici' ? 0 : t.name === 'dengeli' ? 1 : 2;
     tierScale = 1; if (n > cap) n = cap;
+    nAmb = 0; for (let i = 0; i < n; i++) if (owner[i]?.amb) nAmb++;
   }
   setTier(deps.quality.current());
 
   function spawn(c: Compiled, inst: Inst, e: EmitterBlock, k: number, count: number) {
     if (n >= cap) return false;
+    if (c.amb) { if (nAmb >= Math.floor(cap * AMBIENT_SHARE)) return false; nAmb++; }   // GRS-07: events always find room
     const i = n++;
     const sx = (e.size?.x ?? 0.1) * inst.scale, sz = (e.size?.z ?? sx) * inst.scale, sy = (e.size?.y ?? 0) * inst.scale;
     let ox = 0, oy = 0, oz = 0;
@@ -191,6 +213,7 @@ export function createFx(deps: FxDeps): MotorFx {
   }
   function flashP(c: Compiled, inst: Inst) {
     if (!c.flash || n >= cap) return;
+    if (c.amb) nAmb++;
     const i = n++;
     px[i] = inst.at.x; py[i] = inst.at.y; pz[i] = inst.at.z; vx[i] = vy[i] = vz[i] = 0; age[i] = 0; life[i] = c.flash.dur; rot[i] = 0; spin[i] = 0; frame[i] = 11; sizeK[i] = -c.flash.intensity * inst.scale; owner[i] = c;
   }
@@ -226,7 +249,9 @@ export function createFx(deps: FxDeps): MotorFx {
     setWind(x, z) { windX = x; windZ = z; },
     live: () => n,
     capacity: () => cap,
-    clear() { n = 0; for (const i of insts) i.alive = false; insts.length = 0; geo.instanceCount = 0; },
+    setAmbient(r, g, b) { (mat.uniforms.uTint.value as T.Color).setRGB(r, g, b); },
+    liveAmbient: () => nAmb,
+    clear() { n = 0; nAmb = 0; for (const i of insts) i.alive = false; insts.length = 0; geo.instanceCount = 0; },
     update(dt) {
       dt = Math.min(Math.max(dt, 0), 0.1); clock += dt;
       // ---- emit
@@ -260,6 +285,7 @@ export function createFx(deps: FxDeps): MotorFx {
         let c = owner[i] as Compiled;
         age[i] += dt;
         while (age[i] >= life[i] && i < n) {
+          if (owner[i]?.amb) nAmb--;
           const last = --n;
           if (i === last) break;
           px[i] = px[last]; py[i] = py[last]; pz[i] = pz[last]; vx[i] = vx[last]; vy[i] = vy[last]; vz[i] = vz[last];
@@ -292,15 +318,15 @@ export function createFx(deps: FxDeps): MotorFx {
           const s0 = ss[j], s1 = ss[Math.min(j + 1, ss.length - 1)], w = s1[0] > s0[0] ? Math.min(1, Math.max(0, (u - s0[0]) / (s1[0] - s0[0]))) : 0;
           size = (s0[1] + (s1[1] - s0[1]) * w) * sizeK[i];
         }
-        const o4 = i * 4, o2 = i * 2;
+        const o4 = i * 4, o3 = i * 3;
         P[o4] = px[i]; P[o4 + 1] = py[i]; P[o4 + 2] = pz[i]; P[o4 + 3] = size;
         Cc[o4] = r; Cc[o4 + 1] = g; Cc[o4 + 2] = b; Cc[o4 + 3] = a;
-        M[o2] = rot[i]; M[o2 + 1] = frame[i];
+        M[o3] = rot[i]; M[o3 + 1] = frame[i]; M[o3 + 2] = c.add;
       }
       geo.instanceCount = n; mesh.visible = n > 0;
       aPos.needsUpdate = aCol.needsUpdate = aMisc.needsUpdate = true;
-      aPos.addUpdateRange(0, n * 4); aCol.addUpdateRange(0, n * 4); aMisc.addUpdateRange(0, n * 2);
-      if (deps.perf) deps.perf.count('fx.live', n);
+      aPos.addUpdateRange(0, n * 4); aCol.addUpdateRange(0, n * 4); aMisc.addUpdateRange(0, n * 3);
+      if (deps.perf) { deps.perf.count('fx.live', n); deps.perf.count('fx.ambient', nAmb); }
     },
   };
   return fx;

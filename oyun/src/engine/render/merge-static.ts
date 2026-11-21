@@ -47,7 +47,7 @@ export function mergeStatic(root: T.Object3D, opts: { keepGeometry?: boolean } =
     const f = list[0], out = new T.Mesh(geo, f.material);
     out.name = (root.name || 'grup') + ':birlesik'; out.castShadow = f.castShadow; out.receiveShadow = f.receiveShadow; out.renderOrder = f.renderOrder;
     root.add(out);
-    for (const m of list) { m.parent?.remove(m); if (!opts.keepGeometry) m.geometry.dispose(); }
+    for (const m of list) { for (const c of [...m.children]) root.attach(c); m.parent?.remove(m); if (!opts.keepGeometry) m.geometry.dispose(); }   // GRS-06: a part's contact plane stays
     saved += list.length - 1;
   }
   return saved;

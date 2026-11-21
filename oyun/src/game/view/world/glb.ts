@@ -7,7 +7,14 @@ import * as T from 'three';
 const cache = new Map<string, Promise<T.Object3D | null>>();
 /* sky environment map (render.onEnv) shared by every GLB material: low-poly cars and buildings pick up sky reflections */
 const envMats = new Set<T.MeshStandardMaterial>(); let envTex: T.Texture | null = null;
-export function setGlbEnv(t: T.Texture | null) { envTex = t; envMats.forEach(m => { m.envMap = t; m.needsUpdate = true; }); }
+// GRS-05: a texture swap is a uniform change; only null <-> texture changes the program (USE_ENVMAP), so only that recompiles
+// (was needsUpdate on every half-hour refresh = every env material relinked twice per game hour)
+export function setGlbEnv(t: T.Texture | null) { envTex = t; envMats.forEach(m => { const relink = !m.envMap !== !t; m.envMap = t; if (relink) m.needsUpdate = true; }); }
+/* GRS-17: tier gate for sky reflections (akıcı 0). envMapIntensity is a uniform: no relink; the base per material is kept once. */
+const envBase = new WeakMap<T.MeshStandardMaterial, number>(); let envK = 1;
+export function setGlbEnvK(k: number) { envK = Math.max(0, Math.min(1, +k)); envMats.forEach(m => { if (!envBase.has(m)) envBase.set(m, m.envMapIntensity); m.envMapIntensity = envBase.get(m)! * envK; }); }
+export const glbEnvK = () => envK;
+const envKApply = (m: T.MeshStandardMaterial) => { envBase.set(m, m.envMapIntensity); m.envMapIntensity *= envK; };
 /* tinted building materials get a daylight-only emissive lift (Kenney colormaps are dark); night dims it so walls do not glow */
 const liftMats = new Set<T.MeshStandardMaterial>(); let nightK = 0;
 export function setGlbNight(n: number) { nightK = Math.max(0, Math.min(1, n)); liftMats.forEach(m => { m.emissiveIntensity = 0.32 * (1 - nightK) + 0.03; }); }
@@ -16,11 +23,11 @@ function envReg(m: T.MeshStandardMaterial, kind: EnvKind) {
   if (!m.isMeshStandardMaterial || envMats.has(m) || kind === 'skip') return;
   const glossy = kind === 'glossy';
   m.envMapIntensity = glossy ? 0.7 : 0.35; m.roughness = Math.min(m.roughness, glossy ? 0.42 : 0.85); if (glossy) m.metalness = Math.max(m.metalness, 0.15);
-  if (envTex) { m.envMap = envTex; m.needsUpdate = true; } envMats.add(m);
+  if (envTex) { m.envMap = envTex; m.needsUpdate = true; } envMats.add(m); envKApply(m);
 }
 /** Let a non-GLB material (procedural buildings) pick up the same sky reflections. */
 export function useSkyEnv(m: T.MeshStandardMaterial, kind: 'matte' | 'glass') {
-  if (kind === 'glass') { m.envMapIntensity = 1.15; envMats.add(m); if (envTex) { m.envMap = envTex; m.needsUpdate = true; } return; }
+  if (kind === 'glass') { if (envMats.has(m)) return; m.envMapIntensity = 1.15; envMats.add(m); envKApply(m); if (envTex) { m.envMap = envTex; m.needsUpdate = true; } return; }
   envReg(m, 'matte');
 }
 /* PRF-15: every Kenney kit file points at the same Textures/colormap.png with the same material; each GLTFLoader load made its own

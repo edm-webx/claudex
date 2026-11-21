@@ -17,6 +17,7 @@
 import * as T from 'three';
 import type { ZoneManager, Vec2, Disposer } from '../../../engine/api';
 import { todAt } from '../../../engine/render/tod';
+import { REFLECT_LAYER } from '../../../engine/render/reflect';
 import { LAMPS } from '../../../content/prefabs/iskele/pier';
 import { PLAN_DT, pickLamps, assignSlots, stepFade, smooth01, floresanNoktasi, vitrinLambalari, type FadeState } from './night-lights-plan';
 import { IC_BY_ID, IC_MEKANLAR } from '../../../content/ic-mekan';
@@ -78,7 +79,7 @@ export function createNightLights(o: { scene: T.Scene; zones: ZoneManager | null
     n = Math.max(1, Math.min(16, Math.round(n)));
     while (lights.length < n) {
       const l = new T.PointLight('#ffcf8a', 0, tune.range, 1.6);
-      l.castShadow = false; l.name = 'nightLight' + lights.length; o.scene.add(l); lights.push(l);
+      l.castShadow = false; l.name = 'nightLight' + lights.length; l.layers.enable(REFLECT_LAYER); o.scene.add(l); lights.push(l);   // GRS-05: same light set in the water mirror pass
       slots.push({ cur: -1, want: -1, k: 0, px: 0, py: -50, pz: 0, base: 0, col: COL_POST });
     }
     while (lights.length > n) { const l = lights.pop()!; o.scene.remove(l); l.dispose(); slots.pop(); }

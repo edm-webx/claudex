@@ -9,6 +9,8 @@
  */
 import * as T from 'three';
 import { zeminDetay, tahtaDoku } from '../../../engine/render/zemin-detay';
+import { wetZemin } from '../../../engine/render/zemin-islak';
+import { groundAo } from '../../../engine/render/zemin-ao';
 import { Batch, PI, TAU, type UVRect } from '../../../engine/prefab/batch';
 
 type G = CanvasRenderingContext2D;
@@ -314,6 +316,8 @@ export function ensureKit(): void {
   MAT.glass = new T.MeshLambertMaterial({ color: '#cfeaf4', transparent: true, opacity: 0.32, depthWrite: false });
   MAT.marker = new T.MeshBasicMaterial({ color: K.yellow, transparent: true, opacity: 0.85, depthWrite: false });
   zeminDetay(MAT.atlas); zeminDetay(MAT.stone, { force: 1, ds: 0.55 }); tahtaDoku(MAT.plank);
+  wetZemin(MAT.atlas); wetZemin(MAT.stone); wetZemin(MAT.plank);   // GRS-05: rain darkens the deck/pavement, sky sheen at grazing angles
+  for (const m of [MAT.atlas, MAT.stone, MAT.plank, MAT.tile, MAT.floor]) groundAo(m);   // GRS-06: soft dark foot of walls and posts
 }
 /** All canvas textures of the kit (zones dispose/re-upload them with the pier). */
 export function kitTextures(): T.Texture[] { return ready ? [atlasTex, plankTex, stoneTex, tileNewTex, tileWornTex, floorTex, radialTex] : []; }

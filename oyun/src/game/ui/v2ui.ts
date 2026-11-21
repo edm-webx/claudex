@@ -7,6 +7,7 @@
 // is no global SB; DOM events 'ui:open' / 'ui:close' are dispatched on ui.root like engine/ui does.
 import { TIER_PRICE_X } from '../../content/ekonomi2';
 import { KIOSK_STAGES } from '../../content/stages';
+import { kaliteSatiri } from '../../content/kalite-metin';
 import type { Ui } from '../../engine/api';
 import { ICONS, INK } from '../../engine/ui/v2-style';
 import { renderEsnaf, renderKomsuSection } from './esnaf-panel';
@@ -815,7 +816,7 @@ function renderAyarlar(m, A) {
     s += `<div class="sb-card sb-set">${ICONS.sound}<div class="sb-grow"><h3>Kendi müziğini dinle</h3><p>Oyunun müziği susar, çay kaşığı ve martılar kalır.</p></div><button class="sb-tog${om ? ' on' : ''}" data-a="setOwnMusic" data-id="${om ? 0 : 1}" aria-label="Kendi müziğini dinle" aria-pressed="${om}"></button></div>`;
   }
   if (A.setHaptic) { const hp = m.haptic !== false; s += `<div class="sb-card sb-set">${ICONS.vibrate}<div class="sb-grow"><h3>Titreşim</h3><p>Para toplarken kısa titreşim</p></div><button class="sb-tog${hp ? ' on' : ''}" data-a="setHaptic" data-v="${hp ? 0 : 1}" aria-label="Titreşim" aria-pressed="${hp}"></button></div>`; }
-  s += `<div class="sb-card"><div class="sb-set" style="min-height:0;margin-bottom:8px">${ICONS.quality}<div class="sb-grow"><h3>Görüntü kalitesi</h3><p>Otomatik, telefonuna göre ayarlar.</p></div></div><div class="sb-seg">${QUAL.map(x => `<button class="${q === x[0] ? 'on' : ''}" data-a="setQuality" data-v="${x[0]}">${x[1]}</button>`).join('')}</div></div>`;
+  s += `<div class="sb-card"><div class="sb-set" style="min-height:0;margin-bottom:8px">${ICONS.quality}<div class="sb-grow"><h3>Görüntü kalitesi</h3><p>Otomatik, telefonuna göre ayarlar.</p></div></div><div class="sb-seg">${QUAL.map(x => `<button class="${q === x[0] ? 'on' : ''}" data-a="setQuality" data-v="${x[0]}">${x[1]}</button>`).join('')}</div><p class="sb-kalite" style="font-size:14px;margin:8px 2px 0">${kaliteSatiri(q, m.tierNow || null)}</p></div>`;
   if (A.setHand) { const hd = m.hand === 'sol' ? 'sol' : 'sag'; s += `<div class="sb-card"><div class="sb-set" style="min-height:0;margin-bottom:8px">${ICONS.hand}<div class="sb-grow"><h3>El tarafı</h3><p>Düğmeler elinin tarafına geçer.</p></div></div><div class="sb-seg two"><button class="${hd === 'sol' ? 'on' : ''}" data-a="setHand" data-v="sol">Sol el</button><button class="${hd === 'sag' ? 'on' : ''}" data-a="setHand" data-v="sag">Sağ el</button></div></div>`; }
   if (A.setPerf) { const pf = !!m.perf; s += `<div class="sb-card"><div class="sb-set" style="min-height:0">${ICONS.stopwatch}<div class="sb-grow"><h3>Hız ölçer</h3><p>Kare hızı ve en yavaş parçalar. Raporu kopyalayıp gönderebilirsin.</p></div><button class="sb-tog${pf ? ' on' : ''}" data-a="setPerf" data-v="${pf ? 0 : 1}" aria-label="Hız ölçer" aria-pressed="${pf}"></button></div>${A.copyReport ? `<div class="sb-mrow" style="margin-top:8px">${btn('Raporu kopyala', 'copyReport', null, 'blue sm', null, { icon: 'newspaper' })}</div>` : ''}</div>`; }
   if (A.karakterDegis) s += `<div class="sb-card sb-set">${ICONS.people}<div class="sb-grow"><h3>Karakter değiştir</h3><p>Kaydeder, hesabına döner. 4 yuvadan başkasını seçersin.</p></div>${btn('Değiştir', 'karakterDegis', null, 'blue sm')}</div>`;

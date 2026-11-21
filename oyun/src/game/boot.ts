@@ -43,7 +43,7 @@ import { createInput } from '../engine/input';
 import { createLoop } from '../engine/loop';
 import { createLogger, angLerp } from '../engine/core';
 import { createRender } from '../engine/render';
-import { setGlbEnv, setGlbNight } from './view/world/glb';
+import { setGlbEnv, setGlbNight, setGlbEnvK, glbEnvK } from './view/world/glb';
 import { mulkApi } from './sim/mulk';
 import { createDress } from '../engine/dress';
 import { createPrefabs } from '../engine/prefab';
@@ -124,7 +124,9 @@ import { createDekorLook, type DekorLookView } from './view/world/dekor-look';
 import { createEvRoom, type EvRoomView } from './view/ev/ev-room';
 import { createTipJar, type TipJarView } from './view/world/tip-jar';
 import { createReklam, type ReklamView } from './view/world/reklam';
-import { createHavaLook, type HavaLookView } from './view/world/hava-look';
+import { createHavaLook, HAVA_ZORLA, type HavaLookView } from './view/world/hava-look';
+import { Batch } from '../engine/prefab/batch';
+import { setGroundAo } from '../engine/render/zemin-ao';
 import { createDenizLook, type DenizLookView } from './view/world/deniz-look';
 import { createDenizUi, type DenizUiView } from './ui/deniz-ui';
 import { createHuyMotion, type HuyMotionView } from './view/chars/huy-motion';
@@ -182,6 +184,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const cloudOnly = !/[?&](autoplay|save|fresh|parity|edit)\b/.test(location.search);
   const platform: Platform = make('platform', () => cloudOnly ? createPlatform({ localStorage: memStore(), indexedDB: null }) : createPlatform()) ?? createPlatform({ localStorage: null, indexedDB: null });
   const params = platform.params;
+  if (params.raw.noao !== undefined) { Batch.contact = false; setGroundAo(0); }   // GRS-06 A/B: no ground AO, no contact planes
   perf = make('perf', () => createPerf({ platform, root: app }));
   const P: PerfMeter = perf ?? createPerf({});
   perf = P;
@@ -218,6 +221,8 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const nav: Nav = make('nav', () => createNav({ log })) ?? openNav();
   const anim: AnimApi | null = make('anim', () => createAnim({ log }));
   const fx: Fx | null = make('fx', () => createFx({ scene, quality, dress: dress ?? undefined, perf: P }));
+  // GRS-07: smoke/steam take the light's colour at night (floor 0.70: still readable on dark ground, never a bright white blot)
+  if (fx) (R as unknown as { onTime?: (cb: (t: { n: number }) => void) => void }).onTime?.(t => { const n = Math.max(0, Math.min(1, t.n)); (fx as unknown as { setAmbient?(r: number, g: number, b: number): void }).setAmbient?.(1 - 0.30 * n, 1 - 0.27 * n, 1 - 0.18 * n); });
   const chars: Chars | null = anim && dress ? make('chars', () => createChars({ scene, anim, dress, quality, fx: fx ?? undefined, perf: P })) : null;
   if (!(anim && dress)) warn('chars', new Error('skipped: anim/dress missing, capsule hero, no crowd'));
   let world: (GameView & AnyRec) | null = zones && prefab && dress
@@ -414,7 +419,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const copyReport = () => { void platform.copyText(P.dump().kayit ? JSON.stringify(P.dump()) : P.report()).then(ok => U.toast(ok ? 'Rapor kopyalandı.' : 'Kopyalanamadı, hız ölçerden dene.', ok ? 'good' : 'info')); };
   const panels: Panels | null = playMode && uiReal ? make('panels', () => createPanels({
     ui: U, sim, models: { panelModel: panelModel as never, panelActions: panelActions as never }, audio: audio ?? undefined, extraSettings,
-    perf: { visible: () => !!P.visible, show: (on: boolean) => { try { P.show(on); } catch { /* headless */ } }, copy: copyReport },
+    perf: { visible: () => !!P.visible, show: (on: boolean) => { try { P.show(on); } catch { /* headless */ } }, copy: copyReport }, quality,
   })) : null;
   const labels = playMode && uiReal ? make('labels', () => createHtmlLabels(U.root)) : null;
   const project = (p: Vec3, out: ScreenPt) => R.worldToScreen(p, out);
@@ -605,11 +610,13 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   // ── tier changes
   const applyTier = (t: TierDef) => {
     make('render.setTier', () => { R.setTier(t); return true; });
+    setGlbEnvK(t.flags.reflect ? 1 : 0);   // GRS-17: sky reflections only on reflect tiers (uniform; no relink)
     if (chars) make('crowd.setBudget', () => { chars.crowd.setBudget(t.crowd); return true; });
     if (fx) make('fx.setTier', () => { fx.setTier(t); return true; });
     sim.state.settings.autoTier = t.name;
   };
   quality.onChange(applyTier);
+  setGlbEnvK(quality.current().flags.reflect ? 1 : 0);
   if (nightLights) quality.onChange(t => make('nightLights.setTier', () => { nightLights.setTier(t); return true; }));   // PRF-08: ışık sayısı yalnız kademe değişiminde
   quality.onChange(() => { void R.warm?.(scene, cam.camera); });   // PRF-03: gölge + ışık havuzu değişti; yeni programlar paralel derlensin (kare içinde değil)
   quality.onScale?.(sc => make('render.setScale', () => { R.setScale?.(sc); P.count('olcekYuzde', Math.round(sc * 100)); return true; }));
@@ -894,7 +901,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   // PRF-06: bölge/prefab başına çizim maliyeti tablosu (yalnız okur). game.js 2.5 MB sınırı yüzünden yalnız geliştirme ve ölçüm
   // derlemesinde (vite --mode olcum; tests/browser/cizim-butce.mjs --build) var, oyuncu derlemesinde ağaçtan atılır.
   // GRS-05: A/B ölçümü için yansıma geçişini aç/kapat ve durumunu oku (yalnız ölçüm/geliştirme derlemesi)
-  if (import.meta.env.MODE !== 'production') reg('yansima', (on?: boolean) => { const rf = (R as unknown as { reflector?: { setBudget(b: unknown): void; on: boolean; stats(): unknown } }).reflector; if (!rf) return null; if (on === false) rf.setBudget(null); else if (on === true) rf.setBudget(reflectBudget(quality.current().name)); return { on: rf.on, ...(rf.stats() as object) }; });
+  if (import.meta.env.MODE !== 'production') reg('yansima', (on?: boolean) => { const rf = (R as unknown as { reflector?: { setBudget(b: unknown): void; on: boolean; stats(): unknown } }).reflector; if (!rf) return null; if (on === false) rf.setBudget(null); else if (on === true) rf.setBudget(reflectBudget(quality.current())); return { on: rf.on, ...(rf.stats() as object) }; });
   if (import.meta.env.MODE !== 'production') reg('drawCost', (top = 20) => { const sun = (R as unknown as { sun?: { castShadow: boolean; shadow: { camera: Parameters<typeof drawCostTable>[1] } } }).sun; return drawCostTable(scene, cam.camera, sun?.castShadow ? sun.shadow.camera : null, top || 20); });
   if (import.meta.env.MODE !== 'production') reg('shadowCull', (on?: boolean) => { const r = R as unknown as { shadowCull?: boolean; shadowStats?: () => unknown }; if (on !== undefined && r.shadowCull !== undefined) r.shadowCull = !!on; return { on: r.shadowCull ?? false, ...(r.shadowStats?.() as object ?? {}) }; });   // PRF-06 A/B ölçüm kancası
   if (import.meta.env.MODE !== 'production') reg('sahneKutu', (k: Parameters<typeof kutuda>[1], max?: number) => kutuda(scene, k, max));   // PRF-09 hayaletlenme tanısı
@@ -903,6 +910,11 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   if (import.meta.env.MODE !== 'production') reg('dokuAkis', (tam?: boolean) => { if (tam !== undefined) akisZorla(!!tam); return akisDurum(); });   // PRF-15 A/B: akış kapalıyken (hep tam) görüntü aynı mı
   if (import.meta.env.MODE !== 'production') reg('kameraNear', (v: number | null) => { (cam as unknown as { nearFixed?(v: number | null): void }).nearFixed?.(v ?? null); return cam.camera.near; });   // PRF-09 A/B
   if (import.meta.env.MODE !== 'production') reg('heroPoz',() => { const o = H.object.position; return { x: +o.x.toFixed(3), y: +o.y.toFixed(3), z: +o.z.toFixed(3), camY: +cam.camera.position.y.toFixed(3), near: cam.camera.near }; });
+  if (import.meta.env.MODE !== 'production') reg('yagmur', (k?: number, islak?: number) => { if (k !== undefined) HAVA_ZORLA.yagmur = k === null ? -1 : +k; if (islak !== undefined) HAVA_ZORLA.islak = +islak; return HAVA_ZORLA.yagmur; });   // GRS-05 ıslak zemin çekimi
+  // GRS-06 A/B in one frame: ground AO uniform and contact planes on/off (measurement builds only)
+  if (import.meta.env.MODE !== 'production') reg('ao', (on: boolean) => { setGroundAo(on ? 0.3 : 0); let n = 0; scene.traverse(o => { if (o.name === 'contact') { o.visible = !!on; n++; } }); return n; });
+  if (import.meta.env.MODE !== 'production') reg('malzeme', (name: string) => { const o = scene.getObjectByName(name) as unknown as { material?: { type: string; opacity: number; envMap: unknown; envMapIntensity?: number }; visible: boolean } | undefined; const m = o?.material; return m ? { type: m.type, opacity: m.opacity, env: !!m.envMap, envK: m.envMapIntensity ?? null, visible: o!.visible } : null; });   // GRS-05 cam denetimi
+  reg('gfx', () => ({ ...((R as unknown as { gfxState?: () => object }).gfxState?.() ?? {}), envK: glbEnvK() }));   // GRS-17: tier gözlem kancası
   reg('lights', () => nightLights?.stats() ?? null);   // PRF-08: gece ışığı havuzu durumu
   reg('setTime', (h: number) => { sim.command({ kind: 'setTime', hour: h }); lastHour = -1; timeT = 0; gSaat.sifirla(sim.clock.hour, sim.state.day); guard('setTime', () => { R.setTime(sim.clock.hour, sim.clock.season); havaLook?.relight(); }); });
   reg('setStage', (n: number) => { sim.command({ kind: 'setStage', stage: n }); callWorld('setStage', sim.state.stage, sim.state.renewed); });

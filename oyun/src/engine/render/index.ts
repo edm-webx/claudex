@@ -4,8 +4,8 @@
  * Decisions where MOTOR/CONTRACT are silent:
  * - The renderer is created in createRender when `deps.canvas` is given (init() with the same canvas is then a no-op),
  *   so `render.scene`/`render.camera` are usable right away. WebGL failure throws (boot shows #fail / fallback).
- * - setTier: antialias is a context attribute and cannot change on a live canvas; an AA change is stored and applies
- *   on the next page load (v2 did the same: AA was decided once from guessTier). Pixel ratio, shadows apply live.
+ * - setTier: GRS-17: antialias is the composer target's MSAA (live), not a canvas attribute; the post chain, shadow map and
+ *   sun.castShadow are the same in every tier, so a tier change relinks no program. Pixel ratio, shadows apply live.
  * - Extras beyond RenderPipeline (typed as MotorRender): onTime(cb) for views that tint their own materials (sea,
  *   night glow), tod()/night/hour/phase, horizon (camera sees the horizon; skyline culling), setFocus(x, z)
  *   (shadow box follows the camera, also done automatically every 10 frames like v2), sun/hemi/sky handles.
@@ -27,7 +27,9 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { akisGuncelle } from './doku-akis';
-import { createReflector, reflectBudget, type Reflector } from './reflect';
+import { groundRadius, nextShadowExt } from './shadow-fit';
+import { renderScale } from '../quality';
+import { createReflector, reflectBudget, REFLECT_LAYER, type Reflector } from './reflect';
 
 export { todAt, phaseAt, TOD } from './tod';
 export type { Tod } from './tod';
@@ -71,6 +73,8 @@ export interface MotorRender extends RenderPipeline {
   warm(sc: T.Scene, cam: T.Camera): Promise<void>;
   /** PRF-03: programs born in warm() vs inside a frame (blocking), a warm still compiling, and the last frame-born program names */
   warmStats(): { born: { draw: number; warm: number }; busy: boolean; lastDrawBorn: string[] };
+  /** GRS-17: what the current tier really switched on (test hook 'gfx') */
+  gfxState(): Record<string, unknown>;
 }
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
@@ -117,6 +121,8 @@ export function createRender(deps: RenderDeps): MotorRender {
   // v2 world.js light rig
   const hemi = new T.HemisphereLight('#dcefff', '#9a8a74', 1.45); hemi.name = 'hemi'; env.add(hemi);
   const sun = new T.DirectionalLight('#fff4e2', 2.3); sun.name = 'sun'; env.add(sun, sun.target);
+  // GRS-05: three r160 culls lights by camera layers too; the mirrored pass needs the same light set (lit, and no second program variant)
+  hemi.layers.enable(REFLECT_LAYER); sun.layers.enable(REFLECT_LAYER);
   const focus = new T.Vector3(-0.8, 0, -3.5), sunDir = new T.Vector3(0.3, 0.8, 0.4).normalize();
   const placeSun = () => { sun.target.position.copy(focus); sun.position.copy(focus).addScaledVector(sunDir, 32); sun.target.updateMatrixWorld(); sun.updateMatrixWorld(); };
   placeSun();
@@ -127,6 +133,7 @@ export function createRender(deps: RenderDeps): MotorRender {
     const skyOBR = sky.onBeforeRender.bind(sky), fwd = new T.Vector3();
     sky.onBeforeRender = (r, s, cam, g, m, gr) => {
       skyOBR(r, s, cam, g, m, gr);
+      if (cam === reflector.camera) return;   // GRS-05: the mirrored pass looks up through the water; horizon stays the player's
       cam.getWorldDirection(fwd);
       const half = (cam as T.PerspectiveCamera).isPerspectiveCamera ? (cam as T.PerspectiveCamera).fov * Math.PI / 360 : 0.6;
       horizon = Math.asin(Math.max(-1, Math.min(1, -fwd.y))) - half < 0.12;
@@ -248,32 +255,43 @@ export function createRender(deps: RenderDeps): MotorRender {
   };
   let canvasEl: HTMLCanvasElement | null = null;
   let tier: TierDef | null = null;
-  let wantAA: boolean | null = null;
   let hour = 11, tod = todAt(11), night = 0;
   let frameNo = 0, lost = false, resScale = 1, postCut = false;
   // PRF-12: on a post-chain tier (bloom) the dynamic resolution scale shrinks only the composer's targets: the scene is drawn
   // smaller and the last full-screen pass (GRADE) stretches it to the full canvas with linear filtering. Resizing the canvas
   // itself is a synchronous drawing-buffer reallocation (1-16 s per step in headless SwiftShader, olcek-gecis.mjs) and it was
   // done twice per step (setPixelRatio + resize). Akıcı has no post chain, so its canvas still follows the scale, once.
-  const basePR = (t: TierDef) => Math.min((typeof window !== 'undefined' && window.devicePixelRatio) || 1, t.pixelRatio);
-  const postTier = (t: TierDef) => !!(t.flags && t.flags.bloom);
+  const basePR = (t: TierDef) => renderScale(t, (typeof window !== 'undefined' && window.devicePixelRatio) || 1);   // GRS-17: tier floor on DPR 1 screens
+  // GRS-17: the post chain runs in EVERY tier when the GPU can (WebGL2 + float colour buffer): the same program path in all tiers, so a
+  // tier change relinks nothing (screen vs target toneMapping is in every program key). Akıcı only switches the bloom pass off and
+  // gets the GRADE look too. Without float targets the old direct path stays (tier changes then relink; logged once).
+  let postOk = false;
+  const postTier = (t: TierDef) => postOk || !!(t.flags && t.flags.bloom);
   const canvasPR = (t: TierDef) => postTier(t) ? basePR(t) : basePR(t) * resScale;
   const _rs = new T.Vector2();
   const timeSubs = new Set<(t: Tod, h: number) => void>();
   const lostSubs = new Set<() => void>(), restoredSubs = new Set<() => void>();
   let loseExt: { loseContext(): void; restoreContext(): void } | null = null;
   const lastInfo: RenderInfo = { calls: 0, tris: 0, geos: 0, texs: 0 };
+  /** GRS-05: last frame's mirrored pass (calls/tris it added, main-pass calls before it); `ever` = a target was ever drawn */
+  const reflInfo = { ran: false, ever: false, calls: 0, tris: 0, main: 0 };
 
   // post-process (tier flag `bloom`): MSAA half-float target -> bloom -> OutputPass (tone mapping + sRGB)
   let composer: EffectComposer | null = null, rpass: RenderPass | null = null, bloom: UnrealBloomPass | null = null, grade: ShaderPass | null = null;
   function setupPost(t: TierDef) {
-    const want = !!(renderer && t.flags && t.flags.bloom);
+    const want = !!renderer && postTier(t);
     // PRF-15: EffectComposer.dispose frees only its own two targets; the bloom pass keeps ~10 half-float mip targets and every
     // pass its material, so each switch to a no-bloom tier leaked them on the GPU. Passes are disposed first now.
     // GRS-01: without the post chain (akıcı) the grade runs inside tone mapping (look.ts CustomToneMapping); with it, ACES + GRADE pass
     if (renderer) { renderer.toneMapping = want ? T.ACESFilmicToneMapping : T.CustomToneMapping; renderer.toneMappingExposure = want ? LOOK_POZ.ana : LOOK_POZ.ana * AKICI_POZ; }
     if (!want) { if (composer) { composer.passes.forEach(ps => { try { ps.dispose(); } catch { /* */ } }); composer.dispose(); composer = null; rpass = null; bloom = null; grade = null; } return; }
-    if (composer) return;
+    if (composer) {
+      if (bloom) bloom.enabled = !!t.flags?.bloom && !postCut;
+      // GRS-17: MSAA follows the tier live (only the scene target is multisampled; samples are not in any program key)
+      const rb = (composer as unknown as { renderTarget2: T.WebGLRenderTarget }).renderTarget2, ns = t.antialias ? 4 : 0;
+      if (rb.samples !== ns) { rb.samples = ns; rb.dispose(); }
+      return;
+    }
     const { w, h } = size(), pr = basePR(t) * resScale;
     const target = new T.WebGLRenderTarget(Math.round(w * pr), Math.round(h * pr), { type: T.HalfFloatType, samples: t.antialias ? 4 : 0 });
     composer = new EffectComposer(renderer!, target);
@@ -290,7 +308,7 @@ export function createRender(deps: RenderDeps): MotorRender {
     grade = new ShaderPass(GRADE); composer.addPass(grade);
     composer.setPixelRatio(pr); composer.setSize(w, h);
     tuneBloom();
-    bloom.enabled = !postCut;
+    bloom.enabled = !!t.flags?.bloom && !postCut;
   }
   let look = lookAt(hour, night);
   function tuneBloom() {
@@ -310,7 +328,8 @@ export function createRender(deps: RenderDeps): MotorRender {
   function refreshEnv() {
     if (!renderer) return;
     // PRF-08 (B-082): akıcı re-renders the PMREM sky every 2 game hours instead of every half hour (reflections still follow day/night)
-    const key = tier?.name === 'akici' ? 1000 + Math.round(hour / 2) : Math.round(hour * 2); if (key === envKey && envRT) return; envKey = key;
+    // GRS-17: a tier without `reflect` makes the PMREM once (envMap stays in the program key) and never refreshes it (envK = 0 there)
+    const key = !tier?.flags?.reflect ? -2 : Math.round(hour * 2); if ((key === envKey || key === -2) && envRT) return; envKey = key;
     pmrem ||= new T.PMREMGenerator(renderer);
     const s = new T.Scene(); s.add(new T.Mesh(sky.geometry, sky.material));
     const old = envRT; envRT = pmrem.fromScene(s, 0.02);
@@ -334,16 +353,28 @@ export function createRender(deps: RenderDeps): MotorRender {
     return { w, h };
   }
 
-  function applyShadows(t: TierDef) {
-    const sh = !!t.shadows, sz = t.shadowSize || 1024, ext = sz >= 2048 ? 17 : 15;
-    sun.castShadow = sh;
-    if (sun.shadow.mapSize.x !== sz) { sun.shadow.mapSize.set(sz, sz); if (sun.shadow.map) { sun.shadow.map.dispose(); (sun.shadow as { map: T.WebGLRenderTarget | null }).map = null; } }
+  // GRS-06: shadow box half size follows the camera's ground footprint (shadow-fit.ts), in steps with hysteresis
+  let shadowExt = 15;
+  function fitShadowBox(ext: number) {
+    shadowExt = ext;
+    if (tier && !tier.shadows) {
+      // GRS-17: akıcı keeps castShadow (same programs in every tier: no relink on a tier change) but its 64 px map sees only the
+      // empty 1..1.6 m slab right at the light, 32 m above the focus: nothing casts, every receiver is past the far plane = lit
+      Object.assign(sun.shadow.camera, { left: -1, right: 1, top: 1, bottom: -1, near: 1, far: 1.6 }); sun.shadow.camera.updateProjectionMatrix();
+      return;
+    }
+    const sz = (tier && tier.shadowSize) || 1024;
     Object.assign(sun.shadow.camera, { left: -ext, right: ext, top: ext, bottom: -ext, near: 1, far: 80 }); sun.shadow.camera.updateProjectionMatrix();
-    sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.035;
+    sun.shadow.normalBias = 1.5 * (2 * ext / sz);   // 1.5 texel (was a fixed 0.035 = ~1.2 texel at ±15/1024)
+  }
+  function applyShadows(t: TierDef) {
+    const sh = !!t.shadows, sz = sh ? t.shadowSize || 1024 : 64;
+    sun.castShadow = true;
+    if (sun.shadow.mapSize.x !== sz) { sun.shadow.mapSize.set(sz, sz); if (sun.shadow.map) { sun.shadow.map.dispose(); (sun.shadow as { map: T.WebGLRenderTarget | null }).map = null; } }
+    sun.shadow.bias = -0.0005; fitShadowBox(shadowExt);
     // PRF-03: renderer.shadowMap.enabled stays true for the whole session (set in init). Flipping it forced
-    // scene.traverse(needsUpdate) = every material re-linked on a tier change (seconds of freeze on ANGLE). Now only the
-    // sun's castShadow follows the tier; three re-evaluates its light hash by itself. A shadow-off tier frees the map.
-    if (!sh && sun.shadow.map) { sun.shadow.map.dispose(); (sun.shadow as { map: T.WebGLRenderTarget | null }).map = null; }
+    // scene.traverse(needsUpdate) = every material re-linked on a tier change (seconds of freeze on ANGLE).
+    // GRS-17: sun.castShadow too (it is in the program key: numDirLightShadows); the shadow-off look is the empty 64 px map above.
   }
 
   const api: MotorRender = {
@@ -358,7 +389,7 @@ export function createRender(deps: RenderDeps): MotorRender {
     get frameNo() { return frameNo; },
     get lost() { return lost; },
     sun, hemi, sky,
-    get bloomOn() { return !!composer; },
+    get bloomOn() { return !!composer && !!bloom?.enabled; },
     get lightTint() { return composer ? NO_TINT : look.tint; },
     hemiMul: 1,
     weatherSat: 1,
@@ -371,7 +402,7 @@ export function createRender(deps: RenderDeps): MotorRender {
       if (renderer && canvasEl === canvas) { api.setTier(t); return; }
       canvasEl = canvas;
       installLookToneMap();
-      renderer = createLookRenderer({ canvas, antialias: !!t.antialias && !t.flags?.bloom, exposure: LOOK_POZ.ana, powerPreference: 'high-performance' });   // sRGB + ACES (look.ts)
+      renderer = createLookRenderer({ canvas, antialias: false, exposure: LOOK_POZ.ana, powerPreference: 'high-performance' });   // sRGB + ACES (look.ts); GRS-17: AA lives in the composer target (live per tier)
       // 2026-11-09 Chrome freeze root cause: with checkShaderErrors on, three calls getProgramInfoLog for every new
       // program right after linking, which blocks the main thread until the GPU process finishes compiling (no parallel
       // compile). On Windows/ANGLE that was seconds per new area. Errors are only checked in dev builds now.
@@ -380,14 +411,14 @@ export function createRender(deps: RenderDeps): MotorRender {
         const c = renderer.getContext();
         // PRF-15: with the post chain (bloom tiers) the scene is antialiased in the composer's MSAA target and the canvas only gets
         // the final full-screen quad, so a multisampled canvas back buffer (~46 MB at 1600x900) bought nothing; akıcı has no AA.
-        if (typeof WebGL2RenderingContext !== 'undefined' && c instanceof WebGL2RenderingContext) { gl2 = c; gpuExt = c.getExtension('EXT_disjoint_timer_query_webgl2') as typeof gpuExt; }
+        if (typeof WebGL2RenderingContext !== 'undefined' && c instanceof WebGL2RenderingContext) { gl2 = c; gpuExt = c.getExtension('EXT_disjoint_timer_query_webgl2') as typeof gpuExt; postOk = !!(c.getExtension('EXT_color_buffer_float') || c.getExtension('EXT_color_buffer_half_float')); }
+        if (!postOk) deps.log?.info('[render] float hedef yok: kademe geçişi yeniden derler (doğrudan çizim yolu)');
         const dbg = c.getExtension('WEBGL_debug_renderer_info');
         deps.perf?.meta('gpu', dbg ? String(c.getParameter(dbg.UNMASKED_RENDERER_WEBGL)) : 'bilinmiyor');
         deps.perf?.meta('gpuZamanOlcer', gpuExt ? 'var' : 'yok');
       } catch { /* headless */ }
       renderer.shadowMap.type = T.PCFSoftShadowMap;
       renderer.shadowMap.enabled = true;
-      wantAA = !!t.antialias;
       try { loseExt = renderer.getContext().getExtension('WEBGL_lose_context'); } catch { loseExt = null; }
       canvas.addEventListener('webglcontextlost', (e: Event) => { e.preventDefault(); lost = true; lostSubs.forEach(cb => { try { cb(); } catch (err) { deps.log?.warn('[render] lost cb', err); } }); }, false);
       canvas.addEventListener('webglcontextrestored', () => { lost = false; if (tier) applyShadows(tier); restoredSubs.forEach(cb => { try { cb(); } catch (err) { deps.log?.warn('[render] restored cb', err); } }); }, false);
@@ -395,9 +426,8 @@ export function createRender(deps: RenderDeps): MotorRender {
     },
     setTier(t: TierDef) {
       tier = t;
-      if (wantAA !== null && !!t.antialias !== wantAA) deps.log?.info('[render] antialias change applies on next load');
       applyShadows(t);
-      reflector.setBudget(reflectBudget(t.name));
+      reflector.setBudget(reflectBudget(t));
       if (renderer && renderer.getPixelRatio() !== canvasPR(t)) renderer.setPixelRatio(canvasPR(t));
       setupPost(t);
       // GRS-02: akıcı skips the cloud noise in the sky shader (a uniform, no relink); the gradient, sun, stars and moon stay
@@ -427,13 +457,14 @@ export function createRender(deps: RenderDeps): MotorRender {
     tod: () => tod,
     setFocus(x: number, z: number) {
       // 2026-11-08: shadows follow the camera over the whole map (far shore too), snapped to the shadow texel grid
-      const sz = (tier && tier.shadowSize) || 1024, ext = sz >= 2048 ? 17 : 15, step = (2 * ext) / sz * 4;
+      const sz = (tier && tier.shadowSize) || 1024, step = (2 * shadowExt) / sz * 4;
       const fx = clamp(+x || 0, -70, 70), fz = clamp(+z || 0, -20, 62);
       focus.set(Math.round(fx / step) * step, 0, Math.round(fz / step) * step); placeSun();
     },
     frame(sc: T.Scene, cam: T.Camera) {
       if (!renderer || lost) return;
       frameNo++;
+      if (frameNo % 30 === 5 && tier?.shadows) { const ne = nextShadowExt(shadowExt, groundRadius(cam, focus)); if (ne !== shadowExt) fitShadowBox(ne); }
       if (frameNo % 10 === 1) { const f = rig.focus(); api.setFocus(f.x, f.z); }
       if (frameNo % 30 === 2 || !envRT) refreshEnv();
       if ((cam as T.PerspectiveCamera).isPerspectiveCamera) akisGuncelle(sc, cam as T.PerspectiveCamera, Math.round((renderer.domElement.height || 720) / (composer ? 1 : resScale)));   // PRF-15 doku akışı; PRF-12: ölçeksiz yükseklik (dinamik çözünürlük adımı dokuları yeniden çizdirmez)
@@ -442,7 +473,7 @@ export function createRender(deps: RenderDeps): MotorRender {
       if (grade) { const ws = clamp(+api.weatherSat || 1, 0.6, 1); grade.uniforms.uSat.value = look.sat * ws; }   // GRS-02 rain/fog wash
       // PRF-06: casters whose shadow cannot reach the view skip the shadow pass (same picture, fewer draws)
       const draw = () => {
-        if (api.shadowCull) sCull.begin(sc, cam, sun);
+        if (api.shadowCull && tier?.shadows) sCull.begin(sc, cam, sun);
         try { if (composer && rpass) { rpass.scene = sc; rpass.camera = cam; composer.render(); } else renderer!.render(sc, cam); } finally { sCull.end(); }
       };
       const pf = deps.perf;
@@ -455,12 +486,15 @@ export function createRender(deps: RenderDeps): MotorRender {
         if (nb > 0 && frameNo > 1) pf.mark('compile', `${nb} shader karede derlendi, toplam ${progList().length}: ${lastDrawBorn.slice(-nb).join(' ')}`);
       } else { draw(); scanProgs('draw', sc); }
       // GRS-05: mirrored water pass after the main draw (shadow map is fresh); the sea samples it next frame
+      const ri = renderer.info, c0 = ri.render.calls, t0 = ri.render.triangles, n0 = reflector.stats().renders;
       if ((cam as T.PerspectiveCamera).isPerspectiveCamera && api.reflectSea && api.reflectSea.visible) {
         reflector.resMul = composer ? resScale : 1;   // PRF-12: the mirror follows the scene's scaled size (canvas stays full on post tiers)
         const rd = () => reflector.render(renderer!, sc, cam as T.PerspectiveCamera, api.reflectSea);
         if (pf) pf.time('render.reflect', rd); else rd();
       }
-      const ri = renderer.info;
+      const ran = reflector.stats().renders > n0;
+      reflInfo.ran = ran; reflInfo.calls = ran ? ri.render.calls - c0 : 0; reflInfo.tris = ran ? ri.render.triangles - t0 : 0; reflInfo.main = c0;
+      reflInfo.ever ||= ran;
       lastInfo.calls = ri.render.calls; lastInfo.tris = ri.render.triangles;
       lastInfo.geos = ri.memory.geometries; lastInfo.texs = ri.memory.textures;
     },
@@ -472,7 +506,7 @@ export function createRender(deps: RenderDeps): MotorRender {
     },
     setPostCut(cut: boolean) {
       postCut = !!cut;
-      if (bloom) bloom.enabled = !postCut;   // the composer skips a disabled pass (no swap); OutputPass + GRADE still run
+      if (bloom) bloom.enabled = !!tier?.flags?.bloom && !postCut;   // the composer skips a disabled pass (no swap); OutputPass + GRADE still run
     },
     warm(sc: T.Scene, cam: T.Camera) {
       // Compiles the variant the frame really draws: with bloom the scene goes into the composer's half-float target, and three
@@ -482,11 +516,19 @@ export function createRender(deps: RenderDeps): MotorRender {
       return compileFor(sc, cam, null).then(() => undefined);
     },
     warmStats: () => ({ born: { ...born }, busy: warmJobs > 0, lastDrawBorn: [...lastDrawBorn] }),
+    gfxState() {
+      const cv = renderer?.domElement, rb = composer ? (composer as unknown as { renderTarget2: T.WebGLRenderTarget }).renderTarget2 : null;
+      return { tier: tier?.name ?? null, renderScale: tier ? basePR(tier) : null, pixelRatio: renderer?.getPixelRatio() ?? null, drawingBuffer: { w: cv?.width ?? 0, h: cv?.height ?? 0 },
+        shadowMapEnabled: !!renderer?.shadowMap.enabled, castShadow: sun.castShadow, shadowMapSize: sun.shadow.mapSize.x, shadowExt: sun.shadow.camera.right, shadowFar: sun.shadow.camera.far,
+        post: !!composer, bloomEnabled: !!bloom?.enabled, msaa: rb ? rb.samples : 0, toneMapping: renderer?.toneMapping ?? null,
+        programs: progList().length, flags: { ...(tier?.flags ?? {}) }, reflect: reflector.stats() };
+    },
     info() {
       if (renderer) { lastInfo.geos = renderer.info.memory.geometries; lastInfo.texs = renderer.info.memory.textures; }
       const sw = composer ? (composer as unknown as { readBuffer: T.WebGLRenderTarget }).readBuffer.width : renderer?.domElement.width ?? 0;
       const sh = composer ? (composer as unknown as { readBuffer: T.WebGLRenderTarget }).readBuffer.height : renderer?.domElement.height ?? 0;
-      return { ...lastInfo, sceneW: sw, sceneH: sh, programs: renderer ? ((renderer.info as { programs?: unknown[] }).programs?.length ?? 0) : 0, programNames: progList().filter(Boolean).map(progName), born: { ...born }, frameNo };
+      const rs = reflector.stats();
+      return { ...lastInfo, reflect: { ...reflInfo, w: rs.w, h: rs.h }, sceneW: sw, sceneH: sh, programs: renderer ? ((renderer.info as { programs?: unknown[] }).programs?.length ?? 0) : 0, programNames: progList().filter(Boolean).map(progName), born: { ...born }, frameNo };
     },
     resize() {
       const { w, h } = size();

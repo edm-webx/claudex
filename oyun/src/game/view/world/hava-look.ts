@@ -22,7 +22,7 @@ import { UMBRELLA, MARKET } from '../../../content/hava';
 import type { HtmlLabels, HtmlLabel } from '../../ui/labels';
 import { crowdWeather } from '../chars/weather-pose';
 import { BULUT_TEMEL } from '../../../engine/render/sky';
-import { createTemasGolge, temasOpaklik, temasYaricap } from './temas-golge';
+import { setZeminWet } from '../../../engine/render/zemin-islak';
 
 export interface HavaLookDeps {
   scene: T.Scene;
@@ -40,6 +40,8 @@ export interface HavaLookDeps {
   sfx?: (id: string) => void;
   float?: (x: number, z: number, text: string) => void;
 }
+/** GRS-05 test kancası (yalnız ölçüm derlemesi boot'tan yazar): 0..1 yağmur zorlar, -1 = simdeki hava */
+export const HAVA_ZORLA = { yagmur: -1, islak: -1 };
 export interface HavaLookView { update(dt: number): void; relight(): void; dispose(): void }
 
 const RAIN_N = 700, SNOW_N = 600, CAP = 140, HATS = 6, CAPS_W = 14, PUDDLES = 7, BALLS = 3;
@@ -122,7 +124,6 @@ export function createHavaLook(d: HavaLookDeps): HavaLookView {
   const partyGeo = G(new T.ConeGeometry(0.08, 0.22, 7)); partyGeo.translate(0, 0.11, 0);
   const iParty = mkInst(partyGeo, M(new T.MeshLambertMaterial({ color: '#ffffff' })), true);
   const insts = [iUmb, iStick, iPaper, iBeanie, iScarf, iStraw, iStrawTop, iFan, iParty];
-  const temas = createTemasGolge(sky);   // GRS-06: contact blobs under every visible character (1 draw)
   const PAL_UMB = ['#e0533c', '#2f7fb3', '#3b3b48', '#ffd23f', '#5d8f45', '#8a6bbf', '#f2a2b3'].map(c => new T.Color(c));
   const PAL_WOOL = ['#c23e2c', '#2f5a8a', '#5d8f45', '#e8964a', '#8a6bbf', '#f2e6c8'].map(c => new T.Color(c));
   const PAL_PARTY = ['#e0533c', '#ffd23f', '#3fb5b0', '#f2a2b3', '#5fbf5f'].map(c => new T.Color(c));
@@ -278,18 +279,14 @@ export function createHavaLook(d: HavaLookDeps): HavaLookView {
 
   function crowd(v: HavaView): void {
     for (const im of insts) im.count = 0;
-    temas.begin();
-    const ag = d.agents(); if (!ag || !d.crowdHead) { temas.end(); return; }
-    const flagsA = ag.u16('flags'), rotA = ag.f32('rot'), hi = Math.min(ag.hi, 256), speedA = ag.f32('speed');
-    temas.setOpacity(temasOpaklik(!!R.sun?.castShadow, R.tod?.().n ?? 0));
+    const ag = d.agents(); if (!ag || !d.crowdHead) return;
+    const flagsA = ag.u16('flags'), rotA = ag.f32('rot'), hi = Math.min(ag.hi, 256);
     const wetOn = rainK > 0.25 || flakeK > 0.5, heatOn = heatK > 0.3;
     const winter = v.season === 'kis', summer = v.season === 'yaz';
     let nU = 0, nP = 0, nB = 0, nS = 0, nW = 0, nF = 0, nY = 0;
     for (let i = 0; i < hi; i++) {
-      const f = flagsA[i]; if (!(f & AGENT_FLAG.visible)) continue;
+      const f = flagsA[i]; if (!(f & AGENT_FLAG.visible) || (f & AGENT_FLAG.hero)) continue;
       if (!d.crowdHead(i, head) || !(head.y > 0.5)) continue;
-      if (head.y < 3) temas.add(head.x, head.z, temasYaricap((f & AGENT_FLAG.seated) !== 0, speedA[i]));
-      if (f & AGENT_FLAG.hero) continue;
       const h = hash(i * 3.17), ry = rotA[i], sit = (f & AGENT_FLAG.seated) !== 0;
       if (wetOn && !sit && h < 0.75 && nU < CAP) {
         if (h < 0.55) {
@@ -315,7 +312,6 @@ export function createHavaLook(d: HavaLookDeps): HavaLookView {
     }
     iUmb.count = iStick.count = nU; iPaper.count = nP; iBeanie.count = nB; iScarf.count = nS; iStraw.count = iStrawTop.count = nW; iFan.count = nF; iParty.count = nY;
     for (const im of insts) { if (im.count) { im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true; } }
-    temas.end();
   }
 
   function snowballs(dt: number): void {
@@ -377,9 +373,10 @@ export function createHavaLook(d: HavaLookDeps): HavaLookView {
     if (!pierParent) return;
     const r = d.rules();
     // wet / snow
-    // GRS-05: the deck keeps a faint glaze after dark (dew + lamp sheen), the rain wetness adds on top
-    const geceParlak = 0.07 * clamp(R.tod?.().n ?? 0, 0, 1);
-    wet.visible = wetK > 0.02 || geceParlak > 0.005; wetMat.opacity = Math.min(0.4, 0.32 * wetK + geceParlak);
+    // GRS-05: the shared ground materials darken and pick up a sky sheen (zemin-islak.ts); the glossy plane only adds the highlight
+    // (0.18, was 0.32: no double darkening). No rain = no sheen, also at night.
+    setZeminWet(wetK);
+    wet.visible = wetK > 0.02; wetMat.opacity = 0.18 * wetK;
     snowDeck.visible = snowK > 0.02; snowDeckMat.opacity = 0.62 * snowK;
     for (const p of puddles) {
       const on = wetK > 0.35; p.p.visible = p.r.visible = on;
@@ -475,13 +472,14 @@ export function createHavaLook(d: HavaLookDeps): HavaLookView {
       attachPier();
       const v = api.view(); lastV = v;
       const k = v.k, kd = v.kind;
-      rainK = damp(rainK, (kd === 'saganak' ? 1 : kd === 'firtina' ? 1 : 0) * k, 1.5, dt);
+      rainK = damp(rainK, HAVA_ZORLA.yagmur >= 0 ? HAVA_ZORLA.yagmur : (kd === 'saganak' ? 1 : kd === 'firtina' ? 1 : 0) * k, 1.5, dt);
       flakeK = damp(flakeK, (kd === 'kar' ? 1 : 0) * k, 1.2, dt);
       fogK = damp(fogK, (kd === 'sis' ? 1 : 0) * k, 0.8, dt);
       lodosK = damp(lodosK, (kd === 'lodos' ? 1 : kd === 'firtina' ? 0.7 : 0) * k, 1.2, dt);
       heatK = damp(heatK, (kd === 'sicak' ? 1 : 0) * k, 1, dt);
       rainbowK = damp(rainbowK, (kd === 'gokkusagi' ? 1 : 0) * k, 0.8, dt);
       wetK = clamp(wetK + (rainK > 0.2 ? dt * 0.12 * rainK : flakeK > 0.2 ? 0 : -dt * 0.015), 0, 1);
+      if (HAVA_ZORLA.islak >= 0) { wetK = HAVA_ZORLA.islak; HAVA_ZORLA.islak = -1; }   // test: jump to a wetness (drying takes ~65 s)
       snowK = clamp(snowK + (flakeK > 0.2 ? dt * 0.05 * flakeK : -dt * 0.01), 0, 1);
       crowdWeather.lean = lodosK * 0.28;
       // sea: faster waves in lodos / storm
@@ -511,7 +509,7 @@ export function createHavaLook(d: HavaLookDeps): HavaLookView {
       offFloat?.(); offHorn?.();
       flyLabel?.free(); mktLabel?.free();
       chip?.remove();
-      temas.dispose(); sky.parent?.remove(sky); pier.parent?.remove(pier);
+      sky.parent?.remove(sky); pier.parent?.remove(pier);
       geos.forEach(g => g.dispose()); mats.forEach(m => m.dispose());
       crowdWeather.lean = 0;
     },

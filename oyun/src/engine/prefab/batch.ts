@@ -93,12 +93,12 @@ export class Batch {
     let r = o.r != null ? o.r : Math.min(0.035, w * 0.18, h * 0.18, d * 0.18);
     r = Math.min(r, w * 0.45, h * 0.45, d * 0.45);
     const g = r > 0.004 ? roundBox(+w.toFixed(3), +h.toFixed(3), +d.toFixed(3), +r.toFixed(3), o.s || 1) : geoc(`B${w.toFixed(3)}|${h.toFixed(3)}|${d.toFixed(3)}`, () => new T.BoxGeometry(w, h, d));
-    return this.add(g, c, this.M(x, y, z, o), o);
+    const base = this.cnt; this.add(g, c, this.M(x, y, z, o), o); this.foot(base); return this;
   }
   cyl(rt: number, rb: number, h: number, c: ColorLike, x: number, y: number, z: number, o: PrimOpts = {}): this {
     const seg = o.seg || 12, open = !!o.open;
     const g = geoc(`C${rt.toFixed(3)}|${rb.toFixed(3)}|${h.toFixed(3)}|${seg}|${open}`, () => new T.CylinderGeometry(rt, rb, h, seg, 1, open));
-    return this.add(g, c, this.M(x, y, z, o), o);
+    const base = this.cnt; this.add(g, c, this.M(x, y, z, o), o); this.foot(base); return this;
   }
   sph(r: number, c: ColorLike, x: number, y: number, z: number, o: PrimOpts = {}): this {
     const ws = o.ws || 12, hs = o.hs || 8, tl = o.tl || PI;
@@ -115,36 +115,66 @@ export class Batch {
   /** A box from two corners (x0..x1, y0..y1, z0..z1). */
   span(x0: number, x1: number, y0: number, y1: number, z0: number, z1: number, c: ColorLike, o: PrimOpts = {}): this { return this.box(Math.abs(x1 - x0), Math.abs(y1 - y0), Math.abs(z1 - z0), c, (x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2, o); }
   get empty(): boolean { return this.cnt === 0; }
-  /** GRS-06 baked contact AO: strength 0..1 of the darkening at the foot of upright faces (0 = off, the default; prefabs opt in) */
-  ao = 0;
-  /** height (batch-local metres) over which the foot darkening fades out */
-  static aoHeight = 0.55;
+  /** GRS-06: soft contact plane under upright boxes/cylinders standing on the batch floor (y = 0); off for A/B (?noao=1) */
+  static contact = true;
+  /** footprints x0, z0, x1, z1 (batch-local) of the parts that stand on the floor */
+  contactRects: number[] = [];
+  /** records the footprint of the vertices added since `base` when the part stands upright on the floor (GRS-06 rule) */
+  private foot(base: number): void {
+    const e = _mA.elements;
+    if (Math.abs(e[4]) > 1e-3 || Math.abs(e[6]) > 1e-3) return;   // tilted part (rx/rz): no footprint
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    for (let k = base * 3; k < this.cnt * 3; k += 3) {
+      const x = this.p[k], y = this.p[k + 1], z = this.p[k + 2];
+      if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; if (z < z0) z0 = z; if (z > z1) z1 = z;
+    }
+    if (y0 < -0.02 || y0 > 0.08 || y1 - y0 < 0.25 || (x1 - x0) * (z1 - z0) < 0.04) return;
+    this.contactRects.push(x0, z0, x1, z1);
+  }
   geometry(): T.BufferGeometry {
     const g = new T.BufferGeometry();
     g.setAttribute('position', new T.Float32BufferAttribute(this.p, 3));
     g.setAttribute('normal', new T.Float32BufferAttribute(this.n, 3));
-    g.setAttribute('color', new T.Float32BufferAttribute(this.ao > 0 ? bakeFootAo(this.p, this.n, this.c, this.ao, Batch.aoHeight) : this.c, 3));
+    g.setAttribute('color', new T.Float32BufferAttribute(this.c, 3));
     g.setAttribute('uv', new T.Float32BufferAttribute(this.u, 2));
     g.setIndex(this.cnt > 65535 ? new T.Uint32BufferAttribute(this.i, 1) : new T.Uint16BufferAttribute(this.i, 1));
     g.computeBoundingSphere(); g.userData.atlas = true;
     return g;
   }
-  mesh(mat: T.Material, cast = true, recv = true): T.Mesh { const m = new T.Mesh(this.geometry(), mat); m.castShadow = cast; m.receiveShadow = recv; return m; }
+  mesh(mat: T.Material, cast = true, recv = true): T.Mesh {
+    const m = new T.Mesh(this.geometry(), mat); m.castShadow = cast; m.receiveShadow = recv;
+    const lit = (mat as T.MeshLambertMaterial).isMeshLambertMaterial || (mat as T.MeshStandardMaterial).isMeshStandardMaterial;
+    if (Batch.contact && cast && lit && this.contactRects.length) { const c = contactMesh(this.contactRects); if (c) m.add(c); }
+    return m;
+  }
 }
 
-/**
- * GRS-06: vertex-colour ambient occlusion at the foot of upright faces. A vertex at height y over the ground (batch-local y = 0)
- * is darkened by `k * (1 - smoothstep(0, h, y)) * (1 - |ny|)`: side faces get a soft dark foot where they meet the floor, top and
- * bottom faces are untouched, nothing above `h` changes. Pure function (returns a new array), unit-tested.
- */
-export function bakeFootAo(p: ArrayLike<number>, n: ArrayLike<number>, c: ArrayLike<number>, k: number, h: number): number[] {
-  const out = new Array<number>(c.length);
-  for (let i = 0; i < c.length / 3; i++) {
-    const y = p[i * 3 + 1], up = Math.abs(n[i * 3 + 1]);
-    const t = clamp(y / h, 0, 1), f = 1 - k * (1 - t * t * (3 - 2 * t)) * (1 - up);
-    out[i * 3] = c[i * 3] * f; out[i * 3 + 1] = c[i * 3 + 1] * f; out[i * 3 + 2] = c[i * 3 + 2] * f;
+/* ---------- GRS-06 contact planes ---------- */
+export const CONTACT_MAX = 80, CONTACT_A0 = 0.34, CONTACT_E = 0.14, CONTACT_Y = 0.01;
+let contactMat: T.MeshBasicMaterial | null = null;
+/** Soft dark footprint planes (one draw per batch mesh): a 4x4 vertex grid per footprint, inner ring alpha A0, outer ring (E outside) 0.
+ *  Bigger footprints win when there are more than CONTACT_MAX. Returns null when nothing qualifies. */
+export function contactGeometry(rects: number[]): T.BufferGeometry | null {
+  const n = rects.length / 4; if (!n) return null;
+  const order = Array.from({ length: n }, (_, i) => i).sort((a, b) => (rects[b * 4 + 2] - rects[b * 4]) * (rects[b * 4 + 3] - rects[b * 4 + 1]) - (rects[a * 4 + 2] - rects[a * 4]) * (rects[a * 4 + 3] - rects[a * 4 + 1])).slice(0, CONTACT_MAX);
+  const pos: number[] = [], colr: number[] = [], idx: number[] = [], E = CONTACT_E;
+  for (const r of order) {
+    const x0 = rects[r * 4], z0 = rects[r * 4 + 1], x1 = rects[r * 4 + 2], z1 = rects[r * 4 + 3];
+    const xs = [x0 - E, x0, x1, x1 + E], zs = [z0 - E, z0, z1, z1 + E], b = pos.length / 3;
+    for (let j = 0; j < 4; j++) for (let i = 0; i < 4; i++) { pos.push(xs[i], CONTACT_Y, zs[j]); colr.push(1, 1, 1, i > 0 && i < 3 && j > 0 && j < 3 ? CONTACT_A0 : 0); }
+    for (let j = 0; j < 3; j++) for (let i = 0; i < 3; i++) { const a = b + j * 4 + i; idx.push(a, a + 4, a + 1, a + 1, a + 4, a + 5); }
   }
-  return out;
+  const g = new T.BufferGeometry();
+  g.setAttribute('position', new T.Float32BufferAttribute(pos, 3));
+  g.setAttribute('color', new T.Float32BufferAttribute(colr, 4));
+  g.setIndex(pos.length / 3 > 65535 ? new T.Uint32BufferAttribute(idx, 1) : new T.Uint16BufferAttribute(idx, 1));
+  g.computeBoundingSphere();
+  return g;
 }
-/** GRS-06 default foot-AO strength for the iskele prefabs (kiosk, pier, stations) */
-export const FOOT_AO = 0.26;
+function contactMesh(rects: number[]): T.Mesh | null {
+  const g = contactGeometry(rects); if (!g) return null;
+  contactMat ||= new T.MeshBasicMaterial({ color: '#14101c', vertexColors: true, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+  const m = new T.Mesh(g, contactMat);
+  m.name = 'contact'; m.renderOrder = -1; m.castShadow = false; m.receiveShadow = false; m.userData.noReflect = true; m.userData.noMerge = true;
+  return m;
+}

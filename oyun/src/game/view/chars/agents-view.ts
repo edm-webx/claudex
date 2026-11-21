@@ -114,6 +114,10 @@ export function createAgentsView(deps: AgentsViewDeps): AgentsView {
   const view: AgentsView = {
     update(_state: GameState, dt: number, alpha: number) {
       const agents = deps.agents();
+      // GRS-17: the far flock / pigeons take their counts from the tier when built: rebuild them on a tier change
+      const tn = deps.quality.current().name;
+      if (tierKey && tn !== tierKey) { flock?.dispose(); pigeons?.dispose(); flock = null; pigeons = null; }
+      tierKey = tn;
       if (!flock) {
         try { flock = chars.makeFlock({ center: { x: 0, y: FLOCK.y, z: FLOCK.z }, radius: FLOCK.radius }); } catch { flock = null; }
       }
@@ -152,8 +156,6 @@ export function createAgentsView(deps: AgentsViewDeps): AgentsView {
         const p = deps.player();
         if (p.moving && frame++ % 6 === 0 && pigeons.scatter) pigeons.scatter(p.x, p.z);
       }
-      const t = deps.quality.current().name;
-      tierKey = t;
     },
     headPos(id, out) {
       const r = rows.get(id); if (!r) return false;
@@ -167,7 +169,6 @@ export function createAgentsView(deps: AgentsViewDeps): AgentsView {
       for (const r of rows.values()) r.h.dispose();
       rows.clear();
       flock?.dispose(); pigeons?.dispose(); flock = null; pigeons = null;
-      void tierKey;
     },
   };
   return view;

@@ -23,10 +23,21 @@ import type { Quality, QualityDeps, QualitySetting, TierDef, TierName, Disposer 
 export const SCALE_MIN = 0.7, SCALE_STEP = 0.05;
 const ORDER: TierName[] = ['akici', 'dengeli', 'sahane'];
 export const TIER_TABLE: Readonly<Record<TierName, TierDef>> = Object.freeze({
-  akici: { name: 'akici', label: 'Akıcı', crowd: 25, gullsNear: 4, gullsFar: 12, pigeons: 8, pixelRatio: 0.85, antialias: false, shadows: false, shadowSize: 0, fps: 30, particles: 120, buildBudgetMs: 3, maxLiveZones: 2, heroes: 12, flags: {} },
-  dengeli: { name: 'dengeli', label: 'Dengeli', crowd: 50, gullsNear: 8, gullsFar: 24, pigeons: 16, pixelRatio: 1.25, antialias: true, shadows: true, shadowSize: 1024, fps: 60, particles: 400, buildBudgetMs: 4, maxLiveZones: 3, heroes: 16, flags: { bloom: true } },
-  sahane: { name: 'sahane', label: 'Şahane', crowd: 90, gullsNear: 16, gullsFar: 40, pigeons: 30, pixelRatio: 2.0, antialias: true, shadows: true, shadowSize: 2048, fps: 60, particles: 1000, buildBudgetMs: 6, maxLiveZones: 4, heroes: 16, flags: { softShadows: true, bloom: true } },
+  akici: { name: 'akici', label: 'Akıcı', crowd: 25, gullsNear: 4, gullsFar: 12, pigeons: 8, pixelRatio: 0.85, antialias: false, shadows: false, shadowSize: 0, fps: 30, particles: 120, buildBudgetMs: 3, maxLiveZones: 2, flags: {} },
+  dengeli: { name: 'dengeli', label: 'Dengeli', crowd: 50, gullsNear: 8, gullsFar: 24, pigeons: 16, pixelRatio: 1.25, pixelRatioMin: 1.0, antialias: true, shadows: true, shadowSize: 1024, fps: 60, particles: 400, buildBudgetMs: 4, maxLiveZones: 3, flags: { bloom: true, reflect: true } },
+  sahane: { name: 'sahane', label: 'Şahane', crowd: 90, gullsNear: 16, gullsFar: 40, pigeons: 30, pixelRatio: 2.0, pixelRatioMin: 1.5, antialias: true, shadows: true, shadowSize: 2048, fps: 60, particles: 1000, buildBudgetMs: 6, maxLiveZones: 4, flags: { bloom: true, reflect: true, reflectHi: true } },
 } satisfies Record<TierName, TierDef>);
+
+/** GRS-17: render pixel ratio of a tier on a screen: the tier floor lifts DPR 1 screens (1080p PC: akıcı 0.85, dengeli 1.0, şahane 1.5),
+ *  the tier ceiling caps phones (DPR 3: 0.85 / 1.25 / 2.0). Labels are HTML, so text size does not change. */
+export function renderScale(t: TierDef, dpr: number): number { return Math.min(Math.max(dpr || 1, t.pixelRatioMin ?? 0), t.pixelRatio); }
+
+/** GRS-17: every TIER_TABLE flag has a consumer, written here (a flag missing from this list fails quality.test). */
+export const TIER_FLAG_DOC: Readonly<Record<string, { konum: string; canli: 'uniform' | 'gorunurluk' | 'rt-yeniden-boyut'; paket: string }>> = Object.freeze({
+  bloom: { konum: 'src/engine/render/index.ts setupPost/setPostCut (bloom pass)', canli: 'gorunurluk', paket: 'B-082' },
+  reflect: { konum: 'src/engine/render/reflect.ts reflectBudget (su yansıması RT) + game/view/world/glb.ts setGlbEnvK (boot applyTier)', canli: 'rt-yeniden-boyut', paket: 'GRS-05/GRS-17' },
+  reflectHi: { konum: 'src/engine/render/reflect.ts reflectBudget (yarım çözünürlük, her kare)', canli: 'rt-yeniden-boyut', paket: 'GRS-05' },
+});
 
 export function guessTier(memoryGB: number, cores: number): TierName {
   if (memoryGB <= 3 || cores <= 4) return 'akici';

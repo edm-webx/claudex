@@ -62,7 +62,7 @@ const gridPos = (i: number, cols: number, dx: number, dz: number) => ({ x: (i % 
 const boxOf = (pts: { x: number; z: number }[], y1: number, pad: number) => { const b = new T.Box3(); pts.forEach(p => b.expandByPoint(new T.Vector3(p.x, 0, p.z))); b.min.x -= pad; b.max.x += pad; b.min.z -= pad; b.max.z += pad; b.max.y = y1; return b; };
 
 // motor-side services for the extra views (quality stub: lineup always shows the top tier)
-const TIER: TierDef = { name: 'sahane', label: 'Şahane', crowd: 90, gullsNear: 16, gullsFar: 40, pigeons: 30, pixelRatio: 2, antialias: true, shadows: true, shadowSize: 2048, fps: 60, particles: 1000, buildBudgetMs: 6, maxLiveZones: 4, heroes: 16, flags: {} };
+const TIER: TierDef = { name: 'sahane', label: 'Şahane', crowd: 90, gullsNear: 16, gullsFar: 40, pigeons: 30, pixelRatio: 2, antialias: true, shadows: true, shadowSize: 2048, fps: 60, particles: 1000, buildBudgetMs: 6, maxLiveZones: 4, flags: {} };
 const quality = { current: () => TIER, setting: () => 'sahane', set() {}, onChange: () => () => {}, feed() {}, batterySaver() {}, table: { akici: TIER, dengeli: TIER, sahane: TIER } } as unknown as Quality;
 const anim = createAnim();
 let fx: MotorFx | null = null;
