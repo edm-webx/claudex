@@ -243,7 +243,7 @@ position:fixed;inset:0;pointer-events:none;z-index:10;overflow:hidden;font-famil
 .sb-toasts{position:absolute;left:50%;top:calc(var(--hudb) + 44px);transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;z-index:40;width:min(calc(100% - 24px),420px)}
 .sb-toast{display:flex;align-items:center;gap:8px;background:var(--paper);border:2.5px solid var(--ink);border-radius:16px;padding:6px 14px 7px 6px;font:800 14px/1.25 var(--body);box-shadow:var(--shadow);max-width:100%;animation:sb-tin .28s cubic-bezier(.3,1.6,.5,1);transition:opacity .3s,transform .3s}
 .sb-bell{position:relative;pointer-events:auto}.sb-bell svg{width:22px;height:22px}
-.sb-bell-n{position:absolute;right:-4px;top:-4px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:#ff5a4e;color:#fff;font:900 13px/18px var(--disp);text-align:center;box-sizing:border-box}
+.sb-bell-n{position:absolute;right:-4px;top:-4px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:#c4271b;color:#fff;font:900 13px/18px var(--disp);text-align:center;box-sizing:border-box}
 .sb-notes{position:absolute;right:calc(var(--sr) + 10px);top:calc(var(--hudb) + 52px);width:min(340px,calc(100% - 24px));max-height:46vh;overflow:auto;z-index:45;pointer-events:auto;background:rgba(11,19,38,.94);border:1px solid rgba(255,255,255,.18);border-radius:16px;padding:6px;box-shadow:0 14px 32px rgba(4,10,24,.5)}
 .sb-notes .n{display:flex;gap:8px;justify-content:space-between;align-items:baseline;padding:7px 10px;border-radius:10px;color:#fff;font:700 14px/1.3 var(--body)}
 .sb-notes .n+.n{border-top:1px solid rgba(255,255,255,.08)}.sb-notes .n.bad span{color:#ffb4a8}.sb-notes .n.good span{color:#9bf0c2}
@@ -287,7 +287,7 @@ position:fixed;inset:0;pointer-events:none;z-index:10;overflow:hidden;font-famil
 .sb-ach .am{width:58px;height:58px;flex:none;animation:sb-spin 1.2s ease-out}
 .sb-ach .am svg{width:58px;height:58px}
 @keyframes sb-spin{0%{transform:rotateY(0) scale(.5)}60%{transform:rotateY(540deg) scale(1.1)}100%{transform:rotateY(720deg) scale(1)}}
-.sb-ach .ak{font:900 13px/1 var(--disp);color:var(--red2);letter-spacing:.08em}
+.sb-ach .ak{font:900 13px/1 var(--disp);color:#9c2a1d;letter-spacing:.08em}
 .sb-ach h3{font:900 16px/1.1 var(--disp);margin:2px 0}
 .sb-ach p{font:700 13px/1.25 var(--body);color:var(--ink2)}
 .sb-ach .ar{margin-top:5px}

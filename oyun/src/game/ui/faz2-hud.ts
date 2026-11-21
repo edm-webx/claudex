@@ -28,15 +28,15 @@ const CSS = `
   font-family:var(--body,system-ui,sans-serif);color:var(--ink,#3b2a20);transition:opacity .25s}
 .f2-rail.off{opacity:0;pointer-events:none!important}
 .f2-rail>*{pointer-events:auto}
-.f2-ph{display:flex;justify-content:space-between;align-items:center;gap:6px;background:#ffd23f;border:2px solid var(--ink,#3b2a20);border-radius:10px;padding:3px 7px;font:900 11.5px/1.2 var(--disp,system-ui);cursor:pointer;box-shadow:0 2px 0 var(--ink,#3b2a20)}
-.f2-note{font:700 12px/1.25 var(--body,system-ui);opacity:.9;padding:0 2px}
+.f2-ph{display:flex;justify-content:space-between;align-items:center;gap:6px;background:#ffd23f;border:2px solid var(--ink,#3b2a20);border-radius:10px;padding:3px 7px;font:900 13px/1.2 var(--disp,system-ui);cursor:pointer;box-shadow:0 2px 0 var(--ink,#3b2a20)}
+.f2-note{font:700 13px/1.25 var(--body,system-ui);opacity:.9;padding:0 2px}
 .f2-top{background:var(--ink,#3b2a20);color:#fff8ec;border-radius:10px;padding:4px 7px;font:800 13px/1.25 var(--body,system-ui)}
 .f2-top b{color:#ffd23f}
 .f2-slip{background:#fffdf6;border:2px solid var(--ink,#3b2a20);border-radius:4px 4px 10px 10px;padding:3px 6px 4px;box-shadow:0 2px 0 var(--ink,#3b2a20);
-  font:800 11px/1.25 var(--body,system-ui);animation:f2-in .25s ease-out;background-image:repeating-linear-gradient(transparent 0 13px,rgba(59,42,32,.08) 13px 14px)}
+  font:800 13px/1.25 var(--body,system-ui);animation:f2-in .25s ease-out;background-image:repeating-linear-gradient(transparent 0 13px,rgba(59,42,32,.08) 13px 14px)}
 .f2-slip.sp{border-color:#d68910}
 .f2-slip.late{animation:f2-shake .5s ease-in-out infinite alternate}
-.f2-slip .h{display:flex;justify-content:space-between;font:900 12px/1.2 var(--disp,system-ui)}
+.f2-slip .h{display:flex;justify-content:space-between;font:900 13px/1.2 var(--disp,system-ui)}
 .f2-slip .h i{font-style:normal;background:var(--ink,#3b2a20);color:#fff;border-radius:7px;padding:0 5px}
 .f2-slip s{opacity:.45}
 .f2-slip .bar{height:5px;border-radius:3px;background:#e8dccb;margin-top:3px;overflow:hidden}

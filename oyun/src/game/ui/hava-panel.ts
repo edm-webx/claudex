@@ -22,7 +22,7 @@ const CSS = `<style>
 .hv-items{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0}
 .hv-it{border:2.5px solid var(--ink);border-radius:12px;background:#fff;padding:6px 8px;font:800 14px/1.2 var(--body)}.hv-it b{display:block;font:900 15px/1.1 var(--body);color:var(--money)}
 .hv-row{display:flex;gap:10px;align-items:center}.hv-row h3{font:900 18px/1.1 var(--disp);margin:0}.hv-row p{font:700 15px/1.3 var(--body);margin:2px 0}
-.hv-up{display:grid;grid-template-columns:54px 1fr;gap:8px;align-items:center}.hv-up .d{font:900 20px/1 var(--disp);text-align:center;border:2.5px solid var(--ink);border-radius:12px;padding:6px 0;background:#fff6e6}.hv-up .d small{display:block;font:800 11px/1 var(--body)}
+.hv-up{display:grid;grid-template-columns:54px 1fr;gap:8px;align-items:center}.hv-up .d{font:900 20px/1 var(--disp);text-align:center;border:2.5px solid var(--ink);border-radius:12px;padding:6px 0;background:#fff6e6}.hv-up .d small{display:block;font:800 13px/1 var(--body)}
 .hv-up h3{font:900 17px/1.1 var(--disp);margin:0}.hv-up p{font:700 14px/1.3 var(--body);margin:2px 0}
 .hv-mk{display:grid;grid-template-columns:30px 1fr auto;gap:8px;align-items:center;margin:6px 0}.hv-mk i{width:28px;height:28px;border-radius:50%;border:2.5px solid var(--ink)}
 .hv-mk p{margin:0;font:800 15px/1.2 var(--body)}.hv-mk p small{display:block;font:700 13px/1.2 var(--body);opacity:.75}.hv-mk .sb-btn{min-height:52px}

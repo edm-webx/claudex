@@ -43,3 +43,7 @@ Kalan: sipariş panelinin (faz2-hud f2-rail) çakışması test edilmedi (rail e
 ### UX-15 ilk dilim (karakter yaratıcı) 2026-11-21
 Yapıldı: Kimlik sekmesine 'Bedenin: Erkek/Kadın' (Vücut sekmesinden taşındı), Kadın seçilince sakal/bıyık temizlenir; yeni karakterde ad kutusu boş ('Adını yaz'), ad yazılmadan 'Sahneye çık' Kimlik sekmesine döndürür. Ekranda doğrulandı (k2.png).
 Yapılmadı / karar bekliyor: Ayarlar'daki 'Büfeci: Sabri/Sabriye' (v2ui.ts ~822) kalksın mı (sahip kararı); 7 sakal etiketi 4 mesh (esnafim/chars-v2, SANAT rolü asset üretecek); saç şapka altında yassılaşma (H-076); canlı yüz ifadesi önizlemesi; AVM giyim 5 ürün; kozmetik ürünleri. Sipariş paneli (f2-rail) çakışma testi ve kontrast betiği (tools/kontrast.mjs) yapılmadı.
+
+### UX thread 3. tur 2026-11-21
+Yapıldı: Ayarlar'dan Büfeci Sabri/Sabriye kalktı (sahip onayı); ilk giriş ipuçları tutorial.ts 'ipucu' sistemi (bina: banka/kırtasiye/okul, bölge: stadyum/orman; kayıt st.tut['ip_*'], 10 sn aralık; toast ile; birim testi ipucu.test.ts); bildirim merkezi engine/ui/index.ts (zil, son 30, okunmamış sayacı, toast 14px/3,2 sn, aria-live); tools/kontrast.mjs (13px altı + kontrast taraması, node tools/kontrast.mjs).
+Açık: view/world/hava-look.ts:480 tarih rozeti 12.5px (ana thread alanı, bir sayı değişikliği); sipariş paneli (faz2-hud f2-rail) ekranda çıkmadığı için görsel doğrulanmadı (CSS konumu rozetin altında, sağ sütun); ilk 10 dk tutorial sırası olduğu gibi bırakıldı (17 adım), yeni dakika haritası sahip girdisi bekler.
