@@ -125,6 +125,8 @@ export interface AgentHost {
   kitchenTasiAl?(wid: number): CarryItem<FoodId> | null;
   /** put the carried plate on the pass (false: pass full, wait) */
   kitchenPass?(wid: number): boolean;
+  /** 2026-11-21: elindeki tabağın gideceği pass penceresi ('on' sokak, 'W'/'E' salon) */
+  kitchenPassYer?(wid: number): 'on' | 'W' | 'E' | null;
   kitchenDrop?(wid: number): void;
   /** BUF-13 dish pile: dirty plates waiting at the dishwashing station; wash one (false: pile empty); table-wipe time factor (1..2) */
   dishCount?(): number;

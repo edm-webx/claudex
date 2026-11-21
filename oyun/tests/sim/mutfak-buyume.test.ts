@@ -2,10 +2,11 @@
 // bekleme noktaları ve rotası o aşamanın odasının içinde; duvarlar (çarpışma) odayla gider; pass ön duvarda, büfe tezgâhının arkasında,
 // garson tabağı odaya girmeden pencereden alır.
 import { describe, it, expect } from 'vitest';
-import { IC_BY_ID, icColliders, icDim, icLayout, icWorld, mutfakOda, mutfakBoy, mutfakStand, mutfakRota, mutfakDunya, mutfakIcine, mutfakVitrin, MUTFAK_YER, MUTFAK_NOKTA, IC_DUVAR, icIcinde } from '../../src/content/ic-mekan';
+import { IC_BY_ID, icColliders, icDim, icLayout, icWorld, mutfakOda, mutfakBoy, mutfakStand, mutfakRota, mutfakDunya, mutfakIcine, mutfakVitrin, MUTFAK_YER, MUTFAK_NOKTA, IC_DUVAR, icIcinde, passAcik, servisKoridor, passAsciUV, passGarsonNokta, SERVIS_KAPI_V } from '../../src/content/ic-mekan';
 import { MUTFAK_IST_BY_ID, mutfakEsya } from '../../src/content/mutfak';
 import { BUFE } from '../../src/content/prefabs/iskele/layout';
 import { buyumeEngel, GECIT, gecitIcinde } from '../../src/game/view/world/bufe-buyume';
+import { merdivenKutu } from '../../src/content/kanat';
 
 const ic = (st: number) => mutfakBoy(st).yari - IC_DUVAR;
 
@@ -33,14 +34,15 @@ describe('mutfak aşamayla büyür', () => {
     }
     for (const id of ids) if (MUTFAK_YER[id].sira === 'on') expect(Math.abs(MUTFAK_YER[id].u) - MUTFAK_YER[id].w / 2, id).toBeGreaterThan(0.85);
   });
-  it('duvarlar odayla gider: aşama 3 duvarı ±4.6, aşama 9 duvarı ±9; dışarısı yürünebilir', () => {
+  it('duvarlar odayla gider: aşama 3 duvarı ±4.6, aşama 9 duvarı ±8.55 (doğu çatı merdiveninin önünde biter); dışarısı yürünebilir', () => {
     const blocked = (s: number, x: number, z: number) => icColliders(IC_BY_ID.mutfak, s).some(r => x > r.x0 && x < r.x1 && z > r.z0 && z < r.z1);
     expect(blocked(3, 4.5, -15.2)).toBe(true); expect(blocked(3, 6.0, -15.2)).toBe(false);
     expect(blocked(6, 6.8, -15.2)).toBe(true); expect(blocked(6, 8.0, -15.2)).toBe(false);
-    expect(blocked(9, 8.9, -15.2)).toBe(true);
+    expect(blocked(9, 8.45, -15.2)).toBe(true); expect(blocked(9, 8.7, -15.2)).toBe(false);
     for (const s of [3, 6, 9]) { expect(blocked(s, 0, -12.9)).toBe(false); expect(blocked(s, 2.5, -13.1)).toBe(true); }   // kapı açık, yanındaki ön duvar kapalı (tek giriş)
     const tags = buyumeEngel(3).filter(r => r.tag === 'buyume-bufemutfak'); expect(Math.max(...tags.map(r => r.x1))).toBeLessThanOrEqual(4.7);
-    expect(Math.max(...buyumeEngel(9).filter(r => r.tag === 'buyume-bufemutfak').map(r => r.x1))).toBeGreaterThan(8.9);
+    expect(Math.max(...buyumeEngel(9).filter(r => r.tag === 'buyume-bufemutfak').map(r => r.x1))).toBeGreaterThan(8.5);
+    expect(mutfakOda(9).x + mutfakOda(9).wx / 2).toBeLessThan(merdivenKutu('E').x0);   // 2026-11-21: duvar merdivenin içine girmiyor
   });
   it('hazırlık tezgâhları aşamayla çoğalır ve aşamanın rotası onların içinden geçmez', () => {
     for (const s of [3, 6, 9, 10]) {
@@ -53,16 +55,30 @@ describe('mutfak aşamayla büyür', () => {
     const n = (s: number) => icLayout(IC_BY_ID.mutfak, s).filter(i => i.solid && (i.asama ?? 0) <= s).length; expect(n(3)).toBeLessThan(n(6)); expect(n(6)).toBeLessThan(n(9));
   });
   it('bekleme noktası odanın içine çekilir', () => { expect(mutfakIcine([-6.3, -0.7], 3)[0]).toBeGreaterThan(-ic(3)); expect(mutfakIcine([-6.3, -0.7], 9)[0]).toBe(-6.3); });
-  it('servis geçidi (2026-11-21): büfe ile mutfak arası çatılı, yan duvarlı, batıda tek personel kapısı; pass ve mutfak kapısı içine açılır', () => {
+  it('büfe ve restoran ayrı (2026-11-21, 2. tur): aradaki ara yol açık (çatılı geçit yok); mutfak salonlara kapalı servis koridoruyla bağlı', () => {
     const pg = mutfakDunya(MUTFAK_NOKTA.passGarson), kapi = icWorld(IC_BY_ID.mutfak, 0, icDim(IC_BY_ID.mutfak).D / 2 + 0.7);
-    expect(gecitIcinde(pg)).toBe(true); expect(gecitIcinde(kapi)).toBe(true);
-    for (const s of [3, 6, 9, 10]) {
+    expect(gecitIcinde(pg)).toBe(true); expect(gecitIcinde(kapi)).toBe(true);   // sokak pass'ı ve personel kapısı ara yolda
+    for (const s of [3, 6, 7, 9, 10]) {
       const eng = buyumeEngel(s), blocked = (x: number, z: number) => eng.some(r => x > r.x0 && x < r.x1 && z > r.z0 && z < r.z1);
-      expect(blocked(GECIT.x0 + 0.1, (GECIT.kz0 + GECIT.kz1) / 2)).toBe(false);   // personel kapısı açık
-      for (const z of [GECIT.z0 + 0.2, GECIT.z1 - 0.2]) expect(blocked(GECIT.x0 + 0.1, z)).toBe(true);
-      for (const z of [-12.8, -11.8, -10.8]) expect(blocked(GECIT.x1 - 0.1, z)).toBe(true);   // doğu duvarı kapalı
+      expect(eng.some(r => r.tag === 'buyume-gecit')).toBe(false);   // büfeyi mutfağa yapıştıran geçit duvarı yok
+      for (const z of [-12.8, -11.8, -10.9]) { expect(blocked(GECIT.x0 + 0.1, z)).toBe(false); expect(blocked(GECIT.x1 - 0.1, z)).toBe(false); }   // ara yol iki uçtan açık
       expect(blocked(pg.x, pg.z)).toBe(false); expect(blocked(kapi.x, kapi.z)).toBe(false);
+      for (const y of ['W', 'E'] as const) {
+        const acik = passAcik(y, s), r = servisKoridor(y, s), orta = { x: (r.x0 + r.x1) / 2, z: (r.z0 + r.z1) / 2 };
+        expect(eng.some(e => e.tag === 'buyume-servis' && orta.x > e.x0 && orta.x < e.x1 && orta.z > e.z0 && orta.z < e.z1)).toBe(acik);   // koridor yalnız personelin
+        if (!acik) continue;
+        const k = mutfakOda(s), duvar = y === 'W' ? k.x - k.wx / 2 : k.x + k.wx / 2, sal = IC_BY_ID[y === 'W' ? 'salonW' : 'salonE'];
+        expect(Math.abs((y === 'W' ? r.x1 : r.x0) - duvar)).toBeLessThan(1e-6);   // koridor mutfak duvarından
+        expect(Math.abs((y === 'W' ? r.x0 : r.x1) - (y === 'W' ? sal.x + sal.wx / 2 : sal.x - sal.wx / 2))).toBeLessThan(1e-6);   // salon duvarına
+        const kz = k.z + (SERVIS_KAPI_V[0] + SERVIS_KAPI_V[1]) / 2;   // mutfak yan duvarında kapı boşluğu
+        expect(icColliders(IC_BY_ID.mutfak, s).some(c => duvar > c.x0 - 0.01 && duvar < c.x1 + 0.01 && kz > c.z0 && kz < c.z1)).toBe(false);
+        const pa = mutfakDunya(passAsciUV(y)), gp = passGarsonNokta(y);   // aşçı koridorda, garson salonun içinde, ikisi aynı pencerenin iki yüzü
+        expect(pa.x > r.x0 && pa.x < r.x1 && pa.z > r.z0 && pa.z < r.z1).toBe(true);
+        expect(icIcinde(sal, gp, -0.3)).toBe(true); expect(Math.abs(gp.z - pa.z)).toBeLessThan(1e-6);
+        expect(icColliders(sal, s).some(c => gp.x > c.x0 - 0.2 && gp.x < c.x1 + 0.2 && gp.z > c.z0 - 0.2 && gp.z < c.z1 + 0.2)).toBe(false);   // garson noktası boş
+      }
     }
+    expect(passAcik('W', 5)).toBe(false); expect(passAcik('W', 6)).toBe(true); expect(passAcik('E', 6)).toBe(false); expect(passAcik('E', 7)).toBe(true);
   });
   it('pass penceresi büfe tezgâhının arkasında; garson noktası odanın dışında, yürüyüş yolunda; vitrin bölgesi büfeyi kapsar', () => {
     const pg = mutfakDunya(MUTFAK_NOKTA.passGarson), pa = mutfakDunya(MUTFAK_NOKTA.passAsci);

@@ -55,6 +55,7 @@ export function hostFromRules(r: Rules): AgentHost {
     kitchenTasi: (w, o) => restoranApi(r)?.kitchenTasi?.(w, o) ?? null,
     kitchenTasiAl: (w) => restoranApi(r)?.kitchenTasiAl?.(w) ?? null,
     kitchenPass: (w) => restoranApi(r)?.kitchenPass?.(w) ?? false,
+    kitchenPassYer: (w) => restoranApi(r)?.kitchenPassYer?.(w) ?? null,
     kitchenDrop: (w) => restoranApi(r)?.kitchenDrop?.(w),
     dishCount: () => rt.dirtyDishes || 0,
     kasaMesgul: () => rt.kasaQueue.length > 0,

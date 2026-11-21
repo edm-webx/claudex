@@ -17,7 +17,7 @@
  * Keeps clear: the ferry corridor (east, z -9.2..-4.8), the customer walkway behind the kiosk (z ~-12) and along x ~7.
  */
 import * as T from 'three';
-import { IC_BY_ID, icColliders, icIcinde, mutfakOda, MUTFAK_YER } from '../../../content/ic-mekan';
+import { IC_BY_ID, icColliders, icIcinde, mutfakOda, MUTFAK_YER, passAcik, servisKoridor } from '../../../content/ic-mekan';
 import { KIOSK_STAGES } from '../../../content/stages';
 import { WB, WT, EB, ET, insaatAlani } from '../../../content/insaat';
 import { Batch } from '../../../engine/prefab/batch';
@@ -65,9 +65,9 @@ export function buyumeEngel(stage: number): { x0: number; x1: number; z0: number
   // roof terrace stairs (stage 8): closed on the ground grid, only the scripted roof route (sim content/kanat.ts) uses them
   if (stage >= 8) for (const sd of ['W', 'E'] as const) { const k = merdivenKutu(sd); add(k.x0, k.x1, k.z0, k.z1, 'buyume-merdiven'); }
   if (stage >= 3) icColliders(IC_BY_ID.mutfak, stage).forEach(r => add(r.x0, r.x1, r.z0, r.z1, 'buyume-bufemutfak'));   // 2026-11-09 büfe mutfağı (BUF-22: walls follow the stage room)
-  if (stage >= 9) add(ET.x1 - 3.0, ET.x1, -3.6, -2.4, 'buyume-mutfak');
-  if (stage >= 3) gecitDuvar().forEach(r => add(r.x0, r.x1, r.z0, r.z1, 'buyume-gecit'));
-  if (stage >= 6) add(BUFE_VITRIN.x0, BUFE_VITRIN.x1, BUFE_VITRIN.z0, BUFE_VITRIN.z1, 'buyume-bufe-ic');   // 2026-11-21 roofed service passage behind the büfe
+  // 2026-11-21 restoran: mutfak ile salonlar arasındaki kapalı servis koridorları (yalnız mutfak personeli, senaryolu rota)
+  for (const y of ['W', 'E'] as const) if (passAcik(y, stage)) { const r = servisKoridor(y, stage); add(r.x0, r.x1, r.z0, r.z1, 'buyume-servis'); }
+  if (stage >= 6) add(BUFE_VITRIN.x0, BUFE_VITRIN.x1, BUFE_VITRIN.z0, BUFE_VITRIN.z1, 'buyume-bufe-ic');   // 2026-11-21 büfe interior cabinet
   return o;
 }
 
@@ -207,8 +207,10 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
      only while the player is inside the kitchen; from the büfe the passage roof lifts and the kitchen shows through the glass front). */
   if (stage >= 3) {
     const steel = stage >= 7, esnaf = !steel;
-    const wallC = fine ? '#1f2a44' : steel ? '#b9c2ca' : '#efe3c8', bandC = fine ? '#c9a24a' : '#1f2a44', stripeC = fine ? '#f4f2ec' : '#ffd23f', roofC = fine ? '#3c4d70' : steel ? '#7d858d' : '#8b5a3c';
-    const mull = fine ? '#c9a24a' : steel ? '#9aa2ab' : '#7a4a2a';
+    // 2026-11-21 (sahibi: "büfe ile mutfağın mimarisi bir mi?"): mutfak büfenin değil RESTORANIN binası: salonlarla aynı dil (beyaz sıva,
+    // salon mavisi bant, beyaz çerçeve; aşama 10 lacivert-altın), büfenin kırmızı/sarı çizgisi yok. İç donanım esnaf -> çelik (ic-mekan-look).
+    const wallC = fine ? '#1f2a44' : '#ece6da', bandC = accent, stripeC = fine ? '#e8c76a' : frame, roofC = fine ? '#3c4d70' : '#5f6e7a';
+    const mull = fine ? '#c9a24a' : '#e9eef2'; void steel;
     const cat = { g: new T.Group(), b: new Batch(), gl: new Batch(), lit: new Batch(), wm: new Batch() }; cat.g.name = 'cati-K'; catis.push(cat);
     const duv = { g: new T.Group(), b: new Batch(), gl: new Batch(), lit: new Batch(), wm: new Batch() }; duv.g.name = 'duvar-K'; catis.push(duv);
     const k = mutfakOda(stage), X0 = k.x - k.wx / 2, X1 = k.x + k.wx / 2, Z0 = k.z - k.wz / 2, Z1 = k.z + k.wz / 2, Hh = 3.0, kb = duv.b, rb = cat.b;
@@ -222,7 +224,6 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
       duv.gl.box(xb - xa, 1.5, 0.04, '#cfe8f4', (xa + xb) / 2, 1.75, Z1 - 0.05);
       const n = Math.max(1, Math.round((xb - xa) / 1.3)); for (let i = 0; i <= n; i++) kb.box(0.08, 1.5, 0.12, mull, xa + (xb - xa) * i / n, 1.75, Z1 - 0.02);
     }
-    if (esnaf) for (let x = X0 + 0.3; x < X1 - 0.2; x += 0.3) if (Math.abs(x) > DG) kb.box(0.012, 0.9, 0.01, '#d6c8a6', x, 0.5, Z1 + 0.005);   // fayans derzleri (esnaf)
     kb.box(PU - PW / 2 - X0, 0.06, 0.06, bandC, (X0 + PU - PW / 2) / 2, 1.0, Z1 + 0.02); kb.box(-DG - PU - PW / 2, 0.06, 0.06, bandC, (PU + PW / 2 - DG) / 2, 1.0, Z1 + 0.02); kb.box(X1 - DG, 0.06, 0.06, bandC, (X1 + DG) / 2, 1.0, Z1 + 0.02);
     // pass window: open hatch, serving ledge outside with plates and a bell, heat lamp glow, awning (esnaf stripes / steel canopy)
     kb.box(PW + 0.3, 0.08, 0.55, fine ? '#c9a24a' : steel ? '#e9eef2' : '#a8794e', PU, 1.02, Z1 + 0.22); kb.box(PW + 0.2, 0.1, 0.1, mull, PU, 2.5, Z1 + 0.02);
@@ -230,9 +231,8 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
     duv.lit.box(PW - 0.2, 0.05, 0.25, '#ffcf8a', PU, 2.4, Z1 - 0.2);
     for (let i = 0; i < 3; i++) kb.cyl(0.17, 0.17, 0.03, '#ffffff', PU - 0.7 + i * 0.45, 1.08, Z1 + 0.25, { seg: 12 });
     kb.cyl(0.06, 0.07, 0.05, '#c9a24a', PU + 0.95, 1.09, Z1 + 0.25, { seg: 8 });
-    if (esnaf) for (let i = 0; i < 6; i++) kb.box(0.4, 0.05, 0.75, i % 2 ? '#fbfaf6' : '#c0392b', PU - PW / 2 - 0.05 + (i + 0.5) * (PW + 0.1) / 6, 2.72, Z1 + 0.32, { rx: 0.35 });
-    else kb.box(PW + 0.5, 0.06, 0.7, accent, PU, 2.72, Z1 + 0.32, { rx: 0.3 });
-    sign(stage >= 9 ? 'SERVİS · PASS' : 'SERVİS', PU, 2.8, Z1 + 0.2, 1.5);   // under the service passage roof (GECIT)
+    kb.box(PW + 0.5, 0.06, 0.7, accent, PU, 2.72, Z1 + 0.32, { rx: 0.3 }); void esnaf;
+    sign(passAcik('W', stage) ? 'TERAS SERVİSİ' : 'SERVİS', PU, 2.8, Z1 + 0.2, 1.5);   // sokak pass'ı: büfe önü masaları + salonu olmayan teras
     kb.box(1.9, 0.07, 0.5, accent, k.x, 2.75, Z1 + 0.3, { rx: 0.25 });   // door canopy
     // roof (+ chimneys / extractor units / skylights), hidden with the cutaway
     rb.box(k.wx + 0.3, 0.22, k.wz + 0.3, roofC, k.x, Hh + 0.11, k.z);
@@ -240,12 +240,12 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
     for (const f of stage >= 4 ? [-0.6, -0.2, 0.3] : [-0.6]) { const cxm = f * (k.wx / 2); rb.cyl(0.32, 0.36, 1.1, steel ? '#9aa2ab' : '#6b5a4a', cxm, Hh + 0.85, k.z - 0.6, { seg: 8 }); rb.cyl(0.4, 0.4, 0.1, '#33373b', cxm, Hh + 1.45, k.z - 0.6, { seg: 8 }); }
     if (stage >= 9) for (const f of [-0.85, 0.75]) { rb.box(1.6, 0.8, 1.2, fine ? '#2a3550' : '#c9ced6', f * (k.wx / 2), Hh + 0.62, k.z - 0.4); rb.box(1.2, 0.08, 0.9, '#5b6068', f * (k.wx / 2), Hh + 1.06, k.z - 0.4); }
     if (stage >= 10) for (let i = 0; i < 4; i++) cat.lit.box(1.2, 0.06, 0.8, '#fff3d6', -4.5 + i * 3, Hh + 0.25, k.z + 0.3);
-    { const mb = b; const mg = grp; b = kb; grp = duv.g; sign(fine ? 'SABRİ\'NİN MUTFAĞI' : stage >= 9 ? 'SABRİ MUTFAĞI · ŞEF' : 'SABRİ MUTFAĞI', k.x, Hh + 0.62, Z1 + 0.24, 3.6); b = mb; grp = mg; }
+    { const mb = b; const mg = grp; b = kb; grp = duv.g; sign('MUTFAK · PERSONEL', k.x, Hh + 0.5, Z1 + 0.24, 2.6); b = mb; grp = mg; }   // ara yola bakan servis cephesi: personel kapısı + teras pass'ı
     glowAt(k.x, Z1 + 0.9, 2.4); glowAt(PU, Z1 + 0.9, 1.8);
-    /* 2026-11-21 "iskelede dışarıda açık mutfak var ne alaka": the kitchen reads as the büfe's back kitchen. Outside it speaks the
-       büfe language (navy base band, yellow stripe, navy cornice), high windows and extractor grilles on the sea side, its own sign
-       facing the sea; the walkway between the büfe and the kitchen is a roofed service passage (GECIT: side walls, one staff door
-       on the west side), the roof of the passage is cut away while the player is in the büfe / passage / kitchen. */
+    /* 2026-11-21 (2. tur, sahibi: "yapışık da duramaz, büfe ayrı restoran ve mutfağı ayrı çalışsın"): the kitchen is the restaurant's
+       back of house. Same language as the salons (white plaster, salon-blue bands), high windows and extractor grilles on the sea
+       side; the büfe stands on its own in front across an OPEN service alley (the roofed passage that glued them together is gone),
+       the salons join the kitchen through closed service corridors (servisKoridor) with a pass window into each salon. */
     const ob = (w: number, h: number, d: number, c: string, x: number, y: number, z: number) => kb.box(w, h, d, c, x, y, z);
     for (const [y, h, c] of [[0.18, 0.36, bandC], [1.02, 0.08, stripeC], [2.62, 0.08, stripeC], [2.86, 0.28, bandC]] as [number, number, string][]) {
       ob(k.wx + 0.06, h, 0.04, c, k.x, y, Z0 - 0.02);   // back (sea side)
@@ -259,28 +259,19 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
       for (const s2 of [-1, 1]) ob(0.07, 0.78, 0.07, bandC, wx + s2 * 0.74, 1.95, Z0 - 0.06);
     }
     for (const sx of [X0, X1]) { duv.gl.box(0.03, 0.7, 1.4, '#cfe8f4', sx + (sx < 0 ? -0.04 : 0.04), 1.95, k.z); ob(0.08, 0.08, 1.56, bandC, sx + (sx < 0 ? -0.06 : 0.06), 2.34, k.z); ob(0.1, 0.08, 1.56, bandC, sx + (sx < 0 ? -0.07 : 0.07), 1.56, k.z); }
-    { const mb = b, mg = grp; b = kb; grp = duv.g; sign(fine ? 'SABRİ\'NİN MUTFAĞI' : 'SABRİ\'NİN BÜFESİ · MUTFAK', k.x, Hh + 0.62, Z0 - 0.24, 3.6, Math.PI); b = mb; grp = mg; }
-    // service passage: floor, west wall with the staff door, east wall with a window, roof (cati-G) with lamps
-    const G = GECIT, gw = G.x1 - G.x0, gz = (G.z0 + G.z1) / 2, gd = G.z1 - G.z0, gt = 0.2, gc = fine ? '#2a3550' : wallC;
-    b.box(gw, 0.08, gd, fine ? '#3a3540' : steel ? '#b9a08a' : '#c98a5a', (G.x0 + G.x1) / 2, 0.04, gz);
-    for (let i = 1; i < 14; i++) b.box(0.014, 0.004, gd - 0.05, fine ? '#c9a24a' : '#e9dcc0', G.x0 + i * gw / 14, 0.082, gz); for (let j = 1; j < 4; j++) b.box(gw - 0.05, 0.004, 0.014, fine ? '#c9a24a' : '#e9dcc0', (G.x0 + G.x1) / 2, 0.082, G.z0 + j * gd / 4);
-    const wall = (x: number, za: number, zb: number, y0: number, y1: number, c = gc) => { if (zb - za > 0.01) b.box(gt, y1 - y0, zb - za, c, x, (y0 + y1) / 2, (za + zb) / 2); };
-    const wx0 = G.x0 + gt / 2, wx1 = G.x1 - gt / 2;
-    wall(wx0, G.z0, G.kz0, 0, Hh); wall(wx0, G.kz1, G.z1, 0, Hh); wall(wx0, G.kz0, G.kz1, 2.3, Hh);   // west: staff door (gap kz0..kz1)
-    wall(wx1, G.z0, G.z1, 0, 1.0); wall(wx1, G.z0, G.z1, 2.4, Hh); gl.box(0.04, 1.4, gd - 0.3, '#cfe8f4', wx1, 1.7, gz);   // east: window
-    for (let i = 0; i <= 3; i++) b.box(0.1, 1.4, 0.1, bandC, wx1 + 0.06, 1.7, G.z0 + 0.1 + i * (gd - 0.2) / 3);
-    for (const [x, sd] of [[G.x0, -1], [G.x1, 1]] as [number, number][]) for (const [y, h, c] of [[0.18, 0.36, bandC], [1.02, 0.08, stripeC], [2.62, 0.08, stripeC], [2.86, 0.28, bandC]] as [number, number, string][]) {
-      if (sd < 0 && y < 2.3) { b.box(0.04, h, G.kz0 - G.z0, c, x - 0.02, y, (G.z0 + G.kz0) / 2); b.box(0.04, h, G.z1 - G.kz1, c, x - 0.02, y, (G.kz1 + G.z1) / 2); }
-      else b.box(0.04, h, gd, c, x + sd * 0.02, y, gz);
+    { const mb = b, mg = grp; b = kb; grp = duv.g; sign(fine ? 'SABRİ\'NİN SOFRASI' : stage >= 6 ? 'SABRİ RESTORAN' : 'SABRİ MUTFAĞI', k.x, Hh + 0.62, Z0 - 0.24, 3.6, Math.PI); b = mb; grp = mg; }
+    // 2026-11-21 servis koridorları: mutfağın yan duvarından salonun duvarına kapalı, çatılı blok (salonla aynı dil); içinden aşçı/komi
+    // tabağı salonun pass penceresine taşır (ic-mekan.ts servisKoridor / passAsciUV). Batı aşama 6, doğu aşama 7; çatı merdiveni üstünden geçer.
+    for (const y of ['W', 'E'] as const) {
+      if (!passAcik(y, stage)) continue;
+      const r = servisKoridor(y, stage), w = r.x1 - r.x0, d = r.z1 - r.z0, x = (r.x0 + r.x1) / 2, z = (r.z0 + r.z1) / 2;
+      b.box(w + 0.1, Hh, d, wallC, x, Hh / 2, z);
+      b.box(w + 0.3, 0.2, d + 0.3, roofC, x, Hh + 0.1, z);
+      for (const zz of [r.z0 - 0.02, r.z1 + 0.02]) { b.box(w + 0.12, 0.3, 0.04, bandC, x, 0.15, zz); b.box(w + 0.12, 0.26, 0.04, bandC, x, Hh - 0.13, zz); b.box(w + 0.12, 0.06, 0.05, stripeC, x, Hh - 0.3, zz); }
+      const nwin = Math.max(1, Math.floor(w / 1.8));   // high service windows on the promenade side, warm light inside
+      for (let i = 0; i < nwin; i++) { const wx2 = r.x0 + w * (i + 0.5) / nwin; gl.box(0.8, 0.45, 0.03, '#cfe8f4', wx2, 2.2, r.z1 + 0.03); b.box(0.9, 0.06, 0.06, bandC, wx2, 1.95, r.z1 + 0.05); lit.box(0.7, 0.03, 0.02, '#ffd9a0', wx2, 2.4, r.z1 + 0.02); }
+      sign(fine ? 'SERVİS' : 'MUTFAK → SALON', x, Hh - 0.75, r.z1 + 0.06, Math.min(1.8, w - 0.3));
     }
-    for (const s2 of [-1, 1]) b.box(0.12, 2.3, 0.12, bandC, G.x0 - 0.02, 1.15, (G.kz0 + G.kz1) / 2 + s2 * (G.kz1 - G.kz0) / 2);   // door frame
-    b.box(0.45, 0.05, (G.kz1 - G.kz0) + 0.3, bandC, G.x0 - 0.22, 2.48, (G.kz0 + G.kz1) / 2, { rz: -0.25 });   // little door canopy
-    { const ry = -HP; sign(fine ? 'PERSONEL · MUTFAK' : 'PERSONEL GİRİŞİ', G.x0 - 0.08, 2.72, (G.kz0 + G.kz1) / 2, 1.5, ry); }
-    const catG = { g: new T.Group(), b: new Batch(), gl: new Batch(), lit: new Batch(), wm: new Batch() }; catG.g.name = 'cati-G'; catis.push(catG);
-    catG.b.box(gw + 0.3, 0.2, gd + 0.1, roofC, (G.x0 + G.x1) / 2, Hh + 0.1, gz);
-    { const seamC = fine ? '#5a6f98' : steel ? '#98a0a8' : '#a0694a', ns = Math.round(gw / 0.9); for (let i = 1; i < ns; i++) catG.b.box(0.05, 0.05, gd + 0.1, seamC, G.x0 + i * gw / ns, Hh + 0.22, gz); }
-    for (const zz of [G.z0 + 0.05, G.z1 - 0.05]) { catG.b.box(gw + 0.4, 0.26, 0.1, bandC, (G.x0 + G.x1) / 2, Hh + 0.12, zz); catG.b.box(gw + 0.42, 0.06, 0.11, stripeC, (G.x0 + G.x1) / 2, Hh + 0.02, zz); }
-    for (let i = 0; i < 4; i++) catG.lit.cyl(0.16, 0.2, 0.12, '#fff3d6', G.x0 + gw * (i + 0.5) / 4, Hh - 0.08, gz, { seg: 10 });
   }
   /* 6+: büfe interior (2026-11-21 "büfenin içi koca boş zemin"): the kitchen moved behind, so the büfe gets a bread / dessert
      cabinet on the east wall (BUFE_VITRIN, solid), a glass and jar shelf with the old photo on the west wall (wall-mounted) and a
@@ -302,34 +293,34 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
   if (stage >= 6) { hall(WB, 1, fine ? 'SABRİ\'NİN SOFRASI · KAHVALTI' : stage >= 8 ? 'SABRİ KAHVALTI & MEZE' : 'SABRİ KAHVALTI SALONU', stage >= 8, '#ffcf8a', { floor: fine ? '#c9a77c' : '#e9e0c8', back: fine ? '#f3e6c8' : '#efe6d2' }); }
   /* 7: east hall: Balık lokantası */
   if (stage >= 7) { hall(EB, stage >= 8 ? 2 : 1, fine ? 'SABRİ\'NİN SOFRASI · BALIK' : stage >= 8 ? 'SABRİ BOĞAZ LOKANTASI' : 'SABRİ BALIK LOKANTASI', stage >= 8, '#ffd9a0', { floor: fine ? '#dfe8ec' : '#e3ebee', back: fine ? '#1d4f86' : '#d8e6ee' }); }
-  /* 9: open grill kitchen, arcade behind the kiosk, rooftop sign on the kiosk */
+  /* 9: rooftop sign on the büfe (the büfe keeps its own name: it is NOT the restaurant), restaurant crest on the kitchen roof.
+     2026-11-21: the old stage-9 "Şef Mutfağı · Izgara" counter on the east terrace is gone (an orphan grill cut off from the real
+     kitchen, owner: "iskelenin sağında şef mutfağı ızgara diye bir yer var neden?"); stage 9 is the two-line kitchen (ocak2 / izgara2). */
   if (stage >= 9) {
-    const kx = ET.x1 - 1.5, kz = -3.0;
-    b.box(3.0, 0.95, 1.1, fine ? '#2a2a30' : '#c9ced6', kx, 0.6, kz); b.box(3.1, 0.06, 1.2, '#e9eef2', kx, 1.1, kz);
-    b.box(3.0, 2.6, 0.18, fine ? '#1f2a44' : '#e9e0c8', kx, 1.42, kz - 0.7);
-    for (let i = 0; i < 7; i++) for (let j = 0; j < 4; j++) b.box(0.36, 0.3, 0.02, (i + j) % 2 ? '#3fb5b0' : '#f6f8fb', kx - 1.2 + i * 0.4, 1.3 + j * 0.34, kz - 0.6);
-    b.box(2.4, 0.5, 1.0, '#9aa2ab', kx, 2.75, kz - 0.25); b.box(0.5, 2.6, 0.5, '#9aa2ab', kx + 0.8, 4.2, kz - 0.5);
-    b.box(1.4, 0.08, 0.7, '#1a1a1a', kx - 0.6, 1.15, kz);
-    for (let i = 0; i < 6; i++) { const f = new T.Mesh(new T.ConeGeometry(0.07, 0.3, 5), new T.MeshBasicMaterial({ color: i % 2 ? '#ffb347' : '#ff7a2f', transparent: true, opacity: 0.9, depthWrite: false })); f.position.set(kx - 1.1 + i * 0.2, 1.32, kz); f.userData.ph = i * 1.7; grp.add(f); flames.push(f); }
-    sign('ŞEF MUTFAĞI · IZGARA', kx, 3.35, kz + 0.2, 2.8);
-    // the grill şef is the hired kitchen chef (sim agents/workers.ts 'kAcik' at content/kanat.ts ACIK_MUTFAK), not a figure
-    // (the old slatted arcade over the walkway is gone: the roofed service passage GECIT replaces it from stage 3)
     // rooftop sign over the kiosk
     { const tb = { g: new T.Group(), b: new Batch(), gl: new Batch(), lit: new Batch(), wm: new Batch() }; tb.g.name = 'tabela-B'; catis.push(tb);   // 2026-11-21: hides with the büfe cutaway (it floated over the open büfe and hid its inside)
       const mb = b, mg = grp; b = tb.b; grp = tb.g;
-      sign(fine ? 'SABRİ\'NİN SOFRASI' : 'SABRİ\'NİN BÜFESİ · 1987', 0, 3.75, BUFE.z0 + 0.35, 7.0, 0, fine ? '#14192a' : '#e0533c', fine ? '#e8c76a' : '#fff6e6');   // 2026-11-21 görsel: direkler kalktı, tabela arka duvarın üstüne monte
+      sign('SABRİ\'NİN BÜFESİ · 1987', 0, 3.75, BUFE.z0 + 0.35, 7.0, 0, '#e0533c', '#fff6e6');   // büfe hep büfe: kırmızı tabela, Sofrası değil   // 2026-11-21 görsel: direkler kalktı, tabela arka duvarın üstüne monte
       for (const x of [-3.0, 3.0]) b.box(0.12, 0.7, 0.12, '#9aa2ab', x, 3.3, BUFE.z0 + 0.3);   // kısa çelik konsollar
       b = mb; grp = mg; }
   }
-  /* 10: fine dining arrival */
+  /* 6+: restaurant crest on the kitchen roof, facing the promenade over the büfe: the back row (salon + kitchen + salon) is one
+     restaurant, "Sabri Restoran", at stage 10 "Sabri'nin Sofrası". Hidden from inside the büfe / kitchen (cutaway). */
+  if (stage >= 6) {
+    const tr = { g: new T.Group(), b: new Batch(), gl: new Batch(), lit: new Batch(), wm: new Batch() }; tr.g.name = 'tabela-R'; catis.push(tr);
+    const mb = b, mg = grp; b = tr.b; grp = tr.g; const zf = mutfakOda(stage).z + mutfakOda(stage).wz / 2 - 0.5;
+    sign(fine ? 'SABRİ\'NİN SOFRASI' : 'SABRİ RESTORAN', 0, 4.55, zf, 6.4, 0);
+    for (const x of [-2.6, 2.6]) b.box(0.12, 1.2, 0.12, fine ? '#c9a24a' : '#9aa2ab', x, 3.75, zf - 0.08);
+    b = mb; grp = mg;
+  }
+  /* 10: fine dining arrival: at the RESTAURANT doors (salon fronts), not along the büfe queue (2026-11-21) */
   if (fine) {
-    b.box(1.5, 0.025, 7.4, '#9a1f2a', -0.25, 0.02, 0.6); b.box(1.58, 0.02, 7.44, '#c9a24a', -0.25, 0.012, 0.6);   // red carpet along the queue
-    for (const s2 of [-1, 1]) for (let i = 0; i < 5; i++) { const z = -2.6 + i * 1.65, x = -0.25 + s2 * 1.0; b.cyl(0.03, 0.03, 0.9, '#c9a24a', x, 0.45, z, { seg: 6 }); b.sph(0.06, '#c9a24a', x, 0.92, z, { ws: 6, hs: 4 }); }
-    // gold arch at the pier mouth
-    for (const x of [-3.6, 3.1]) { b.box(0.4, 4.6, 0.4, '#1f2a44', x, 2.3, 4.15); b.box(0.5, 0.2, 0.5, '#c9a24a', x, 4.6, 4.15); b.box(0.5, 0.2, 0.5, '#c9a24a', x, 0.1, 4.15); lit.cyl(0.1, 0.12, 0.08, '#ffe6b0', x, 0.06, 4.6, { seg: 8 }); }
-    b.box(7.1, 0.3, 0.3, '#c9a24a', -0.25, 4.75, 4.15); sign('SABRİ\'NİN SOFRASI', -0.25, 4.2, 4.33, 5.6, 0);
+    for (const r of [WB, EB]) {
+      const X = cx(r); b.box(1.6, 0.025, 1.15, '#9a1f2a', X, 0.02, r.z1 + 0.6); b.box(1.68, 0.02, 1.2, '#c9a24a', X, 0.012, r.z1 + 0.6);   // red carpet at the door
+      for (const s2 of [-1, 1]) { const x = X + s2 * 1.05; b.cyl(0.03, 0.03, 0.9, '#c9a24a', x, 0.45, r.z1 + 0.9, { seg: 6 }); b.sph(0.06, '#c9a24a', x, 0.92, r.z1 + 0.9, { ws: 6, hs: 4 }); }
+    }
     b.box(0.6, 1.1, 0.4, '#1f2a44', 4.2, 0.55, 5.6); b.box(0.66, 0.06, 0.46, '#c9a24a', 4.2, 1.12, 5.6);   // valet podium on the promenade
-    for (const [x, z] of [[-4.6, 3.3], [4.0, 3.3], [WT.x1 + 1.6, -9.6], [EB.x0 - 1.6, -9.6], [WT.x0 + 0.6, WT.z1 + 0.2], [ET.x1 - 0.4, ET.z1 + 0.3]]) { b.cyl(0.32, 0.26, 0.6, '#f4f2ec', x, 0.3, z, { seg: 10 }); b.sph(0.42, '#3f7a34', x, 0.95, z, { ws: 8, hs: 6 }); b.sph(0.3, '#4f8f3a', x, 1.5, z, { ws: 8, hs: 6 }); }
+    for (const [x, z] of [[cx(WB) - 1.7, WB.z1 + 0.5], [cx(WB) + 1.7, WB.z1 + 0.5], [cx(EB) - 1.7, EB.z1 + 0.5], [cx(EB) + 1.7, EB.z1 + 0.5], [WT.x0 + 0.6, WT.z1 + 0.2], [ET.x1 - 0.4, ET.z1 + 0.3]]) { b.cyl(0.32, 0.26, 0.6, '#f4f2ec', x, 0.3, z, { seg: 10 }); b.sph(0.42, '#3f7a34', x, 0.95, z, { ws: 8, hs: 6 }); b.sph(0.3, '#4f8f3a', x, 1.5, z, { ws: 8, hs: 6 }); }
   }
 
   const { solid: sm, glass: gm, glow: lm, pool: pm, warm: wmm } = mats();
@@ -475,7 +466,7 @@ export function createBufeBuyume(deps: BuyumeDeps): BuyumeView {
         for (const [nm, m] of [['cati-W', IC_BY_ID.salonW], ['cati-E', IC_BY_ID.salonE], ['duvar-K', mutfakOda(st)]] as const) { const o = grp.getObjectByName(nm); if (o) o.visible = !icIcinde(m, hp, 0.2); }
         const ck = grp.getObjectByName('cati-K'), inK = icIcinde(mutfakOda(st), hp, 0.2); if (ck) ck.visible = !inK;   // 2026-11-21: the kitchen roof lifts only while the player is inside the kitchen
         const inB = hp.x > BUFE.x0 - 0.2 && hp.x < BUFE.x1 + 0.2 && hp.z > BUFE.z0 - 0.2 && hp.z < BUFE.z1, tbB = grp.getObjectByName('tabela-B'); if (tbB) tbB.visible = !inB && !gecitIcinde(hp);
-        const cg = grp.getObjectByName('cati-G'); if (cg) cg.visible = !inK && !gecitIcinde(hp) && !inB;   // passage roof: off from the büfe (pass window seen), the passage and the kitchen
+        const tbR = grp.getObjectByName('tabela-R'); if (tbR) tbR.visible = !inB && !inK && !gecitIcinde(hp);
       }
       const n = deps.night();
       const M = mats(); M.glow.color.setScalar(0.55 + 0.45 * n); M.pool.opacity = 0.75 * n; M.warm.opacity = 0.35 * n;

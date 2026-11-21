@@ -16,7 +16,10 @@ export const FAZ2_UI = true;
 export const ADISYON = {
   fromStage: 3,
   /** share of new customers that come for table service, by kiosk stage (index stage-1) */
-  share: [0, 0, 0.2, 0.3, 0.4, 0.45, 0.5, 0.55, 0.55, 0.6],   // 2026-11-09 user: seated customers must not cycle so fast the player gives up (calmer)
+  // 2026-11-09 user: seated customers must not cycle so fast the player gives up (calmer). 2026-11-21 owner: "son seviyelere doğru
+  // müşteriler sıra olmak yerine restorana girip sipariş vermeli": from the salons on (6+) most guests dine in, the büfe counter
+  // stays the takeaway window (queue) for the rest. Bills are recalibrated in content/kanat.ts KANAT_FIYAT_X.
+  share: [0, 0, 0.2, 0.3, 0.4, 0.6, 0.7, 0.8, 0.86, 0.9],
   orderDelay: 4,          // s after sitting before the ticket prints
   patience: 150,          // s for the whole ticket
   maxOpen: 3,             // open tickets at once
