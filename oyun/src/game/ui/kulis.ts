@@ -365,7 +365,10 @@ ${e.sapka ? `<div class="kl-l">Şapka rengi</div>${sw('sapkaRenk', COLS, e.sapka
     cp.lerp(new T.Vector3(...s.cam), k); ca.lerp(new T.Vector3(...s.at), k);
     cam.position.copy(cp);
     const right = new T.Vector3().subVectors(ca, cp).cross(new T.Vector3(0, 1, 0)).normalize();
-    cam.lookAt(ca.clone().addScaledVector(right, off)); cam.fov = wide ? 40 : 48; cam.updateProjectionMatrix();
+    cam.lookAt(ca.clone().addScaledVector(right, off)); cam.fov = wide ? 40 : 48;
+    if (!wide && h > w) cam.setViewOffset(w, h, 0, Math.round(h * 0.15), w, h);   // dar dikey ekranda alttaki panel karakteri kapatmasın: görüntüyü yukarı kaydır
+    else cam.clearViewOffset();
+    cam.updateProjectionMatrix();
     if (hero) {
       hero.setPose({ x: hp.x, z: hp.z }, hp.rot);
       hero.setInput({ speed: walkSp, carry: 0, act: walkSp > 0 ? 'walk' : 'idle', mood: tab === 'yuz' || tab === 'sac' ? 'ok' : 'happy', t });

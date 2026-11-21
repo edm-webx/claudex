@@ -33,6 +33,8 @@ export interface MotorCameraRig extends CameraRig {
   turn(delta: number): void;
   /** dev/measurement only: pin the near plane (null = automatic) */
   nearFixed(v: number | null): void;
+  /** Alçak kamerada duvar/bina içine girmeyi önler: fn(hero xz, kamera xz) -> ilk çarpışma oranı (1 = engel yok). */
+  setOcclusion(fn: ((fx: number, fz: number, tx: number, tz: number) => number) | null): void;
   /** Ease the orbit back to the flat default angle. */
   recenter(): void;
 }
@@ -57,6 +59,7 @@ export function createCameraRig(deps: CameraDeps): MotorCameraRig {
     if (q !== camera.near) { camera.near = q; camera.updateProjectionMatrix(); }
   };
 
+  let occ: ((fx: number, fz: number, tx: number, tz: number) => number) | null = null, occK = 1;
   const baseDist = () => {
     const tanV = Math.tan(camera.fov * Math.PI / 360), asp = camera.aspect;
     return clamp(Math.max(6.6 / (tanV * asp), 6.2 / tanV), 13, 40) * CAM.zoom;
@@ -72,6 +75,7 @@ export function createCameraRig(deps: CameraDeps): MotorCameraRig {
     get yaw() { return yaw; },
     turn(delta: number) { if (!fpv && isFinite(delta)) { yawTo = null; yaw += delta; } },
     nearFixed(v) { nearPin = v; },
+    setOcclusion(fn) { occ = fn; occK = 1; },
     /** dev/screenshot only: zoom without the ZOOM_MAX clamp */
     zoomRaw(z: number) { CAM.zoom = z; },
     fp(v) { if (!v && fpv) snapNext = true; fpv = v; },
@@ -125,6 +129,13 @@ export function createCameraRig(deps: CameraDeps): MotorCameraRig {
         if (Math.abs(yawTo - yaw) < 0.002) { yaw = 0; yawTo = null; }
       }
       setNear(clamp(dist * 0.08, 0.1, 3));
+      if (occ) {   // kamera alçaksa (duvar/çatı yüksekliğinin altında) hero ile kamera arasındaki büyük solid'e girmesin
+        const h0 = Math.sin(pitch) * dist + camY;
+        let want = 1;
+        if (h0 < 4.5) { const o = Math.cos(pitch) * dist; const t = occ(CAM.x, CAM.z + 0.4, CAM.x + Math.sin(yaw) * o, CAM.z + 0.4 + Math.cos(yaw) * o); want = clamp((t - 0.04) , 0.35, 1); }
+        occK = want < occK ? want : occK + (want - occK) * (1 - Math.exp(-3 * dt));   // yaklaşırken anında, açılırken yumuşak
+        dist *= occK;
+      } else occK = 1;
       const off = Math.cos(pitch) * dist;
       camera.position.set(CAM.x + Math.sin(yaw) * off, Math.sin(pitch) * dist + camY, CAM.z + 0.4 + Math.cos(yaw) * off);
       camera.lookAt(CAM.x, 0.6 + camY, CAM.z + 0.4);
