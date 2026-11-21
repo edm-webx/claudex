@@ -17,7 +17,7 @@ await p.addInitScript(() => {
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=${process.env.TIER || 'dengeli'}&seed=3&stage=10`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 90000 });
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(700); }
+const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await p.fill('.kl-in[name="ad"]:not([readonly])', 'Deneme', { timeout: 1000 }).catch(() => {}); await go.click({ force: true }); await p.waitForTimeout(700); }
 const settle = (n = 10) => p.evaluate(n => { const M = window.__marti; for (let k = 0; k < n; k++) M.renderFrames(2, 0.1); }, n);
 const sample = () => p.evaluate(() => { try { gc(); } catch { /* */ } const M = window.__marti, i = M.info(); return { geo: i.geos, tex: i.texs, prog: i.programs, ctx: window.__ctxLive(), dom: document.getElementsByTagName('*').length, heap: (performance.memory?.usedJSHeapSize || 0) / 1048576, calls: i.calls }; });
 await p.evaluate(() => { const M = window.__marti; M.simCmd('money', 9e9); M.simCmd('level', 40); });
@@ -32,7 +32,7 @@ for (let t = 0; t < TUR; t++) {
   if (t === 0) evCalls = await p.evaluate(() => { const M = window.__marti, f0 = M.info().frameNo; M.renderFrames(3, 0.1); return { cover: !!document.querySelector('.ev-ov'), anaKareCizildi: M.info().frameNo - f0 }; });   // PRF-04: örtülüyken ana sahne 0 kare çizer
   await p.evaluate(() => window.__marti.command({ kind: 'dekor2', arg: 'evClose' })); await settle(4);
   await p.evaluate(() => window.__marti.command({ kind: 'esnafim', op: 'open' })); await settle(2);   // kulis (karakter): üçüncü bağlam
-  { const kg = await p.$('.kl-go'); if (kg) { await kg.click({ force: true }); await settle(2); } }
+  { const kg = await p.$('.kl-go'); if (kg) { await p.fill('.kl-in[name="ad"]:not([readonly])', 'Deneme', { timeout: 1000 }).catch(() => {}); await kg.click({ force: true }); await settle(2); } }
   const s = await sample(); rows.push(s); if (process.env.SES || t % 5 === 4 || t === 0) console.log(`tur ${String(t + 1).padStart(2)}  geo=${s.geo} tex=${s.tex} prog=${s.prog} ctx=${s.ctx} dom=${s.dom} heapMB=${s.heap.toFixed(1)}`);
 }
 const half = rows.slice(Math.floor(rows.length / 2));

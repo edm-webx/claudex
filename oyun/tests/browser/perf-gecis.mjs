@@ -13,7 +13,7 @@ const hata = []; p.on('pageerror', e => hata.push(String(e).slice(0, 160)));
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengeli&seed=3&stage=1`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 120000 });
 await p.evaluate(() => { const M = window.__marti; M.play('sabri'); M.renderFrames(2, 0.1); });
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(700); }
+const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await p.fill('.kl-in[name="ad"]:not([readonly])', 'Deneme', { timeout: 1000 }).catch(() => {}); await go.click({ force: true }); await p.waitForTimeout(700); }
 const gecis = {};
 for (let s = 2; s <= 10; s++) {
   const o = await p.evaluate((s) => {

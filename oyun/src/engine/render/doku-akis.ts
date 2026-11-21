@@ -9,7 +9,7 @@
  *   sayısı (dpm yarım ölçekte verilir; ölçek s'de dpm * 2s). Bir basamak ppm > doku * YUKARI ise yetmez (bir üst, yetene dek);
  *   daha küçük bir basamakta ppm < doku * ASAGI kalıyorsa ona iner (gecikmeli eşik: sınırda gidip gelmez).
  * - Ana sahnede olmayan (ayrı renderer'lı kulis/ev odası önizlemesi gibi) nesneler ölçülemez: her zaman tam çözünürlük.
- * - Görünmeyen (kendisi ya da bir atası visible=false) nesneler en çok yarımda tutulur (daha küçükse olduğu gibi kalır).
+ * - Görünmeyen (kendisi ya da bir atası visible=false) ya da kamera kadrajı dışındaki nesneler en çok yarımda tutulur (daha küçükse olduğu gibi kalır).
  * - Kare başına en çok bir yeniden çizim (en acil olan önce): yaklaşırken bile kare süresine sıçrama koymaz.
  * - Eski doku değişimden sonra dispose edilir; malzemenin haritası değişir, shader değişmez (yeniden derleme yok).
  */
@@ -36,6 +36,7 @@ let cizim = 0, yukari = 0, asagi = 0, zorlaTam = false;
 /** Measurement hook (A/B proof that streaming changes no visible pixel): true keeps every texture at full scale. */
 export function akisZorla(tam: boolean): void { zorlaTam = tam; }
 const _p = /* @__PURE__ */ new T.Vector3();
+const _fr = /* @__PURE__ */ new T.Frustum(), _pv = /* @__PURE__ */ new T.Matrix4(), _sf = /* @__PURE__ */ new T.Sphere();
 
 /** Registers a streamed texture; draws it now at half scale and returns the texture plus a remover (disposes it). */
 export function akisKaydet(k: AkisKaydi): { tex: T.Texture; birak(): void } {
@@ -66,19 +67,23 @@ export function hedefOlcek(s: number, ppm: number, dpm: number): number {
 export function akisGuncelle(scene: T.Object3D, camera: T.PerspectiveCamera, ekranYuk: number): void {
   if (!kayitlar.size) return;
   const tanH = Math.tan((camera.fov * Math.PI) / 360) || 1, yari = ekranYuk / 2;
+  camera.updateMatrixWorld(); _fr.setFromProjectionMatrix(_pv.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
   camera.getWorldPosition(_p);
   const cx = _p.x, cy = _p.y, cz = _p.z;
   let en: Kayit | null = null, enOlcek = 0, enAciliyet = 0;
   for (const r of kayitlar) {
     const { kok, gorunur } = kokVeGorunur(r.obj);
     let ist: number;
-    if (kok !== scene || zorlaTam) ist = 1;
-    else if (!gorunur) ist = Math.min(r.olcek, 0.5);
+    // Ayrı renderer'lı önizleme (kulis/ev odası) kendi Scene'indedir: hep tam. Sahneden sökülmüş (bölge önbelleğinde bekleyen)
+    // kök Scene değildir: eskiden o da "önizleme" sayılıp tam çözünürlüğe çıkıyor, bölge geri gelince 1024x512 dokularla dönüyordu.
+    if (zorlaTam || (kok !== scene && (kok as T.Scene).isScene)) ist = 1;
     else {
-      r.obj.getWorldPosition(_p);
+      // GPU: gizli ya da kadraj dışı (arkada/yanda) nesne en çok yarımda; uzaktaysa uzaklığa göre daha da iner. Kadraja girince büyür.
+      r.obj.getWorldPosition(_p); _sf.set(_p, 1.6);
+      const tavan = kok === scene && gorunur && _fr.intersectsSphere(_sf) ? 1 : 0.5;
       const d = Math.max(0.05, Math.hypot(_p.x - cx, _p.y + 1.2 - cy, _p.z - cz));
       const ppm = yari / tanH / d;
-      ist = hedefOlcek(r.olcek, ppm, r.dpm);
+      ist = Math.min(hedefOlcek(r.olcek, ppm, r.dpm), tavan);
       if (ist !== r.olcek) { const oran = ppm / (r.dpm * 2 * r.olcek), a = ist > r.olcek ? oran : 1 / Math.max(oran, 1e-3); if (a > enAciliyet) { enAciliyet = a; en = r; enOlcek = ist; } }
       continue;
     }
