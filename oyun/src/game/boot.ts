@@ -571,7 +571,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const ormanView = ACIK_DUNYA && playMode ? make('ormanView', () => createOrmanView({ scene, rules: () => sim.rules, hero: () => pos, chars: chars as never, hour: () => sim.clock.hour, setSolid: r => nav.setSolids('otobus', r) })) : null;
   // the glass shelter is solid too (back + side panels), you wait in front of it
   if (ormanView) { try { nav.setSolids('durak', [{ x0: 3.9, x1: 8.1, z0: 14.4, z1: 14.75 }, { x0: 3.85, x1: 4.15, z0: 12.9, z1: 14.75 }, { x0: 7.85, x1: 8.15, z0: 12.9, z1: 14.75 }]); } catch { /* */ } }
-  const otobusHud = ACIK_DUNYA && playMode && uiReal ? make('otobusHud', () => createOtobusHud({ root: U.root, rules: () => sim.rules, command, hour: () => sim.clock.hour, sfx: id => { try { audio?.sfx(id); } catch { /* */ } } })) : null;
+  const otobusHud = ACIK_DUNYA && playMode && uiReal ? make('otobusHud', () => createOtobusHud({ root: U.root, rules: () => sim.rules, command, hour: () => sim.clock.hour, sfx: (id, at) => { try { audio?.sfx(id, at ? { at } : undefined); } catch { /* */ } } })) : null;
   const audioMap: AudioMap | null = playMode && audio ? make('audioMap', () => createAudioMap({
     bus: sim.bus, audio, playerPos: () => pos, phase: () => sim.clock.phase,
     // ses-1 place signature: Sabri'nin evi overlay, Çarşı Sokağı by position, else the pier

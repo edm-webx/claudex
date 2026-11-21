@@ -32,6 +32,8 @@ export interface AudioMapDeps {
 export interface AudioMap { update(): void; dispose(): void; }
 
 /** Sounds that lower the music (and for loud match sounds the ambience): [seconds, depth, ambience]. */
+/** Olay konumu taşımayan ama dünyada sabit bir kaynağı olan sesler: vapur iskele kapısından (view/world doorPos) duyulur, uzakta kısılır ve sağ-sola yayılır. */
+const SABIT_KAYNAK: Record<string, { x: number; z: number }> = { ferryHorn: { x: 22.4, z: -7.1 }, ferryDock: { x: 22.4, z: -7.1 } };
 const DUCK: Record<string, [number, number, boolean]> = { horn: [2.2, 0.35, false], confetti: [1.8, 0.4, false], whistle: [1.2, 0.5, true], whistleLong: [1.6, 0.5, true], crowdCheer: [2, 0.5, true], day: [1.8, 0.4, false], bell: [1, 0.5, false] };
 
 export function createAudioMap(deps: AudioMapDeps): AudioMap {
@@ -53,7 +55,7 @@ export function createAudioMap(deps: AudioMapDeps): AudioMap {
       if (name === 'transfer' || name === 'pick') { const now = clockNow(); if (now - lastTransferSfx < 160) return; lastTransferSfx = now; }
       // BUF-08: tava çarpması ve bulaşık şıngırtısı için en kısa aralık (SES_ARALIK_MS)
       if (name in SES_ARALIK_MS) { const now = clockNow(); if (now - (lastHiz[name] ?? -1e9) < SES_ARALIK_MS[name as keyof typeof SES_ARALIK_MS]) return; lastHiz[name] = now; }
-      const at = d && typeof d.x === 'number' && typeof d.z === 'number' ? { x: d.x, z: d.z } : undefined;
+      const at = d && typeof d.x === 'number' && typeof d.z === 'number' ? { x: d.x, z: d.z } : SABIT_KAYNAK[name];
       try { audio.sfx(id, at ? { at } : undefined); } catch { /* audio is optional */ }
       const dk = DUCK[id]; if (dk) { try { ma.duck?.(dk[0], dk[1], dk[2]); } catch { /* optional */ } }
     }) as () => void);
