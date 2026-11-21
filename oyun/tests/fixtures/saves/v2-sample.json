@@ -1,0 +1,25 @@
+{
+  "hero": "sabriye", "money": 4321.5, "gold": 12, "xp": 40, "level": 5,
+  "day": 4, "dayT": 77.5, "playT": 912.3, "totalEarned": 31000,
+  "owned": { "cay": true, "ayran": true, "simit": true, "tabure1": true, "tabure2": true, "isbul": true, "pencere": true, "tepsi1": true, "masa1": true },
+  "padPaid": { "gazoz": 640 }, "tiers": { "doner": 2, "cay": 1, "ayran": 1, "simit": 3, "tost": 1, "gazoz": 1 },
+  "stage": 1, "renewed": ["tente", "tabela"], "tadilat": null,
+  "workers": [
+    { "id": 1, "name": "Rıza", "role": "doner", "trait": "hamarat", "rarity": "altin", "xp": 320, "morale": 80, "legend": "riza" },
+    { "id": 2, "name": "Nazlı", "role": "garson", "trait": "tatli", "rarity": "altin", "xp": 40, "morale": 66, "legend": "nazli" }
+  ],
+  "nextWid": 3, "jobCards": null, "jobRefreshAt": 0, "boards": 2,
+  "stars": 1, "grades": { "lezzet": 3, "hiz": 2, "siklik": 1, "sohret": 2, "temizlik": 4 }, "gurmePass": false, "plaque": 0,
+  "stats": { "sales": 190, "sold_doner": 80, "sold_cay": 70 }, "ach": { "first": 100 },
+  "cats": ["pamuk", "tarcin"], "dog": false,
+  "decorOwned": ["sofra_bezi", "sofra_bezi"], "decorSlots": [null, "sofra_bezi", null, null, "sofra_bezi"],
+  "sign": { "text": "Sabriye Büfe", "font": "neon", "renamed": true },
+  "magnet": 1, "kepenk": 0,
+  "orders": { "date": "2026-10-17", "list": [ { "id": "cay", "goal": 29, "base": 40, "claimed": false } ], "allClaimed": false },
+  "regulars": { "necati": { "visits": 3 } }, "vipLast": 0,
+  "tut": { "firstCut": 1, "firstDrop": 1, "firstCollect": 1, "cayUsed": 1, "firstCustomer": 1 },
+  "settings": { "muted": true, "quality": "dengeli", "autoTier": "dengeli" },
+  "pile": 250, "floor": 0, "owedBack": 0, "siftahDate": "2026-10-17", "lastSeen": 1760000000000, "rate": 300,
+  "week": { "earned": 9000, "customers": 120 }, "today": { "earned": 700, "customers": 9, "angry": 0, "served": 0, "waitFrac": 0, "dirtyT": 0, "slow": {}, "sets": 1 },
+  "kapkacDay": 0, "karamelDay": 0, "teamDay": 0, "teamWin": false, "tanidikDay": 0, "seed": 7
+}

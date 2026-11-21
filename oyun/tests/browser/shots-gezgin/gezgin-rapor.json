@@ -1,0 +1,117 @@
+{
+ "stops": [
+  {
+   "name": "iskele-bufe",
+   "pos": {
+    "x": 0,
+    "z": 0
+   },
+   "calls": 139,
+   "tris": 173679,
+   "fps": 10.2
+  },
+  {
+   "name": "iskele-ferry",
+   "pos": {
+    "x": -6,
+    "z": 4
+   },
+   "calls": 89,
+   "tris": 176618,
+   "fps": 10.1
+  },
+  {
+   "name": "carsi",
+   "pos": {
+    "x": 60,
+    "z": 8
+   },
+   "calls": 47,
+   "tris": 170894,
+   "fps": 10
+  },
+  {
+   "name": "meydan",
+   "pos": {
+    "x": 7.5,
+    "z": 13.4
+   },
+   "calls": 87,
+   "tris": 179212,
+   "fps": 10
+  },
+  {
+   "name": "sahil",
+   "pos": {
+    "x": 7.5,
+    "z": 13.4
+   },
+   "calls": 110,
+   "tris": 180718,
+   "fps": 10
+  },
+  {
+   "name": "stadyum-kapi",
+   "pos": {
+    "x": 404,
+    "z": 13
+   },
+   "calls": 107,
+   "tris": 137226,
+   "fps": 10
+  },
+  {
+   "name": "stadyum-saha",
+   "pos": {
+    "x": 425,
+    "z": 20
+   },
+   "calls": 57,
+   "tris": 136710,
+   "fps": 10
+  },
+  {
+   "name": "belgrad-durak",
+   "pos": {
+    "x": 806,
+    "z": 10
+   },
+   "calls": 138,
+   "tris": 299961,
+   "fps": 10
+  },
+  {
+   "name": "belgrad-orman",
+   "pos": {
+    "x": 840,
+    "z": 20
+   },
+   "calls": 170,
+   "tris": 306677,
+   "fps": 10
+  },
+  {
+   "name": "belgrad-derin",
+   "pos": {
+    "x": 870,
+    "z": 40
+   },
+   "calls": 102,
+   "tris": 304041,
+   "fps": 10
+  }
+ ],
+ "errors": [],
+ "findings": [
+  {
+   "sev": "bug",
+   "where": "meydan",
+   "what": "ışınlanma tutmadı: istenen 140, olan 7.5 (bölge duvarı?)"
+  },
+  {
+   "sev": "bug",
+   "where": "sahil",
+   "what": "ışınlanma tutmadı: istenen 240, olan 7.5 (bölge duvarı?)"
+  }
+ ]
+}

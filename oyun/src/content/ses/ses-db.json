@@ -1,0 +1,3073 @@
+{
+ "version": 1,
+ "engine": "marti-synth",
+ "about": "Martı Synth ses veritabanı. Her ses katmanlardan oluşur (tone / noise / pluck / omni / burst). Oyun açılınca bir kez sentezlenip önbelleğe alınır; .mp3/.wav yok. 'patches' içine omni_synth_256_pro sayfasındaki 'JSON olarak kopyala' çıktısı aynen yapıştırılabilir ve bir katmanda { k: 'omni', patch: 'isim' } diye kullanılır.",
+ "patches": {
+  "vapur": {
+   "masterVol": -6,
+   "osc1Vol": -60,
+   "osc2Vol": -60,
+   "osc3Vol": -2,
+   "osc3Oct": -3,
+   "noise2Vol": -8,
+   "filtCutoff": 250,
+   "filtRes": 4,
+   "filtEnvAmt": 0,
+   "ampA": 0.5,
+   "ampD": 0.5,
+   "ampS": 1,
+   "ampR": 1,
+   "lfo2Rate": 3.5,
+   "lfo2Dep": 150,
+   "fxDist": 0.3,
+   "fxDistMix": 0.3,
+   "fxRevDec": 6,
+   "fxRevMix": 0.4
+  },
+  "laser": {
+   "osc1Vol": 0,
+   "osc1Oct": 1,
+   "osc2Vol": -12,
+   "filtCutoff": 8000,
+   "filtEnvAmt": 5000,
+   "ampD": 0.1,
+   "filtD": 0.1,
+   "lfo1Rate": 20,
+   "lfo1Dep": -2000,
+   "fxDistMix": 0.5,
+   "fxRevMix": 0.2
+  },
+  "drone": {
+   "osc1Vol": -60,
+   "osc2Vol": -60,
+   "osc3Vol": 0,
+   "osc3Oct": -2,
+   "noise2Vol": -20,
+   "filtCutoff": 400,
+   "formantMix": 1,
+   "ampA": 2,
+   "ampR": 4,
+   "lfo2Rate": 0.5,
+   "lfo2Dep": 300,
+   "fxRevDec": 10,
+   "fxRevMix": 0.8
+  },
+  "engine": {
+   "osc1Vol": -60,
+   "osc2Vol": -60,
+   "osc3Vol": -5,
+   "noise2Vol": -10,
+   "filtCutoff": 300,
+   "fxDist": 0.6,
+   "fxDistMix": 0.8,
+   "macroSpeed": 0.8
+  },
+  "magic": {
+   "osc1Vol": 0,
+   "osc1FmFreq": 800,
+   "osc1FmDep": 50,
+   "ampA": 0.05,
+   "ampR": 0.5,
+   "fxDelMix": 0.5,
+   "fxRevMix": 0.5
+  }
+ },
+ "sfx": {
+  "pop": {
+   "pitchVar": 0.06,
+   "cooldown": 30,
+   "layers": [
+    {
+     "k": "tone",
+     "wave": "sine",
+     "f": 620,
+     "f1": 940,
+     "gt": 0.05,
+     "a": 0.002,
+     "d": 0.07,
+     "v": 0.5
+    },
+    {
+     "k": "noise",
+     "color": "white",
+     "filter": {
+      "type": "bp",
+      "f": 3200,
+      "q": 1.5
+     },
+     "a": 0.001,
+     "d": 0.012,
+     "v": 0.12
+    }
+   ]
+  },
+  "tik": {
+   "pitchVar": 0.03,
+   "cooldown": 40,
+   "layers": [
+    {
+     "k": "tone",
+     "f": 2630,
+     "harm": [
+      1,
+      0,
+      0.35,
+      0,
+      0.12
+     ],
+     "a": 0.001,
+     "d": 0.16,
+     "v": 0.32
+    },
+    {
+     "k": "tone",
+     "f": 3950,
+     "a": 0.001,
+     "d": 0.06,
+     "v": 0.12,
+     "at": 0.004
+    }
+   ]
+  },
+  "spoon": {
+   "pitchVar": 0.04,
+   "cooldown": 120,
+   "layers": [
+    {
+     "k": "tone",
+     "f": 2900,
+     "harm": [
+      1,
+      0,
+      0.4,
+      0,
+      0.2
+     ],
+     "a": 0.001,
+     "d": 0.12,
+     "v": 0.25
+    },
+    {
+     "k": "tone",
+     "f": 3100,
+     "harm": [
+      1,
+      0,
+      0.3
+     ],
+     "a": 0.001,
+     "d": 0.1,
+     "v": 0.18,
+     "at": 0.11
+    }
+   ]
+  },
+  "drop": {
+   "pitchVar": 0.08,
+   "cooldown": 40,
+   "layers": [
+    {
+     "k": "tone",
+     "wave": "triangle",
+     "f": 230,
+     "f1": 140,
+     "gt": 0.06,
+     "a": 0.002,
+     "d": 0.08,
+     "v": 0.5
+    },
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "lp",
+      "f": 1100
+     },
+     "a": 0.001,
+     "d": 0.03,
+     "v": 0.3
+    }
+   ]
+  },
+  "coin": {
+   "pitchVar": 0.05,
+   "cooldown": 50,
+   "layers": [
+    {
+     "k": "tone",
+     "f": 2350,
+     "harm": [
+      1,
+      0,
+      0,
+      0.0,
+      0.3,
+      0,
+      0,
+      0,
+      0,
+      0.12
+     ],
+     "a": 0.001,
+     "d": 0.22,
+     "v": 0.3
+    },
+    {
+     "k": "tone",
+     "f": 3150,
+     "a": 0.001,
+     "d": 0.12,
+     "v": 0.14,
+     "at": 0.035
+    }
+   ]
+  },
+  "cash": {
+   "cooldown": 120,
+   "rev": 0.12,
+   "layers": [
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 1800,
+      "q": 0.8
+     },
+     "a": 0.003,
+     "d": 0.09,
+     "v": 0.18
+    },
+    {
+     "k": "tone",
+     "f": 1318,
+     "harm": [
+      1,
+      0.2,
+      0.25,
+      0,
+      0.1
+     ],
+     "a": 0.002,
+     "d": 0.5,
+     "v": 0.3,
+     "at": 0.04
+    },
+    {
+     "k": "tone",
+     "f": 1760,
+     "harm": [
+      1,
+      0.2,
+      0.25,
+      0,
+      0.1
+     ],
+     "a": 0.002,
+     "d": 0.7,
+     "v": 0.3,
+     "at": 0.12
+    },
+    {
+     "k": "burst",
+     "at": 0.05,
+     "n": 4,
+     "every": [
+      0.03,
+      0.06
+     ],
+     "layer": {
+      "k": "tone",
+      "f": 2600,
+      "harm": [
+       1,
+       0,
+       0,
+       0,
+       0.3
+      ],
+      "a": 0.001,
+      "d": 0.1,
+      "v": 0.12
+     }
+    }
+   ]
+  },
+  "buy": {
+   "cooldown": 150,
+   "rev": 0.2,
+   "layers": [
+    {
+     "k": "tone",
+     "wave": "triangle",
+     "f": "C6",
+     "a": 0.003,
+     "d": 0.25,
+     "v": 0.3
+    },
+    {
+     "k": "tone",
+     "wave": "triangle",
+     "f": "E6",
+     "a": 0.003,
+     "d": 0.25,
+     "v": 0.3,
+     "at": 0.07
+    },
+    {
+     "k": "tone",
+     "wave": "triangle",
+     "f": "G6",
+     "a": 0.003,
+     "d": 0.25,
+     "v": 0.3,
+     "at": 0.14
+    },
+    {
+     "k": "tone",
+     "f": "C7",
+     "harm": [
+      1,
+      0,
+      0.2
+     ],
+     "a": 0.003,
+     "d": 0.5,
+     "v": 0.3,
+     "at": 0.21
+    }
+   ]
+  },
+  "bad": {
+   "cooldown": 300,
+   "layers": [
+    {
+     "k": "tone",
+     "wave": "sawtooth",
+     "f": 190,
+     "f1": 120,
+     "a": 0.01,
+     "d": 0.3,
+     "v": 0.3,
+     "filter": {
+      "type": "lp",
+      "f": 900
+     }
+    },
+    {
+     "k": "tone",
+     "wave": "sawtooth",
+     "f": 196,
+     "f1": 124,
+     "a": 0.01,
+     "d": 0.3,
+     "v": 0.2,
+     "filter": {
+      "type": "lp",
+      "f": 700
+     }
+    }
+   ]
+  },
+  "day": {
+   "cooldown": 1000,
+   "rev": 0.3,
+   "layers": [
+    {
+     "k": "tone",
+     "f": "G5",
+     "harm": [
+      1,
+      0.3,
+      0.2,
+      0,
+      0.05
+     ],
+     "a": 0.004,
+     "d": 0.6,
+     "v": 0.3
+    },
+    {
+     "k": "tone",
+     "f": "C6",
+     "harm": [
+      1,
+      0.3,
+      0.2,
+      0,
+      0.05
+     ],
+     "a": 0.004,
+     "d": 0.6,
+     "v": 0.3,
+     "at": 0.14
+    },
+    {
+     "k": "tone",
+     "f": "E6",
+     "harm": [
+      1,
+      0.3,
+      0.2,
+      0,
+      0.05
+     ],
+     "a": 0.004,
+     "d": 0.6,
+     "v": 0.3,
+     "at": 0.28
+    },
+    {
+     "k": "tone",
+     "f": "G6",
+     "harm": [
+      1,
+      0.3,
+      0.2,
+      0,
+      0.05
+     ],
+     "a": 0.004,
+     "d": 1.1,
+     "v": 0.32,
+     "at": 0.42
+    }
+   ]
+  },
+  "horn": {
+   "cooldown": 4000,
+   "rev": 0.4,
+   "note": "Vapur düdüğü: alçak iki ses (Bb2 + F3), nefesli, boğazda yankılanır; altta omni 'vapur' gövde titreşimi.",
+   "layers": [
+    {
+     "k": "tone",
+     "wave": "sawtooth",
+     "f": 116.5,
+     "a": 0.18,
+     "d": 0.4,
+     "s": 0.85,
+     "hold": 1.5,
+     "r": 0.6,
+     "v": 0.32,
+     "detune": 6,
+     "vib": {
+      "rate": 4.2,
+      "depth": 0.004
+     },
+     "filter": {
+      "type": "lp",
+      "f": 700,
+      "q": 0.9
+     }
+    },
+    {
+     "k": "tone",
+     "wave": "sawtooth",
+     "f": 174.6,
+     "a": 0.2,
+     "d": 0.4,
+     "s": 0.85,
+     "hold": 1.5,
+     "r": 0.6,
+     "v": 0.2,
+     "detune": -5,
+     "filter": {
+      "type": "lp",
+      "f": 900,
+      "q": 0.9
+     }
+    },
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 420,
+      "q": 1.2
+     },
+     "a": 0.2,
+     "d": 0.3,
+     "s": 0.7,
+     "hold": 1.5,
+     "r": 0.5,
+     "v": 0.12
+    },
+    {
+     "k": "omni",
+     "patch": "vapur",
+     "note": "Bb1",
+     "hold": 1.6,
+     "v": 0.25
+    }
+   ]
+  },
+  "gull": {
+   "pitchVar": 0.08,
+   "cooldown": 600,
+   "layers": [
+    {
+     "k": "tone",
+     "wave": "sawtooth",
+     "f": 2100,
+     "f1": 1150,
+     "gt": 0.16,
+     "a": 0.01,
+     "d": 0.12,
+     "s": 0.4,
+     "hold": 0.15,
+     "r": 0.04,
+     "v": 0.22,
+     "vib": {
+      "rate": 28,
+      "depth": 0.02
+     },
+     "filter": {
+      "type": "bp",
+      "f": 2000,
+      "q": 1.6
+     }
+    },
+    {
+     "k": "tone",
+     "wave": "sawtooth",
+     "f": 2250,
+     "f1": 1200,
+     "gt": 0.14,
+     "a": 0.01,
+     "d": 0.1,
+     "s": 0.4,
+     "hold": 0.13,
+     "r": 0.04,
+     "v": 0.18,
+     "at": 0.22,
+     "vib": {
+      "rate": 30,
+      "depth": 0.02
+     },
+     "filter": {
+      "type": "bp",
+      "f": 2100,
+      "q": 1.6
+     }
+    },
+    {
+     "k": "tone",
+     "wave": "sawtooth",
+     "f": 2000,
+     "f1": 1300,
+     "gt": 0.1,
+     "a": 0.01,
+     "d": 0.08,
+     "s": 0.3,
+     "hold": 0.09,
+     "r": 0.03,
+     "v": 0.12,
+     "at": 0.41,
+     "filter": {
+      "type": "bp",
+      "f": 2000,
+      "q": 1.6
+     }
+    }
+   ]
+  },
+  "splash": {
+   "cooldown": 300,
+   "layers": [
+    {
+     "k": "noise",
+     "color": "white",
+     "filter": {
+      "type": "bp",
+      "f": 1600,
+      "f1": 500,
+      "q": 0.7
+     },
+     "a": 0.004,
+     "d": 0.45,
+     "v": 0.4
+    },
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "lp",
+      "f": 3500
+     },
+     "a": 0.002,
+     "d": 0.12,
+     "v": 0.3
+    },
+    {
+     "k": "burst",
+     "at": 0.06,
+     "n": 7,
+     "every": [
+      0.02,
+      0.06
+     ],
+     "fJit": 0.4,
+     "layer": {
+      "k": "tone",
+      "f": 1700,
+      "f1": 2600,
+      "a": 0.001,
+      "d": 0.03,
+      "v": 0.08
+     }
+    }
+   ]
+  },
+  "fizz": {
+   "cooldown": 200,
+   "layers": [
+    {
+     "k": "noise",
+     "color": "white",
+     "filter": {
+      "type": "hp",
+      "f": 5200
+     },
+     "a": 0.002,
+     "d": 0.4,
+     "v": 0.28
+    },
+    {
+     "k": "noise",
+     "color": "white",
+     "filter": {
+      "type": "bp",
+      "f": 2500,
+      "q": 1
+     },
+     "a": 0.001,
+     "d": 0.03,
+     "v": 0.3
+    },
+    {
+     "k": "burst",
+     "at": 0.08,
+     "n": 10,
+     "every": [
+      0.015,
+      0.05
+     ],
+     "fJit": 0.5,
+     "layer": {
+      "k": "tone",
+      "f": 3600,
+      "f1": 4600,
+      "a": 0.0005,
+      "d": 0.012,
+      "v": 0.06
+     }
+    }
+   ]
+  },
+  "pour": {
+   "cooldown": 200,
+   "layers": [
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 700,
+      "f1": 1500,
+      "q": 2.5
+     },
+     "a": 0.03,
+     "d": 0.2,
+     "s": 0.7,
+     "hold": 0.35,
+     "r": 0.08,
+     "v": 0.35
+    },
+    {
+     "k": "burst",
+     "at": 0.05,
+     "n": 6,
+     "every": [
+      0.03,
+      0.06
+     ],
+     "fJit": 0.3,
+     "layer": {
+      "k": "tone",
+      "f": 900,
+      "f1": 1400,
+      "a": 0.001,
+      "d": 0.025,
+      "v": 0.07
+     }
+    }
+   ]
+  },
+  "cut": {
+   "pitchVar": 0.1,
+   "cooldown": 60,
+   "layers": [
+    {
+     "k": "noise",
+     "color": "white",
+     "filter": {
+      "type": "bp",
+      "f": 5200,
+      "q": 3
+     },
+     "a": 0.001,
+     "d": 0.06,
+     "v": 0.3
+    },
+    {
+     "k": "tone",
+     "f": 3300,
+     "harm": [
+      1,
+      0,
+      0.4
+     ],
+     "a": 0.001,
+     "d": 0.035,
+     "v": 0.08
+    }
+   ]
+  },
+  "press": {
+   "cooldown": 200,
+   "layers": [
+    {
+     "k": "tone",
+     "wave": "triangle",
+     "f": 120,
+     "f1": 70,
+     "a": 0.002,
+     "d": 0.12,
+     "v": 0.45
+    },
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "lp",
+      "f": 900
+     },
+     "a": 0.001,
+     "d": 0.05,
+     "v": 0.3
+    },
+    {
+     "k": "noise",
+     "color": "white",
+     "filter": {
+      "type": "hp",
+      "f": 4500
+     },
+     "a": 0.08,
+     "d": 0.3,
+     "v": 0.06,
+     "at": 0.06
+    }
+   ]
+  },
+  "steamHiss": {
+   "cooldown": 900,
+   "layers": [
+    {
+     "k": "noise",
+     "color": "white",
+     "filter": {
+      "type": "hp",
+      "f": 4200
+     },
+     "a": 0.06,
+     "d": 0.3,
+     "s": 0.5,
+     "hold": 0.3,
+     "r": 0.3,
+     "v": 0.12
+    }
+   ]
+  },
+  "sizzle": {
+   "cooldown": 800,
+   "layers": [
+    {
+     "k": "noise",
+     "color": "white",
+     "filter": {
+      "type": "bp",
+      "f": 5500,
+      "q": 0.5
+     },
+     "a": 0.05,
+     "d": 0.5,
+     "v": 0.1
+    }
+   ]
+  },
+  "purr": {
+   "cooldown": 1500,
+   "layers": [
+    {
+     "k": "tone",
+     "wave": "sawtooth",
+     "f": 52,
+     "a": 0.08,
+     "d": 0.4,
+     "s": 0.8,
+     "hold": 0.8,
+     "r": 0.2,
+     "v": 0.45,
+     "swell": {
+      "rate": 24,
+      "depth": 0.85
+     },
+     "filter": {
+      "type": "lp",
+      "f": 320
+     }
+    },
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 250
+     },
+     "a": 0.08,
+     "d": 0.4,
+     "s": 0.8,
+     "hold": 0.8,
+     "r": 0.2,
+     "v": 0.3,
+     "swell": {
+      "rate": 24,
+      "depth": 0.9
+     }
+    }
+   ]
+  },
+  "bark": {
+   "cooldown": 1200,
+   "layers": [
+    {
+     "k": "tone",
+     "wave": "sawtooth",
+     "f": 360,
+     "f1": 230,
+     "a": 0.004,
+     "d": 0.09,
+     "v": 0.3,
+     "filter": {
+      "type": "bp",
+      "f": 900,
+      "q": 1.4
+     }
+    },
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 1200,
+      "q": 1
+     },
+     "a": 0.003,
+     "d": 0.06,
+     "v": 0.15
+    },
+    {
+     "k": "tone",
+     "wave": "sawtooth",
+     "f": 340,
+     "f1": 220,
+     "a": 0.004,
+     "d": 0.1,
+     "v": 0.26,
+     "at": 0.17,
+     "filter": {
+      "type": "bp",
+      "f": 850,
+      "q": 1.4
+     }
+    }
+   ]
+  },
+  "streak": {
+   "cooldown": 300,
+   "layers": [
+    {
+     "k": "tone",
+     "wave": "square",
+     "f": "E5",
+     "a": 0.002,
+     "d": 0.1,
+     "v": 0.12,
+     "filter": {
+      "type": "lp",
+      "f": 3000
+     }
+    },
+    {
+     "k": "tone",
+     "wave": "square",
+     "f": "A5",
+     "a": 0.002,
+     "d": 0.1,
+     "v": 0.12,
+     "at": 0.05,
+     "filter": {
+      "type": "lp",
+      "f": 3000
+     }
+    },
+    {
+     "k": "tone",
+     "wave": "square",
+     "f": "D6",
+     "a": 0.002,
+     "d": 0.18,
+     "v": 0.12,
+     "at": 0.1,
+     "filter": {
+      "type": "lp",
+      "f": 3200
+     }
+    }
+   ]
+  },
+  "sparkle": {
+   "cooldown": 300,
+   "rev": 0.3,
+   "layers": [
+    {
+     "k": "tone",
+     "f": "G6",
+     "harm": [
+      1,
+      0,
+      0.2
+     ],
+     "a": 0.002,
+     "d": 0.18,
+     "v": 0.18
+    },
+    {
+     "k": "tone",
+     "f": "C7",
+     "harm": [
+      1,
+      0,
+      0.2
+     ],
+     "a": 0.002,
+     "d": 0.18,
+     "v": 0.18,
+     "at": 0.05
+    },
+    {
+     "k": "tone",
+     "f": "E7",
+     "harm": [
+      1,
+      0,
+      0.2
+     ],
+     "a": 0.002,
+     "d": 0.3,
+     "v": 0.18,
+     "at": 0.1
+    }
+   ]
+  },
+  "confetti": {
+   "cooldown": 500,
+   "rev": 0.25,
+   "layers": [
+    {
+     "k": "noise",
+     "color": "white",
+     "filter": {
+      "type": "bp",
+      "f": 2600,
+      "q": 0.8
+     },
+     "a": 0.002,
+     "d": 0.08,
+     "v": 0.3
+    },
+    {
+     "k": "tone",
+     "wave": "triangle",
+     "f": "G5",
+     "a": 0.003,
+     "d": 0.18,
+     "v": 0.2,
+     "at": 0.05
+    },
+    {
+     "k": "tone",
+     "wave": "triangle",
+     "f": "B5",
+     "a": 0.003,
+     "d": 0.18,
+     "v": 0.2,
+     "at": 0.11
+    },
+    {
+     "k": "tone",
+     "wave": "triangle",
+     "f": "D6",
+     "a": 0.003,
+     "d": 0.18,
+     "v": 0.2,
+     "at": 0.17
+    },
+    {
+     "k": "tone",
+     "wave": "triangle",
+     "f": "G6",
+     "a": 0.003,
+     "d": 0.35,
+     "v": 0.2,
+     "at": 0.23
+    }
+   ]
+  },
+  "clean": {
+   "cooldown": 400,
+   "layers": [
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 2400,
+      "q": 0.9
+     },
+     "a": 0.02,
+     "d": 0.3,
+     "s": 0.6,
+     "hold": 0.32,
+     "r": 0.06,
+     "v": 0.2,
+     "swell": {
+      "rate": 6.5,
+      "depth": 0.9,
+      "ph": 0.75
+     }
+    }
+   ]
+  },
+  "wake": {
+   "cooldown": 800,
+   "layers": [
+    {
+     "k": "tone",
+     "wave": "square",
+     "f": 300,
+     "f1": 700,
+     "a": 0.005,
+     "d": 0.2,
+     "v": 0.1,
+     "filter": {
+      "type": "lp",
+      "f": 2200
+     }
+    }
+   ]
+  },
+  "flash": {
+   "cooldown": 300,
+   "layers": [
+    {
+     "k": "noise",
+     "color": "white",
+     "filter": {
+      "type": "bp",
+      "f": 3000,
+      "q": 2
+     },
+     "a": 0.001,
+     "d": 0.02,
+     "v": 0.3
+    },
+    {
+     "k": "noise",
+     "color": "white",
+     "filter": {
+      "type": "bp",
+      "f": 2200,
+      "q": 2
+     },
+     "a": 0.001,
+     "d": 0.03,
+     "v": 0.25,
+     "at": 0.07
+    }
+   ]
+  },
+  "creak": {
+   "pitchVar": 0.12,
+   "cooldown": 1500,
+   "layers": [
+    {
+     "k": "tone",
+     "wave": "sawtooth",
+     "f": 150,
+     "f1": 190,
+     "a": 0.03,
+     "d": 0.2,
+     "s": 0.4,
+     "hold": 0.25,
+     "r": 0.08,
+     "v": 0.08,
+     "fm": {
+      "ratio": 0.5,
+      "index": 2
+     },
+     "filter": {
+      "type": "bp",
+      "f": 900,
+      "q": 2
+     }
+    }
+   ]
+  },
+  "puff": {
+   "cooldown": 900,
+   "layers": [
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "lp",
+      "f": 500
+     },
+     "a": 0.005,
+     "d": 0.08,
+     "v": 0.08
+    }
+   ]
+  },
+  "feather": {
+   "cooldown": 700,
+   "layers": [
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 2800,
+      "q": 0.7
+     },
+     "a": 0.03,
+     "d": 0.2,
+     "v": 0.06
+    }
+   ]
+  },
+  "blow": {
+   "cooldown": 6000,
+   "layers": [
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "lp",
+      "f": 650
+     },
+     "a": 0.06,
+     "d": 0.3,
+     "v": 0.035
+    }
+   ]
+  },
+  "shutter": {
+   "cooldown": 400,
+   "layers": [
+    {
+     "k": "burst",
+     "n": 7,
+     "every": [
+      0.035,
+      0.05
+     ],
+     "fJit": 0.15,
+     "layer": {
+      "k": "noise",
+      "color": "white",
+      "filter": {
+       "type": "bp",
+       "f": 900,
+       "q": 3
+      },
+      "a": 0.001,
+      "d": 0.04,
+      "v": 0.2
+     }
+    },
+    {
+     "k": "tone",
+     "wave": "sawtooth",
+     "f": 90,
+     "f1": 70,
+     "a": 0.01,
+     "d": 0.3,
+     "v": 0.06,
+     "filter": {
+      "type": "lp",
+      "f": 500
+     }
+    }
+   ]
+  },
+  "jingle": {
+   "cooldown": 3000,
+   "rev": 0.25,
+   "layers": [
+    {
+     "k": "tone",
+     "wave": "triangle",
+     "f": "G5",
+     "a": 0.004,
+     "d": 0.18,
+     "v": 0.22
+    },
+    {
+     "k": "tone",
+     "wave": "triangle",
+     "f": "E5",
+     "a": 0.004,
+     "d": 0.18,
+     "v": 0.22,
+     "at": 0.13
+    },
+    {
+     "k": "tone",
+     "wave": "triangle",
+     "f": "C5",
+     "a": 0.004,
+     "d": 0.18,
+     "v": 0.22,
+     "at": 0.26
+    },
+    {
+     "k": "tone",
+     "wave": "triangle",
+     "f": "G5",
+     "a": 0.004,
+     "d": 0.18,
+     "v": 0.22,
+     "at": 0.39
+    },
+    {
+     "k": "tone",
+     "f": "C6",
+     "harm": [
+      1,
+      0.25,
+      0.15
+     ],
+     "a": 0.004,
+     "d": 0.6,
+     "v": 0.26,
+     "at": 0.52
+    }
+   ]
+  },
+  "ticket": {
+   "cooldown": 200,
+   "note": "Adisyon geldi: kağıt fişin yazıcıdan çıkışı + küçük zil.",
+   "layers": [
+    {
+     "k": "burst",
+     "n": 5,
+     "every": [
+      0.025,
+      0.035
+     ],
+     "fJit": 0.1,
+     "layer": {
+      "k": "noise",
+      "color": "white",
+      "filter": {
+       "type": "bp",
+       "f": 3500,
+       "q": 4
+      },
+      "a": 0.001,
+      "d": 0.015,
+      "v": 0.12
+     }
+    },
+    {
+     "k": "tone",
+     "f": 2093,
+     "harm": [
+      1,
+      0,
+      0.3,
+      0,
+      0.1
+     ],
+     "a": 0.001,
+     "d": 0.35,
+     "v": 0.22,
+     "at": 0.16
+    }
+   ]
+  },
+  "serve": {
+   "cooldown": 150,
+   "note": "Tabak masaya kondu: porselen tık.",
+   "layers": [
+    {
+     "k": "tone",
+     "f": 1650,
+     "harm": [
+      1,
+      0,
+      0.5,
+      0,
+      0.2
+     ],
+     "a": 0.001,
+     "d": 0.08,
+     "v": 0.22
+    },
+    {
+     "k": "tone",
+     "wave": "triangle",
+     "f": 260,
+     "f1": 180,
+     "a": 0.002,
+     "d": 0.05,
+     "v": 0.2
+    }
+   ]
+  },
+  "hesap": {
+   "cooldown": 400,
+   "note": "Hesap ödendi: bozuk para şakırtısı.",
+   "layers": [
+    {
+     "k": "burst",
+     "n": 6,
+     "every": [
+      0.03,
+      0.07
+     ],
+     "fJit": 0.25,
+     "layer": {
+      "k": "tone",
+      "f": 2400,
+      "harm": [
+       1,
+       0,
+       0,
+       0,
+       0.3
+      ],
+      "a": 0.001,
+      "d": 0.12,
+      "v": 0.14
+     }
+    }
+   ]
+  },
+  "glitch": {
+   "cooldown": 700,
+   "note": "NPC Erim'in 'bozuk asset' cızırtısı (eski oyun hatası gibi).",
+   "layers": [
+    {
+     "k": "tone",
+     "wave": "square",
+     "f": 880,
+     "a": 0.001,
+     "d": 0.03,
+     "s": 1,
+     "hold": 0.05,
+     "r": 0.01,
+     "v": 0.08,
+     "filter": {
+      "type": "lp",
+      "f": 4000
+     }
+    },
+    {
+     "k": "tone",
+     "wave": "square",
+     "f": 220,
+     "a": 0.001,
+     "d": 0.03,
+     "s": 1,
+     "hold": 0.04,
+     "r": 0.01,
+     "v": 0.08,
+     "at": 0.06
+    },
+    {
+     "k": "tone",
+     "wave": "square",
+     "f": 1320,
+     "a": 0.001,
+     "d": 0.03,
+     "s": 1,
+     "hold": 0.03,
+     "r": 0.01,
+     "v": 0.06,
+     "at": 0.11
+    }
+   ]
+  },
+  "bonk": {
+   "cooldown": 500,
+   "note": "Erim duvara tosladı.",
+   "layers": [
+    {
+     "k": "tone",
+     "wave": "triangle",
+     "f": 180,
+     "f1": 90,
+     "a": 0.002,
+     "d": 0.12,
+     "v": 0.4
+    },
+    {
+     "k": "tone",
+     "f": 1200,
+     "f1": 900,
+     "a": 0.002,
+     "d": 0.08,
+     "v": 0.08,
+     "at": 0.01
+    }
+   ]
+  },
+  "thunder": {
+   "cooldown": 8000,
+   "rev": 0.45,
+   "layers": [
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 260
+     },
+     "a": 0.05,
+     "d": 2.4,
+     "v": 0.6,
+     "swell": {
+      "rate": 2.2,
+      "depth": 0.5,
+      "rand": 0.8
+     }
+    },
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "lp",
+      "f": 1200
+     },
+     "a": 0.003,
+     "d": 0.4,
+     "v": 0.25
+    }
+   ]
+  }
+ },
+ "loops": {
+  "deniz": {
+   "dur": 18,
+   "gain": 0.55,
+   "rev": 0.15,
+   "note": "İskele denizi: alçak dalga gövdesi + köpük + iskele ayağına çarpan su.",
+   "layers": [
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 420,
+      "q": 0.5
+     },
+     "v": 0.6,
+     "swell": {
+      "rate": 0.11,
+      "depth": 0.55,
+      "ph": 0.2,
+      "rand": 0.6
+     }
+    },
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 1300,
+      "q": 0.5
+     },
+     "v": 0.16,
+     "swell": {
+      "rate": 0.11,
+      "depth": 0.9,
+      "ph": 0.15,
+      "rand": 0.6
+     }
+    }
+   ],
+   "events": [
+    {
+     "every": [
+      1.4,
+      3.2
+     ],
+     "layer": {
+      "k": "noise",
+      "color": "pink",
+      "filter": {
+       "type": "bp",
+       "f": 650,
+       "q": 1.6
+      },
+      "a": 0.06,
+      "d": 0.35,
+      "v": 0.22
+     }
+    }
+   ]
+  },
+  "yagmur": {
+   "dur": 12,
+   "gain": 0.5,
+   "note": "Sağanak: hışırtı + damla tıkırtıları + uzak uğultu.",
+   "layers": [
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 2600,
+      "q": 0.35
+     },
+     "v": 0.4
+    },
+    {
+     "k": "noise",
+     "color": "white",
+     "filter": {
+      "type": "hp",
+      "f": 6500
+     },
+     "v": 0.07
+    },
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 220
+     },
+     "v": 0.22,
+     "swell": {
+      "rate": 0.07,
+      "depth": 0.4
+     }
+    }
+   ],
+   "events": [
+    {
+     "every": [
+      0.025,
+      0.1
+     ],
+     "layer": {
+      "k": "tone",
+      "f": 2800,
+      "f1": 1800,
+      "a": 0.0005,
+      "d": 0.012,
+      "v": 0.08
+     }
+    }
+   ]
+  },
+  "ruzgar": {
+   "dur": 16,
+   "gain": 0.4,
+   "note": "Lodos: uğuldayan, dalgalanan rüzgar.",
+   "layers": [
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 520,
+      "q": 1.3
+     },
+     "v": 0.5,
+     "swell": {
+      "rate": 0.08,
+      "depth": 0.8,
+      "rand": 0.7
+     }
+    },
+    {
+     "k": "noise",
+     "color": "white",
+     "filter": {
+      "type": "bp",
+      "f": 1900,
+      "q": 4
+     },
+     "v": 0.06,
+     "swell": {
+      "rate": 0.13,
+      "depth": 0.95,
+      "rand": 0.5
+     }
+    }
+   ]
+  },
+  "izgara": {
+   "dur": 8,
+   "gain": 0.35,
+   "note": "Ocak cızırtısı: yumuşak, düzensiz; eski 13 Hz kare dalgalı (fısır fısır) sürüm kaldırıldı.",
+   "layers": [
+    {
+     "k": "noise",
+     "color": "white",
+     "filter": {
+      "type": "bp",
+      "f": 5200,
+      "q": 0.5
+     },
+     "v": 0.25,
+     "swell": {
+      "rate": 0.5,
+      "depth": 0.3,
+      "rand": 0.8
+     }
+    }
+   ],
+   "events": [
+    {
+     "every": [
+      0.06,
+      0.4
+     ],
+     "layer": {
+      "k": "noise",
+      "color": "white",
+      "filter": {
+       "type": "hp",
+       "f": 3000
+      },
+      "a": 0.0008,
+      "d": 0.014,
+      "v": 0.22
+     }
+    }
+   ]
+  }
+ },
+ "music": {
+  "map": {
+   "phase": {
+    "morning": [
+     "sabah",
+     "gunduz",
+     "gunduz2"
+    ],
+    "noon": [
+     "gunduz",
+     "gunduz2"
+    ],
+    "sunset": [
+     "aksam",
+     "aksam2"
+    ],
+    "night": [
+     "gece",
+     "gece2"
+    ]
+   },
+   "weather": {
+    "saganak": "yagmur",
+    "firtina": "yagmur",
+    "kar": "kar"
+   },
+   "place": {
+    "ev": "kar",
+    "carsi": "carsi",
+    "carsi.gece": "carsi_gece",
+    "orman": "orman",
+    "orman.aksam": "orman_aksam",
+    "orman.gece": "orman_gece",
+    "halisaha": "halisaha",
+    "stadyum": "halisaha",
+    "gece": "pazar",
+    "sahil": "sahil",
+    "metro": "metro",
+    "adalar": "adalar"
+   },
+   "event": "senlik"
+  },
+  "tracks": {
+   "gunduz": {
+    "note": "Nihavend (La), saz arpejleri, keman, hafif darbuka: vapur iskelesinde güneşli öğle.",
+    "bpm": 86,
+    "root": "A3",
+    "scale": [
+     0,
+     2,
+     3,
+     5,
+     7,
+     8,
+     11
+    ],
+    "chords": [
+     [
+      0,
+      [
+       0,
+       3,
+       7
+      ]
+     ],
+     [
+      5,
+      [
+       0,
+       3,
+       7
+      ]
+     ],
+     [
+      10,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      3,
+      [
+       0,
+       4,
+       7,
+       11
+      ]
+     ],
+     [
+      0,
+      [
+       0,
+       3,
+       7
+      ]
+     ],
+     [
+      5,
+      [
+       0,
+       3,
+       7,
+       10
+      ]
+     ],
+     [
+      7,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      0,
+      [
+       0,
+       3,
+       7
+      ]
+     ]
+    ],
+    "chordBars": 2,
+    "bars": 16,
+    "arp": "saz",
+    "lead": "keman",
+    "perc": "darbuka",
+    "pad": 0.09,
+    "bass": 0.2,
+    "lpf": 5200,
+    "rev": 0.28,
+    "gain": 0.55,
+    "density": 0.65
+   },
+   "aksam": {
+    "note": "Kürdi (Mi), naylon gitar ve ney: gün batımında boğaz, Kıraç baladı havası.",
+    "bpm": 74,
+    "root": "E3",
+    "scale": [
+     0,
+     1,
+     3,
+     5,
+     7,
+     8,
+     10
+    ],
+    "chords": [
+     [
+      0,
+      [
+       0,
+       3,
+       7
+      ]
+     ],
+     [
+      1,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      3,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      0,
+      [
+       0,
+       3,
+       7,
+       10
+      ]
+     ]
+    ],
+    "chordBars": 2,
+    "bars": 16,
+    "arp": "nylon",
+    "lead": "ney",
+    "perc": "dum",
+    "pad": 0.12,
+    "bass": 0.18,
+    "lpf": 3800,
+    "rev": 0.35,
+    "gain": 0.52,
+    "density": 0.6
+   },
+   "gece": {
+    "note": "Hicaz (Re), seyrek naylon gitar, uzaktan ney; davul yok.",
+    "bpm": 64,
+    "root": "D3",
+    "scale": [
+     0,
+     1,
+     4,
+     5,
+     7,
+     8,
+     10
+    ],
+    "chords": [
+     [
+      0,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      1,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      10,
+      [
+       0,
+       3,
+       7
+      ]
+     ],
+     [
+      0,
+      [
+       0,
+       4,
+       7,
+       10
+      ]
+     ]
+    ],
+    "chordBars": 2,
+    "bars": 16,
+    "arp": "nylon",
+    "lead": "ney",
+    "leadBars": [
+     6,
+     7,
+     14,
+     15
+    ],
+    "perc": "none",
+    "pad": 0.13,
+    "bass": 0.12,
+    "lpf": 2600,
+    "rev": 0.42,
+    "gain": 0.45,
+    "density": 0.4
+   },
+   "yagmur": {
+    "note": "Yağmurlu İstanbul: 90'lar elektrik piyanosu, yaylı pad, buğulu keman. 'Bir Garip Aşk Bestesi' klibinin cam buğusu.",
+    "bpm": 70,
+    "root": "A3",
+    "scale": [
+     0,
+     2,
+     3,
+     5,
+     7,
+     8,
+     10
+    ],
+    "chords": [
+     [
+      0,
+      [
+       0,
+       3,
+       7,
+       10
+      ]
+     ],
+     [
+      8,
+      [
+       0,
+       4,
+       7,
+       11
+      ]
+     ],
+     [
+      3,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      10,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      0,
+      [
+       0,
+       3,
+       7
+      ]
+     ],
+     [
+      5,
+      [
+       0,
+       3,
+       7,
+       10
+      ]
+     ],
+     [
+      7,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      0,
+      [
+       0,
+       3,
+       7
+      ]
+     ]
+    ],
+    "chordBars": 2,
+    "bars": 16,
+    "arp": "epiano",
+    "lead": "keman",
+    "leadBars": [
+     4,
+     5,
+     6,
+     7,
+     12,
+     13,
+     14,
+     15
+    ],
+    "perc": "none",
+    "pad": 0.13,
+    "bass": 0.16,
+    "lpf": 2400,
+    "rev": 0.4,
+    "gain": 0.5,
+    "density": 0.8
+   },
+   "kar": {
+    "note": "Karlı gece / Sabri'nin evi: müzik kutusu, yumuşak pad.",
+    "bpm": 66,
+    "root": "D4",
+    "scale": [
+     0,
+     2,
+     3,
+     5,
+     7,
+     8,
+     10
+    ],
+    "chords": [
+     [
+      0,
+      [
+       0,
+       3,
+       7
+      ]
+     ],
+     [
+      8,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      3,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      10,
+      [
+       0,
+       4,
+       7
+      ]
+     ]
+    ],
+    "chordBars": 2,
+    "bars": 16,
+    "arp": "kutu",
+    "arpPattern": [
+     0,
+     2,
+     1,
+     3,
+     2,
+     1,
+     4,
+     2
+    ],
+    "lead": "none",
+    "perc": "none",
+    "pad": 0.1,
+    "bass": 0.08,
+    "lpf": 4000,
+    "rev": 0.45,
+    "gain": 0.45,
+    "density": 0.55
+   },
+   "senlik": {
+    "note": "Şenlik: hızlı maksum darbuka, zil, saz ve klarnet.",
+    "bpm": 104,
+    "root": "A3",
+    "scale": [
+     0,
+     1,
+     4,
+     5,
+     7,
+     8,
+     10
+    ],
+    "chords": [
+     [
+      0,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      1,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      0,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      10,
+      [
+       0,
+       3,
+       7
+      ]
+     ]
+    ],
+    "chordBars": 2,
+    "bars": 16,
+    "arp": "saz",
+    "lead": "klarnet",
+    "perc": "darbuka",
+    "tef": true,
+    "pad": 0.06,
+    "bass": 0.22,
+    "lpf": 6000,
+    "rev": 0.2,
+    "gain": 0.55,
+    "density": 0.85
+   },
+   "gunduz2": {
+    "note": "Rast (Sol), klarnet ve saz, hafif dum: çarşıya inen sabah.",
+    "bpm": 90,
+    "root": "G3",
+    "scale": [
+     0,
+     2,
+     4,
+     5,
+     7,
+     9,
+     10
+    ],
+    "chords": [
+     [
+      0,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      5,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      7,
+      [
+       0,
+       4,
+       7,
+       10
+      ]
+     ],
+     [
+      0,
+      [
+       0,
+       4,
+       7
+      ]
+     ]
+    ],
+    "chordBars": 2,
+    "bars": 16,
+    "arp": "saz",
+    "lead": "klarnet",
+    "perc": "dum",
+    "pad": 0.1,
+    "bass": 0.16,
+    "lpf": 5600,
+    "rev": 0.3,
+    "gain": 0.5,
+    "density": 0.7
+   },
+   "sabah": {
+    "note": "Uşşak (La), elektrik piyano ve ney: ilk çay, ilk vapur.",
+    "bpm": 78,
+    "root": "A3",
+    "scale": [
+     0,
+     2,
+     3,
+     5,
+     7,
+     8,
+     10
+    ],
+    "chords": [
+     [
+      0,
+      [
+       0,
+       3,
+       7,
+       10
+      ]
+     ],
+     [
+      3,
+      [
+       0,
+       4,
+       7,
+       11
+      ]
+     ],
+     [
+      5,
+      [
+       0,
+       3,
+       7
+      ]
+     ],
+     [
+      7,
+      [
+       0,
+       4,
+       7
+      ]
+     ]
+    ],
+    "chordBars": 2,
+    "bars": 16,
+    "arp": "epiano",
+    "lead": "ney",
+    "perc": "none",
+    "pad": 0.12,
+    "bass": 0.16,
+    "lpf": 4200,
+    "rev": 0.3,
+    "gain": 0.5,
+    "density": 0.6
+   },
+   "aksam2": {
+    "note": "Nihavend (Re), keman ve elektrik piyano: akşam ezanı öncesi boğaz.",
+    "bpm": 72,
+    "root": "D3",
+    "scale": [
+     0,
+     2,
+     3,
+     5,
+     7,
+     8,
+     11
+    ],
+    "chords": [
+     [
+      0,
+      [
+       0,
+       3,
+       7
+      ]
+     ],
+     [
+      8,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      3,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      7,
+      [
+       0,
+       4,
+       7,
+       10
+      ]
+     ]
+    ],
+    "chordBars": 2,
+    "bars": 16,
+    "arp": "epiano",
+    "lead": "keman",
+    "perc": "dum",
+    "pad": 0.1,
+    "bass": 0.16,
+    "lpf": 3600,
+    "rev": 0.38,
+    "gain": 0.5,
+    "density": 0.6
+   },
+   "gece2": {
+    "note": "Gece yarısı: müzik kutusu ve uzak ney, sokak lambası.",
+    "bpm": 60,
+    "root": "E3",
+    "scale": [
+     0,
+     2,
+     3,
+     5,
+     7,
+     8,
+     10
+    ],
+    "chords": [
+     [
+      0,
+      [
+       0,
+       3,
+       7
+      ]
+     ],
+     [
+      8,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      5,
+      [
+       0,
+       3,
+       7
+      ]
+     ],
+     [
+      7,
+      [
+       0,
+       4,
+       7
+      ]
+     ]
+    ],
+    "chordBars": 2,
+    "bars": 16,
+    "arp": "kutu",
+    "lead": "ney",
+    "perc": "none",
+    "pad": 0.12,
+    "bass": 0.1,
+    "lpf": 2800,
+    "rev": 0.45,
+    "gain": 0.44,
+    "density": 0.45,
+    "leadBars": [
+     4,
+     5,
+     12,
+     13
+    ]
+   },
+   "carsi": {
+    "note": "Hicaz (La), klarnet ve darbuka: çarşı kalabalığı, pazarlık sesleri.",
+    "bpm": 98,
+    "root": "A3",
+    "scale": [
+     0,
+     1,
+     4,
+     5,
+     7,
+     8,
+     10
+    ],
+    "chords": [
+     [
+      0,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      1,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      10,
+      [
+       0,
+       3,
+       7
+      ]
+     ],
+     [
+      0,
+      [
+       0,
+       4,
+       7
+      ]
+     ]
+    ],
+    "chordBars": 2,
+    "bars": 16,
+    "arp": "saz",
+    "lead": "klarnet",
+    "perc": "darbuka",
+    "pad": 0.1,
+    "bass": 0.16,
+    "lpf": 5800,
+    "rev": 0.3,
+    "gain": 0.52,
+    "density": 0.8
+   },
+   "carsi_gece": {
+    "note": "Kapanan çarşı: seyrek saz, kanunsu tıngırtı, klarnet uzaktan.",
+    "bpm": 70,
+    "root": "A3",
+    "scale": [
+     0,
+     1,
+     4,
+     5,
+     7,
+     8,
+     10
+    ],
+    "chords": [
+     [
+      0,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      1,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      10,
+      [
+       0,
+       3,
+       7
+      ]
+     ],
+     [
+      0,
+      [
+       0,
+       4,
+       7,
+       10
+      ]
+     ]
+    ],
+    "chordBars": 2,
+    "bars": 16,
+    "arp": "saz",
+    "lead": "klarnet",
+    "perc": "none",
+    "pad": 0.1,
+    "bass": 0.16,
+    "lpf": 3000,
+    "rev": 0.4,
+    "gain": 0.45,
+    "density": 0.45,
+    "leadBars": [
+     6,
+     7,
+     14,
+     15
+    ]
+   },
+   "orman": {
+    "note": "Belgrad Ormanı: naylon gitar arpejleri, ney, kuş cıvıltısına yer bırakan sakin Rast.",
+    "bpm": 72,
+    "root": "G3",
+    "scale": [
+     0,
+     2,
+     4,
+     5,
+     7,
+     9,
+     10
+    ],
+    "chords": [
+     [
+      0,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      5,
+      [
+       0,
+       4,
+       7,
+       11
+      ]
+     ],
+     [
+      9,
+      [
+       0,
+       3,
+       7
+      ]
+     ],
+     [
+      7,
+      [
+       0,
+       4,
+       7
+      ]
+     ]
+    ],
+    "chordBars": 2,
+    "bars": 16,
+    "arp": "nylon",
+    "lead": "ney",
+    "perc": "none",
+    "pad": 0.11,
+    "bass": 0.12,
+    "lpf": 4200,
+    "rev": 0.4,
+    "gain": 0.48,
+    "density": 0.55
+   },
+   "orman_aksam": {
+    "note": "Ormanda gün batımı: mangal dumanı, keman ve naylon gitar.",
+    "bpm": 66,
+    "root": "D3",
+    "scale": [
+     0,
+     2,
+     4,
+     5,
+     7,
+     9,
+     11
+    ],
+    "chords": [
+     [
+      0,
+      [
+       0,
+       4,
+       7,
+       11
+      ]
+     ],
+     [
+      9,
+      [
+       0,
+       3,
+       7
+      ]
+     ],
+     [
+      5,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      7,
+      [
+       0,
+       4,
+       7
+      ]
+     ]
+    ],
+    "chordBars": 2,
+    "bars": 16,
+    "arp": "nylon",
+    "lead": "keman",
+    "perc": "none",
+    "pad": 0.13,
+    "bass": 0.16,
+    "lpf": 3400,
+    "rev": 0.45,
+    "gain": 0.46,
+    "density": 0.5
+   },
+   "orman_gece": {
+    "note": "Gece ormanı: müzik kutusu ve derin pad, cırcır böcekleri.",
+    "bpm": 58,
+    "root": "E3",
+    "scale": [
+     0,
+     2,
+     3,
+     5,
+     7,
+     8,
+     10
+    ],
+    "chords": [
+     [
+      0,
+      [
+       0,
+       3,
+       7
+      ]
+     ],
+     [
+      5,
+      [
+       0,
+       3,
+       7
+      ]
+     ],
+     [
+      8,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      7,
+      [
+       0,
+       4,
+       7
+      ]
+     ]
+    ],
+    "chordBars": 2,
+    "bars": 16,
+    "arp": "kutu",
+    "lead": "none",
+    "perc": "none",
+    "pad": 0.14,
+    "bass": 0.08,
+    "lpf": 2600,
+    "rev": 0.5,
+    "gain": 0.42,
+    "density": 0.4
+   },
+   "halisaha": {
+    "note": "Halı saha: hızlı darbuka ve tef, saz riffi, tribün coşkusu.",
+    "bpm": 124,
+    "root": "E3",
+    "scale": [
+     0,
+     2,
+     3,
+     5,
+     7,
+     8,
+     10
+    ],
+    "chords": [
+     [
+      0,
+      [
+       0,
+       3,
+       7
+      ]
+     ],
+     [
+      10,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      8,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      7,
+      [
+       0,
+       4,
+       7
+      ]
+     ]
+    ],
+    "chordBars": 2,
+    "bars": 16,
+    "arp": "saz",
+    "lead": "klarnet",
+    "perc": "darbuka",
+    "pad": 0.05,
+    "bass": 0.24,
+    "lpf": 6500,
+    "rev": 0.18,
+    "gain": 0.55,
+    "density": 0.9,
+    "tef": true
+   },
+   "pazar": {
+    "note": "Gece pazarı: fenerler altında saz ve klarnet, ağır dum.",
+    "bpm": 92,
+    "root": "D3",
+    "scale": [
+     0,
+     1,
+     4,
+     5,
+     7,
+     8,
+     10
+    ],
+    "chords": [
+     [
+      0,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      1,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      0,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      10,
+      [
+       0,
+       3,
+       7
+      ]
+     ]
+    ],
+    "chordBars": 2,
+    "bars": 16,
+    "arp": "saz",
+    "lead": "klarnet",
+    "perc": "dum",
+    "pad": 0.1,
+    "bass": 0.16,
+    "lpf": 4800,
+    "rev": 0.3,
+    "gain": 0.5,
+    "density": 0.75
+   },
+   "sahil": {
+    "note": "Sahil yolu: elektrik piyano ve keman, banklarda simit.",
+    "bpm": 80,
+    "root": "C4",
+    "scale": [
+     0,
+     2,
+     4,
+     5,
+     7,
+     9,
+     11
+    ],
+    "chords": [
+     [
+      0,
+      [
+       0,
+       4,
+       7,
+       11
+      ]
+     ],
+     [
+      9,
+      [
+       0,
+       3,
+       7,
+       10
+      ]
+     ],
+     [
+      5,
+      [
+       0,
+       4,
+       7,
+       11
+      ]
+     ],
+     [
+      7,
+      [
+       0,
+       4,
+       7,
+       10
+      ]
+     ]
+    ],
+    "chordBars": 2,
+    "bars": 16,
+    "arp": "epiano",
+    "lead": "keman",
+    "perc": "dum",
+    "pad": 0.1,
+    "bass": 0.16,
+    "lpf": 5000,
+    "rev": 0.32,
+    "gain": 0.5,
+    "density": 0.6
+   },
+   "metro": {
+    "note": "Metro altı: sokak müzisyeni klarneti, çini duvarda yankı.",
+    "bpm": 84,
+    "root": "B3",
+    "scale": [
+     0,
+     1,
+     4,
+     5,
+     7,
+     8,
+     10
+    ],
+    "chords": [
+     [
+      0,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      1,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      10,
+      [
+       0,
+       3,
+       7
+      ]
+     ],
+     [
+      0,
+      [
+       0,
+       4,
+       7
+      ]
+     ]
+    ],
+    "chordBars": 2,
+    "bars": 16,
+    "arp": "epiano",
+    "lead": "klarnet",
+    "perc": "dum",
+    "pad": 0.1,
+    "bass": 0.16,
+    "lpf": 4400,
+    "rev": 0.5,
+    "gain": 0.5,
+    "density": 0.6
+   },
+   "adalar": {
+    "note": "Adalar: naylon gitar ve keman, çam kokusu ve bisiklet zili.",
+    "bpm": 76,
+    "root": "F3",
+    "scale": [
+     0,
+     2,
+     4,
+     5,
+     7,
+     9,
+     11
+    ],
+    "chords": [
+     [
+      0,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      5,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      2,
+      [
+       0,
+       3,
+       7
+      ]
+     ],
+     [
+      7,
+      [
+       0,
+       4,
+       7,
+       10
+      ]
+     ]
+    ],
+    "chordBars": 2,
+    "bars": 16,
+    "arp": "nylon",
+    "lead": "keman",
+    "perc": "none",
+    "pad": 0.1,
+    "bass": 0.16,
+    "lpf": 4600,
+    "rev": 0.36,
+    "gain": 0.5,
+    "density": 0.6
+   }
+  }
+ },
+ "voices": {
+  "sabri": {
+   "base": 135,
+   "wave": "square",
+   "speed": 12,
+   "range": 6,
+   "vol": 0.06
+  },
+  "erim": {
+   "base": 340,
+   "wave": "square",
+   "speed": 19,
+   "range": 11,
+   "wobble": 0.15,
+   "vol": 0.055,
+   "formant": 1.3
+  },
+  "teyze": {
+   "base": 250,
+   "wave": "triangle",
+   "speed": 15,
+   "range": 8,
+   "vol": 0.08
+  },
+  "emekli": {
+   "base": 115,
+   "wave": "sawtooth",
+   "speed": 10,
+   "range": 5,
+   "vol": 0.05,
+   "formant": 0.8
+  },
+  "genc": {
+   "base": 190,
+   "wave": "square",
+   "speed": 16,
+   "range": 7,
+   "vol": 0.055
+  },
+  "varsayilan": {
+   "base": 165,
+   "wave": "square",
+   "speed": 14,
+   "range": 7,
+   "vol": 0.055
+  }
+ }
+}

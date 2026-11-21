@@ -1,0 +1,507 @@
+{
+ "source": "v2 test/bot.js seed 7 dengeli, 25 min, run read-only from a copy",
+ "gameDayS": 240,
+ "moneyAtDayEnd": {
+  "1": 3729,
+  "2": 8386,
+  "3": 1944,
+  "4": 15854,
+  "5": 14910,
+  "6": 22660
+ },
+ "earnedCumAtDayEnd": {
+  "1": 5229,
+  "2": 12636,
+  "3": 18747,
+  "4": 32459,
+  "5": 50873,
+  "6": 70360
+ },
+ "note": "money is spend-dependent (day 3 dips after purchases); parity test uses cumulative earned",
+ "firstUnlock": {
+  "cay": 30.3,
+  "ayran": 182.9,
+  "simit": 275.3,
+  "tabure2": 277.6,
+  "pencere": 542.9,
+  "isbul": 466.5
+ },
+ "hires": [
+  {
+   "t": 466.7,
+   "name": "Rıza"
+  },
+  {
+   "t": 712.2,
+   "name": "Nazlı"
+  },
+  {
+   "t": 803.9,
+   "name": "Tayfun"
+  },
+  {
+   "t": 895.9,
+   "name": "Ramazan"
+  },
+  {
+   "t": 999.9,
+   "name": "Zafer"
+  },
+  {
+   "t": 1110.9,
+   "name": "Aslı"
+  }
+ ],
+ "curve": [
+  {
+   "t": 1,
+   "day": 1,
+   "money": 0,
+   "level": 1,
+   "stars": 0,
+   "owned": 0,
+   "workers": 0
+  },
+  {
+   "t": 32.8,
+   "day": 1,
+   "money": 419,
+   "level": 2,
+   "stars": 0,
+   "owned": 1,
+   "workers": 0
+  },
+  {
+   "t": 62.8,
+   "day": 1,
+   "money": 1163,
+   "level": 2,
+   "stars": 0,
+   "owned": 1,
+   "workers": 0
+  },
+  {
+   "t": 92.8,
+   "day": 1,
+   "money": 1469,
+   "level": 2,
+   "stars": 0,
+   "owned": 1,
+   "workers": 0
+  },
+  {
+   "t": 123.4,
+   "day": 1,
+   "money": 1749,
+   "level": 2,
+   "stars": 0,
+   "owned": 1,
+   "workers": 0
+  },
+  {
+   "t": 153.4,
+   "day": 1,
+   "money": 2405,
+   "level": 2,
+   "stars": 0,
+   "owned": 1,
+   "workers": 0
+  },
+  {
+   "t": 184,
+   "day": 1,
+   "money": 1585,
+   "level": 3,
+   "stars": 0,
+   "owned": 2,
+   "workers": 0
+  },
+  {
+   "t": 214,
+   "day": 1,
+   "money": 2972,
+   "level": 3,
+   "stars": 0,
+   "owned": 2,
+   "workers": 0
+  },
+  {
+   "t": 244.6,
+   "day": 2,
+   "money": 3748,
+   "level": 3,
+   "stars": 0,
+   "owned": 2,
+   "workers": 0
+  },
+  {
+   "t": 274.6,
+   "day": 2,
+   "money": 3397,
+   "level": 3,
+   "stars": 0,
+   "owned": 3,
+   "workers": 0
+  },
+  {
+   "t": 305.2,
+   "day": 2,
+   "money": 3920,
+   "level": 3,
+   "stars": 0,
+   "owned": 5,
+   "workers": 0
+  },
+  {
+   "t": 335.2,
+   "day": 2,
+   "money": 4969,
+   "level": 3,
+   "stars": 0,
+   "owned": 5,
+   "workers": 0
+  },
+  {
+   "t": 365.2,
+   "day": 2,
+   "money": 5949,
+   "level": 3,
+   "stars": 0,
+   "owned": 5,
+   "workers": 0
+  },
+  {
+   "t": 395.2,
+   "day": 2,
+   "money": 7496,
+   "level": 4,
+   "stars": 0,
+   "owned": 5,
+   "workers": 0
+  },
+  {
+   "t": 425.2,
+   "day": 2,
+   "money": 8015,
+   "level": 4,
+   "stars": 0,
+   "owned": 5,
+   "workers": 0
+  },
+  {
+   "t": 455.2,
+   "day": 2,
+   "money": 9157,
+   "level": 4,
+   "stars": 0,
+   "owned": 5,
+   "workers": 0
+  },
+  {
+   "t": 487,
+   "day": 3,
+   "money": 8674,
+   "level": 4,
+   "stars": 1,
+   "owned": 6,
+   "workers": 1
+  },
+  {
+   "t": 517,
+   "day": 3,
+   "money": 9373,
+   "level": 4,
+   "stars": 1,
+   "owned": 6,
+   "workers": 1
+  },
+  {
+   "t": 547,
+   "day": 3,
+   "money": 8426,
+   "level": 5,
+   "stars": 1,
+   "owned": 8,
+   "workers": 1
+  },
+  {
+   "t": 577,
+   "day": 3,
+   "money": 5779,
+   "level": 5,
+   "stars": 1,
+   "owned": 10,
+   "workers": 1
+  },
+  {
+   "t": 607.6,
+   "day": 3,
+   "money": 1709,
+   "level": 5,
+   "stars": 1,
+   "owned": 11,
+   "workers": 1
+  },
+  {
+   "t": 638.2,
+   "day": 3,
+   "money": 1023,
+   "level": 5,
+   "stars": 1,
+   "owned": 12,
+   "workers": 1
+  },
+  {
+   "t": 668.8,
+   "day": 3,
+   "money": 2171,
+   "level": 5,
+   "stars": 1,
+   "owned": 12,
+   "workers": 1
+  },
+  {
+   "t": 698.8,
+   "day": 3,
+   "money": 3259,
+   "level": 5,
+   "stars": 1,
+   "owned": 12,
+   "workers": 1
+  },
+  {
+   "t": 729.4,
+   "day": 4,
+   "money": 2358,
+   "level": 5,
+   "stars": 1,
+   "owned": 12,
+   "workers": 2
+  },
+  {
+   "t": 759.4,
+   "day": 4,
+   "money": 7319,
+   "level": 6,
+   "stars": 1,
+   "owned": 14,
+   "workers": 2
+  },
+  {
+   "t": 789.4,
+   "day": 4,
+   "money": 6562,
+   "level": 6,
+   "stars": 1,
+   "owned": 14,
+   "workers": 2
+  },
+  {
+   "t": 819.4,
+   "day": 4,
+   "money": 4937,
+   "level": 6,
+   "stars": 1,
+   "owned": 14,
+   "workers": 3
+  },
+  {
+   "t": 849.4,
+   "day": 4,
+   "money": 23658,
+   "level": 6,
+   "stars": 1,
+   "owned": 14,
+   "workers": 3
+  },
+  {
+   "t": 879.4,
+   "day": 4,
+   "money": 12543,
+   "level": 6,
+   "stars": 1,
+   "owned": 14,
+   "workers": 3
+  },
+  {
+   "t": 909.4,
+   "day": 4,
+   "money": 11907,
+   "level": 6,
+   "stars": 1,
+   "owned": 14,
+   "workers": 4
+  },
+  {
+   "t": 939.4,
+   "day": 4,
+   "money": 13779,
+   "level": 6,
+   "stars": 1,
+   "owned": 14,
+   "workers": 4
+  },
+  {
+   "t": 969.4,
+   "day": 5,
+   "money": 16222,
+   "level": 7,
+   "stars": 2,
+   "owned": 14,
+   "workers": 4
+  },
+  {
+   "t": 999.4,
+   "day": 5,
+   "money": 17411,
+   "level": 7,
+   "stars": 2,
+   "owned": 14,
+   "workers": 4
+  },
+  {
+   "t": 1029.4,
+   "day": 5,
+   "money": 16250,
+   "level": 7,
+   "stars": 2,
+   "owned": 14,
+   "workers": 5
+  },
+  {
+   "t": 1060,
+   "day": 5,
+   "money": 18226,
+   "level": 7,
+   "stars": 2,
+   "owned": 14,
+   "workers": 5
+  },
+  {
+   "t": 1090,
+   "day": 5,
+   "money": 21652,
+   "level": 7,
+   "stars": 2,
+   "owned": 14,
+   "workers": 5
+  },
+  {
+   "t": 1120,
+   "day": 5,
+   "money": 20530,
+   "level": 7,
+   "stars": 2,
+   "owned": 14,
+   "workers": 6
+  },
+  {
+   "t": 1150,
+   "day": 5,
+   "money": 22472,
+   "level": 7,
+   "stars": 2,
+   "owned": 14,
+   "workers": 6
+  },
+  {
+   "t": 1180,
+   "day": 5,
+   "money": 26222,
+   "level": 7,
+   "stars": 2,
+   "owned": 14,
+   "workers": 6
+  },
+  {
+   "t": 1210,
+   "day": 6,
+   "money": 15367,
+   "level": 7,
+   "stars": 2,
+   "owned": 14,
+   "workers": 6
+  },
+  {
+   "t": 1240,
+   "day": 6,
+   "money": 16642,
+   "level": 7,
+   "stars": 2,
+   "owned": 14,
+   "workers": 6
+  },
+  {
+   "t": 1270,
+   "day": 6,
+   "money": 20036,
+   "level": 7,
+   "stars": 2,
+   "owned": 14,
+   "workers": 6
+  },
+  {
+   "t": 1300.6,
+   "day": 6,
+   "money": 23621,
+   "level": 7,
+   "stars": 2,
+   "owned": 14,
+   "workers": 6
+  },
+  {
+   "t": 1330.6,
+   "day": 6,
+   "money": 25380,
+   "level": 7,
+   "stars": 2,
+   "owned": 14,
+   "workers": 6
+  },
+  {
+   "t": 1360.6,
+   "day": 6,
+   "money": 15837,
+   "level": 7,
+   "stars": 2,
+   "owned": 14,
+   "workers": 6
+  },
+  {
+   "t": 1390.6,
+   "day": 6,
+   "money": 17291,
+   "level": 7,
+   "stars": 2,
+   "owned": 14,
+   "workers": 6
+  },
+  {
+   "t": 1420.6,
+   "day": 6,
+   "money": 19373,
+   "level": 7,
+   "stars": 2,
+   "owned": 14,
+   "workers": 6
+  },
+  {
+   "t": 1450.6,
+   "day": 7,
+   "money": 23148,
+   "level": 7,
+   "stars": 2,
+   "owned": 14,
+   "workers": 6
+  },
+  {
+   "t": 1480.6,
+   "day": 7,
+   "money": 24633,
+   "level": 7,
+   "stars": 2,
+   "owned": 14,
+   "workers": 6
+  }
+ ]
+}

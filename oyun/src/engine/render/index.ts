@@ -1,0 +1,479 @@
+/**
+ * Render pipeline: reproduces the v2 look 1:1 (game.js renderer setup + world.js light/fog/sky/time of day/shadows).
+ * Owns the Scene, the camera rig, hemisphere + sun lights, fog and the sky dome. Zones and views add their roots.
+ * Decisions where MOTOR/CONTRACT are silent:
+ * - The renderer is created in createRender when `deps.canvas` is given (init() with the same canvas is then a no-op),
+ *   so `render.scene`/`render.camera` are usable right away. WebGL failure throws (boot shows #fail / fallback).
+ * - setTier: antialias is a context attribute and cannot change on a live canvas; an AA change is stored and applies
+ *   on the next page load (v2 did the same: AA was decided once from guessTier). Pixel ratio, shadows apply live.
+ * - Extras beyond RenderPipeline (typed as MotorRender): onTime(cb) for views that tint their own materials (sea,
+ *   night glow), tod()/night/hour/phase, horizon (camera sees the horizon; skyline culling), setFocus(x, z)
+ *   (shadow box follows the camera, also done automatically every 10 frames like v2), sun/hemi/sky handles.
+ * - Context loss: the canvas events pause rendering; three re-uploads geometry/textures from their CPU copies on the
+ *   next frame after restore (all our textures are canvas/image backed), so nothing has to be rebuilt by hand.
+ */
+import * as T from 'three';
+import type { RenderPipeline, RenderDeps, TierDef, Season, WeatherState, RenderInfo, Vec3, ScreenPt, Disposer, DayPhase } from '../api';
+import { DAY_START_H, DAY_END_H } from '../api';
+import { createCameraRig, type MotorCameraRig } from '../camera';
+import { makeSky } from './sky';
+import { createShadowCull } from './shadow-cull';
+import { createWarmGate } from './warm-gate';
+import { createLookRenderer, lookAt, LOOK_POZ, AKICI_POZ, installLookToneMap } from './look';
+import { todAt, phaseAt, DAWN_EXTRA, type Tod } from './tod';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+import { akisGuncelle } from './doku-akis';
+
+export { todAt, phaseAt, TOD } from './tod';
+export type { Tod } from './tod';
+
+export interface MotorRender extends RenderPipeline {
+  readonly camera: MotorCameraRig;
+  onTime(cb: (tod: Tod, hour: number) => void): Disposer;
+  tod(): Tod;
+  readonly hour: number;
+  readonly night: number;
+  readonly phase: DayPhase;
+  /** True when the camera can see the horizon (wide/intro shots); updated during each frame (v2 rule). */
+  readonly horizon: boolean;
+  readonly sun: T.DirectionalLight;
+  readonly hemi: T.HemisphereLight;
+  readonly sky: T.Mesh;
+  readonly tier: TierDef | null;
+  setFocus(x: number, z: number): void;
+  readonly frameNo: number;
+  readonly lost: boolean;
+  /** Sky-based environment map (PMREM, refreshed every half game hour); null before the renderer exists. */
+  onEnv(cb: (tex: T.Texture | null) => void): Disposer;
+  readonly bloomOn: boolean;
+  /** PRF-08: outdoor hemisphere multiplier (night-lights eases it to 0.85 inside a room); setTime and hava-look multiply it in. */
+  hemiMul: number;
+  /** GRS-01: light colour multiplier for the akıcı grade (golden hour / night tint without the GRADE pass); [1,1,1] when GRADE runs */
+  readonly lightTint: readonly [number, number, number];
+  /** PRF-06: leave out shadow casters whose shadow cannot reach the camera view (default on; off only for A/B measurement) */
+  shadowCull: boolean;
+  shadowStats(): { casters: number; culled: number };
+  /** PRF-12: dynamic resolution; multiplies the tier's pixel ratio (0.6..1). Resizes targets only, no shader relink. */
+  setScale(s: number): void;
+  /** PRF-03: parallel shader compile of everything visible, in both shadow states (so a later tier change links nothing). Never draws. */
+  warm(sc: T.Scene, cam: T.Camera): Promise<void>;
+  /** PRF-03: programs born in warm() vs inside a frame (blocking), a warm still compiling, and the last frame-born program names */
+  warmStats(): { born: { draw: number; warm: number }; busy: boolean; lastDrawBorn: string[] };
+}
+
+const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
+const NO_TINT = [1, 1, 1] as const;
+
+/** PRF-03: OutputPass picks its defines inside its first render() (a define change = relink inside the frame). Same rule as
+ *  three 0.160 OutputPass.render, done ahead so warm() compiles the program the first frame really uses. */
+function primeOutputPass(op: OutputPass, r: T.WebGLRenderer): void {
+  const o = op as unknown as { _outputColorSpace: string | null; _toneMapping: T.ToneMapping | null; material: T.ShaderMaterial };
+  if (o._outputColorSpace === r.outputColorSpace && o._toneMapping === r.toneMapping) return;
+  o._outputColorSpace = r.outputColorSpace; o._toneMapping = r.toneMapping;
+  const d: Record<string, string> = {};
+  if (T.ColorManagement.getTransfer(r.outputColorSpace) === T.SRGBTransfer) d.SRGB_TRANSFER = '';
+  const tm: Partial<Record<T.ToneMapping, string>> = { [T.LinearToneMapping]: 'LINEAR', [T.ReinhardToneMapping]: 'REINHARD', [T.CineonToneMapping]: 'CINEON', [T.ACESFilmicToneMapping]: 'ACES_FILMIC', [T.AgXToneMapping]: 'AGX' };
+  const k = tm[r.toneMapping]; if (k) d[k + '_TONE_MAPPING'] = '';
+  o.material.defines = d; o.material.needsUpdate = true;
+}
+
+/** Display-space colour grade after OutputPass: saturation, contrast around a pivot, tint, soft vignette (values: look.ts lookAt). */
+const L0 = lookAt(11, 0);
+const GRADE = {
+  uniforms: { tDiffuse: { value: null }, uSat: { value: L0.sat }, uCon: { value: L0.con }, uPiv: { value: L0.pivot }, uTint: { value: new T.Vector3(...L0.tint) }, uVig: { value: L0.vig } },
+  vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float uSat; uniform float uCon; uniform float uPiv; uniform vec3 uTint; uniform float uVig; varying vec2 vUv;
+void main() {
+  vec4 c = texture2D(tDiffuse, vUv); vec3 col = c.rgb;
+  float l = dot(col, vec3(0.2126, 0.7152, 0.0722));
+  col = mix(vec3(l), col, uSat);
+  col = (col - uPiv) * uCon + uPiv;
+  col *= uTint;
+  vec2 d = vUv - 0.5; col *= 1.0 - uVig * smoothstep(0.35, 0.85, length(d * vec2(1.25, 1.0)));
+  gl_FragColor = vec4(clamp(col, 0.0, 1.0), c.a);
+}`,
+};
+
+export function createRender(deps: RenderDeps): MotorRender {
+  const scene = new T.Scene();
+  scene.name = 'scene';
+  scene.background = new T.Color('#bfe3f7');
+  scene.fog = new T.Fog('#c6e3f2', 70, 190);
+  const env = new T.Group(); env.name = 'env'; scene.add(env);
+  const rig = createCameraRig({ aspect: 1 });
+
+  // v2 world.js light rig
+  const hemi = new T.HemisphereLight('#dcefff', '#9a8a74', 1.45); hemi.name = 'hemi'; env.add(hemi);
+  const sun = new T.DirectionalLight('#fff4e2', 2.3); sun.name = 'sun'; env.add(sun, sun.target);
+  const focus = new T.Vector3(-0.8, 0, -3.5), sunDir = new T.Vector3(0.3, 0.8, 0.4).normalize();
+  const placeSun = () => { sun.target.position.copy(focus); sun.position.copy(focus).addScaledVector(sunDir, 32); sun.target.updateMatrixWorld(); sun.updateMatrixWorld(); };
+  placeSun();
+
+  const sky = makeSky(); sky.userData.parity = 'sky'; env.add(sky);
+  let horizon = true;
+  {
+    const skyOBR = sky.onBeforeRender.bind(sky), fwd = new T.Vector3();
+    sky.onBeforeRender = (r, s, cam, g, m, gr) => {
+      skyOBR(r, s, cam, g, m, gr);
+      cam.getWorldDirection(fwd);
+      const half = (cam as T.PerspectiveCamera).isPerspectiveCamera ? (cam as T.PerspectiveCamera).fov * Math.PI / 360 : 0.6;
+      horizon = Math.asin(Math.max(-1, Math.min(1, -fwd.y))) - half < 0.12;
+    };
+  }
+
+  let renderer: T.WebGLRenderer | null = null;
+  // PRF-01: GPU frame time via EXT_disjoint_timer_query_webgl2 (only while the perf recorder is on; absent = not measured).
+  // PRF-03: every shader program three links is counted once, by where it was born: 'warm' (compileAsync, parallel, off the
+  // frame) or 'draw' (first sight inside a frame = the blocking compile that froze Chrome). Target in play: draw births = 0.
+  const seenProg = new WeakSet<object>(), born = { draw: 0, warm: 0 }, lastDrawBorn: string[] = [];
+  const keyHash = (s: string) => { let h = 2166136261; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return (h >>> 0).toString(36); };
+  const progNames = new WeakMap<object, string>();
+  const progName = (pg: { name: string; cacheKey: string }) => { let s = progNames.get(pg); if (!s) { s = (pg.name || '') + '#' + keyHash(pg.cacheKey || ''); progNames.set(pg, s); } return s; };
+  const progList = () => ((renderer?.info as { programs?: { name: string; cacheKey: string }[] } | undefined)?.programs || []);
+  const scanProgs = (kind: 'draw' | 'warm', sc?: T.Object3D) => {
+    let n = 0; const fresh: object[] = [];
+    for (const pg of progList()) {
+      if (!pg || seenProg.has(pg)) continue;
+      seenProg.add(pg); n++; born[kind]++;
+      if (kind === 'draw') fresh.push(pg);
+    }
+    // a frame-born program is rare (that is the bug): name who owns it (object path + material) for the perf record
+    if (fresh.length && sc && renderer) {
+      const pr = renderer.properties, who = new Map<object, string>();
+      sc.traverse(o => { const mt = (o as T.Mesh).material; if (!mt) return; for (const m of Array.isArray(mt) ? mt : [mt]) { const cp = (pr.get(m) as { currentProgram?: object }).currentProgram; if (cp && fresh.includes(cp) && !who.has(cp)) { let path = o.name || o.type, q = o.parent; for (let k = 0; q && k < 3; k++, q = q.parent) path = (q.name || q.type) + '/' + path; who.set(cp, path + ':' + m.type + (m.name ? '(' + m.name + ')' : '')); } } });
+      for (const pg of fresh) { lastDrawBorn.push(progName(pg as { name: string; cacheKey: string }) + '@' + (who.get(pg) || 'geçiş/pmrem')); if (lastDrawBorn.length > 24) lastDrawBorn.shift(); }
+    }
+    return n;
+  };
+  let warmJobs = 0;
+  // compileAsync against the target the frame really draws into (see warm()); `objs` = compile only these objects' materials
+  const compileFor = (sc: T.Scene, cam: T.Camera, objs: T.Object3D[] | null): Promise<unknown> => {
+    const r = renderer as unknown as { compileAsync?: (s: T.Object3D, c: T.Camera, target?: T.Scene | null) => Promise<unknown> } | null;
+    if (!r || !r.compileAsync || lost) return Promise.resolve();
+    const rt = composer && rpass ? (composer as unknown as { readBuffer: T.WebGLRenderTarget }).readBuffer : null, prevRt = renderer!.getRenderTarget();
+    let job: Promise<unknown> = Promise.resolve();
+    try {
+      if (rt) renderer!.setRenderTarget(rt);
+      // a list: duck-typed root whose traverse walks only the new objects (no lights in it, so the light state of `sc` stays exact)
+      job = objs ? r.compileAsync({ traverse: (cb: (o: T.Object3D) => void) => objs.forEach(cb), traverseVisible: () => { /* lights come from sc */ } } as unknown as T.Object3D, cam, sc) : r.compileAsync(sc, cam);
+      // full warm: the post passes too (bloom blur/composite, OutputPass, grade). Their full-screen quads are not in the scene,
+      // so they used to link inside the first frame. The pass that draws to the screen compiles against the screen.
+      if (!objs) pmrem ||= new T.PMREMGenerator(renderer!);   // its blur shader starts linking now, not inside the first env refresh
+      if (!objs && composer) {
+        const toScreen = new T.Scene(), toTarget = new T.Scene(), quad = new T.PlaneGeometry(2, 2);
+        const last = composer.passes.filter(ps => ps.enabled).pop();   // the composer sets renderToScreen only while rendering
+        for (const ps of composer.passes) {
+          if (ps instanceof OutputPass) primeOutputPass(ps, renderer!);
+          const mats = new Set<T.Material>();
+          for (const v of Object.values(ps as unknown as Record<string, unknown>)) {
+            const list = Array.isArray(v) ? v : [v, (v as { material?: unknown } | null)?.material];
+            for (const m of list) if (m && (m as T.Material).isMaterial) mats.add(m as T.Material);
+          }
+          mats.forEach(m => (ps === last ? toScreen : toTarget).add(new T.Mesh(quad, m)));
+        }
+        const jobs = [job];
+        if (toTarget.children.length) jobs.push(r.compileAsync(toTarget, cam));
+        if (toScreen.children.length) { renderer!.setRenderTarget(null); jobs.push(r.compileAsync(toScreen, cam)); }
+        job = Promise.all(jobs).finally(() => quad.dispose());
+      }
+    } catch (err) { deps.log?.warn('[render] warm', err); }
+    finally { if (rt || composer) renderer!.setRenderTarget(prevRt); }
+    scanProgs('warm');
+    warmJobs++;
+    return job.then(() => { warmJobs--; }, () => { warmJobs--; });
+  };
+  // PRF-03 gate: new meshes whose program is not linked yet wait off-camera until compileAsync is done (warm-gate.ts)
+  const gate = createWarmGate();
+  let gateUntil = 0, gateN = 0;
+  const gateStep = (sc: T.Scene, cam: T.Camera) => {
+    const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    if (gate.held() && now > gateUntil) gate.release();   // safety: never hide anything longer than 3 s
+    if (!gate.dirty() || !renderer) return;
+    const pr = renderer.properties;
+    type Prog = { isReady(): boolean };
+    const got = gate.collect(sc, m => !(pr.get(m) as { currentProgram?: Prog }).currentProgram);
+    if (!got.length) return;
+    gateUntil = now + 3000;
+    void compileFor(sc, cam, got).then(() => { gate.release(got); });
+    // a new material instance whose program already exists (cache hit) is ready right after the sync part: show it this frame,
+    // only objects whose program is really still linking wait (else a view that respawns meshes would blink for a frame)
+    const ready = got.filter(o => { const mt = (o as T.Mesh).material; return (Array.isArray(mt) ? mt : [mt]).every(m => { const cp = (pr.get(m) as { currentProgram?: Prog }).currentProgram; return !!cp && cp.isReady(); }); });
+    if (ready.length) gate.release(ready);
+    if (got.length > ready.length) { gateN += got.length - ready.length; deps.perf?.count('shaderBekletilen', gateN); }
+  };
+  let gl2: WebGL2RenderingContext | null = null, gpuExt: { TIME_ELAPSED_EXT: number; GPU_DISJOINT_EXT: number } | null = null;
+  let gpuQ: WebGLQuery | null = null; const gpuPending: WebGLQuery[] = [];
+  const gpuBegin = () => { if (!gl2 || !gpuExt || gpuQ || gpuPending.length > 4) return; try { gpuQ = gl2.createQuery(); if (gpuQ) gl2.beginQuery(gpuExt.TIME_ELAPSED_EXT, gpuQ); } catch { gpuQ = null; } };
+  const gpuEnd = () => { if (!gl2 || !gpuExt || !gpuQ) return; try { gl2.endQuery(gpuExt.TIME_ELAPSED_EXT); gpuPending.push(gpuQ); } catch { /* ignore */ } gpuQ = null; };
+  const gpuPoll = () => {
+    if (!gl2 || !gpuExt) return;
+    while (gpuPending.length) {
+      const q = gpuPending[0];
+      try {
+        if (!gl2.getQueryParameter(q, gl2.QUERY_RESULT_AVAILABLE)) break;
+        const bad = gl2.getParameter(gpuExt.GPU_DISJOINT_EXT);
+        if (!bad) deps.perf?.gpu(gl2.getQueryParameter(q, gl2.QUERY_RESULT) / 1e6);
+        gl2.deleteQuery(q);
+      } catch { /* ignore */ }
+      gpuPending.shift();
+    }
+  };
+  let canvasEl: HTMLCanvasElement | null = null;
+  let tier: TierDef | null = null;
+  let wantAA: boolean | null = null;
+  let hour = 11, tod = todAt(11), night = 0;
+  let frameNo = 0, lost = false, resScale = 1;
+  const timeSubs = new Set<(t: Tod, h: number) => void>();
+  const lostSubs = new Set<() => void>(), restoredSubs = new Set<() => void>();
+  let loseExt: { loseContext(): void; restoreContext(): void } | null = null;
+  const lastInfo: RenderInfo = { calls: 0, tris: 0, geos: 0, texs: 0 };
+
+  // post-process (tier flag `bloom`): MSAA half-float target -> bloom -> OutputPass (tone mapping + sRGB)
+  let composer: EffectComposer | null = null, rpass: RenderPass | null = null, bloom: UnrealBloomPass | null = null, grade: ShaderPass | null = null;
+  function setupPost(t: TierDef) {
+    const want = !!(renderer && t.flags && t.flags.bloom);
+    // PRF-15: EffectComposer.dispose frees only its own two targets; the bloom pass keeps ~10 half-float mip targets and every
+    // pass its material, so each switch to a no-bloom tier leaked them on the GPU. Passes are disposed first now.
+    // GRS-01: without the post chain (akıcı) the grade runs inside tone mapping (look.ts CustomToneMapping); with it, ACES + GRADE pass
+    if (renderer) { renderer.toneMapping = want ? T.ACESFilmicToneMapping : T.CustomToneMapping; renderer.toneMappingExposure = want ? LOOK_POZ.ana : LOOK_POZ.ana * AKICI_POZ; }
+    if (!want) { if (composer) { composer.passes.forEach(ps => { try { ps.dispose(); } catch { /* */ } }); composer.dispose(); composer = null; rpass = null; bloom = null; grade = null; } return; }
+    if (composer) return;
+    const { w, h } = size(), pr = renderer!.getPixelRatio();
+    const target = new T.WebGLRenderTarget(Math.round(w * pr), Math.round(h * pr), { type: T.HalfFloatType, samples: t.antialias ? 4 : 0 });
+    composer = new EffectComposer(renderer!, target);
+    // PRF-15: the composer clones its target, so both ping-pong buffers were 4x MSAA half-float with a depth buffer (~69 MB of
+    // renderbuffers each at 1600x900). Only the scene pass needs that: it draws into readBuffer (rt2), the bloom pass blends back
+    // into rt2, OutputPass writes rt1 and the grade quad reads rt1 to the screen. rt1 keeps the same half-float format (same
+    // pixels) without MSAA and depth.
+    { const c = composer as unknown as { renderTarget1: T.WebGLRenderTarget; writeBuffer: T.WebGLRenderTarget };
+      const rt1 = new T.WebGLRenderTarget(target.width, target.height, { type: T.HalfFloatType, depthBuffer: false });
+      rt1.texture.name = 'EffectComposer.rt1'; target.dispose(); c.renderTarget1 = rt1; c.writeBuffer = rt1; }
+    rpass = new RenderPass(scene, rig.camera); composer.addPass(rpass);
+    bloom = new UnrealBloomPass(new T.Vector2(w, h), 0.22, 0.4, 0.92); composer.addPass(bloom);
+    composer.addPass(new OutputPass());
+    grade = new ShaderPass(GRADE); composer.addPass(grade);
+    composer.setPixelRatio(pr); composer.setSize(w, h);
+    tuneBloom();
+  }
+  let look = lookAt(hour, night);
+  function tuneBloom() {
+    look = lookAt(hour, night);   // colour grade follows the day: warm golden hour, cool blue night (look.ts)
+    if (grade) {
+      const u = grade.uniforms;
+      u.uSat.value = look.sat; u.uCon.value = look.con; u.uPiv.value = look.pivot;
+      u.uTint.value.set(look.tint[0], look.tint[1], look.tint[2]); u.uVig.value = look.vig;
+    }
+    // 2026-11-08 user: glare made in-game text unreadable (threshold floor 0.90 at night: a sign's glow does not swallow its text)
+    if (!bloom) return; bloom.strength = look.bloom.strength; bloom.threshold = look.bloom.threshold; bloom.radius = look.bloom.radius; }
+
+  // sky environment map (PMREM from the sky dome): reflections on standard materials (Kenney models, metal props)
+  const sCull = createShadowCull();
+  let pmrem: T.PMREMGenerator | null = null, envRT: T.WebGLRenderTarget | null = null, envKey = -1;
+  const envSubs = new Set<(t: T.Texture | null) => void>();
+  function refreshEnv() {
+    if (!renderer) return;
+    // PRF-08 (B-082): akıcı re-renders the PMREM sky every 2 game hours instead of every half hour (reflections still follow day/night)
+    const key = tier?.name === 'akici' ? 1000 + Math.round(hour / 2) : Math.round(hour * 2); if (key === envKey && envRT) return; envKey = key;
+    pmrem ||= new T.PMREMGenerator(renderer);
+    const s = new T.Scene(); s.add(new T.Mesh(sky.geometry, sky.material));
+    const old = envRT; envRT = pmrem.fromScene(s, 0.02);
+    envSubs.forEach(cb => { try { cb(envRT!.texture); } catch (err) { deps.log?.warn('[render] env cb', err); } });
+    if (old) old.dispose();
+  }
+
+  // screen-space pick list (no mesh raycast)
+  const picks = new Map<string, { p: T.Vector3; r: number }>();
+  const _v = new T.Vector3(), _v2 = new T.Vector3();
+
+  function size(): { w: number; h: number } {
+    const c = canvasEl;
+    const w = (c && c.clientWidth) || (typeof window !== 'undefined' ? window.innerWidth : 390) || 390;
+    const h = (c && c.clientHeight) || (typeof window !== 'undefined' ? window.innerHeight : 844) || 844;
+    return { w, h };
+  }
+
+  function applyShadows(t: TierDef) {
+    const sh = !!t.shadows, sz = t.shadowSize || 1024, ext = sz >= 2048 ? 17 : 15;
+    sun.castShadow = sh;
+    if (sun.shadow.mapSize.x !== sz) { sun.shadow.mapSize.set(sz, sz); if (sun.shadow.map) { sun.shadow.map.dispose(); (sun.shadow as { map: T.WebGLRenderTarget | null }).map = null; } }
+    Object.assign(sun.shadow.camera, { left: -ext, right: ext, top: ext, bottom: -ext, near: 1, far: 80 }); sun.shadow.camera.updateProjectionMatrix();
+    sun.shadow.bias = -0.0005; sun.shadow.normalBias = 0.035;
+    // PRF-03: renderer.shadowMap.enabled stays true for the whole session (set in init). Flipping it forced
+    // scene.traverse(needsUpdate) = every material re-linked on a tier change (seconds of freeze on ANGLE). Now only the
+    // sun's castShadow follows the tier; three re-evaluates its light hash by itself. A shadow-off tier frees the map.
+    if (!sh && sun.shadow.map) { sun.shadow.map.dispose(); (sun.shadow as { map: T.WebGLRenderTarget | null }).map = null; }
+  }
+
+  const api: MotorRender = {
+    scene,
+    camera: rig,
+    get renderer() { return renderer; },
+    get hour() { return hour; },
+    get night() { return night; },
+    get phase() { return phaseAt(hour); },
+    get horizon() { return horizon; },
+    get tier() { return tier; },
+    get frameNo() { return frameNo; },
+    get lost() { return lost; },
+    sun, hemi, sky,
+    get bloomOn() { return !!composer; },
+    get lightTint() { return composer ? NO_TINT : look.tint; },
+    hemiMul: 1,
+    shadowCull: true,
+    shadowStats: () => sCull.stats(),
+    onEnv(cb) { envSubs.add(cb); try { cb(envRT ? envRT.texture : null); } catch { /* ignore */ } return () => { envSubs.delete(cb); }; },
+    init(canvas: HTMLCanvasElement, t: TierDef) {
+      if (renderer && canvasEl === canvas) { api.setTier(t); return; }
+      canvasEl = canvas;
+      installLookToneMap();
+      renderer = createLookRenderer({ canvas, antialias: !!t.antialias && !t.flags?.bloom, exposure: LOOK_POZ.ana, powerPreference: 'high-performance' });   // sRGB + ACES (look.ts)
+      // 2026-11-09 Chrome freeze root cause: with checkShaderErrors on, three calls getProgramInfoLog for every new
+      // program right after linking, which blocks the main thread until the GPU process finishes compiling (no parallel
+      // compile). On Windows/ANGLE that was seconds per new area. Errors are only checked in dev builds now.
+      renderer.debug.checkShaderErrors = !!(import.meta as { env?: { DEV?: boolean } }).env?.DEV;
+      try {
+        const c = renderer.getContext();
+        // PRF-15: with the post chain (bloom tiers) the scene is antialiased in the composer's MSAA target and the canvas only gets
+        // the final full-screen quad, so a multisampled canvas back buffer (~46 MB at 1600x900) bought nothing; akıcı has no AA.
+        if (typeof WebGL2RenderingContext !== 'undefined' && c instanceof WebGL2RenderingContext) { gl2 = c; gpuExt = c.getExtension('EXT_disjoint_timer_query_webgl2') as typeof gpuExt; }
+        const dbg = c.getExtension('WEBGL_debug_renderer_info');
+        deps.perf?.meta('gpu', dbg ? String(c.getParameter(dbg.UNMASKED_RENDERER_WEBGL)) : 'bilinmiyor');
+        deps.perf?.meta('gpuZamanOlcer', gpuExt ? 'var' : 'yok');
+      } catch { /* headless */ }
+      renderer.shadowMap.type = T.PCFSoftShadowMap;
+      renderer.shadowMap.enabled = true;
+      wantAA = !!t.antialias;
+      try { loseExt = renderer.getContext().getExtension('WEBGL_lose_context'); } catch { loseExt = null; }
+      canvas.addEventListener('webglcontextlost', (e: Event) => { e.preventDefault(); lost = true; lostSubs.forEach(cb => { try { cb(); } catch (err) { deps.log?.warn('[render] lost cb', err); } }); }, false);
+      canvas.addEventListener('webglcontextrestored', () => { lost = false; if (tier) applyShadows(tier); restoredSubs.forEach(cb => { try { cb(); } catch (err) { deps.log?.warn('[render] restored cb', err); } }); }, false);
+      api.setTier(t);
+    },
+    setTier(t: TierDef) {
+      tier = t;
+      if (wantAA !== null && !!t.antialias !== wantAA) deps.log?.info('[render] antialias change applies on next load');
+      applyShadows(t);
+      if (renderer) renderer.setPixelRatio(Math.min((typeof window !== 'undefined' && window.devicePixelRatio) || 1, t.pixelRatio) * resScale);
+      setupPost(t);
+      api.resize();
+      if (renderer) api.setTime(hour);   // GRS-01: the light tint follows the post chain (GRADE vs akıcı tone-map grade)
+    },
+    setTime(h: number, _season?: Season) {
+      // GRS-02: the game day runs to DAY_END_H (03:00 = 27); 27..32 is the visual dawn corridor after the gün sonu card (32 = 08:00)
+      hour = clamp(+h || 12, DAY_START_H, DAY_END_H + DAWN_EXTRA);
+      tod = todAt(hour); night = tod.n;
+      const su = (sky.material as T.ShaderMaterial).uniforms;
+      su.uTop.value.copy(tod.top); su.uHor.value.copy(tod.hor); su.uLow.value.copy(tod.low); su.uSunCol.value.copy(tod.sun); su.uNight.value = night;
+      sunDir.set(Math.sin(tod.az) * Math.cos(tod.el), Math.sin(tod.el), Math.cos(tod.az) * Math.cos(tod.el)).normalize();
+      su.uSunDir.value.copy(sunDir); placeSun();
+      tuneBloom();
+      sun.color.copy(tod.sun); sun.intensity = tod.si;
+      hemi.color.copy(tod.hs); hemi.groundColor.copy(tod.hg); hemi.intensity = tod.hi * api.hemiMul;
+      // GRS-01: akıcı has no GRADE pass; its golden-hour / night tint goes into the light colours instead (never both)
+      const [tr, tg, tb] = api.lightTint; sun.color.r *= tr; sun.color.g *= tg; sun.color.b *= tb; hemi.color.r *= tr; hemi.color.g *= tg; hemi.color.b *= tb;
+      (scene.fog as T.Fog).color.copy(tod.fog);
+      timeSubs.forEach(cb => { try { cb(tod, hour); } catch (err) { deps.log?.warn('[render] time cb', err); } });
+    },
+    setWeather(_w: WeatherState) { /* M5 */ },
+    onTime(cb) { timeSubs.add(cb); try { cb(tod, hour); } catch { /* ignore */ } return () => { timeSubs.delete(cb); }; },
+    tod: () => tod,
+    setFocus(x: number, z: number) {
+      // 2026-11-08: shadows follow the camera over the whole map (far shore too), snapped to the shadow texel grid
+      const sz = (tier && tier.shadowSize) || 1024, ext = sz >= 2048 ? 17 : 15, step = (2 * ext) / sz * 4;
+      const fx = clamp(+x || 0, -70, 70), fz = clamp(+z || 0, -20, 62);
+      focus.set(Math.round(fx / step) * step, 0, Math.round(fz / step) * step); placeSun();
+    },
+    frame(sc: T.Scene, cam: T.Camera) {
+      if (!renderer || lost) return;
+      frameNo++;
+      if (frameNo % 10 === 1) { const f = rig.focus(); api.setFocus(f.x, f.z); }
+      if (frameNo % 30 === 2 || !envRT) refreshEnv();
+      if ((cam as T.PerspectiveCamera).isPerspectiveCamera) akisGuncelle(sc, cam as T.PerspectiveCamera, renderer.domElement.height || 720);   // PRF-15 doku akışı
+      renderer.info.autoReset = false; renderer.info.reset();   // info() = everything drawn for this frame (composer passes, shadow pass)
+      gateStep(sc, cam);
+      // PRF-06: casters whose shadow cannot reach the view skip the shadow pass (same picture, fewer draws)
+      const draw = () => {
+        if (api.shadowCull) sCull.begin(sc, cam, sun);
+        try { if (composer && rpass) { rpass.scene = sc; rpass.camera = cam; composer.render(); } else renderer!.render(sc, cam); } finally { sCull.end(); }
+      };
+      const pf = deps.perf;
+      if (pf) {
+        const rec = pf.recording;
+        if (rec) gpuBegin();
+        pf.time('render.draw', draw);
+        if (rec) { gpuEnd(); gpuPoll(); }
+        const nb = scanProgs('draw', sc);
+        if (nb > 0 && frameNo > 1) pf.mark('compile', `${nb} shader karede derlendi, toplam ${progList().length}: ${lastDrawBorn.slice(-nb).join(' ')}`);
+      } else { draw(); scanProgs('draw', sc); }
+      const ri = renderer.info;
+      lastInfo.calls = ri.render.calls; lastInfo.tris = ri.render.triangles;
+      lastInfo.geos = ri.memory.geometries; lastInfo.texs = ri.memory.textures;
+    },
+    setScale(v: number) {
+      const nv = clamp(+v || 1, 0.5, 1);
+      if (nv === resScale) return;
+      resScale = nv;
+      if (renderer && tier) { renderer.setPixelRatio(Math.min((typeof window !== 'undefined' && window.devicePixelRatio) || 1, tier.pixelRatio) * resScale); api.resize(); }
+    },
+    warm(sc: T.Scene, cam: T.Camera) {
+      // Compiles the variant the frame really draws: with bloom the scene goes into the composer's half-float target, and three
+      // keys programs by the target (linear output, no tone mapping) - compiling against the screen made programs no frame ever
+      // used, and the real ones were then linked blocking on first sight. (The old "other shadow state" pass is gone: every tier
+      // change also changes the night-light pool size, so those programs never matched either; a tier change warms on its own.)
+      return compileFor(sc, cam, null).then(() => undefined);
+    },
+    warmStats: () => ({ born: { ...born }, busy: warmJobs > 0, lastDrawBorn: [...lastDrawBorn] }),
+    info() {
+      if (renderer) { lastInfo.geos = renderer.info.memory.geometries; lastInfo.texs = renderer.info.memory.textures; }
+      return { ...lastInfo, programs: renderer ? ((renderer.info as { programs?: unknown[] }).programs?.length ?? 0) : 0, programNames: progList().filter(Boolean).map(progName), born: { ...born }, frameNo };
+    },
+    resize() {
+      const { w, h } = size();
+      if (renderer) renderer.setSize(w, h, false);
+      if (composer && renderer) { composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(w, h); }
+      rig.setAspect(w / h);
+    },
+    registerPick(id: string, p: Vec3, radius: number) {
+      picks.set(id, { p: new T.Vector3(p.x, p.y, p.z), r: radius });
+      return () => { picks.delete(id); };
+    },
+    updatePick(id: string, p: Vec3) { const e = picks.get(id); if (e) e.p.set(p.x, p.y, p.z); },
+    pick(sp: ScreenPt) {
+      const { w, h } = size(); const cam = rig.camera;
+      let best: string | null = null, bestD = Infinity;
+      picks.forEach((e, id) => {
+        _v.copy(e.p).project(cam); if (_v.z > 1) return;
+        const sx = (_v.x * 0.5 + 0.5) * w, sy = (-_v.y * 0.5 + 0.5) * h;
+        // screen radius: project a point offset by r along camera right
+        _v2.set(e.p.x + e.r, e.p.y, e.p.z).project(cam);
+        const rpx = Math.max(18, Math.abs((_v2.x * 0.5 + 0.5) * w - sx));
+        const d = Math.hypot(sp.x - sx, sp.y - sy);
+        if (d <= rpx && d < bestD) { bestD = d; best = id; }
+      });
+      return best;
+    },
+    worldToScreen(p: Vec3, out: ScreenPt) {
+      const { w, h } = size();
+      _v.set(p.x, p.y, p.z).project(rig.camera);
+      out.x = (_v.x * 0.5 + 0.5) * w; out.y = (-_v.y * 0.5 + 0.5) * h;
+      return _v.z <= 1 && _v.z >= -1;
+    },
+    onContextLost(cb) { lostSubs.add(cb); return () => { lostSubs.delete(cb); }; },
+    onContextRestored(cb) { restoredSubs.add(cb); return () => { restoredSubs.delete(cb); }; },
+    loseContext() { if (loseExt) loseExt.loseContext(); },
+    restoreContext() { if (loseExt) loseExt.restoreContext(); },
+    dispose() {
+      timeSubs.clear(); picks.clear(); gate.dispose();
+      if (composer) { composer.passes.forEach(ps => { try { ps.dispose(); } catch { /* */ } }); composer.dispose(); composer = null; }
+      envRT?.dispose(); envRT = null; pmrem?.dispose(); pmrem = null;
+      if (renderer) { renderer.dispose(); renderer = null; }
+    },
+  };
+  if (deps.perf) deps.perf.source('render', () => ({ ...api.info() }));
+  if (deps.canvas) api.init(deps.canvas, deps.quality.current());
+  api.setTime(11);
+  return api;
+}
