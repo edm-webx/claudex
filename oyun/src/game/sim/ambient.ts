@@ -72,7 +72,7 @@ interface Walker {
   dog?: { x: number; z: number; rot: number; speed: number; ad: number } | null; dinle?: number; gizli?: boolean;
   /** sokak: seconds of free stepping (no grid collision): getting up from a bench, out of a corner; tries = unstick count on this path */
   free?: number; tries?: number;
-  /** BUF-25: hunger 0..1+, rises with game time; >= 1 = wants to eat at a shop */ ac?: number; acHiz?: number;
+  /** BUF-25: hunger 0..1+, rises with game time; >= 1 = wants to eat at a shop */ ac?: number; acHiz?: number; /** BUF-25: walking to a shop door to visit it (exit = true: goes inside on arrival) */ visit?: boolean;
 }
 
 /** View-facing street state per agent slot (DNY-02/19): role, umbrella, dog follower. Read by view/disari/sokak-look.ts. */
@@ -350,6 +350,7 @@ export function createAmbient(deps: AmbientDeps): AmbientSystem {
   }
   /** sokak: an inside walker comes out of a door, with a type (and maybe a street role) for the hour */
   function comeOut(s: SoAStore, w: Walker, rng: Rng, at: Vec2 | null, rol = -1) {
+    w.visit = false;
     const i = w.slot;
     const ty = rol >= 0 ? Math.max(0, CITIZENS.findIndex(c => c.id === SOKAK_ROLLER[rol].tip)) : pickTypeHour(rng, hour);
     const def = CITIZENS[ty];
@@ -449,7 +450,7 @@ export function createAmbient(deps: AmbientDeps): AmbientSystem {
         wet = !!hv?.wet; kar = !!hv?.kar; sicak = !!hv?.sicak;
         if (durum) {
           // rain starts: the walkers (not the roles) rethink now, most run for an awning
-          if (wet && !durum.wet) for (const w of walkers.values()) if (w.state !== S_IN && (w.rol ?? -1) < 0 && !(w.spot ?? '').startsWith('sig:')) { if (w.state === S_WALK) { w.path = []; w.wp = 0; } else w.t = 0; }
+          if (wet && !durum.wet) for (const w of walkers.values()) if (w.state !== S_IN && !w.visit && (w.rol ?? -1) < 0 && !(w.spot ?? '').startsWith('sig:')) { if (w.state === S_WALK) { w.path = []; w.wp = 0; } else w.t = 0; }
           durum.wet = wet; durum.hour = hour;
         }
         if (walkers.size < target && !filled) fillSokak(s, rng);
@@ -683,6 +684,34 @@ export function createAmbient(deps: AmbientDeps): AmbientSystem {
       s.u8('act')[best] = A_IDLE; s.f32('speed')[best] = 0;
       if (durum) { durum.rol[best] = 0; durum.semsiye[best] = 0; }
       return best;
+    },
+    sendHungry(door, maxD) {
+      const s = store;
+      if (!s || !sokak) return -1;
+      const X = s.f32('x'), Z = s.f32('z'), flags = s.u16('flags');
+      const cand: { slot: number; d: number }[] = [];
+      for (const slot of [...walkers.keys()].sort((a, b) => a - b)) {
+        const w = walkers.get(slot)!;
+        if (w.state === S_IN || w.gizli || w.visit || (w.rol ?? -1) >= 0 || w.dog || (w.ac ?? 0) < 1 || (flags[slot] & AGENT_FLAG.scenery) || CITIZENS[s.u8('typeId')[slot]]?.scenery) continue;
+        const d = Math.hypot(X[slot] - door.x, Z[slot] - door.z);
+        if (d < maxD) cand.push({ slot, d });
+      }
+      cand.sort((a, b) => a.d - b.d || a.slot - b.slot);
+      for (const { slot } of cand.slice(0, 4)) {   // nearest that really has a route to the door
+        const w = walkers.get(slot)!, p = route({ x: X[slot], z: Z[slot] }, door);
+        if (!p.length) continue;
+        releaseSeat(w); flags[slot] &= ~AGENT_FLAG.seated;
+        w.state = S_WALK; w.path = p; w.wp = 0; w.exit = true; w.visit = true; w.oturak = null; w.varis = undefined; w.kal = undefined; w.free = 0; w.ac = 0;
+        return slot;
+      }
+      return -1;
+    },
+    /** 'walk' on its way, 'in' arrived (went inside the shop), 'lost' no longer visiting (took another goal or was recruited) */
+    visitStatus(slot) {
+      const w = walkers.get(slot);
+      if (!w || !w.visit) return 'lost';
+      if (w.state === S_IN) { w.visit = false; return 'in'; }
+      return 'walk';
     },
     release(agent) {
       const s = store;

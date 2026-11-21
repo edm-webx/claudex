@@ -907,6 +907,9 @@ export interface AmbientSystem extends System {
   release(agent: number): void;
   /** BUF-25: take the nearest hungry street citizen within maxD m of `near` (agent slot or -1); it keeps its look and position. */
   recruitHungry?(near: Vec2, maxD: number): number;
+  /** BUF-25: send the nearest hungry street citizen walking to a shop door (agent slot or -1); it goes in on arrival. */
+  sendHungry?(door: Vec2, maxD: number): number;
+  visitStatus?(slot: number): 'walk' | 'in' | 'lost';
 }
 /** M0 player movement + collision (A, src/game/sim/walk.ts). */
 export interface PlayerWalk extends System {
