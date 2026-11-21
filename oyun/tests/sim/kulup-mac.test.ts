@@ -15,6 +15,7 @@ it('kulüp maçı: bilet yok, kulüp adıyla lig maçı, galibiyet 3 puan ve par
   sim.command({ kind: 'teleport', x: STADYUM.kapi.x, z: STADYUM.kapi.z });
   c({ op: 'bilet' }); expect(S.money).toBe(20000);
   const mac = rt.uiLast.haliSahaMac; expect(mac.name).toContain('Martı FK'); expect(mac.ligG).toBeGreaterThanOrEqual(0);
+  expect(mac.ayar).toEqual(macAyari(S, mac)); expect(['pres', 'dengeli', 'kontra']).toContain(mac.ayar.plan[1]);   // FUT-02: insan maçı kulüp/lig gücüyle kurulur
   const m0 = S.money; sim.command({ kind: 'halisaha', op: 'sonuc', biz: 3, onlar: 1 });
   expect(S.money).toBeGreaterThanOrEqual(20000 + KULUP_ODUL.win);
   const t = rt.lig.model().tablo.flat().find((r: any) => r.ben); expect(t.p).toBe(3);

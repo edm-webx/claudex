@@ -109,7 +109,7 @@ export function macAyari(S: { zones: Record<string, unknown> }, t: Pick<MacGunu,
   const ar = S.zones.arsa as { takim?: unknown; stad?: { formasyon?: string } } | undefined, h = S.zones.halisaha as Save | undefined, FK = Object.keys(FORMATIONS);
   const own = kulupGuc(h?.played || 0, h?.won || 0), rakipGuc = LIG_BY_ID[t.rival]?.guc ?? 55;
   const fo = ar?.stad?.formasyon || '', f0 = ar?.takim && FORMATIONS[fo] ? fo : '2-2', f1 = FK[hashId(t.rival) % FK.length];
-  const plan = (g: number) => (g >= 60 ? 'kisa' : g <= 46 ? 'uzun' : 'kanat');   // macmotor PLANLAR
+  const plan = (g: number) => (g >= 60 ? 'pres' : g <= 46 ? 'kontra' : 'dengeli');
   return {
     skill: [gucSkill(own), gucSkill(rakipGuc)] as [number, number], formations: [f0, f1] as [string, string],
     names: [KADRO.map(k => k.ad), [...RAKIP_KADRO]] as [string[], string[]], colors: [t.colors, t.rivalColors] as [[string, string], [string, string]], plan: [plan(own), plan(rakipGuc)] as [string, string],
@@ -223,7 +223,7 @@ export function installHaliSaha(K: Kernel, lig?: LigIf) {
         const t = rt.uiLast.haliSahaTeklif as MacGunu | undefined; if (!t) return false;
         delete rt.uiLast.haliSahaTeklif;
         const club = kulupVar(), st = club ? stadSave(S.zones.arsa as never) : null;   // the gate is sold BEFORE kick-off: fill uses the form going in and the rival's real strength
-        rt.uiLast.haliSahaMac = { ...t, ayar: macAyari(S, t), doluluk: tahminDoluluk(st ? st.fiyat : FIYAT_VARSAYILAN, z.form || [], LIG_BY_ID[t.rival]?.guc || 55), formasyon: st ? st.formasyon : '2-2' }; rt.paused = true; rt.pauseWhy = 'halisaha';
+        rt.uiLast.haliSahaMac = { ...t, doluluk: tahminDoluluk(st ? st.fiyat : FIYAT_VARSAYILAN, z.form || [], LIG_BY_ID[t.rival]?.guc || 55), formasyon: st ? st.formasyon : '2-2', ayar: macAyari(S, t) }; rt.paused = true; rt.pauseWhy = 'halisaha';
         K.logEv('haliSaha', { op: 'kabul', team: t.team });
         return true;
       }
