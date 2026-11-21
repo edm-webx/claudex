@@ -22,7 +22,7 @@ import { ADISYON, ADISYON_LINES, SERVIS, FAZ2_UI, type GarsonTur } from '../../c
 import { bolgeleriKur, bolgeAtamasi, type Bolge } from './garson-bolge';
 import { YEMEK } from '../../content/ekonomi2';
 import { DISH_BY_ID, acikYemekler, menuPano, yemekAgirlik, yemekAd, isProduct, type DishId, type FoodId, type MenuAsama } from '../../content/yemek-menu';
-import { MUTFAK_NOKTA, IC_BY_ID, icIcinde, mutfakDunya, mutfakStand } from '../../content/ic-mekan';
+import { MUTFAK_NOKTA, icIcinde, mutfakDunya, mutfakStand, mutfakOda } from '../../content/ic-mekan';
 import { installMutfakHat, OYUNCU, type IstDurum, type MutfakHatApi, type OyuncuIs } from './mutfak-hat';
 import { DWELL_DEFAULTS, type Vec2 } from '../../engine/api';
 import type { ProductId } from './schema';
@@ -424,7 +424,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     const gN = garsonlar().length;
     bolgeYenile();
     mutfakKayit();
-    if (icIcinde(IC_BY_ID.mutfak, K.playerPos, 0)) oyuncuMutfakT = saat;
+    if (icIcinde(mutfakOda(S.stage || 1), K.playerPos, 0)) oyuncuMutfakT = saat;
     for (const c of rt.customers.slice()) {
       if (c.kind !== 'masa' || !c.seat || c.state === 'leave') continue;
       const f = c as unknown as CF;

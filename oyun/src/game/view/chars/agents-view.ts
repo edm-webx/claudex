@@ -45,8 +45,11 @@ function rolProps(): Record<string, T.Object3D> {
   const saz = new T.Group(); saz.add(box(0.22, 0.26, 0.07, '#8a5a2b', 0.1, 0.95, 0.25), box(0.05, 0.5, 0.04, '#5a3a1c', 0.1, 1.3, 0.25)); saz.rotation.z = -0.5;
   const araba = new T.Group(); araba.add(box(1.0, 0.35, 2.2, '#c0392b', 0, 0.35, 0), box(0.9, 0.3, 1.1, '#8fb8d8', 0, 0.65, -0.1), wheel(0.5, 0.7), wheel(-0.5, 0.7), wheel(0.5, -0.7), wheel(-0.5, -0.7));
   const klips = new T.Group(); klips.add(box(0.2, 0.28, 0.02, '#a0764a', -0.2, 1.0, 0.3));
-  for (const g of [bike, saz, araba, klips]) g.visible = false;
-  return { bike, saz, araba, klips };
+  // BUF-21 tadilat ustası: omuzda kalas, elde çekiç
+  const kalas = new T.Group(); kalas.add(box(0.14, 0.06, 2.0, '#c8955a', 0.24, 1.52, 0.1)); kalas.rotation.y = 0.15;
+  const cekic = new T.Group(); cekic.add(box(0.04, 0.32, 0.04, '#7a4a2a', 0.3, 0.95, 0.28), box(0.16, 0.07, 0.07, '#5b6068', 0.3, 1.1, 0.28));
+  for (const g of [bike, saz, araba, klips, kalas, cekic]) g.visible = false;
+  return { bike, saz, araba, klips, kalas, cekic };
 }
 
 export function resolveLook(chars: MotorChars, look: Record<string, unknown> | undefined): Record<string, unknown> | undefined {
@@ -88,7 +91,7 @@ export function createAgentsView(deps: AgentsViewDeps): AgentsView {
       g.add(sack, knot, rope); g.position.set(0, 0, -1.55); g.visible = false; h.object.add(g); bag = g;
     }
     let props: Record<string, T.Object3D> | undefined;
-    if (!animal && (a.kind === 'worker' || a.key === 'mufettis')) { props = rolProps(); for (const o of Object.values(props)) h.object.add(o); }
+    if (!animal && (a.kind === 'worker' || a.key === 'mufettis' || a.key.startsWith('usta-'))) { props = rolProps(); for (const o of Object.values(props)) h.object.add(o); }
     return { a, h, animal, bag, props, carryKey: '', gull: a.kind === 'gull' ? Number(a.key.split('-')[1]) : -1 };
   }
   function ensure(agents: AgentsHandle | null) {

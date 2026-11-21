@@ -16,7 +16,7 @@ import { Walker, near2, side } from './move';
 import { traitFx, traitId, workerSpeed } from './traits';
 import type { AgentEnv } from './env';
 import { zeminSave } from '../zemin';
-import { IC_BY_ID, icWorld, icDim, icIcinde, icKapi, mutfakRota, mutfakStand, mutfakKoridor, MUTFAK_NOKTA, MUTFAK_YER } from '../../../content/ic-mekan';
+import { IC_BY_ID, icWorld, icDim, icIcinde, icKapi, mutfakRota, mutfakStand, mutfakKoridor, mutfakOda, mutfakIcine, MUTFAK_NOKTA, MUTFAK_YER } from '../../../content/ic-mekan';
 import { isProduct } from '../../../content/yemek-menu';
 import { BULASIK, MUTFAK_MIN_STAGE } from '../../../content/mutfak';
 import { createRoller, type ValeCar } from './roller';
@@ -371,19 +371,22 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
   // tabak istasyon tepsisine iner. Komi varsa tabağı komi pass rafına taşır (aşçı hemen yeni iş alır), yoksa aşçı kendisi taşır.
   // Şef pasoda durur, her tabak pass'a konunca seslenir; hız etkisi yalnız pişirme süresinde (host.kitchenSure -> content/mutfak.ts sefHizi).
   const KM = IC_BY_ID.mutfak, KD = icDim(KM);
+  /** BUF-22: the kitchen room of the current stage (walls move as it grows; x, door and depth stay) */
+  const KMs = () => mutfakOda(env.rules.state.stage || 1);
   const kw = (u: number, v: number): Vec2 => icWorld(KM, u, v);
   const ROW = mutfakKoridor().arka;   // aisle in front of the back-row stations
   const uvOf = (p: Vec2): [number, number] => [p.x - KM.x, p.z - KM.z];   // the room faces +z: u = x - room x, v = z - room z
   const KOMI_YAS = 6;   // a tray plate the komi leaves this long is taken by an idle cook
-  const kIdlePost = (rt: WRt): [number, number] => {
+  const kIdlePost = (rt: WRt): [number, number] => mutfakIcine(kIdlePost0(rt), env.rules.state.stage || 1);   // BUF-22: inside the stage room
+  const kIdlePost0 = (rt: WRt): [number, number] => {
     const i = rows.filter((x) => x.w.role === rt.w.role).indexOf(rt);
-    if (rt.w.role === 'bulasikci') return [-7.2 + i * 1.2, KD.D / 2 - 1.3];
+    if (rt.w.role === 'bulasikci') { const [u, v] = mutfakStand('bulasik'); return [u - i * 1.2, v]; }   // BUF-22: bulaşık arka hatta
     if (rt.w.role === 'barista') { const [u, v] = mutfakStand('cay_bar'); return [u - i * 1.2, v]; }   // BUF-13: çay barı postu
-    if (rt.w.role === 'kasiyer') return [7.8 - i * 1.2, ROW];
+    if (rt.w.role === 'kasiyer') return [2.0 - i * 1.2, ROW];
     if (rt.w.role === 'sef') { const d = MUTFAK_NOKTA.sefDurak; return i < d.length ? d[i] : [d[0][0] - 1.3 * i, d[0][1]]; }
     if (rt.w.role === 'komi') { const d = MUTFAK_NOKTA.komiDurak; return i < d.length ? d[i] : [d[d.length - 1][0] - 1.7 * (i - d.length + 1), d[0][1]]; }
     if (rt.w.role === 'asci') { const d = host.kitchenDevir?.(rt.w.id); if (d) return mutfakStand(d); }   // BUF-06: devralınan istasyonda durur
-    return [-6.3 + i * 1.8, ROW];
+    return [-3.4 + i * 1.7, ROW];
   };
   /** walk along the kitchen aisles (content/ic-mekan.ts mutfakRota: never through the solid prep tables) */
   function kGo(rt: WRt, u: number, v: number) {
@@ -399,7 +402,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
       const pre = up ? catiAsagi(up, rt.a) : [], from = up ? catiAyak(up) : { x: rt.a.x, z: rt.a.z }, g = tc ? catiAyak(tc) : target;
       rt.wk.path = [...pre, ...zeminYol(from, g), ...(tc ? catiYukari(tc, target) : [])]; rt.wk.goal = { x: target.x, z: target.z }; return;
     }
-    const inK = icIcinde(KM, rt.a, 0), tIn = icIcinde(KM, target, 0), doorIn: [number, number] = [0, KD.D / 2 - 0.4], door = icKapi(KM, 0.7);
+    const inK = icIcinde(KMs(), rt.a, 0), tIn = icIcinde(KMs(), target, 0), doorIn: [number, number] = [0, KD.D / 2 - 0.4], door = icKapi(KM, 0.7);
     if (!inK && !tIn) { rt.wk.goTo(target); return; }
     if (inK && tIn) { const t = uvOf(target); kGo(rt, t[0], t[1]); return; }
     if (inK) {
@@ -413,7 +416,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
   /** yerde from -> to yolu (mutfak odasına girip çıkarken kapıdan, koridorlardan): goVia ile aynı kurallar, nokta listesi olarak */
   function zeminYol(from: Vec2, to: Vec2): Vec2[] {
     const nav = (a: Vec2, b: Vec2) => { const p = env.nav.path(a, b); return (p.length ? p : [b]).map((v) => ({ x: v.x, z: v.z })); };
-    const inK = icIcinde(KM, from, 0), tIn = icIcinde(KM, to, 0), doorIn: [number, number] = [0, KD.D / 2 - 0.4], door = icKapi(KM, 0.7);
+    const inK = icIcinde(KMs(), from, 0), tIn = icIcinde(KMs(), to, 0), doorIn: [number, number] = [0, KD.D / 2 - 0.4], door = icKapi(KM, 0.7);
     if (!inK && !tIn) return nav(from, to);
     if (inK && tIn) return mutfakRota(uvOf(from), uvOf(to)).map(([u, v]) => kw(u, v));
     if (inK) return [...mutfakRota(uvOf(from), doorIn).map(([u, v]) => kw(u, v)), door, ...nav(door, to)];
@@ -529,7 +532,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
   function kuryeWork(rt: WRt, S: GameState, dt: number) {
     const a = rt.a, wid = rt.w.id, fx = traitFx(rt.w);
     const hiz = (b: boolean) => (b ? BISIKLET : YAYA) * (1 + (fx.walk || 0)) * (rt.boostT > 0 ? rt.boostX : 1);
-    const iceri = () => icIcinde(KM, a, 0);
+    const iceri = () => icIcinde(KMs(), a, 0);
     const sur = (b: boolean) => { a.fx = b && !iceri() ? 'bike' : ''; };
     switch (rt.state) {
       case 'idle': {
@@ -663,7 +666,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
         const p = rows[i].a, q = rows[j].a, dx = q.x - p.x, dz = q.z - p.z, d = Math.hypot(dx, dz), R = 0.7;
         if (d >= R || Math.abs((p.y || 0) - (q.y || 0)) > 1) continue;   // BUF-20: çatıdaki ile salondaki birbirini itmez
         // BUF-05: the kitchen aisles are one body wide: two people meeting head-on there squeeze past (no push, no aisle deadlock)
-        if ((rows[i].wk.moving || rows[j].wk.moving) && icIcinde(KM, p, 0) && icIcinde(KM, q, 0)) continue;
+        if ((rows[i].wk.moving || rows[j].wk.moving) && icIcinde(KMs(), p, 0) && icIcinde(KMs(), q, 0)) continue;
         const nx = d > 0.001 ? dx / d : 1, nz = d > 0.001 ? dz / d : 0, push = (R - d) * Math.min(1, dt * 6) * 0.5;
         p.x -= nx * push; p.z -= nz * push; q.x += nx * push; q.z += nz * push;
       }

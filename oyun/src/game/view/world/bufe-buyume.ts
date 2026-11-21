@@ -17,7 +17,9 @@
  * Keeps clear: the ferry corridor (east, z -9.2..-4.8), the customer walkway behind the kiosk (z ~-12) and along x ~7.
  */
 import * as T from 'three';
-import { IC_BY_ID, icColliders, icIcinde } from '../../../content/ic-mekan';
+import { IC_BY_ID, icColliders, icIcinde, mutfakOda, mutfakVitrin, MUTFAK_YER } from '../../../content/ic-mekan';
+import { KIOSK_STAGES } from '../../../content/stages';
+import { WB, WT, EB, ET, insaatAlani } from '../../../content/insaat';
 import { Batch } from '../../../engine/prefab/batch';
 import { PIER } from '../../../content/prefabs/iskele/layout';
 import { KANAT_MASALAR, merdivenKutu, type KanatMasa } from '../../../content/kanat';
@@ -29,15 +31,12 @@ export interface BuyumeView { update(dt: number): void; dispose(): void }
 
 const UMB = ['#e0533c', '#2f7fb3', '#ffd23f', '#2f9e8f', '#f4f2ec', '#c94f6d'];
 const HP = Math.PI / 2;
-/** wing footprints on the pier */
-const WB = { x0: -23.0, x1: -12.2, z0: -17.2, z1: -10.6 };   // west hall
-const WT = { x0: -23.0, x1: -12.2, z0: -9.4, z1: 3.4 };      // west terrace
-const EB = { x0: 9.6, x1: 21.6, z0: -17.2, z1: -10.6 };      // east hall
-const ET = { x0: 9.6, x1: 21.4, z0: -3.9, z1: 3.4 };         // east terrace (north of it is the ferry corridor)
+/** wing footprints on the pier (content/insaat.ts: shared with the tadilat site and the sim ustalar) */
 const cx = (r: { x0: number; x1: number }) => (r.x0 + r.x1) / 2, cz = (r: { z0: number; z1: number }) => (r.z0 + r.z1) / 2;
 /** open-air wing tables built at this stage (sim tables, content/kanat.ts); salon tables are ic-mekan items, roof tables drawn by hall() */
 const acikMasalar = (st: number, b: 'cay' | 'dondurma'): KanatMasa[] => KANAT_MASALAR.filter(m => m.bolge === b && st >= m.asama);
-export const BUYUME_AD = ['', '', 'Çiçekli büfe', 'Çay bahçesi', 'Dondurma terası', 'Bahçeli büfe', 'Kahvaltı salonu', 'Balık lokantası', 'Teraslı lokanta', 'Şef mutfağı', 'Fine dining'];
+/** BUF-21: aşama adları tek kaynaktan (content/stages.ts short); 0 ve 1 boş (büyüme 2'den başlar) */
+export const BUYUME_AD = ['', '', ...KIOSK_STAGES.slice(1).map(s => s.short)];
 
 /** Solid parts of the growth for the walk grid (halls, counters, kitchen, tables). */
 export function buyumeEngel(stage: number): { x0: number; x1: number; z0: number; z1: number; tag: string }[] {
@@ -52,7 +51,7 @@ export function buyumeEngel(stage: number): { x0: number; x1: number; z0: number
   if (stage >= 7) icColliders(IC_BY_ID.salonE, stage).forEach(r => add(r.x0, r.x1, r.z0, r.z1, 'buyume-salon'));
   // roof terrace stairs (stage 8): closed on the ground grid, only the scripted roof route (sim content/kanat.ts) uses them
   if (stage >= 8) for (const sd of ['W', 'E'] as const) { const k = merdivenKutu(sd); add(k.x0, k.x1, k.z0, k.z1, 'buyume-merdiven'); }
-  if (stage >= 3) icColliders(IC_BY_ID.mutfak).forEach(r => add(r.x0, r.x1, r.z0, r.z1, 'buyume-bufemutfak'));   // 2026-11-09 büfe mutfağı
+  if (stage >= 3) icColliders(IC_BY_ID.mutfak, stage).forEach(r => add(r.x0, r.x1, r.z0, r.z1, 'buyume-bufemutfak'));   // 2026-11-09 büfe mutfağı (BUF-22: walls follow the stage room)
   if (stage >= 9) add(ET.x1 - 3.0, ET.x1, -3.6, -2.4, 'buyume-mutfak');
   return o;
 }
@@ -188,25 +187,46 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
   }
   let catK: { g: T.Group; b: Batch; gl: Batch; lit: Batch; wm: Batch } | null = null;
   /* 3+: büfe mutfağı shell behind the covered walkway (interior: view/world/ic-mekan-look.ts, door on the walkway side).
-     Walls + roof live in 'cati-K' and hide while the player is inside; the only opening to the street is the pass window. */
+     BUF-22: the shell grows with the stage room (content/ic-mekan.ts mutfakOda: esnaf 9.2 m, lokanta 13.8 m, iki hatlı 18 m). The
+     front is a shop window (low wall + glass) with the pass window behind the büfe counter: garsons take plates there from the
+     walkway. Walls live in 'duvar-K' (hidden while the player is inside), the roof in 'cati-K' (also off while the player is in
+     the büfe or on the walkway, so the kitchen reads from the front). */
   if (stage >= 3) {
-    const steel = stage >= 7, wallC = fine ? '#1f2a44' : steel ? '#b9c2ca' : '#e9dcc0', bandC = fine ? '#c9a24a' : steel ? '#5b6068' : '#3f7f64', roofC = fine ? '#14192a' : steel ? '#7d858d' : '#8b5a3c';
+    const steel = stage >= 7, esnaf = !steel;
+    const wallC = fine ? '#1f2a44' : steel ? '#b9c2ca' : '#efe3c8', bandC = fine ? '#c9a24a' : steel ? '#5b6068' : '#3f7f64', roofC = fine ? '#14192a' : steel ? '#7d858d' : '#8b5a3c';
+    const mull = fine ? '#c9a24a' : steel ? '#9aa2ab' : '#7a4a2a';
     const cat = { g: new T.Group(), b: new Batch(), gl: new Batch(), lit: new Batch(), wm: new Batch() }; cat.g.name = 'cati-K'; catis.push(cat); catK = cat;
-    const k = IC_BY_ID.mutfak, X0 = k.x - k.wx / 2, X1 = k.x + k.wx / 2, Z0 = k.z - k.wz / 2, Z1 = k.z + k.wz / 2, Hh = 3.0, kb = cat.b;
+    const duv = { g: new T.Group(), b: new Batch(), gl: new Batch(), lit: new Batch(), wm: new Batch() }; duv.g.name = 'duvar-K'; catis.push(duv);
+    const k = mutfakOda(stage), X0 = k.x - k.wx / 2, X1 = k.x + k.wx / 2, Z0 = k.z - k.wz / 2, Z1 = k.z + k.wz / 2, Hh = 3.0, kb = duv.b, rb = cat.b;
+    const PU = MUTFAK_YER.pass.u, PW = 2.0, DG = 0.85;   // pass window (behind the büfe counter) and door gap
     kb.box(k.wx, Hh, 0.25, wallC, k.x, Hh / 2, Z0 + 0.125); kb.box(0.25, Hh, k.wz, wallC, X0 + 0.125, Hh / 2, k.z); kb.box(0.25, Hh, k.wz, wallC, X1 - 0.125, Hh / 2, k.z);
-    for (const s2 of [-1, 1]) kb.box((k.wx / 2 - 0.85), Hh, 0.25, wallC, k.x + s2 * (0.85 + (k.wx / 2 - 0.85) / 2), Hh / 2, Z1 - 0.125);
-    kb.box(1.7, Hh - 2.4, 0.25, wallC, k.x, 2.4 + (Hh - 2.4) / 2, Z1 - 0.125);
-    kb.box(k.wx + 0.1, 0.3, 0.06, bandC, k.x, 0.95, Z1 + 0.02); kb.box(k.wx + 0.3, 0.22, k.wz + 0.3, roofC, k.x, Hh + 0.11, k.z); kb.box(k.wx + 0.4, 0.3, 0.12, bandC, k.x, Hh + 0.3, Z1 + 0.16);
-    if (stage >= 4) for (const cxm of [-5.4, -1.8, 2.7]) { kb.cyl(0.32, 0.36, 1.1, steel ? '#9aa2ab' : '#6b5a4a', cxm, Hh + 0.85, k.z - 0.6, { seg: 8 }); kb.cyl(0.4, 0.4, 0.1, '#33373b', cxm, Hh + 1.45, k.z - 0.6, { seg: 8 }); }
-    // pass window: glowing opening + serving ledge with plates and a bell, small awning
-    const wx = k.x + 6.9; cat.gl.box(2.0, 0.9, 0.04, '#a9d6ec', wx, 1.5, Z1 + 0.04); cat.lit.box(1.9, 0.8, 0.02, '#ffcf8a', wx, 1.5, Z1 - 0.03);
-    kb.box(2.4, 0.08, 0.5, steel ? '#e9eef2' : '#a8794e', wx, 1.0, Z1 + 0.25); kb.box(2.3, 0.07, 0.07, bandC, wx, 1.95, Z1 + 0.05); kb.box(2.5, 0.06, 0.7, accent, wx, 2.2, Z1 + 0.35, { rx: 0.35 });
-    for (let i = 0; i < 3; i++) kb.cyl(0.17, 0.17, 0.03, '#ffffff', wx - 0.7 + i * 0.45, 1.06, Z1 + 0.28, { seg: 12 });
-    kb.cyl(0.06, 0.07, 0.05, '#c9a24a', wx + 0.9, 1.07, Z1 + 0.25, { seg: 8 });
+    // front: low wall 0..1.0 (not across the door), glass 1.0..2.5 with mullions, header 2.5..3.0; the pass window is open glass-free
+    const zf = Z1 - 0.125, seg = (xa: number, xb: number, y0: number, y1: number, c = wallC) => { if (xb - xa > 0.01) kb.box(xb - xa, y1 - y0, 0.25, c, (xa + xb) / 2, (y0 + y1) / 2, zf); };
+    seg(X0, -DG, 0, 1.0); seg(DG, X1, 0, 1.0); seg(X0, -DG, 2.5, Hh); seg(DG, X1, 2.5, Hh); kb.box(2 * DG, Hh - 2.4, 0.25, wallC, 0, 2.4 + (Hh - 2.4) / 2, zf);
+    for (const [xa, xb] of [[X0 + 0.25, PU - PW / 2], [PU + PW / 2, -DG], [DG, X1 - 0.25]] as [number, number][]) {
+      if (xb - xa < 0.2) continue;
+      duv.gl.box(xb - xa, 1.5, 0.04, '#cfe8f4', (xa + xb) / 2, 1.75, Z1 - 0.05);
+      const n = Math.max(1, Math.round((xb - xa) / 1.3)); for (let i = 0; i <= n; i++) kb.box(0.08, 1.5, 0.12, mull, xa + (xb - xa) * i / n, 1.75, Z1 - 0.02);
+    }
+    if (esnaf) for (let x = X0 + 0.3; x < X1 - 0.2; x += 0.3) if (Math.abs(x) > DG) kb.box(0.012, 0.9, 0.01, '#d6c8a6', x, 0.5, Z1 + 0.005);   // fayans derzleri (esnaf)
+    kb.box(PU - PW / 2 - X0, 0.06, 0.06, bandC, (X0 + PU - PW / 2) / 2, 1.0, Z1 + 0.02); kb.box(-DG - PU - PW / 2, 0.06, 0.06, bandC, (PU + PW / 2 - DG) / 2, 1.0, Z1 + 0.02); kb.box(X1 - DG, 0.06, 0.06, bandC, (X1 + DG) / 2, 1.0, Z1 + 0.02);
+    // pass window: open hatch, serving ledge outside with plates and a bell, heat lamp glow, awning (esnaf stripes / steel canopy)
+    kb.box(PW + 0.3, 0.08, 0.55, fine ? '#c9a24a' : steel ? '#e9eef2' : '#a8794e', PU, 1.02, Z1 + 0.22); kb.box(PW + 0.2, 0.1, 0.1, mull, PU, 2.5, Z1 + 0.02);
+    for (const s2 of [-1, 1]) kb.box(0.1, 1.5, 0.14, mull, PU + s2 * PW / 2, 1.75, Z1 - 0.02);
+    duv.lit.box(PW - 0.2, 0.05, 0.25, '#ffcf8a', PU, 2.4, Z1 - 0.2);
+    for (let i = 0; i < 3; i++) kb.cyl(0.17, 0.17, 0.03, '#ffffff', PU - 0.7 + i * 0.45, 1.08, Z1 + 0.25, { seg: 12 });
+    kb.cyl(0.06, 0.07, 0.05, '#c9a24a', PU + 0.95, 1.09, Z1 + 0.25, { seg: 8 });
+    if (esnaf) for (let i = 0; i < 6; i++) kb.box(0.4, 0.05, 0.75, i % 2 ? '#fbfaf6' : '#c0392b', PU - PW / 2 - 0.05 + (i + 0.5) * (PW + 0.1) / 6, 2.72, Z1 + 0.32, { rx: 0.35 });
+    else kb.box(PW + 0.5, 0.06, 0.7, accent, PU, 2.72, Z1 + 0.32, { rx: 0.3 });
+    sign(stage >= 9 ? 'SERVİS · PASS' : 'SERVİS', PU, 2.98, Z1 + 0.2, 1.7);
     kb.box(1.9, 0.07, 0.5, accent, k.x, 2.75, Z1 + 0.3, { rx: 0.25 });   // door canopy
-    sign(fine ? 'SABRİ\'NİN MUTFAĞI' : 'SABRİ MUTFAĞI', k.x, Hh + 0.62, Z1 + 0.24, 3.6);
-    glowAt(k.x, Z1 + 0.9, 2.4); glowAt(wx, Z1 + 0.9, 1.6);
-    void X0; void X1;
+    // roof (+ chimneys / extractor units / skylights), hidden with the cutaway
+    rb.box(k.wx + 0.3, 0.22, k.wz + 0.3, roofC, k.x, Hh + 0.11, k.z); rb.box(k.wx + 0.4, 0.3, 0.12, bandC, k.x, Hh + 0.3, Z1 + 0.16);
+    if (stage >= 4) for (const f of [-0.6, -0.2, 0.3]) { const cxm = f * (k.wx / 2); rb.cyl(0.32, 0.36, 1.1, steel ? '#9aa2ab' : '#6b5a4a', cxm, Hh + 0.85, k.z - 0.6, { seg: 8 }); rb.cyl(0.4, 0.4, 0.1, '#33373b', cxm, Hh + 1.45, k.z - 0.6, { seg: 8 }); }
+    if (stage >= 9) for (const f of [-0.85, 0.75]) { rb.box(1.6, 0.8, 1.2, fine ? '#2a3550' : '#c9ced6', f * (k.wx / 2), Hh + 0.62, k.z - 0.4); rb.box(1.2, 0.08, 0.9, '#5b6068', f * (k.wx / 2), Hh + 1.06, k.z - 0.4); }
+    if (stage >= 10) for (let i = 0; i < 4; i++) cat.lit.box(1.2, 0.06, 0.8, '#fff3d6', -4.5 + i * 3, Hh + 0.25, k.z + 0.3);
+    { const mb = b; const mg = grp; b = kb; grp = duv.g; sign(fine ? 'SABRİ\'NİN MUTFAĞI' : stage >= 9 ? 'SABRİ MUTFAĞI · ŞEF' : 'SABRİ MUTFAĞI', k.x, Hh + 0.62, Z1 + 0.24, 3.6); b = mb; grp = mg; }
+    glowAt(k.x, Z1 + 0.9, 2.4); glowAt(PU, Z1 + 0.9, 1.8);
   }
   /* 6: west hall: Kahvaltı salonu */
   if (stage >= 6) { hall(WB, 1, fine ? 'SABRİ\'NİN SOFRASI · SALON' : stage >= 8 ? 'SABRİ KAHVALTI & MEZE' : 'SABRİ KAHVALTI SALONU', stage >= 8, '#ffcf8a'); }
@@ -224,7 +244,7 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
     sign('ŞEF MUTFAĞI · IZGARA', kx, 3.35, kz + 0.2, 2.8);
     // the grill şef is the hired kitchen chef (sim agents/workers.ts 'kAcik' at content/kanat.ts ACIK_MUTFAK), not a figure
     // arcade over the customer walkway behind the kiosk (posts on the sea side only, so the path stays free)
-    for (let x = -11.0; x <= 8.5; x += 3.9) b.box(0.14, 3.2, 0.14, frame, x, 1.72, -13.3);
+    for (let x = -11.0; x <= 8.5; x += 3.9) if (Math.abs(x + 2.9) > 1.2 && Math.abs(x) > 1.0) b.box(0.14, 3.2, 0.14, frame, x, 1.72, -12.95);   // BUF-22: against the kitchen front, never in the pass window or the door
     { const ab = (catK ?? { b }).b; for (let i = 0; i < 26; i++) ab.box(0.16, 0.1, 2.6, wood, -11.0 + i * 0.78, 3.3, -12.05); ab.box(19.8, 0.14, 0.14, frame, -1.25, 3.22, -13.3); } b.box(19.8, 0.22, 0.12, accent, -1.25, 3.25, -10.8);   // slatted arcade roof (slats hide with the kitchen roof)
     for (let x = -10.5; x <= 8.0; x += 1.5) lit.sph(0.07, '#ffe6b0', x, 3.12, -12.0, { ws: 6, hs: 4 });
     // rooftop sign over the kiosk
@@ -258,41 +278,55 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
   return { g: root };
 }
 
-/** Construction site while a wing tadilat (to 3..10) runs, on the wing that stage builds: scaffold towers, a tower crane with a
- *  swinging hook, barriers, a site sign and hard-hat workers hammering. Deck planks appear with the progress (stages 3-5). */
-const SITE_AREA: Record<number, { x0: number; x1: number; z0: number; z1: number }> = { 3: { ...WT, z1: -0.6 }, 4: { ...ET, x1: 17.2 }, 5: WT, 6: WB, 7: EB, 8: EB, 9: ET, 10: { x0: -5, x1: 5, z0: -3.5, z1: 3.8 } };
-function buildSite(to: number): { g: T.Group; workers: T.Object3D[]; hook: T.Object3D; planks: T.Object3D[] } {
-  const R = SITE_AREA[to] || WT, X0 = R.x0, X1 = R.x1, Z0 = R.z0, Z1 = R.z1, XC = cx(R);
-  const g = new T.Group(); g.name = 'insaat'; const b = new Batch(); const workers: T.Object3D[] = [], planks: T.Object3D[] = [];
-  for (const [x, z] of [[X0 + 0.9, Z0 + 0.9], [X1 - 0.9, Z0 + 0.9], [X0 + 0.9, Z1 - 0.9], [X1 - 0.9, Z1 - 0.9]]) {   // scaffold towers
-    for (const [dx, dz] of [[-0.6, -0.6], [0.6, -0.6], [-0.6, 0.6], [0.6, 0.6]]) b.box(0.06, 4.2, 0.06, '#c9ced6', x + dx, 2.1, z + dz);
-    for (let y = 0.8; y < 4.3; y += 1.1) { b.box(1.3, 0.05, 1.3, '#a8794e', x, y, z); b.box(1.25, 0.04, 0.04, '#e0533c', x, y + 0.5, z - 0.6); }
+/** Construction site while a tadilat (to 2..10) runs, on the part that stage builds (content/insaat.ts SITE_AREA): scaffold towers
+ *  with planks and safety netting, a tower crane with a swinging load (from stage 3), barriers, the site board with a live progress
+ *  bar. BUF-21: the hard-hat workers are real walking actors (sim/agents/ustalar.ts), no statues here. Deck planks appear with the
+ *  progress (stages 3-5). */
+function buildSite(to: number): { g: T.Group; hook: T.Object3D | null; planks: T.Object3D[]; bar: { set(p: number): void } } {
+  const R = insaatAlani(to), X0 = R.x0, X1 = R.x1, Z0 = R.z0, Z1 = R.z1, XC = cx(R), small = to <= 2;
+  const g = new T.Group(); g.name = 'insaat'; const b = new Batch(); const planks: T.Object3D[] = [];
+  const towers: [number, number][] = small ? [[X0 + 0.9, Z0 + 0.5], [X1 - 0.9, Z0 + 0.5]] : [[X0 + 0.9, Z0 + 0.9], [X1 - 0.9, Z0 + 0.9], [X0 + 0.9, Z1 - 0.9], [X1 - 0.9, Z1 - 0.9]];
+  const th = small ? 2.6 : 4.2;
+  for (const [x, z] of towers) {   // scaffold towers: tubes, plank decks, toe boards, diagonal braces, green netting
+    for (const [dx, dz] of [[-0.6, -0.6], [0.6, -0.6], [-0.6, 0.6], [0.6, 0.6]]) b.box(0.06, th, 0.06, '#c9ced6', x + dx, th / 2, z + dz);
+    for (let y = 0.8; y < th + 0.1; y += 1.1) { b.box(1.3, 0.05, 1.3, '#a8794e', x, y, z); b.box(1.25, 0.04, 0.04, '#e0533c', x, y + 0.5, z - 0.6); b.box(1.25, 0.04, 0.04, '#e0533c', x, y + 0.5, z + 0.6); }
+    for (const s2 of [-1, 1]) b.box(0.04, 1.6, 0.04, '#9aa2ab', x + s2 * 0.6, th * 0.45, z + 0.62, { rz: 0.7 * s2 });
+    b.box(1.22, th * 0.7, 0.02, '#4f8f5a', x, th * 0.55, z + 0.64);
   }
-  // tower crane at the sea-side corner of the site
-  const ccx = X0 < 0 ? X0 + 0.6 : X1 - 0.6, ccz = Math.max(PIER.z0 + 0.8, Z0 - 0.2), dir = X0 < 0 ? 1 : -1;
-  b.box(0.8, 0.4, 0.8, '#5b6068', ccx, 0.2, ccz); for (let y = 0; y < 11; y += 1) { for (const [ox, oz] of [[-0.3, -0.3], [0.3, -0.3], [-0.3, 0.3], [0.3, 0.3]]) b.box(0.06, 1, 0.06, '#ffd23f', ccx + ox, y + 0.9, ccz + oz); b.box(0.66, 0.05, 0.05, '#ffd23f', ccx, y + 0.5, ccz - 0.3, { rz: 0.8 }); }
-  b.box(13, 0.35, 0.5, '#ffd23f', ccx + dir * 5.5, 11.6, ccz); b.box(1.4, 1.0, 1.0, '#e0533c', ccx, 12.2, ccz); b.box(1.5, 0.9, 0.9, '#5b6068', ccx - dir * 2.2, 11.3, ccz);
-  const hook = new T.Group(); hook.position.set(ccx + dir * 8, 11.4, ccz); const cable = new T.Mesh(new T.BoxGeometry(0.03, 6, 0.03), new T.MeshLambertMaterial({ color: '#222' })); cable.position.y = -3; hook.add(cable);
-  const load = new T.Mesh(new T.BoxGeometry(1.6, 0.3, 0.8), new T.MeshLambertMaterial({ color: '#a8794e' })); load.position.y = -6.2; hook.add(load); g.add(hook);
-  // barriers along the open (promenade) side + site sign
+  // tower crane at the sea-side corner of the site (not for the small stage-2 job)
+  let hook: T.Object3D | null = null;
+  if (!small) {
+    const ccx = X0 < 0 ? X0 + 0.6 : X1 - 0.6, ccz = Math.max(PIER.z0 + 0.8, Z0 - 0.2), dir = X0 < 0 ? 1 : -1;
+    b.box(0.8, 0.4, 0.8, '#5b6068', ccx, 0.2, ccz); for (let y = 0; y < 11; y += 1) { for (const [ox, oz] of [[-0.3, -0.3], [0.3, -0.3], [-0.3, 0.3], [0.3, 0.3]]) b.box(0.06, 1, 0.06, '#ffd23f', ccx + ox, y + 0.9, ccz + oz); b.box(0.66, 0.05, 0.05, '#ffd23f', ccx, y + 0.5, ccz - 0.3, { rz: 0.8 }); }
+    b.box(13, 0.35, 0.5, '#ffd23f', ccx + dir * 5.5, 11.6, ccz); b.box(1.4, 1.0, 1.0, '#e0533c', ccx, 12.2, ccz); b.box(1.5, 0.9, 0.9, '#5b6068', ccx - dir * 2.2, 11.3, ccz);
+    hook = new T.Group(); hook.position.set(ccx + dir * 8, 11.4, ccz); const cable = new T.Mesh(new T.BoxGeometry(0.03, 6, 0.03), new T.MeshLambertMaterial({ color: '#222' })); cable.position.y = -3; hook.add(cable);
+    const load = new T.Mesh(new T.BoxGeometry(1.6, 0.3, 0.8), new T.MeshLambertMaterial({ color: '#a8794e' })); load.position.y = -6.2; hook.add(load); g.add(hook);
+  }
+  // barriers along the open (promenade) side, material pile, cement mixer, site board
   for (let x = X0 + 0.8; x < X1 - 0.6; x += 1.6) { b.box(1.3, 0.8, 0.2, '#f4f2ec', x, 0.4, Z1 + 0.35); b.box(1.32, 0.18, 0.22, '#e0533c', x, 0.55, Z1 + 0.35); }
-  b.box(2.2, 1.3, 0.08, '#ffd23f', XC, 1.3, Z1 + 0.5); b.box(0.08, 1.2, 0.08, '#3a3d42', XC - 0.8, 0.6, Z1 + 0.5); b.box(0.08, 1.2, 0.08, '#3a3d42', XC + 0.8, 0.6, Z1 + 0.5);
+  for (let i = 0; i < 5; i++) b.box(2.0, 0.08, 0.3, i % 2 ? '#c8955a' : '#b07d48', X1 - 1.6, 0.06 + i * 0.09, Z0 + 1.8 + (i % 2) * 0.05);
+  b.cyl(0.38, 0.3, 0.7, '#e0533c', X0 + 2.2, 0.75, Z1 - 0.8, { seg: 10, rz: 0.5 }); b.box(0.9, 0.35, 0.6, '#5b6068', X0 + 2.2, 0.2, Z1 - 0.8);
+  const bx = XC, bz = Z1 + 0.55, by = small ? 1.2 : 1.45;
+  b.box(2.5, 1.5, 0.08, '#ffd23f', bx, by, bz); b.box(0.08, by, 0.08, '#3a3d42', bx - 0.95, by / 2, bz); b.box(0.08, by, 0.08, '#3a3d42', bx + 0.95, by / 2, bz);
   const m = b.mesh(mats().solid, true, true); g.add(m);
-  const skin = new T.MeshLambertMaterial({ color: '#d9a27a' }), vest = new T.MeshLambertMaterial({ color: '#ff8a1f' }), hat = new T.MeshLambertMaterial({ color: '#ffd23f' }), pants = new T.MeshLambertMaterial({ color: '#2f4a6a' });
-  const W = X1 - X0, D = Z1 - Z0;
-  const spots: [number, number][] = [[X0 + W * 0.25, Z0 + D * 0.3], [X0 + W * 0.6, Z0 + D * 0.25], [X0 + W * 0.8, Z0 + D * 0.6], [X0 + W * 0.3, Z0 + D * 0.7], [X0 + W * 0.55, Z0 + D * 0.85], [X0 + W * 0.15, Z0 + D * 0.5]];
-  spots.forEach(([x, z], i) => {
-    const w = new T.Group(); w.position.set(x, 0, z); w.rotation.y = i * 1.3;
-    const leg = new T.Mesh(new T.BoxGeometry(0.32, 0.8, 0.2), pants); leg.position.y = 0.4; w.add(leg);
-    const body = new T.Mesh(new T.BoxGeometry(0.42, 0.55, 0.26), vest); body.position.y = 1.08; w.add(body);
-    const head = new T.Mesh(new T.SphereGeometry(0.15, 8, 6), skin); head.position.y = 1.52; w.add(head);
-    const h = new T.Mesh(new T.SphereGeometry(0.17, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2), hat); h.position.y = 1.56; w.add(h);
-    const arm = new T.Group(); arm.position.set(0.26, 1.3, 0); const a = new T.Mesh(new T.BoxGeometry(0.1, 0.5, 0.1), vest); a.position.y = -0.22; arm.add(a);
-    const hm = new T.Mesh(new T.BoxGeometry(0.06, 0.06, 0.3), new T.MeshLambertMaterial({ color: '#5b6068' })); hm.position.set(0, -0.48, 0.1); arm.add(hm); w.add(arm);
-    w.userData.arm = arm; w.userData.ph = i * 0.9; g.add(w); workers.push(w);
-  });
-  if (to <= 5) for (let i = 0; i < 12; i++) { const pk = new T.Mesh(new T.BoxGeometry(W, 0.12, D / 12), new T.MeshLambertMaterial({ color: i % 2 ? '#a8794e' : '#9c6f46' })); pk.position.set(XC, 0.06, Z0 + (i + 0.5) * D / 12); pk.visible = false; g.add(pk); planks.push(pk); }
-  return { g, workers, hook, planks };
+  // site board face: "İNŞAAT · <next stage>" + a live progress bar (canvas, redrawn on whole percents)
+  const cv = document.createElement('canvas'); cv.width = 512; cv.height = 300; const c2 = cv.getContext('2d')!, tex = new T.CanvasTexture(cv); tex.colorSpace = T.SRGBColorSpace;
+  const ad = KIOSK_STAGES[to - 1]?.short || '';
+  let last = -1;
+  const bar = { set(p: number) {
+    const pc = Math.max(0, Math.min(100, Math.floor(p * 100))); if (pc === last) return; last = pc;
+    c2.fillStyle = '#ffd23f'; c2.fillRect(0, 0, 512, 300); for (let i = -6; i < 20; i++) { c2.fillStyle = '#1d1d1d'; c2.beginPath(); c2.moveTo(i * 40, 0); c2.lineTo(i * 40 + 20, 0); c2.lineTo(i * 40 - 20, 36); c2.lineTo(i * 40 - 40, 36); c2.fill(); }
+    c2.fillStyle = '#1d1d1d'; c2.textAlign = 'center'; c2.textBaseline = 'middle'; c2.font = '900 46px system-ui,sans-serif'; c2.fillText('İNŞAAT', 256, 78);
+    c2.font = '800 34px system-ui,sans-serif'; c2.fillText('Aşama ' + to + ' · ' + ad, 256, 128, 480);
+    c2.fillStyle = '#3a3d42'; c2.fillRect(40, 168, 432, 52); c2.fillStyle = '#2f9e5a'; c2.fillRect(46, 174, 420 * pc / 100, 40);
+    c2.fillStyle = '#fbfaf6'; c2.font = '900 30px system-ui,sans-serif'; c2.fillText('%' + pc, 256, 195);
+    c2.fillStyle = '#1d1d1d'; c2.font = '700 26px system-ui,sans-serif'; c2.fillText('Kolay gelsin ustalar!', 256, 258);
+    tex.needsUpdate = true;
+  } };
+  bar.set(0);
+  const face = new T.Mesh(new T.PlaneGeometry(2.4, 1.4), new T.MeshBasicMaterial({ map: tex })); face.position.set(bx, by, bz + 0.05); face.name = 'pano'; g.add(face);
+  if (to >= 3 && to <= 5) for (let i = 0; i < 12; i++) { const W = X1 - X0, D = Z1 - Z0; const pk = new T.Mesh(new T.BoxGeometry(W, 0.12, D / 12), new T.MeshLambertMaterial({ color: i % 2 ? '#a8794e' : '#9c6f46' })); pk.position.set(XC, 0.06, Z0 + (i + 0.5) * D / 12); pk.visible = false; g.add(pk); planks.push(pk); }
+  return { g, hook, planks, bar };
 }
 
 /** Sponsor banners: from stage 3 the büfe sponsors the player's club. Banners on the halı saha fences and a club flag
@@ -353,12 +387,12 @@ export function createBufeBuyume(deps: BuyumeDeps): BuyumeView {
       const root = deps.root(), st = Math.round(deps.stage() || 1);
       if (!root) { if (grp) clear(); built = -1; return; }
       if (st !== built || (grp && grp.parent !== root)) { clear(); built = st; cur = null; if (st >= 2) { cur = build(st, signMats, flames); grp = cur.g; root.add(grp); } }
-      const td = deps.tadilat?.() ?? null, wantSite = td && td.to >= 3 ? td.to : 0;
-      if (wantSite !== siteTo || (site && site.g.parent !== root)) { if (site) { site.g.removeFromParent(); site.g.traverse(o => { (o as T.Mesh).geometry?.dispose(); }); site = null; } siteTo = wantSite; if (wantSite) { site = buildSite(wantSite); root.add(site.g); } }
+      const td = deps.tadilat?.() ?? null, wantSite = td && td.to >= 2 ? td.to : 0;
+      if (wantSite !== siteTo || (site && site.g.parent !== root)) { if (site) { site.g.removeFromParent(); site.g.traverse(o => { const mm = o as T.Mesh; mm.geometry?.dispose(); if (mm.name === 'pano') { const mt = mm.material as T.MeshBasicMaterial; mt.map?.dispose(); mt.dispose(); } }); site = null; } siteTo = wantSite; if (wantSite) { site = buildSite(wantSite); root.add(site.g); } }
       if (site && td) {
-        for (const w of site.workers) { const arm = w.userData.arm as T.Object3D; arm.rotation.x = -0.6 - Math.max(0, Math.sin(t * 6 + w.userData.ph)) * 1.1; }
-        site.hook.rotation.y = Math.sin(t * 0.3) * 0.5; site.hook.children[1].position.y = -6.2 + Math.sin(t * 0.7) * 1.5;
+        if (site.hook) { site.hook.rotation.y = Math.sin(t * 0.3) * 0.5; site.hook.children[1].position.y = -6.2 + Math.sin(t * 0.7) * 1.5; }
         site.planks.forEach((pk, i) => { pk.visible = i < Math.floor(td.p * site!.planks.length); });
+        site.bar.set(td.p);
       }
       const tk = deps.takim?.() ?? null, sk = tk && st >= 3 ? tk.ad + tk.renk + (tk.renk2 || '') + (st >= 10 ? 'a' : st >= 6 ? 'b' : 'c') : '';
       if (sk !== sponKey || (spon && spon.parent !== root)) { if (spon) { spon.removeFromParent(); spon = null; } sponKey = sk; if (sk && tk) { spon = buildSponsor(tk, st); root.add(spon); } }
@@ -367,7 +401,10 @@ export function createBufeBuyume(deps: BuyumeDeps): BuyumeView {
       if (mk !== mevKey || (mev && mev.parent !== root)) { if (mev) { mev.removeFromParent(); mev = null; } mevKey = mk; if (mk) { mev = buildMevsim(mk as 'bayrak'); root.add(mev); } }
       if (!grp) return;
       const hp = deps.hero?.();
-      if (hp) for (const [nm, m] of [['cati-W', IC_BY_ID.salonW], ['cati-E', IC_BY_ID.salonE], ['cati-K', IC_BY_ID.mutfak]] as const) { const o = grp.getObjectByName(nm); if (o) o.visible = !icIcinde(m, hp, 0.2); }
+      if (hp) {
+        for (const [nm, m] of [['cati-W', IC_BY_ID.salonW], ['cati-E', IC_BY_ID.salonE], ['duvar-K', mutfakOda(st)]] as const) { const o = grp.getObjectByName(nm); if (o) o.visible = !icIcinde(m, hp, 0.2); }
+        const ck = grp.getObjectByName('cati-K'); if (ck) ck.visible = !icIcinde(mutfakOda(st), hp, 0.2) && !mutfakVitrin(hp);   // BUF-22: kitchen seen from the büfe side
+      }
       const n = deps.night();
       const M = mats(); M.glow.color.setScalar(0.55 + 0.45 * n); M.pool.opacity = 0.75 * n; M.warm.opacity = 0.35 * n;
       for (const s of signMats) s.emissiveIntensity = 0.25 + n * 0.5;
