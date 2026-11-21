@@ -110,7 +110,7 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
   const floorTexCache = new Map<string, T.CanvasTexture>();
   /** survey 2026-10-24: real floor patterns (ahşap / fayans / mermer) with visible dirt stains. One texture spans 4 m. */
   function floorPatternTex(desen: string, kir: number): T.CanvasTexture {
-    const key = desen + ':' + kir; const hit = floorTexCache.get(key); if (hit) return hit;
+    const key = desen + ':' + kir; const hit = floorTexCache.get(key); if (hit) { floorTexCache.delete(key); floorTexCache.set(key, hit); return hit; }   // most recent last (PRF-15 trim)
     const N = 512, cv = document.createElement('canvas'); cv.width = cv.height = N; const g = cv.getContext('2d')!;
     let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
     if (desen === 'fayans') {
@@ -138,7 +138,7 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
       for (let k = 0; k < Math.round(24 * kir); k++) { const x = rnd() * N, y = rnd() * N, a = rnd() * 6.28; for (let s = 0; s < 4; s++) { g.beginPath(); g.ellipse(x + Math.cos(a) * s * 22, y + Math.sin(a) * s * 22, 6, 10, a, 0, Math.PI * 2); g.fill(); } }
       g.fillStyle = `rgba(80,60,40,${0.1 * kir})`; g.fillRect(0, 0, N, N);
     }
-    const t = new T.CanvasTexture(cv); t.colorSpace = T.SRGBColorSpace; t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(0.25, 0.25); t.anisotropy = 4;
+    const t = new T.CanvasTexture(cv); t.colorSpace = T.SRGBColorSpace; t.wrapS = t.wrapT = T.RepeatWrapping; t.repeat.set(0.25, 0.25); t.anisotropy = 4; t.userData.zeminDeseni = true;
     floorTexCache.set(key, t); return t;
   }
   let kioskFloorMat: { color: T.Color } | null = null;   // survey 2026-10-24: büfe zemin tonu (sim zemin)
@@ -590,7 +590,11 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
         // survey 2026-10-24: floor pattern + dirt (sim/zemin.ts). Tint only: the tile and wood textures stay.
         if (kioskFloorMat) {
           const fk = (zm?.desen || 'ahsap') + ':' + Math.round((zm?.kir || 0) * 8);
-          if (fk !== floorKey) { floorKey = fk; const m = kioskFloorMat as T.MeshLambertMaterial; m.map = floorPatternTex(zm?.desen || 'ahsap', Math.round((zm?.kir || 0) * 8) / 8); m.color.set('#ffffff'); m.needsUpdate = true; }
+          if (fk !== floorKey) { floorKey = fk; const m = kioskFloorMat as T.MeshLambertMaterial, prev = m.map; m.map = floorPatternTex(zm?.desen || 'ahsap', Math.round((zm?.kir || 0) * 8) / 8); m.color.set('#ffffff'); m.needsUpdate = true;
+            // PRF-15: each dirt step (1/8) is its own 512x512 texture (1.4 MB with mips); only the current one stays on the GPU and at
+            // most 4 canvases stay cached (the dirt climbs during the day and drops on cleaning, so the cache only ever grew)
+            if (prev && prev !== m.map && prev.userData.zeminDeseni) prev.dispose();   // only our own floor textures (not a shared prefab map)
+            while (floorTexCache.size > 4) { const [k0, t0] = floorTexCache.entries().next().value as [string, T.CanvasTexture]; if (t0 === m.map) break; t0.dispose(); floorTexCache.delete(k0); } }
         }
         if (key !== lastStateKey) {
           lastStateKey = key;

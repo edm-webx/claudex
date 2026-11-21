@@ -175,7 +175,6 @@ export function createStantLook(d: StantLookDeps): StantLookView {
       g.lineWidth = 7; g.strokeStyle = '#3b2a20'; g.stroke();
       g.fillStyle = late ? '#fff' : '#3b2a20'; g.font = '900 40px system-ui'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(String(no), 48, 51);
     });
-    if (tTex.size > 60) { tTex.forEach(x => x.dispose()); tTex.clear(); }
     tTex.set(k, t); return t;
   }
 
@@ -231,10 +230,15 @@ export function createStantLook(d: StantLookDeps): StantLookView {
       v.tickets.forEach((t, i) => {
         let s = tickets[i]; if (!s) { s = new T.Sprite(M(new T.SpriteMaterial({ depthTest: false }))); s.scale.set(0.42, 0.42, 1); s.renderOrder = 6; root.add(s); tickets.push(s); }
         const tb = tbs[t.table]; s.visible = !!tb; if (!tb) return;
-        (s.material as T.SpriteMaterial).map = ticketTex(t.no, t.frac > 0.7, t.special); (s.material as T.SpriteMaterial).needsUpdate = true;
+        const sm = s.material as T.SpriteMaterial, nt = ticketTex(t.no, t.frac > 0.7, t.special);
+        if (sm.map !== nt) { const had = !!sm.map; sm.map = nt; if (!had) sm.needsUpdate = true; }   // a map swap needs no relink
         s.position.x = tb.x; s.position.z = tb.z;
       });
       for (let i = v.tickets.length; i < tickets.length; i++) tickets[i].visible = false;
+      // PRF-15: ticket numbers only grow, so plates of closed tickets are freed (the old cache kept up to 60 and then dropped all,
+      // plates on screen included)
+      if (tTex.size > 16) { const use = new Set<T.Texture | null>(); tickets.forEach(s => { if (s.visible) use.add((s.material as T.SpriteMaterial).map); });
+        tTex.forEach((x, k) => { if (!use.has(x)) { x.dispose(); tTex.delete(k); } }); }
     },
     dispose() { d.scene.remove(root); geos.forEach(g => g.dispose()); mats.forEach(m => m.dispose()); texs.forEach(t => t.dispose()); tTex.forEach(t => t.dispose()); },
   };
