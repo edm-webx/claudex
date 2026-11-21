@@ -13,7 +13,7 @@ export interface TrackSpec {
   pad?: number; bass?: number; perc?: 'darbuka' | 'dum' | 'none'; tef?: boolean;
   lpf?: number; rev?: number; swing?: number; gain?: number; density?: number; note?: string;
 }
-export interface MusicDb { tracks: Record<string, TrackSpec>; map: { phase: Record<string, string | string[]>; weather: Record<string, string>; place?: Record<string, string>; event?: string } }
+export interface MusicDb { tracks: Record<string, TrackSpec>; map: { phase: Record<string, string | string[]>; weather: Record<string, string>; place?: Record<string, string | string[]>; event?: string } }
 
 // ───────── instruments (all add into `o` at sample i0) ─────────
 function* padVoice(o: Float32Array, sr: number, i0: number, dur: number, f: number, v: number, rng: Rng, cut: number) {
@@ -169,15 +169,35 @@ export function* renderTrackGen(id: string, T: TrackSpec, sr = SR_LOOP): Generat
   return res;
 }
 
-/** Pick the track key for the current game state. */
-/** 16:52 user ("hep aynı şeyler çalıyor, atmosfere göre değişecekti"): place + time of day first ('orman.gece'),
- *  then the place, then the phase, where a phase can hold several tracks that rotate (variant). */
-export function pickTrack(db: MusicDb, phase: string, weather: string, place: string, event: string | null, variant = 0): string {
-  if (event && db.map.event && db.tracks[db.map.event]) return db.map.event;
-  const w = db.map.weather[weather]; if (w && db.tracks[w]) return w;
+/** 16:52 user ("hep aynı şeyler çalıyor, atmosfere göre değişecekti"). SNT-10: candidate tracks for the game state, in
+ *  order: event, place mapped to '' (silence: banka, hastane), weather, 'place.grup' ('iskele.gece'), place, then the
+ *  base place of a sub-zone ('karsi.meydan' -> 'karsi.gece' / 'karsi'), then the phase list. [] means silence. */
+export function trackAdaylari(db: MusicDb, phase: string, weather: string, place: string, event: string | null): string[] {
+  if (event && db.map.event && db.tracks[db.map.event]) return [db.map.event];
+  const pm = db.map.place || {};
+  if (pm[place] === '') return [];
+  const w = db.map.weather[weather]; if (w && db.tracks[w]) return [w];
   const grp = phase === 'sunset' ? 'aksam' : phase === 'night' ? 'gece' : 'gunduz';
-  const pp = db.map.place?.[place + '.' + grp] || db.map.place?.[place]; if (pp && db.tracks[pp]) return pp;
+  const base = place.split('.')[0];
+  for (const k of base !== place ? [place + '.' + grp, place, base + '.' + grp, base] : [place + '.' + grp, place]) {
+    const v = pm[k]; if (v == null || v === '') continue;
+    const list = (Array.isArray(v) ? v : [v]).filter(t => db.tracks[t]);
+    if (list.length) return list;
+  }
   const ph = db.map.phase[phase];
-  const list = Array.isArray(ph) ? ph.filter(k => db.tracks[k]) : ph ? [ph] : [];
-  return list.length ? list[variant % list.length] : Object.keys(db.tracks)[0];
+  const list = Array.isArray(ph) ? ph.filter(k => db.tracks[k]) : ph && db.tracks[ph] ? [ph] : [];
+  return list.length ? list : [Object.keys(db.tracks)[0]];
+}
+/** Pick the track key for the current game state ('' = silence); `variant` walks the candidate list. */
+export function pickTrack(db: MusicDb, phase: string, weather: string, place: string, event: string | null, variant = 0): string {
+  const l = trackAdaylari(db, phase, weather, place, event);
+  return l.length ? l[variant % l.length] : '';
+}
+
+/** SNT-16: crowd -> calm / lively with hysteresis (up above 0.6, down below 0.4) so it never flickers. */
+export function canlilik(prev: 0 | 1, crowd: number): 0 | 1 { return prev ? (crowd < 0.4 ? 0 : 1) : (crowd > 0.6 ? 1 : 0); }
+/** SNT-16: music colour for a liveliness 0..1 (ramped): sparse and soft when calm, open and present when busy. Monotonic. */
+export function canlilikKatman(s: number): { lpf: number; gain: number } {
+  const k = Math.max(0, Math.min(1, s));
+  return { lpf: 4200 + k * (18000 - 4200), gain: 0.78 + 0.22 * k };
 }

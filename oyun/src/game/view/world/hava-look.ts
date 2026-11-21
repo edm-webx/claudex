@@ -248,7 +248,7 @@ export function createHavaLook(d: HavaLookDeps): HavaLookView {
   function lightning(dt: number, kd: string, k: number): void {
     if ((kd === 'firtina' || kd === 'saganak') && k > 0.7 && !(kd === 'saganak' && rainK < 0.8)) {
       flashT -= dt;
-      if (flashT <= 0) { flashT = yildirimAra(kd, Math.random()); flashAge = 0; }
+      if (flashT <= 0) { flashT = yildirimAra(kd, Math.random()); flashAge = 0; try { globalThis.dispatchEvent?.(new Event('sb:simsek')); } catch { /* ses isteğe bağlı */ } }   // gök gürültüsü şimşeği izler (audio-map)
     }
     flashAge += dt;
     flashK = yildirimEk(flashAge);

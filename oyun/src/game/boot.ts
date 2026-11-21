@@ -88,6 +88,7 @@ import { createOnline } from './online';
 import { createAdminPanel } from './ui/admin-panel';
 import { PAD_KEYS } from '../content/pads';
 import { regionAt, REGIONS } from '../content/disari/martikoy';
+import { sesBolgesi } from '../content/ses/bolgeler';
 import { realmAt } from '../content/realm';
 import { createHaliSaha } from './ui/hali-saha';
 import { createOrmanView } from './view/orman';
@@ -132,6 +133,7 @@ import { createDenizUi, type DenizUiView } from './ui/deniz-ui';
 import { createHuyMotion, type HuyMotionView } from './view/chars/huy-motion';
 import { createAltinSimitFx, type AltinSimitFx } from './ui/altin-simit-fx';
 import { createDisariLook, type DisariLookView } from './view/disari';
+import { createSokakLook } from './view/disari/sokak-look';   // DNY-02/03/19
 import { createStadyumView } from './view/stadyum';
 import { createNightLights, roomLightsFor } from './view/world/night-lights';
 import { createGorselSaat } from './boot-saat';
@@ -255,6 +257,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
 
   // ── ui, audio
   const audio: Audio | null = make('audio', () => createAudio({ platform, dress: dress ?? undefined }));
+  if (audio) Object.defineProperty(target, 'audio', { configurable: true, get: () => (audio as { debug?: () => unknown }).debug?.() });   // SNT-01: son 200 çalma kaydı + bus seviyeleri
   let ui: Ui | null = make('ui', () => createUi({ root: app, platform, audio: audio ?? undefined }));
   const uiReal = !!ui;
   if (!ui) ui = fallbackUi(app);
@@ -339,7 +342,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     salon: () => ({ stage: sim.state.stage || 1, esya: ((sim.state.zones as { salon?: { esya?: string[] } }).salon?.esya) || [] }),
     mutfak: () => { const rv = restoranApi(sim.rules)?.view(); return { ekip: sim.state.workers.filter(w => MUTFAK_ROL_BY_ID[w.role]).map(w => ({ rol: w.role, rank: rankOf(w.xp || 0) })), kds: (rv?.tickets || []).slice(0, 6).map(k => '#' + k.no + '  Masa ' + (k.table + 1) + ' · ' + k.items.filter(i => i.left).map(i => i.left + '× ' + i.name).join(', ')), pass: rv?.pass || [], ist: rv?.ist || {},
       bilet: (rv?.tickets || []).map(k => ({ no: k.no, masa: k.table + 1, kalem: k.items.filter(i => i.left).map(i => i.left + '× ' + i.name), frac: k.frac })), zeminKir: ((sim.state.zones as { zemin?: { kir?: number } }).zemin?.kir) ?? 0 }; } })) : null;   // BUF-05: pass rafı + istasyon tepsileri
-  const karsiYasam: YasamView | null = playMode && zones && chars ? make('karsiYasam', () => createKarsiYasam({ root: () => zones.root('iskele') ?? null, chars, hero: () => walk.pos, hour: () => sim.clock.hour, sfx: id => { try { audio?.sfx(id); } catch { /* */ } }, isci: () => { const m = mulkApi(sim.rules); return m ? m.view().plots.filter(p => p.sabit && p.owned).map(p => ({ id: p.id, n: p.isci, lv: p.lv, esya: (p as { esya?: string[] }).esya || [] })) : []; } })) : null;
+  const karsiYasam: YasamView | null = playMode && zones && chars ? make('karsiYasam', () => createKarsiYasam({ root: () => zones.root('iskele') ?? null, chars, hero: () => walk.pos, hour: () => sim.clock.hour, sfx: (id, at) => { try { audio?.sfx(id, at ? { at } : undefined); } catch { /* */ } }, isci: () => { const m = mulkApi(sim.rules); return m ? m.view().plots.filter(p => p.sabit && p.owned).map(p => ({ id: p.id, n: p.isci, lv: p.lv, esya: (p as { esya?: string[] }).esya || [] })) : []; } })) : null;
   const yolLook: YolLookView | null = playMode && zones ? make('yolLook', () => createYolLook({ root: () => zones.root('iskele') ?? null })) : null;
 
   const izgaraLook: IzgaraLookView | null = playMode && uiReal ? make('izgaraLook', () => createIzgaraLook({ scene, host: U.root })) : null;
@@ -560,6 +563,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     scene, zones: zones as ZoneManager, labels, project, rules: () => sim.rules, hero: () => pos, hour: () => sim.clock.hour, command,
     makeCat: chars ? (o => (chars as MotorChars).makeCat(o)) : undefined,
   })) : null;
+  const sokakLook = playMode && chars ? make('sokakLook', () => createSokakLook({ scene, agents: () => sim.agents, crowd: (chars as MotorChars).crowd, makeDog: o => (chars as MotorChars).makeDog(o), hour: () => sim.clock.hour })) : null;   // DNY-02/03/19: sokak eşyaları + köpek
   // karar paketi G: Envanter / Mülk panel (banka, günlük tahta, arsa, stadyum); the bank mirrors the cloud account record
   const kirtasiyeFp = playMode && uiReal ? make('kirtasiyeFp', () => createKirtasiyeFp({ root: U.root, rules: () => sim.rules, command, sfx: id => { try { audio?.sfx(id); } catch { /* */ } } })) : null;
   const mulkPanel = playMode && uiReal ? make('mulkPanel', () => createMulkPanel({ root: U.root, rules: () => sim.rules, command, sfx: id => { try { audio?.sfx(id); } catch { /* */ } } })) : null;
@@ -569,15 +573,16 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const bankaRt = () => (sim.rules.rt as unknown as { banka?: { tl: number; esya: Record<string, number>; dirty: boolean } }).banka;
   let bankaT = 0;
   // 16:52 user: 42B bus from the stop across the büfe to Belgrad Ormanı (view/orman, ui/otobus-hud)
-  const ormanView = ACIK_DUNYA && playMode ? make('ormanView', () => createOrmanView({ scene, rules: () => sim.rules, hero: () => pos, chars: chars as never, hour: () => sim.clock.hour, setSolid: r => nav.setSolids('otobus', r) })) : null;
+  const ormanView = ACIK_DUNYA && playMode ? make('ormanView', () => createOrmanView({ scene, rules: () => sim.rules, hero: () => pos, chars: chars as never, hour: () => sim.clock.hour, setSolid: r => nav.setSolids('otobus', r), camera: () => cam.camera })) : null;
   // the glass shelter is solid too (back + side panels), you wait in front of it
   if (ormanView) { try { nav.setSolids('durak', [{ x0: 3.9, x1: 8.1, z0: 14.4, z1: 14.75 }, { x0: 3.85, x1: 4.15, z0: 12.9, z1: 14.75 }, { x0: 7.85, x1: 8.15, z0: 12.9, z1: 14.75 }]); } catch { /* */ } }
-  const otobusHud = ACIK_DUNYA && playMode && uiReal ? make('otobusHud', () => createOtobusHud({ root: U.root, rules: () => sim.rules, command, hour: () => sim.clock.hour, sfx: id => { try { audio?.sfx(id); } catch { /* */ } } })) : null;
+  const otobusHud = ACIK_DUNYA && playMode && uiReal ? make('otobusHud', () => createOtobusHud({ root: U.root, rules: () => sim.rules, command, hour: () => sim.clock.hour, sfx: (id, at) => { try { audio?.sfx(id, at ? { at } : undefined); } catch { /* */ } } })) : null;
   const audioMap: AudioMap | null = playMode && audio ? make('audioMap', () => createAudioMap({
     bus: sim.bus, audio, playerPos: () => pos, phase: () => sim.clock.phase,
     // ses-1 place signature: Sabri'nin evi overlay, Çarşı Sokağı by position, else the pier
     // 16:52 user: music + ambience follow the place: every region has its own (orman, gece pazarı, sahil...), the halı saha match its stand
-    zone: () => { if (evRoom?.isOpen()) return 'ev'; if (document.querySelector('.hs-game')) return 'halisaha'; const r = regionAt(pos.x); return r ? r.id : 'iskele'; },
+    zone: () => { if (evRoom?.isOpen()) return 'ev'; if (document.querySelector('.hs-game')) return 'halisaha'; return sesBolgesi(pos); },   // DNY-17: ses bölgesi (iç mekan, karşı yaka alt bölgeleri, şerit)
+    interior: () => icMekan?.icinde() ?? null,
     crowd: () => Math.min(1, (sim.agents.count || 0) / 45),
     weather: () => havaApi(sim.rules)?.view().kind ?? 'acik',
     season: () => havaApi(sim.rules)?.view().season ?? 'sonbahar',
@@ -729,6 +734,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (chars && !(chars.crowd as MotorCrowd).hideUp) (chars.crowd as MotorCrowd).hideUp = salonUstGizli;   // 2026-11-21: çatıdakiler, çatısı kalkmış salonun içindeyken görünmez
     if (chars && !(chars.crowd as MotorCrowd).heightOf) (chars.crowd as MotorCrowd).heightOf = (slot: number) => (rt() as unknown as { agentY?: Float32Array }).agentY?.[slot] || 0;   // BUF-20: çatı terası müşterileri
     if (chars) guard('crowd', () => { P.time('crowd', () => { chars.crowd.update(sim.agents, fdt, alpha); chars.update(fdt, alpha); }); });
+    if (sokakLook) guard('sokakLook', () => sokakLook.update(fdt));
     if (carsi) guard('carsi', () => carsi.update(fdt));
     if (moments) guard('moments', () => moments.update(fdt));
     if (dekorLook) guard('dekorLook', () => dekorLook.update(fdt));
@@ -909,6 +915,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   if (import.meta.env.MODE !== 'production') reg('kaynakDokum', (derin?: number, max?: number) => kaynakDokum(scene, derin ?? 3, max ?? 40));   // PRF-15 doku/geometri baytı sahibine göre
   if (import.meta.env.MODE !== 'production') reg('dokuAkis', (tam?: boolean) => { if (tam !== undefined) akisZorla(!!tam); return akisDurum(); });   // PRF-15 A/B: akış kapalıyken (hep tam) görüntü aynı mı
   if (import.meta.env.MODE !== 'production') reg('kameraNear', (v: number | null) => { (cam as unknown as { nearFixed?(v: number | null): void }).nearFixed?.(v ?? null); return cam.camera.near; });   // PRF-09 A/B
+  if (import.meta.env.MODE !== 'production') reg('sahne', () => scene);   // dev: sahne ağacını sayfadan kurcalamak için (orman teşhisi)
   if (import.meta.env.MODE !== 'production') reg('heroPoz',() => { const o = H.object.position; return { x: +o.x.toFixed(3), y: +o.y.toFixed(3), z: +o.z.toFixed(3), camY: +cam.camera.position.y.toFixed(3), near: cam.camera.near }; });
   if (import.meta.env.MODE !== 'production') reg('yagmur', (k?: number, islak?: number) => { if (k !== undefined) HAVA_ZORLA.yagmur = k === null ? -1 : +k; if (islak !== undefined) HAVA_ZORLA.islak = +islak; return HAVA_ZORLA.yagmur; });   // GRS-05 ıslak zemin çekimi
   // GRS-06 A/B in one frame: ground AO uniform and contact planes on/off (measurement builds only)
@@ -917,6 +924,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   reg('gfx', () => ({ ...((R as unknown as { gfxState?: () => object }).gfxState?.() ?? {}), envK: glbEnvK() }));   // GRS-17: tier gözlem kancası
   reg('lights', () => nightLights?.stats() ?? null);   // PRF-08: gece ışığı havuzu durumu
   reg('setTime', (h: number) => { sim.command({ kind: 'setTime', hour: h }); lastHour = -1; timeT = 0; gSaat.sifirla(sim.clock.hour, sim.state.day); guard('setTime', () => { R.setTime(sim.clock.hour, sim.clock.season); havaLook?.relight(); }); });
+  reg('havaZorla', (k: string) => { const h = (sim.state.zones as Record<string, { segs?: unknown[]; wDay?: number }>).hava; if (h) { h.segs = k ? [{ k, a: 8, b: 27 }] : []; h.wDay = sim.state.day; } return havaApi(sim.rules)?.view().kind ?? null; });   // DNY-19 test: bugünün havasını zorla (sağanak, kar, sicak...)
   reg('setStage', (n: number) => { sim.command({ kind: 'setStage', stage: n }); callWorld('setStage', sim.state.stage, sim.state.renewed); });
   reg('setTier', (name: TierName) => quality.set(name));
   reg('moments', (what?: string, arg?: string) => { if (!moments) return null; if (what) moments.force(what as never, arg); return moments.info(); });

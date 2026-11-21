@@ -1,0 +1,61 @@
+{
+ "schema": 1,
+ "zaman": "2026-11-21T16:44:43.687Z",
+ "mod": "hizli",
+ "ozet": {
+  "bug": 0,
+  "warn": 0,
+  "perf": 0,
+  "bolge": 3,
+  "saat": [
+   13
+  ]
+ },
+ "bolgeler": [
+  "iskele",
+  "karsi-okul",
+  "orman-durak"
+ ],
+ "bulgular": [],
+ "baseline": {
+  "karsilastirma": []
+ },
+ "olcum": [
+  {
+   "yer": "iskele",
+   "saat": 13,
+   "calls": 196,
+   "tris": 384593,
+   "ms": 100,
+   "fps": 11.5,
+   "heapMB": 68.9,
+   "canli": 48,
+   "gorunur": 29,
+   "yakin": 19
+  },
+  {
+   "yer": "karsi-okul",
+   "saat": 13,
+   "calls": 311,
+   "tris": 674651,
+   "ms": 100,
+   "fps": 11.5,
+   "heapMB": 68.9,
+   "canli": 48,
+   "gorunur": 25,
+   "yakin": 21
+  },
+  {
+   "yer": "orman-durak",
+   "saat": 13,
+   "calls": 252,
+   "tris": 392926,
+   "ms": 100,
+   "fps": 11.8,
+   "heapMB": 68.9,
+   "canli": 48,
+   "gorunur": 1,
+   "yakin": 0
+  }
+ ]
+}

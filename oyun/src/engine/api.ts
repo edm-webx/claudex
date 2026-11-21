@@ -851,7 +851,7 @@ export interface UiDeps { root: HTMLElement; platform: Platform; audio?: Audio; 
 
 export interface AudioBus { volume: number; muted: boolean; }
 export interface Audio {
-  buses: { music: AudioBus; sfx: AudioBus; voice: AudioBus };
+  buses: { music: AudioBus; sfx: AudioBus; voice: AudioBus; ambience?: AudioBus; ui?: AudioBus };
   sfx(id: string, opts?: { at?: Vec2; vol?: number; pitch?: number }): void;
   music: { setZone(id: string): void; setPhase(p: DayPhase): void; setIntensity(v: number): void };
   ambience: { setListener(pos: Vec2): void };
@@ -910,6 +910,11 @@ export interface GameView {
 export interface AmbientSystem extends System {
   recruit(filter?: (typeId: string) => boolean): number;   // agent slot or -1
   release(agent: number): void;
+  /** BUF-25: take the nearest hungry street citizen within maxD m of `near` (agent slot or -1); it keeps its look and position. */
+  recruitHungry?(near: Vec2, maxD: number): number;
+  /** BUF-25: send the nearest hungry street citizen walking to a shop door (agent slot or -1); it goes in on arrival. */
+  sendHungry?(door: Vec2, maxD: number): number;
+  visitStatus?(slot: number): 'walk' | 'in' | 'lost';
 }
 /** M0 player movement + collision (A, src/game/sim/walk.ts). */
 export interface PlayerWalk extends System {

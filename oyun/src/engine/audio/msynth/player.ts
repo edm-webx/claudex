@@ -1,51 +1,94 @@
 // Music player on top of the bank: same surface as the old procedural lo-fi (engine/audio/lofi.ts) so the audio
-// facade swaps it in place. Plays one pre-rendered loop at a time and crossfades (3 s) when phase / weather /
-// place / event picks another track. Fog muffles through one lowpass; intensity (crowd) and duck move one gain.
+// facade swaps it in place. Plays one pre-rendered loop at a time and crossfades when phase / weather / place / event
+// picks another track. Fog muffles through one lowpass; intensity (crowd) and duck move one gain.
+// SNT-10: the candidates for a state come from trackAdaylari(); variety is a shuffle bag (no immediate repeat) that
+// rotates every ROT_MS, the rotation swap waits for the next 4-bar phrase and crossfades ~5 s. '' (banka, hastane)
+// fades to silence. Only the next likely track is pre-rendered (bank LRU keeps memory flat); stop() renders nothing.
+// SNT-16: crowd liveliness with hysteresis opens the lowpass and lifts the level (calm = sparse, busy = present).
+// SNT-14: kis(v) pulls the music down while a live musician is near (1 = no pull).
 import type { Bank } from './index';
-import { pickTrack } from './music';
+import { trackAdaylari, canlilik, canlilikKatman } from './music';
+import { Canta } from '../../../content/ses/ambiyans';
+import { Rng, hashSeed } from './dsp';
 import type { Lofi, LofiPhase } from '../lofi';
 
-export function createMusicPlayer(ac: AudioContext, out: AudioNode, bank: Bank): Lofi {
+export const ROT_MS = 150000;
+export const XF_TC = 1.1;   // setTargetAtTime time constant: ~5 s to silence
+
+export interface MusicPlayer extends Lofi { kis(v: number): void; adaylar(): string[] }
+
+export function createMusicPlayer(ac: AudioContext, out: AudioNode, bank: Bank): MusicPlayer {
   let on = false, phase: LofiPhase = 'morning', place = 'iskele', weather = 'acik', event: string | null = null, intensity = 0.5;
-  let cur: { key: string; src: AudioBufferSourceNode; g: GainNode } | null = null;
-  let want = '', variant = 0, rotT: ReturnType<typeof setInterval> | null = null;
+  let canli: 0 | 1 = 0, kisV = 1;
+  let cur: { key: string; src: AudioBufferSourceNode; g: GainNode; t0: number; dur: number } | null = null;
+  let want = '', aday: string[] = [], adayKey = '', bag: Canta<string> | null = null;
+  let rotT: ReturnType<typeof setInterval> | null = null, phraseT: ReturnType<typeof setTimeout> | null = null;
+  const rng = new Rng(hashSeed('muzik.canta'));
   const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 20000; lp.Q.value = 0.5;
   const master = ac.createGain(); master.gain.value = 0.9;
   lp.connect(master); master.connect(out);
-  const level = () => 0.75 + 0.25 * intensity;
+  const level = () => (0.75 + 0.25 * intensity) * canlilikKatman(canli).gain * kisV;
   function apply() {
     try {
       master.gain.setTargetAtTime(level(), ac.currentTime, 0.4);
-      lp.frequency.setTargetAtTime(weather === 'sis' ? 1400 : weather === 'saganak' || weather === 'firtina' ? 5000 : 20000, ac.currentTime, 0.8);
+      const wf = weather === 'sis' ? 1400 : weather === 'saganak' || weather === 'firtina' ? 5000 : 20000;
+      lp.frequency.setTargetAtTime(Math.min(wf, canlilikKatman(canli).lpf), ac.currentTime, 2.5);
     } catch { /* closed */ }
   }
-  function sync() {
+  function fadeOut(c: NonNullable<typeof cur>, tc = XF_TC) { try { const t = ac.currentTime; c.g.gain.setTargetAtTime(0, t, tc); c.src.stop(t + tc * 6); } catch { /* */ } }
+  function play(key: string) {
     if (!on) return;
-    const key = pickTrack(bank.db.music, phase, weather, place, event, variant);
+    if (!key) { want = ''; if (cur) { fadeOut(cur); cur = null; } return; }
     if (cur && cur.key === key) return;
     want = key;
     bank.track(key, buf => {
       if (!on || want !== key || (cur && cur.key === key)) return;
       const t = ac.currentTime;
-      if (cur) { const old = cur; try { old.g.gain.setTargetAtTime(0, t, 1); old.src.stop(t + 5); } catch { /* */ } }
+      if (cur) fadeOut(cur);
       const g = ac.createGain(); g.gain.value = 0; g.connect(lp);
       const src = ac.createBufferSource(); src.buffer = buf; src.loop = true; src.connect(g); src.start();
-      g.gain.setTargetAtTime(1, t, 1);
-      cur = { key, src, g };
+      g.gain.setTargetAtTime(1, t, XF_TC);
+      cur = { key, src, g, t0: t, dur: buf.duration };
+      const nx = bag?.peek(); if (nx && nx !== key) setTimeout(() => { if (on) bank.track(nx, () => { /* cached */ }); }, 8000);
     });
   }
-  // render the likely next tracks in the background so changes are instant
-  const warm = () => { for (const k of new Set(Object.values(bank.db.music.map.phase).flat())) bank.track(k, () => { /* cached */ }); };
+  /** state changed: new candidate list -> keep the current track if it still fits, else draw from the bag */
+  function sync() {
+    if (!on) return;
+    const l = trackAdaylari(bank.db.music, phase, weather, place, event), k = l.join('|');
+    if (k !== adayKey) { adayKey = k; aday = l; bag = l.length > 1 ? new Canta(l.map(v => ({ v, w: 1 })), () => rng.next()) : null; }
+    if (!aday.length) { play(''); return; }
+    if (cur && aday.includes(cur.key) && want === cur.key) return;
+    if (want && aday.includes(want)) return;
+    play(bag ? (bag.next() as string) : aday[0]);
+  }
+  /** variety: next bag track, swapped at the next 4-bar phrase of the current loop */
+  function rotate() {
+    if (!on || !bag || !cur) return;
+    let nx = bag.next(); if (nx === cur.key) nx = bag.next();
+    if (!nx || nx === cur.key) return;
+    const phrase = cur.dur / 4, el = (ac.currentTime - cur.t0) % phrase, wait = Math.max(0, phrase - el) * 1000;
+    if (phraseT) clearTimeout(phraseT);
+    const key = nx;
+    phraseT = setTimeout(() => { phraseT = null; if (on && aday.includes(key)) play(key); }, wait);
+  }
   return {
-    start() { if (on) return; on = true; apply(); sync(); setTimeout(warm, 4000); if (!rotT) rotT = setInterval(() => { variant++; sync(); }, 150000); },
-    stop() { on = false; want = ''; if (rotT) { clearInterval(rotT); rotT = null; } if (cur) { const c = cur; cur = null; try { c.g.gain.setTargetAtTime(0, ac.currentTime, 0.3); c.src.stop(ac.currentTime + 1.5); } catch { /* */ } } },
+    start() { if (on) return; on = true; apply(); sync(); if (!rotT) rotT = setInterval(rotate, ROT_MS); },
+    stop() {
+      on = false; want = ''; adayKey = '';
+      if (rotT) { clearInterval(rotT); rotT = null; }
+      if (phraseT) { clearTimeout(phraseT); phraseT = null; }
+      if (cur) { const c = cur; cur = null; fadeOut(c, 0.3); }
+    },
     get playing() { return on; },
     setPlace(id) { place = id; sync(); },
     setPhase(p) { phase = p; sync(); },
-    setIntensity(v) { intensity = Math.max(0, Math.min(1, v)); apply(); },
+    setIntensity(v) { intensity = Math.max(0, Math.min(1, v)); canli = canlilik(canli, intensity); apply(); },
     setEvent(id) { event = id; sync(); },
     setWeather(k) { weather = k; apply(); sync(); },
     duck(sec) { try { const t = ac.currentTime; master.gain.cancelScheduledValues(t); master.gain.setTargetAtTime(level() * 0.35, t, 0.15); master.gain.setTargetAtTime(level(), t + sec, 0.6); } catch { /* */ } },
+    kis(v) { const nv = Math.max(0, Math.min(1, v)); if (Math.abs(nv - kisV) < 0.01) return; kisV = nv; apply(); },
     layers() { return cur ? [cur.key] : []; },
+    adaylar() { return aday.slice(); },
   };
 }

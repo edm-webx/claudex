@@ -8,7 +8,7 @@
  */
 import type { System, SimCtx, Vec2 } from '../../../engine/api';
 import { IC_BY_ID, icWorld, icDim, icLayout, icUV, icYol, personelGeo } from '../../../content/ic-mekan';
-import { KAFE_ISCI_TAVAN, ARSA_ISLETME, kafeMenu } from '../../../content/esya';
+import { KAFE_ISCI_TAVAN, ARSA_ISLETME, kafeMenu, ARSALAR, arsaKapi } from '../../../content/esya';
 import { kalemOf, ISTASYON_LAYOUT_K, ISTASYON_SIRA, type IstasyonId } from '../../../content/isletme-istasyon';
 import { ISLETME_ROL } from '../../../content/isletme-kadro';
 import type { AgentEnv } from './env';
@@ -30,13 +30,16 @@ const LINES_GEZ = ['Şuna bir bakayım…', 'Bedeni var mı acaba?', 'Bu güzelm
 
 interface Guest { a: Actor; st: 'in' | 'gez' | 'queue' | 'served' | 'toSeat' | 'sit' | 'out'; t: number; gez: number; gezYaw: number; path: Vec2[]; slot: number; claimed: number; seat: Vec2 | null; tbl: number; face: number; want: string }
 interface Wk { a: Actor; cid: number; idx: number; st: 'post' | 'toSt' | 'brew' | 'hand'; t: number; guest: Guest | null; path: Vec2[]; item: string }
-interface Room { arsa: string; room: string; bistro: boolean; guests: Guest[]; wk: Wk[]; seatTaken: Set<number> }
+/** BUF-25: a hungry street citizen walking to the shop door; the guest appears when it arrives (or after VISIT_MAX seconds, so the flow count never drops) */
+interface Visitor { slot: number; t: number }
+interface Room { arsa: string; room: string; bistro: boolean; guests: Guest[]; wk: Wk[]; seatTaken: Set<number>; visitors: Visitor[] }
+const HUNGRY_M = 40, VISIT_MAX = 50;
 
 export interface KafeSystem extends System { rooms(): { room: string; guests: number; waiting: number; workers: number; siparisler: string[] }[]; siparisOf(room: string): string[] }
 
 export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSystem {
   const rng = env.rng('kafe');
-  const rooms: Room[] = ROOMS.map(r => ({ ...r, guests: [], wk: [], seatTaken: new Set<number>() }));
+  const rooms: Room[] = ROOMS.map(r => ({ ...r, guests: [], wk: [], seatTaken: new Set<number>(), visitors: [] }));
   const host = () => rt.kafeHost as KafeHostApi | undefined;
   const geom0 = (r: Room) => {
     const m = IC_BY_ID[r.room], D = icDim(m).D, W = icDim(m).W, lay = icLayout(m), tz = lay.find(i => i.k === 'tezgah')!;
@@ -141,11 +144,22 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
 
   function tickRoom(r: Room, dt: number) {
     const h = host(), info = h?.info(r.arsa);
-    if (!h || !info) { for (const gu of r.guests) env.reg.remove(gu.a); for (const w of r.wk) env.reg.remove(w.a); r.guests.length = 0; r.wk.length = 0; r.seatTaken.clear(); return; }
+    if (!h || !info) { r.visitors.length = 0; for (const gu of r.guests) env.reg.remove(gu.a); for (const w of r.wk) env.reg.remove(w.a); r.guests.length = 0; r.wk.length = 0; r.seatTaken.clear(); return; }
     syncWorkers(r);
     // new guests from the hourly customer flow (mulk.ts accrues them into pending)
-    const open = r.guests.filter(x => x.st === 'in' || x.st === 'gez' || x.st === 'queue').length;
-    if ((h.pending[r.arsa] || 0) > 0 && open < Math.min(geom(r).maxQ, info.kuyruk)) { h.pending[r.arsa]--; spawnGuest(r); }
+    const open = r.guests.filter(x => x.st === 'in' || x.st === 'gez' || x.st === 'queue').length + r.visitors.length;
+    const amb = env.rules.ambient;
+    if ((h.pending[r.arsa] || 0) > 0 && open < Math.min(geom(r).maxQ, info.kuyruk)) {
+      h.pending[r.arsa]--;
+      // BUF-25: a hungry citizen of the street walks over by own will and becomes the guest at the door; none near = the guest appears as before
+      const ar = ARSALAR.find(x => x.id === r.arsa), vs = amb?.sendHungry && ar ? amb.sendHungry(arsaKapi(ar), HUNGRY_M) : -1;
+      if (vs >= 0) r.visitors.push({ slot: vs, t: 0 }); else spawnGuest(r);
+    }
+    for (let i = r.visitors.length - 1; i >= 0; i--) {
+      const v = r.visitors[i]; v.t += dt;
+      const st = amb?.visitStatus ? amb.visitStatus(v.slot) : 'lost';
+      if (st === 'in' || st === 'lost' || v.t > VISIT_MAX) { r.visitors.splice(i, 1); spawnGuest(r); }
+    }
     // guests
     for (let i = r.guests.length - 1; i >= 0; i--) {
       const gu = r.guests[i], a = gu.a; gu.t += dt;
