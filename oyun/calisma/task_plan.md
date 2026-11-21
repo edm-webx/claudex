@@ -41,3 +41,9 @@ Aşamalar (oturum): [ ] 0 Karar ve ölçüm (12-14) [ ] 1 Temizlik ve temel (60-
 - jo0q11 @ d8bbfcd: PRF-09/10 tamam (testler yeşil), WIP: PRF-11/15 (tools/{bellek-olc,glb-sikistir,paket-dokum,yukleme-olc}.mjs, render/{doku-akis,kaynak-dokum,yukle-ekran}.ts), GRS-01/02 (boot-saat.ts, tod/look/hava-look). Sıkıştırılmış .glb'ler geri alındı (yama /mnt/project-files/arsiv/wip-glb-sikistirma-2026-11-21.patch, doğrulanmadı); tests/unit/render/glb-sikistir.test.ts bu yüzden kırmızı, glb.ts değişikliği sıkıştırılmış varlığı çözmeye hazır.
 - Beta 1 zip: arsiv/sabrinin-bufesi-itch-v2.0-beta1-2026-11-21.zip (birleştirme dalı claude/v2-beta: bundle arsiv/v2-beta-birlestirme-2026-11-21.bundle). Açık: tests/sim/yuk.test.ts gün dönümü tick sıçraması, game.js 2.58 MB (check-dist tavanı geçici 3 MB, yalnız birleştirme dalında).
 - Yapılmadı: GRS-05/06/07/17, PRF-07/12, KAL-01/02/13/15, EKO-01/02/03. Kollar: büfe ukvrqf c9b9659 (BUF-19/20/22/21/30 yolda), işletmeler unh0w1 d34f41c, arayüz m0d31m 0e62d93, futbol wa2wu6, dünya+ses g3g2bo*.
+
+## 2026-11-21 bellek zinciri (PRF-11, PRF-15)
+- GLB nicemleme uygulandı (e2f585b): 3.06 -> 1.45 MB, köşe verisi 2.81 -> 1.18 MB; tests/browser/glb-ab.mjs 20 modelde 0 piksel, oyun içi arabalı kare 0 piksel.
+- Doku akışı merdiveni 1/2-1/4-1/8 (7dc1ace): dengeli 1280x720 en yüksek GPU 206.9 -> 168.7 MB, doku-akis-ab 4 karede 0 piksel. Izgara tuvali ilk açılışta. PMREM ara hedefi bırakılır (80e5400, -6 MB).
+- Sızıntı: büfe zemini kir dokuları ve fiş plakaları birikiyordu (87940cb). sizinti.mjs 8 turda doku 162->174 iken 162->170 (son iki tur düz); 20 tur yeşili henüz görülmedi.
+- Bütçe: tools/perf-budget.json "bellek" (varlık kuralı testi tests/unit/render/varlik-butce.test.ts, çalışma tavanı node tools/bellek-olc.mjs --kapi --tekrar 3).
