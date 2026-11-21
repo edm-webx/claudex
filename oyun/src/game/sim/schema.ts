@@ -128,11 +128,11 @@ export const AGENT_SCHEMA = {
 export type AgentField = keyof typeof AGENT_SCHEMA;
 
 export const GAIT_ORDER = ['normal', 'waddle', 'brisk', 'slow', 'shuffle', 'kid', 'run'] as const;
-export const ACT_ORDER = ['none', 'idle', 'walk', 'carry', 'cut', 'pour', 'serve', 'sit', 'sip', 'eat', 'wave', 'sleep', 'sweep', 'phone', 'grab', 'cheer', 'perform', 'dance'] as const;
+export const ACT_ORDER = ['none', 'idle', 'walk', 'carry', 'cut', 'pour', 'serve', 'sit', 'sip', 'eat', 'wave', 'sleep', 'sweep', 'phone', 'grab', 'cheer', 'perform', 'dance', 'fish', 'read', 'walkdog', 'jog', 'play'] as const;   // DNY-02: sona ekleme
 export const MOOD_ORDER = ['happy', 'ok', 'impatient', 'sad', 'asleep'] as const;
 export const EXPR_ORDER = ['neutral', 'smile', 'grin', 'laugh', 'surprised', 'sleepy', 'pout', 'grumpy', 'love', 'wink', 'thinking', 'bliss'] as const;
 /** Zone index for the u8 `zone` field. Append only. */
-export const ZONE_ORDER = ['iskele', 'test-sokak', 'carsi', 'meydan', 'barinak', 'sahil'] as const;
+export const ZONE_ORDER = ['iskele', 'test-sokak', 'carsi', 'meydan', 'barinak', 'sahil', 'karsi', 'stadyum', 'orman'] as const;   // DNY-01: sona ekleme
 export const AGENT_LOD = { A: 0, B: 1, C: 2 } as const;
 export const AGENT_FLAG = {
   visible: 1 << 0,      // view should draw it
