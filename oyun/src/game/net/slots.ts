@@ -45,6 +45,26 @@ export function slotSec(i: number): void {
   v.aktif = i; yeni = !v.slots?.[i];
 }
 
+/**
+ * Karakter silme (2026-11-21): clears ONE slot of the cloud record. Re-reads the record first so another device's
+ * newer slots/bank are never clobbered, touches nothing but slots[i] (+ the legacy top-level code mirror of that slot),
+ * leaves `banka` and the other slots as they are. true = server confirmed. On failure the in-memory copy is reloaded.
+ */
+export async function slotSil(i: number): Promise<boolean> {
+  if (!hesap() || i < 0 || i >= SLOT_N) return false;
+  await slotlariYukle();
+  const s = v.slots?.[i]; if (!s) return true;   // already empty
+  v.slots![i] = null;
+  // the legacy mirror (code/playT) would otherwise resurrect the deleted character as slot 1 on the next load
+  if (v.code === s.code) { delete v.code; delete v.playT; }
+  if (v.aktif === i) v.aktif = Math.max(0, v.slots!.findIndex(Boolean));
+  const ok = await veriYaz(v as Record<string, unknown>, null);
+  if (!ok) { await slotlariYukle(); return false; }
+  // the local save may still hold this character: mark it foreign so the next entry reloads from the cloud / starts fresh
+  try { localStorage.setItem('martikoy-save-owner', 'silindi'); } catch { /* */ }
+  return true;
+}
+
 /** cloud copy of the ACTIVE slot (null for an empty slot or a guest) */
 export async function bulutOku(): Promise<{ code: string; playT: number } | null> {
   if (!hesap()) return null;

@@ -4,7 +4,7 @@
 import { supaReady, girisYap, kayitOl, cikisYap } from '../net/supa';
 import { girisSonrasi, adminAdiMi, adminDogrula } from '../net/admin';
 import { girisLogu } from '../net/log';
-import { slotlariYukle, slotListesi, slotSec, aktifSlot } from '../net/slots';
+import { slotlariYukle, slotListesi, slotSec, aktifSlot, slotSil } from '../net/slots';
 import { SINIFLAR } from '../sim/esnafim';
 
 export interface GirisView { show(go: () => void): void }
@@ -22,6 +22,11 @@ const CSS = `
 .gr-go:disabled{opacity:.6;cursor:wait}
 .gr-guest{margin-top:12px;width:100%;min-height:46px;border-radius:14px;border:3px dashed #3b2a20;background:transparent;font:900 16px var(--disp);color:#3b2a20;cursor:pointer}
 .gr-slots{display:grid;gap:8px;margin-top:6px}.gr-sl{display:flex;align-items:center;gap:10px;min-height:64px;border:3px solid #3b2a20;border-radius:14px;background:#fff6e6;font:900 17px var(--disp);color:#3b2a20;cursor:pointer;padding:4px 12px;text-align:left;box-shadow:0 3px 0 #3b2a20}.gr-sl:hover{background:#ffeab0}.gr-sl i{font-style:normal;font-size:30px;width:40px;text-align:center}.gr-sl small{display:block;font:700 13px var(--body);opacity:.7}.gr-sl.empty{border-style:dashed;background:transparent;box-shadow:none}.gr-sl.on{background:#ffd23f}
+.gr-row{display:flex;gap:8px;align-items:stretch}.gr-row .gr-sl{flex:1;min-width:0}
+.gr-del{flex:none;width:52px;border:3px solid #3b2a20;border-radius:14px;background:#fff6e6;font-size:22px;cursor:pointer;box-shadow:0 3px 0 #3b2a20}.gr-del:hover{background:#ffd5cf}
+.gr-warn{font:800 15px/1.4 var(--body);margin:10px 0 4px;text-align:center}.gr-warn b{font-family:var(--disp)}
+.gr-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.gr-btns button{min-height:52px;border:4px solid #3b2a20;border-radius:14px;font:900 17px/1.1 var(--disp);color:#3b2a20;cursor:pointer;box-shadow:0 4px 0 #3b2a20}
+.gr-no{background:#fff6e6}.gr-red{background:#e8574a;color:#fff!important}.gr-red:disabled{opacity:.4;cursor:not-allowed}
 .gr-err{min-height:20px;margin-top:8px;font:800 14px/1.3 var(--body);color:#b3261e;text-align:center}
 .gr-srv{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:6px}.gr-s{min-height:50px;border:3px solid #3b2a20;border-radius:12px;background:#fff6e6;font:900 16px var(--disp);color:#3b2a20;cursor:pointer;display:flex;align-items:center;gap:8px;padding:2px 10px;text-align:left;box-shadow:0 3px 0 #3b2a20}.gr-s.on{background:#ffd23f}.gr-s i{width:16px;height:16px;border-radius:50%;border:2px solid #3b2a20;flex:none}.gr-s small{display:block;font:700 13px var(--body);opacity:.7}
 .gr-card{max-height:calc(100vh - 32px);overflow:auto}
@@ -56,8 +61,21 @@ export function createGiris(deps: { root: HTMLElement; afterLogin: (isNew: boole
         inServers = false;
         const list = slotListesi(), cur = aktifSlot(), pt = (s: number) => s >= 3600 ? Math.floor(s / 3600) + ' sa ' + Math.floor(s % 3600 / 60) + ' dk' : Math.max(1, Math.floor(s / 60)) + ' dk';
         bg.innerHTML = `<div class="gr-card"><div class="gr-h">🧑 Karakterini seç</div><div class="gr-sub">Hesabında 4 yuva var. Banka hepsinin ortak. Adı bir kez seçersin, sonra değişmez.</div>
-<div class="gr-slots">${list.map((s, i) => s ? `<button class="gr-sl${i === cur ? ' on' : ''}" data-slot="${i}"><i>${SINIFLAR.find(x => x.id === s.sinif)?.icon || '🧑'}</i><span>${s.ad.replace(/[<>&]/g, '')}<small>${s.level}. seviye · ${SINIFLAR.find(x => x.id === s.sinif)?.ad || ''} · ${pt(s.playT)} oynandı</small></span></button>` : `<button class="gr-sl empty" data-slot="${i}"><i>＋</i><span>Yeni karakter<small>Boş yuva ${i + 1}</small></span></button>`).join('')}</div></div>`;
+<div class="gr-slots">${list.map((s, i) => s ? `<div class="gr-row"><button class="gr-sl${i === cur ? ' on' : ''}" data-slot="${i}"><i>${SINIFLAR.find(x => x.id === s.sinif)?.icon || '🧑'}</i><span>${s.ad.replace(/[<>&]/g, '')}<small>${s.level}. seviye · ${SINIFLAR.find(x => x.id === s.sinif)?.ad || ''} · ${pt(s.playT)} oynandı</small></span></button><button class="gr-del" data-del="${i}" aria-label="${s.ad.replace(/[<>&"]/g, '')} karakterini sil" title="Karakteri sil">🗑</button></div>` : `<button class="gr-sl empty" data-slot="${i}"><i>＋</i><span>Yeni karakter<small>Boş yuva ${i + 1}</small></span></button>`).join('')}</div></div>`;
       };
+      // Karakter silme: iki onay. 1) "emin misin" 2) karakterin adını yaz, kırmızı düğme ancak ad eşleşince açılır. Yalnız o yuva silinir, banka ve diğer yuvalar kalır.
+      const delScreen = (i: number, step: 1 | 2, err = '') => {
+        const s = slotListesi()[i]; if (!s) { slotsScreen(); return; }
+        const ad = s.ad.replace(/[<>&]/g, '');
+        bg.innerHTML = step === 1
+          ? `<div class="gr-card"><div class="gr-h">🗑 Karakteri sil?</div><div class="gr-warn"><b>${ad}</b> (${s.level}. seviye) silinecek: dükkanı, ilerlemesi, her şeyi. Geri alınmaz. Ortak banka ve diğer karakterlerin durur.</div>
+<div class="gr-btns"><button class="gr-no" data-no="1">Vazgeç</button><button class="gr-red" data-d1="${i}">Devam</button></div></div>`
+          : `<div class="gr-card"><div class="gr-h">⚠️ Son onay</div><div class="gr-warn">Silmek için karakterin adını aynen yaz: <b>${ad}</b></div>
+<input class="gr-in" name="onay" maxlength="32" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${ad}"><div class="gr-err">${err}</div>
+<div class="gr-btns"><button class="gr-no" data-no="1">Vazgeç</button><button class="gr-red" data-d2="${i}" disabled>Sil</button></div></div>`;
+        if (step === 2) (bg.querySelector('input[name="onay"]') as HTMLInputElement).focus();
+      };
+      const delMatch = (i: number) => { const s = slotListesi()[i], t = (bg.querySelector('input[name="onay"]') as HTMLInputElement | null)?.value || ''; return !!s && t.trim().toLocaleLowerCase('tr') === s.ad.replace(/[<>&]/g, '').trim().toLocaleLowerCase('tr'); };
       const bg = document.createElement('div'); bg.className = 'gr-bg';
       let mode: 'giris' | 'kayit' = 'giris';
       const paint = (err = '') => {
@@ -89,15 +107,24 @@ export function createGiris(deps: { root: HTMLElement; afterLogin: (isNew: boole
       };
       bg.addEventListener('click', e => {
         const el = (e.target as HTMLElement).closest('button') as HTMLButtonElement | null; if (!el) return;
+        if (el.dataset.no) { try { deps.sfx?.('pick'); } catch { /* */ } slotsScreen(); return; }
+        if (el.dataset.del) { delScreen(Number(el.dataset.del), 1); return; }
+        if (el.dataset.d1) { delScreen(Number(el.dataset.d1), 2); return; }
+        if (el.dataset.d2) {
+          const i = Number(el.dataset.d2); if (!delMatch(i)) return;
+          el.disabled = true; el.textContent = 'Siliniyor...';
+          void slotSil(i).then(ok => { if (ok) { try { deps.sfx?.('ok'); } catch { /* */ } slotsScreen(); } else { try { deps.sfx?.('error'); } catch { /* */ } delScreen(i, 2, 'Silinemedi, bağlantını kontrol edip tekrar dene. Hiçbir şey silinmedi.'); } });
+          return;
+        }
         if (el.dataset.slot) { slotSec(Number(el.dataset.slot)); try { deps.sfx?.('pick'); } catch { /* */ } void enter(); return; }
         if (el.dataset.enter) { void enter(); return; }
         if (el.dataset.m) { mode = el.dataset.m as 'giris' | 'kayit'; paint(); return; }
         if (el.dataset.go) { void submit(); return; }
         if (el.dataset.guest) finish(false);
       });
-      bg.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') { if (inServers) void enter(); else void submit(); } });
+      bg.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') { if ((e.target as HTMLInputElement).name === 'onay') { (bg.querySelector('[data-d2]') as HTMLButtonElement | null)?.click(); return; } if (inServers) void enter(); else void submit(); } });
       bg.addEventListener('keyup', e => e.stopPropagation());
-      bg.addEventListener('input', e => { const t = e.target as HTMLInputElement; if (t.name === 'ad' && mode === 'giris' && adminAdiMi(t.value)) showKey(); });
+      bg.addEventListener('input', e => { const t = e.target as HTMLInputElement; if (t.name === 'onay') { const b = bg.querySelector('[data-d2]') as HTMLButtonElement | null; if (b) b.disabled = !delMatch(Number(b.dataset.d2)); return; } if (t.name === 'ad' && mode === 'giris' && adminAdiMi(t.value)) showKey(); });
       // 2026-10-25 user: no "continue as ..." screen; everyone types their own username and password
       paint(); deps.root.appendChild(bg);
     },
