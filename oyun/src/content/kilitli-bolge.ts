@@ -115,11 +115,11 @@ export function bolgeEngelleri(state: unknown): { x0: number; x1: number; z0: nu
  * Sahip: "karşıya giderken kullanılan merdiven de inşaat halinde olsun, iki ucu birleşmesin, oyunun belirli bir seviyesinde açılsın;
  * iskeledeki yürüme yolunu kapatmasın, bir uyarı tabelası yeter, merdivenin ortası boş olsun". Köprünün orta açıklığı (yolun
  * ortası) yok: iki merdiven ve güvertenin uçları durur, aradaki boşlukta kimse geçemez. Ağır makine yok.
- * Açılış: Esnaf Seviyesi 2. Neden 2: karşı yakanın ilk satın alınabilir dükkânı (k1 Meydan Kafe) seviye 2'de açılır; banka ve halı
- * saha da karşıda, ilk birkaç dakikadan uzun kilitli kalmamalı. Seviye 1 = ilk dakikalar, oyuncu büfeyi öğrenirken. Ayrıca
+ * Açılış: Esnaf Seviyesi 3 (sahip 2026-11-21: "seviye 3'te açılsın, karşıdaki dükkân da öyle; önce iskeleyi adam edelim"). k1 Meydan Kafe de 3'e çekildi; banka ve halı
+ * saha da karşıda. Ayrıca
  * `acikBolgeler`e 'ust-gecit' yazılırsa da açılır (ileride bir görevle açmak için). */
 export const UST_GECIT = {
-  id: 'ust-gecit', seviye: 2,
+  id: 'ust-gecit', seviye: 3,
   /** güvertede olmayan açıklık (dünya z); yolun ortası, iki şerit kenarı arasında */
   z0: 17.6, z1: 23.8,
   /** köprü merdiveninin x'i ve yarı genişliği (content/ustgecit UG ile aynı) */
