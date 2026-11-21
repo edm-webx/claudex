@@ -33,6 +33,7 @@ import { crowdWeather } from '../weather-pose';
 import * as C from './kit';
 import { vrand } from './kit';
 import { akisKaydet } from '../../../../engine/render/doku-akis';
+import { hairKit, beardKit, mustacheKit } from './sac-kit';
 
 export const CH: any = {};
 
@@ -58,6 +59,7 @@ const TEAMS: any = { lodosspor: ['#2fb8b0', '#f08a2c'], vapurspor: ['#9b84c9', '
 CH.SKINS = SKINS; CH.TEAMS = TEAMS;
 
 const col = new T.Color();
+const KCOL = new T.Color();
 const shade = (c?: any, k?: any) => { const o = new T.Color(c); const h: any = {}; o.getHSL(h); o.setHSL(h.h, h.s, clamp(h.l * k, 0, 1)); return '#' + o.getHexString(); };
 const mix = (a?: any, b?: any, t?: any) => { const o = new T.Color(a); o.lerp(new T.Color(b), t); return '#' + o.getHexString(); };
 
@@ -670,7 +672,18 @@ function buildHeroMesh(L?: any) {
   const hairC = L.hairColor;
   const hairCol = (v?: any) => (L.temples && Math.abs(v.x) > 0.13 && v.y < headY + 0.07) ? L.temples : hairC;
   const mouthY = headY - 0.075;
-  if (L.mustache) {
+  // Karakter Atölyesi: real 3D mustache / beard from sac-kit (legacy ids mapped); unknown ids keep the old shapes
+  const fhC = L.beardColor || (L.age === 'old' ? HAIRC.silver : hairC);
+  const kitPut = (pieces: any, base: any) => pieces.forEach((p: any) => {
+    const m = new T.Matrix4().multiplyMatrices(HM, p.m);
+    const bc = p.k === 'trim' ? (L.tieColor || shade(typeof base === 'string' ? base : hairC, 0.55)) : base;
+    // sh > 1 also adds a little light so dark hair still shows its sheen
+    const color = p.sh ? (v: any, i: any) => { const k = p.sh[i]; KCOL.set(typeof bc === 'function' ? bc(v) : bc).multiplyScalar(k); if (k > 0.98) { const add = (k - 0.98) * 0.32; KCOL.r += add; KCOL.g += add; KCOL.b += add; } return KCOL; } : bc;
+    b.add(p.g, on('head', { m, color }));
+  });
+  const musK = L.mustache ? mustacheKit(({ thin: 'ince', thick: 'kalin', curl: 'burma' } as any)[L.mustache] || (L.mustache === true ? 'kalin' : L.mustache), R, L.hairKit ? 0 : 1) : null;
+  if (musK) kitPut(musK, L.mustacheColor || fhC);
+  else if (L.mustache) {
     const thick = L.mustache === 'thick' ? 0.034 : L.mustache === 'thin' ? 0.018 : 0.026;
     const mc = L.mustacheColor || (L.age === 'old' ? HAIRC.silver : hairC);
     [-1, 1].forEach((sx?: any) => {
@@ -678,10 +691,10 @@ function buildHeroMesh(L?: any) {
       if (L.mustache === 'thick' || L.mustache === 'curl') b.add(sph(thick * 0.75, 6, 5), on('head', { m: mT(sx * 0.088, mouthY + 0.018, R * 0.83), color: mc }));
     });
   }
-  if (L.beard === 'goateeLong') b.add(sph(0.045, 10, 8), on('head', { m: mTRS(0, mouthY - 0.085, R * 0.84, 0.18, 0, 0, 0.75, 1.9, 0.8), color: L.age === 'old' ? HAIRC.silver : hairC }));   // sivri keçi sakalı (UX-15: keçi ve çember artık farklı biçim)
+  const beardK = L.beard ? beardKit(({ goateeLong: 'keci', goatee: 'cember', short: 'kisa', sideburns: 'favori' } as any)[L.beard] || (L.beard === true ? 'tam' : L.beard), R, L.hairKit ? 0 : 1) : null;
+  if (beardK) kitPut(beardK, fhC);
+  else if (L.beard === 'goateeLong') b.add(sph(0.045, 10, 8), on('head', { m: mTRS(0, mouthY - 0.085, R * 0.84, 0.18, 0, 0, 0.75, 1.9, 0.8), color: L.age === 'old' ? HAIRC.silver : hairC }));
   else if (L.beard === 'goatee') b.add(sph(0.05, 10, 8), on('head', { m: mTRS(0, mouthY - 0.065, R * 0.86, 0, 0, 0, 0.9, 1.2, 0.8), color: L.age === 'old' ? HAIRC.silver : hairC }));
-  else if (L.beard === 'short') b.add(sph(+(R * 1.012).toFixed(4), 14, 6, PI / 2 - 1.0, 2.0, PI * 0.6, PI * 0.3), on('head', { m: HM, color: L.age === 'old' ? HAIRC.silver : hairC }));
-  else if (L.beard === 'sideburns') [-1, 1].forEach((s?: any) => b.add(sph(0.045, 8, 6), on('head', { m: mTRS(s * R * 0.84, mouthY + 0.06, R * 0.38, 0, 0, 0, 0.55, 1.9, 0.9), color: L.age === 'old' ? HAIRC.silver : hairC })));
   else if (L.beard) b.add(sph(+(R * 1.03).toFixed(4), 14, 6, PI / 2 - 1.15, 2.3, PI * 0.56, PI * 0.36), on('head', { m: HM, color: L.age === 'old' ? HAIRC.silver : hairC }));
   if (L.glasses) {
     const gc = L.glasses === 'sun' ? '#1b1b22' : L.glasses === 'thick' ? '#3a2a20' : '#4a4a55', tk = L.glasses === 'thick' ? 0.011 : 0.007;
@@ -707,10 +720,14 @@ function buildHeroMesh(L?: any) {
     put(scarfPieces(L.headscarf, R, 1), gmap);
   } else {
     let hair = L.hair;
-    // any hat: hair is flattened to a close-fitting cap so nothing pokes through the brim or crown
-    if (L.hat && hair !== 'long' && hair !== 'ponytail' && hair !== 'bald' && hair !== 'none') hair = 'buzz';
-    else if (L.hat && hair === 'wavy') hair = 'long';
-    put(hairPieces(hair, R, 1), gmap);
+    const hk = hair ? hairKit(hair, R, { hat: !!L.hat, girth: L.girth, lod: L.hairKit ? 0 : 1 }) : null;
+    if (hk) kitPut(hk, hairCol);   // Karakter Atölyesi: sculpted hair; under a hat the kit flattens its own volume
+    else {
+      // any hat: hair is flattened to a close-fitting cap so nothing pokes through the brim or crown
+      if (L.hat && hair !== 'long' && hair !== 'ponytail' && hair !== 'bald' && hair !== 'none') hair = 'buzz';
+      else if (L.hat && hair === 'wavy') hair = 'long';
+      put(hairPieces(hair, R, 1), gmap);
+    }
     if (L.hat) put(hatPieces(L.hat, R, 1), { hair: 'hairfn', cover: L.hatColor || '#e0533c', trim: shade(L.hatColor || '#e0533c', 0.75), dark: '#2b3340', gold: '#f2b632' });
   }
   if (L.pen === 'ear') b.add(cyl(0.008, 0.008, 0.13, 6), on('head', { m: mTRS(R * 0.93, headY + 0.055, -0.02, 0.25, 0, 1.25), color: '#2d63b8' }));
