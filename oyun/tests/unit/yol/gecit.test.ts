@@ -14,7 +14,9 @@ const ray = new T.Raycaster();
 /** Highest drawn bridge surface under (x, z) that is below `below` (rails at the edges are outside the sampled strip). */
 function surfaceY(x: number, z: number, below: number): number {
   ray.set(new T.Vector3(x, below, z), new T.Vector3(0, -1, 0)); ray.far = below + 1;
-  const hit = ray.intersectObject(bridge, true).find(h => h.point.y < below);
+  // ugInsaat (2026-11-21): the closed bridge's barriers stand ON the walk on purpose; this measures the open bridge (ugOrta drawn)
+  const inInsaat = (o: T.Object3D | null): boolean => !!o && (o.name === 'ugInsaat' || inInsaat(o.parent));
+  const hit = ray.intersectObject(bridge, true).find(h => h.point.y < below && !inInsaat(h.object));
   return hit ? hit.point.y : 0;
 }
 

@@ -136,7 +136,7 @@ export function createDisariLook(d: DisariViewDeps): DisariLookView {
     // bozuk paralı tartı
     {
       const g = new T.Group(); g.position.set(PIER_PROPS.tarti.x, 0, PIER_PROPS.tarti.z); pier.add(g);
-      box(g, 0.6, 0.12, 0.6, iron, 0, 0.06, 0); box(g, 0.32, 1.3, 0.22, red, 0, 0.75, -0.2);
+      box(g, 0.6, 0.15, 0.6, iron, 0, 0.075, 0); box(g, 0.32, 1.3, 0.22, red, 0, 0.75, -0.2);   // 2026-11-21: plate top 0.15 (0.12 lay on the pier kerb top = dark flicker)
       const face = new T.Mesh(G(new T.CylinderGeometry(0.22, 0.22, 0.05, 16)), white); face.rotation.x = Math.PI / 2; face.position.set(0, 1.25, -0.07); g.add(face);
       box(g, 0.16, 0.04, 0.03, brass, 0, 0.95, -0.08);
     }

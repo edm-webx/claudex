@@ -110,3 +110,31 @@ export const bolgeKilitli = (b: KilitliBolge, state: unknown): boolean => !acikB
 export function bolgeEngelleri(state: unknown): { x0: number; x1: number; z0: number; z1: number }[] {
   return KILITLI_BOLGELER.filter(b => bolgeKilitli(b, state)).map(b => dunyaKutu(b, { u0: b.bariyerU - 0.25, u1: 82, z0: PROM_Z0 - 0.6, z1: PROM_Z1 + 1.0 }));
 }
+
+/* ---------- Üst geçit inşaatı (2026-11-21) ----------
+ * Sahip: "karşıya giderken kullanılan merdiven de inşaat halinde olsun, iki ucu birleşmesin, oyunun belirli bir seviyesinde açılsın;
+ * iskeledeki yürüme yolunu kapatmasın, bir uyarı tabelası yeter, merdivenin ortası boş olsun". Köprünün orta açıklığı (yolun
+ * ortası) yok: iki merdiven ve güvertenin uçları durur, aradaki boşlukta kimse geçemez. Ağır makine yok.
+ * Açılış: Esnaf Seviyesi 2. Neden 2: karşı yakanın ilk satın alınabilir dükkânı (k1 Meydan Kafe) seviye 2'de açılır; banka ve halı
+ * saha da karşıda, ilk birkaç dakikadan uzun kilitli kalmamalı. Seviye 1 = ilk dakikalar, oyuncu büfeyi öğrenirken. Ayrıca
+ * `acikBolgeler`e 'ust-gecit' yazılırsa da açılır (ileride bir görevle açmak için). */
+export const UST_GECIT = {
+  id: 'ust-gecit', seviye: 2,
+  /** güvertede olmayan açıklık (dünya z); yolun ortası, iki şerit kenarı arasında */
+  z0: 17.6, z1: 23.8,
+  /** köprü merdiveninin x'i ve yarı genişliği (content/ustgecit UG ile aynı) */
+  x: 24, hw: 1.15,
+} as const;
+
+/** Üst geçit açık mı: seviye yetti ya da açılış listesinde. Seviye bilgisi olmayan durum (araç testleri) kilitlemez. */
+export function gecitAcik(state: unknown): boolean {
+  const lv = (state as { level?: unknown } | null | undefined)?.level;
+  if (typeof lv !== 'number') return true;
+  return lv >= UST_GECIT.seviye || acikBolgeler(state).includes(UST_GECIT.id);
+}
+
+/** Kapalıyken yürüyüşü durduran dikdörtgen: açıklık + iki yanda 0,4 m (güverte ucundaki bariyerin önü) */
+export function gecitEngeli(): { x0: number; x1: number; z0: number; z1: number } {
+  const g = UST_GECIT;
+  return { x0: g.x - g.hw - 0.4, x1: g.x + g.hw + 0.4, z0: g.z0 - 0.4, z1: g.z1 + 0.4 };
+}
