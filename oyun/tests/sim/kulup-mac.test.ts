@@ -117,7 +117,7 @@ it('FUT-12: kulüp gücü çeteleyle büyür, skill 0.5-0.7, macAyari saf ve tut
   const m = mk(); klup(m); const { sim, S, rt, c } = m; c({ op: 'bilet' });
   const t = rt.uiLast.haliSahaMac, a0 = macAyari(S, t), a1 = macAyari(S, t); expect(a1).toEqual(a0);
   expect(a0.skill[0]).toBeCloseTo(gucSkill(KULUP_GUC_TABAN), 5); for (const v of a0.skill) { expect(v).toBeGreaterThanOrEqual(0.5); expect(v).toBeLessThanOrEqual(0.7); }
-  expect(a0.names[0]).toContain('SABRİ'); expect(a0.colors[0]).toEqual(t.colors); expect(['kisa', 'uzun', 'kanat']).toContain(a0.plan[1]);
+  expect(a0.names[0]).toContain('SABRİ'); expect(a0.colors[0]).toEqual(t.colors); expect(['pres', 'dengeli', 'kontra']).toContain(a0.plan[1]);
   S.zones.arsa.stad.formasyon = '1-2-1'; expect(macAyari(S, t).formations[0]).toBe('1-2-1');
   expect(() => createMatch({ seed: 1, human: 0, humanSlot: 3, formations: a0.formations, names: a0.names, skill: a0.skill })).not.toThrow();
   sim.command({ kind: 'halisaha', op: 'sonuc', biz: 2, onlar: 0 }); S.zones.halisaha.played = 40; S.zones.halisaha.won = 30;
