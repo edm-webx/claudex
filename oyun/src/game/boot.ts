@@ -88,6 +88,7 @@ import { createOnline } from './online';
 import { createAdminPanel } from './ui/admin-panel';
 import { PAD_KEYS } from '../content/pads';
 import { regionAt, REGIONS } from '../content/disari/martikoy';
+import { sesBolgesi } from '../content/ses/bolgeler';
 import { realmAt } from '../content/realm';
 import { createHaliSaha } from './ui/hali-saha';
 import { createOrmanView } from './view/orman';
@@ -335,7 +336,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     salon: () => ({ stage: sim.state.stage || 1, esya: ((sim.state.zones as { salon?: { esya?: string[] } }).salon?.esya) || [] }),
     mutfak: () => { const rv = restoranApi(sim.rules)?.view(); return { ekip: sim.state.workers.filter(w => MUTFAK_ROL_BY_ID[w.role]).map(w => ({ rol: w.role, rank: rankOf(w.xp || 0) })), kds: (rv?.tickets || []).slice(0, 6).map(k => '#' + k.no + '  Masa ' + (k.table + 1) + ' · ' + k.items.filter(i => i.left).map(i => i.left + '× ' + i.name).join(', ')), pass: rv?.pass || [], ist: rv?.ist || {},
       bilet: (rv?.tickets || []).map(k => ({ no: k.no, masa: k.table + 1, kalem: k.items.filter(i => i.left).map(i => i.left + '× ' + i.name), frac: k.frac })), zeminKir: ((sim.state.zones as { zemin?: { kir?: number } }).zemin?.kir) ?? 0 }; } })) : null;   // BUF-05: pass rafı + istasyon tepsileri
-  const karsiYasam: YasamView | null = playMode && zones && chars ? make('karsiYasam', () => createKarsiYasam({ root: () => zones.root('iskele') ?? null, chars, hero: () => walk.pos, hour: () => sim.clock.hour, sfx: id => { try { audio?.sfx(id); } catch { /* */ } }, isci: () => { const m = mulkApi(sim.rules); return m ? m.view().plots.filter(p => p.sabit && p.owned).map(p => ({ id: p.id, n: p.isci, lv: p.lv, esya: (p as { esya?: string[] }).esya || [] })) : []; } })) : null;
+  const karsiYasam: YasamView | null = playMode && zones && chars ? make('karsiYasam', () => createKarsiYasam({ root: () => zones.root('iskele') ?? null, chars, hero: () => walk.pos, hour: () => sim.clock.hour, sfx: (id, at) => { try { audio?.sfx(id, at ? { at } : undefined); } catch { /* */ } }, isci: () => { const m = mulkApi(sim.rules); return m ? m.view().plots.filter(p => p.sabit && p.owned).map(p => ({ id: p.id, n: p.isci, lv: p.lv, esya: (p as { esya?: string[] }).esya || [] })) : []; } })) : null;
   const yolLook: YolLookView | null = playMode && zones ? make('yolLook', () => createYolLook({ root: () => zones.root('iskele') ?? null })) : null;
 
   const izgaraLook: IzgaraLookView | null = playMode && uiReal ? make('izgaraLook', () => createIzgaraLook({ scene, host: U.root })) : null;
@@ -573,7 +574,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     bus: sim.bus, audio, playerPos: () => pos, phase: () => sim.clock.phase,
     // ses-1 place signature: Sabri'nin evi overlay, Çarşı Sokağı by position, else the pier
     // 16:52 user: music + ambience follow the place: every region has its own (orman, gece pazarı, sahil...), the halı saha match its stand
-    zone: () => { if (evRoom?.isOpen()) return 'ev'; if (document.querySelector('.hs-game')) return 'halisaha'; const r = regionAt(pos.x); return r ? r.id : 'iskele'; },
+    zone: () => { if (evRoom?.isOpen()) return 'ev'; if (document.querySelector('.hs-game')) return 'halisaha'; return sesBolgesi(pos); },   // DNY-17: ses bölgesi (iç mekan, karşı yaka alt bölgeleri, şerit)
     interior: () => icMekan?.icinde() ?? null,
     crowd: () => Math.min(1, (sim.agents.count || 0) / 45),
     weather: () => havaApi(sim.rules)?.view().kind ?? 'acik',

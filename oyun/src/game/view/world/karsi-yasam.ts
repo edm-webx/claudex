@@ -11,8 +11,9 @@ import { createMatch, L as ML, WD as MW } from '../../sim/macmotor';
 import { KARSI_FOUNTAIN, KARSI_PITCH } from '../../../content/zones/karsi';
 import { ARSALAR, arsaKapi } from '../../../content/esya';
 import { insaatYer } from '../../../content/isletme-insaat';
+import { MORG, Canta } from '../../../content/ses/ambiyans';   // SNT-08: morg gece sesleri (aralık, çanta, konum)
 
-export interface YasamDeps { root: () => T.Object3D | null; chars: Chars | null; hero: () => { x: number; z: number }; hour: () => number; sfx: (id: string) => void; /** hired café workers per owned fixed plot (sim/mulk) */ isci?: () => { id: string; n: number; lv?: number; esya?: string[] }[] }
+export interface YasamDeps { root: () => T.Object3D | null; chars: Chars | null; hero: () => { x: number; z: number }; hour: () => number; sfx: (id: string, at?: { x: number; z: number }) => void; /** hired café workers per owned fixed plot (sim/mulk) */ isci?: () => { id: string; n: number; lv?: number; esya?: string[] }[] }
 export interface YasamView { update(dt: number): void; dispose(): void }
 
 type H = { object: T.Object3D; setPose(p: { x: number; z: number }, r: number): void; setInput(i: Record<string, unknown>): void; update(dt: number, a: number): void };
@@ -243,6 +244,7 @@ export function createKarsiYasam(d: YasamDeps): YasamView {
     ballMesh.position.set(P.x + (m.ball.x - ML / 2) * sx, 0.15, P.z + (m.ball.y - MW / 2) * sz);
   }
   let morgT = 6;
+  const morgCanta = new Canta(MORG.sesler.map(v => ({ v, w: 1 })), Math.random);
   return {
     update(dt) {
       const root = d.root(); if (!root) return;
@@ -267,7 +269,7 @@ export function createKarsiYasam(d: YasamDeps): YasamView {
       (glowPts.material as T.PointsMaterial).opacity = night ? 0.85 : 0;
       // morg
       { if (night && (hour >= 22 || hour < 5.5)) { morgLight.visible = Math.sin(tt * 23) * Math.sin(tt * 7.3) > -0.15; (morgLight.material as T.MeshLambertMaterial).color.set(Math.random() < 0.08 ? '#ffffff' : '#ff2a1a');
-          morgT -= dt; if (morgT <= 0 && Math.hypot(h.x - 57, h.z - 55) < 40) { morgT = rnd(7, 16); morgShadow.visible = true; d.sfx(Math.random() < 0.5 ? 'moan' : Math.random() < 0.5 ? 'knock' : 'whisper'); setTimeout(() => { morgShadow.visible = false; }, 1400); }
+          morgT -= dt; if (morgT <= 0 && Math.hypot(h.x - MORG.at.x, h.z - MORG.at.z) < MORG.r) { morgT = rnd(MORG.aralik[0], MORG.aralik[1]); morgShadow.visible = true; const ici = Math.abs(h.x - MORG.at.x) < 1.65 && Math.abs(h.z - MORG.at.z) < 1.6; d.sfx(morgCanta.next() ?? 'moan', ici ? { x: h.x + 1.5, z: h.z } : MORG.at); setTimeout(() => { morgShadow.visible = false; }, 1400); }
           if (morgShadow.visible) morgShadow.position.z = 55.5 + Math.sin(tt * 3) * 0.5; } else { morgLight.visible = false; morgShadow.visible = false; } }
       if ((isciT -= dt) <= 0) { isciT = 1.0; syncIsci(); }
       stepActors(dt); stepMatch(dt, Math.hypot(h.x + 39, h.z - 45) < 45);

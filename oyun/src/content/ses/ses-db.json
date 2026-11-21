@@ -1566,6 +1566,388 @@
      "v": 0.012
     }
    ]
+  },
+  "moan": {
+   "cooldown": 6000,
+   "gain": 0.55,
+   "rev": 0.5,
+   "note": "Morg: uzak, alçak inilti; yavaş giriş, 420 Hz üstü yok.",
+   "layers": [
+    {
+     "k": "tone",
+     "wave": "triangle",
+     "f": 92,
+     "f1": 74,
+     "gt": 1.8,
+     "a": 0.45,
+     "d": 1.2,
+     "s": 0.6,
+     "hold": 1.6,
+     "r": 0.6,
+     "v": 0.4,
+     "vib": {
+      "rate": 3.1,
+      "depth": 0.012
+     },
+     "filter": {
+      "type": "lp",
+      "f": 420,
+      "q": 0.6
+     }
+    },
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 300,
+      "q": 0.8
+     },
+     "a": 0.6,
+     "d": 1,
+     "s": 0.5,
+     "hold": 1.5,
+     "r": 0.6,
+     "v": 0.12
+    }
+   ]
+  },
+  "knock": {
+   "cooldown": 4000,
+   "gain": 0.6,
+   "rev": 0.35,
+   "note": "Morg kapısı: üç boğuk tahta tıkırtısı.",
+   "layers": [
+    {
+     "k": "burst",
+     "n": 3,
+     "every": [
+      0.28,
+      0.36
+     ],
+     "fJit": 0.05,
+     "vJit": 0.2,
+     "layer": {
+      "k": "tone",
+      "f": 150,
+      "f1": 110,
+      "a": 0.002,
+      "d": 0.09,
+      "v": 0.5,
+      "filter": {
+       "type": "lp",
+       "f": 900
+      }
+     }
+    },
+    {
+     "k": "burst",
+     "n": 3,
+     "every": [
+      0.28,
+      0.36
+     ],
+     "fJit": 0.1,
+     "layer": {
+      "k": "noise",
+      "color": "pink",
+      "filter": {
+       "type": "lp",
+       "f": 800
+      },
+      "a": 0.001,
+      "d": 0.04,
+      "v": 0.18
+     }
+    }
+   ]
+  },
+  "whisper": {
+   "cooldown": 6000,
+   "gain": 0.5,
+   "rev": 0.45,
+   "note": "Morg: hece hece, kısık fısıltı (sert tiz yok).",
+   "layers": [
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 2400,
+      "q": 1.1
+     },
+     "a": 0.25,
+     "d": 0.8,
+     "s": 0.6,
+     "hold": 1.2,
+     "r": 0.4,
+     "v": 0.3,
+     "swell": {
+      "rate": 5.5,
+      "depth": 0.7,
+      "rand": 0.6
+     }
+    },
+    {
+     "k": "noise",
+     "color": "white",
+     "filter": {
+      "type": "lp",
+      "f": 3500
+     },
+     "a": 0.3,
+     "d": 0.6,
+     "s": 0.4,
+     "hold": 1,
+     "r": 0.4,
+     "v": 0.06
+    }
+   ]
+  },
+  "halat": {
+   "cooldown": 5000,
+   "gain": 0.5,
+   "pitchVar": 0.08,
+   "note": "İskele: gerilen halat gıcırtısı + hafif zincir şıkırtısı.",
+   "layers": [
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 700,
+      "f1": 520,
+      "q": 5
+     },
+     "a": 0.08,
+     "d": 0.4,
+     "s": 0.3,
+     "hold": 0.5,
+     "r": 0.2,
+     "v": 0.35
+    },
+    {
+     "k": "burst",
+     "at": 0.45,
+     "n": 4,
+     "every": [
+      0.05,
+      0.09
+     ],
+     "fJit": 0.15,
+     "layer": {
+      "k": "tone",
+      "f": 2300,
+      "harm": [
+       1,
+       0,
+       0.3
+      ],
+      "a": 0.001,
+      "d": 0.05,
+      "v": 0.06
+     }
+    }
+   ]
+  },
+  "baykus": {
+   "cooldown": 8000,
+   "gain": 0.5,
+   "rev": 0.5,
+   "note": "Baykuş: uzaktan iki yumuşak hu-huu.",
+   "layers": [
+    {
+     "k": "tone",
+     "f": 390,
+     "f1": 360,
+     "a": 0.04,
+     "d": 0.2,
+     "s": 0.6,
+     "hold": 0.22,
+     "r": 0.12,
+     "v": 0.3,
+     "filter": {
+      "type": "lp",
+      "f": 1200
+     }
+    },
+    {
+     "k": "tone",
+     "f": 380,
+     "f1": 330,
+     "at": 0.45,
+     "a": 0.06,
+     "d": 0.4,
+     "s": 0.7,
+     "hold": 0.55,
+     "r": 0.2,
+     "v": 0.3,
+     "vib": {
+      "rate": 5,
+      "depth": 0.01
+     },
+     "filter": {
+      "type": "lp",
+      "f": 1200
+     }
+    }
+   ]
+  },
+  "kopek": {
+   "cooldown": 9000,
+   "gain": 0.45,
+   "rev": 0.45,
+   "note": "Uzak köpek havlaması: kare dalga yok, boğuk iki havlama.",
+   "layers": [
+    {
+     "k": "tone",
+     "wave": "triangle",
+     "f": 430,
+     "f1": 300,
+     "a": 0.01,
+     "d": 0.1,
+     "v": 0.3,
+     "filter": {
+      "type": "lp",
+      "f": 1100
+     }
+    },
+    {
+     "k": "tone",
+     "wave": "triangle",
+     "f": 410,
+     "f1": 290,
+     "at": 0.22,
+     "a": 0.01,
+     "d": 0.11,
+     "v": 0.26,
+     "filter": {
+      "type": "lp",
+      "f": 1100
+     }
+    }
+   ]
+  },
+  "cocuk": {
+   "cooldown": 7000,
+   "gain": 0.4,
+   "rev": 0.35,
+   "note": "Uzak okul bahçesi: çocuk cıvıltısı, birkaç kısa yükselen ses.",
+   "layers": [
+    {
+     "k": "burst",
+     "n": 5,
+     "every": [
+      0.12,
+      0.3
+     ],
+     "fJit": 0.25,
+     "vJit": 0.5,
+     "layer": {
+      "k": "tone",
+      "wave": "triangle",
+      "f": 520,
+      "f1": 700,
+      "a": 0.02,
+      "d": 0.12,
+      "v": 0.2,
+      "vib": {
+       "rate": 7,
+       "depth": 0.03
+      },
+      "filter": {
+       "type": "lp",
+       "f": 1800
+      }
+     }
+    },
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 1200,
+      "q": 0.6
+     },
+     "a": 0.2,
+     "d": 0.8,
+     "v": 0.06
+    }
+   ]
+  },
+  "zil": {
+   "cooldown": 60000,
+   "gain": 0.4,
+   "rev": 0.4,
+   "note": "Okul zili (uzaktan): yumuşak çan, elektrikli tırlama yok.",
+   "layers": [
+    {
+     "k": "tone",
+     "f": 1046,
+     "harm": [
+      1,
+      0,
+      0.35,
+      0,
+      0.12
+     ],
+     "a": 0.003,
+     "d": 1.1,
+     "v": 0.25
+    },
+    {
+     "k": "tone",
+     "f": 784,
+     "harm": [
+      1,
+      0,
+      0.35,
+      0,
+      0.12
+     ],
+     "at": 0.5,
+     "a": 0.003,
+     "d": 1.3,
+     "v": 0.25
+    }
+   ]
+  },
+  "otobus": {
+   "cooldown": 12000,
+   "gain": 0.5,
+   "note": "Uzaktan geçen otobüs: alçak motor uğultusu, yavaş giriş-çıkış.",
+   "layers": [
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 170
+     },
+     "a": 1.2,
+     "d": 1.5,
+     "s": 0.4,
+     "hold": 2.2,
+     "r": 1.2,
+     "v": 0.5
+    },
+    {
+     "k": "tone",
+     "wave": "triangle",
+     "f": 62,
+     "f1": 70,
+     "a": 1,
+     "d": 1.4,
+     "s": 0.4,
+     "hold": 2.2,
+     "r": 1.1,
+     "v": 0.2,
+     "filter": {
+      "type": "lp",
+      "f": 240
+     }
+    }
+   ]
   }
  },
  "loops": {
@@ -1761,6 +2143,349 @@
      }
     }
    ]
+  },
+  "iskele_gece": {
+   "dur": 14,
+   "gain": 0.45,
+   "rev": 0.25,
+   "note": "İskele gece: yumuşak, seyrek dalga; ayağa vuran sakin su, uzak liman uğultusu.",
+   "layers": [
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 300,
+      "q": 0.5
+     },
+     "v": 0.55,
+     "swell": {
+      "rate": 0.07,
+      "depth": 0.6,
+      "ph": 0.3,
+      "rand": 0.5
+     }
+    },
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 900,
+      "q": 0.5
+     },
+     "v": 0.07,
+     "swell": {
+      "rate": 0.07,
+      "depth": 0.9,
+      "ph": 0.25,
+      "rand": 0.5
+     }
+    },
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 90,
+      "q": 0.7
+     },
+     "v": 0.18
+    }
+   ],
+   "events": [
+    {
+     "every": [
+      2.2,
+      4.5
+     ],
+     "layer": {
+      "k": "noise",
+      "color": "pink",
+      "filter": {
+       "type": "bp",
+       "f": 520,
+       "q": 1.4
+      },
+      "a": 0.12,
+      "d": 0.5,
+      "v": 0.14
+     }
+    }
+   ]
+  },
+  "orman_gunduz": {
+   "dur": 16,
+   "gain": 0.42,
+   "rev": 0.2,
+   "note": "Orman gündüz: yapraklarda rüzgar, dal hışırtısı.",
+   "layers": [
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 2400,
+      "q": 0.5
+     },
+     "v": 0.22,
+     "swell": {
+      "rate": 0.16,
+      "depth": 0.75,
+      "rand": 0.7
+     }
+    },
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 320,
+      "q": 0.6
+     },
+     "v": 0.3,
+     "swell": {
+      "rate": 0.06,
+      "depth": 0.6,
+      "rand": 0.6
+     }
+    }
+   ],
+   "events": [
+    {
+     "every": [
+      0.8,
+      2.4
+     ],
+     "layer": {
+      "k": "noise",
+      "color": "white",
+      "filter": {
+       "type": "hp",
+       "f": 3800
+      },
+      "a": 0.05,
+      "d": 0.25,
+      "v": 0.05
+     }
+    }
+   ]
+  },
+  "orman_gece": {
+   "dur": 14,
+   "gain": 0.4,
+   "rev": 0.3,
+   "note": "Orman gece: alçak rüzgar ve uzak cırcır böcekleri (yumuşak sinüs cıvıltı).",
+   "layers": [
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 260,
+      "q": 0.6
+     },
+     "v": 0.32,
+     "swell": {
+      "rate": 0.05,
+      "depth": 0.7,
+      "rand": 0.6
+     }
+    }
+   ],
+   "events": [
+    {
+     "every": [
+      0.45,
+      1.1
+     ],
+     "vJit": 0.5,
+     "layer": {
+      "k": "burst",
+      "n": 3,
+      "every": [
+       0.05,
+       0.07
+      ],
+      "fJit": 0.03,
+      "layer": {
+       "k": "tone",
+       "f": 4300,
+       "a": 0.004,
+       "d": 0.03,
+       "v": 0.035,
+       "filter": {
+        "type": "lp",
+        "f": 6000
+       }
+      }
+     }
+    }
+   ]
+  },
+  "karsi_sokak": {
+   "dur": 16,
+   "gain": 0.4,
+   "rev": 0.2,
+   "note": "Karşı yaka sokak: uzak trafik uğultusu, mahalle mırıltısı, geçen araba.",
+   "layers": [
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 180,
+      "q": 0.6
+     },
+     "v": 0.5,
+     "swell": {
+      "rate": 0.05,
+      "depth": 0.4,
+      "rand": 0.6
+     }
+    },
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 650,
+      "q": 0.5
+     },
+     "v": 0.08,
+     "swell": {
+      "rate": 0.21,
+      "depth": 0.5,
+      "rand": 0.8
+     }
+    }
+   ],
+   "events": [
+    {
+     "every": [
+      4,
+      8
+     ],
+     "layer": {
+      "k": "noise",
+      "color": "pink",
+      "filter": {
+       "type": "bp",
+       "f": 300,
+       "f1": 800,
+       "q": 0.8
+      },
+      "a": 1.2,
+      "d": 1.4,
+      "s": 0,
+      "hold": 1.4,
+      "r": 0.9,
+      "v": 0.14
+     }
+    }
+   ]
+  },
+  "fiskiye": {
+   "dur": 10,
+   "gain": 0.4,
+   "rev": 0.15,
+   "note": "Meydan fıskiyesi: su perdesi + havuza düşen damlalar.",
+   "layers": [
+    {
+     "k": "noise",
+     "color": "white",
+     "filter": {
+      "type": "bp",
+      "f": 3400,
+      "q": 0.35
+     },
+     "v": 0.14,
+     "swell": {
+      "rate": 0.3,
+      "depth": 0.2,
+      "rand": 0.8
+     }
+    },
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 1100,
+      "q": 0.5
+     },
+     "v": 0.14
+    }
+   ],
+   "events": [
+    {
+     "every": [
+      0.04,
+      0.16
+     ],
+     "layer": {
+      "k": "tone",
+      "f": 1800,
+      "f1": 2600,
+      "a": 0.001,
+      "d": 0.03,
+      "v": 0.025
+     }
+    }
+   ]
+  },
+  "kalabalik": {
+   "dur": 14,
+   "gain": 0.42,
+   "rev": 0.25,
+   "note": "Kalabalık yatağı: uzak tribün mırıltısı, yavaş kabarma (eski gürültü+LFO yerine önbellekli).",
+   "layers": [
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 700,
+      "q": 0.7
+     },
+     "v": 0.3,
+     "swell": {
+      "rate": 0.13,
+      "depth": 0.35,
+      "rand": 0.7
+     }
+    },
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 320,
+      "q": 0.6
+     },
+     "v": 0.25
+    }
+   ],
+   "events": [
+    {
+     "every": [
+      1.5,
+      3.5
+     ],
+     "layer": {
+      "k": "noise",
+      "color": "pink",
+      "filter": {
+       "type": "bp",
+       "f": 1000,
+       "q": 0.9
+      },
+      "a": 0.3,
+      "d": 0.6,
+      "v": 0.12
+     }
+    }
+   ]
   }
  },
  "music": {
@@ -1796,12 +2521,52 @@
     "orman": "orman",
     "orman.aksam": "orman_aksam",
     "orman.gece": "orman_gece",
-    "halisaha": "halisaha",
-    "stadyum": "halisaha",
+    "halisaha": ["mac","halisaha"],
+    "stadyum": "stadyum",
     "gece": "pazar",
     "sahil": "sahil",
     "metro": "metro",
-    "adalar": "adalar"
+    "adalar": "adalar",
+    "iskele.gunduz": [
+     "gunduz",
+     "gunduz2",
+     "sabah"
+    ],
+    "iskele.aksam": [
+     "aksam",
+     "aksam2"
+    ],
+    "iskele.gece": [
+     "gece",
+     "gece2"
+    ],
+    "karsi": [
+     "karsi",
+     "sahil"
+    ],
+    "karsi.aksam": [
+     "karsi_aksam",
+     "aksam2"
+    ],
+    "karsi.gece": [
+     "karsi_gece",
+     "carsi_gece"
+    ],
+    "karsi.halisaha": "stadyum",
+    "stadyum.gece": [
+     "stadyum",
+     "gece2"
+    ],
+    "ic.kafe": "kafe",
+    "ic.kafeterya": "kafe",
+    "ic.kahvalti": "kafe",
+    "ic.bistro": "bistro",
+    "ic.lokanta": "bistro",
+    "ic.balik": "bistro",
+    "ic.banka": "",
+    "ic.hastane": "",
+    "ic.acil": "",
+    "ic.morg": ""
    },
    "event": "senlik"
   },
@@ -3108,6 +3873,520 @@
     "rev": 0.36,
     "gain": 0.5,
     "density": 0.6
+   },
+   "karsi": {
+    "note": "Karşı yaka gündüz: Uşşak, naylon gitar ve keman, hafif düm; mahalle, fırın kokusu.",
+    "bpm": 84,
+    "root": "D3",
+    "scale": [
+     0,
+     2,
+     3,
+     5,
+     7,
+     8,
+     10
+    ],
+    "chords": [
+     [
+      0,
+      [
+       0,
+       3,
+       7
+      ]
+     ],
+     [
+      5,
+      [
+       0,
+       3,
+       7
+      ]
+     ],
+     [
+      10,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      0,
+      [
+       0,
+       3,
+       7
+      ]
+     ]
+    ],
+    "chordBars": 2,
+    "bars": 12,
+    "arp": "nylon",
+    "lead": "keman",
+    "leadBars": [
+     4,
+     5,
+     10,
+     11
+    ],
+    "perc": "dum",
+    "pad": 0.09,
+    "bass": 0.15,
+    "lpf": 4800,
+    "rev": 0.3,
+    "gain": 0.5,
+    "density": 0.6
+   },
+   "karsi_aksam": {
+    "note": "Karşı yaka akşam: Kürdi, elektrik piyano ve ney; çay bahçesi.",
+    "bpm": 72,
+    "root": "E3",
+    "scale": [
+     0,
+     1,
+     3,
+     5,
+     7,
+     8,
+     10
+    ],
+    "chords": [
+     [
+      0,
+      [
+       0,
+       3,
+       7
+      ]
+     ],
+     [
+      8,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      5,
+      [
+       0,
+       3,
+       7
+      ]
+     ],
+     [
+      7,
+      [
+       0,
+       3,
+       7
+      ]
+     ]
+    ],
+    "chordBars": 2,
+    "bars": 12,
+    "arp": "epiano",
+    "lead": "ney",
+    "leadBars": [
+     4,
+     5,
+     6,
+     10,
+     11
+    ],
+    "perc": "none",
+    "pad": 0.11,
+    "bass": 0.14,
+    "lpf": 3800,
+    "rev": 0.36,
+    "gain": 0.48,
+    "density": 0.55
+   },
+   "karsi_gece": {
+    "note": "Karşı yaka gece: Nihavend, müzik kutusu ve uzak ney; sokak lambaları.",
+    "bpm": 60,
+    "root": "C3",
+    "scale": [
+     0,
+     2,
+     3,
+     5,
+     7,
+     8,
+     11
+    ],
+    "chords": [
+     [
+      0,
+      [
+       0,
+       3,
+       7
+      ]
+     ],
+     [
+      5,
+      [
+       0,
+       3,
+       7
+      ]
+     ],
+     [
+      7,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      0,
+      [
+       0,
+       3,
+       7
+      ]
+     ]
+    ],
+    "chordBars": 2,
+    "bars": 12,
+    "arp": "kutu",
+    "lead": "ney",
+    "leadBars": [
+     6,
+     7
+    ],
+    "perc": "none",
+    "pad": 0.12,
+    "bass": 0.1,
+    "lpf": 2600,
+    "rev": 0.45,
+    "gain": 0.44,
+    "density": 0.4
+   },
+   "stadyum": {
+    "note": "Stadyum boşta: Rast, sakin saz ve hafif düm; maç günü öncesi bekleyiş.",
+    "bpm": 92,
+    "root": "G3",
+    "scale": [
+     0,
+     2,
+     4,
+     5,
+     7,
+     9,
+     10
+    ],
+    "chords": [
+     [
+      0,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      5,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      7,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      0,
+      [
+       0,
+       4,
+       7
+      ]
+     ]
+    ],
+    "chordBars": 2,
+    "bars": 12,
+    "arp": "saz",
+    "lead": "none",
+    "perc": "dum",
+    "pad": 0.07,
+    "bass": 0.18,
+    "lpf": 4200,
+    "rev": 0.25,
+    "gain": 0.48,
+    "density": 0.55
+   },
+   "mac": {
+    "note": "Maç: hızlı darbuka ve tef, saz riffi, klarnet; tempolu ama tiz değil.",
+    "bpm": 132,
+    "root": "E3",
+    "scale": [
+     0,
+     1,
+     4,
+     5,
+     7,
+     8,
+     10
+    ],
+    "chords": [
+     [
+      0,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      1,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      10,
+      [
+       0,
+       3,
+       7
+      ]
+     ],
+     [
+      0,
+      [
+       0,
+       4,
+       7
+      ]
+     ]
+    ],
+    "chordBars": 2,
+    "bars": 16,
+    "arp": "saz",
+    "lead": "klarnet",
+    "leadBars": [
+     4,
+     5,
+     6,
+     7,
+     12,
+     13,
+     14,
+     15
+    ],
+    "perc": "darbuka",
+    "tef": true,
+    "pad": 0.04,
+    "bass": 0.24,
+    "lpf": 5200,
+    "rev": 0.16,
+    "gain": 0.55,
+    "density": 0.9
+   },
+   "kafe": {
+    "note": "Kafe içi: Nihavend, sakin elektrik piyano ve naylon; fincan sesleri arasında.",
+    "bpm": 76,
+    "root": "A3",
+    "scale": [
+     0,
+     2,
+     3,
+     5,
+     7,
+     8,
+     11
+    ],
+    "chords": [
+     [
+      0,
+      [
+       0,
+       3,
+       7,
+       10
+      ]
+     ],
+     [
+      5,
+      [
+       0,
+       3,
+       7,
+       10
+      ]
+     ],
+     [
+      10,
+      [
+       0,
+       4,
+       7,
+       11
+      ]
+     ],
+     [
+      7,
+      [
+       0,
+       4,
+       7,
+       10
+      ]
+     ]
+    ],
+    "chordBars": 2,
+    "bars": 12,
+    "arp": "epiano",
+    "lead": "none",
+    "perc": "none",
+    "pad": 0.08,
+    "bass": 0.14,
+    "lpf": 3600,
+    "rev": 0.28,
+    "gain": 0.42,
+    "density": 0.5
+   },
+   "bistro": {
+    "note": "Bistro içi: Hüzzam havası, naylon gitar ve kısık keman.",
+    "bpm": 70,
+    "root": "D3",
+    "scale": [
+     0,
+     1,
+     3,
+     4,
+     7,
+     8,
+     10
+    ],
+    "chords": [
+     [
+      0,
+      [
+       0,
+       3,
+       7
+      ]
+     ],
+     [
+      8,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      3,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      7,
+      [
+       0,
+       4,
+       7
+      ]
+     ]
+    ],
+    "chordBars": 2,
+    "bars": 12,
+    "arp": "nylon",
+    "lead": "keman",
+    "leadBars": [
+     6,
+     7
+    ],
+    "perc": "none",
+    "pad": 0.09,
+    "bass": 0.12,
+    "lpf": 3400,
+    "rev": 0.32,
+    "gain": 0.42,
+    "density": 0.5
+   },
+   "canli_saz": {
+    "note": "Canlı müzisyen: saz ve ney, yumuşak; ped, bas ve vurmalı yok.",
+    "bpm": 84,
+    "root": "D3",
+    "scale": [
+     0,
+     1,
+     4,
+     5,
+     7,
+     8,
+     10
+    ],
+    "chords": [
+     [
+      0,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      1,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      10,
+      [
+       0,
+       3,
+       7
+      ]
+     ],
+     [
+      0,
+      [
+       0,
+       4,
+       7
+      ]
+     ]
+    ],
+    "chordBars": 2,
+    "bars": 8,
+    "arp": "saz",
+    "lead": "ney",
+    "leadBars": [
+     2,
+     3,
+     6,
+     7
+    ],
+    "perc": "none",
+    "pad": 0,
+    "bass": 0,
+    "lpf": 3800,
+    "rev": 0.22,
+    "gain": 0.5,
+    "density": 0.65
    }
   }
  },

@@ -29,7 +29,8 @@ import type { Audio, AudioDeps, AudioBus, Vec2, DayPhase } from '../api';
 import type { Lofi } from './lofi';
 import SES_DB from '../../content/ses/ses-db.json';
 import { createBank, type Bank, type SesDb } from './msynth';
-import { createMusicPlayer } from './msynth/player';
+import { createMusicPlayer, type MusicPlayer } from './msynth/player';
+import { createAmbiyans } from './ambiyans';
 import { babble, type VoiceProfile } from './msynth/voice';
 import { createMoneyGate, isMoney } from './gate';
 import { createAtmosphere, createVoiceCap, DEFAULT_TABLE, type Atmosphere, type AmbienceTable, type AtmoHost } from './atmosphere';
@@ -46,6 +47,10 @@ export interface MotorAudio extends Audio {
   jingle(): void;
   /** Bölgesel atmosfer: yalnız bulunulan bölge/iç mekân katmanları açık (atmosphere.ts). */
   atmosphere: { setInterior(id: string | null): void; setTable(t: AmbienceTable): void; active(): string[]; live(): string[]; scope(): string };
+  /** SNT-14: sim 'canliMuzik' (müzisyen çalıyor): konumlu canlı müzik kaynağı (ambiyans.ts). */
+  canliMuzik(pos: Vec2): void;
+  /** SNT-07 debug / test: bölge döngü ağırlıkları ve son ambiyans olayları. */
+  ambiyans(): { aktif: Record<string, number>; olaylar: { id: string; vol: number }[] };
   /** Arcade babble for a line of text in a character's voice (ses-db `voices`). */
   speak(text: string, who?: string, mood?: 'ok' | 'happy' | 'angry'): void;
   /** Martı Synth bank (debug / editor sound list). */
@@ -70,7 +75,7 @@ export function createAudio(deps: AudioDeps): MotorAudio {
   let intensity = 0.5;
   const listener: Vec2 = { x: 0, z: 0 };
   let lastVoice = -1e9;
-  let lofi: Lofi | null = null;
+  let lofi: MusicPlayer | null = null;
   let lofiPlace = 'iskele', lofiEvent: string | null = null, lofiWeather = 'acik';
   let hasSampleMusic = false;
   let grill: Vec2 | null = null;
@@ -327,7 +332,7 @@ export function createAudio(deps: AudioDeps): MotorAudio {
   const atmoHost: AtmoHost = {
     start(def) {
       if (!ac || !ambOn) return null;
-      const out = busOut(buses.ambience), fadeG = ac.createGain(); fadeG.gain.value = 0; fadeG.connect(out);
+      const out = busOut(buses.ambience), fadeG = ac.createGain(); fadeG.gain.value = 0; fadeG.connect(amb.kazanc(def.id, out));
       let stopped = false, src: AudioScheduledSourceNode | null = null, extra: AudioScheduledSourceNode | null = null;
       if (def.loop === 'crowdBed') { const n = crowdBed(fadeG); src = n.a; extra = n.b; }
       else if (def.loop) {
@@ -358,12 +363,25 @@ export function createAudio(deps: AudioDeps): MotorAudio {
       else if (!playId(s.id, g) && SFX[s.id]) SFX[s.id](g);
     },
   };
+  // SNT-07 / DNY-17: bölge tablosu, evre/uzaklık ağırlıkları, çanta olayları ve canlı müzik (ambiyans.ts); kapı yukarıdaki atmo
+  const amb = createAmbiyans({
+    ac: () => ac, out: () => busOut(buses.ambience), bank: () => bank,
+    olay: (id, g, day) => {
+      if (!live() || !ac || !ambOn || !voiceCap.take(deps.platform.clock.now(), 2500, 0)) return false;
+      if (id === 'seasonCall') seasonCall(g, day); else if (id === 'simitci') SFX.simitci(g); else if (!playId(id, g) && SFX[id]) SFX[id](g);
+      return true;
+    },
+    setTable: t => { atmoTable = t as AmbienceTable; atmo?.setTable(atmoTable); },
+    temel: () => DEFAULT_TABLE, disarida: () => !atmo || atmo.outdoor() === 1,
+    muzikKis: v => lofi?.kis(v), rnd: Math.random,
+  });
   function syncAtmo() { if (!atmo) return; atmo.setZone(atmoZone); atmo.setInterior(atmoInterior); if (wxOut && ac) try { wxOut.gain.setTargetAtTime(atmo.outdoor() ? 1 : 0.2, ac.currentTime, 0.6); } catch { /* */ } }
   function startAmbience() {
     if (ambOn || !ac || !live()) return;
     ambOn = true;
     wxOut = ac.createGain(); wxOut.connect(busOut(buses.ambience));
     atmo = createAtmosphere(atmoHost, { table: atmoTable });
+    amb.setZone(zone || 'iskele'); amb.setPhase(phase); amb.setWeather(ambWeather); amb.start();
     syncAtmo();
     weatherKey = ''; syncWeather();
     const tickAtmo = () => { try { atmo?.tick(deps.platform.clock.now(), { phase, weather: ambWeather }); } catch { /* */ } };
@@ -436,7 +454,7 @@ export function createAudio(deps: AudioDeps): MotorAudio {
     if (sizzleG) { try { sizzleG.disconnect(); } catch { /* */ } }
     heatG = null; humG = null;
     sizzleG = null; weatherG = null; weatherSrc = null; weatherKey = '';
-    ambOn = false; if (atmoTimer) clearInterval(atmoTimer); atmoTimer = null; atmo?.dispose(); atmo = null;
+    ambOn = false; if (atmoTimer) clearInterval(atmoTimer); atmoTimer = null; atmo?.dispose(); atmo = null; amb.stop();
     if (wxOut) { try { wxOut.disconnect(); } catch { /* */ } wxOut = null; }
     for (const n of ambNodes) { try { n.stop(); } catch { /* already */ } }
     ambNodes = [];
@@ -464,6 +482,8 @@ export function createAudio(deps: AudioDeps): MotorAudio {
       } catch { /* */ }
     },
     bank: () => bank,
+    canliMuzik(pos) { amb.canli(pos); },
+    ambiyans: () => ({ aktif: amb.aktif(), olaylar: amb.olaylar() }),
     atmosphere: {
       setInterior(id) { atmoInterior = id; syncAtmo(); },
       setTable(t) { atmoTable = t; atmo?.setTable(t); },
@@ -509,16 +529,16 @@ export function createAudio(deps: AudioDeps): MotorAudio {
     },
     debug: () => ({ log: playLog.slice(), counts: { ...counts }, buses: Object.fromEntries(Object.entries(buses).map(([k, b]) => [k, { volume: b.volume, muted: b.muted }])), ambOn, bank: bank ? bank.stats() : null }),
     music: {
-      setZone(id) { if (id === zone) return; zone = id; lofiPlace = id; atmoZone = id; try { syncAtmo(); lofi?.setPlace(id); refreshMusic(); } catch { /* ignore */ } },
-      setPhase(p) { if (p === phase) return; phase = p; try { lofi?.setPhase(p); refreshMusic(); } catch { /* ignore */ } },
+      setZone(id) { if (id === zone) return; zone = id; lofiPlace = id; atmoZone = id; try { amb.setZone(id); syncAtmo(); lofi?.setPlace(id); refreshMusic(); } catch { /* ignore */ } },
+      setPhase(p) { if (p === phase) return; phase = p; try { amb.setPhase(p); lofi?.setPhase(p); refreshMusic(); } catch { /* ignore */ } },
       setIntensity(v) { intensity = Math.max(0, Math.min(1, +v || 0)); lofi?.setIntensity(intensity); (buses.music as unknown as { apply: () => void }).apply(); },
       setEvent(id) { lofiEvent = id; lofi?.setEvent(id); },
-      setWeather(k) { lofiWeather = k; lofi?.setWeather(k); ambWeather = k; syncWeather(); },
+      setWeather(k) { lofiWeather = k; lofi?.setWeather(k); ambWeather = k; amb.setWeather(k); syncWeather(); },
       duck(sec) { lofi?.duck(sec); },
       layers() { return lofi && lofi.playing ? lofi.layers() : []; },
     },
     ambience: {
-      setListener(pos) { listener.x = pos.x; listener.z = pos.z; updateSizzle(); updateHeat(); },
+      setListener(pos) { listener.x = pos.x; listener.z = pos.z; amb.setListener(pos); updateSizzle(); updateHeat(); },
       setHeat(list) { heat = (list || []).map(k => ({ x: k.x, z: k.z, w: k.w })); updateHeat(); },
       setGrill(pos) { grill = pos ? { x: pos.x, z: pos.z } : null; updateSizzle(); },
       setSeason(v) { ambSeason = String(v || 'sonbahar'); },
