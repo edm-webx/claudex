@@ -33,3 +33,15 @@ export const USTA_NOKTA: Record<number, [number, number][]> = {
 export const ustaSayisi = (to: number): number => (to >= 9 ? 5 : to >= 6 ? 4 : 3);
 export const ustaNoktalari = (to: number): Vec2[] => (USTA_NOKTA[to] || USTA_NOKTA[3]).map(([x, z]) => ({ x, z }));
 export const insaatAlani = (to: number): Alan => SITE_AREA[to] || WT;
+
+/* ---------- BUF-30 aşama açılış anı (pure: view/world/acilis.ts ve testler okur) ---------- */
+import { MUTFAK_ROL, mutfakSlot } from './mutfak';
+import { DISHES } from './yemek-menu';
+import { KIOSK_STAGES } from './stages';
+export interface AcilisBilgi { to: number; ad: string; /** kameranın uğradığı yer (yeni bölümün ortası) */ odak: Vec2; /** kurdelenin gerildiği giriş */ kurdele: Vec2; /** yeni gelen kadro: 'Aşçı +1' */ yeniRol: string[]; /** menüye yeni giren yemekler */ yeniMenu: string[] }
+export function acilisBilgi(to: number): AcilisBilgi {
+  const r = insaatAlani(to), odak = { x: (r.x0 + r.x1) / 2, z: (r.z0 + r.z1) / 2 };
+  const kurdele = to === 6 || to === 7 || to === 8 ? { x: odak.x, z: r.z1 + 0.9 } : to === 2 || to === 10 ? { x: -0.25, z: 3.2 } : { x: odak.x, z: Math.min(3.9, r.z1 + 0.5) };
+  const yeniRol = MUTFAK_ROL.map(x => ({ x, d: mutfakSlot(x.id, to) - mutfakSlot(x.id, to - 1) })).filter(o => o.d > 0).map(o => o.x.label + ' +' + o.d);
+  return { to, ad: KIOSK_STAGES[to - 1]?.short || '', odak, kurdele, yeniRol, yeniMenu: DISHES.filter(d => d.asama === to).map(d => d.ad) };
+}

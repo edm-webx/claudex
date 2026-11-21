@@ -245,7 +245,7 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
     // the grill şef is the hired kitchen chef (sim agents/workers.ts 'kAcik' at content/kanat.ts ACIK_MUTFAK), not a figure
     // arcade over the customer walkway behind the kiosk (posts on the sea side only, so the path stays free)
     for (let x = -11.0; x <= 8.5; x += 3.9) if (Math.abs(x + 2.9) > 1.2 && Math.abs(x) > 1.0) b.box(0.14, 3.2, 0.14, frame, x, 1.72, -12.95);   // BUF-22: against the kitchen front, never in the pass window or the door
-    { const ab = (catK ?? { b }).b; for (let i = 0; i < 26; i++) ab.box(0.16, 0.1, 2.6, wood, -11.0 + i * 0.78, 3.3, -12.05); ab.box(19.8, 0.14, 0.14, frame, -1.25, 3.22, -13.3); } b.box(19.8, 0.22, 0.12, accent, -1.25, 3.25, -10.8);   // slatted arcade roof (slats hide with the kitchen roof)
+    { const ab = (catK ?? { b }).b; for (let i = 0; i < 26; i++) ab.box(0.16, 0.1, 2.6, wood, -11.0 + i * 0.78, 3.3, -12.05); ab.box(19.8, 0.14, 0.14, frame, -1.25, 3.22, -13.0); ab.box(19.8, 0.22, 0.12, accent, -1.25, 3.25, -10.8); }   // BUF-22: the front beam hides with the slats (kitchen cutaway)   // slatted arcade roof (slats hide with the kitchen roof)
     for (let x = -10.5; x <= 8.0; x += 1.5) lit.sph(0.07, '#ffe6b0', x, 3.12, -12.0, { ws: 6, hs: 4 });
     // rooftop sign over the kiosk
     sign(fine ? 'SABRİ\'NİN SOFRASI' : 'SABRİ\'NİN BÜFESİ · 1987', 0, 5.4, -7.6, 7.0, 0, fine ? '#14192a' : '#e0533c', fine ? '#e8c76a' : '#fff6e6');
