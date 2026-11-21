@@ -12,7 +12,8 @@ export const EVENT_SFX: Record<string, SfxRule> = {
     const id = String(d?.id ?? '');
     if (id.startsWith('station.')) return null;   // stations sound on 'pick' (a real pickup), not on every act tick
     if (id === 'counter') return 'drop';
-    if (id === 'kasa' || id.startsWith('floor')) return 'coin';
+    if (id.startsWith('floor')) return 'coinFloor';   // yerden para toplama: çok kısık
+    if (id === 'kasa') return 'coin';
     if (id.startsWith('tip.')) return 'coin';
     if (id.startsWith('table.')) return 'clean';
     return null;

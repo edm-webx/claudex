@@ -213,6 +213,35 @@
     }
    ]
   },
+  "coinFloor": {
+   "note": "Yerden para toplama: çok kısık yumuşak tık (coin ailesinin %30 seviyesi).",
+   "pitchVar": 0,
+   "cooldown": 0,
+   "gain": 0.3,
+   "rev": 0.15,
+   "layers": [
+    {
+     "k": "tone",
+     "wave": "sine",
+     "f": 440,
+     "a": 0.006,
+     "d": 0.32,
+     "v": 0.09,
+     "harm": [
+      1,
+      0.12
+     ]
+    },
+    {
+     "k": "tone",
+     "wave": "sine",
+     "f": 880,
+     "a": 0.006,
+     "d": 0.18,
+     "v": 0.015
+    }
+   ]
+  },
   "cash": {
    "note": "Yumuşak kasa: iki sine vuruş.",
    "pitchVar": 0,
@@ -1586,7 +1615,7 @@
   },
   "moan": {
    "cooldown": 6000,
-   "gain": 0.55,
+   "gain": 0.9,
    "rev": 0.5,
    "note": "Morg: uzak, alçak inilti; yavaş giriş, 420 Hz üstü yok.",
    "layers": [
@@ -1631,7 +1660,7 @@
   },
   "knock": {
    "cooldown": 4000,
-   "gain": 0.6,
+   "gain": 0.95,
    "rev": 0.35,
    "note": "Morg kapısı: üç boğuk tahta tıkırtısı.",
    "layers": [
@@ -1681,7 +1710,7 @@
   },
   "whisper": {
    "cooldown": 6000,
-   "gain": 0.5,
+   "gain": 0.8,
    "rev": 0.45,
    "note": "Morg: hece hece, kısık fısıltı (sert tiz yok).",
    "layers": [

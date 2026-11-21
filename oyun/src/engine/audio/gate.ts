@@ -1,6 +1,6 @@
 // Para sesi tek kapısı: coin/cash/hesap/tip... hangi yoldan (bank, örnek, tarif) çalarsa çalsın aynı alışma.
 // Saf mantık (AudioContext yok): sfx() girişinde çağrılır. Yoğun serviste ses seyrekleşir ve kısılır; patlama olmaz.
-export const MONEY_IDS = ['coin', 'cash', 'buy', 'hesap', 'tip'] as const;
+export const MONEY_IDS = ['coin', 'coinFloor', 'cash', 'buy', 'hesap', 'tip'] as const;
 const MONEY = new Set<string>(MONEY_IDS);
 export const isMoney = (id: string): boolean => MONEY.has(id);
 /** A major pentatonic ratios (relative to the 440 Hz base of the soft bank sounds). */

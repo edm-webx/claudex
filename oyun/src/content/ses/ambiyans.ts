@@ -230,8 +230,8 @@ export const MORG = {
   at: { x: 57.3, z: 55.5 } as Nokta,
   /** bu mesafenin dışında hiç tetik yok */
   r: 40,
-  /** tetik aralığı (sn): eski 7-16 sn yorucuydu */
-  aralik: [18, 40] as const,
+  /** tetik aralığı (sn): sahip korkutucu istiyor (2026-11-21), eski 7-16 sn yorucuydu */
+  aralik: [12, 28] as const,
   sesler: ['moan', 'knock', 'whisper'] as const,
   gece: (h: number) => h >= 22 || h < 5.5,
 };

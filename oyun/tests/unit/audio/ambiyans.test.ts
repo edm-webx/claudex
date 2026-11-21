@@ -121,8 +121,8 @@ describe('kapı tablosu (atmosphere.ts ile)', () => {
 });
 
 describe('morg ve canlı müzik', () => {
-  it('morg tetik aralığı alt sınırı 18 sn, yalnız gece', () => {
-    expect(MORG.aralik[0]).toBeGreaterThanOrEqual(18);
+  it('morg tetik aralığı alt sınırı 12 sn, yalnız gece', () => {
+    expect(MORG.aralik[0]).toBeGreaterThanOrEqual(12);
     expect(MORG.gece(23)).toBe(true); expect(MORG.gece(12)).toBe(false); expect(MORG.gece(3)).toBe(true);
     for (const id of MORG.sesler) expect(db.sfx[id], id).toBeTruthy();   // yumuşak ses-db sürümü motor tarifinden önce gelir
   });

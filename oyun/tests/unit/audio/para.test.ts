@@ -27,7 +27,7 @@ describe('para kapısı', () => {
   it('para olayları kapıdan geçen kimliklere bağlı; para dışı olaylar kapıda değil', () => {
     for (const id of ['coin', 'cash', 'hesap', 'buy', 'tip']) expect(isMoney(id)).toBe(true);
     for (const id of ['pop', 'tik', 'error', 'gull']) expect(isMoney(id)).toBe(false);
-    expect(MONEY_IDS.length).toBe(5);
+    expect(MONEY_IDS.length).toBe(6);
     expect(EVENT_SFX.sale).toBe('coin'); expect(EVENT_SFX.hesap).toBe('hesap');
   });
 });
