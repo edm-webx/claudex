@@ -100,5 +100,55 @@
       "dosya": 31
     },
     "olcum_ortami": "headless Chromium SwiftShader, 640x360, ?stage=10, rota: iskele, büfe içi, halı saha, orman, karşı yaka, AVM içi; çizim çağrısı/üçgen/program/geometri/doku/heap = rota üstü en büyük, her noktada 3 örnekten en büyük"
+  },
+  "bellek": {
+    "_not": "PRF-11/PRF-15 bellek ve varlık bütçesi. Hedef (sahip): 'GTA5 PS3'te 512 MB ile çalıştıysa bizimki de o dengede' (PS3: 256 MB sistem + 256 MB görüntü belleği). Ölçüm: node tools/bellek-olc.mjs (GPU baytı WebGL çağrılarından sayılır, tools/gpu-bellek-kanca.mjs; heap gc sonrası), varlık kuralları tests/unit/render/varlik-butce.test.ts ile her testte denetlenir. Tavanlar ölçülen en büyük değer x1.15 (heap x1.15x1.2).",
+    "varlik": {
+      "dokuKenarMax": 2048,
+      "dokuHucre": 512,
+      "_doku": "Kenar 2 üstel ya da 512'lik atlas hücresinin katı (zemin atlası 3x2 hücre = 1536x1024): mip zinciri temiz iner. Her yüklenen dokuda mipmap + LinearMipmapLinear. KTX2/Basis yok: Basis çözücüsü WebAssembly ister, check-dist WebAssembly'yi yasaklar; çizim dokuları (karakter, tabela) zaten çalışma anında tuvalde üretilir.",
+      "dokuToplamMB": 1.0,
+      "glbToplamMB": 1.6,
+      "glbTekMB": 0.2,
+      "_glb": "Tüm GLB'ler tools/glb-sikistir.mjs ile KHR_mesh_quantization (normal int8, uv uint16, teğet atılır; three yerleşik okur, çözücü yok). Draco/meshopt yok: ikisi de WebAssembly çözücü ister. Yeni model eklenince: node tools/glb-sikistir.mjs, sonra node tests/browser/glb-ab.mjs önce sonra (piksel farkı)."
+    },
+    "calisma": {
+      "_olcum": "2026-11-21, headless Chromium SwiftShader 1280x720 (devicePixelRatio 1), kademe dengeli, ?stage=10, rota iskele, büfe içi, halı saha, orman, karşı yaka, AVM içi, iki tur (ikinci tur birincinin aynısıysa sızıntı yok).",
+      "dengeli": {
+        "gpuMB": 194,
+        "dokuMB": 103,
+        "tamponMB": 23,
+        "heapMB": 108
+      },
+      "_olculen": {
+        "dengeli": {
+          "gpuMB": 168.7,
+          "_gpuMB": "bufe-ici (2. tur)",
+          "dokuMB": 89.0,
+          "_dokuMB": "karsi-yaka",
+          "tamponMB": 20.03,
+          "heapMB": 78.3,
+          "_heapMB": "karsi-yaka (2. tur)",
+          "renderbufferMB": 55.92,
+          "_renderbufferMB": "MSAA x4 yarım float sahne hedefi + derinlik (bloom zinciri), çözünürlükle orantılı"
+        }
+      },
+      "_once": {
+        "dengeli": {
+          "gpuMB": 206.88,
+          "dokuMB": 129.84,
+          "heapMB": 79.2,
+          "_not": "GLB nicemleme ve doku akışı merdiveninden önce (aynı rota)"
+        }
+      }
+    },
+    "yukleme": {
+      "_not": "node tools/yukleme-olc.mjs --build: index.html -> ilk boya / game.js / oynanabilir kare; html ve js gzip ile gider (itch.io gibi). Hedef: kablolu < 3 sn ağ, 4G < 8 sn ağ (hazır süresindeki JS/shader payı SwiftShader'da gerçeğinden uzun, bilgi amaçlı).",
+      "indirilenMB": {
+        "once": 5.4,
+        "sonra": 4.39,
+        "_not": "oyunun ilk dakikasında inen tüm dosyalar (game.js gzip'siz sayıldı)"
+      }
+    }
   }
 }

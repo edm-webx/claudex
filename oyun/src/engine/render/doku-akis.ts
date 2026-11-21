@@ -1,19 +1,23 @@
 /**
- * PRF-15 doku akışı (texture streaming): büyük çizimli dokuların en üst mip katı yalnız gerektiğinde bellekte.
+ * PRF-15 doku akışı (texture streaming): büyük çizimli dokuların üst mip katları yalnız gerektiğinde bellekte.
  * Bir karakter atlası 1024x512 (mip ile GPU'da 2.7 MB, tuvali de RAM'de 2 MB). Uzaktaki bir karakterin yüzünde ekran pikseli
- * başına bir dokudan az düşer: GPU zaten en üst katı örneklemez, alttaki katlardan okur. Bu yüzden kayıtlı doku önce yarım
- * çözünürlükte (512x256, aynı çizim) çizilir; kamera, yarım dokunun piksel başına bir dokuyu karşılamayacağı kadar yaklaşınca
- * tam çözünürlüğe çıkar, uzaklaşınca yarıma iner. Ekranda görülen ayrıntı aynı kalır, bellek dörtte bire iner.
- * - Ölçüt: ekranda 1 m'nin kaç piksel tuttuğu (ppm = yarı yükseklik / tan(fov/2) / uzaklık) ile dokunun 1 m'ye düşen doku
- *   sayısı (dpm, yarım çözünürlükte) karşılaştırılır. ppm > dpm * YUKARI ise tam, ppm < dpm * ASAGI ise yarım (gecikmeli eşik).
+ * başına bir dokudan az düşer: GPU zaten üst katları örneklemez, alttaki katlardan okur. Bu yüzden kayıtlı doku bir ölçek
+ * merdiveninden (1, 1/2, 1/4, 1/8; aynı çizim küçük tuvalde) ekranın gerçekten okuyabildiği en küçük basamakta tutulur:
+ * kamera yaklaşınca bir üst basamağa çıkar, uzaklaşınca iner. Ekranda görülen ayrıntı aynı kalır; 1/2 dörtte bir, 1/8 altmış
+ * dörtte bir bellek tutar (karşı yakanın 41 işçisi iskeleden bakarken 28 MB yerine 0.5 MB).
+ * - Ölçüt: ekranda 1 m'nin kaç piksel tuttuğu (ppm = yarı yükseklik / tan(fov/2) / uzaklık) ile basamağın 1 m'ye düşen doku
+ *   sayısı (dpm yarım ölçekte verilir; ölçek s'de dpm * 2s). Bir basamak ppm > doku * YUKARI ise yetmez (bir üst, yetene dek);
+ *   daha küçük bir basamakta ppm < doku * ASAGI kalıyorsa ona iner (gecikmeli eşik: sınırda gidip gelmez).
  * - Ana sahnede olmayan (ayrı renderer'lı kulis/ev odası önizlemesi gibi) nesneler ölçülemez: her zaman tam çözünürlük.
- * - Görünmeyen (kendisi ya da bir atası visible=false) nesneler yarıma iner.
+ * - Görünmeyen (kendisi ya da bir atası visible=false) nesneler en çok yarımda tutulur (daha küçükse olduğu gibi kalır).
  * - Kare başına en çok bir yeniden çizim (en acil olan önce): yaklaşırken bile kare süresine sıçrama koymaz.
  * - Eski doku değişimden sonra dispose edilir; malzemenin haritası değişir, shader değişmez (yeniden derleme yok).
  */
 import * as T from 'three';
 
 export const YUKARI = 1.0, ASAGI = 0.7;
+/** Scale ladder, largest first (1/8 of a 1024x512 atlas is 128x64). */
+export const OLCEKLER = [1, 0.5, 0.25, 0.125] as const;
 
 export interface AkisKaydi {
   /** Nesne (dünya konumu ve görünürlük buradan okunur). */
@@ -47,6 +51,17 @@ function kokVeGorunur(o: T.Object3D): { kok: T.Object3D; gorunur: boolean } {
   return { kok: c, gorunur: g };
 }
 
+/** Ladder step for scale `s` at `ppm` screen pixels per metre (`dpm` = texels per metre at half scale), with hysteresis. */
+export function hedefOlcek(s: number, ppm: number, dpm: number): number {
+  const doku = (x: number) => dpm * 2 * x;
+  if (ppm > doku(s) * YUKARI) {   // not enough texels: the smallest larger step that is enough
+    for (let i = OLCEKLER.length - 1; i >= 0; i--) { const x = OLCEKLER[i]; if (x > s && ppm <= doku(x) * YUKARI) return x; }
+    return 1;
+  }
+  for (let i = OLCEKLER.length - 1; i >= 0; i--) { const x = OLCEKLER[i]; if (x < s && ppm < doku(x) * ASAGI) return x; }   // smallest step with margin
+  return s;
+}
+
 /** Picks at most one texture to redraw per call (the most urgent). Call once per frame with the main scene camera. */
 export function akisGuncelle(scene: T.Object3D, camera: T.PerspectiveCamera, ekranYuk: number): void {
   if (!kayitlar.size) return;
@@ -58,27 +73,28 @@ export function akisGuncelle(scene: T.Object3D, camera: T.PerspectiveCamera, ekr
     const { kok, gorunur } = kokVeGorunur(r.obj);
     let ist: number;
     if (kok !== scene || zorlaTam) ist = 1;
-    else if (!gorunur) ist = 0.5;
+    else if (!gorunur) ist = Math.min(r.olcek, 0.5);
     else {
       r.obj.getWorldPosition(_p);
       const d = Math.max(0.05, Math.hypot(_p.x - cx, _p.y + 1.2 - cy, _p.z - cz));
-      const ppm = yari / tanH / d, oran = ppm / r.dpm;
-      ist = r.olcek === 1 ? (oran < ASAGI ? 0.5 : 1) : (oran > YUKARI ? 1 : 0.5);
-      if (ist !== r.olcek) { const a = ist === 1 ? oran : 1 / Math.max(oran, 1e-3); if (a > enAciliyet) { enAciliyet = a; en = r; enOlcek = ist; } }
+      const ppm = yari / tanH / d;
+      ist = hedefOlcek(r.olcek, ppm, r.dpm);
+      if (ist !== r.olcek) { const oran = ppm / (r.dpm * 2 * r.olcek), a = ist > r.olcek ? oran : 1 / Math.max(oran, 1e-3); if (a > enAciliyet) { enAciliyet = a; en = r; enOlcek = ist; } }
       continue;
     }
     if (ist !== r.olcek && !en) { en = r; enOlcek = ist; enAciliyet = 1e-6; }
   }
   if (!en) return;
   const eski = en.tex;
+  if (enOlcek > en.olcek) yukari++; else asagi++;
   en.tex = en.ciz(enOlcek); en.olcek = enOlcek; cizim++;
-  if (enOlcek === 1) yukari++; else asagi++;
   en.tak(en.tex);
   eski?.dispose();
 }
 
 /** Counters for tests and the perf meter. */
-export function akisDurum(): { kayit: number; tam: number; cizim: number; yukari: number; asagi: number } {
-  let tam = 0; kayitlar.forEach(r => { if (r.olcek === 1) tam++; });
-  return { kayit: kayitlar.size, tam, cizim, yukari, asagi };
+export function akisDurum(): { kayit: number; tam: number; cizim: number; yukari: number; asagi: number; seviye: Record<string, number> } {
+  let tam = 0; const seviye: Record<string, number> = {};
+  kayitlar.forEach(r => { if (r.olcek === 1) tam++; seviye[r.olcek] = (seviye[r.olcek] || 0) + 1; });
+  return { kayit: kayitlar.size, tam, cizim, yukari, asagi, seviye };
 }

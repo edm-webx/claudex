@@ -13,18 +13,21 @@ const PX = 40;   // dokuda metre başına piksel
 
 export function createIzgaraLook(d: IzgaraLookDeps): IzgaraLookView {
   const W = (IZGARA.x1 - IZGARA.x0), H = (IZGARA.z1 - IZGARA.z0);
-  const c = document.createElement('canvas'); c.width = W * PX; c.height = H * PX;
-  const g = c.getContext('2d')!;
-  const cp = IZGARA.cell * PX;
-  g.fillStyle = 'rgba(255,255,255,0.05)'; g.fillRect(0, 0, c.width, c.height);
-  for (let r = 0; r < IZGARA_ROWS; r++) for (let k = 0; k < IZGARA_COLS; k++) {
-    if ((r + k) % 2) { g.fillStyle = 'rgba(255,255,255,0.05)'; g.fillRect(k * cp, r * cp, cp, cp); }
-  }
-  g.lineWidth = 2;
-  // a dark under-stroke keeps the lines readable on both the pale deck and the dark sea
-  const line = (x0: number, y0: number, x1: number, y1: number, major: boolean) => {
-    g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.lineWidth = 6; g.strokeStyle = 'rgba(15,25,45,0.4)'; g.stroke();
-    g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.lineWidth = 2; g.strokeStyle = major ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.75)'; g.stroke();
+  // PRF-15: the 2080x1120 canvas (9 MB of RAM, 12 MB on the GPU with mips) is only drawn the first time the grid is switched on
+  let mesh: T.Mesh | null = null, tex: T.CanvasTexture | null = null, mat: T.MeshBasicMaterial | null = null;
+  const build = () => {
+    const c = document.createElement('canvas'); c.width = W * PX; c.height = H * PX;
+    const g = c.getContext('2d')!;
+    const cp = IZGARA.cell * PX;
+    g.fillStyle = 'rgba(255,255,255,0.05)'; g.fillRect(0, 0, c.width, c.height);
+    for (let r = 0; r < IZGARA_ROWS; r++) for (let k = 0; k < IZGARA_COLS; k++) {
+      if ((r + k) % 2) { g.fillStyle = 'rgba(255,255,255,0.05)'; g.fillRect(k * cp, r * cp, cp, cp); }
+    }
+    g.lineWidth = 2;
+    // a dark under-stroke keeps the lines readable on both the pale deck and the dark sea
+    const line = (x0: number, y0: number, x1: number, y1: number, major: boolean) => {
+      g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.lineWidth = 6; g.strokeStyle = 'rgba(15,25,45,0.4)'; g.stroke();
+      g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.lineWidth = 2; g.strokeStyle = major ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.75)'; g.stroke();
   };
   for (let k = 0; k <= IZGARA_COLS; k++) line(k * cp, 0, k * cp, c.height, k % 5 === 0);
   for (let r = 0; r <= IZGARA_ROWS; r++) line(0, r * cp, c.width, r * cp, r % 5 === 0);
@@ -34,19 +37,20 @@ export function createIzgaraLook(d: IzgaraLookDeps): IzgaraLookView {
     g.lineWidth = 4; g.strokeStyle = 'rgba(20,30,50,0.7)'; g.strokeText(t, k * cp + 5, r * cp + 4);
     g.fillStyle = '#ffffff'; g.fillText(t, k * cp + 5, r * cp + 4);
   }
-  const tex = new T.CanvasTexture(c); tex.colorSpace = T.SRGBColorSpace; tex.anisotropy = 4;
-  const mat = new T.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.55, depthWrite: false, toneMapped: false });
-  const mesh = new T.Mesh(new T.PlaneGeometry(W, H), mat);
+  tex = new T.CanvasTexture(c); tex.colorSpace = T.SRGBColorSpace; tex.anisotropy = 4;
+  mat = new T.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.55, depthWrite: false, toneMapped: false });
+  mesh = new T.Mesh(new T.PlaneGeometry(W, H), mat);
   mesh.rotation.x = -Math.PI / 2; mesh.position.set((IZGARA.x0 + IZGARA.x1) / 2, 0.07, (IZGARA.z0 + IZGARA.z1) / 2);
   mesh.renderOrder = 2; mesh.name = 'izgara'; mesh.frustumCulled = false;
   d.scene.add(mesh);
+  };
 
   let on = false;   // 2026-10-25 user: grid is admin-only, off by default
-  const apply = () => { mesh.visible = on; };
+  const apply = () => { if (on && !mesh) build(); if (mesh) mesh.visible = on; };
   const set = (v: boolean) => { on = !!v; apply(); };
   apply();
   return {
     set, get: () => on, where: cellOf,
-    dispose() { d.scene.remove(mesh); tex.dispose(); mat.dispose(); mesh.geometry.dispose(); },
+    dispose() { if (mesh) { d.scene.remove(mesh); mesh.geometry.dispose(); } tex?.dispose(); mat?.dispose(); },
   };
 }

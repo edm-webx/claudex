@@ -35,6 +35,7 @@ await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengel
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 120000 });
 await p.evaluate(() => { const M = window.__marti; M.play('sabri'); M.renderFrames(2, 0.1); });
 const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(700); }
+await p.addStyleTag({ content: 'body *{visibility:hidden !important} canvas#c{visibility:visible !important}' });   // yalnız 3B sahne (CSS animasyonlu ipucu eli farkı karıştırmasın)
 const kare = n => p.evaluate(n => { const M = window.__marti; for (let k = 0; k < n; k++) M.renderFrames(1, 1e-9); }, n);   // dt 0 = 1/30 sayılır: 1e-9 ile zaman gerçekten durur
 const KARE = [['orman', 806, 9, 1.0], ['orman-yakin', 806, 9, 0.45], ['karsi-isci', 20, 40, 0.6], ['bufe-musteri', 0, -4, 0.5]];
 let kotu = 0;
@@ -51,7 +52,7 @@ for (const [ad, x, z, zoom] of KARE) {
   const oran = n / (a.width * a.height);
   if (OUT) { writeFileSync(join(OUT, ad + '-akis.png'), A); writeFileSync(join(OUT, ad + '-tam.png'), B); writeFileSync(join(OUT, ad + '-fark.png'), PNG.sync.write(diff)); }
   const ok = oran < 0.002; if (!ok) kotu++;
-  console.log(`${ok ? 'aynı ' : 'FARKLI'} ${ad.padEnd(13)} fark %${(oran * 100).toFixed(3)} (${n} px)  akış: ${d0.kayit} NPC atlası, ${d0.tam} tam -> zorla: ${d1.tam} tam`);
+  console.log(`${ok ? 'aynı ' : 'FARKLI'} ${ad.padEnd(13)} fark %${(oran * 100).toFixed(3)} (${n} px)  akış: ${d0.kayit} NPC atlası, basamak ${JSON.stringify(d0.seviye ?? {})} -> zorla: ${d1.tam} tam`);
 }
 await b.close(); srv.close();
 console.log(kotu || hata ? 'KIRMIZI' : 'YEŞİL: akış görünür pikseli değiştirmiyor');

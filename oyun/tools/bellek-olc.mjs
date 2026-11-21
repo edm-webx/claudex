@@ -1,4 +1,7 @@
-// PRF-15/PRF-11: bellek ölçümü. node tools/bellek-olc.mjs [--build] [--dist KLASÖR] [--kademe dengeli] [--json çıktı.json] [--tekrar 2] [--boyut 1280x720] [--dokum]
+// PRF-15/PRF-11: bellek ölçümü. node tools/bellek-olc.mjs [--build] [--dist KLASÖR] [--kademe dengeli] [--json çıktı.json] [--tekrar 2] [--boyut 1280x720] [--dokum] [--kapi]
+// --kapi: tools/perf-budget.json bellek.calisma[kademe] tavanlarını (gpuMB, dokuMB, tamponMB, heapMB) aşan ya da (--tekrar 3+) son turda aynı
+// noktada GPU belleği bir önceki turdan 2 MB'tan fazla büyüyen ölçümde çıkış 1 (bütçe 1280x720 için yazıldı). İlk tur karşılaştırılmaz:
+// iskelenin ilk ölçümü karşı yaka hiç kurulmadan alınır, sonraki turlarda karşı yakanın gizli ama canlı kısmı iskelede de sayılır.
 // --dokum: ölçüm derlemesi (vite --mode olcum) yapar ve her noktada kaynakDokum (doku/geometri baytı sahibine göre) yazar.
 // Rota boyunca her noktada: GPU bellek (WebGL çağrılarından sayılan doku/renderbuffer/tampon baytı, tools/gpu-bellek-kanca.mjs),
 // renderer.info.memory (geometri/doku sayısı), JS yığını (gc sonrası), DOM düğümü; ayrıca indirilen varlık baytı ve ilk kare süresi.
@@ -74,5 +77,12 @@ const enb = satir.reduce((a, r) => r.gpuMB > a.gpuMB ? r : a, satir[0]);
 console.log(`\nen yüksek GPU: ${enb.gpuMB} MB (${enb.ad}); en büyük dokular: ${enb.enBuyuk.map(d => `${d.w}x${d.h}${d.mip ? '+mip' : ''} ${d.mb}MB`).join(', ')}`);
 const ozet = { tarih: new Date().toISOString().slice(0, 16), kademe: tier, hazirMs, indirilenMB: +(([...indirilen.values()].reduce((a, b) => a + b, 0)) / 1048576).toFixed(3), indirilen: Object.fromEntries(indirilen), ilk, satir, donus, gpuMaxMB: enb.gpuMB, heapMaxMB: Math.max(...satir.map(r => r.heapMB)), geoMax: Math.max(...satir.map(r => r.geos)), texMax: Math.max(...satir.map(r => r.texs)), hatalar };
 if (hatalar.length) console.log('sayfa hataları:', hatalar);
+let kapiKotu = 0;
+if (arg('--kapi')) {
+  const B = JSON.parse(readFileSync('tools/perf-budget.json', 'utf8')).bellek?.calisma?.[tier];
+  if (!B) { console.log(`kapı: bütçede ${tier} yok`); kapiKotu++; }
+  else for (const k of ['gpuMB', 'dokuMB', 'tamponMB', 'heapMB']) { const v = Math.max(...satir.map(r => r[k])); const ok = v <= B[k]; if (!ok) kapiKotu++; console.log(`kapı ${ok ? 'tamam' : 'AŞILDI'} ${k.padEnd(9)} ${v} / ${B[k]}`); }
+  if (TEKRAR > 2) for (const r of satir.filter(r => r.tur === TEKRAR)) { const i = satir.find(q => q.tur === TEKRAR - 1 && q.ad === r.ad); if (i && r.gpuMB - i.gpuMB > 2) { kapiKotu++; console.log(`kapı BÜYÜME ${r.ad}: tur ${TEKRAR - 1} ${i.gpuMB} MB -> tur ${TEKRAR} ${r.gpuMB} MB`); } }
+}
 const jf = arg('--json'); if (jf && jf !== true) { writeFileSync(jf, JSON.stringify(ozet, null, 1)); console.log(`json: ${jf}`); }
-process.exit(hatalar.length ? 1 : 0);
+process.exit(hatalar.length || kapiKotu ? 1 : 0);
