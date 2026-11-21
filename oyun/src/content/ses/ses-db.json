@@ -107,24 +107,22 @@
    "layers": [
     {
      "k": "tone",
-     "f": 2630,
+     "f": 1500,
      "harm": [
       1,
-      0,
-      0.35,
       0,
       0.12
      ],
      "a": 0.001,
      "d": 0.16,
-     "v": 0.32
+     "v": 0.1
     },
     {
      "k": "tone",
      "f": 3950,
      "a": 0.001,
      "d": 0.06,
-     "v": 0.12,
+     "v": 0.05,
      "at": 0.004
     }
    ]
@@ -139,13 +137,11 @@
      "harm": [
       1,
       0,
-      0.4,
-      0,
-      0.2
+      0.15
      ],
      "a": 0.001,
      "d": 0.12,
-     "v": 0.25
+     "v": 0.2
     },
     {
      "k": "tone",
@@ -157,7 +153,7 @@
      ],
      "a": 0.001,
      "d": 0.1,
-     "v": 0.18,
+     "v": 0.12,
      "at": 0.11
     }
    ]
@@ -375,7 +371,7 @@
   "horn": {
    "cooldown": 4000,
    "rev": 0.4,
-   "note": "Vapur düdüğü: alçak iki ses (Bb2 + F3), nefesli, boğazda yankılanır; altta omni 'vapur' gövde titreşimi.",
+   "note": "Vapur düdüğü: alçak iki ses (Bb2 + F3), nefesli, boğazda yankılanır; altta omni 'vapur' gövde titreşimi. Yumuşatıldı: tepe < 0.45.",
    "layers": [
     {
      "k": "tone",
@@ -437,7 +433,8 @@
      "hold": 1.6,
      "v": 0.2
     }
-   ]
+   ],
+   "gain": 0.55
   },
   "gull": {
    "pitchVar": 0.08,
@@ -563,12 +560,13 @@
      "k": "noise",
      "color": "white",
      "filter": {
-      "type": "hp",
-      "f": 5200
+      "type": "bp",
+      "f": 3200,
+      "q": 0.6
      },
      "a": 0.002,
      "d": 0.4,
-     "v": 0.28
+     "v": 0.16
     },
     {
      "k": "noise",
@@ -580,7 +578,7 @@
      },
      "a": 0.001,
      "d": 0.03,
-     "v": 0.3
+     "v": 0.15
     },
     {
      "k": "burst",
@@ -598,7 +596,8 @@
       "a": 0.0005,
       "d": 0.012,
       "v": 0.06
-     }
+     },
+     "v": 0.015
     }
    ]
   },
@@ -655,7 +654,7 @@
      },
      "a": 0.001,
      "d": 0.06,
-     "v": 0.3
+     "v": 0.2
     },
     {
      "k": "tone",
@@ -715,15 +714,16 @@
      "k": "noise",
      "color": "white",
      "filter": {
-      "type": "hp",
-      "f": 4200
+      "type": "bp",
+      "f": 3000,
+      "q": 0.5
      },
      "a": 0.06,
      "d": 0.3,
      "s": 0.5,
      "hold": 0.3,
      "r": 0.3,
-     "v": 0.12
+     "v": 0.09
     }
    ]
   },
@@ -1435,6 +1435,135 @@
      "a": 0.01,
      "d": 0.12,
      "v": 0.07
+    }
+   ]
+  },
+  "ok": {
+   "note": "Onay (para dışı): yumuşak iki sine, ~100 ms.",
+   "pitchVar": 0.02,
+   "cooldown": 60,
+   "layers": [
+    {
+     "k": "tone",
+     "wave": "sine",
+     "f": 523,
+     "a": 0.004,
+     "d": 0.09,
+     "v": 0.06
+    },
+    {
+     "k": "tone",
+     "wave": "sine",
+     "f": 659,
+     "a": 0.004,
+     "d": 0.1,
+     "v": 0.05,
+     "at": 0.05
+    }
+   ]
+  },
+  "panelAc": {
+   "note": "Panel açılışı: çok kısa yükselen alçak sine.",
+   "cooldown": 80,
+   "layers": [
+    {
+     "k": "tone",
+     "wave": "sine",
+     "f": 300,
+     "a": 0.004,
+     "d": 0.09,
+     "v": 0.05,
+     "f1": 520
+    }
+   ]
+  },
+  "panelKapat": {
+   "note": "Panel kapanışı: kısa alçalan sine.",
+   "cooldown": 80,
+   "layers": [
+    {
+     "k": "tone",
+     "wave": "sine",
+     "f": 480,
+     "a": 0.004,
+     "d": 0.08,
+     "v": 0.045,
+     "f1": 280
+    }
+   ]
+  },
+  "sekme": {
+   "note": "Sekme: tek yumuşak tık.",
+   "pitchVar": 0.03,
+   "cooldown": 60,
+   "layers": [
+    {
+     "k": "tone",
+     "wave": "sine",
+     "f": 700,
+     "a": 0.004,
+     "d": 0.05,
+     "v": 0.045
+    }
+   ]
+  },
+  "slider": {
+   "note": "Kaydırıcı: çok hafif tık.",
+   "pitchVar": 0.05,
+   "cooldown": 80,
+   "layers": [
+    {
+     "k": "tone",
+     "wave": "sine",
+     "f": 900,
+     "a": 0.004,
+     "d": 0.03,
+     "v": 0.03
+    }
+   ]
+  },
+  "toggle": {
+   "note": "Aç/kapa: kısa çift sine.",
+   "cooldown": 80,
+   "layers": [
+    {
+     "k": "tone",
+     "wave": "sine",
+     "f": 600,
+     "a": 0.004,
+     "d": 0.05,
+     "v": 0.045
+    },
+    {
+     "k": "tone",
+     "wave": "sine",
+     "f": 800,
+     "a": 0.004,
+     "d": 0.06,
+     "v": 0.04,
+     "at": 0.04
+    }
+   ]
+  },
+  "bildirim": {
+   "note": "Bildirim: hafif çan.",
+   "cooldown": 400,
+   "layers": [
+    {
+     "k": "tone",
+     "wave": "sine",
+     "f": 880,
+     "a": 0.004,
+     "d": 0.28,
+     "v": 0.04
+    },
+    {
+     "k": "tone",
+     "wave": "sine",
+     "f": 1320,
+     "a": 0.004,
+     "d": 0.2,
+     "v": 0.012
     }
    ]
   }

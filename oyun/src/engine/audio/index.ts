@@ -91,7 +91,7 @@ export function createAudio(deps: AudioDeps): MotorAudio {
     const b: BusImpl = {
       node: null,
       get volume() { return volume; },
-      set volume(v: number) { const nv = Math.max(0, Math.min(1, +v || 0)); if (nv > 0 && volume <= 0) muted = false; volume = nv; apply(); },   // slider pulled up from 0 = unmute (no mute/slider mismatch)
+      set volume(v: number) { const nv = Math.max(0, Math.min(1, +v || 0)); const wake = nv > 0 && volume <= 0; volume = nv; if (wake) { muted = false; for (const o of Object.values(buses)) if (o !== b && o.muted) o.muted = false; } apply(); },   // slider pulled up from 0 = unmute (no mute/slider mismatch)
       get muted() { return muted; },
       set muted(m: boolean) { muted = !!m; apply(); },
     };

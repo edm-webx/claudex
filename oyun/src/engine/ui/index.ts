@@ -107,7 +107,7 @@ export function createUi(deps: UiDeps): Ui {
   });
   root.addEventListener('pointerdown', e => {
     const b = (e.target as Element).closest?.('.sb-btn,.sb-bi,.sb-ib,.sb-x,.sb-tog,.sb-seg button') as HTMLButtonElement | null;
-    if (b && !b.disabled && !b.classList.contains('off')) { sfx('pop'); if (settings.haptics) deps.platform.vibrate(8); }
+    if (b && !b.disabled && !b.classList.contains('off')) { const r = b.dataset.sfx || (b.classList.contains('sb-x') ? 'panelKapat' : b.classList.contains('sb-tog') ? 'toggle' : b.closest('.sb-seg') ? 'sekme' : 'tik'); sfx(r); if (settings.haptics) deps.platform.vibrate(8); }
   }, { passive: true });
   setStars(0);
   const measure = () => {

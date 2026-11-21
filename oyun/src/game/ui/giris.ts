@@ -84,7 +84,7 @@ export function createGiris(deps: { root: HTMLElement; afterLogin: (isNew: boole
         if (!err && adm) { const k = await adminDogrula(kod); if (k === 'yanlis') { await cikisYap(); err = 'Anahtar kod yanlış.'; } }
         isNew = !err && mode === 'kayit';
         if (err) { const keepAd = ad; paint(err); (bg.querySelector('input[name="ad"]') as HTMLInputElement).value = keepAd; try { deps.sfx?.('error'); } catch { /* */ } return; }
-        try { deps.sfx?.('buy'); } catch { /* */ }
+        try { deps.sfx?.('ok'); } catch { /* */ }
         finish(true);
       };
       bg.addEventListener('click', e => {
