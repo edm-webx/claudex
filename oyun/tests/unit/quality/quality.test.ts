@@ -22,6 +22,9 @@ describe('quality', () => {
   it('guess follows v2 guessTier', () => {
     expect(guessTier(2, 8)).toBe('akici'); expect(guessTier(8, 4)).toBe('akici');
     expect(guessTier(4, 8)).toBe('dengeli'); expect(guessTier(8, 8)).toBe('sahane');
+    // PRF-13: phone never starts at sahane; dengeli only with 6+ GB and 8+ cores; desktop unchanged
+    expect(guessTier(8, 8, true)).toBe('dengeli'); expect(guessTier(8, 6, true)).toBe('akici'); expect(guessTier(4, 8, true)).toBe('akici'); expect(guessTier(16, 16, true)).toBe('dengeli');
+    expect(guessTier(8, 8, false)).toBe('sahane');
   });
   it('forced slow frames for 10 s drop one tier (auto), then max one change per minute', () => {
     const ls = memLs();
