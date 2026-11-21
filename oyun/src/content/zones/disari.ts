@@ -160,11 +160,15 @@ export function disariPrefabs(): PrefabDef[] {
   for (let i = 0; i < 16; i++) bulbs.push(sph(0.1, -11.5 + i * 1.53, 3.05, 0, ['#ffd23f', '#e0533c', '#5aa9d6', '#8fd06b'][i % 4], 6));
   defs.push({ id: 'mk.bulbs', parts: [box(0.1, 3.3, 0.1, -12, 1.65, 0, '#3b3b3b'), box(0.1, 3.3, 0.1, 12, 1.65, 0, '#3b3b3b'), ...bulbs] });
   // stadyum: pitch, goals, stands, floodlight towers, halı saha cage
-  const pitch: PartDef[] = [plane(30, 18, 0.02, '#4f9e4a', 'grass'), plane(30, 0.12, 0.03, '#f6f6f0'), plane(0.12, 18, 0.03, '#f6f6f0'), plane(0.12, 18, 0.03, '#f6f6f0')];
-  pitch[2].pos = [-15, 0.03, 0]; pitch[3].pos = [15, 0.03, 0]; pitch[1].pos = [0, 0.03, -9];
-  for (let k = 0; k < 10; k++) pitch.push({ ...plane(3, 18, 0.022, k % 2 ? '#5aae54' : '#459443'), pos: [-13.5 + k * 3, 0.022, 0] });   // mowing stripes
-  pitch.push({ ...plane(30, 0.12, 0.03, '#f6f6f0'), pos: [0, 0.03, 9] }, { ...plane(0.12, 18, 0.031, '#f6f6f0'), pos: [0, 0.031, 0] }, cyl(2.4, 0.02, 2.4, 0, 0.025, 0, '#58a653', 24));
-  for (const sx of [-1, 1]) pitch.push(box(0.1, 2.2, 0.1, sx * 15, 1.1, -3.6, '#f6f6f0'), box(0.1, 2.2, 0.1, sx * 15, 1.1, 3.6, '#f6f6f0'), box(0.1, 0.1, 7.3, sx * 15, 2.2, 0, '#f6f6f0'), box(1.6, 2.2, 7.3, sx * 15.8, 1.1, 0, '#e8eef0'));
+  // 2026-11-21 stadyum görseli: saha 30 x 15.4 (z 11.8..27.2): güneyde kulüp binası/sokak, kuzeyde çit arasına sığar. Çizgiler (kenar, orta
+  // yuvarlak, ceza sahası, nokta) view/stadyum/index.ts'te keskin geometri olarak çizilir; eski koyu yeşil disk ve beyaz dolu kale kutusu kalktı.
+  const PD = 15.4;
+  const pitch: PartDef[] = [plane(30, PD, 0.02, '#4f9e4a', 'grass')];
+  for (let k = 0; k < 10; k++) pitch.push({ ...plane(3, PD, 0.022, k % 2 ? '#5aae54' : '#459443'), pos: [-13.5 + k * 3, 0.022, 0] });   // mowing stripes
+  for (const sx of [-1, 1]) pitch.push(box(0.1, 2.2, 0.1, sx * 15, 1.1, -3.6, '#f6f6f0'), box(0.1, 2.2, 0.1, sx * 15, 1.1, 3.6, '#f6f6f0'), box(0.1, 0.1, 7.3, sx * 15, 2.2, 0, '#f6f6f0'),
+    box(0.06, 2.2, 0.06, sx * 16.4, 1.1, -3.6, '#d9dee2'), box(0.06, 2.2, 0.06, sx * 16.4, 1.1, 3.6, '#d9dee2'), box(1.4, 0.06, 0.06, sx * 15.7, 2.2, -3.6, '#d9dee2'), box(1.4, 0.06, 0.06, sx * 15.7, 2.2, 3.6, '#d9dee2'),
+    { ...box(0.03, 2.2, 7.2, sx * 16.4, 1.1, 0, '#e8eef0'), mat: 'glass' }, { ...box(1.4, 0.03, 7.2, sx * 15.7, 2.2, 0, '#e8eef0'), mat: 'glass' },
+    { ...box(1.4, 2.2, 0.03, sx * 15.7, 1.1, -3.6, '#e8eef0'), mat: 'glass' }, { ...box(1.4, 2.2, 0.03, sx * 15.7, 1.1, 3.6, '#e8eef0'), mat: 'glass' });   // net frame + net (glass), not a solid white block
   defs.push({ id: 'mk.pitch', parts: pitch, colliders: [R(1.8, 7.4, -15.8, 0), R(1.8, 7.4, 15.8, 0)] });
   const stand: PartDef[] = [];
   // 2026-11-02: tiers rise AWAY from the pitch (local -z = away after the PI turn), solid steps, back wall and side walls, open to the sky so the crowd shows
@@ -346,9 +350,10 @@ export function stadyumZone(): ZoneDef {
   const x0 = 392, x1 = 452, mx = 422;
   const props: PrefabPlacement[] = [P('ground', 'mk.ground.pitchzone', mx, 9), P('pitch', 'mk.pitch', 426, 19.5), P('stand', 'mk.stand', 426, 30.2, Math.PI),
     P('cage0', 'mk.cage', 402, 0.5), P('cage1', 'mk.cage', 418, 0.5), P('cage2', 'mk.cage', 434, 0.5),
-    P('fl0', 'mk.flood', 410, 10.6), P('fl1', 'mk.flood', 442, 10.6), P('bayrak', 'mk.bayrak', 396, 16),
+    P('bayrak', 'mk.bayrak', 396, 16),
     P('ground2', 'mk.ground.yard', mx, 40), P('hedgeN', 'mk.hedge', 426, 27.6), P('hedgeW', 'mk.hedgeS', 410.6, 19.5), P('hedgeE', 'mk.hedgeS', 441.4, 19.5)];
-  for (const x of [400, 412, 424, 436, 448]) props.push(P('lamp' + x, 'ts.lamp', x, 13.6));
+  // sokak lambaları sahanın içinde duruyordu (z 13.6); saha dışına, kulüp binası yanına alındı. Kısa mk.flood direkleri kalktı: view'in 4 kafes direği aydınlatır.
+  for (const [x, z] of [[400, 13.6], [424, 11.0], [436, 11.0], [448, 13.6]]) props.push(P('lamp' + x, 'ts.lamp', x, z));
   return base('stadyum', -6, 32, props, frame(x0, x1, -6, 32), 'gece', 'tersane');
 }
 export function tersaneZone(): ZoneDef {

@@ -326,7 +326,8 @@ export function buildMast(kit: Kit, parent: T.Object3D, x: number, z: number, h:
   for (let y = 1; y < h; y += 1.4) for (const r of [0, 1]) { const b = new T.BoxGeometry(r ? 0.05 : w, 0.05, r ? w : 0.05); b.translate(0, y, 0); parts.push(b); for (const s of [-1, 1]) { const c = b.clone(); c.translate(r ? s * w / 2 : 0, 0, r ? 0 : s * w / 2); parts.push(c); } }
   const lat = new T.Mesh(kit.geo(mergeGeometries(parts)), steel); lat.castShadow = true; g.add(lat); parts.forEach(p => p.dispose());
   const head = new T.Group(); head.position.y = h + 0.6; g.add(head);
-  head.add(new T.Mesh(kit.geo(new T.BoxGeometry(3.2, 1.9, 0.3)), kit.mat('#2b3038', { metalness: 0.5, roughness: 0.5 })));
+  head.add(new T.Mesh(kit.geo(new T.BoxGeometry(3.2, 1.9, 0.3)), kit.mat('#a3abb5', { metalness: 0.35, roughness: 0.5 })));   // housing back reads as grey steel, not a black hole from behind
+  for (const y of [-0.45, 0.45]) { const rib = new T.Mesh(kit.geo(new T.BoxGeometry(3.3, 0.08, 0.36)), steel); rib.position.y = y; head.add(rib); }
   const lampM = kit.mat('#fffaf0', { emissive: '#fff3d0', emissiveIntensity: 1.1, roughness: 0.3 });
   const lamps = new T.Mesh(kit.geo(new T.BoxGeometry(2.9, 1.6, 0.06)), lampM); lamps.position.z = 0.17; head.add(lamps);
   head.rotation.set(0, Math.atan2(aim.x - x, aim.z - z), 0); head.rotateX(0.45);   // lamp face (+z) toward the pitch, tilted down

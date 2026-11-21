@@ -43,3 +43,11 @@ Dört izin işi dala birleştirildi (tsc temiz; qa:hizli ve testler birleşik h�
 - İz 4 kontrol: girdi modülü, olay-ses tablosu, sabit adım, tuş şeması, yardım kartı commit'li. Ekran görüntüsü ve gamepad gerçek cihaz doğrulaması yok.
 - İz 2 görsel: YARIM (WIP commit): ortak.ts, hali-saha-3d.ts, dünya stadyumu (view/stadyum/index.ts). Ekran görüntüsüyle doğrulanmadı, çıplak stadyum bulgusu kapanmadı.
 Kalan: motor FUT-02+heat, görseli bitir ve ekranla doğrula, macAyari bağlama, hali-saha.ts ↔ yeni motor alanları (ball.z, dive, ref, heat) uyumu, qa:hizli, ekran görüntüleri, Ana İş'e bildirim.
+
+## Görsel iz tamamlandı 2026-11-21 (thread "Halı saha stadyum görseli", dal claude/project-thread-bv7cfm)
+- Prefab kimlik çakışması düzeltmesi (Belgrad 267c5b5) alındı: stadyum zemini artık çiziliyor (mavi zemin yok).
+- Dünya stadyumu: saha 30 x 15.4 (z 11.8..27.2) kulüp binası ile çit arasına sığdı; çizgiler view'de geometri (kenar, orta yuvarlak, ceza/kale alanı, nokta, korner yayı); beyaz dolu kale kutuları yerine çerçeve + file; sahanın içindeki 3 sokak lambası dışarı; kısa mk.flood direkleri kalktı (4 kafes direk yeter); beton meydan zemini; projektör kafasının arkası gri çelik; reklam panoları çizgiye binmiyor.
+- Maç sahnesi: uzak şehir binaları bembeyaz parlıyordu (pencere dokusu zemini beyaz + emissive) -> koyu cephe, yalnız pencereler yanar.
+- Doğrulama: tests/browser/halisaha-gorsel.mjs (dunya-ust karesi eklendi), kanıt /mnt/project-files/sosisci-oyun/asama7-kanit/stadyum-gorsel-2026-11-21/. Maç geniş açı dengeli: 245 çizim, 375k üçgen (doluluk 1).
+- vitest: 4 kırmızı (ipucu, baglilik, ekonomi-egri, faz2-ekonomi) taban 7babb68'de de kırmızı, bizden değil.
+- Kalan (görsel): kulüp binası çatısı sade; maç sahnesi köşe blokları düz beton; "Nasıl oynanır" kartı açılışta sahayı kapatıyor (kontrol izinin işi).

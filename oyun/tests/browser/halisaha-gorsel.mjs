@@ -34,6 +34,7 @@ await p.evaluate(() => { const M = window.__marti; M.teleport(399.5, 12.4); M.st
 if (yalniz !== 'mac') {
 await world('dunya-stadyum-guney', 426, 12.4, { zr: 2.4, yaw: Math.PI, tilt: 0.35, cz: 22 });
 await world('dunya-stadyum-bati', 404, 18, { zr: 2.4, yaw: -Math.PI / 2, tilt: 0.35, cx: 420, cz: 20 });
+await world('dunya-ust', 424, 16, { zr: 3.2, yaw: 0, tilt: 1.25, cz: 18 });
 await world('dunya-kulup-binasi', 416, 12.6, { zr: 1.3, yaw: 0, tilt: 0.25, cz: 9 });
 }
 if (yalniz === 'dunya') { writeFileSync(join(out, pre + 'rapor.json'), JSON.stringify({ ...report, errs }, null, 1)); await b.close(); srv.close(); process.exit(0); }
