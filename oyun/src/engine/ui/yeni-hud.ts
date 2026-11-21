@@ -36,6 +36,13 @@ export const YENI_CSS = `
 #sbui .sb-bi:hover{background:rgba(255,255,255,.07)!important;color:#fff!important}
 #sbui .sb-bi.on{background:linear-gradient(180deg,rgba(255,182,39,.0),rgba(255,182,39,.22))!important;box-shadow:inset 0 -3px 0 var(--amb)!important;color:#fff!important}
 #sbui .sb-badge{background:#ff5a4e!important;border:2px solid var(--glass2)!important;font-family:var(--disp)}
+#sbui .sb-bar{overflow-x:auto;overflow-y:hidden;justify-content:flex-start!important;scrollbar-width:none;overscroll-behavior-x:contain}
+#sbui .sb-bar::-webkit-scrollbar{display:none}
+#sbui .sb-bi{flex:1 0 auto!important;max-width:none!important;min-width:64px;padding:0 8px!important}
+#sbui .sb-bi span{overflow:visible!important;text-overflow:clip!important}
+#sbui .sb-bar.more-r{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}
+#sbui .sb-bar.more-l{-webkit-mask-image:linear-gradient(270deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(270deg,#000 calc(100% - 28px),transparent)}
+#sbui .sb-bar.more-l.more-r{-webkit-mask-image:linear-gradient(90deg,transparent,#000 24px,#000 calc(100% - 24px),transparent);mask-image:linear-gradient(90deg,transparent,#000 24px,#000 calc(100% - 24px),transparent)}
 /* goals tab */
 body .hd-card{background:rgba(11,19,38,.9)!important;border:1px solid rgba(255,255,255,.18)!important;border-right:3px solid #ffb627!important;border-radius:0 14px 14px 0!important;left:0!important;right:auto!important;top:calc(var(--hudb,100px) + 56px)!important;width:min(232px,58vw)!important;box-shadow:0 14px 32px rgba(4,10,24,.45)!important;color:#fff!important;backdrop-filter:blur(16px) saturate(1.3);-webkit-backdrop-filter:blur(16px) saturate(1.3)}
 body .hd-hd{background:transparent!important;border:0!important;padding:9px 12px 4px!important}
@@ -66,6 +73,26 @@ body .on-send{background:#ffb627!important;color:#14213d!important;border:0!impo
 body .yt-b{background:rgba(11,19,38,.82)!important;border:2px solid #ffb627!important;box-shadow:0 10px 26px rgba(4,10,24,.5),0 0 18px rgba(255,182,39,.35)!important}
 body .yt-b.cd{filter:saturate(.3) brightness(.8)}
 body .yt-b span{background:#ffb627!important;color:#14213d!important}
+/* dar dikey telefon (360-480): sağ üst düğmeler 2x2 ızgara, defter küçülür, sürekli taşma yok */
+@media (max-width:480px){
+#sbui .sb-hud{gap:8px}
+#sbui .sb-lvl{width:56px!important;height:56px!important}
+#sbui .sb-lvl-in{width:44px!important;height:44px!important;font-size:21px!important}
+#sbui .sb-hmid{min-width:0!important;flex:1 1 0!important;padding:7px 10px 8px!important}
+#sbui .sb-pill{font-size:18px!important}
+#sbui .sb-pill svg{width:22px!important;height:22px!important}
+#sbui .sb-gold b{font-size:17px!important}
+#sbui .sb-hl{gap:8px!important}
+#sbui .sb-hbtns{display:grid!important;grid-template-columns:repeat(2,38px);gap:6px!important;margin-left:0}
+#sbui .sb-ib{width:38px!important;height:38px!important;border-radius:12px!important}
+#sbui .sb-ib svg{width:22px!important;height:22px!important}
+#sbui .sb-bi{min-width:60px;padding:0 4px!important;font-size:11px!important;letter-spacing:.02em!important}
+#sbui .sb-bi svg{width:26px!important;height:26px!important}
+body .on-oda{top:calc(var(--hudb,100px) + 6px)!important;left:calc(var(--sl,0px) + 8px)!important;min-height:28px!important;padding:0 12px!important;font-size:12px!important;transform:none!important}
+#sbui .sb-streak{top:calc(100% + 40px)!important}
+body .hd-card{top:calc(var(--hudb,100px) + 76px)!important}
+body .on-pill{top:calc(var(--hudb,100px) + 40px)!important;left:calc(var(--sl,0px) + 8px)!important;max-width:calc(100vw - 16px)!important;transform:none!important;min-width:0!important}
+}
 /* kısa yatay telefon: yukarıdaki !important kuralları v2-style'daki yatay medya sorgusunu eziyordu; burada aynı değerler yeniden uygulanır */
 @media (orientation:landscape) and (max-height:540px){
 body .on-pill{top:calc(var(--hudb,64px) + 6px)!important}

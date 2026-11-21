@@ -499,10 +499,10 @@ export function createHavaLook(d: HavaLookDeps): HavaLookView {
         const key = v.icon + v.name + v.dateText + (v.market.open ? 'm' : '');
         if (key !== chipKey) {
           chipKey = key;
-          const sub = v.market.open ? 'Gece Pazarı açık' : v.dateText;
+          const sub = v.market.open ? 'Gece Pazarı açık' : v.kind === 'acik' ? v.dateText.split(' ').slice(2).join(' ') : v.dateText;   // gün adı: ay+gün zaten üst satırda
           chip.innerHTML = `<div style="font-size:16px">${v.icon} ${v.kind === 'acik' ? v.dateText.split(' ').slice(0, 2).join(' ') : v.name}</div><div style="font-size:13px;opacity:.8">${sub.replace(/[<>&]/g, '')}</div>`;
         }
-        chip.style.opacity = r.rt.panel ? '0' : '1';
+        chip.style.opacity = r.rt.panel || document.querySelector('.kl-p') ? '0' : '1';
       }
     },
     dispose() {

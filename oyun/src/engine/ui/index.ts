@@ -176,7 +176,7 @@ export function createUi(deps: UiDeps): Ui {
   toasts.setAttribute('role', 'status'); toasts.setAttribute('aria-live', 'polite');
   function toast(text: string, kind: 'good' | 'bad' | 'info') {
     kind = kind || 'info';
-    if (text !== (hist[0]?.text)) { hist.unshift({ text, kind, at: Date.now() }); if (hist.length > 30) hist.length = 30; unread++; paintNotes(); }
+    if (text !== (hist[0]?.text)) { hist.unshift({ text, kind, at: Date.now() }); if (hist.length > 30) hist.length = 30; if (kind === 'bad') unread++; paintNotes(); }   // rozet yalnız uyarılarda: her başarım sayacı şişirmesin
     if (text === lastToast && toastBusy) return;
     if (kind === 'info' && toastQ.length >= 1) return;
     if (toastQ.length >= 3) toastQ.shift();

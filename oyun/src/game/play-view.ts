@@ -214,6 +214,31 @@ export function createPlayView(d: PlayViewDeps): PlayView {
     byKey.forEach((l, key) => { if (seen.has(key)) return; l.onTap = null; l.free(); byKey.delete(key); });
   }
 
+  // Öğretici yazılı yönerge: ok/halka tek başına "ne yapmalıyım" sorusunu yanıtsız bırakıyordu (tarama ARAYÜZ).
+  const TUT_METIN: Record<string, string> = {
+    walk: 'Parmağınla sürükle: Sabri yürüsün',
+    doner: 'Döner makinesine yaklaş ve kes',
+    counter: 'Dilimi halkadaki tezgâha götür',
+    money: 'Kasadaki parayı topla',
+    pad_cay: 'Halkaya gir: çay ocağını satın al',
+    cay: 'Çay ocağına git, çay demle',
+    pad_isbul: 'Halkaya gir: iş panosunu satın al',
+    isbul: 'Panoya git, ilk işçini bul',
+  };
+  let tutEl: HTMLElement | null = null, tutKey = '';
+  function tutText(id: string | null) {
+    const txt = id ? TUT_METIN[id] || '' : '';
+    if (!txt) { if (tutEl) tutEl.style.opacity = '0'; tutKey = ''; return; }
+    if (!tutEl) {
+      const root = document.getElementById('sbui'); if (!root) return;
+      tutEl = document.createElement('div'); tutEl.className = 'tut-txt'; tutEl.setAttribute('role', 'status');
+      tutEl.style.cssText = 'position:absolute;left:50%;bottom:calc(var(--sbm,0px) + var(--barh,70px) + 18px);transform:translateX(-50%);z-index:33;max-width:min(88vw,380px);padding:8px 16px;border-radius:14px;background:rgba(11,19,38,.86);color:#fff;border:1px solid rgba(255,255,255,.18);font:800 15px/1.3 var(--body,system-ui);text-align:center;pointer-events:none;transition:opacity .3s;opacity:0;box-shadow:0 8px 20px rgba(4,10,24,.4)';
+      root.appendChild(tutEl);
+    }
+    if (tutKey !== txt) { tutKey = txt; tutEl.textContent = txt; }
+    tutEl.style.opacity = document.querySelector('.sb-sheet,.kl-p,.mp-bg.on') ? '0' : '1';
+  }
+
   function renderTutorial(t: number) {
     if (!arrow && d.marker) {
       arrow = d.marker('arrow'); ring = d.marker('ring');
@@ -221,6 +246,7 @@ export function createPlayView(d: PlayViewDeps): PlayView {
       if (ring) { ring.visible = false; d.addToScene?.(ring); }
     }
     const s = started() ? d.tutorial() : null;
+    tutText(s ? s.id : null);
     if (s && s.hand) {
       if (arrow) arrow.visible = false; if (ring) ring.visible = false;
       const h = d.hero(), sc = screenOf(h.x, 0.8, h.z);

@@ -346,6 +346,7 @@ export function createRender(deps: RenderDeps): MotorRender {
   const _v = new T.Vector3(), _v2 = new T.Vector3();
   const reflector = createReflector(-1.0);   // WATER_Y of the iskele sea
 
+  let offResize: (() => void) | null = null;
   function size(): { w: number; h: number } {
     const c = canvasEl;
     const w = (c && c.clientWidth) || (typeof window !== 'undefined' ? window.innerWidth : 390) || 390;
@@ -423,6 +424,14 @@ export function createRender(deps: RenderDeps): MotorRender {
       canvas.addEventListener('webglcontextlost', (e: Event) => { e.preventDefault(); lost = true; lostSubs.forEach(cb => { try { cb(); } catch (err) { deps.log?.warn('[render] lost cb', err); } }); }, false);
       canvas.addEventListener('webglcontextrestored', () => { lost = false; if (tier) applyShadows(tier); restoredSubs.forEach(cb => { try { cb(); } catch (err) { deps.log?.warn('[render] restored cb', err); } }); }, false);
       api.setTier(t);
+      // Ekran döndürme / pencere boyutu: canvas CSS boyutu değişince çizim tamponu da yeniden boyutlansın (tarama ARAYÜZ: sahne gerilip bozuluyordu).
+      // resize() boyut aynıysa tampon ayırmaz, bu yüzden her olayda çağırmak ucuz.
+      if (typeof window !== 'undefined') {
+        let raf = 0; const kick = () => { if (raf) return; raf = requestAnimationFrame(() => { raf = 0; if (renderer) api.resize(); }); };
+        window.addEventListener('resize', kick); window.addEventListener('orientationchange', kick);
+        const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(kick) : null; ro?.observe(canvas);
+        offResize = () => { window.removeEventListener('resize', kick); window.removeEventListener('orientationchange', kick); ro?.disconnect(); if (raf) cancelAnimationFrame(raf); };
+      }
     },
     setTier(t: TierDef) {
       tier = t;
@@ -567,6 +576,7 @@ export function createRender(deps: RenderDeps): MotorRender {
     loseContext() { if (loseExt) loseExt.loseContext(); },
     restoreContext() { if (loseExt) loseExt.restoreContext(); },
     dispose() {
+      offResize?.(); offResize = null;
       timeSubs.clear(); picks.clear(); gate.dispose();
       if (composer) { composer.passes.forEach(ps => { try { ps.dispose(); } catch { /* */ } }); composer.dispose(); composer = null; }
       envRT?.dispose(); envRT = null; pmrem?.dispose(); pmrem = null; reflector.dispose();

@@ -460,6 +460,8 @@ U.menuBar = function (items) {
   barItems = Array.isArray(items) ? items : [];
   if (!L.bar) {
     L.bar = root.appendChild(mk('nav', 'sb-bar')); L.bar.setAttribute('aria-label', 'Menü');
+    L.bar.addEventListener('scroll', () => barFade(), { passive: true });
+    window.addEventListener('resize', () => barFade());
     L.bar.addEventListener('click', e => {
       const b = e.target.closest('[data-id]'); if (!b) return;
       const id = b.dataset.id;
@@ -473,9 +475,22 @@ U.menuBar = function (items) {
     return `<button class="sb-bi${U.openId === it.id ? ' on' : ''}" data-id="${esc(it.id)}" aria-label="${esc(it.label || it.id)}">${I(it.icon || it.id)}<span>${esc(it.label || '')}</span>${badge}</button>`;
   }).join('');
   morph(L.bar, barHTML);
-  measure();
+  measure(); barFade();
 };
-const markBar = () => { if (L.bar) L.bar.querySelectorAll('.sb-bi').forEach(b => b.classList.toggle('on', b.dataset.id === U.openId)); };
+/** Dar ekranda 8-9 sekme sığmaz: şerit kaydırılır, kenarda solma ipucu çıkar, etkin sekme görünür kalır (tarama ARAYÜZ). */
+const barFade = () => {
+  const b = L.bar; if (!b) return;
+  b.classList.toggle('more-l', b.scrollLeft > 2);
+  b.classList.toggle('more-r', b.scrollLeft + b.clientWidth < b.scrollWidth - 2);
+};
+const markBar = () => {
+  if (!L.bar) return;
+  L.bar.querySelectorAll('.sb-bi').forEach(b => {
+    const on = b.dataset.id === U.openId; b.classList.toggle('on', on);
+    if (on && L.bar.scrollWidth > L.bar.clientWidth) { const l = b.offsetLeft - (L.bar.clientWidth - b.offsetWidth) / 2; L.bar.scrollLeft = Math.max(0, l); }
+  });
+  barFade();
+};
 
 /* ---------- confirm (in-page, never window.confirm) ---------- */
 let confirmEl = null;
@@ -927,7 +942,7 @@ U.title = function (o) {
   if (titleEl) titleEl.remove();
   const t = titleEl = mk('div', 'sb-full sb-title');
   t.innerHTML = SCENE + `<div class="sb-tl-wrap"><div class="sb-tl-top"><div class="sb-logo" role="img" aria-label="Sabri'nin Büfesi"><span class="sb-pamuk">${PAMUK}</span><div class="sb-awn"></div><div class="sb-signb"><span class="l1">Sabri'nin</span><span class="l2">Büfesi</span></div></div>
-    <div class="sb-sub">${ICONS.gull}Martıköy İskelesi</div><div class="sb-ver" aria-label="Sürüm 2.0">2.0</div></div>
+    <div class="sb-sub">${ICONS.gull}Martıköy İskelesi</div><div class="sb-ver" aria-label="Sürüm 2.0">v2.0</div></div>
     <div class="sb-tl-bot"><button class="sb-btn big" data-play>${ICONS.play}Oyna</button><div class="sb-tl-note">Hesabınla gir, arkadaşınla oda kur, beraber çalışın.</div></div></div>`;
   root.appendChild(t); artBackdrop(t);
   t.querySelector('[data-play]').addEventListener('click', () => {
