@@ -19,8 +19,6 @@ const CSS = `<style>
 .hv-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.hv-chips .sb-chip{font-size:14px;padding:4px 9px}
 .hv-ev{border-width:3px}.hv-ev h3{font:900 21px/1.1 var(--disp);margin:0 0 2px}.hv-ev p{font:700 15px/1.3 var(--body);margin:3px 0}
 .hv-ban{height:14px;border-radius:7px;margin:-2px 0 8px;border:2px solid var(--ink)}
-.hv-items{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0}
-.hv-it{border:2.5px solid var(--ink);border-radius:12px;background:#fff;padding:6px 8px;font:800 14px/1.2 var(--body)}.hv-it b{display:block;font:900 15px/1.1 var(--body);color:var(--money)}
 .hv-row{display:flex;gap:10px;align-items:center}.hv-row h3{font:900 18px/1.1 var(--disp);margin:0}.hv-row p{font:700 15px/1.3 var(--body);margin:2px 0}
 .hv-up{display:grid;grid-template-columns:54px 1fr;gap:8px;align-items:center}.hv-up .d{font:900 20px/1 var(--disp);text-align:center;border:2.5px solid var(--ink);border-radius:12px;padding:6px 0;background:#fff6e6}.hv-up .d small{display:block;font:800 11px/1 var(--body)}
 .hv-up h3{font:900 17px/1.1 var(--disp);margin:0}.hv-up p{font:700 14px/1.3 var(--body);margin:2px 0}
@@ -44,16 +42,12 @@ export function renderHava(m: any): string {
   // night market
   const mk = m.market || {};
   s += `<div class="sb-sec">${I('moon')}Gece Pazarı<span>${mk.today ? (mk.open ? 'Şu an açık' : mk.closed ? 'Bu hafta bitti' : 'Bu akşam 19:00') : mk.days + ' gün sonra'}</span></div><div class="sb-card">
-    <p style="font:700 15px/1.35 var(--body);margin:0 0 4px">Her Cumartesi gecesi iskeleye tezgahlar kurulur. Stoku önceden koy, tezgah kendi satar. Son saat yarı fiyat, kalanlar kedilere.</p>
-    ${mk.today && (mk.open || mk.closed) ? `<p style="font:800 15px/1.3 var(--body);margin:0 0 4px">Bu gece: ${mk.sold} satış, ${tl(mk.earned)}${mk.fresh && mk.open ? ' · Tazelik saati!' : ''}</p>` : ''}`;
+    <p style="font:700 15px/1.35 var(--body);margin:0 0 4px">Her Cumartesi gecesi iskeleye tezgahlar kurulur ve kendi kendine satar. Satış başına birim maliyet düşülür, net kazanç kasaya girer.</p>
+    ${mk.today && (mk.open || mk.closed) ? `<p style="font:800 15px/1.3 var(--body);margin:0 0 4px">Bu gece: ${mk.sold} satış, net ${tl(mk.earned)}</p>` : ''}`;
   for (const it of mk.items || []) {
-    const full = it.stock >= it.max, ok = (mk.money || 0) >= it.cost;
-    s += `<div class="hv-mk"><i style="background:${esc(it.color)}"></i><p>${esc(it.name)} · ${it.stock} adet<small>Tanesi ${tl(it.price)}</small></p>${btn('+' + it.pack, 'havaStock', it.id, 'cream sm', tl(it.cost), full || !ok, full ? 'Tezgah dolu.' : 'Kasada ' + tl(it.cost) + ' olmalı.')}</div>`;
+    s += `<div class="hv-mk"><i style="background:${esc(it.color)}"></i><p>${esc(it.name)}<small>Satış başına net ${tl(it.net)}</small></p></div>`;
   }
   s += `</div>`;
-  // seasonal foods
-  s += `<div class="sb-sec">${I('flame')}Mevsimlik tezgah<span>${esc(m.season)}</span></div><div class="sb-card"><p style="font:700 15px/1.35 var(--body);margin:0 0 6px">Mevsimin lezzetleri satışların yanına eklenir. Kışın sıcaklar, yazın soğuklar daha çok istenir.${m.foodSold ? ' Satılan: ' + m.foodSold : ''}</p>
-    <div class="hv-items">${(m.foods || []).map((f: any) => `<div class="hv-it">${esc(f.name)}<b>${tl(f.price)}</b></div>`).join('')}</div></div>`;
   // trophies
   const tr = m.trophies || [], ex = m.extras || [];
   if (tr.length || ex.length) s += `<div class="sb-sec">${I('trophy')}Kupalar ve ödüller<span>${tr.length}</span></div><div class="sb-card"><div class="hv-tags">${tr.map((t: string) => `<span>${I('trophy')} ${esc(t)}</span>`).join('')}${ex.map((t: string) => `<span>${esc(t)}</span>`).join('')}</div></div>`;

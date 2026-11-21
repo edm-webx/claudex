@@ -100,7 +100,7 @@ export const ZONE_SCHEMA: Record<string, F> = {
 };
 
 /** Sanitizer'ı olmayan, yalnızca "nesne mi" diye bakılan bölgeler (kendi tembel okuyucuları varsayılan kurar). Yeni anahtarı buraya değil ZONE_SCHEMA'ya yaz. */
-export const ZONE_GEVSEK = ['calisan', 'hikaye', 'koleksiyon', 'kurye', 'deniz', 'restoran', 'yiyecek', '_dekor', '_ev', 'pencere', 'zemin', 'martikoy', 'test-sokak', 'esnafim', 'esnaf'] as const;
+export const ZONE_GEVSEK = ['calisan', 'hikaye', 'koleksiyon', 'kurye', 'deniz', 'restoran', 'yiyecek', '_dekor', '_ev', 'pencere', 'zemin', 'martikoy', 'test-sokak', 'esnafim', 'esnaf', 'hijyen'] as const;
 
 /** Ölü anahtarlar: 'dükkan zinciri' mekaniği kaldırıldı (kırmızı çizgi), kayıttaki izi silinir. */
 export const OLU_ZONLAR = ['zincir'] as const;

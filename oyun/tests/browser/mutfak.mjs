@@ -14,8 +14,16 @@ await p.evaluate(() => { const M = window.__marti; M.setTime(13); M.step(2); M.i
 console.log(await p.evaluate(() => JSON.stringify(window.__marti.state().workers?.map?.(w => w.role) ?? 'n/a')));
 await p.evaluate(() => { window.__marti.closeJobBoard(); window.__marti.closePanel(); window.__marti.renderFrames(2, 0.1); const h = [...document.querySelectorAll('*')].find(e => e.children.length === 0 && /İş ve İşçi Bulma/.test(e.textContent || '')); let e = h; while (e && e.parentElement && e.parentElement.id !== 'sbui' && e.parentElement !== document.body) { if (getComputedStyle(e).position === 'absolute' || getComputedStyle(e).position === 'fixed') { if (e.getBoundingClientRect().width > 500) break; } e = e.parentElement; } if (e) e.style.display = 'none'; });
 await p.evaluate(() => window.__marti.renderFrames(3, 0.1)); await p.waitForTimeout(500);
-for (const [id, x, z, zr] of [['dis', 0, -9, 2], ['ic', 0, -14.6, 1]]) {
-  await p.evaluate(([x, z, zr]) => { const M = window.__marti; M.teleport(x, z); for (let k = 0; k < 8; k++) M.renderFrames(3, 0.1); M.camera({ x, z: z - (zr === 1 ? 0.4 : 3), zoomRaw: zr === 1 ? 0.9 : 1.4 }); for (let k = 0; k < 6; k++) M.renderFrames(3, 0.1); }, [x, z, zr]);
+// BUF-07: öğle servisi: biletler, kıvılcım, duman ve kirli tabak yığını oluşsun diye sim'i ilerlet
+const stepN = Number(process.env.STEPN || 120); await p.evaluate((stepN) => { const M = window.__marti; M.setTime(12.2); for (let i = 0; i < Number(0 + (stepN)); i++) M.step(1); }, stepN);
+// [id, kahraman x, z, kamera zoomRaw, kamera x, kamera z]: dis = dışarıdan, ic = üstten, duvar = arka duvar (fiş rayı, menü, tava, fan), hat = ocak/ızgara hattı (buhar, duman, kıvılcım)
+await p.evaluate(() => { window.__mkir = 1; });   // (geçici görünüm kancası varsa) ıslak zemin tabelasını da göster
+const SHOTS = [['dis', 0, -9, 1.4, 0, -12], ['ic', 0, -14.6, 0.62, -1.5, -14.2], ['duvar', 0, -14.6, 0.62, 5.8, -16.6], ['hat', 0, -14.6, 0.5, -3.2, -15.6]].filter(r => !process.env.SHOTS || process.env.SHOTS.split(',').includes(r[0]));
+for (const [id, x, z, zr, cx, cz] of SHOTS) {
+  await p.evaluate(([x, z]) => { const M = window.__marti; M.teleport(x, z); for (let k = 0; k < 8; k++) M.renderFrames(3, 0.1); }, [x, z]);
+  // hat/ic: bir istasyon gerçekten pişirirken çek (görünüm hatta __mfx yayıcı sayısını yazar; yoksa beklemeden devam)
+  if (id === 'hat' || id === 'ic' || id === 'duvar') await p.evaluate((id) => { const M = window.__marti; for (let i = 0; i < 300 && window.__mfx !== undefined && !(id === 'duvar' ? window.__mbil >= 2 : window.__mfx > 0); i++) { M.step(1); M.renderFrames(1, 0.05); } for (let i = 0; i < 14; i++) M.renderFrames(1, 0.07); }, id);
+  await p.evaluate(([cx, cz, zr]) => { const M = window.__marti; M.camera({ x: cx, z: cz, zoomRaw: zr }); for (let k = 0; k < 6; k++) M.renderFrames(3, 0.1); }, [cx, cz, zr]);
   await p.waitForTimeout(300); await p.screenshot({ path: join(out, 'mutfak-' + id + '.png'), timeout: 300000 }); console.log('ok', id);
 }
 await b.close(); srv.close(); process.exit(0);

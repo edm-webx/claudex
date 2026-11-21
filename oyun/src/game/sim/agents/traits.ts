@@ -1,7 +1,7 @@
 /** Worker speed and trait helpers (v2 traitFx / workerSpeed / pickTrait). Pure. */
 import type { WorkerSave, GameState } from '../schema';
 import { TRAITS, type TraitFx, type TraitDef } from '../../../content/traits';
-import { RARITY, RANKS, rankOf, moraleFactor, MORALE_START } from '../../../content/ranks';
+import { RARITY, RANKS, rankOf } from '../../../content/ranks';
 
 /** Worker save entries come from v2 (`trait`) or the new schema (`traits[]`); both are read. */
 export function traitId(w: Pick<WorkerSave, 'traits'> & { trait?: unknown }): string {
@@ -11,13 +11,12 @@ export function traitId(w: Pick<WorkerSave, 'traits'> & { trait?: unknown }): st
 }
 export function traitDef(w: Pick<WorkerSave, 'traits'> & { trait?: unknown }): TraitDef { return TRAITS[traitId(w)] || TRAITS.hamarat; }
 export function traitFx(w: Pick<WorkerSave, 'traits'> & { trait?: unknown }): TraitFx { return traitDef(w).fx; }
-export const moraleOf = (w: WorkerSave): number => (w.morale == null ? MORALE_START : w.morale);
 
 export interface SpeedCtx { hour: number; station: string | null; teamWin: boolean; teamDay: number; day: number; boostT: number; boostX: number }
-/** v2 workerSpeed: rarity x rank x morale x (1 + trait terms), then the wake-up boost. Never below 0.4 of base. */
+/** v2 workerSpeed: rarity x rank x (1 + trait terms), then the wake-up boost. Never below 0.4 of base. */
 export function workerSpeed(w: WorkerSave, c: SpeedCtx): number {
   const fx = traitFx(w), rar = RARITY[w.rarity || 'gri'] || RARITY.gri;
-  let s = rar.x * RANKS[rankOf(w.xp || 0)].x * moraleFactor(moraleOf(w));
+  let s = rar.x * RANKS[rankOf(w.xp || 0)].x;
   let k = 1 + (fx.speed || 0);
   if (fx.cutSpeed && (c.station === 'doner' || c.station === 'tost')) k += fx.cutSpeed;
   if (c.hour < 12 && fx.morningSpeed) k += fx.morningSpeed;

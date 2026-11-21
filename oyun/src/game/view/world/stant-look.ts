@@ -230,7 +230,7 @@ export function createStantLook(d: StantLookDeps): StantLookView {
       v.tickets.forEach((t, i) => {
         let s = tickets[i]; if (!s) { s = new T.Sprite(M(new T.SpriteMaterial({ depthTest: false }))); s.scale.set(0.42, 0.42, 1); s.renderOrder = 6; root.add(s); tickets.push(s); }
         const tb = tbs[t.table]; s.visible = !!tb; if (!tb) return;
-        const sm = s.material as T.SpriteMaterial, nt = ticketTex(t.no, t.frac > 0.7, t.special);
+        const sm = s.material as T.SpriteMaterial, nt = ticketTex(t.no, t.frac > 0.7, false);
         if (sm.map !== nt) { const had = !!sm.map; sm.map = nt; if (!had) sm.needsUpdate = true; }   // a map swap needs no relink
         s.position.x = tb.x; s.position.z = tb.z;
       });

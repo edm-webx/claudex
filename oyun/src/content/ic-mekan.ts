@@ -7,9 +7,9 @@
  * Items with `esya` show only when that equipment is bought (never solid, so the static walk grid stays valid).
  */
 export type Yon = '+x' | '-x' | '+z' | '-z';
-export type IcTur = 'kafe' | 'bistro' | 'kirtasiye' | 'okul' | 'lokanta' | 'kafeterya' | 'banka' | 'hastane' | 'acil' | 'morg' | 'kahvalti' | 'balik' | 'mutfak';
+export type IcTur = 'kafe' | 'bistro' | 'kirtasiye' | 'okul' | 'lokanta' | 'kafeterya' | 'banka' | 'hastane' | 'acil' | 'morg' | 'kahvalti' | 'balik' | 'mutfak' | 'giyim' | 'elektronik' | 'oyuncak';
 export interface IcMekan { id: string; ad: string; tur: IcTur; x: number; z: number; wx: number; wz: number; kapi: Yon; arsa?: string; bina?: string; salon?: 'W' | 'E'; mutfak?: boolean; h: number }
-export interface IcItem { k: string; u: number; v: number; w: number; d: number; ry?: number; solid?: boolean; esya?: string; y?: number; txt?: string; c?: string }
+export interface IcItem { k: string; u: number; v: number; w: number; d: number; ry?: number; solid?: boolean; esya?: string; y?: number; txt?: string; c?: string; /** büfe salonu: o aşamada kurulur (BUF-20 aşama 10 masaları) */ asama?: number }
 export interface Rect { x0: number; x1: number; z0: number; z1: number }
 
 export const IC_MEKANLAR: IcMekan[] = [
@@ -17,7 +17,13 @@ export const IC_MEKANLAR: IcMekan[] = [
   { id: 'kafe2', ad: 'Sahil Bistro', tur: 'bistro', x: -17.5, z: 51.5, wx: 7, wz: 9.4, kapi: '+x', arsa: 'k2', bina: 'kafe2', h: 3.1 },
   { id: 'kirtasiye', ad: 'Martı Kırtasiye', tur: 'kirtasiye', x: 28, z: 35.2, wx: 7.1, wz: 3.6, kapi: '-z', arsa: 'k3', bina: 'kirtasiye', h: 3.0 },
   { id: 'okul', ad: 'Martıköy İlkokulu', tur: 'okul', x: 48.85, z: 37.25, wx: 18.3, wz: 7.5, kapi: '-z', arsa: 'k4', bina: 'okul', h: 3.2 },
-  { id: 'avm', ad: 'Martı AVM', tur: 'lokanta', x: 20.15, z: 51.8, wx: 16.9, wz: 10.6, kapi: '-z', arsa: 'k5', bina: 'avm', h: 3.6 },
+  // 2026-11-20 owner: "AVM içindeki mağazalar ayrı, satın alınıp işletilebilen işletmeler olsun". The mall footprint
+  // (x 11.7..28.6, z 46.5..57.1) is cut into strips side by side, each with its own door on the -z front: lokanta (k5, keeps
+  // the room id 'avm') + Martı Moda (k7) + Tekno Martı (k8) + Oyuncak Dünyası (k9). The rooms touch but never overlap.
+  { id: 'avm', ad: 'Martı Lokantası', tur: 'lokanta', x: 26.0, z: 51.8, wx: 5.2, wz: 10.6, kapi: '-z', arsa: 'k5', bina: 'avm', h: 3.6 },
+  { id: 'avm_moda', ad: 'Martı Moda', tur: 'giyim', x: 21.45, z: 51.8, wx: 3.9, wz: 10.6, kapi: '-z', arsa: 'k7', bina: 'avm', h: 3.6 },
+  { id: 'avm_tekno', ad: 'Tekno Martı', tur: 'elektronik', x: 17.55, z: 51.8, wx: 3.9, wz: 10.6, kapi: '-z', arsa: 'k8', bina: 'avm', h: 3.6 },
+  { id: 'avm_oyuncak', ad: 'Oyuncak Dünyası', tur: 'oyuncak', x: 13.65, z: 51.8, wx: 3.9, wz: 10.6, kapi: '-z', arsa: 'k9', bina: 'avm', h: 3.6 },
   { id: 'tesis', ad: 'Halı Saha Tesisleri', tur: 'kafeterya', x: -54.1, z: 45.4, wx: 3.7, wz: 17.8, kapi: '+x', arsa: 'k6', bina: 'tesis', h: 2.8 },
   { id: 'banka', ad: 'Martı Kasası Bankası', tur: 'banka', x: 11.7, z: 36.8, wx: 10, wz: 8.4, kapi: '+z', bina: 'banka', h: 3.3 },
   { id: 'hastane', ad: 'Devlet Hastanesi', tur: 'hastane', x: 46.95, z: 53.55, wx: 16.9, wz: 6.7, kapi: '-z', bina: 'hastane', h: 3.0 },
@@ -31,7 +37,9 @@ export const IC_MEKANLAR: IcMekan[] = [
 ];
 export const IC_BY_ID: Record<string, IcMekan> = Object.fromEntries(IC_MEKANLAR.map(m => [m.id, m]));
 /** business rooms run by the live room sim (sim/agents/kafe.ts): real guests + real workers, no props */
-export const IC_CANLI = ['k1', 'k2', 'k3', 'k4', 'k5', 'k6'];
+export const IC_CANLI = ['k1', 'k2', 'k3', 'k4', 'k5', 'k6', 'k7', 'k8', 'k9'];
+/** every room of one building (the AVM has four) */
+export const icBina = (bina: string) => IC_MEKANLAR.filter(m => m.bina === bina);
 export const icOfArsa = (arsa: string) => IC_MEKANLAR.find(m => m.arsa === arsa);
 
 const YAW: Record<Yon, number> = { '+z': 0, '+x': Math.PI / 2, '-z': Math.PI, '-x': -Math.PI / 2 };
@@ -46,6 +54,11 @@ function rectW(m: IcMekan, u0: number, u1: number, v0: number, v1: number): Rect
   const a = icWorld(m, u0, v0), b = icWorld(m, u1, v1);
   return { x0: Math.min(a.x, b.x), x1: Math.max(a.x, b.x), z0: Math.min(a.z, b.z), z1: Math.max(a.z, b.z) };
 }
+/** dünya (x, z) -> oda çerçevesi (u, v): icWorld'ün tersi */
+export function icUV(m: IcMekan, x: number, z: number): { u: number; v: number } {
+  const t = YAW[m.kapi], c = Math.round(Math.cos(t)), s = Math.round(Math.sin(t)), dx = x - m.x, dz = z - m.z;
+  return { u: dx * c - dz * s, v: dx * s + dz * c };
+}
 export const IC_DUVAR = 0.25, IC_KAPI = 1.7;
 /** is p inside the room (margin < 0 shrinks) */
 export function icIcinde(m: IcMekan, p: { x: number; z: number }, margin = 0): boolean {
@@ -58,33 +71,41 @@ export const icKapi = (m: IcMekan, off = 0.6) => icWorld(m, 0, icDim(m).D / 2 + 
 /* ---------- layouts (door frame) ---------- */
 const it = (k: string, u: number, v: number, w: number, d: number, o: Partial<IcItem> = {}): IcItem => ({ k, u, v, w, d, ...o });
 const masa = (u: number, v: number, k = 'masa2') => it(k, u, v, 0.8, 0.8, { solid: true });
+/**
+ * BUF-20: büfe salonlarının masaları sim masasıdır (content/kanat.ts KANAT_MASALAR salonW / salonE, aynı u/v ızgarası): koltuklar
+ * u ekseninde ±0.78, garson v+0.95'te. Kapıya yakın iki masa aşama 10'da (fine dining) kurulur.
+ */
+const SALON_U = [-3.9, -1.9, 1.9, 3.9], SALON_V = [-0.2, 1.6];
+const salonMasalar = (): IcItem[] => SALON_V.flatMap(v => SALON_U.map(u => it('salonMasa', u, v, 0.9, 0.8, { solid: true, ...(v > 1 && Math.abs(u) < 3 ? { asama: 10 } : {}) })));
 
 function kafeLayout(W: number, D: number, bistro: boolean): IcItem[] {
-  const bv = -D / 2 + 1.2, o: IcItem[] = [
-    it('rafArka', -1.2, -D / 2 + 0.32, 5.6, 0.36), it('tezgah', -1.2, bv, 5.0, 0.75, { solid: true, c: bistro ? '#1d4f86' : '#7a3b1c' }), it('kasa', 0.9, bv, 0.4, 0.4, { y: 1.05 }),
+  // 2026-11-21 denetim: tezgâh arkasında 0.9 m personel koridoru (raf duvara yaslı, tezgâh öne alındı; eskiden 0.33 m kalıyordu)
+  const bv = -D / 2 + 1.95, o: IcItem[] = [
+    it('rafArka', -1.2, -D / 2 + IC_DUVAR + 0.18, 5.6, 0.36), it('tezgah', -1.2, bv, 5.0, 0.75, { solid: true, c: bistro ? '#1d4f86' : '#7a3b1c' }), it('kasa', 0.9, bv, 0.4, 0.4, { y: 1.05 }),
     it('menuPano', -1.2, -D / 2 + 0.27, 3.0, 0.05, { y: 2.3, txt: bistro ? 'SAHİL BİSTRO' : 'MEYDAN KAFE' }),
-    masa(-3.3, 0.2, bistro ? 'masa4' : 'masa2'), masa(-3.3, 2.1), masa(-1.8, 1.2), masa(1.9, 0.5, bistro ? 'masa4' : 'masa2'), masa(1.9, 2.3),
+    masa(-3.1, 0.5, bistro ? 'masa4' : 'masa2'), masa(-3.1, 2.4), masa(-1.6, 1.45), masa(1.9, 0.85, bistro ? 'masa4' : 'masa2'), masa(1.9, 2.55),
     it('saksiB', W / 2 - 0.45, D / 2 - 0.45, 0.6, 0.6), it('lamba', 0, 0, W, D),
   ];
   if (!bistro) o.push(
     it('espresso', -2.7, bv, 0.6, 0.5, { esya: 'espresso', y: 1.05 }), it('barista', -0.4, bv, 0.9, 0.5, { esya: 'barista', y: 1.05 }),
-    it('vitrin', 2.0, bv, 1.4, 0.8, { esya: 'vitrin' }), it('koltuk', W / 2 - 1.2, D / 2 - 1.3, 1.8, 1.6, { esya: 'koltuk' }),
+    it('vitrin', 2.0, bv, 1.4, 0.8, { esya: 'vitrin' }), it('koltuk', W / 2 - 1.05, D / 2 - 1.3, 1.6, 1.6, { esya: 'koltuk' }),
     it('muzik', W / 2 - 0.55, -D / 2 + 0.55, 0.8, 0.6, { esya: 'muzik' }), it('kitaplik', -W / 2 + 0.3, 0.4, 3.2, 0.4, { esya: 'kitaplik', ry: 1 }),
     it('saksi', -W / 2 + 0.5, D / 2 - 0.5, 0.5, 0.5, { esya: 'saksi' }), it('saksi', W / 2 - 0.5, -0.6, 0.5, 0.5, { esya: 'saksi' }), it('isikTavan', 0, 0, W - 0.6, D - 0.6, { esya: 'isik' }));
   else o.push(
     it('espresso', -2.7, bv, 0.6, 0.5, { esya: 'kahve_bar', y: 1.05 }), it('waffle', -0.5, bv, 0.6, 0.45, { esya: 'waffle_mak', y: 1.05 }), it('bicak', 0.3, bv, 0.5, 0.3, { esya: 'sef_seti', y: 1.05 }),
     it('buzVitrin', 2.1, bv, 1.6, 0.85, { esya: 'buz_vitrin' }), it('akvaryum', -W / 2 + 0.32, 0.6, 3.2, 0.45, { esya: 'akvaryum', ry: 1 }),
-    it('mangal', W / 2 - 0.65, -D / 2 + 0.6, 1.0, 0.8, { esya: 'mangal' }), it('piyano', W / 2 - 1.1, D / 2 - 1.1, 1.5, 1.2, { esya: 'piyano' }), it('isikTavan', 0, 0, W - 0.6, D - 0.6, { esya: 'isik' }));
+    it('mangal', W / 2 - 0.7, -D / 2 + 0.6, 0.9, 0.7, { esya: 'mangal' }), it('piyano', W / 2 - 1.1, D / 2 - 1.1, 1.5, 1.2, { esya: 'piyano' }), it('isikTavan', 0, 0, W - 0.6, D - 0.6, { esya: 'isik' }));
   return o;
 }
 function kirtasiyeLayout(W: number, D: number): IcItem[] {
+  // 2026-11-21 denetim: tezgâh doğu duvarından 0.9 m içeride (kasiyer arkada sıkışmıyor), okuma köşesi kapı yolundan alındı
   return [
-    it('rafArka', -0.9, -D / 2 + 0.45, W - 2.8, 0.5, { solid: true, c: 'kirtasiye' }), it('tezgah', W / 2 - 1.1, 0.0, 1.8, 0.7, { solid: true, ry: 1, c: '#2b6fb8' }), it('kasa', W / 2 - 1.1, 0.5, 0.4, 0.4, { y: 1.05 }),
+    it('rafArka', -0.9, -D / 2 + 0.45, W - 2.8, 0.5, { solid: true, c: 'kirtasiye' }), it('tezgah', W / 2 - 1.55, 0.0, 1.8, 0.7, { solid: true, ry: 1, c: '#2b6fb8' }), it('kasa', W / 2 - 1.55, 0.5, 0.4, 0.4, { y: 1.05 }),
     it('stand', -1.6, 0.5, 1.3, 0.55, { solid: true }), it('lamba', 0, 0, W, D),
-    it('fotokopi', W / 2 - 0.6, -D / 2 + 0.6, 0.9, 0.7, { esya: 'fotokopi' }), it('pos', W / 2 - 1.1, -0.4, 0.3, 0.3, { esya: 'pos', y: 1.05 }),
-    it('laminasyon', W / 2 - 1.1, 0.15, 0.5, 0.4, { esya: 'laminasyon', y: 1.05 }), it('kitaplik', -W / 2 + 0.3, 0.1, 2.6, 0.4, { esya: 'kitap_raf', ry: 1 }),
+    it('fotokopi', W / 2 - 0.6, -D / 2 + 0.6, 0.9, 0.7, { esya: 'fotokopi' }), it('pos', W / 2 - 1.55, -0.4, 0.3, 0.3, { esya: 'pos', y: 1.05 }),
+    it('laminasyon', W / 2 - 1.55, 0.15, 0.5, 0.4, { esya: 'laminasyon', y: 1.05 }), it('kitaplik', -W / 2 + 0.3, 0.1, 2.6, 0.4, { esya: 'kitap_raf', ry: 1 }),
     it('kalemVitrin', 1.2, -D / 2 + 0.55, 1.2, 0.6, { esya: 'vitrin_k' }), it('oyuncak', -W / 2 + 1.3, D / 2 - 0.6, 1.2, 0.7, { esya: 'oyuncak' }),
-    it('yazici3d', -2.9 + 0.2, -D / 2 + 0.45, 0.6, 0.5, { esya: 'yazici3d', y: 1.25 }), it('okuma', 0.2, 0.7, 1.2, 1.0, { esya: 'okuma' }),
+    it('yazici3d', -2.9 + 0.2, -D / 2 + 0.45, 0.6, 0.5, { esya: 'yazici3d', y: 1.25 }), it('okuma', -1.9, -0.5, 1.1, 0.9, { esya: 'okuma' }),
   ];
 }
 function okulLayout(W: number, D: number): IcItem[] {
@@ -92,8 +113,8 @@ function okulLayout(W: number, D: number): IcItem[] {
     it('dolap', -4.8, D / 2 - 0.35, 3.4, 0.45, { solid: true, ry: 2 }), it('pano', -8.9, 0, 2.4, 0.06, { ry: 1, y: 1.6 }), it('bolme', 0.2, -1.2, 0.18, D - 2.4 - 0.5, { solid: true })];
   for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++) o.push(it('sira', -7.6 + c * 1.55, -1.3 + r * 1.4, 1.1, 0.55, { solid: true }));
   // the school canteen (business k4) in the east half
-  const bv = -D / 2 + 1.15;
-  o.push(it('tezgah', 5.2, bv, 4.6, 0.7, { solid: true, c: '#e0533c' }), it('rafArka', 5.2, -D / 2 + 0.32, 4.8, 0.36), it('kasa', 6.9, bv, 0.4, 0.4, { y: 1.05 }),
+  const bv = -D / 2 + 1.95;   // 2026-11-21 denetim: kantin tezgâhı öne, arkada 0.9 m personel koridoru
+  o.push(it('tezgah', 5.2, bv, 4.6, 0.7, { solid: true, c: '#e0533c' }), it('rafArka', 5.2, -D / 2 + IC_DUVAR + 0.18, 4.8, 0.36), it('kasa', 6.9, bv, 0.4, 0.4, { y: 1.05 }),
     it('menuPano', 5.2, -D / 2 + 0.27, 2.6, 0.05, { y: 2.2, txt: 'KANTİN' }),
     it('tostMak', 4.0, bv, 0.5, 0.4, { esya: 'tost_mak', y: 1.05 }), it('buzdolap', 8.5, -D / 2 + 0.5, 0.9, 0.7, { esya: 'buzdolap' }),
     it('semaver', 5.4, bv, 0.4, 0.4, { esya: 'semaver_k', y: 1.05 }), it('firinK', 2.4, -D / 2 + 0.5, 0.9, 0.7, { esya: 'mikrodalga' }),
@@ -101,29 +122,66 @@ function okulLayout(W: number, D: number): IcItem[] {
     it('ekran', 5.2, -D / 2 + 0.2, 1.4, 0.08, { esya: 'ekran_k', y: 2.0 }), it('izgara', 7.3, -D / 2 + 0.55, 0.9, 0.6, { esya: 'izgara_k' }));
   return o;
 }
+/** AVM lokanta strip (W 5.2): counter at the back, staff behind it, cooking line on the back wall, tables in a column on the
+ *  east side so the queue lanes on the west side stay clear */
 function avmLayout(W: number, D: number): IcItem[] {
-  const bv = -D / 2 + 1.3;
+  const bv = -D / 2 + 2.15, bw = -D / 2 + IC_DUVAR + 0.25;   // 2026-11-21 denetim: pişirme hattı ile tezgâh arası 0.95 m
   return [
     it('lamba', 0, 0, W, D), it('zemin', 0, 0, W, D, { c: 'avm' }),
-    it('tezgah', -5.0, bv, 6.0, 0.8, { solid: true, c: '#a2472f' }), it('kasa', -2.4, bv, 0.4, 0.4, { y: 1.05 }), it('menuPano', -5.0, -D / 2 + 0.27, 4.0, 0.05, { y: 2.6, txt: 'MARTI LOKANTASI' }),
-    masa(-6.4, 0.6, 'masa4'), masa(-3.6, 0.6, 'masa4'), masa(-6.4, 3.0, 'masa4'), masa(-3.6, 3.0, 'masa4'),
-    it('magaza', 2.2, -D / 2 + 0.75, 3.6, 1.3, { solid: true, txt: 'MARTI MODA', c: '#c94f6d' }), it('magaza', 6.2, -D / 2 + 0.75, 3.6, 1.3, { solid: true, txt: 'TEKNO MARTI', c: '#2b6fb8' }),
-    it('magaza', W / 2 - 0.75, 1.6, 3.6, 1.3, { solid: true, txt: 'OYUNCAK DÜNYASI', c: '#ffb627', ry: 3 }),
-    it('yuruyen', 3.6, 1.6, 1.3, 3.6, { solid: true }), it('saksiB', 1.2, 3.8, 0.7, 0.7, { solid: true }), it('saksiB', -1.2, 3.8, 0.7, 0.7, { solid: true }), it('bank', 6.4, 3.9, 1.8, 0.45, { solid: true }),
-    it('benmari', -6.6, bv, 1.6, 0.6, { esya: 'benmari', y: 1.05 }), it('corba', -4.2, bv, 0.55, 0.55, { esya: 'corba_kazan', y: 1.05 }),
-    it('tasFirin', -7.4, -D / 2 + 0.7, 1.4, 1.0, { esya: 'pide_firin' }), it('semaver', -3.3, bv, 0.4, 0.4, { esya: 'cay_ocak', y: 1.05 }),
-    it('mangal', -5.6, -D / 2 + 0.55, 1.2, 0.6, { esya: 'ocakbasi' }), it('doner', -4.1, -D / 2 + 0.5, 0.6, 0.6, { esya: 'doner' }),
-    it('tatliVitrin', -1.4, bv, 1.2, 0.75, { esya: 'tatli_vitrin' }), it('ekran', -5.0, -D / 2 + 0.2, 2.6, 0.08, { esya: 'led_menu', y: 2.0 }), it('ustaOcak', -2.8, -D / 2 + 0.55, 1.0, 0.6, { esya: 'sef_ocak' }),
+    it('tezgah', -0.5, bv, 3.6, 0.8, { solid: true, c: '#a2472f' }), it('kasa', 1.0, bv, 0.4, 0.4, { y: 1.05 }), it('menuPano', -0.5, -D / 2 + 0.27, 3.4, 0.05, { y: 2.75, txt: 'MARTI LOKANTASI' }),
+    masa(-1.6, -0.2, 'masa4'), masa(-1.6, 1.7, 'masa4'), masa(-1.6, 3.6, 'masa4'), it('saksiB', W / 2 - 0.55, D / 2 - 0.55, 0.5, 0.5, { solid: true }),
+    it('benmari', -1.6, bv, 1.4, 0.6, { esya: 'benmari', y: 1.05 }), it('corba', -0.45, bv, 0.5, 0.5, { esya: 'corba_kazan', y: 1.05 }), it('semaver', 0.3, bv, 0.4, 0.4, { esya: 'cay_ocak', y: 1.05 }),
+    // back wall cooking line; the staff lane (v ~ bv - 0.7) stays free in front of it
+    it('tasFirin', -1.75, bw, 1.0, 0.5, { esya: 'pide_firin' }), it('mangal', -0.7, bw, 0.9, 0.5, { esya: 'ocakbasi' }), it('doner', 0.1, bw, 0.5, 0.5, { esya: 'doner' }),
+    it('ustaOcak', 0.9, bw, 0.8, 0.5, { esya: 'sef_ocak' }), it('tatliVitrin', W / 2 - 0.75, bw, 0.8, 0.5, { esya: 'tatli_vitrin' }),
+    it('ekran', -0.5, -D / 2 + 0.2, 1.6, 0.08, { esya: 'led_menu', y: 1.85 }),
   ];
 }
+/** AVM shop strip (W 3.9, D 10.6), door at v = +D/2. The till counter stands along the depth (ry 3: front to the customers on
+ *  the -u side, like the stationery shop), the stock shelf behind it on the +u wall, goods racks on the -u wall, a display
+ *  table near the door. The middle lane (u ~ -0.6..0.2) stays empty: guests walk door -> racks -> till in straight lines.
+ *  Equipment (`esya`) never collides. */
+export const MAGAZA_RENK: Record<'giyim' | 'elektronik' | 'oyuncak', { c: string; txt: string }> = {
+  giyim: { c: '#c94f6d', txt: 'MARTI MODA' }, elektronik: { c: '#2b6fb8', txt: 'TEKNO MARTI' }, oyuncak: { c: '#e8892b', txt: 'OYUNCAK DÜNYASI' },
+};
+function magazaLayout(W: number, D: number, tur: 'giyim' | 'elektronik' | 'oyuncak'): IcItem[] {
+  const R = MAGAZA_RENK[tur], tv = -2.6, tu = 0.25,   // 2026-11-21 denetim: kasiyerler depo rafına yapışıyordu, tezgâh 0.25 m batıya
+    wl = -W / 2 + 0.5, wr = W / 2 - 0.4, fv = D / 2 - 0.55;
+  const o: IcItem[] = [
+    it('lamba', 0, 0, W, D), it('zemin', 0, 0, W, D, { c: 'avm' }),
+    it('tezgah', tu, tv, 3.0, 0.6, { solid: true, ry: 3, c: R.c }), it('kasa', tu, tv + 1.15, 0.4, 0.4, { y: 1.05, ry: 3 }),
+    it('depoRaf', wr + 0.05, tv, 3.0, 0.3, { ry: 3, c: tur }), it('paketMasa', tu, tv + 0.45, 0.5, 0.4, { y: 1.05, ry: 3, c: tur }),
+    it('menuPano', 0, -D / 2 + 0.27, 2.8, 0.05, { y: 2.55, txt: R.txt }),
+    it('reyon', wl + 0.05, -2.15, 3.5, 0.4, { solid: true, ry: 1, c: tur }), it('reyon', wl + 0.05, 2.0, 3.2, 0.4, { solid: true, ry: 1, c: tur }),
+    it('teshir', 0.9, 2.2, 0.9, 1.3, { solid: true, c: tur }),
+  ];
+  if (tur === 'giyim') o.push(
+    it('askilik', 0.95, 0.55, 0.9, 0.9, { esya: 'askilik' }), it('manken', wl + 0.15, fv, 0.5, 0.5, { esya: 'manken' }), it('manken', wr - 0.05, fv, 0.5, 0.5, { esya: 'manken', c: 'b' }),
+    it('prova', wl + 0.3, -D / 2 + 0.75, 1.0, 1.0, { esya: 'prova' }), it('ayna', -W / 2 + 0.3, 0.0, 0.7, 0.06, { esya: 'ayna', ry: 1 }),
+    it('ayakkabi', wr + 0.1, 0.55, 1.1, 0.3, { esya: 'ayakkabi', ry: 3 }), it('aksesuar', 0.9, 3.65, 0.55, 0.55, { esya: 'aksesuar' }),
+    it('ledPano', 0.45, -D / 2 + 0.2, 1.5, 0.05, { esya: 'led_vitrin', y: 1.5, c: R.c }), it('dikis', tu, tv - 0.95, 0.55, 0.45, { esya: 'tasarim', y: 1.05, ry: 3 }));
+  else if (tur === 'elektronik') o.push(
+    it('testMasa', tu, tv - 0.9, 0.6, 0.45, { y: 1.05, ry: 3 }),
+    it('demoMasa', 0.95, 0.55, 0.8, 0.9, { esya: 'demo_masa' }), it('tamir', tu, tv - 0.3, 0.5, 0.4, { esya: 'tamir', y: 1.05, ry: 3 }),
+    it('tvDuvar', W / 2 - 0.27, 2.2, 2.4, 0.06, { esya: 'tv_duvar', y: 1.75, ry: 3 }), it('kulaklikStand', wl + 0.15, fv, 0.5, 0.5, { esya: 'kulaklik_stand' }),
+    it('konsol', wl + 0.3, -D / 2 + 0.75, 1.0, 1.0, { esya: 'konsol' }), it('vr', wr - 0.05, fv, 0.6, 0.6, { esya: 'vr' }),
+    it('drone', -0.2, 1.0, 0.6, 0.6, { esya: 'drone', y: 2.35 }), it('ledPano', 0.45, -D / 2 + 0.2, 1.5, 0.05, { esya: 'led_e', y: 1.5, c: R.c }));
+  else o.push(
+    it('testMasa', tu, tv - 0.9, 0.6, 0.45, { y: 1.05, ry: 3 }),
+    it('pelusSepet', 0.95, 0.55, 0.8, 0.8, { esya: 'pelus_sepet' }), it('balon', wl + 0.15, fv, 0.5, 0.5, { esya: 'balon' }),
+    it('trenPist', 0.9, 2.2, 0.8, 1.2, { esya: 'tren_pist', y: 0.8 }), it('legoDuvar', wr + 0.1, 0.55, 1.1, 0.3, { esya: 'lego_duvar', ry: 3 }),
+    it('oyunKale', wl + 0.3, -D / 2 + 0.75, 1.0, 1.0, { esya: 'oyun_kale' }), it('maskot', wr - 0.05, fv, 0.6, 0.6, { esya: 'maskot' }),
+    it('hediye', tu, tv - 0.3, 0.5, 0.4, { esya: 'hediye_paket', y: 1.05, ry: 3 }), it('ledPano', 0.45, -D / 2 + 0.2, 1.5, 0.05, { esya: 'led_o', y: 1.5, c: R.c }));
+  return o;
+}
 function kafeteryaLayout(W: number, D: number): IcItem[] {
-  const bv = -D / 2 + 0.85;
+  const bv = -D / 2 + 1.45;   // 2026-11-21 denetim: tezgâh arkasında 0.9 m koridor; masalar kuyruğun önünden doğuya alındı
   return [
     it('lamba', 0, 0, W, D), it('tezgah', -4.8, bv, 4.6, 0.6, { solid: true, c: '#2f9e5a' }), it('kasa', -2.9, bv, 0.4, 0.4, { y: 1.05 }), it('menuPano', -4.8, -D / 2 + 0.27, 2.8, 0.05, { y: 2.0, txt: 'KAFETERYA' }),
-    masa(-6.4, 1.0), masa(-3.6, 1.0), it('dolap', 5.6, -D / 2 + 0.3, 5.0, 0.45, { solid: true }), it('bank', 5.6, 0.2, 3.6, 0.4, { solid: true }),
+    masa(1.1, 0.7), masa(2.8, 0.7), it('dolap', 5.6, -D / 2 + 0.3, 5.0, 0.45, { solid: true }), it('bank', 5.6, 0.2, 3.6, 0.4, { solid: true }),
     it('pano', 2.2, -D / 2 + 0.17, 1.6, 0.06, { y: 1.5, txt: 'SOYUNMA' }), it('dus', 8.2, 0.9, 1.0, 1.2),
     it('semaver', -5.8, bv, 0.4, 0.4, { esya: 'cay_mak', y: 1.05 }), it('buzdolap', -7.9, -D / 2 + 0.45, 0.9, 0.7, { esya: 'icecek_dolap' }),
-    it('ekran', -0.8, -D / 2 + 0.2, 1.8, 0.08, { esya: 'mac_tv', y: 1.7 }), it('langirt', -0.8, 0.7, 1.3, 0.75, { esya: 'langirt' }),
+    it('ekran', -0.8, -D / 2 + 0.2, 1.8, 0.08, { esya: 'mac_tv', y: 1.7 }), it('langirt', -1.0, 1.0, 1.3, 0.75, { esya: 'langirt' }),
     it('kupa', 1.0, -D / 2 + 0.35, 1.2, 0.45, { esya: 'kupa' }), it('izgara', -6.9, -D / 2 + 0.45, 0.9, 0.55, { esya: 'izgara_t' }),
     it('formaDuvar', 3.2, -D / 2 + 0.16, 2.0, 0.06, { esya: 'forma_duvar', y: 1.6 }), it('vip', -8.2, 1.0, 0.9, 1.4, { esya: 'vip' }),
   ];
@@ -147,7 +205,7 @@ function hastaneLayout(W: number, D: number): IcItem[] {
 function kahvaltiLayout(W: number, D: number): IcItem[] {
   return [
     it('lamba', 0, 0, W, D), it('acikBufe', -1.2, -D / 2 + 1.0, 5.2, 0.8, { solid: true }), it('menuPano', -1.2, -D / 2 + 0.27, 3.2, 0.05, { y: 2.5, txt: 'SERPME KAHVALTI' }),
-    masa(-4.0, 0.2, 'masa4'), masa(-4.0, 2.1, 'masa4'), masa(-2.1, 1.2, 'masa4'), masa(2.2, 1.2, 'masa4'), masa(4.1, 0.2, 'masa4'), masa(4.1, 2.1, 'masa4'),
+    ...salonMasalar(),
     it('semaverDev', -W / 2 + 0.6, -D / 2 + 0.6, 0.8, 0.8, { esya: 'semaver_dev' }), it('tasFirin', 3.9, -D / 2 + 0.75, 2.0, 1.1, { esya: 'tas_firin' }),
     it('gozleme', 2.0, -D / 2 + 0.75, 1.4, 0.9, { esya: 'gozleme' }), it('balKaymak', -W / 2 + 0.45, -1.25, 1.4, 0.6, { esya: 'bal_kaymak', ry: 1 }),
     it('sarkuteri', W / 2 - 0.45, -1.25, 1.6, 0.7, { esya: 'sarkuteri', ry: 3 }),
@@ -156,10 +214,10 @@ function kahvaltiLayout(W: number, D: number): IcItem[] {
 function balikLayout(W: number, D: number): IcItem[] {
   return [
     it('lamba', 0, 0, W, D), it('bar', -2.4, -D / 2 + 1.0, 5.0, 0.8, { solid: true }), it('menuPano', -2.4, -D / 2 + 0.27, 3.2, 0.05, { y: 2.5, txt: 'GÜNÜN BALIĞI' }),
-    masa(-4.2, 0.4, 'masa4'), masa(-4.2, 2.3, 'masa4'), masa(-2.2, 1.4, 'masa4'), masa(2.2, 1.0, 'masa4'), masa(2.6, -0.9, 'masa4'), masa(4.5, 0.4, 'masa4'),
+    ...salonMasalar(),
     it('buzTezgah', 1.6, -D / 2 + 0.8, 2.4, 0.9, { esya: 'buz_tezgah' }), it('mangal', 4.6, -D / 2 + 0.65, 1.4, 0.8, { esya: 'mangal_e' }),
     it('akvaryum', -W / 2 + 0.32, 0.4, 3.6, 0.45, { esya: 'akvaryum_e', ry: 1 }), it('mezeDolap', W / 2 - 0.4, 1.6, 1.8, 0.6, { esya: 'meze_dolap', ry: 3 }),
-    it('piyano', 4.3, 2.4, 1.6, 1.2, { esya: 'piyano_s' }),
+    it('piyano', 4.4, -1.45, 1.6, 1.0, { esya: 'piyano_s' }),
   ];
 }
 function acilLayout(W: number, D: number): IcItem[] {
@@ -170,39 +228,234 @@ function morgLayout(W: number, D: number): IcItem[] {
   return [it('lamba', 0, 0, W, D, { c: 'titrek' }), it('zemin', 0, 0, W, D, { c: 'morg' }), it('cekmece', 0, -D / 2 + 0.4, W - 0.7, 0.55, { solid: true }), it('otopsi', 0.85, 0.15, 0.7, 1.7, { solid: true })];
 }
 
+/**
+ * Mutfak istasyonlarının yeri (BUF-05, kapı çerçevesi: u kapı duvarı boyunca, v odanın içine): tek doğruluk kaynağı. mutfakLayout,
+ * sim'deki aşçı durakları (mutfakStand) ve rota (mutfakRota) buradan okur. sira: arka duvar hattı, ön hat ya da ortada (şef pasosu).
+ * BUF-22: mutfak aşamayla yerinde büyür (mutfakOda): oda hep x=0'a ortalı, kapı u=0'da, u = dünya x. Her istasyon kendi açıldığı
+ * aşamanın odasına sığar (3-5 esnaf ±4.6, 6-8 lokanta ±6.9, 9-10 iki hatlı ±9). Pass ön duvarda, büfe tezgâhının arkasında: garson
+ * tabağı dışarıdan, pass penceresinden alır (passGarson odanın dışında, kapıdan girmez).
+ */
+export const MUTFAK_YER: Record<string, { u: number; w: number; sira: 'arka' | 'on' | 'orta'; k: string }> = {
+  // arka hat (aşama 3-5 esnaf odası: soğuk oda, ocak, ızgara, fritöz, bulaşık)
+  soguk_oda: { u: -3.6, w: 1.4, sira: 'arka', k: 'sogukOda' }, ocak: { u: -2.0, w: 1.6, sira: 'arka', k: 'ocakK' }, izgara: { u: -0.3, w: 1.6, sira: 'arka', k: 'izgaraK' },
+  fritoz: { u: 1.3, w: 1.2, sira: 'arka', k: 'fritoz' }, bulasik: { u: 3.25, w: 2.0, sira: 'arka', k: 'bulasik' },
+  // aşama 6-8 lokanta odası: taş fırın sola, döner sağa; 9: ikinci ocak / ızgara hatları uçlarda
+  tas_firin: { u: -5.5, w: 1.8, sira: 'arka', k: 'tasFirin' }, doner: { u: 5.0, w: 1.1, sira: 'arka', k: 'doner' },
+  ocak2: { u: -7.6, w: 1.6, sira: 'arka', k: 'ocakK' }, izgara2: { u: 7.6, w: 1.6, sira: 'arka', k: 'izgaraK' },
+  // ön hat: pass (pencerede), çay barı; 6-7: salata, soğuk meze, tatlı
+  pass: { u: -2.9, w: 2.0, sira: 'on', k: 'pass' }, cay_bar: { u: 2.6, w: 1.6, sira: 'on', k: 'cayBar' },
+  salata: { u: -5.4, w: 1.6, sira: 'on', k: 'salata' }, meze: { u: 4.6, w: 1.4, sira: 'on', k: 'mezeDolap' }, tatli: { u: 5.95, w: 1.2, sira: 'on', k: 'tatliVitrin' },
+  // 10: şef pasosu ortada (hazırlık tezgâhlarının sağında)
+  sef_masa: { u: 6.0, w: 2.4, sira: 'orta', k: 'sefMasa' },
+};
+/** mutfak koridorları ve duraklar (u, v): arka koridor v=-D/2+1.5, ön koridor v=D/2-1.3; geçitler hazırlık tezgâhlarının arasından.
+ *  passGarson pass penceresinin önü (odanın dışı, yürüyüş yolu). Geçitler en küçük odaya da sığar: rota aşamadan bağımsız. */
+export const MUTFAK_NOKTA = {
+  passAsci: [-2.9, 0.9] as [number, number], passGarson: [-2.9, 2.95] as [number, number],
+  gecit: [-4.0, 0, 4.0], sefDurak: [[-1.5, 0.9], [-4.4, 0.9]] as [number, number][], komiDurak: [[3.6, -0.7], [1.9, -0.7]] as [number, number][],
+};
+/** BUF-22: aşamaya göre mutfak odası (x=0'a ortalı, ön duvar sabit z=-13.0, derinlik sabit): genişlik 9.2 / 13.8 / 18 m */
+export const MUTFAK_BOY: { s: number; yari: number; ad: string }[] = [
+  { s: 3, yari: 4.6, ad: 'Esnaf mutfağı' }, { s: 6, yari: 6.9, ad: 'Lokanta mutfağı' }, { s: 9, yari: 9, ad: 'İki hatlı mutfak' }, { s: 10, yari: 9, ad: 'Şef pasolu otel mutfağı' },
+];
+export function mutfakBoy(stage: number): { s: number; yari: number; ad: string } {
+  let b = MUTFAK_BOY[0]; for (const x of MUTFAK_BOY) if (stage >= x.s) b = x; return b;
+}
+const odaCache = new Map<number, IcMekan>();
+/** the kitchen room of this stage (the IC_BY_ID.mutfak record is the largest, stage 9-10 room) */
+export function mutfakOda(stage: number): IcMekan {
+  const b = mutfakBoy(stage), key = b.yari; let o = odaCache.get(key);
+  if (!o) { o = { ...IC_BY_ID.mutfak, wx: b.yari * 2 }; odaCache.set(key, o); }
+  return o;
+}
+/** BUF-22: oyuncu büfede ya da arkasındaki yürüyüş yolundayken mutfağın çatısı kalkar, içi pass penceresi / camlı önden görünür */
+export const mutfakVitrin = (p: { x: number; z: number }): boolean => p.x > -10.5 && p.x < 10.5 && p.z > -13.2 && p.z < -3.6;
+const mutfakD = () => icDim(IC_BY_ID.mutfak).D;
+export const mutfakKoridor = () => { const D = mutfakD(); return { arka: -D / 2 + 1.5, on: D / 2 - 1.3 }; };
+/** istasyonun önünde aşçının durduğu nokta (u, v); şef pasosu arka koridordan */
+export function mutfakStand(id: string): [number, number] {
+  const y = MUTFAK_YER[id], k = mutfakKoridor(); if (!y) return [0, k.arka];
+  return [y.u, y.sira === 'on' ? k.on : k.arka];
+}
+/** istasyonun üstü (tabak görünümü), oda çerçevesinde (u, v) */
+export function mutfakUst(id: string): [number, number] {
+  const y = MUTFAK_YER[id], D = mutfakD(); if (!y) return [0, 0];
+  return [y.u, y.sira === 'on' ? D / 2 - 0.55 : y.sira === 'orta' ? 0.1 : -D / 2 + 0.55];
+}
+export const mutfakDunya = (uv: [number, number]) => icWorld(IC_BY_ID.mutfak, uv[0], uv[1]);
+/** BUF-22: bu aşamada mutfakta bekleme / durma noktası odanın içinde kalsın (iç duvar yüzünden 0.6 m) */
+export function mutfakIcine(uv: [number, number], stage: number): [number, number] {
+  const m = mutfakBoy(stage).yari - IC_DUVAR - 0.6; return [Math.max(-m, Math.min(m, uv[0])), uv[1]];
+}
+/**
+ * Mutfak içi yürüyüş rotası (u, v noktaları): koridora çık, koridor boyunca git, gerekirse en kısa geçitten öbür koridora geç,
+ * hedefe in. Hazırlık tezgâhlarının (solid) içinden geçmez; kapı (v > ön koridor) ve şef durakları gibi ara noktalar dikine bağlanır.
+ */
+export function mutfakRota(from: [number, number], to: [number, number]): [number, number][] {
+  const k = mutfakKoridor(), near = (v: number, a: number) => Math.abs(v - a) < 0.3;
+  const aisleOf = (p: [number, number]) => (near(p[1], k.arka) ? k.arka : near(p[1], k.on) ? k.on : p[1] < (k.arka + k.on) / 2 - 0.4 ? k.arka : k.on);
+  const a0 = aisleOf(from), a1 = aisleOf(to), out: [number, number][] = [];
+  if (Math.abs(from[1] - a0) > 0.05) out.push([from[0], a0]);
+  if (a0 !== a1) {
+    let g = MUTFAK_NOKTA.gecit[0], best = 1e9;
+    for (const x of MUTFAK_NOKTA.gecit) { const c = Math.abs(from[0] - x) + Math.abs(x - to[0]); if (c < best) { best = c; g = x; } }
+    out.push([g, a0], [g, a1]);
+  }
+  out.push([to[0], a1]);
+  if (Math.abs(to[1] - a1) > 0.05) out.push([to[0], to[1]]);
+  return out;
+}
 const cache = new Map<string, IcItem[]>();
-/** Kitchen (door frame): cooking line on the back wall, prep line in front, pass at the right end; every station is `esya` = its id */
-function mutfakLayout(W: number, D: number): IcItem[] {
-  const bv = -D / 2 + 0.55, fv = D / 2 - 0.55;
-  const st = (k: string, esya: string, u: number, w: number, v = bv, o: Partial<IcItem> = {}) => it(k, u, v, w, 0.9, { esya, ...o });
+/**
+ * Kitchen (door frame): cooking line on the back wall, prep line in front, pass in the front wall (window to the walkway); every
+ * station is `esya` = its id. BUF-22: duvar öğeleri (davlumbaz, tava rayı, menü) o aşamanın oda genişliğine göre; hazırlık
+ * tezgâhları aşamayla çoğalır (asama alanı: kurulmadan çarpışmaz). Ön hat istasyonları aşçıya dönük (ry 2).
+ */
+function mutfakLayout(W: number, D: number, stage: number): IcItem[] {
+  const bv = -D / 2 + 0.55, fv = D / 2 - 0.55, yari = W / 2 - IC_DUVAR;
+  const st = (id: string) => { const y = MUTFAK_YER[id]; return it(y.k, y.u, y.sira === 'arka' ? bv : y.sira === 'on' ? fv : 0.1, y.w, 0.75, { esya: id, ...(y.sira === 'on' ? { ry: 2 } : {}) }); };
+  const hood = stage >= 9 ? [-8.4, 2.0] : stage >= 6 ? [-6.4, 2.0] : [-2.9, 2.0];
   return [
-    st('sogukOda', 'soguk_oda', -8.1, 1.4), st('ocakK', 'ocak', -6.3, 1.6), st('ocakK', 'ocak2', -4.5, 1.6), st('izgaraK', 'izgara', -2.7, 1.6), st('izgaraK', 'izgara2', -0.9, 1.6),
-    st('fritoz', 'fritoz', 0.8, 1.2), st('tasFirin', 'tas_firin', 2.7, 1.8), st('doner', 'doner', 4.5, 1.1), st('tatliVitrin', 'tatli', 5.9, 1.2), st('pass', 'pass', 7.8, 2.0),
-    st('bulasik', 'bulasik', -7.2, 2.0, fv), st('salata', 'salata', -4.6, 1.6, fv), st('mezeDolap', 'meze', -2.6, 1.4, fv), st('cayBar', 'cay_bar', 6.5, 1.6, fv),
-    st('sefMasa', 'sef_masa', 0, 2.8, 0.1),
-    it('davlumbaz', -4.0, bv, 9.0, 1.0, { esya: 'ocak' }), it('asiliTava', -1.0, -D / 2 + 0.1, 16, 0.2), it('kds', 7.8, -D / 2 + 0.1, 1.9, 0.1),
-    it('hazirlik', -3.4, 0.1, 2.4, 0.7, { solid: true }), it('hazirlik', 3.9, 0.1, 2.4, 0.7, { solid: true }),
+    ...Object.keys(MUTFAK_YER).map(st),
+    it('davlumbaz', (hood[0] + hood[1]) / 2, bv, hood[1] - hood[0], 1.0, { esya: 'ocak' }),
+    ...(stage >= 9 ? [it('davlumbaz', 6.3, bv, 4.0, 1.0, { esya: 'izgara2' })] : []),
+    it('asiliTava', 0, -D / 2 + 0.3, Math.max(4, 2 * yari - 1.4), 0.2), it('kds', 3.25, -D / 2 + 0.3, 1.9, 0.1),   // duvar yüzü -D/2+0.25: duvara asılı öğeler onun önünde (2026-11-20 BUF-07)
+    it('mutfakMenu', -yari + 0.03, 0.15, 2.6, 0.1, { ry: 1 }),   // BUF-07: duvar menü panosu (aşamaya göre) + şef notu; BUF-22: sol yan duvarda (oda büyüyünce duvarla gider)
+    it('islakTabela', -1.0, 0.95, 0.4, 0.4),   // BUF-07: ıslak zemin tabelasının yeri (yalnız yerleşim, görünürlük kir eşiğiyle ic-mekan-look'ta)
+    it('hazirlik', -2.7, 0.1, 1.8, 0.7, { solid: true }), it('hazirlik', 2.7, 0.1, 1.8, 0.7, { solid: true }),
+    it('hazirlik', -5.8, 0.1, 1.6, 0.7, { solid: true, asama: 6 }), it('hazirlik', -7.8, 0.1, 1.4, 0.7, { solid: true, asama: 9 }),
   ];
 }
 
-export function icLayout(m: IcMekan): IcItem[] {
-  let o = cache.get(m.id); if (o) return o;
+/** room furniture; `stage` only matters for the büfe kitchen (BUF-22: grows with the stage, default = the full stage-10 kitchen) */
+export function icLayout(m: IcMekan, stage = 10): IcItem[] {
+  if (m.mutfak) m = mutfakOda(stage);
+  const key = m.mutfak ? 'mutfak' + mutfakBoy(stage).s : m.id;
+  let o = cache.get(key); if (o) return o;
   const { W, D } = icDim(m);
   o = m.tur === 'kafe' ? kafeLayout(W, D, false) : m.tur === 'bistro' ? kafeLayout(W, D, true) : m.tur === 'kirtasiye' ? kirtasiyeLayout(W, D) : m.tur === 'okul' ? okulLayout(W, D)
     : m.tur === 'lokanta' ? avmLayout(W, D) : m.tur === 'kafeterya' ? kafeteryaLayout(W, D) : m.tur === 'banka' ? bankaLayout(W, D) : m.tur === 'hastane' ? hastaneLayout(W, D)
-    : m.tur === 'mutfak' ? mutfakLayout(W, D) : m.tur === 'kahvalti' ? kahvaltiLayout(W, D) : m.tur === 'balik' ? balikLayout(W, D) : m.tur === 'acil' ? acilLayout(W, D) : morgLayout(W, D);
-  cache.set(m.id, o); return o;
+    : m.tur === 'giyim' || m.tur === 'elektronik' || m.tur === 'oyuncak' ? magazaLayout(W, D, m.tur)
+    : m.tur === 'mutfak' ? mutfakLayout(W, D, stage) : m.tur === 'kahvalti' ? kahvaltiLayout(W, D) : m.tur === 'balik' ? balikLayout(W, D) : m.tur === 'acil' ? acilLayout(W, D) : morgLayout(W, D);
+  o = o.map(i => duvaraOturt(i, W, D));
+  cache.set(key, o); return o;
+}
+/** 2026-11-21 denetim: zemin eşyası duvarın içine taşmaz; taşan eşya duvar yüzüne yaslanacak kadar içeri kayar (ince duvar panoları,
+ *  kapılar ve kasa kapağı gibi derinliği 0.25 m'den az olanlar duvarda kalır). */
+function duvaraOturt(i: IcItem, W: number, D: number): IcItem {
+  if (!icZeminEngeli(i)) return i;
+  const r = icItemRect(i), t = IC_DUVAR, sw = r.u1 - r.u0, sd = r.v1 - r.v0; let du = 0, dv = 0;
+  if (sw > 0.25 && sw < W - 2 * t) { if (r.u0 < -W / 2 + t) du = -W / 2 + t - r.u0; else if (r.u1 > W / 2 - t) du = W / 2 - t - r.u1; }
+  if (sd > 0.25 && sd < D - 2 * t) { if (r.v0 < -D / 2 + t) dv = -D / 2 + t - r.v0; else if (r.v1 > D / 2 - t) dv = D / 2 - t - r.v1; }
+  return du || dv ? { ...i, u: i.u + du, v: i.v + dv } : i;
 }
 
-/** World-space colliders: walls with the door gap plus solid furniture. */
-export function icColliders(m: IcMekan): Rect[] {
+/** World-space colliders: walls with the door gap plus solid furniture (`stage`: büfe salonunda o aşamada kurulmamış masa yok). */
+export function icColliders(m: IcMekan, stage = 99): Rect[] {
+  if (m.mutfak) m = mutfakOda(stage);   // BUF-22: kitchen walls follow the stage room
   const { W, D } = icDim(m), t = IC_DUVAR, g = IC_KAPI / 2, o: Rect[] = [];
   o.push(rectW(m, -W / 2, W / 2, -D / 2, -D / 2 + t), rectW(m, -W / 2, -W / 2 + t, -D / 2, D / 2), rectW(m, W / 2 - t, W / 2, -D / 2, D / 2));
   o.push(rectW(m, -W / 2, -g, D / 2 - t, D / 2), rectW(m, g, W / 2, D / 2 - t, D / 2));
-  for (const i of icLayout(m)) if (i.solid) { const sw = (i.ry || 0) % 2 ? i.d : i.w, sd = (i.ry || 0) % 2 ? i.w : i.d; o.push(rectW(m, i.u - sw / 2, i.u + sw / 2, i.v - sd / 2, i.v + sd / 2)); }
+  for (const i of icLayout(m, Math.min(10, stage))) if (i.solid && (i.asama ?? 0) <= stage) { const sw = (i.ry || 0) % 2 ? i.d : i.w, sd = (i.ry || 0) % 2 ? i.w : i.d; o.push(rectW(m, i.u - sw / 2, i.u + sw / 2, i.v - sd / 2, i.v + sd / 2)); }
   return o;
 }
 /** Same, relative to the building centre (prefab-local colliders for an unrotated placement). */
-export const icCollidersLocal = (m: IcMekan): Rect[] => icColliders(m).map(r => ({ x0: r.x0 - m.x, x1: r.x1 - m.x, z0: r.z0 - m.z, z1: r.z1 - m.z }));
+export const icCollidersLocal = (m: IcMekan, cx = m.x, cz = m.z): Rect[] => icColliders(m).map(r => ({ x0: r.x0 - cx, x1: r.x1 - cx, z0: r.z0 - cz, z1: r.z1 - cz }));
+/** every room of a building, relative to the building centre (the AVM shell holds four rooms) */
+export const icBinaCollidersLocal = (bina: string, cx: number, cz: number): Rect[] => icBina(bina).flatMap(m => icCollidersLocal(m, cx, cz));
 /** bank teller window: bank ops work here too */
 export function bankaGise(): { x: number; z: number } { const m = IC_BY_ID.banka; return icWorld(m, 0, -icDim(m).D / 2 + 2.6); }
+
+/* ---------- personel geometrisi (2026-11-21 görsel mantık denetimi) ----------
+ * Kullanıcı: "kafeye girince çalışanlar tezgâhın arasında kağıt gibi sıkışmış". Tezgâh arkasındaki çalışan yeri, tezgâh
+ * hattının ucu ve koridor derinliği tek yerden hesaplanır (sim/agents/kafe.ts ve tests/unit/ic-mekan-yerlesim.test.ts).
+ * Çerçeve: a = tezgâh boyunca konum, b = tezgâhtan uzaklık (müşteri tarafı +, personel tarafı -). */
+/** çalışan gövde yarıçapı (görsel karakter omuz genişliği ~0.44 m) */
+export const PERSONEL_R = 0.22;
+/** u/v dikdörtgeni (kapı çerçevesi) */
+export function icItemRect(i: IcItem): { u0: number; u1: number; v0: number; v1: number } {
+  const sw = (i.ry || 0) % 2 ? i.d : i.w, sd = (i.ry || 0) % 2 ? i.w : i.d;
+  return { u0: i.u - sw / 2, u1: i.u + sw / 2, v0: i.v - sd / 2, v1: i.v + sd / 2 };
+}
+/** zeminde duran, yürümeye engel olan öğe mi (tavan / duvar paneli / tezgâh üstü cihaz / zemin deseni değil) */
+export function icZeminEngeli(i: IcItem): boolean {
+  if (i.k === 'lamba' || i.k === 'zemin' || i.k === 'isikTavan' || i.k === 'kuyruk' || i.k === 'islakTabela') return false;
+  if (i.y !== undefined && i.y >= 0.9) return false;   // tezgâh üstü (1.05) ya da duvara asılı
+  return true;
+}
+export interface PersonelGeo { tz: IcItem; vert: boolean; arka: number; cu: number; endU: number; lo: number; hi: number }
+/** tezgâhlı işletme odasında personelin durduğu bant: arka = tezgâh merkezinden personel noktasına uzaklık */
+export function personelGeo(m: IcMekan): PersonelGeo | null {
+  const lay = icLayout(m), tz = lay.find(i => i.k === 'tezgah'); if (!tz) return null;
+  const vert = (tz.ry || 0) % 2 === 1, arka = tz.d / 2 + 0.36;
+  // tezgâh hattına bitişik zemin öğeleri (vitrin dolabı vb.) hattı uzatır: personel ucun ötesinden dolaşır, içinden geçmez
+  const along = (i: IcItem) => { const r = icItemRect(i); return vert ? [r.v0, r.v1] : [r.u0, r.u1]; };
+  const off = (i: IcItem) => (vert ? i.u - tz.u : i.v - tz.v);
+  let a0 = vert ? tz.v - tz.w / 2 : tz.u - tz.w / 2, a1 = vert ? tz.v + tz.w / 2 : tz.u + tz.w / 2;
+  for (const i of lay) if (i !== tz && icZeminEngeli(i) && Math.abs(off(i)) < 0.3) { const [x0, x1] = along(i); if (x1 >= a1 - 0.05 && x0 <= a1 + 0.3) a1 = Math.max(a1, x1); if (x0 <= a0 + 0.05 && x1 >= a0 - 0.3) a0 = Math.min(a0, x0); }
+  const cu = vert ? a0 + 0.3 : tz.u - tz.w / 2 + 1.0, endU = a1 + 0.55;
+  return { tz, vert, arka, cu, endU, lo: cu + 0.2, hi: a1 - 0.4 };
+}
+/** oda içinde u/v çerçevesinde engelden kaçan yol (ızgara A*, 0.15 m, sonra görüş hattıyla sadeleştirilir). Duvarlar ve zemin
+ *  eşyaları `rad` kadar şişirilir. Başlangıç / hedef bir engele değiyorsa en yakın boş hücreden başlar. Izgara oda başına bir kez kurulur. */
+const yolCache = new Map<string, { u: number; v: number }[]>();
+interface YolIzgara { nu: number; nv: number; W: number; D: number; ok: Uint8Array }
+const izgaraCache = new Map<string, YolIzgara>();
+const YS = 0.15;
+function yolIzgara(m: IcMekan, rad: number, stage: number): YolIzgara {
+  const key = `${m.id}|${m.wx}|${stage}|${rad}`; let g = izgaraCache.get(key); if (g) return g;
+  const { W, D } = icDim(m), t = IC_DUVAR;
+  const rs: { u0: number; u1: number; v0: number; v1: number }[] = [
+    { u0: -W / 2, u1: -W / 2 + t, v0: -D / 2, v1: D / 2 }, { u0: W / 2 - t, u1: W / 2, v0: -D / 2, v1: D / 2 }, { u0: -W / 2, u1: W / 2, v0: -D / 2, v1: -D / 2 + t },
+    { u0: -W / 2, u1: -IC_KAPI / 2, v0: D / 2 - t, v1: D / 2 }, { u0: IC_KAPI / 2, u1: W / 2, v0: D / 2 - t, v1: D / 2 },
+    ...icLayout(m, stage).filter(i => icZeminEngeli(i) && (i.asama ?? 0) <= stage).map(icItemRect)];
+  const nu = Math.ceil(W / YS), nv = Math.ceil((D + 3) / YS), ok = new Uint8Array(nu * nv);
+  for (let j = 0; j < nv; j++) for (let i = 0; i < nu; i++) {
+    const u = -W / 2 + (i + 0.5) * YS, v = -D / 2 + (j + 0.5) * YS; let f = 1;
+    for (const r of rs) if (u > r.u0 - rad && u < r.u1 + rad && v > r.v0 - rad && v < r.v1 + rad) { f = 0; break; }
+    ok[j * nu + i] = f;
+  }
+  g = { nu, nv, W, D, ok }; izgaraCache.set(key, g); return g;
+}
+export function icYol(m: IcMekan, from: { u: number; v: number }, to: { u: number; v: number }, rad = 0.2, stage = 10): { u: number; v: number }[] {
+  const key = `${m.id}|${m.wx}|${stage}|${from.u.toFixed(2)},${from.v.toFixed(2)}|${to.u.toFixed(2)},${to.v.toFixed(2)}|${rad}`;
+  const hit = yolCache.get(key); if (hit) return hit.slice();
+  const G = yolIzgara(m, rad, stage), { nu, nv, W, D, ok } = G;
+  const ci = (u: number) => Math.floor((u + W / 2) / YS), cj = (v: number) => Math.floor((v + D / 2) / YS);
+  const free = (u: number, v: number) => { const i = ci(u), j = cj(v); return i >= 0 && j >= 0 && i < nu && j < nv && ok[j * nu + i] === 1; };
+  const los = (a: { u: number; v: number }, b: { u: number; v: number }) => { const n = Math.ceil(Math.hypot(b.u - a.u, b.v - a.v) / 0.05); for (let k = 0; k <= n; k++) if (!free(a.u + (b.u - a.u) * k / n, a.v + (b.v - a.v) * k / n)) return false; return true; };
+  const cu = (i: number) => -W / 2 + (i + 0.5) * YS, cv = (j: number) => -D / 2 + (j + 0.5) * YS;
+  const cell = (p: { u: number; v: number }) => {
+    const i0 = ci(p.u), j0 = cj(p.v); let bi = -1, bd = 1e9;
+    for (let r = 0; r < 10 && bi < 0; r++) for (let i = i0 - r; i <= i0 + r; i++) for (let j = j0 - r; j <= j0 + r; j++) { if (i < 0 || j < 0 || i >= nu || j >= nv || !ok[j * nu + i]) continue; const d = Math.hypot(cu(i) - p.u, cv(j) - p.v); if (d < bd) { bd = d; bi = j * nu + i; } }
+    return bi;
+  };
+  let out: { u: number; v: number }[] = [to];
+  const s0 = cell(from), g0 = cell(to);
+  if (s0 >= 0 && g0 >= 0 && !los(from, to)) {
+    const N = nu * nv, gs = new Float32Array(N).fill(Infinity), prev = new Int32Array(N).fill(-1), done = new Uint8Array(N);
+    const gi = g0 % nu, gj = Math.floor(g0 / nu), h = (k: number) => { const di = Math.abs(k % nu - gi), dj = Math.abs(Math.floor(k / nu) - gj); return Math.max(di, dj) + 0.4142 * Math.min(di, dj); };
+    // binary heap on f = g + h
+    const hk: number[] = [], hf: number[] = [];
+    const push = (k: number, f: number) => { let i = hk.length; hk.push(k); hf.push(f); while (i > 0) { const p = (i - 1) >> 1; if (hf[p] <= hf[i]) break; [hk[p], hk[i]] = [hk[i], hk[p]]; [hf[p], hf[i]] = [hf[i], hf[p]]; i = p; } };
+    const pop = () => { const k = hk[0], lk = hk.pop()!, lf = hf.pop()!; if (hk.length) { hk[0] = lk; hf[0] = lf; let i = 0; for (;;) { const l = 2 * i + 1, r = l + 1; let m2 = i; if (l < hk.length && hf[l] < hf[m2]) m2 = l; if (r < hk.length && hf[r] < hf[m2]) m2 = r; if (m2 === i) break; [hk[m2], hk[i]] = [hk[i], hk[m2]]; [hf[m2], hf[i]] = [hf[i], hf[m2]]; i = m2; } } return k; };
+    gs[s0] = 0; push(s0, h(s0));
+    while (hk.length) {
+      const k = pop(); if (k === g0) break; if (done[k]) continue; done[k] = 1;
+      const i = k % nu, j = Math.floor(k / nu);
+      for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) {
+        if (!di && !dj) continue; const ii = i + di, jj = j + dj; if (ii < 0 || jj < 0 || ii >= nu || jj >= nv) continue;
+        const n = jj * nu + ii; if (done[n] || !ok[n] || (di && dj && (!ok[j * nu + ii] || !ok[jj * nu + i]))) continue;
+        const c = gs[k] + (di && dj ? 1.4142 : 1); if (c < gs[n]) { gs[n] = c; prev[n] = k; push(n, c + h(n)); }
+      }
+    }
+    if (prev[g0] >= 0 || g0 === s0) {
+      const raw: { u: number; v: number }[] = []; for (let k = g0; k >= 0; k = prev[k]) raw.unshift({ u: cu(k % nu), v: cv(Math.floor(k / nu)) });
+      raw.unshift(from); raw.push(to);
+      out = []; let a = 0;
+      while (a < raw.length - 1) { let b = raw.length - 1; while (b > a + 1 && !los(raw[a], raw[b])) b--; out.push(raw[b]); a = b; }
+    }
+  }
+  if (yolCache.size > 400) yolCache.clear();   // keys carry positions: keep the cache bounded
+  yolCache.set(key, out); return out.slice();
+}

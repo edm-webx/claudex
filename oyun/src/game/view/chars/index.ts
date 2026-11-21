@@ -24,6 +24,7 @@ import { ugY, onUg } from '../../../content/ustgecit';
 import * as T from 'three';
 import { CH } from './v2/chars-v2';
 import * as K from './v2/kit';
+import { makeUrunModel } from './urun-model';
 import type {
   Chars, CharsDeps, CharLook, HeroHandle, CrowdView, AnimalOpts, AnimLayerInput, ExprId, BrowId, Vec2, Vec3, SoAStore, Animator, GaitId, ActId,
 } from '../../../engine/api';
@@ -35,7 +36,7 @@ import type { MotorAnimator } from '../../../engine/anim';
 
 export const ITEM_LOOK: Record<string, { color: string; h: number }> = {
   doner: { color: '#f1dcae', h: 0.2 }, cay: { color: '#a3301a', h: 0.19 }, ayran: { color: '#fbfdff', h: 0.17 },
-  simit: { color: '#c8833c', h: 0.06 }, tost: { color: '#e8c27a', h: 0.08 }, gazoz: { color: '#5aa9d6', h: 0.22 },
+  simit: { color: '#c8833c', h: 0.06 }, tost: { color: '#e8c27a', h: 0.08 }, gazoz: { color: '#5aa9d6', h: 0.22 }, tahta: { color: '#a8794e', h: 0.1 },
 };
 const FACE_ROW = FACES.map(f => f.crowdRow), FAR_ROW = FACES.map(f => f.farRow);
 // 'count' ActId'de yok ama garsonun hesap sayma hareketi sim'den bu adla gelir (workers.ts); görünümde para sayma animasyonuna eşlenir
@@ -54,6 +55,8 @@ export interface MotorCrowd extends CrowdView {
   lookSeed(slot: number, seed: number): void;
   headPos(slot: number, out: Vec3): boolean;
   stats(): Record<string, unknown>;
+  /** BUF-20: optional per-slot height (sim rt.agentY: çatı terası / merdiven); null = ground */
+  heightOf: ((slot: number) => number) | null;
 }
 export interface MotorChars extends Chars {
   readonly crowd: MotorCrowd;
@@ -73,6 +76,7 @@ export function createChars(deps: CharsDeps): MotorChars {
   const handles = new Set<MotorHero>();
 
   function itemMesh(id: string): T.Object3D {
+    if (id.startsWith('urun:')) return makeUrunModel(id.slice(5));   // DKN-05: far-shore business items
     const o = itemFactory ? itemFactory(id) : null;
     if (o) return o;
     const L = ITEM_LOOK[id] || { color: '#e8e2d4', h: 0.12 };
@@ -173,6 +177,7 @@ export function createChars(deps: CharsDeps): MotorChars {
     lookSeed(slot, seed) { slotSeed[slot] = seed; if (slotId[slot] >= 0) { v2crowd.remove(slotId[slot]); slotId[slot] = -1; } },
     headPos(slot, out) { const id = slotId[slot]; if (id < 0) return false; const v = v2crowd.headPos(id); out.x = v.x; out.y = v.y; out.z = v.z; return true; },
     stats: () => v2crowd.stats(),
+    heightOf: null,
     update(agents: SoAStore, dt: number, alpha: number) {
       const hi = Math.min(agents.hi, 256), flags = agents.u16('flags'), lod = agents.u8('lod');
       // choose up to budget slots: priority first, then the rest
@@ -197,7 +202,7 @@ export function createChars(deps: CharsDeps): MotorChars {
         }
         const a = ACT_ORDER[act[i]] as ActId, m = MOOD_ORDER[mood[i]], e = expr[i];
         let rot = PR[i]; { let d = RO[i] - rot; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; rot += d * alpha; }
-        set.x = PX[i] + (X[i] - PX[i]) * alpha; set.z = PZ[i] + (Z[i] - PZ[i]) * alpha; set.rot = rot;
+        set.x = PX[i] + (X[i] - PX[i]) * alpha; set.z = PZ[i] + (Z[i] - PZ[i]) * alpha; set.rot = rot; set.y = crowd.heightOf ? crowd.heightOf(i) : 0;
         set.speed = moving(SP[i]) ? Math.min(1, SP[i] / 0.9) : 0;
         set.sit = a === 'sit' || (flags[i] & AGENT_FLAG.seated) !== 0;
         set.carry = carry[i] > 0;

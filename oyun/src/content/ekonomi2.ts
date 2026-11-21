@@ -52,3 +52,10 @@ export const STAGE_MULT = [1, 1.04, 1.08, 1.12, 1.16, 1.2, 1.24, 1.28, 1.32, 1.3
 export const STAGE_ARRIVAL = [0, 2.6, 5.5, 9, 13, 15.5, 18, 20.5, 23, 25.5];
 
 export const fmtTL = (v: number): string => Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' ₺';
+
+/**
+ * Yemek menüsü (content/yemek-menu.ts, BUF-04): masa biletinde bir kalemin yemek (DishId) olma payı, aşama başına (index = aşama-1).
+ * Kalan kalemler eski tezgâh ürünü olarak kalır (simit, çay, ayran...). Fiyatlar yemek-menu.ts'de; ortalama adisyon
+ * SALON.adisyon'a yakın tutulur (tests/sim/menu-asama.test.ts bandı korur). Gelir çok kayarsa önce bu payı kıs.
+ */
+export const YEMEK = { pay: [0, 0, 0.3, 0.4, 0.45, 0.5, 0.55, 0.6, 0.6, 0.65], /** tadım menüsünde ekstra servis başına bilet sabrı (sn) */ kursSabir: 22 };

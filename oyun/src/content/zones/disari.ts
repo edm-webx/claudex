@@ -144,7 +144,7 @@ export function disariPrefabs(): PrefabDef[] {
   defs.push({ id: 'mk.rocks', parts: [0, 1, 2, 3, 4, 5].map(i => sph(0.9 + (i % 3) * 0.2, -6 + i * 2.4, WATER_Y + 0.3, (i % 2) * 0.5, '#8a8478', 6)) });
   defs.push({ id: 'mk.wallZ', parts: [box(0.6, 1.4, 8, 0, 0.7, 0, '#cbbfa8')], colliders: [R(0.6, 8)] });
   // ───── 2026-10-24 açık dünya: new districts ─────
-  g('mk.ground.night', 48, 30, '#4a4560'); g('mk.ground.pitchzone', 60, 34, '#b9c4ae'); g('mk.ground.yard', 56, 30, '#b8b0a2');
+  g('mk.ground.night', 48, 30, '#4a4560'); g('mk.ground.pitchzone', 96, 64, '#b9c4ae');   // 2026-11-21 denetim: halı saha kafesleri zemin kenarında boşlukta kalıyordu g('mk.ground.yard', 56, 30, '#b8b0a2');
   g('mk.ground.tile', 40, 30, '#d9dde3'); g('mk.ground.forest', 52, 34, '#7fae63', 0.014); g('mk.ground.island', 60, 26, '#e3d3a8');
   defs.push({ id: 'mk.water60', parts: [plane(60, 16, WATER_Y, '#3f8fbf', 'water'), box(60, 1.0, 0.35, 0, -0.5, 8.0, '#b9ad99', 'seawall')] });
   // gece pazarı: stalls with lanterns and a string of bulbs
@@ -205,7 +205,7 @@ export function disariPrefabs(): PrefabDef[] {
   defs.push(house('mk.kosk.b', 8, 6, 6, '#cfe0ef', '#7e8b8f', 1, [box(8.4, 0.2, 2, 0, 2.6, 3.8, '#7e8b8f', 'balcony')]));
   defs.push({ id: 'mk.bikes', parts: [box(4, 0.1, 0.1, 0, 0.6, 0, '#3b3b3b'), ...[-1.5, -0.5, 0.5, 1.5].flatMap((x, i) => [cyl(0.32, 0.05, 0.32, x, 0.34, -0.4, '#2b2b2b', 10), cyl(0.32, 0.05, 0.32, x, 0.34, 0.4, '#2b2b2b', 10), box(0.08, 0.5, 0.8, x, 0.62, 0, ['#e0533c', '#3fb5b0', '#ffd23f', '#8c5a9a'][i])])], colliders: [R(4, 1)] });
   // Belgrad Ormanı (16:52 user): oaks and pines, a stone fountain, mangal spots, picnic tables, logs, rocks, a trail
-  g('mk.ground.orman', 84, 42, '#6f9e55', 0.014); g('mk.trail', 84, 3.2, '#b89a6a', 0.02);
+  g('mk.ground.orman', 110, 64, '#6f9e55', 0.014);   // 2026-11-21 denetim: kenardaki ağaçların altı boşluk kalmasın (zemin yürünebilir alandan geniş) g('mk.trail', 84, 3.2, '#b89a6a', 0.02);
   defs.push({ id: 'mk.oak', parts: [cyl(0.32, 2.6, 0.45, 0, 1.3, 0, '#6b4a2e', 8), cyl(0.12, 1.2, 0.16, 0.5, 2.6, 0.2, '#6b4a2e', 6), sph(2.0, 0, 4.0, 0, '#4f8a3a', 10), sph(1.5, 1.2, 4.6, 0.6, '#5f9e48', 9), sph(1.4, -1.1, 4.3, -0.5, '#467f33', 9), sph(1.2, 0.2, 5.3, -0.8, '#6aa94f', 8)], colliders: [R(1.0, 1.0)] });
   defs.push({ id: 'mk.pine.tall', parts: [cyl(0.16, 2.2, 0.22, 0, 1.1, 0, '#5a3d26', 7), cyl(0, 2.4, 1.6, 0, 2.8, 0, '#2f6e44', 9), cyl(0, 2.1, 1.25, 0, 4.0, 0, '#3a7d4e', 9), cyl(0, 1.7, 0.85, 0, 5.1, 0, '#468a58', 8)], colliders: [R(0.7, 0.7)] });
   defs.push({ id: 'mk.bush', parts: [sph(0.7, 0, 0.45, 0, '#4f8a3a', 8), sph(0.55, 0.6, 0.38, 0.2, '#5f9e48', 7), sph(0.5, -0.55, 0.35, -0.1, '#467f33', 7)] });

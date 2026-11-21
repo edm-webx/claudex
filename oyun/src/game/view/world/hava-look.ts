@@ -450,7 +450,7 @@ export function createHavaLook(d: HavaLookDeps): HavaLookView {
     } else if (flyLabel) { flyLabel.free(); flyLabel = null; }
     if (market.visible && pierParent) {
       if (!mktLabel) { mktLabel = d.labels.label(); mktLabel.onTap = () => d.command({ kind: 'hava', op: 'open' }); }
-      showLabel(mktLabel, -9.3, 2.6, -5.7, '<b>GECE PAZARI</b>' + (v.market.stock ? v.market.stock + ' ürün tezgahta' : 'Tezgah boş'), 'tag');
+      showLabel(mktLabel, -9.3, 2.6, -5.7, '<b>GECE PAZARI</b>', 'tag');
     } else if (mktLabel) { mktLabel.onTap = null; mktLabel.free(); mktLabel = null; }
   }
 

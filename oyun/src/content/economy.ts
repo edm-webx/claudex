@@ -27,7 +27,6 @@ export const P = {
   ACH_LOVE: 0.01, CAT_F: 0.10, CAT_AT: [13, 25, 50, 75, 100, 125, 150, 175, 200, 250, 300],
   SALARY: [0.03, 0.04, 0.05, 0.06, 0.06], // wage share of what the worker produced, by rank
   RANK_XP: [0, 300, 1500, 6000, 20000], RANK_X: [1, 1.25, 1.5, 1.8, 2.2],
-  MORALE_START: 70,
   CARRY_BASE: 4, TRAY_PLUS: 2,
   MAGNET_M: [0.8, 1.2, 1.6, 2.2, 3.0],   // Mıknatıslı Önlük levels
   MAGNET_COST: [0, 2500, 15000, 60000, 200000],
@@ -99,13 +98,6 @@ export const TROPHIES = [
   { id: 'mahallenin_gozdesi', name: 'Mahallenin Gözdesi', stat: 'served' },
   { id: 'altin_durum', name: 'Altın Dürüm', stat: 'sold_doner' }
 ];
-export const COMPLAINTS: Record<string, { text: string; fix: string }> = {
-  transport: { text: 'tepside ürün birikti, taşıyan yok', fix: 'Garson al' },
-  production: { text: '{station} yetişmedi', fix: 'Usta al' },
-  seats: { text: 'oturacak yer yoktu', fix: 'Masa aç' },
-  queue: { text: 'kuyruk çok uzun bekledi', fix: 'İşçi al' },
-  kasa: { text: 'kasada para birikti', fix: 'Mıknatıslı önlük' }
-};
 export interface DecorDef2 { id: string; name: string; set: string; price: number; keyif: number; points: number; size: 's' | 'm' | 'l'; color: string; cats?: boolean; }
 export const DECOR_SETS: Record<string, string> = { nostalji: 'Nostalji / Yeşilçam', denizci: 'Martı / Denizci', lale: 'Lale Devri', genel: 'Genel', ...DECOR_SETS_EXTRA };
 export const DECOR: DecorDef2[] = [

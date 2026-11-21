@@ -10,6 +10,7 @@ import * as K from '../chars/v2/kit';
 import { createMatch, L as ML, WD as MW } from '../../sim/macmotor';
 import { KARSI_FOUNTAIN, KARSI_PITCH } from '../../../content/zones/karsi';
 import { ARSALAR, arsaKapi } from '../../../content/esya';
+import { insaatYer } from '../../../content/isletme-insaat';
 
 export interface YasamDeps { root: () => T.Object3D | null; chars: Chars | null; hero: () => { x: number; z: number }; hour: () => number; sfx: (id: string) => void; /** hired café workers per owned fixed plot (sim/mulk) */ isci?: () => { id: string; n: number; lv?: number; esya?: string[] }[] }
 export interface YasamView { update(dt: number): void; dispose(): void }
@@ -45,7 +46,7 @@ export function createKarsiYasam(d: YasamDeps): YasamView {
       while (cur.length < n) { const i = cur.length, k = arsaKapi(a); const h = mkH(['universiteli', 'plaza', 'teyze'][i % 3], 700 + a.id.charCodeAt(1) * 10 + i, { hat: 'cap' }); if (!h) break; addA(h, k.x - 0.6 - i * 0.2, k.z - 1.3 + i * 1.3, { act: i === 0 ? 'pour' : 'perform', yaw: Math.PI / 2 }); cur.push(actors[actors.length - 1]); }
       kafeIsci.set(a.id, cur);
     }
-    syncTeras();
+    syncTeras(); syncCephe();
   }
   /** café terrace grows with the café level (2026-11-08 owner: kafeler "aynı mantıkla işletilmeli", like the büfe stages):
    *  lv1 2 tables, lv2 4, lv3 + pergola awning, lv4 6 + planters, lv5 8 + string lights and a gold "BİSTRO" frame. */
@@ -84,6 +85,39 @@ export function createKarsiYasam(d: YasamDeps): YasamView {
         if (lv >= 5) bx(0.1, 0.1, 3.0, '#c9a24a', k.x + 0.25, 3.3, k.z, g);
       }
       holder.add(g); teras.set(a.id, { lv: key, g });
+    }
+  }
+  /** DKN-02: facade tiers of every business by stage (local frame of content/isletme-insaat: u along the front wall, v out):
+   *  lv2 striped awning over the door, lv3 sign lamps, lv4 planters, lv5 string lights + gold trim. The two cafés already have
+   *  a terrace (pergola, planters, lights above), so they only get the sign lamps. Key = lv + esya, rebuilt on change. */
+  const cephe = new Map<string, { lv: string; g: T.Group }>();
+  function syncCephe() {
+    if (!d.isci) return;
+    const rows = d.isci(), lvs = new Map(rows.map(x => [x.id, x.lv || 1])), es = new Map(rows.map(x => [x.id, new Set(x.esya || [])]));
+    for (const a of ARSALAR) {
+      if (!a.sabit) continue; const y = insaatYer(a.id); if (!y) continue;
+      const lv = lvs.get(a.id) || 0, cur = cephe.get(a.id), has = es.get(a.id) || new Set<string>(), key = lv + ':' + [...has].sort().join(',');
+      if (cur && cur.lv === key) continue;
+      if (cur) { cur.g.removeFromParent(); cur.g.traverse(o => { const m = o as T.Mesh; m.geometry?.dispose(); }); cephe.delete(a.id); }
+      if (!lv) continue;
+      const g = new T.Group(), terasli = a.id === 'k1' || a.id === 'k2', ACC = ['#e0533c', '#2f7fb3', '#2f9e8f', '#c94f6d', '#e8892b', '#7d6bb0'][ARSALAR.indexOf(a) % 6];
+      g.position.set(y.ox, 0, y.oz); g.rotation.y = y.yaw;
+      if (!terasli && lv >= 2) {   // awning: alternating stripes tilted out over the door
+        const n = 7, w = Math.min(4.2, y.S);   // a narrow AVM shop keeps the awning on its own front
+        for (let i = 0; i < n; i++) { const st = new T.Mesh(new T.BoxGeometry(w / n, 0.05, 1.3), lam(i % 2 ? '#fbfaf6' : ACC)); st.position.set(-w / 2 + (i + 0.5) * w / n, 2.75, 0.75); st.rotation.x = 0.28; g.add(st); }
+        bx(w, 0.22, 0.04, ACC, 0, 2.55, 1.38, g);
+      }
+      if (lv >= 3) for (const s2 of [-1, 1]) {   // sign lamps on arms
+        const lx = Math.min(2.2, y.S / 2 - 0.1); bx(0.05, 0.05, 0.5, '#3a3d42', s2 * lx, 3.5, 0.28, g);
+        const l = new T.Mesh(new T.SphereGeometry(0.12, 8, 6), new T.MeshBasicMaterial({ color: '#ffe6a8' })); l.position.set(s2 * lx, 3.4, 0.55); g.add(l);
+      }
+      if (!terasli && (lv >= 4 || has.has('saksi'))) for (const s2 of [-1, 1]) { bx(0.55, 0.5, 0.55, '#f4f2ec', s2 * 1.5, 0.25, 0.95, g); const p = new T.Mesh(new T.SphereGeometry(0.42, 8, 6), lam('#3f7a34')); p.position.set(s2 * 1.5, 0.85, 0.95); g.add(p); }
+      if (!terasli && (lv >= 5 || has.has('isik'))) {
+        const bulbs = new T.MeshBasicMaterial({ color: '#ffd890' }), W = Math.min(y.S, 7.5);
+        for (let i = 0; i <= 12; i++) { const u = -W / 2 + i * W / 12, b = new T.Mesh(new T.SphereGeometry(0.06, 6, 4), bulbs); b.position.set(u, 3.45 - Math.sin(i / 12 * Math.PI) * 0.3, 1.5); g.add(b); }
+        if (lv >= 5) bx(3.0, 0.1, 0.1, '#c9a24a', 0, 3.1, 0.2, g);
+      }
+      holder.add(g); cephe.set(a.id, { lv: key, g });
     }
   }
   const lam = (c: string) => new T.MeshLambertMaterial({ color: c });

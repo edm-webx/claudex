@@ -34,7 +34,7 @@ describe('sale value', () => {
     S.siftahDate = '';
     const m1 = S.money;
     r.salesApi.settle([{ type: 'cay', tier: 1 }], { direct: true });
-    expect(Math.round(S.money - m1)).toBe(57);             // 2026-10-24 (ingredients 15 %): çay sale with the first-of-day siftah bonus (new product: no streak)
+    expect(Math.round(S.money - m1)).toBe(27);             // çay sale with the first-of-day siftah bonus (new product: no streak); mevsimlik ekstra gelir kalktı (eski değer 57)
     expect(events(sim, 'siftah').length).toBe(1);
   });
   it('venue multiplier follows stage, plaque and stars', () => {

@@ -25,6 +25,8 @@ export interface AgentsViewDeps {
   /** Live agents handle (rules.rt.agents); null before the sim exists. */
   agents: () => AgentsHandle | null;
   player: () => { x: number; z: number; moving: boolean };
+  /** 2026-11-21 denetim: kameranın dibinden geçen martı ekranda büfeden büyük görünüyordu; havadaki martı kameraya 8 m'den yakınsa gizlenir */
+  camera?: () => { position: { x: number; y: number; z: number } };
   /** Optional: B's item meshes are wired through chars.setItemFactory by boot. */
 }
 export interface AgentsView extends GameView {
@@ -34,7 +36,23 @@ export interface AgentsView extends GameView {
   stats(): { rigs: number };
 }
 
-interface Row { a: Actor; h: HeroHandle; animal: boolean; carryKey: string; gull: number; bag?: T.Object3D }
+interface Row { a: Actor; h: HeroHandle; animal: boolean; carryKey: string; gull: number; bag?: T.Object3D; props?: Record<string, T.Object3D> }
+
+/** BUF-14/15: hafif rol aksesuarları (a.fx): kurye bisikleti, müzisyen sazı, vale arabası (sürerken), müfettiş klipsi; tek kutu/silindir, gölge yok */
+function rolProps(): Record<string, T.Object3D> {
+  const L = (c: string) => new T.MeshLambertMaterial({ color: c });
+  const box = (w: number, h: number, d: number, c: string, x = 0, y = 0, z = 0) => { const m = new T.Mesh(new T.BoxGeometry(w, h, d), L(c)); m.position.set(x, y, z); return m; };
+  const wheel = (x: number, z: number) => { const m = new T.Mesh(new T.TorusGeometry(0.3, 0.035, 5, 12), L('#222')); m.rotation.y = Math.PI / 2; m.position.set(x, 0.3, z); return m; };
+  const bike = new T.Group(); bike.add(wheel(0, 0.55), wheel(0, -0.55), box(0.05, 0.05, 1.1, '#3fb5b0', 0, 0.45, 0), box(0.4, 0.04, 0.04, '#222', 0, 0.85, 0.5));
+  const saz = new T.Group(); saz.add(box(0.22, 0.26, 0.07, '#8a5a2b', 0.1, 0.95, 0.25), box(0.05, 0.5, 0.04, '#5a3a1c', 0.1, 1.3, 0.25)); saz.rotation.z = -0.5;
+  const araba = new T.Group(); araba.add(box(1.0, 0.35, 2.2, '#c0392b', 0, 0.35, 0), box(0.9, 0.3, 1.1, '#8fb8d8', 0, 0.65, -0.1), wheel(0.5, 0.7), wheel(-0.5, 0.7), wheel(0.5, -0.7), wheel(-0.5, -0.7));
+  const klips = new T.Group(); klips.add(box(0.2, 0.28, 0.02, '#a0764a', -0.2, 1.0, 0.3));
+  // BUF-21 tadilat ustası: omuzda kalas, elde çekiç
+  const kalas = new T.Group(); kalas.add(box(0.14, 0.06, 2.0, '#c8955a', 0.24, 1.52, 0.1)); kalas.rotation.y = 0.15;
+  const cekic = new T.Group(); cekic.add(box(0.04, 0.32, 0.04, '#7a4a2a', 0.3, 0.95, 0.28), box(0.16, 0.07, 0.07, '#5b6068', 0.3, 1.1, 0.28));
+  for (const g of [bike, saz, araba, klips, kalas, cekic]) g.visible = false;
+  return { bike, saz, araba, klips, kalas, cekic };
+}
 
 export function resolveLook(chars: MotorChars, look: Record<string, unknown> | undefined): Record<string, unknown> | undefined {
   if (!look) return look;
@@ -74,7 +92,9 @@ export function createAgentsView(deps: AgentsViewDeps): AgentsView {
       const rope = new T.Mesh(new T.CylinderGeometry(0.014, 0.014, 1.9, 4), new T.MeshLambertMaterial({ color: '#d8d0c0' })); rope.rotation.x = Math.PI / 2; rope.position.set(0, 0.22, 0.95);
       g.add(sack, knot, rope); g.position.set(0, 0, -1.55); g.visible = false; h.object.add(g); bag = g;
     }
-    return { a, h, animal, bag, carryKey: '', gull: a.kind === 'gull' ? Number(a.key.split('-')[1]) : -1 };
+    let props: Record<string, T.Object3D> | undefined;
+    if (!animal && (a.kind === 'worker' || a.key === 'mufettis' || a.key.startsWith('usta-'))) { props = rolProps(); for (const o of Object.values(props)) h.object.add(o); }
+    return { a, h, animal, bag, props, carryKey: '', gull: a.kind === 'gull' ? Number(a.key.split('-')[1]) : -1 };
   }
   function ensure(agents: AgentsHandle | null) {
     if (!agents) return;
@@ -106,8 +126,13 @@ export function createAgentsView(deps: AgentsViewDeps): AgentsView {
         const rot = lerpAngle(a.prot, a.rot, alpha);
         h.setPose({ x, z }, rot);
         h.object.position.y = y;
+        if (r.props) for (const k in r.props) r.props[k].visible = a.fx === k;
         if (r.bag) { r.bag.visible = a.fx === 'bag'; r.bag.rotation.y = Math.sin(performance.now() / 260) * 0.12; }
-        if (r.gull >= 0) h.object.visible = r.gull < gullsNear || a.act === 'stare' || a.act === 'snatch' || a.carry.length > 0;
+        if (r.gull >= 0) {
+          h.object.visible = r.gull < gullsNear || a.act === 'stare' || a.act === 'snatch' || a.carry.length > 0;
+          const cp = y > 1.5 ? deps.camera?.()?.position : undefined;
+          if (cp && h.object.visible && (cp.x - x) ** 2 + (cp.y - y) ** 2 + (cp.z - z) ** 2 < 64) h.object.visible = false;
+        }
         if (r.animal) {
           (h as unknown as { setState(s: Record<string, unknown>): void }).setState(r.a.kind === 'gull' || r.a.kind === 'parrot' ? { mode: a.act, speed: Math.min(1, a.speed / 1.2) } : { act: a.act, speed: Math.min(1, a.speed / 1.2) });
         } else {

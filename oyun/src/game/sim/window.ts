@@ -49,7 +49,8 @@ export function installWindow(K: Kernel, cu: ReturnType<typeof installCustomers>
       const want: Partial<Record<ProductId, number>> = {};
       for (const c of rt.winq.slice(0, 3)) { const l = cu.orderLeft(c); for (const p in l) want[p as ProductId] = (want[p as ProductId] || 0) + (l[p as ProductId] || 0); }
       for (const p of sh) if (want[p]) want[p] = (want[p] || 0) - 1;
-      const p = (Object.keys(want) as ProductId[]).find(k => (want[k] || 0) > 0 && rt.counter[k] && rt.counter[k].length);
+      const rez = (k: ProductId) => (rt as unknown as { restoran?: { rezerve?(p: ProductId): number } }).restoran?.rezerve?.(k) ?? 0;   // BUF-09: plates a garson claimed stay
+      const p = (Object.keys(want) as ProductId[]).find(k => (want[k] || 0) > 0 && rt.counter[k] && rt.counter[k].length > rez(k));
       if (p) { rt.counter[p].pop(); sh.push(p); }
     }
     if ((staffT -= dt) > 0) return; staffT = 1.1;

@@ -9,10 +9,16 @@ import type { SimEvents } from '../events';
 import type { Content } from '../../content/types';
 import type { StageLayout } from '../../content/prefabs/iskele/layout';
 import type { SimCmd } from './commands';
+import type { FoodId } from '../../content/yemek-menu';
 
-/** One product unit (in hands, on a tray, on the counter). */
-export interface Item { type: ProductId; tier: number; /** worker id who made it (wage share) */ by?: number; /** worker id who carried it */ carrier?: number; /** price multiplier (Titiz) */ priceX?: number; }
+/**
+ * One product unit (in hands, on a tray, on the counter). BUF-05: `T` widens to FoodId for kitchen plates (`Plate`: a DishId
+ * plate cooked at its own station, on the pass, carried to a table, sold). Counter/stations/carry stay ProductId (runtime only, not saved).
+ */
+export interface Item<T extends string = ProductId> { type: T; tier: number; /** worker id who made it (wage share) */ by?: number; /** worker id who carried it */ carrier?: number; /** price multiplier (Titiz) */ priceX?: number; }
 export type Order = Partial<Record<ProductId, number>>;
+/** BUF-05: a plate of any food (tezgâh ürünü or mutfak yemeği, content/yemek-menu.ts FoodId); runtime only */
+export type Plate = Item<FoodId>;
 export interface MoneyStack { value: number; }
 export interface FloorMoney { value: number; x: number; z: number; }
 
@@ -30,16 +36,22 @@ export interface Customer {
   patience: number; patMax: number;
   sit: boolean; mood: 'happy' | 'ok' | 'angry';
   x: number; z: number; rot: number; speed: number;
+  /** BUF-20: height above the pier (çatı terası / merdiven, content/kanat.ts katY); runtime only */
+  y?: number;
   path: Vec2[];
   /** agents SoA slot (-1: logical only, no body) and party member slots */
   agent: number; members: number[];
-  items: Item[];
+  items: Plate[];
   seat: { table: number; seat: number } | null;
   say: string; sayT: number;
   calm: boolean; follower: boolean; tag: string | null;
   qi: number;
   /** musteri.ts (runtime only): special request line + its product, tourist flag, heart timer after a happy serve */
-  req?: string; reqP?: ProductId; tourist?: boolean; heartT?: number;
+  tourist?: boolean; heartT?: number;
+  /** BUF-12 kasa sırası: true = kasada sırada (state 'queue' kalır), kasaT = işlem süresi sayacı, odeme = nakit/kart (yalnız görsel) */
+  kasa?: boolean; kasaT?: number; odeme?: 'nakit' | 'kart';
+  /** BUF-24 büyük grup: birleştirilen ek masalar (ana masa seat.table) ve büyük grubun adı (Doğum günü kalabalığı...) */
+  ekMasa?: number[]; grupAd?: string;
 }
 
 export interface StationRt { built: boolean; out: Item[]; grabT: number; /** sim time of the last worker operate() */ opT: number; /** worker id -> progress 0..1 */ prog: Record<number, number>; }
@@ -62,6 +74,8 @@ export interface Runtime {
   tables: TableRt[];
   customers: Customer[];
   queue: Customer[]; winq: Customer[];
+  /** BUF-12: kasada sırada bekleyen müşteriler (kasiyer kasa başındayken) */
+  kasaQueue: Customer[];
   ferry: { state: FerryPhase; t: number; next: number; arriveAt: number; docked: boolean; /** dock +25 s etc. in sim seconds */ phaseLen: number };
   /** ferry kinds + timetable (ferry-kinds.ts); set by installFerry */
   ferryInfo?: import('./ferry-kinds').FerryInfo;
@@ -89,6 +103,8 @@ export interface Runtime {
   tutStep: string | null;
   slowSeat: number;
   dayHistory: { day: number; earned: number; customers: number }[];
+  /** BUF-13: kirli tabak yığını (bulaşık istasyonunda), mutfakta çalışan sayısı (zemin kiri), temizlikçi mutfağı paspaslıyor mu; çalışma anı */
+  dirtyDishes: number; mutfakBusy: number; mutfakMop: boolean;
 }
 
 /** Everything C's agents may ask of / tell A's rules. */
@@ -198,8 +214,8 @@ export interface MoneyApi {
 }
 export interface SalesApi {
   /** v2 settleSale for non-queue sales (regular, VIP): streak, sets, siftah, wages. Returns the money value. */
-  settle(items: Item[], opts?: { direct?: boolean; at?: Vec2 }): number;
-  itemValue(it: Item): number;
+  settle(items: Plate[], opts?: { direct?: boolean; at?: Vec2 }): number;
+  itemValue(it: Plate): number;
 }
 
 export const emptyRuntime = (layout: StageLayout): Runtime => ({
@@ -210,11 +226,11 @@ export const emptyRuntime = (layout: StageLayout): Runtime => ({
     simit: { built: false, out: [], grabT: 0, opT: -99, prog: {} }, tost: { built: false, out: [], grabT: 0, opT: -99, prog: {} }, gazoz: { built: false, out: [], grabT: 0, opT: -99, prog: {} },
   },
   counter: { doner: [], cay: [], ayran: [], simit: [], tost: [], gazoz: [] },
-  kasa: [], floor: [], tables: [], customers: [], queue: [], winq: [],
+  kasa: [], floor: [], tables: [], customers: [], queue: [], winq: [], kasaQueue: [],
   ferry: { state: 'away', t: 0, next: 120, arriveAt: -1, docked: false, phaseLen: 0 },
   'window': null, streak: 0, lastSaleT: -99, lastSaleProducts: [], siklik: 0, slow: null, pads: [],
   panel: null, boardOpen: false, uiLast: {}, incomeWin: [], rate: 0, act: 'idle', layout, say: '', sayT: 0,
-  reserved: [], auras: [], followers: 0, tipBoostT: 0, actT: 0, slowCard: null, slowSeen: false, tutStep: null, slowSeat: 0, dayHistory: [],
+  reserved: [], auras: [], followers: 0, tipBoostT: 0, actT: 0, slowCard: null, slowSeen: false, tutStep: null, slowSeat: 0, dayHistory: [], dirtyDishes: 0, mutfakBusy: 0, mutfakMop: false,
 });
 
 /** Internal shared object of the sim modules (A only): Rules plus helpers that cross module borders. */

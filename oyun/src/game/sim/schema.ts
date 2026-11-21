@@ -21,7 +21,8 @@ export const PRODUCT_IDS: readonly ProductId[] = ['doner', 'cay', 'ayran', 'simi
 export type GradeId = 'lezzet' | 'hiz' | 'siklik' | 'sohret' | 'temizlik';
 export type HeroId = 'sabri' | 'sabriye';
 
-export interface WorkerSave { id: number; name: string; role: string; xp: number; morale: number; traits: string[]; rarity?: string; [k: string]: unknown; }
+/** morale: old saves only; no longer read or written (BUF-02). */
+export interface WorkerSave { id: number; name: string; role: string; xp: number; morale?: number; traits: string[]; rarity?: string; [k: string]: unknown; }
 export interface CatSave { id: string; name?: string; trust?: number; [k: string]: unknown; }
 export interface DecorSlotSave { slot: string; item: string; rotY?: number; paint?: { material?: string; color?: string; pattern?: string; shape?: string }; [k: string]: unknown; }
 export interface TodaySave { earned: number; customers: number; angry: number; served: number; waitFrac: number; dirtyT: number; slow: Record<string, number>; sets: number; /** EKO-02 gelir defteri: kaynak -> bugünkü ₺ (eski kayıtta yok = boş) */ src?: Record<string, number>; }
