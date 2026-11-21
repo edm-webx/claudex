@@ -32,6 +32,7 @@ import * as T from 'three';
 import { crowdWeather } from '../weather-pose';
 import * as C from './kit';
 import { vrand } from './kit';
+import { akisKaydet } from '../../../../engine/render/doku-akis';
 
 export const CH: any = {};
 
@@ -541,8 +542,9 @@ function drawPattern(g?: any, x?: any, y?: any, w?: any, h?: any, base?: any, al
     g.globalAlpha = 1;
   }
 }
-function heroAtlas(L?: any) {
-  return C.canvasTex(1024, 512, (g?: any) => {
+function heroAtlas(L?: any, k = 1) {
+  return C.canvasTex(1024 * k, 512 * k, (g?: any) => {
+    if (k !== 1) g.scale(k, k);   // PRF-15 doku akışı: same drawing at half scale for NPCs seen from afar (engine/render/doku-akis)
     g.fillStyle = '#ffffff'; g.fillRect(0, 0, 1024, 512);
     for (let e = 0; e < 6; e++) paintFace(g, (e % 3) * 128, Math.floor(e / 3) * 128, 128, L.faceSpec, EXPR_NAMES[e], L.skinColor);
     for (let c = 0; c < X_CELLS.length; c++) paintFaceX(g, 512 + (c % 4) * 128, Math.floor(c / 4) * 128, 128, L.faceSpec, c, L.skinColor, true);
@@ -766,10 +768,16 @@ Hero.prototype.setLook = function (this: any, look?: any) {
   if (this.preset && PRESETS[this.preset]) base = Object.assign({}, PRESETS[this.preset], look || {});
   const L = this.look = normLook(base, this.preset ? 'custom' : this.kind, this.role, this.seed);
   this.style = STYLE[L.style] || STYLE.def;
-  if (this.mesh) { this.rig.remove(this.mesh); this.mesh.geometry.dispose(); this.mesh.material.dispose(); if (this.tex) this.tex.dispose(); }
+  if (this.mesh) { this.rig.remove(this.mesh); this.mesh.geometry.dispose(); this.mesh.material.dispose(); if (this.akis) { this.akis.birak(); this.akis = null; } else if (this.tex) this.tex.dispose(); }
   const H = withSeg(SEG.hero, () => buildHeroMesh(L));
-  this.tex = heroAtlas(L);
-  const mat = new T.MeshLambertMaterial({ vertexColors: true, map: this.tex, alphaTest: 0.5 });
+  const mat = new T.MeshLambertMaterial({ vertexColors: true, alphaTest: 0.5 });
+  // PRF-15: NPC atlases (1024x512, 2.7 MB GPU each; 40+ on screen in the forest / across the road) stream their top level:
+  // half scale until the camera is close enough for it to show, the player's own heroes always full
+  if (this.kind === 'regular' || this.kind === 'worker') {
+    this.akis = akisKaydet({ obj: this.group, dpm: 160, ciz: (k: number) => heroAtlas(L, k), tak: (t: any) => { this.tex = t; mat.map = t; } });
+    this.tex = this.akis.tex;
+  } else this.tex = heroAtlas(L);
+  mat.map = this.tex;
   const mesh = new T.SkinnedMesh(H.geo, mat);
   mesh.add(H.B.root); mesh.castShadow = true; mesh.receiveShadow = true; mesh.frustumCulled = false;
   mesh.updateMatrixWorld(true);
@@ -961,7 +969,7 @@ Hero.prototype.apply = function (this: any) {
 Hero.prototype.dispose = function (this: any) {
   if (this.group.parent) this.group.parent.remove(this.group);
   if (this.mesh) { this.mesh.geometry.dispose(); this.mesh.material.dispose(); this.mesh.skeleton.dispose(); }
-  if (this.tex) this.tex.dispose();
+  if (this.akis) { this.akis.birak(); this.akis = null; } else if (this.tex) this.tex.dispose();
 };
 CH.makeHero = function (opts?: any) {
   try { return new (Hero as any)(opts || {}); }

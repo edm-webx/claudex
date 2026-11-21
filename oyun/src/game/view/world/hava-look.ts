@@ -46,8 +46,19 @@ const clamp = (v: number, a: number, b: number) => (v < a ? a : v > b ? b : v);
 const damp = (a: number, b: number, k: number, dt: number) => a + (b - a) * (1 - Math.exp(-k * dt));
 const hash = (n: number) => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
 
+/** GRS-02 (owner H-053/H-054: lightning random, rare, soft): flash ramp 0.06 s, fade 0.55 s; hemisphere add at most +0.35 */
+export const YILDIRIM_TEPE = 0.35;
+export function yildirimEk(age: number): number {
+  if (!(age >= 0)) return 0;
+  let k = age < 0.06 ? age / 0.06 : Math.max(0, 1 - (age - 0.06) / 0.55);
+  k = k * k * (3 - 2 * k);
+  return k * YILDIRIM_TEPE;
+}
+/** seconds until the next flash: fırtına 20..50 s, sağanak 40..100 s (r = 0..1) */
+export function yildirimAra(kd: string, r: number): number { return kd === 'firtina' ? 20 + 30 * r : 40 + 60 * r; }
+
 interface RenderLike {
-  sun?: T.DirectionalLight; hemi?: T.HemisphereLight; sky?: T.Mesh; /** PRF-08 room dimming (night-lights), multiplied in, never accumulated */ hemiMul?: number; tod?: () => { top: T.Color; hor: T.Color; low: T.Color; fog: T.Color; sun: T.Color; si: number; hs: T.Color; hg: T.Color; hi: number; n: number };
+  sun?: T.DirectionalLight; hemi?: T.HemisphereLight; sky?: T.Mesh; /** PRF-08 room dimming (night-lights), multiplied in, never accumulated */ hemiMul?: number; /** GRS-01 akıcı grade tint for the light colours ([1,1,1] with the GRADE pass) */ lightTint?: readonly [number, number, number]; tod?: () => { top: T.Color; hor: T.Color; low: T.Color; fog: T.Color; sun: T.Color; si: number; hs: T.Color; hg: T.Color; hi: number; n: number };
 }
 
 export function createHavaLook(d: HavaLookDeps): HavaLookView {
@@ -229,16 +240,15 @@ export function createHavaLook(d: HavaLookDeps): HavaLookView {
     pierParent!.worldToLocal(roof.position);
   }
 
-  let baseHemi = 1, flashK = 0, flashT = 20, flashAge = 9;
+  let baseHemi = 1, flashK = 0, flashT = 35, flashAge = 9;
   function lightning(dt: number, kd: string, k: number): void {
     if ((kd === 'firtina' || kd === 'saganak') && k > 0.7 && !(kd === 'saganak' && rainK < 0.8)) {
       flashT -= dt;
-      if (flashT <= 0) { flashT = (kd === 'firtina' ? 14 : 30) + Math.random() * (kd === 'firtina' ? 26 : 50); flashAge = 0; }
+      if (flashT <= 0) { flashT = yildirimAra(kd, Math.random()); flashAge = 0; }
     }
     flashAge += dt;
-    flashK = flashAge < 0.06 ? flashAge / 0.06 : Math.max(0, 1 - (flashAge - 0.06) / 0.55);
-    flashK = flashK * flashK * (3 - 2 * flashK) * 0.55;
-    if (R.hemi) R.hemi.intensity = baseHemi * (R.hemiMul ?? 1) + flashK * 1.3;
+    flashK = yildirimEk(flashAge);
+    if (R.hemi) R.hemi.intensity = baseHemi * (R.hemiMul ?? 1) + flashK;
   }
 
   function light(v: HavaView): void {
@@ -246,7 +256,9 @@ export function createHavaLook(d: HavaLookDeps): HavaLookView {
     const dark = clamp(rainK * 0.55 + flakeK * 0.3 + fogK * 0.35, 0, 0.7);
     C1.copy(tod.sun).multiply(TINT[v.season] || TINT.yaz).lerp(GREY, dark * 0.6);
     R.sun.color.copy(C1); R.sun.intensity = tod.si * (1 - dark * 0.5) * (heatK > 0 ? 1 + heatK * 0.08 : 1);
-    R.hemi.color.copy(tod.hs).lerp(GREY, dark * 0.4); baseHemi = tod.hi * (1 - dark * 0.15); R.hemi.intensity = baseHemi * (R.hemiMul ?? 1);
+    R.hemi.color.copy(tod.hs).lerp(GREY, dark * 0.4);
+    const lt = R.lightTint; if (lt) { R.sun.color.r *= lt[0]; R.sun.color.g *= lt[1]; R.sun.color.b *= lt[2]; R.hemi.color.r *= lt[0]; R.hemi.color.g *= lt[1]; R.hemi.color.b *= lt[2]; }
+    baseHemi = tod.hi * (1 - dark * 0.15); R.hemi.intensity = baseHemi * (R.hemiMul ?? 1);
     const su = (R.sky?.material as T.ShaderMaterial | undefined)?.uniforms;
     if (su && su.uTop && su.uHor) { su.uTop.value.copy(tod.top).lerp(GREY, dark * (1 - tod.n * 0.7)); su.uHor.value.copy(tod.hor).lerp(FOGC, dark * (1 - tod.n * 0.7)); if (su.uLow) su.uLow.value.copy(tod.low).lerp(GREY, dark * 0.8 * (1 - tod.n * 0.7)); }
     const fog = d.scene.fog as T.Fog | null;

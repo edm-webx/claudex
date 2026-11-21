@@ -125,8 +125,12 @@ import { createAltinSimitFx, type AltinSimitFx } from './ui/altin-simit-fx';
 import { createDisariLook, type DisariLookView } from './view/disari';
 import { createStadyumView } from './view/stadyum';
 import { createNightLights, roomLightsFor } from './view/world/night-lights';
+import { createGorselSaat } from './boot-saat';
 import { drawCostTable } from '../engine/perf/draw-cost';
 import { kutuda, kopyalar } from '../engine/perf/sahne-tara';
+import { kaynakDokum } from '../engine/render/kaynak-dokum';
+import { akisZorla, akisDurum } from '../engine/render/doku-akis';
+import { yukleAdim, yukleBitti } from '../engine/render/yukle-ekran';
 import { createHedefCard, type HedefCard } from './ui/hedef-card';
 import { createFaz2Hud, type Faz2Hud } from './ui/faz2-hud';
 import { createStantLook, type StantLookView } from './view/world/stant-look';
@@ -153,6 +157,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const warnings: string[] = [];
   const target = ((window as unknown as { __marti?: AnyRec }).__marti ??= {});
   const hooks: TestHooks = createHooks({ target });
+  yukleAdim(0.3, 'Mahalle kuruluyor');   // PRF-11 yükleme ekranı: game.js indi ve çalışıyor
 
   let perf: PerfMeter | null = null;
   const warn = (name: string, e: unknown) => {
@@ -594,6 +599,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
 
   let camHold: Vec2 | null = null;
   let timeT = 0, lastHour = -1, simT = 0, camTick = sim.tick;
+  const gSaat = createGorselSaat(sim.clock.hour, sim.state.day);   // GRS-02: night held behind the gün sonu card, then a soft dawn
   cam.snap(walk.pos);
 
   const heroAct = (a: string) => (a === 'cut' || a === 'pour' ? a : (sim.rules.rt as unknown as { yetenek?: { dans?: boolean } }).yetenek?.dans ? 'dance' : 'idle');
@@ -657,7 +663,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (stadyumView) guard('stadyumView', () => stadyumView.update(fdt));
     if ((bankaT -= fdt) <= 0) { bankaT = 2; const b = bankaRt(); if (b?.dirty && hesap()) { b.dirty = false; void bankaYaz({ tl: b.tl, esya: b.esya }); } }
     if (otobusHud) guard('otobusHud', () => otobusHud.update(fdt));
-    if (nightLights) guard('nightLights', () => nightLights.update(pos, sim.clock.hour, fdt, roomLightsFor(icMekan?.icinde())));
+    if (nightLights) guard('nightLights', () => nightLights.update(pos, gSaat.saat, fdt, roomLightsFor(icMekan?.icinde())));   // GRS-02: lamps follow the drawn hour (lit behind the gün sonu card, fade at dawn)
     if (playMode) guard('heroKind', syncHeroKind);
     guard('hero', () => {
       const r = rt();
@@ -682,8 +688,8 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (fx) guard('fx', () => fx.update(fdt));
     if (anim) guard('anim', () => anim.update(fdt));
     timeT -= fdt;
-    const hour = sim.clock.hour;
-    if (timeT <= 0 || (sim.timeFrozen && hour !== lastHour)) {
+    const hour = gSaat.update(sim.clock.hour, sim.state.day, !!sim.rules.rt.uiLast.gunSonu, fdt);
+    if (timeT <= 0 || gSaat.gecis || (sim.timeFrozen && hour !== lastHour)) {
       timeT = 0.2;
       if (hour !== lastHour) { lastHour = hour; guard('setTime', () => { R.setTime(hour, sim.clock.season); havaLook?.relight(); }); }
     }
@@ -844,10 +850,12 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   if (import.meta.env.MODE !== 'production') reg('shadowCull', (on?: boolean) => { const r = R as unknown as { shadowCull?: boolean; shadowStats?: () => unknown }; if (on !== undefined && r.shadowCull !== undefined) r.shadowCull = !!on; return { on: r.shadowCull ?? false, ...(r.shadowStats?.() as object ?? {}) }; });   // PRF-06 A/B ölçüm kancası
   if (import.meta.env.MODE !== 'production') reg('sahneKutu', (k: Parameters<typeof kutuda>[1], max?: number) => kutuda(scene, k, max));   // PRF-09 hayaletlenme tanısı
   if (import.meta.env.MODE !== 'production') reg('sahneKopya', (max?: number) => kopyalar(scene, max));
+  if (import.meta.env.MODE !== 'production') reg('kaynakDokum', (derin?: number, max?: number) => kaynakDokum(scene, derin ?? 3, max ?? 40));   // PRF-15 doku/geometri baytı sahibine göre
+  if (import.meta.env.MODE !== 'production') reg('dokuAkis', (tam?: boolean) => { if (tam !== undefined) akisZorla(!!tam); return akisDurum(); });   // PRF-15 A/B: akış kapalıyken (hep tam) görüntü aynı mı
   if (import.meta.env.MODE !== 'production') reg('kameraNear', (v: number | null) => { (cam as unknown as { nearFixed?(v: number | null): void }).nearFixed?.(v ?? null); return cam.camera.near; });   // PRF-09 A/B
   if (import.meta.env.MODE !== 'production') reg('heroPoz',() => { const o = H.object.position; return { x: +o.x.toFixed(3), y: +o.y.toFixed(3), z: +o.z.toFixed(3), camY: +cam.camera.position.y.toFixed(3), near: cam.camera.near }; });
   reg('lights', () => nightLights?.stats() ?? null);   // PRF-08: gece ışığı havuzu durumu
-  reg('setTime', (h: number) => { sim.command({ kind: 'setTime', hour: h }); lastHour = -1; timeT = 0; guard('setTime', () => { R.setTime(sim.clock.hour, sim.clock.season); havaLook?.relight(); }); });
+  reg('setTime', (h: number) => { sim.command({ kind: 'setTime', hour: h }); lastHour = -1; timeT = 0; gSaat.sifirla(sim.clock.hour, sim.state.day); guard('setTime', () => { R.setTime(sim.clock.hour, sim.clock.season); havaLook?.relight(); }); });
   reg('setStage', (n: number) => { sim.command({ kind: 'setStage', stage: n }); callWorld('setStage', sim.state.stage, sim.state.renewed); });
   reg('setTier', (name: TierName) => quality.set(name));
   reg('moments', (what?: string, arg?: string) => { if (!moments) return null; if (what) moments.force(what as never, arg); return moments.info(); });
@@ -997,11 +1005,13 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   // ── first frame, then go
   if (playMode) guard('startFlow', startFlow);
   // PRF-03: yükleme ekranı ısıtması: ilk kareden önce sahnedeki her şeyin shader'ı paralel derlenir (en çok 6 sn beklenir)
+  yukleAdim(0.8, 'Sahne hazırlanıyor');   // PRF-11: ısıtma süresince yükleme ekranı başlığın üstünde kalır
   if (R.warm) await Promise.race([R.warm(scene, cam.camera), new Promise(res => setTimeout(res, 6000))]);
   renderFrame(1 / 30, 1);
   if (!params.noloop) loop.start();
   if (warnings.length) console.warn('[marti] fallbacks:', warnings.join('; '));
   hooks.setReady(true);
+  yukleBitti();
   void TIER_TABLE;
 }
 

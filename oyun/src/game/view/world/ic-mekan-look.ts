@@ -460,7 +460,7 @@ export function createIcMekan(d: IcDeps): IcView {
         if (!r.g.visible) continue;
         const a = r.an;
         for (const s of a.spin) s.rotation.y += dt * 2.2;
-        for (const f of a.fire) { const k = 0.75 + 0.35 * Math.sin(t * 13 + f.userData.ph) + 0.15 * Math.sin(t * 29 + f.userData.ph * 2); f.scale.set(1, k, 1); }
+        for (const f of a.fire) { const k = 0.8 + 0.25 * Math.sin(t * 9 + f.userData.ph) + 0.08 * Math.sin(t * 15 + f.userData.ph * 2); f.scale.set(1, k, 1); }   // GRS-02: slower, softer flame
         for (const f of a.fish) { const w = f.userData.w as number, x = Math.sin(t * 0.4 + f.userData.ph) * (w / 2 - 0.25); f.position.x = x; f.rotation.y = Math.cos(t * 0.4 + f.userData.ph) > 0 ? 0 : Math.PI; f.position.y += Math.sin(t * 2 + f.userData.ph) * 0.0015; }
         for (let i = 0; i < a.screens.length; i++) a.screens[i].color.setHSL(((t * 0.05 + i * 0.3) % 1), 0.55, 0.42 + 0.06 * Math.sin(t * 3 + i));
         for (const p of a.bob) p.rotation.z = Math.sin(t * 1.4 + p.position.x * 3) * 0.04;
@@ -476,7 +476,8 @@ export function createIcMekan(d: IcDeps): IcView {
         if (a.fan) { const sp = (a.fxEm?.length ? 11 : 4) * dt; for (const f of a.fan) f.rotation.z += sp; }
         if (a.swing) for (const s of a.swing) s.o.rotation.z = Math.sin(t * 1.1 + s.ph) * (a.fxEm?.length ? 0.07 : 0.035);
         if (a.fx) a.fx.update(dt, a.fxEm || []);
-        if (a.flick.length && a.lamps) a.lamps.visible = Math.sin(t * 23) + Math.sin(t * 7.3) > -1.2;
+        // GRS-02 (owner: "ışık titremesi ASLA"): lamps never blink
+        if (a.flick.length && a.lamps) a.lamps.visible = true;
         void nk;
       }
     },

@@ -200,7 +200,7 @@ export function createSim(o: SimOpts, extra: SimExtra = {}): SimFull {
       if (rules.handle(c)) return;
       switch (c.kind) {
         case 'setTime': {
-          const h = Math.min(24, Math.max(8, Number(c.hour)));
+          const h = Math.min(DAY_END_H - 0.02, Math.max(DAY_START_H, Number(c.hour)));   // GRS-02: hooks can show the 24..27 deep night (27 itself would end the day)
           state.dayT = (h - DAY_START_H) * (GAME_DAY_S / (DAY_END_H - DAY_START_H));
           timeFrozen = c.freeze !== false;
           bus.emit('timeSet', { hour: h });
