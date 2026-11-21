@@ -34,6 +34,7 @@ import type {
   GameView, HeroHandle, TestHooks, Editor, Vec2, Vec3, ScreenPt, Logger, TierName, ArtManifest, SaveStore, QualitySetting, Rect, WalkGrid,
 } from '../engine/api';
 import type { Object3D } from 'three';
+import * as T from 'three';
 import { createHooks } from '../engine/debug';
 import { fallbackRender, fallbackWorld, fallbackHero, fallbackUi, fallbackHud } from '../engine/debug/fallbacks';
 import { createPlatform } from '../engine/platform';
@@ -220,6 +221,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
 
   // ── world + characters
   const prefab: PrefabSystem | null = dress ? make('prefab', () => createPrefabs({ dress, perf: P, log })) : null;
+  const ZONE_IDS_OCC = ['iskele', 'test-sokak', 'sahil', 'yokus', 'meydan', 'barinak', 'gece', 'stadyum', 'tersane', 'metro', 'tepe', 'adalar', 'orman'];
   const zones: ZoneManager | null = prefab && dress ? make('zones', () => createZones({ scene, prefab, dress, quality, perf: P, log })) : null;
   const nav: Nav = make('nav', () => createNav({ log })) ?? openNav();
   const anim: AnimApi | null = make('anim', () => createAnim({ log }));
@@ -408,6 +410,26 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
 
   // ── agents view (workers, regulars, gurme, kapkaççı, cats, Karamel, gulls, pigeons, far flock)
   /** 2026-11-21: the player is inside a büfe salon (its roof / upper floor is cut away, view/world/bufe-buyume.ts): people up on that roof would float */
+  // Kamera occlusion: alçak kamerada hero ile kamera arasındaki yüksek (>=1.8 m) opak mesh'e (duvar/bina/direk) girmesin. Aday liste ~1 sn'de bir yenilenir.
+  if (zones && cam.setOcclusion) {
+    const ray = new T.Raycaster(), org = new T.Vector3(), dir = new T.Vector3(), box = new T.Box3();
+    let cand: T.Object3D[] = [], candAt = -1e9;
+    const refresh = () => {
+      cand = [];
+      for (const id of ZONE_IDS_OCC) { const r = zones.def(id) ? zones.root(id) : null; if (!r || !r.visible) continue;
+        r.traverse(o => { const m = o as T.Mesh; if (!m.isMesh || (m as T.SkinnedMesh).isSkinnedMesh || (m as T.InstancedMesh).isInstancedMesh || !o.visible) return;
+          const mt = m.material as T.Material | T.Material[]; const mm = Array.isArray(mt) ? mt[0] : mt; if (!mm || mm.transparent || (mm as T.Material & { opacity: number }).opacity < 0.99) return;
+          if (!m.geometry.boundingBox) m.geometry.computeBoundingBox(); box.copy(m.geometry.boundingBox!).applyMatrix4(m.matrixWorld);
+          if (box.max.y - box.min.y >= 1.8 && box.min.y < 1.2) cand.push(o); }); }
+    };
+    cam.setOcclusion((fx, fz, tx, tz) => {
+      const now = performance.now(); if (now - candAt > 1000) { candAt = now; refresh(); }
+      const len = Math.hypot(tx - fx, tz - fz); if (len < 0.5) return 1;
+      org.set(fx, 1.2, fz); dir.set((tx - fx) / len, 0, (tz - fz) / len); ray.set(org, dir); ray.far = len;
+      const hit = ray.intersectObjects(cand, false)[0];
+      return hit ? Math.max(0, hit.distance / len) : 1;
+    });
+  }
   const salonUstGizli = (x: number, z: number) => { for (const m of [KT_IC.salonW, KT_IC.salonE]) if (ktIcinde(m, pos, 0.2) && ktIcinde(m, { x, z }, 0.4)) return true; return false; };
   const agentsOf = (): AgentsHandle | null => (sim.rules.rt as unknown as { agents?: AgentsHandle }).agents ?? null;
   const agentsView: AgentsView | null = playMode && chars ? make('agentsView', () => createAgentsView({
@@ -421,6 +443,8 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (key === 'quality') make('quality.set', () => { quality.set(String(value) as QualitySetting); return true; });
     else if (key === 'hand') { const h = value === 'left' ? 'left' : 'right'; U.settings.hand = h; input.setHand(h); }
     else if (key === 'haptics') U.settings.haptics = !!value;
+    else if (key === 'textScale') { const v = Math.min(1.6, Math.max(0.8, Number(value) || 1)); U.settings.textScale = v; U.root.style.setProperty('--ts', String(v)); }
+    else if (key === 'colorBlindIcons') { U.settings.colorBlindIcons = !!value; U.root.classList.toggle('sb-cb', !!value); }
   };
   const copyReport = () => { void platform.copyText(P.dump().kayit ? JSON.stringify(P.dump()) : P.report()).then(ok => U.toast(ok ? 'Rapor kopyalandı.' : 'Kopyalanamadı, hız ölçerden dene.', ok ? 'good' : 'info')); };
   const panels: Panels | null = playMode && uiReal ? make('panels', () => createPanels({
@@ -615,6 +639,8 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   if (audio && sim.state.settings.muted) { for (const b of Object.values(audio.buses)) b.muted = true; }
   if (audio) make('audio.saved', () => { const st = sim.state.settings; audio.buses.music.volume = st.music ?? 0.8; audio.buses.sfx.volume = st.sfx ?? 1; audio.buses.voice.volume = st.voice ?? 1; audio.ownMusicMode(!!st.ownMusic); return true; }); // ses-5 saved sliders + own music
   if (sim.state.settings.hand === 'left') extraSettings('hand', 'left');
+  if ((sim.state.settings.textScale || 1) !== 1) extraSettings('textScale', sim.state.settings.textScale);
+  if (sim.state.settings.colorBlindIcons) extraSettings('colorBlindIcons', true);
 
   // ── tier changes
   const applyTier = (t: TierDef) => {

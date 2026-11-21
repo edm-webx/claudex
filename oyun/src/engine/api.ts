@@ -436,6 +436,8 @@ export const ZOOM_MAX = 2.1;
  * position = (cx, sin(pitch)*dist, cz + 0.4 + cos(pitch)*dist); lookAt(cx, 0.6, cz + 0.4). No rotation.
  */
 export interface CameraRig {
+  /** Alçak kamerada duvar/bina içine girmeyi önler: fn(hero xz, kamera xz) -> ilk çarpışma oranı (1 = engel yok). */
+  setOcclusion?(fn: ((fx: number, fz: number, tx: number, tz: number) => number) | null): void;
   readonly camera: PerspectiveCamera;
   readonly fov: number;
   readonly pitch: number;
@@ -645,6 +647,8 @@ export interface Nav {
   move(from: Vec2, to: Vec2, radius: number, out: Vec2, opts?: { solids?: boolean }): Vec2;
   /** Exact collider rects of a zone (walls, counters, props), used by move(..., { solids: true }). */
   setSolids(key: string, rects: Rect[]): void;
+  /** Kamera occlusion: from->to doğrusunun büyük solid (duvar/bina) ile ilk kesişim oranı, 1 = engel yok. */
+  rayHit?(from: Vec2, to: Vec2, minSize?: number): number;
   defineTarget(id: string, at: Vec2): void;
   flowTo(targetId: string): FlowField;                   // cached
   zonePath(fromZone: string, toZone: string): string[];  // portal ids

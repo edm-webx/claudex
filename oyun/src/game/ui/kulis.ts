@@ -70,7 +70,7 @@ const CSS = `
 .kl-rnd{position:fixed;left:14px;bottom:14px;z-index:62;min-height:50px;padding:6px 16px;border-radius:14px;border:4px solid #3b2a20;background:#fff6e6;box-shadow:0 4px 0 #3b2a20;font:900 17px var(--disp);color:#3b2a20;cursor:pointer}
 .kl-tag{position:fixed;left:14px;top:14px;z-index:62;padding:8px 14px;border-radius:14px;background:rgba(40,22,18,.78);color:#ffe9b0;font:900 18px/1.2 var(--disp);pointer-events:none}
 .kl-tag small{display:block;font:700 13px var(--body);color:#f4dcc0}
-@media (max-width:700px){.kl-p{top:auto;height:56vh;left:8px;right:8px;width:auto;bottom:8px}.kl-rnd{bottom:auto;top:70px}.kl-t{flex-basis:30%;font-size:13px}}
+@media (max-width:700px){.kl-p{top:auto;height:42vh;left:8px;right:8px;width:auto;bottom:8px}.kl-rnd{bottom:auto;top:70px}.kl-tabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}.kl-tabs::-webkit-scrollbar{display:none}.kl-t{flex:0 0 auto;font-size:13px;padding:4px 12px}}
 `;
 
 /** Painted textures, code made (no image files) */
@@ -361,7 +361,10 @@ ${e.sapka ? `<div class="kl-l">Şapka rengi</div>${sw('sapkaRenk', COLS, e.sapka
     cp.lerp(new T.Vector3(...s.cam), k); ca.lerp(new T.Vector3(...s.at), k);
     cam.position.copy(cp);
     const right = new T.Vector3().subVectors(ca, cp).cross(new T.Vector3(0, 1, 0)).normalize();
-    cam.lookAt(ca.clone().addScaledVector(right, off)); cam.fov = wide ? 40 : 48; cam.updateProjectionMatrix();
+    cam.lookAt(ca.clone().addScaledVector(right, off)); cam.fov = wide ? 40 : 48;
+    if (!wide && h > w) cam.setViewOffset(w, h, 0, Math.round(h * 0.15), w, h);   // dar dikey ekranda alttaki panel karakteri kapatmasın: görüntüyü yukarı kaydır
+    else cam.clearViewOffset();
+    cam.updateProjectionMatrix();
     if (hero) {
       hero.setPose({ x: hp.x, z: hp.z }, hp.rot);
       hero.setInput({ speed: walkSp, carry: 0, act: walkSp > 0 ? 'walk' : 'idle', mood: tab === 'yuz' || tab === 'sac' ? 'ok' : 'happy', t });
