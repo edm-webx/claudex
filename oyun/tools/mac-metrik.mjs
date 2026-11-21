@@ -40,7 +40,7 @@ const satir = [
   `| Şut/takım (bot-bot) | ${botBot.sutTakimOrt} | ${E.sutTakim.join('-')} | ${ok(botBot.sutTakimOrt >= E.sutTakim[0] && botBot.sutTakimOrt <= E.sutTakim[1])} |`,
   `| İsabet oranı, xG/takım, gol/xG | ${ozet.isabetOran}, ${ozet.xgTakimOrt}, ${ozet.golXgOran} | - | - |`,
   `| Gol/maç ort (min-max, %10-%90) | ${ozet.golOrt} (${ozet.golMin}-${ozet.golMax}, ${ozet.golYuzde10}-${ozet.golYuzde90}) | ${E.golMac.join('-')} | ${ok(ozet.golOrt >= E.golMac[0] && ozet.golOrt <= E.golMac[1])} |`,
-  `| Topa sahip olma aralığı (%) | ${ozet.sahipMin}-${ozet.sahipMax} | 25-75 | ${ok(ozet.sahipMin >= 20 && ozet.sahipMax <= 80)} |`,
+  `| Topa sahip olma aralığı (%, bot-bot / tümü) | ${botBot.sahipMin}-${botBot.sahipMax} / ${ozet.sahipMin}-${ozet.sahipMax} | 25-75 (bot-bot) | ${ok(botBot.sahipMin >= 25 && botBot.sahipMax <= 75)} |`,
   `| Yığılma (≥5 oyuncu 4 m içinde) | ${ozet.yigilmaOrt} | < 0.3 | ${ok(ozet.yigilmaOrt < 0.3)} |`,
   `| Takım arkadaşı çakışması (<1.5 m) | ${ozet.cakismaOrt} | düşük | - |`,
   `| Alan kapsamı (ısı entropisi 0-1) | ${ozet.kapsamOrt} | yüksek | - |`,

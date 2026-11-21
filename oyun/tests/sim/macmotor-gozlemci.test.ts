@@ -27,7 +27,8 @@ function humanRun(seed: number, aimY: number) {
   let t = 0, resolved = false;
   for (let i = 0; i < 30 * 12; i++) {
     m.input.ix = 1; m.input.iy = 0; m.step(dt); t += dt;
-    if (m.freeze > 0 || m.restart || m.score[0] + m.score[1] > 0) { resolved = true; break; }
+    // FUT-03 dokun-kovala: top rakibe geçmesi de çözüm sayılır (çizgide sıkışma değil)
+    if (m.freeze > 0 || m.restart || m.score[0] + m.score[1] > 0 || (m.ball.owner >= 0 && m.pls[m.ball.owner].team === 1)) { resolved = true; break; }
   }
   return { resolved, t, before };
 }
