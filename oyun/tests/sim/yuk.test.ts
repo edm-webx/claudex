@@ -10,6 +10,7 @@ import { createAmbient } from '../../src/game/sim/ambient';
 import { createLoop } from '../../src/engine/loop';
 import { AGENT_CAP } from '../../src/game/sim/schema';
 import type { WalkGrid } from '../../src/engine/api';
+import { sakin, yuzdelik, medyan } from './olcum';
 import budget from '../../tools/perf-budget.json';
 
 const log = { info() {}, warn() {}, error() {} };
@@ -46,35 +47,45 @@ function worstCase(seed: number) {
   return { sim, nav };
 }
 
-const q = (a: number[], p: number) => [...a].sort((x, y) => x - y)[Math.min(a.length - 1, Math.floor(a.length * p))];
+const TUR = 5;   // kararlı ölçüm: aynı tohumlu senaryo TUR kez koşulur (bkz. olcum.ts)
 
-it('en kötü durum: tick maliyeti bütçe altında (p95 ve maks), sistem dağılımı raporlanır', () => {
-  const { sim, nav } = worstCase(1);
-  for (let i = 0; i < WARM; i++) sim.tickOnce();          // JIT ısınması: ilk tick'ler ölçüme girmez
-  const tot: number[] = [], per: Record<string, number[]> = {};
-  const n0 = nav.stats!();
-  let maxCallsInTick = 0;
-  for (let i = 0; i < TICKS; i++) {
-    const c0 = nav.stats!().pathCalls;
-    const t0 = performance.now(); sim.tickOnce(); tot.push(performance.now() - t0);
-    const c1 = nav.stats!().pathCalls - c0; if (c1 > maxCallsInTick) maxCallsInTick = c1;
-    const tm = sim.scheduler.timings(); for (const k in tm) (per[k] ||= []).push(tm[k]);
+function olc() {
+  const turlar: number[][] = [], perTur: Record<string, number[]>[] = [];
+  let nav0: any, nav1: any, maxCallsInTick = 0, sim0: any;
+  for (let r = 0; r < TUR; r++) {
+    const { sim, nav } = worstCase(1);
+    for (let i = 0; i < WARM; i++) sim.tickOnce();          // JIT ısınması: ilk tick'ler ölçüme girmez
+    const tot: number[] = [], per: Record<string, number[]> = {};
+    const n0 = nav.stats!();
+    for (let i = 0; i < TICKS; i++) {
+      const c0 = nav.stats!().pathCalls;
+      const t0 = performance.now(); sim.tickOnce(); tot.push(performance.now() - t0);
+      const c1 = nav.stats!().pathCalls - c0; if (c1 > maxCallsInTick) maxCallsInTick = c1;
+      const tm = sim.scheduler.timings(); for (const k in tm) (per[k] ||= []).push(tm[k]);
+    }
+    turlar.push(tot); perTur.push(per);
+    if (r === 0) { nav0 = n0; nav1 = nav.stats!(); sim0 = sim; }
   }
-  const n1 = nav.stats!();
-  const p95 = q(tot, 0.95), mx = Math.max(...tot);
-  const top = Object.entries(per).map(([k, v]) => [k, q(v, 0.95), Math.max(...v)] as const).sort((a, b) => b[1] - a[1]).slice(0, 6);
-  console.log(`[yuk] ajan=${sim.agents.hi}/${AGENT_CAP} işçi=${sim.state.workers.length} aşama=${sim.state.stage} tick p50=${q(tot, 0.5).toFixed(3)} p95=${p95.toFixed(3)} p99=${q(tot, 0.99).toFixed(3)} maks=${mx.toFixed(2)} ms`);
-  console.log('[yuk] en pahalı sistemler (p95/maks ms):', top.map(t => `${t[0]} ${t[1].toFixed(3)}/${t[2].toFixed(2)}`).join(' | '));
-  console.log(`[yuk] nav: ${n1.pathCalls - n0.pathCalls} yol isteği/${TICKS} tick, tick başı en çok ${maxCallsInTick}, istek başı ort. ${((n1.expanded - n0.expanded) / Math.max(1, n1.pathCalls - n0.pathCalls)).toFixed(0)} düğüm, en çok ${n1.maxExpanded}, başarısız ${n1.pathFails - n0.pathFails}; akış alanı yeniden kurulum ${n1.flowBuilds - n0.flowBuilds}, isabet ${n1.flowHits - n0.flowHits}`);
+  return { turlar, perTur, nav0, nav1, maxCallsInTick, sim: sim0 };
+}
+
+it('en kötü durum: tick maliyeti bütçe altında (kararlı p95 ve maks), sistem dağılımı raporlanır', () => {
+  const { turlar, perTur, nav0, nav1, maxCallsInTick, sim } = olc();
+  const calm = sakin(turlar);                               // tick başına tur-min: gürültüsüz, gerçek sıçramalar korunur
+  const ham = turlar.map(t => Math.max(...t));
+  const p95 = yuzdelik(calm, 0.95), mx = Math.max(...calm);
+  const top = Object.keys(perTur[0]).map(k => { const c = sakin(perTur.map(p => p[k])); return [k, yuzdelik(c, 0.95), Math.max(...c)] as const; }).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  console.log(`[yuk] ajan=${sim.agents.hi}/${AGENT_CAP} işçi=${sim.state.workers.length} aşama=${sim.state.stage} ${TUR} tur x ${TICKS} tick; kararlı tick p50=${medyan(calm).toFixed(3)} p95=${p95.toFixed(3)} p99=${yuzdelik(calm, 0.99).toFixed(3)} p99.9=${yuzdelik(calm, 0.999).toFixed(3)} maks=${mx.toFixed(2)} ms | ham tur maks: ${ham.map(h => h.toFixed(1)).join(', ')} ms`);
+  console.log('[yuk] en pahalı sistemler (kararlı p95/maks ms):', top.map(t => `${t[0]} ${t[1].toFixed(3)}/${t[2].toFixed(2)}`).join(' | '));
+  console.log(`[yuk] nav: ${nav1.pathCalls - nav0.pathCalls} yol isteği/${TICKS} tick, tick başı en çok ${maxCallsInTick}, istek başı ort. ${((nav1.expanded - nav0.expanded) / Math.max(1, nav1.pathCalls - nav0.pathCalls)).toFixed(0)} düğüm, en çok ${nav1.maxExpanded}, başarısız ${nav1.pathFails - nav0.pathFails}; akış alanı yeniden kurulum ${nav1.flowBuilds - nav0.flowBuilds}, isabet ${nav1.flowHits - nav0.flowHits}`);
   expect(sim.agents.hi).toBeGreaterThan(150);               // gerçekten kalabalık senaryo
   expect(sim.scheduler.disabled()).toEqual([]);            // hiçbir sistem düşmedi
+  // Bütçeler GEVŞETİLMEDİ (p95 8 ms, maks 25 ms). Kararlı seri yalnız her turda tekrarlanan tick'leri tutar: CPU yarışması bütçeyi
+  // yanlış yere kırmaz, gerçek sim sıçraması (her turda aynı tick) kırar. Maks doğrudan kararlı serinin maksimumudur (eski p99.9 hilesi yok).
   expect(p95).toBeLessThan(B.tickP95Ms);
-  // Maks bütçesi p99.9 üzerinden: ölçüm kutusundaki tek seferlik işletim sistemi/GC sıçraması (bir koşuda 76 ms görüldü, tekrarda
-  // 6 ms) bütçeyi yanlış yere kırmasın. Gerçek bir sim regresyonu p99.9'u da yükseltir. Mutlak tavan 4 kat.
-  expect(q(tot, 0.999)).toBeLessThan(B.tickMaxMs);
-  expect(mx).toBeLessThan(B.tickMaxMs * 4);
+  expect(mx).toBeLessThan(B.tickMaxMs);
   expect(maxCallsInTick).toBeLessThanOrEqual(B.pathCallsPerTickMax);
-}, 120000);
+}, 240000);
 
 it('determinizm: aynı tohum iki koşuda aynı durum özeti (ölçüm sim sonucunu değiştirmez)', () => {
   const a = worstCase(7).sim, b = worstCase(7).sim;

@@ -39,7 +39,10 @@ export const TIER_FLAG_DOC: Readonly<Record<string, { konum: string; canli: 'uni
   reflectHi: { konum: 'src/engine/render/reflect.ts reflectBudget (yarım çözünürlük, her kare)', canli: 'rt-yeniden-boyut', paket: 'GRS-05' },
 });
 
-export function guessTier(memoryGB: number, cores: number): TierName {
+export function guessTier(memoryGB: number, cores: number, mobile = false): TierName {
+  // PRF-13: on a phone the first guess is never 'sahane' (iOS Safari reports no deviceMemory, the fallback would read as a big PC);
+  // 'dengeli' only with 6+ GB and 8+ cores. The auto-watch can still raise it later. Desktop guess unchanged.
+  if (mobile) return memoryGB >= 6 && cores >= 8 ? 'dengeli' : 'akici';
   if (memoryGB <= 3 || cores <= 4) return 'akici';
   if (memoryGB <= 4) return 'dengeli';
   return 'sahane';
@@ -55,7 +58,7 @@ export function createQuality(deps: QualityDeps): Quality {
   let setting: QualitySetting = saved.setting && (saved.setting === 'auto' || ORDER.includes(saved.setting)) ? saved.setting : 'auto';
   let downThisSession = false;
   let autoTier: TierName | null = saved.autoTier && ORDER.includes(saved.autoTier) ? saved.autoTier : null;
-  const guess = () => guessTier(p.device.memoryGB, p.device.cores);
+  const guess = () => guessTier(p.device.memoryGB, p.device.cores, p.device.mobile);
   let cur: TierName = p.params.tier ?? (setting !== 'auto' ? setting : autoTier ?? guess());
   const subs = new Set<(t: TierDef, why: Why) => void>();
   const scaleSubs = new Set<(s: number) => void>();
