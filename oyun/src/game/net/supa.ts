@@ -1,7 +1,7 @@
 /**
  * Martıköy sunucusu: Supabase (2026-10-24 13:05 user: kullanıcı adı + şifre, veritabanı; no server purchase needed).
  * - Auth: a username becomes a fake e-mail <name>@martikoy.oyun (Confirm email OFF in Supabase), so nobody types a mail.
- * - Tables (sosisci-oyun/sunucu/supabase-kurulum.sql): oyuncular (public profile: kullanici_adi, esnaf look),
+ * - Tables (oyun/sunucu/supabase-kurulum.sql + migrations/): oyuncular (public profile: kullanici_adi, esnaf look),
  *   kayitlar (private save code, only the owner reads it; RLS).
  * - Realtime channels carry the room codes (online.ts).
  * URL + anon/publishable key are public by design (RLS protects the data). Never put a service_role/secret key here.
@@ -36,6 +36,9 @@ const trErr = (m: string) =>
   /Invalid login/i.test(m) ? 'Kullanıcı adı ya da şifre yanlış.'
   : /already registered|already exists/i.test(m) ? 'Bu kullanıcı adı alınmış.'
   : /Password should be/i.test(m) ? 'Şifre en az 6 karakter olmalı.'
+  : /weak|pwned|known to be|easy to guess/i.test(m) ? 'Bu şifre sızdırılmış/çok bilinen bir şifre, başka bir şifre seç.'
+  : /değiştirilemez/i.test(m) ? 'Kullanıcı adı değiştirilemez.'
+  : /oyuncular_ad_bicim|check constraint/i.test(m) ? 'Kullanıcı adı 3-16 küçük harf/rakam olsun (boşluk yok).'
   : /rate limit|too many/i.test(m) ? 'Çok fazla deneme oldu, biraz bekle.'
   : /fetch|network|Failed/i.test(m) ? 'Sunucuya ulaşılamadı. İnternetini kontrol et.'
   : /signups not allowed|Signups/i.test(m) ? 'Kayıtlar kapalı (Supabase: Email provider açık olmalı).'
