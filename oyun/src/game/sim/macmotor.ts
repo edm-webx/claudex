@@ -31,8 +31,10 @@ export interface Pl {
 /** z/vz: top yüksekliği (m, yerde 0) ve dikey hızı. Taşınan top yerdedir. */
 export interface Ball { x: number; y: number; z: number; vx: number; vy: number; vz: number; owner: number; lastTouch: 0 | 1; lastKicker: number }
 export type Ev = { k: 'sfx'; id: string } | { k: 'banner'; text: string; t: number } | { k: 'goal'; team: 0 | 1; scorer: number } | { k: 'end' } | { k: 'shake'; t: number }
-  | { k: 'post' } | { k: 'save'; team: 0 | 1 };
+  | { k: 'post' } | { k: 'save'; team: 0 | 1 } | { k: 'foul'; team: 0 | 1; x: number; y: number; pen: boolean } | { k: 'card'; who: number };
+/** 'aut' eski kayıtlar/çağrılar için tipte kalır; motor kale çizgisi dışını 'kale' (kale vuruşu) olarak verir. */
 export type RestartKind = 'tac' | 'korner' | 'aut' | 'kale' | 'serbest' | 'penalti';
+export type RefSignal = '' | 'foul' | 'penalti' | 'korner' | 'tac' | 'aut' | 'kale';
 export type Action = 'sut' | 'pas' | 'calim' | 'uzun' | 'kap' | 'degis';
 
 /** Normalised anchors (x: own goal 0 -> opp goal 1, y 0..1), slot 0 = keeper. */
@@ -64,7 +66,9 @@ export function createMatch(o: MatchOpts = {}) {
   const ball: Ball = { x: L / 2, y: WD / 2, z: 0, vx: 0, vy: 0, vz: 0, owner: -1, lastTouch: 0, lastKicker: -1 };
   const m = {
     pls, ball, score: [0, 0] as [number, number], clock: 0, half: 1, over: false, freeze: 1.4, ctrl: o.humanSlot ?? 3, input: { ix: 0, iy: 0 }, events: [] as Ev[],
-    restart: null as null | { taker: number; kind: RestartKind; t: number }, poss: [0, 0] as [number, number], corners: [0, 0] as [number, number],
+    restart: null as null | { taker: number; kind: RestartKind; t: number }, poss: [0, 0] as [number, number], corners: [0, 0] as [number, number], fouls: [0, 0] as [number, number],
+    /** FUT-05 hakem: sahada topu çaprazdan izler; signal karar işareti (kol), t işaretin kalan süresi (sn). vx/vy yürüyüş animasyonu için. */
+    ref: { x: L / 2, y: WD / 2 + 4, vx: 0, vy: 0, signal: '' as RefSignal, t: 0 },
     pass: null as null | { from: number; team: 0 | 1 }, shot: null as null | { team: 0 | 1; t: number }, lastPasser: -1, lastPasserT: -9, switchT: 0, planT: 0,
     timers: [] as { t: number; fn: () => void }[], banner: 'Başlıyoruz!', bannerT: 1.6,
     /** Top ayaktan uzaktayken (dokun-kovala) basılan vuruş, top 1.5 m'ye girince (en çok 0.5 sn içinde) yapılır. */
@@ -118,6 +122,10 @@ export function createMatch(o: MatchOpts = {}) {
     setAct(p, 'kick', 0.3);
     if (kind === 'pas') { m.pass = { from: i, team: p.team }; p.st.passes++; m.shot = null; sfx('puff'); }
     else {
+      if (m.restart && m.restart.kind === 'penalti') {   // penaltıda kaleci vuruş anında bir yöne karar verir (beceriyle doğru tahmin)
+        const k = pls.find(q => q.gk && q.team !== p.team)!, side = ball.vy >= 0 ? 1 : -1, guess = R() < 0.3 + k.sk.gk * 0.3 ? side : (R() < 0.5 ? 1 : -1);
+        k.dive = 0.5; k.diveDir = guess as -1 | 1; k.vy = 4.5 + k.sk.gk * 1.5;
+      }
       m.pass = null; p.st.shots++; const tt = (goalX(p.team) - ball.x) / (ball.vx || 1e-6), zl = vz * tt - G / 2 * tt * tt;
       if (tt > 0 && ball.vx * dirOf(p.team) > 0 && ball.y + ball.vy * tt > M0 - 0.3 && ball.y + ball.vy * tt < M1 + 0.3 && zl < GH - 0.1) { p.st.onTarget++; m.shot = { team: p.team, t: 3 }; } else m.shot = null;
       sfx('kick'); emit({ k: 'shake', t: 0.15 });
@@ -164,10 +172,11 @@ export function createMatch(o: MatchOpts = {}) {
    */
   function tackle(qi: number): boolean {
     const q = pls[qi], o = ball.owner >= 0 ? pls[ball.owner] : null; setAct(q, 'tackle', 0.45); q.kickCd = 0.6;
-    if (!o || o.team === q.team || o.gk) return false;
-    const db = Math.hypot(ball.x - q.x, ball.y - q.y), dc = Math.hypot(o.x - q.x, o.y - q.y), reach = 0.6 + q.sk.tackle * 0.35;
+    if (!o || o.team === q.team || o.gk || m.restart) return false;
+    const db = Math.hypot(ball.x - q.x, ball.y - q.y), dc = Math.hypot(o.x - q.x, o.y - q.y), reach = 0.6 + q.sk.tackle * 0.35, qs = Math.hypot(q.vx, q.vy);
     const behind = ((q.x - o.x) * o.fx + (q.y - o.y) * o.fy) / (dc || 1) < -0.35, shielded = dc + 0.3 < db && Math.hypot(ball.x - o.x, ball.y - o.y) < 0.8;
     if (db < reach && !behind && !shielded) { o.stun = 0.45; take(qi, true); sfx('kick'); return true; }
+    if (dc < 1.0 && (behind || (qs > 6.5 && dc < 0.8 && db > reach + 0.3))) { foul(qi, o, behind && qs > 6); return false; }   // arkadan ya da topa gitmeyen sert giriş
     q.stun = 0.28; return false;
   }
 
@@ -185,11 +194,16 @@ export function createMatch(o: MatchOpts = {}) {
     const shotV = xg(p), [mate, ps] = passOption(p);
     const carry = 0.9 + p.sk.flair * 1.3 - (press < 1.6 ? 1.6 : 0) - (press < 2.6 ? 0.5 : 0) + (press > 3.5 ? 1.0 : 0) + (dGoal < 9 ? 0.6 : 0) + R() * 0.9 + (p.hold > 3 ? -1.5 : 0);
     if (m.restart && m.restart.taker === i) {   // set piece: look, then play it
-      if (m.restart.kind === 'korner') { const t = pls.filter(q => q.team === p.team && !q.gk).sort((a, b) => Math.abs(a.x - gx) - Math.abs(b.x - gx))[0]; if (t) { if (R() < 0.5) loft(p, t.x, t.y); else kick(p, t.x - p.x, t.y - p.y, clamp(len(t.x - p.x, t.y - p.y) * 1.5 + 4, 9, 17), 'pas'); } }
+      const kd = m.restart.kind;
+      if (kd === 'penalti' || (kd === 'serbest' && dGoal < 14 && shotV > 0.06 && R() < 0.6)) {   // penaltı ya da doğrudan serbest vuruş: köşeye
+        const side = R() < 0.5 ? -1 : 1, aim = WD / 2 + side * (0.9 + R() * 0.8);
+        kick(p, gx + dir * 0.5 - p.x, aim - p.y + (R() - 0.5) * (1 - p.sk.shoot) * 1.6, 17 + p.sk.shoot * 6, 'sut', kd === 'penalti' ? 0.3 + R() * 1.6 : 2.6 + R() * 1.2); return;
+      }
+      if (kd === 'korner') { const t = pls.filter(q => q.team === p.team && !q.gk).sort((a, b) => Math.abs(a.x - gx) - Math.abs(b.x - gx))[0]; if (t) { if (R() < 0.5) loft(p, t.x, t.y); else kick(p, t.x - p.x, t.y - p.y, clamp(len(t.x - p.x, t.y - p.y) * 1.5 + 4, 9, 17), 'pas'); } }
       else if (mate) kick(p, mate.x - p.x, mate.y - p.y, clamp(len(mate.x - p.x, mate.y - p.y) * 1.4 + 6, 9, 17), 'pas'); else kick(p, dir, 0, 12, 'pas');
       return;
     }
-    if (dGoal < 15 && shotV > 0.1 + R() * 0.07 + (press > 2.5 ? 0.03 : 0) && shotV >= xg(mate || p) - 0.02) {
+    if (dGoal < 16 && shotV > 0.085 + R() * 0.07 + (press > 2.5 ? 0.03 : 0) && shotV >= xg(mate || p) - 0.02) {
       const side = (R() < 0.5 ? -1 : 1), aim = WD / 2 + side * (1.1 + (1 - p.sk.shoot) * 0.9 + R() * 0.6) * ((M1 - M0) / 2 / 1.6);
       kick(p, gx + dir * 0.5 - p.x, aim - p.y + (R() - 0.5) * ((1 - p.sk.shoot) * 2.4 + dGoal * 0.18 + (press < 1.8 ? 2.2 : 0)), 16 + p.sk.shoot * 6 + R() * 2, 'sut', 0.4 + R() * 2.4 + (1 - p.sk.shoot) * R() * 2); return;
     }
@@ -296,20 +310,49 @@ export function createMatch(o: MatchOpts = {}) {
     }
   }
 
+  const BANNER: Record<RestartKind, string> = { tac: 'TAÇ', korner: 'KORNER', aut: 'AUT', kale: 'KALE VURUŞU', serbest: 'FAUL', penalti: 'PENALTI' };
+  const signal = (s: RefSignal) => { m.ref.signal = s; m.ref.t = 1.6; };
+
+  /** Duran top (FUT-05): taç, korner, kale vuruşu, serbest vuruş (5v5 kısa duvar), penaltı. Hakem kararı kolla gösterir (m.ref). */
   function setPiece(kind: RestartKind, team: 0 | 1, bx: number, by: number) {
-    sfx('whistle'); say(kind === 'tac' ? 'TAÇ' : kind === 'korner' ? 'KORNER' : 'AUT', 1.4); m.freeze = 1.1; m.pass = null; m.shot = null;
+    sfx('whistle'); say(BANNER[kind], 1.4); m.freeze = kind === 'penalti' ? 1.8 : 1.1; m.pass = null; m.shot = null; m.bekleyen = null;
+    signal(kind === 'serbest' ? 'foul' : kind);
     if (kind === 'korner') m.corners[team]++;
     let tx: number, ty: number, taker = -1;
-    if (kind === 'aut') { taker = pls.findIndex(q => q.team === team && q.gk); tx = team === 0 ? 2 : L - 2; ty = WD / 2; }
-    else {
-      tx = kind === 'korner' ? (bx > L / 2 ? L - 0.4 : 0.4) : clamp(bx, 1, L - 1); ty = by < WD / 2 ? 0.4 : WD - 0.4;
-      let bd = 1e9; pls.forEach((q, i) => { if (q.team === team && !q.gk) { const d = Math.hypot(q.x - tx, q.y - ty); if (d < bd) { bd = d; taker = i; } } });
+    const nearest = () => { let bd = 1e9; pls.forEach((q, i) => { if (q.team === team && !q.gk) { const d = Math.hypot(q.x - tx, q.y - ty); if (d < bd) { bd = d; taker = i; } } }); };
+    if (kind === 'aut' || kind === 'kale') { taker = pls.findIndex(q => q.team === team && q.gk); tx = team === 0 ? 2 : L - 2; ty = WD / 2; }
+    else if (kind === 'penalti') {
+      tx = ownX(1 - team) + dirOf(1 - team) * PEN_D; ty = WD / 2; let bs = -1;
+      pls.forEach((q, i) => { if (q.team === team && !q.gk && q.sk.shoot > bs) { bs = q.sk.shoot; taker = i; } });
+      pls.forEach((q, i) => { if (i === taker || q.gk) return; if (inBox(1 - team as 0 | 1, q.x, q.y) || Math.hypot(q.x - tx, q.y - ty) < 3) { q.x = ownX(1 - team) + dirOf(1 - team) * (BOX_D + 1 + (i % 3) * 0.8); q.vx = q.vy = 0; } });
+      const k = pls.find(q => q.gk && q.team !== team)!; k.x = ownX(k.team) + dirOf(k.team) * 0.5; k.y = WD / 2; k.vx = k.vy = 0;
     }
-    const p = pls[taker]; p.x = tx; p.y = ty; p.vx = p.vy = 0; p.stun = 0; p.kickCd = 0; p.think = 0.5;
-    const aimX = kind === 'korner' ? (tx > L / 2 ? L - 3 : 3) : L / 2, ad = len(aimX - tx, WD / 2 - ty); p.fx = (aimX - tx) / ad; p.fy = (WD / 2 - ty) / ad;
+    else if (kind === 'serbest') { tx = clamp(bx, 1, L - 1); ty = clamp(by, 0.6, WD - 0.6); nearest(); }
+    else { tx = kind === 'korner' ? (bx > L / 2 ? L - 0.4 : 0.4) : clamp(bx, 1, L - 1); ty = by < WD / 2 ? 0.4 : WD - 0.4; nearest(); }
+    const p = pls[taker]; p.x = tx; p.y = ty; p.vx = p.vy = 0; p.stun = 0; p.dive = 0; p.kickCd = 0; p.think = kind === 'penalti' ? 1.0 : 0.5;
+    const gx = goalX(team), aimX = kind === 'korner' ? (tx > L / 2 ? L - 3 : 3) : kind === 'penalti' || kind === 'serbest' ? gx : L / 2, ad = len(aimX - tx, WD / 2 - ty); p.fx = (aimX - tx) / ad; p.fy = (WD / 2 - ty) / ad;
     pls.forEach(q => { if (q.team === team) return; const dx = q.x - tx, dy = q.y - ty, dd = Math.hypot(dx, dy); if (dd < 3) { const ux = dd > 0.01 ? dx / dd : -p.fx, uy = dd > 0.01 ? dy / dd : -p.fy; q.x = clamp(tx + ux * 3, 0.4, L - 0.4); q.y = clamp(ty + uy * 3, 0.4, WD - 0.4); q.vx = q.vy = 0; } });
-    placeBall(p.x + p.fx * 0.6, p.y + p.fy * 0.6); ball.owner = taker; ball.lastTouch = team;
+    if (kind === 'serbest' && Math.hypot(gx - tx, WD / 2 - ty) < 15) {   // kısa duvar: en yakın iki rakip, topla kale arasında 3 m'de
+      const gd = len(gx - tx, WD / 2 - ty), ux = (gx - tx) / gd, uy = (WD / 2 - ty) / gd;
+      pls.filter(q => q.team !== team && !q.gk).sort((a, b) => Math.hypot(a.x - tx, a.y - ty) - Math.hypot(b.x - tx, b.y - ty)).slice(0, 2)
+        .forEach((q, k) => { q.x = clamp(tx + ux * 3 - uy * (k - 0.5) * 0.7, 0.4, L - 0.4); q.y = clamp(ty + uy * 3 + ux * (k - 0.5) * 0.7, 0.4, WD - 0.4); q.vx = q.vy = 0; q.stun = 0.4; });
+    }
+    placeBall(kind === 'penalti' ? tx : p.x + p.fx * 0.6, kind === 'penalti' ? ty : p.y + p.fy * 0.6); ball.owner = taker; ball.lastTouch = team;
+    if (kind === 'penalti') { p.x = tx - p.fx * 0.7; p.y = ty - p.fy * 0.7; }
     m.restart = { taker, kind, t: 0 }; if (human !== null && team === human && !p.gk) m.ctrl = taker;
+  }
+
+  /**
+   * Faul (FUT-05): arkadan temaslı müdahale ya da topa değmeyen aşırı sert (hızlı) temaslı müdahale. Temiz top kazanma faul değildir.
+   * Faulü yapanın kendi ceza alanında = penaltı, başka yerde = serbest vuruş. Sert arkadan giriş ya da aynı oyuncunun 3. faulü sarı kart
+   * (yalnız uyarı, atma yok).
+   */
+  const faulSay = pls.map(() => 0);
+  function foul(qi: number, o: Pl, hard: boolean) {
+    const q = pls[qi], pen = inBox(q.team, o.x, o.y), card = hard || ++faulSay[qi] >= 3; m.fouls[q.team]++;
+    emit({ k: 'foul', team: q.team, x: o.x, y: o.y, pen }); o.stun = 0.6;
+    setPiece(pen ? 'penalti' : 'serbest', o.team, o.x, o.y);
+    if (card) { faulSay[qi] = 0; emit({ k: 'card', who: qi }); say(BANNER[pen ? 'penalti' : 'serbest'] + ' - SARI KART: ' + q.name, 1.8); }
   }
 
   function goal(team: 0 | 1) {
@@ -332,6 +375,7 @@ export function createMatch(o: MatchOpts = {}) {
   function act(a: Action, power = 0.5, uzun = false) {
     if (m.over || m.freeze > 0 || human === null) return;
     if (m.restart && m.restart.kind === 'tac' && ball.owner === m.ctrl && a !== 'uzun') a = 'pas';
+    if (m.restart && m.restart.kind === 'penalti' && ball.owner === m.ctrl) a = 'sut';   // penaltıda yalnız şut
     const p = pls[m.ctrl], { ix, iy } = m.input, dir = dirOf(p.team), mv = Math.hypot(ix, iy) > 0.25, has = ball.owner === m.ctrl;
     power = clamp(power, 0, 1);
     if (a === 'degis' || (a === 'pas' && !has)) {
@@ -414,7 +458,7 @@ export function createMatch(o: MatchOpts = {}) {
     if (inMouth && ball.z < GH) { ball.owner = -1; goal(right ? 0 : 1); return true; }
     const att: 0 | 1 = right ? 0 : 1, def: 0 | 1 = right ? 1 : 0;
     m.pass = null; ball.owner = -1;
-    if (ball.lastTouch === att) setPiece('aut', def, ball.x, ball.y); else setPiece('korner', att, right ? L : 0, ball.y);
+    if (ball.lastTouch === att) setPiece('kale', def, ball.x, ball.y); else setPiece('korner', att, right ? L : 0, ball.y);
     return true;
   }
 
@@ -429,13 +473,25 @@ export function createMatch(o: MatchOpts = {}) {
     ball.y = clamp(ball.y, M0 + 0.12, M1 - 0.12);
   }
 
-  function step(dt: number) {
-    m.events.length = 0;
+  /** Hakem topu çaprazdan, 3 m geriden ve 5 m yandan izler; duran topta karar yerine yürür. */
+  function refStep(dt: number) {
+    const r = m.ref, rx = clamp(ball.x - (ball.vx >= 0 ? 3 : -3), 2, L - 2), ry = ball.y < WD / 2 ? clamp(ball.y + 5, 2, WD - 1) : clamp(ball.y - 5, 1, WD - 2);
+    const dx = rx - r.x, dy = ry - r.y, d = Math.hypot(dx, dy), want = d > 0.3 ? Math.min(6, d * 2) : 0;
+    r.vx += ((d > 0 ? dx / d * want : 0) - r.vx) * Math.min(1, dt * 5); r.vy += ((d > 0 ? dy / d * want : 0) - r.vy) * Math.min(1, dt * 5);
+    r.x += r.vx * dt; r.y += r.vy * dt;
+    if (r.t > 0) { r.t -= dt; if (r.t <= 0) { r.t = 0; r.signal = ''; } }
+  }
+
+  /** Olaylar bir adım boyunca m.events'te durur; adımlar arasında act() ile çıkan olaylar (müdahale, faul, vuruş sesi) da sonraki adımın listesine girer. */
+  let seen = 0;
+  function step(dt: number) { m.events.splice(0, seen); stepIn(dt); seen = m.events.length; }
+  function stepIn(dt: number) {
     if (m.bannerT > 0) m.bannerT -= dt;
     for (const p of pls) if (p.actT > 0) { p.actT -= dt; if (p.actT <= 0) { p.actT = 0; p.act = ''; } }
     for (let k = m.timers.length - 1; k >= 0; k--) { m.timers[k].t -= dt; if (m.timers[k].t <= 0) { const f = m.timers[k].fn; m.timers.splice(k, 1); f(); } }
+    refStep(dt);
     if (m.freeze > 0) { m.freeze -= dt; netBall(dt); return; }
-    if (m.restart) { m.restart.t += dt; if (human !== null && m.restart.taker === m.ctrl && m.restart.t > 6 && ball.owner === m.ctrl) act('pas'); }
+    if (m.restart) { m.restart.t += dt; if (human !== null && m.restart.taker === m.ctrl && m.restart.t > 6 && ball.owner === m.ctrl) act(m.restart.kind === 'penalti' ? 'sut' : 'pas', 0.6); }
     if (m.over) return;
     m.clock += dt; if (m.shot) { m.shot.t -= dt; if (m.shot.t <= 0) m.shot = null; }
     if (ball.owner >= 0) m.poss[pls[ball.owner].team] += dt;
@@ -475,7 +531,11 @@ export function createMatch(o: MatchOpts = {}) {
       else {
         if (ball.owner === i && !p.gk) carrierAI(p, i, dt);
         else if (ball.owner === i && p.gk) { p.tx = p.x; p.ty = p.y; p.spd = 0; p.think -= dt; if (p.think <= 0 && p.kickCd <= 0) { const [q] = passOption(p); if (q) kick(p, q.x - p.x, q.y - p.y, clamp(len(q.x - p.x, q.y - p.y) * 1.4 + 6, 10, 18), 'pas'); else kick(p, dirOf(p.team), 0, 13, 'pas'); } }
-        else if (carrier && carrier.team !== p.team && !p.gk && p.kickCd <= 0 && Math.hypot(ball.x - p.x, ball.y - p.y) < 1.1 && R() < dt * (1.6 + p.sk.tackle * 2.4)) tackle(i);
+        else if (carrier && carrier.team !== p.team && !p.gk && !m.restart && p.kickCd <= 0 && Math.hypot(ball.x - p.x, ball.y - p.y) < 1.1) {
+          // müdahale kararı: önden/yandan istekli; arkadan (faul riski) nadiren, becerisiz oyuncu daha sık dener
+          const dc = len(p.x - carrier.x, p.y - carrier.y), bh = ((p.x - carrier.x) * carrier.fx + (p.y - carrier.y) * carrier.fy) / dc < -0.35;
+          if (R() < dt * (1.6 + p.sk.tackle * 2.4) * (bh ? 0.9 + (1 - p.sk.tackle) * 1.2 : 1)) tackle(i);
+        }
         let tx = p.tx, ty = p.ty;
         if (ball.owner === i && Math.hypot(ball.x - p.x, ball.y - p.y) > 0.6) { tx = ball.x + ball.vx * 0.15; ty = ball.y + ball.vy * 0.15; }   // topu kovala
         const dx = tx - p.x, dy = ty - p.y, d = Math.hypot(dx, dy), want = d > 0.15 ? Math.min(p.spd * bm, d * 3) : 0;

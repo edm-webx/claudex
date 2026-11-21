@@ -58,8 +58,11 @@ export function insanBotu(kisilik: Kisilik, seed: number) {
     } else {
       tasima = 0;
       const d = Math.hypot(b.x - p.x, b.y - p.y) || 1; m.input.ix = (b.x - p.x) / d; m.input.iy = (b.y - p.y) / d;
-      const rakipte = b.owner >= 0 && m.pls[b.owner].team !== team;
-      if (rakipte && d < (kisilik === 'saldirgan' ? 1.6 : 1.3) && R() < 0.5) m.act('sut');
+      const o = b.owner >= 0 ? m.pls[b.owner] : null;
+      if (o && o.team !== team && d < (kisilik === 'saldirgan' ? 1.6 : 1.3) && R() < 0.5) {
+        const arkadan = ((p.x - o.x) * o.fx + (p.y - o.y) * o.fy) < -0.35 * Math.hypot(p.x - o.x, p.y - o.y);   // arkadan girmek faul: insan da çoğunlukla kaçınır
+        if (!arkadan || R() < (kisilik === 'saldirgan' ? 0.12 : 0.05)) m.act('kap');
+      }
     }
   };
 }

@@ -23,6 +23,7 @@ describe('maç kalitesi (24 maç)', () => {
     expect(BB.pasIsabet).toBeGreaterThan(ESIK.pasIsabet[0]); expect(BB.pasIsabet).toBeLessThan(ESIK.pasIsabet[1]);
     expect(BB.sutTakimOrt).toBeGreaterThan(ESIK.sutTakim[0]); expect(BB.sutTakimOrt).toBeLessThan(ESIK.sutTakim[1]);
     expect(OZ.golOrt).toBeGreaterThan(ESIK.golMac[0]); expect(OZ.golOrt).toBeLessThan(ESIK.golMac[1]);
+    expect(OZ.faulMac).toBeGreaterThan(ESIK.faulMac[0]); expect(OZ.faulMac).toBeLessThan(ESIK.faulMac[1]);
     expect(BB.sahipMin).toBeGreaterThan(25); expect(BB.sahipMax).toBeLessThan(75); expect(OZ.yigilmaOrt).toBeLessThan(0.3);
   });
   it('kalıp yok: farklı seed farklı yol ve skor', () => { expect(kalipYolu([1, 2, 3, 4, 5, 6])).toBeGreaterThan(4); expect(OZ.skorCesit).toBeGreaterThan(8); });

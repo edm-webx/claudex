@@ -28,7 +28,7 @@ describe('top fiziği', () => {
     for (let i = 0; i < 20 && !post; i++) { m.step(dt); if (m.events.some(e => e.k === 'post')) post = true; }
     expect(post).toBe(true); expect(m.ball.vx).toBeLessThan(0); expect(m.score[0]).toBe(0);
     const m2 = bos(); serbest(m2, L - 2, 10, 15, 0, 3, 0); for (let i = 0; i < 30; i++) m2.step(dt);
-    expect(m2.score[0]).toBe(0); expect(m2.restart?.kind).toBe('aut');
+    expect(m2.score[0]).toBe(0); expect(m2.restart?.kind).toBe('kale');
   });
   it('gol olan top ağda yavaşlar ve ağ içinde durur', () => {
     const m = bos(); serbest(m, L - 2, 10, 20, 0, 0.5, 0); let g = false;
