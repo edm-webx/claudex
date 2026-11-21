@@ -157,9 +157,25 @@ export function createRender(deps: RenderDeps): MotorRender {
   };
   let warmJobs = 0;
   // compileAsync against the target the frame really draws into (see warm()); `objs` = compile only these objects' materials
+  // three 0.160 compileAsync polls properties.get(m).currentProgram.isReady() and throws (inside a setTimeout, so the promise never
+  // settles) when a material was disposed while linking: a streamed zone left again within the compile window (PRF-07 pop-in
+  // probe, 2026-11-21). The warm job then stayed busy forever and its meshes waited for the 3 s gate safety. Same steps, but a
+  // material without a program any more counts as done.
+  const compileSafe = (s: T.Object3D, c: T.Camera, target?: T.Scene | null): Promise<unknown> => {
+    const rr = renderer as unknown as { compile(s: T.Object3D, c: T.Camera, t?: T.Scene | null): Set<T.Material>; properties: { get(m: object): { currentProgram?: { isReady(): boolean } } }; extensions: { get(n: string): unknown } };
+    const mats = rr.compile(s, c, target ?? null);
+    return new Promise<void>(resolve => {
+      const check = () => {
+        mats.forEach(m => { const cp = rr.properties.get(m).currentProgram; if (!cp || cp.isReady()) mats.delete(m); });
+        if (!mats.size) { resolve(); return; }
+        setTimeout(check, 10);
+      };
+      if (rr.extensions.get('KHR_parallel_shader_compile') !== null) check(); else setTimeout(check, 10);
+    });
+  };
   const compileFor = (sc: T.Scene, cam: T.Camera, objs: T.Object3D[] | null): Promise<unknown> => {
-    const r = renderer as unknown as { compileAsync?: (s: T.Object3D, c: T.Camera, target?: T.Scene | null) => Promise<unknown> } | null;
-    if (!r || !r.compileAsync || lost) return Promise.resolve();
+    const r = renderer ? { compileAsync: compileSafe } : null;
+    if (!r || lost) return Promise.resolve();
     const rt = composer && rpass ? (composer as unknown as { readBuffer: T.WebGLRenderTarget }).readBuffer : null, prevRt = renderer!.getRenderTarget();
     let job: Promise<unknown> = Promise.resolve();
     try {

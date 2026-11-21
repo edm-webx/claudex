@@ -16,6 +16,12 @@
  *   2 zones), so a return trip is one attach job; older ones drop their instances and rebuild from the cached
  *   templates. GPU memory counters return to baseline; three re-uploads on the next visit.
  * - Memory cap: at most quality.current().maxLiveZones zones warm/hot; the farthest extra ones are held at sim.
+ * - PRF-07 view-aware streaming: with the camera frustum (update's 2nd argument) a zone in view is built out to the fog's far
+ *   edge, not only within 25 m of the player (see VIEW_MARGIN). ZONE_DIST itself stays 25/60: at the default zoom the ground in
+ *   view reaches ~15 m sideways and ~11 m beyond the hero on a 16:9 screen (portrait phone: 9 m / 24 m), so 25 m covers it;
+ *   zoom-out x2.1 reaches 32 m sideways (50 m ahead on a phone) and a low tilt sees to the fog, which the frustum rule covers
+ *   without building every zone within that radius. popStats() counts the zones that still appeared or vanished
+ *   on screen (tests/browser/pop-in.mjs).
  * - Walk grid (pure data): cells start walkable (cost 1); prop colliders (prefab colliders / collidersFor, placed
  *   with the placement transform, AABB) are baked to 0; then walk.paint rects are applied in order (override).
  *   Available from registration on, independent of meshes.
@@ -56,7 +62,21 @@ export interface MotorZones extends ZoneManager {
   slowestJob(reset?: boolean): { key: string; ms: number };
   /** Max per-frame build slice seen since the last reset (tests). */
   maxBuildMs(reset?: boolean): number;
+  /** PRF-07 pop-in record: zones that appeared (in) or vanished (out) while inside the camera view, since the last reset. */
+  popStats(reset?: boolean): { popIn: number; popOut: number; last: string[]; cutMs: number };
+  /** PRF-07 A/B switch (measurement): false = distance-only streaming (the pre-PRF-07 rule). */
+  setViewAware(on: boolean): void;
 }
+
+/** PRF-07: a zone whose ground box, grown by VIEW_MARGIN m, is inside the camera frustum and nearer than the fog's far edge
+ *  is built even beyond ZONE_DIST.warm (zoomed out or tilted views see 30-190 m). The margin starts the build a few metres
+ *  before the zone can enter the picture; VIEW_HOLD s after leaving the view it is still wanted (no build/unload churn while
+ *  the camera turns). VIEW_H is the box height (façades, masts). */
+export const VIEW_MARGIN = 14, VIEW_HOLD = 4, VIEW_H = 14;
+/** PRF-07: a player move longer than this between two updates is a jump (camera cut), see update(). */
+export const JUMP_M = 12;
+/** PRF-07: farthest distance (m) a zone is built for the view (fog far on the pier is 170-230 m). */
+export const VIEW_FAR_MAX = 200;
 
 const RANK: Record<ZoneState, number> = { cold: 0, sim: 1, warm: 2, hot: 3 };
 const LIMIT: Record<ZoneState, number> = { hot: ZONE_DIST.hot, warm: ZONE_DIST.warm, sim: ZONE_DIST.sim, cold: Infinity };
@@ -79,6 +99,8 @@ interface ZoneRt {
   anchors: Record<string, AnchorDef> | null;
   dist: number;
   extra: Map<string, Rect[]>;
+  /** PRF-07: last time (s) the grown box was in view; -Infinity = never */
+  seenAt: number;
 }
 
 export function distToRect(p: Vec2, b: Rect): number {
@@ -112,6 +134,26 @@ export function createZones(deps: MotorZonesDeps): MotorZones {
   const stateSubs = new Set<(id: string, s: ZoneState) => void>();
   const builtSubs = new Set<(id: string, root: T.Object3D) => void>();
   let lastBuildMs = 0, maxMs = 0, slowKey = '', slowMs = 0;
+  // PRF-07 view-aware streaming + pop-in record
+  let viewAware = true, fr: T.Frustum | null = null, popIn = 0, popOut = 0, cutMs = 0, inCut = false;
+  const popLast: string[] = [];
+  const _box = new T.Box3();
+  // sky.ts sets fog.far from the camera's distance to the world origin (~170-230 m on the pier, >1 km in the far realms such as
+  // the forest at x 800), so it is capped: beyond VIEW_FAR_MAX nothing is built for the view
+  const viewFar = () => { const f = deps.scene.fog as T.Fog | null; return Math.min(VIEW_FAR_MAX, f && (f as T.Fog).isFog ? f.far : ZONE_DIST.sim); };
+  const inView = (b: Rect, grow: number) => {
+    if (!fr) return false;
+    _box.min.set(b.x0 - grow, -1, b.z0 - grow); _box.max.set(b.x1 + grow, VIEW_H, b.z1 + grow);
+    return fr.intersectsBox(_box);
+  };
+  /** The zone's real box is on screen (inside the frustum, clearly in front of the fog's far edge): showing or hiding it now is a
+   *  pop. A zone that appears in the last VIEW_MARGIN m before the fog's far edge is fogged out (no visible pop). */
+  const onScreen = (z: ZoneRt) => z.dist <= viewFar() - VIEW_MARGIN && inView(z.def.bounds, 0);
+  const notePop = (z: ZoneRt, kind: 'in' | 'out') => {
+    if (cutLeft > 0 || inCut) return;   // inside a camera cut nothing is seen changing
+    if (kind === 'in') popIn++; else popOut++;
+    popLast.push(`${kind}:${z.def.id}@${Math.round(z.dist)}m`); if (popLast.length > 12) popLast.shift();
+  };
 
   const setState = (z: ZoneRt, s: ZoneState) => {
     if (z.state === s) return;
@@ -234,6 +276,7 @@ export function createZones(deps: MotorZonesDeps): MotorZones {
       z.building = false; z.built = true;
       builtSubs.forEach(cb => { try { cb(id, z.root!); } catch (e) { deps.log?.warn('[zones] built cb', e); } });
       z.root.visible = true;
+      if (!inCut && onScreen(z)) notePop(z, 'in');   // built inside a cut frame: never seen empty
       setState(z, RANK[z.target] >= RANK.warm ? z.target : 'sim');
     } });
   }
@@ -260,13 +303,32 @@ export function createZones(deps: MotorZonesDeps): MotorZones {
     if (lastBuildMs > maxMs) maxMs = lastBuildMs;
   }
 
+  let lastPos: Vec2 | null = null, cutLeft = 0;
+  /** Runs every queued job of the zones the player is in (target hot) and of wanted zones already on screen now, keeping the
+   *  others' order. */
+  function runHotNow() {
+    const hot = new Set<string>(); zones.forEach((z, id) => { if (z.target === 'hot' || (RANK[z.target] >= RANK.warm && onScreen(z))) hot.add(id); });
+    if (!hot.size) return;
+    const mine = jobs.filter(j => hot.has(j.zone)), rest = jobs.filter(j => !hot.has(j.zone));
+    jobs.length = 0; jobs.push(...rest);
+    const t0 = now(); inCut = true;
+    for (const j of mine) { const a = now(); try { j.run(); } catch (err) { deps.log?.warn('[zones] job failed', j.key, err); } est.set(j.key, now() - a); }
+    cutMs += now() - t0; inCut = false;
+  }
+
   function decide(playerPos: Vec2) {
+    const sec = now() / 1000;
     const minRank = (z: ZoneRt) => RANK[z.def.minState || 'cold'];
     zones.forEach(z => {
       z.dist = distToRect(playerPos, z.def.bounds);
       let t = rawTarget(z.dist);
       const cur = z.target;
       if (RANK[t] < RANK[cur] && z.dist <= LIMIT[cur] + ZONE_DIST.hysteresis) t = cur;
+      if (viewAware && fr) {   // PRF-07: in view (or just left it) and not lost in the fog -> built before it shows
+        const far = viewFar();
+        if (z.dist <= far && inView(z.def.bounds, VIEW_MARGIN)) z.seenAt = sec;
+        if (RANK[t] < RANK.warm && sec - z.seenAt <= VIEW_HOLD && z.dist <= far + ZONE_DIST.hysteresis) t = 'warm';
+      }
       if (RANK[t] < minRank(z)) t = z.def.minState as ZoneState;
       if (z.forced) t = z.forced;
       z.target = t;
@@ -284,6 +346,7 @@ export function createZones(deps: MotorZonesDeps): MotorZones {
         if (z.built) setState(z, z.target);
         else if (RANK[z.state] > RANK.sim) setState(z, 'sim');
       } else {
+        if (z.built && z.root?.visible && onScreen(z)) notePop(z, 'out');
         if (z.built || z.building) unload(z);
         setState(z, z.target);
       }
@@ -293,7 +356,7 @@ export function createZones(deps: MotorZonesDeps): MotorZones {
   const api: MotorZones = {
     register(def: ZoneDef) {
       if (zones.has(def.id)) { api.replace(def); return; }
-      const z: ZoneRt = { def, state: 'cold', target: 'cold', forced: null, root: null, built: false, building: false, insts: [], cached: null, cachedAt: 0, picks: [], grid: null, anchors: null, dist: Infinity, extra: new Map() };
+      const z: ZoneRt = { def, state: 'cold', target: 'cold', forced: null, root: null, built: false, building: false, insts: [], cached: null, cachedAt: 0, picks: [], grid: null, anchors: null, dist: Infinity, extra: new Map(), seenAt: -Infinity };
       zones.set(def.id, z); order.push(def.id);
       if (def.minState && RANK[def.minState] > 0) { z.target = def.minState; setState(z, RANK[def.minState] >= RANK.warm ? 'sim' : def.minState); }
     },
@@ -311,9 +374,16 @@ export function createZones(deps: MotorZonesDeps): MotorZones {
     },
     def: id => zones.get(id)?.def,
     ids: () => order.slice(),
-    update(playerPos: Vec2) {
+    update(playerPos: Vec2, camFrustum?: T.Frustum) {
+      fr = camFrustum ?? null;
+      // PRF-07: a jump (bus ride, map travel, teleport) is a camera cut. The zone the player lands in, and wanted neighbours already
+      // in the picture, are built inside this frame, unbudgeted: one longer frame at the cut is not seen, an empty street filling in over 4-7 frames is (pop-in probe).
+      const jumped = lastPos !== null && Math.hypot(playerPos.x - lastPos.x, playerPos.z - lastPos.z) > JUMP_M;
+      lastPos = { x: playerPos.x, z: playerPos.z };
+      if (jumped) { cutLeft = 2; cutMs = 0; }   // this frame and the next: boot asks for the frustum before the camera snapped to the new spot
       decide(playerPos);
       apply();
+      if (cutLeft > 0) { cutLeft--; runHotNow(); }
       const budget = deps.quality.current().buildBudgetMs || 4;
       const run = () => runJobs(budget);
       if (deps.perf) deps.perf.time('zones.build', run); else run();
@@ -359,6 +429,8 @@ export function createZones(deps: MotorZonesDeps): MotorZones {
     maxBuildMs(reset?: boolean) { const m = maxMs; if (reset) maxMs = 0; return m; },
     slowestJob(reset?: boolean) { const r = { key: slowKey, ms: slowMs }; if (reset) { slowKey = ''; slowMs = 0; } return r; },
     pending: () => jobs.length,
+    popStats(reset?: boolean) { const r = { popIn, popOut, last: popLast.slice(), cutMs: +cutMs.toFixed(1) }; if (reset) { popIn = 0; popOut = 0; popLast.length = 0; } return r; },
+    setViewAware(on: boolean) { viewAware = !!on; if (!on) zones.forEach(z => { z.seenAt = -Infinity; }); },
     prewarm(id) {
       const z = zones.get(id); if (!z) return;
       const seen = new Set<string>();

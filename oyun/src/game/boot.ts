@@ -908,6 +908,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   });
   reg('zone', (id: string) => (zones ? { id, state: zones.state(id), def: !!zones.def(id), anchors: Object.keys(zones.anchors(id) ?? {}).length, pending: zones.pending() } : null));
   reg('events', (since?: number) => sim.events(since));
+  reg('zonePop', (o: { reset?: boolean; viewAware?: boolean } = {}) => { const mz = zones as unknown as { popStats?(r?: boolean): unknown; setViewAware?(on: boolean): void } | null; if (!mz?.popStats) return null; if (o.viewAware !== undefined) mz.setViewAware?.(o.viewAware); return { ...(mz.popStats(!!o.reset) as object), states: zones!.states() }; });   // PRF-07 pop-in ölçümü (tests/browser/pop-in.mjs)
   // KAL-13: ?qa=1 ile oyun içi bekçi; anomaliler window.__marti.bekci.anomaliler() ile toplanır (üretimde kurulmaz)
   if (params.raw.qa) make('bekci', () => { const b: BekciHandle = installBekci(sim.rules); reg('bekci', b); return b; });
   reg('save', () => save.save('manual'));
