@@ -146,6 +146,22 @@ function makeBlob(size?: any, op = 0.32) { const m = new T.Mesh(blobGeo(), blobM
 /* ---------- face painting (canvas) ----------
    f = { eye: 'round'|'oval'|'lash'|'small'|'big', iris, brow: 'thick'|'mid'|'thin'|'none', browCol, blush, crow, dimples,
          freckles, wrinkles, lips, goldTooth }; expr = 'normal'|'blink'|'happy'|'angry'|'talk'|'sleep' */
+/* Karakter Atölyesi makyajı: far (shadow), eyeliner (liner 'ince' | 'kanat'), kirpik (lashes), allık rengi (blushCol), ben (mole) */
+const rgbaOf = (hex: any, a: number) => { const c = new T.Color(hex); return `rgba(${Math.round(c.r * 255)},${Math.round(c.g * 255)},${Math.round(c.b * 255)},${a})`; };
+function makeupUnder(g?: any, f?: any) {
+  if (!f.shadow) return;
+  const ex = f.ex || 21, ey = f.ey || 57, er = f.eye === 'big' ? 9.5 : f.eye === 'small' ? 5.5 : 7.2;
+  [-1, 1].forEach((s?: any) => { const cx = 64 + s * ex, gr = g.createRadialGradient(cx + s * 1.5, ey - 3, 1, cx + s * 1.5, ey - 3, er + 8); gr.addColorStop(0, rgbaOf(f.shadow, 0.72)); gr.addColorStop(0.6, rgbaOf(f.shadow, 0.38)); gr.addColorStop(1, rgbaOf(f.shadow, 0)); g.fillStyle = gr; g.beginPath(); g.ellipse(cx + s * 1.5, ey - 4, er + 9, er + 4, 0, PI, TAU); g.lineTo(cx + s * 1.5 + er + 9, ey + 1); g.lineTo(cx + s * 1.5 - er - 9, ey + 1); g.fill(); });
+}
+function makeupOver(g?: any, f?: any, cx?: any, s?: any, ey?: any, er?: any, h?: any) {
+  const ink = f.ink || '#2a1c16';
+  if (f.liner) {
+    g.strokeStyle = '#140d0a'; g.lineWidth = f.liner === 'kanat' ? 2.6 : 2; g.beginPath(); g.ellipse(cx, ey, er + 1.8, h + 1.8, 0, PI * 1.02, TAU * 0.995); g.stroke();
+    if (f.liner === 'kanat') { g.lineWidth = 2.4; g.beginPath(); g.moveTo(cx + s * (er + 1.2), ey - 0.5); g.quadraticCurveTo(cx + s * (er + 5), ey - 2.5, cx + s * (er + 8), ey - 6.5); g.stroke(); }
+  }
+  if (f.lashes) { g.strokeStyle = ink; g.lineWidth = 1.5; for (let k = 0; k < 3; k++) { const an = -PI / 2 + s * (0.55 + k * 0.32), x0 = cx + Math.cos(an) * (er + 1.6), y0 = ey + Math.sin(an) * (h + 1.6); g.beginPath(); g.moveTo(x0, y0); g.lineTo(x0 + Math.cos(an) * 3.6, y0 + Math.sin(an) * 3.6 - 0.6); g.stroke(); } }
+}
+function moleDot(g?: any, f?: any) { if (!f.mole) return; g.fillStyle = 'rgba(70,40,30,0.85)'; const p = f.mole === 'dudak' ? [86, 99] : f.mole === 'goz' ? [92, 64] : [93, 82]; g.beginPath(); g.arc(p[0], p[1], 1.7, 0, TAU); g.fill(); }
 function paintFace(g?: any, x?: any, y?: any, S?: any, f?: any, expr?: any, bg?: any) {
   g.save(); g.translate(x, y); g.scale(S / 128, S / 128);
   if (bg) { g.fillStyle = bg; g.fillRect(0, 0, 128, 128); } else g.clearRect(0, 0, 128, 128);
@@ -158,9 +174,10 @@ function paintFace(g?: any, x?: any, y?: any, S?: any, f?: any, expr?: any, bg?:
   const bl = f.blush == null ? 0.22 : f.blush;
   if (bl > 0) {
     const a = expr === 'happy' ? bl * 1.7 : expr === 'angry' ? bl * 1.4 : bl;
-    [-1, 1].forEach((s?: any) => { const gr = g.createRadialGradient(64 + s * 33, 79, 1, 64 + s * 33, 79, 13); gr.addColorStop(0, `rgba(235,96,96,${Math.min(0.75, a)})`); gr.addColorStop(1, 'rgba(235,96,96,0)'); g.fillStyle = gr; g.fillRect(64 + s * 33 - 14, 65, 28, 28); });
+    [-1, 1].forEach((s?: any) => { const gr = g.createRadialGradient(64 + s * 33, 79, 1, 64 + s * 33, 79, 13); gr.addColorStop(0, rgbaOf(f.blushCol || '#eb6060', Math.min(0.75, a))); gr.addColorStop(1, rgbaOf(f.blushCol || '#eb6060', 0)); g.fillStyle = gr; g.fillRect(64 + s * 33 - 14, 65, 28, 28); });
   }
   if (f.freckles) { g.fillStyle = 'rgba(120,70,40,0.45)'; [[-34, 72], [-28, 76], [-38, 78], [28, 72], [34, 77], [26, 78]].forEach((p?: any) => { g.beginPath(); g.arc(64 + p[0], p[1], 1.3, 0, TAU); g.fill(); }); }
+  makeupUnder(g, f); moleDot(g, f);
   if (f.wrinkles) { g.strokeStyle = 'rgba(90,50,35,0.35)'; g.lineWidth = 1.6; g.beginPath(); g.moveTo(52, 30); g.quadraticCurveTo(64, 27, 76, 30); g.stroke(); g.beginPath(); g.moveTo(42, 84); g.quadraticCurveTo(40, 92, 44, 99); g.moveTo(86, 84); g.quadraticCurveTo(88, 92, 84, 99); g.stroke(); }
   // brows
   const bw = f.brow === 'thick' ? 6 : f.brow === 'thin' ? 2.4 : f.brow === 'none' ? 0 : 3.8;
@@ -193,6 +210,7 @@ function paintFace(g?: any, x?: any, y?: any, S?: any, f?: any, expr?: any, bg?:
       g.fillStyle = '#17100c'; g.beginPath(); g.ellipse(cx + s * 0.6, ey + 0.8, er * 0.45, h * 0.5, 0, 0, TAU); g.fill();
       g.fillStyle = '#ffffff'; g.beginPath(); g.arc(cx - 2.2, ey - 2.6, er * 0.3, 0, TAU); g.fill();
       if (f.eye === 'lash') { g.strokeStyle = ink; g.lineWidth = 2.2; g.beginPath(); g.moveTo(cx + s * (er + 1), ey - 2); g.lineTo(cx + s * (er + 5), ey - 6); g.stroke(); }
+      makeupOver(g, f, cx, s, ey, er, h);
       if (expr === 'angry') { g.fillStyle = f.lid || 'rgba(0,0,0,0)'; }
       if (f.crow && expr === 'normal') { g.strokeStyle = 'rgba(80,45,30,0.4)'; g.lineWidth = 1.3; g.beginPath(); g.moveTo(cx + s * (er + 4), ey + 1); g.lineTo(cx + s * (er + 8), ey + 3); g.stroke(); }
     }
@@ -214,7 +232,7 @@ function paintFace(g?: any, x?: any, y?: any, S?: any, f?: any, expr?: any, bg?:
   } else if (expr === 'sleep') {
     g.beginPath(); g.ellipse(64, my + 2, 3.6, 4.2, 0, 0, TAU); g.fill();
   } else {
-    g.lineWidth = 3.4; g.beginPath(); g.moveTo(64 - mw, my - 2); g.quadraticCurveTo(64, my + 9, 64 + mw, my - 2); g.stroke();
+    g.lineWidth = f.lips ? 4.8 : 3.4; g.beginPath(); g.moveTo(64 - mw, my - 2); g.quadraticCurveTo(64, my + 9, 64 + mw, my - 2); g.stroke();
     if (f.dimples) { g.lineWidth = 1.8; g.strokeStyle = 'rgba(120,60,45,0.5)'; [-1, 1].forEach((s?: any) => { g.beginPath(); g.arc(64 + s * (mw + 5), my - 1, 2.4, 0, TAU); g.stroke(); }); }
   }
   g.restore();
@@ -252,6 +270,7 @@ function openEye(g?: any, f?: any, cx?: any, s?: any, ey?: any, er?: any, h?: an
   g.fillStyle = '#17100c'; g.beginPath(); g.ellipse(cx + s * 0.6 + lx, ey + 0.8 + ly, er * 0.45 * pup, h * 0.5 * pup, 0, 0, TAU); g.fill();
   g.fillStyle = '#ffffff'; g.beginPath(); g.arc(cx - 2.2 + lx * 0.5, ey - 2.6 + ly * 0.5, er * 0.3, 0, TAU); g.fill();
   if (f.eye === 'lash') { g.strokeStyle = ink; g.lineWidth = 2.2; g.beginPath(); g.moveTo(cx + s * (er + 1), ey - 2); g.lineTo(cx + s * (er + 5), ey - 6); g.stroke(); }
+  makeupOver(g, f, cx, s, ey, er, h);
 }
 function arcEye(g?: any, f?: any, cx?: any, ey?: any, up = true, lw = 3.6) {
   g.strokeStyle = f.ink || '#2a1c16'; g.lineWidth = lw; g.beginPath();
@@ -261,7 +280,7 @@ function arcEye(g?: any, f?: any, cx?: any, ey?: any, up = true, lw = 3.6) {
 }
 function blushX(g?: any, f?: any, k?: any) {
   const bl = (f.blush == null ? 0.22 : f.blush) * k; if (bl <= 0) return;
-  [-1, 1].forEach((s?: any) => { const gr = g.createRadialGradient(64 + s * 33, 79, 1, 64 + s * 33, 79, 13); gr.addColorStop(0, `rgba(235,96,96,${Math.min(0.8, bl)})`); gr.addColorStop(1, 'rgba(235,96,96,0)'); g.fillStyle = gr; g.fillRect(64 + s * 33 - 14, 65, 28, 28); });
+  [-1, 1].forEach((s?: any) => { const gr = g.createRadialGradient(64 + s * 33, 79, 1, 64 + s * 33, 79, 13); gr.addColorStop(0, rgbaOf(f.blushCol || '#eb6060', Math.min(0.8, bl))); gr.addColorStop(1, rgbaOf(f.blushCol || '#eb6060', 0)); g.fillStyle = gr; g.fillRect(64 + s * 33 - 14, 65, 28, 28); });
 }
 function paintFaceX(g?: any, x?: any, y?: any, S?: any, f0?: any, cell?: any, bg?: any, noBrow?: any) {
   const name = X_CELLS[cell] || 'neutral';
@@ -275,6 +294,7 @@ function paintFaceX(g?: any, x?: any, y?: any, S?: any, f0?: any, cell?: any, bg
   g.lineCap = 'round'; g.lineJoin = 'round';
   blushX(g, f, name === 'laugh' || name === 'love' ? 1.8 : name === 'bliss' ? 2 : name === 'smile' ? 1.3 : 1);
   if (f.freckles) { g.fillStyle = 'rgba(120,70,40,0.45)'; [[-34, 72], [-28, 76], [-38, 78], [28, 72], [34, 77], [26, 78]].forEach((p?: any) => { g.beginPath(); g.arc(64 + p[0], p[1], 1.3, 0, TAU); g.fill(); }); }
+  makeupUnder(g, f); moleDot(g, f);
   if (!noBrow) paintBrows(g, f, X_BROW[name]);
   const lips = f.lips || '#7a2f2a';
   [-1, 1].forEach((s?: any) => {
@@ -705,6 +725,7 @@ function buildHeroMesh(L?: any) {
     });
     b.add(box(0.05, 0.008, 0.008), on('head', { m: mT(0, headY + 0.012, R * 1.0), color: gc }));
   }
+  if (L.necklace) { b.add(tor(0.095 * Math.sqrt(g), 0.007, 4, 18), on('chest', { m: mTRS(0, 1.325, 0.012, PI / 2 - 0.38, 0, 0, 1, 1.05, 1), color: '#f2b632' })); b.add(sph(0.016, 8, 6), on('chest', { m: mT(0, 1.272, frontZ(1.27) + 0.012), color: L.necklaceStone || '#3fb5b0' })); }
   if (L.earrings) [-1, 1].forEach((sx?: any) => b.add(tor(0.017, 0.0045, 4, 10), on('head', { m: mTRS(sx * R * 0.98, headY - 0.065, 0.0, 0, PI / 2, 0), color: '#f2b632' })));
   // hair / headscarf / hat
   const gearM = HM;
