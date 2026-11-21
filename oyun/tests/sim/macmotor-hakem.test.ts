@@ -66,9 +66,9 @@ describe('hakem', () => {
     }
     expect(cards).toBe(1); expect(m.pls.length).toBe(10);
   });
-  it('bot-bot 60 maçta faul/maç 2-6', () => {
+  it('bot-bot 60 maçta faul/maç 1-5 (2026-11-21: akış için daha az kesinti)', () => {
     const r: number[] = []; for (let s = 0; s < 60; s++) r.push(macKos({ seed: 900 + s * 13, formations: FORM_CIFTLERI[s % 3] }).faul);
     const ort = r.reduce((a, b) => a + b, 0) / r.length; console.log('faul/maç', ort.toFixed(2), 'max', Math.max(...r));
-    expect(ort).toBeGreaterThan(2); expect(ort).toBeLessThan(6);
+    expect(ort).toBeGreaterThan(1); expect(ort).toBeLessThan(5);
   });
 });

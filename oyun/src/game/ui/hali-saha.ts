@@ -161,7 +161,7 @@ export function createHaliSaha(deps: HaliSahaDeps): HaliSahaView {
       const evs = M.events as unknown as MacOlay[];
       for (const e of evs) {
         if (e.k === 'shake') shake = Math.max(shake, e.t as number);
-        else if (e.k === 'banner' && e.text !== 'GOOOOL!' && e.text !== 'Devre arası') ref.point = 1.6;
+        else if (e.k === 'banner' && e.text !== 'GOOOOL!' && e.text !== 'KENDİ KALESİNE!' && e.text !== 'Devre arası') ref.point = 1.6;
         const b = olayBanner(e); if (b && !(M.bannerT > 0 && M.banner === b.text)) uiBanner = { text: b.text, t: b.t };
       }
       for (const id of sesler(evs)) sfx(id);
@@ -349,7 +349,7 @@ export function createHaliSaha(deps: HaliSahaDeps): HaliSahaView {
     window.addEventListener('keydown', keyEnter);
     function finish() { if (closed) return; sfx('pop'); if (iz) { deps.command({ kind: 'halisaha', op: 'izleSonuc' }); close(); return; } deps.command({ kind: 'halisaha', op: 'sonuc', biz: M.score[0], onlar: M.score[1], ist: { takim: [M.teamStats(0), M.teamStats(1)], oyuncu: M.pls.filter(p => p.team === 0).map(p => ({ ad: p.name, rol: p.role, ...p.st })) } }); close(); }
     function close() { closed = true; cancelAnimationFrame(raf); window.removeEventListener('resize', resize); window.removeEventListener('keydown', kd); window.removeEventListener('keyup', ku); window.removeEventListener('blur', blur); window.removeEventListener('keydown', keyEnter); girdi.birakHepsi(); hideHelp(); hs3?.dispose(); wrap.remove(); }
-    (wrap as unknown as { __hs: unknown }).__hs = { state: () => ({ score: M.score, clock: M.clock, half: M.half, over: M.over, ctrl: M.ctrl, ball: { ...ball }, stats: [M.teamStats(0), M.teamStats(1)] }), act: (k: 'sut' | 'pas' | 'calim', gu?: number, u?: boolean) => M.act(k, gu, u), finish, ff: (sec: number) => { for (let k = 0; k < sec * 60; k++) step(); interp(0); }, tus: (key: string, on: boolean) => girdi.tus(key, on), girdi };
+    (wrap as unknown as { __hs: unknown }).__hs = { state: () => ({ score: M.score, clock: M.clock, half: M.half, over: M.over, ctrl: M.ctrl, ball: { ...ball }, stats: [M.teamStats(0), M.teamStats(1)] }), act: (k: 'sut' | 'pas' | 'calim', gu?: number, u?: boolean) => M.act(k, gu, u), finish, ff: (sec: number) => { for (let k = 0; k < sec * 60; k++) step(); interp(0); }, tus: (key: string, on: boolean) => girdi.tus(key, on), girdi, M };
     return { close };
   }
 
