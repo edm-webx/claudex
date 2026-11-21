@@ -671,7 +671,8 @@ function buildHeroMesh(L?: any) {
       if (L.mustache === 'thick' || L.mustache === 'curl') b.add(sph(thick * 0.75, 6, 5), on('head', { m: mT(sx * 0.088, mouthY + 0.018, R * 0.83), color: mc }));
     });
   }
-  if (L.beard === 'goatee') b.add(sph(0.05, 10, 8), on('head', { m: mTRS(0, mouthY - 0.065, R * 0.86, 0, 0, 0, 0.9, 1.2, 0.8), color: L.age === 'old' ? HAIRC.silver : hairC }));
+  if (L.beard === 'goateeLong') b.add(sph(0.045, 10, 8), on('head', { m: mTRS(0, mouthY - 0.085, R * 0.84, 0.18, 0, 0, 0.75, 1.9, 0.8), color: L.age === 'old' ? HAIRC.silver : hairC }));   // sivri keçi sakalı (UX-15: keçi ve çember artık farklı biçim)
+  else if (L.beard === 'goatee') b.add(sph(0.05, 10, 8), on('head', { m: mTRS(0, mouthY - 0.065, R * 0.86, 0, 0, 0, 0.9, 1.2, 0.8), color: L.age === 'old' ? HAIRC.silver : hairC }));
   else if (L.beard === 'short') b.add(sph(+(R * 1.012).toFixed(4), 14, 6, PI / 2 - 1.0, 2.0, PI * 0.6, PI * 0.3), on('head', { m: HM, color: L.age === 'old' ? HAIRC.silver : hairC }));
   else if (L.beard === 'sideburns') [-1, 1].forEach((s?: any) => b.add(sph(0.045, 8, 6), on('head', { m: mTRS(s * R * 0.84, mouthY + 0.06, R * 0.38, 0, 0, 0, 0.55, 1.9, 0.9), color: L.age === 'old' ? HAIRC.silver : hairC })));
   else if (L.beard) b.add(sph(+(R * 1.03).toFixed(4), 14, 6, PI / 2 - 1.15, 2.3, PI * 0.56, PI * 0.36), on('head', { m: HM, color: L.age === 'old' ? HAIRC.silver : hairC }));
