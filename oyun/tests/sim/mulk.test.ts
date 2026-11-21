@@ -1,6 +1,6 @@
 // J3-J8 sim: inventory, shared bank, chests, daily board, plots + shops, stadium ticket.
 import { it, expect } from 'vitest';
-import { played } from './m1-helpers';
+import { played, kareyeGit } from './m1-helpers';
 import { mulkApi } from '../../src/game/sim/mulk';
 import { IC_BY_ID } from '../../src/content/ic-mekan';
 import { BANKA, ARSALAR, arsaKapi, STADYUM } from '../../src/content/esya';
@@ -116,7 +116,7 @@ it('canlı oda: kantin, AVM lokantası ve tesis kafeteryası da gerçek müşter
   for (const id of ['k3', 'k4', 'k5', 'k6']) {
     const { sim, S, c } = mk();
     S.level = 40; S.money = 5e7;
-    c({ op: 'arsaAl', id });
+    kareyeGit(sim, id); c({ op: 'arsaAl', id });
     const p = S.zones.arsa.plots[id], h = sim.rules.rt.kafeHost;
     expect(p, id).toBeTruthy(); p.isci = 2;
     for (let i = 0; i < 900; i++) { sim.step(0.1); h.pending[id] = Math.max(h.pending[id] || 0, 1); }

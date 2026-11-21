@@ -4,6 +4,7 @@
 // Varsayımlar (raporda yazılı): oyuncu işletme kasasına günde bir kez uğrar (gün sonunda tahakkuk eden kasa paraya geçer);
 // işletme yükseltmesi (raf_kiti eşyası ister) alınmaz; zaman ölçüsü oyun dakikası (S.playT), gün 480 sn (GAME_DAY_S sabit).
 import { createSim } from '../../src/game/headless';
+import { kareyeGit } from './m1-helpers';
 import { emptyContent } from '../../src/content/index';
 // @ts-expect-error plain ESM JS shared with the browser bot
 import { makeBot } from '../../src/game/ui/bot-ai.mjs';
@@ -60,7 +61,11 @@ function holdingHamle(sim: any, S: any, rt: any): void {
   const aday = ARSALAR.filter(a => a.sabit && !sahip[a.id] && S.level >= a.seviye).sort((a, b) => a.fiyat - b.fiyat)[0];
   if (!aday) return;
   const tampon = 3000;
-  if (S.money >= aday.fiyat + tampon) sim.command({ kind: 'mulk', op: 'arsaAl', id: aday.id });
+  if (S.money < aday.fiyat + tampon) return;
+  // AVM dükkânı yalnız kapısındaki sarı karede alınır: oyuncu kareye gidip alır, sonra kaldığı yere döner (yürüme süresi taslakta yok sayılır)
+  const pp = sim.rules.playerPos, eski = { x: pp.x, z: pp.z, kat: pp.kat || 0 };
+  kareyeGit(sim, aday.id); sim.command({ kind: 'mulk', op: 'arsaAl', id: aday.id });
+  if (pp.x !== eski.x || pp.z !== eski.z) sim.command({ kind: 'teleport', ...eski });
 }
 
 /** S.stats.kaynak_* -> { kaynak: ₺ } (EKO-02 gelir defteri). */

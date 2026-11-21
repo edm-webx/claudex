@@ -1,6 +1,6 @@
 // DKN-03: named crew, 3-candidate board, day-end wages, actors = headcount
 import { it, expect } from 'vitest';
-import { played } from './m1-helpers';
+import { played, kareyeGit } from './m1-helpers';
 import { mulkApi } from '../../src/game/sim/mulk';
 import { ISLETME_ROL, ISCI_GUN_UCRET } from '../../src/content/isletme-kadro';
 
@@ -23,7 +23,7 @@ it('işe alma kadroyu ve parayı günceller, tavan dolunca para düşmez', () =>
 });
 it('kadro sayısı = sahnedeki çalışan sayısı ve adlı (k1-k6)', () => {
   for (const id of ['k1', 'k2', 'k3', 'k4', 'k5', 'k6']) {
-    const { sim, m, S, c } = mk(); c({ op: 'arsaAl', id }); c({ op: 'yukselt', id }); c({ op: 'adminTadilatBitir', id }); c({ op: 'yukselt', id }); c({ op: 'adminTadilatBitir', id }); sim.step(0.5);
+    const { sim, m, S, c } = mk(); kareyeGit(sim, id); c({ op: 'arsaAl', id }); c({ op: 'yukselt', id }); c({ op: 'adminTadilatBitir', id }); c({ op: 'yukselt', id }); c({ op: 'adminTadilatBitir', id }); sim.step(0.5);
     for (let i = 0; i < 3; i++) { const k = (m.model() as any).arsa.find((a: any) => a.id === id).ilan[0]; c({ op: 'ilanAl', id, e: k.id }); }
     for (let i = 0; i < 300; i++) sim.step(0.1);
     const kad = plot(S, id).kadro; expect(kad.length).toBe(3);

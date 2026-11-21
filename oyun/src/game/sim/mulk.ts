@@ -10,7 +10,7 @@
  *   arsa: arsaAl id | arsaKur id tur tip | yukselt id | evAc id
  *   stadyum (near the gate): bilet | takim name
  */
-import { installAvmKareler } from './avm-kareler';
+import { installAvmKareler, satisKaresi } from './avm-kareler';
 import { stadSave, tahminDoluluk, fiyatAyarla, FORMASYONLAR, KAPASITE, FIYAT_MIN, FIYAT_MAX } from './stadyum';
 import type { Kernel } from './state';
 import {
@@ -441,6 +441,13 @@ export function installMulk(K: Kernel) {
   }
 
   // Martı AVM: dükkân satın alma ve alet kurma büfedeki gibi sarı karelerle (avm-kareler.ts)
+  /** sahip 18:46: AVM dükkânı yalnız kapısının önündeki sarı kareden alınır (ilk büfe gibi); panelden / uzaktan alınmaz */
+  function avmKaresiDisinda(id: string): boolean {
+    const m = icOfArsa(id), a = ARSALAR.find(x => x.id === id); if (!m || m.bina !== 'avm' || !a) return false;
+    const pp = K.playerPos as { x: number; z: number; kat?: number }, k = satisKaresi(a);
+    if ((pp.kat || 0) === (m.kat || 0) && Math.hypot(pp.x - k.x, pp.z - k.z) < 1.2) return false;
+    K.toast((a.ad || 'Dükkân').replace(' (AVM)', '') + ': Martı AVM\'de dükkânın önündeki sarı karede durarak alınır.', 'info'); return true;
+  }
   const avmKare = installAvmKareler(K, { arsaAl, kafeEsya, plot: id => arsa().plots[id] as never });
   // ── tick: board roll, shops, level-up chests, collecting tills ──
   let acc = 0, lastLevel = S.level;
@@ -486,7 +493,7 @@ export function installMulk(K: Kernel) {
       case 'avmAl': avmAl(id); break; case 'ktAc': case 'ktKapat': case 'ktEkle': case 'ktTemizle': case 'ktVer': ktOp(op, id); break; case 'dersCevap': dersCevap(n); break; case 'dersBasla': if (okulYakin() && okulZ().soru < 0) okulSoru(); break;
       case 'krediAl': case 'krediOde': case 'tlYatir': case 'tlCek': case 'esyaYatir': case 'esyaCek': bankaOp(op, id, n); break;
       case 'gunlukAl': gunlukAl(id); break;
-      case 'arsaAl': arsaAl(id); break; case 'arsaKur': arsaKur(id, String(c.tur ?? ''), String(c.tip ?? '')); break;
+      case 'arsaAl': if (avmKaresiDisinda(id)) break; arsaAl(id); break; case 'arsaKur': arsaKur(id, String(c.tur ?? ''), String(c.tip ?? '')); break;
       case 'yukselt': yukselt(id); break; case 'tadilatAtla': tadilatAtla(id); break; case 'adminTadilatBitir': tadilatAtla(id, true); break; case 'evAc': evAc(id); break; case 'isciAl': isciAl(id); break; case 'ilanAl': ilanAl(id, String(c.e ?? '')); break; case 'ilanYenile': ilanYenile(id); break; case 'kov': kov(id, flo(c.n)); break; case 'kafeEsya': kafeEsya(id, String(c.e ?? '')); break; case 'tema': tema(id, String(c.e ?? '')); break; case 'salonEsya': salonEsya(String(c.e ?? id)); break;
       case 'bilet': bilet(); break;
       case 'izle': if (!nearGate()) { K.toast('Maçı izlemek için halı saha girişine git.', 'info'); break; } K.command({ kind: 'halisaha', op: 'izle', bahis: c.bahis, n: Number(c.n) || 0 } as never); break;
