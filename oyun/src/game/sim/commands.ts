@@ -65,6 +65,7 @@ export type SimCmd =
   // ── slow icon, ceremonies ──
   | { kind: 'tapSlow' }                              // opens the 'solution' model (and emits 'slowTap')
   | { kind: 'acceptSolution' }
+  | { kind: 'dismissSolution' }                     // 'Sonra': clears the card and rests the icon
   | { kind: 'collectWelcome'; doubled?: boolean }
   | { kind: 'yeniGun' }                              // closes the gün sonu card (survey 2026-10-24)
   | { kind: 'skipCeremony' }                         // closes kasaSayimi / dayCard pause
@@ -80,8 +81,6 @@ export type SimCmd =
   | { kind: 'hava'; op: string; id?: string }
   // ── yiyecek / tarifler / markalar (sim/yiyecek.ts): arg = 'op:id' (tab, st, sel, ing, mix, clear, deal, learn) ──
   | { kind: 'yiyecek'; arg: string }
-  // ── kuryeler (sim/kurye.ts): op = open | accept | decline | self | selfResult | selfQuit | hire | veh | buyVeh | upg | sus | seen ──
-  | { kind: 'kurye'; op: string; id?: string; arg?: number }
   // ── koleksiyonlar + Altın Fırın (sim/koleksiyon.ts): op = open | tab | pack | cast | buy | ad | vitrin | close ──
   | { kind: 'koleksiyon'; op: string; id?: string; arg?: number }
   // ── hikaye, rakipler, öğreticiler (sim/hikaye.ts): op = open | tab | sceneDone | replay | rival | araDone | resultDone ──

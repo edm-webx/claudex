@@ -433,7 +433,7 @@ U.solution = function (o) {
   root.appendChild(s);
   s.addEventListener('click', e => {
     const b = e.target.closest('[data-s]'); if (!b) return;
-    closeSol(); if (b.dataset.s === 'ok') safe(o.onAccept);
+    closeSol(); if (b.dataset.s === 'ok') safe(o.onAccept); else safe(o.onLater);
   });
 };
 
@@ -793,12 +793,14 @@ function renderTadilat(m) {
   if (working) {
     s += `<div class="sb-work">${ICONS.hammer}<div class="sb-grow"><div class="sb-muted">Ustalar çalışıyor, büfe açık kalıyor.</div><b>${esc(timeStr(tLeft))}</b></div></div>`;
     s += btn('Altın Simitle hemen bitir', 'skip', null, 'wide', (m.skipGold != null ? fmt(m.skipGold) + ' Altın Simit' : ''), { icon: 'gold' });
+  } else if (m.final || (!m.nextName && stg >= STAGES.length)) {
+    s += `<div class="sb-muted" style="text-align:center">En üst aşamadasın: büfe tamam. Yeni yatırımlar mülk ve işletmelerde.</div>`;
   } else if (nextSoon) {
     s += `<div class="sb-muted" style="text-align:center">Sonraki tadilat yakında geliyor. Şimdilik çay bahçesinin keyfini çıkar.</div>`;
   } else {
     s += `<div class="sb-muted" style="text-align:center">Her tadilat paslı bir parçayı yeniler: tabela, fayans, floresan, tezgah, boya. Kazanç da katlanır.</div>`;
     s += btn('Tadilatı başlat', 'start', null, 'green wide', m.cost != null ? (num(m.cost) ? tl(m.cost) : m.cost) : '', { icon: 'hammer', off: m.canStart === false, why: m.reason || 'Henüz şartlar tamam değil.' });
-    if (num(m.cost)) s += btn('Kendin kur (yarı fiyat, iki kat süre)', 'startSelf', null, 'cream wide', tl(Math.round(m.cost / 2)), { icon: 'hammer', off: m.canStart === false, why: m.reason || 'Henüz şartlar tamam değil.' });
+    if (num(m.cost)) s += btn('Kendin kur (yarı fiyat, iki kat süre)', 'startSelf', null, 'cream wide', tl(Math.round(m.cost / 2)), { icon: 'hammer', off: (m.canStartSelf ?? m.canStart) === false, why: m.reasonSelf || m.reason || 'Henüz şartlar tamam değil.' });
     if (m.canStart === false) s += `<div class="sb-muted" style="text-align:center">${esc(m.reason || 'Önce istasyonları biraz daha geliştir.')}</div>`;
   }
   s += '</div>';

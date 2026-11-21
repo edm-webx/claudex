@@ -637,6 +637,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
       case 'front': {   // front roles (BUF-14): her rol gerçek iş yapar, ayrıntı agents/roller.ts
         if (w.role === 'kasiyer') {   // BUF-12: kasa başında müşteriye dönük durur, kasada işlem varken para sayar; rütbe kasa işleminden gelen xp ile yükselir
           if (rt.wk.walk(dt, 2.2)) { a.act = 'walk'; break; }
+          { const h = home(rt, S); if (!near2(a, h, 0.5)) { rt.wk.goTo(h); break; } }   // yerleşim değişince (aşama) yeni kasa başına yürür
           a.rot = angLerpTo(a.rot, 0, dt * 6); a.speed = 0; a.act = host.kasaMesgul?.() ? 'count' : 'idle'; checkRank(rt);
           if (rt.t > 9) { rt.t = 0; if (rng.chance(0.3)) say(rt, rng.pick(FRONT_LINES.kasiyer), 2.2); }
           break;

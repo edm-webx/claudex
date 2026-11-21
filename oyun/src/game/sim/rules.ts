@@ -205,7 +205,7 @@ export function createRules(d: RulesDeps): RulesFull {
     for (const k of PRODUCT_IDS) { const it = d.interactions.get('station.' + k); if (it) it.pos = standAt(rt.layout, k); }
     const w = d.interactions.get('window'); if (w) w.pos = rt.layout.window.standAt;
     mo.register(); mo.syncTables(); restoranM.register();
-    rt.queue.forEach(q => { q.qi = -1; }); rt.winq.forEach(q => { q.qi = -1; });
+    rt.queue.forEach(q => { q.qi = -1; }); rt.winq.forEach(q => { q.qi = -1; }); rt.kasaQueue.forEach(q => { q.qi = -1; });   // kasa sırası da yeni yerleşime göre yeniden dizilir
     K.syncPads();
   };
 
@@ -336,6 +336,7 @@ export function createRules(d: RulesDeps): RulesFull {
         S.stage = clamp(Math.round(Number(c.stage)) || 1, 1, 10);
         for (let s = 2; s <= S.stage; s++) (STAGE_TABLES[s] || []).forEach(i => K.setTableBuilt(i, true));
         { const on = new Set(kanatKurulu(S.stage)); for (let i = KANAT_BASE; i < rt.tables.length; i++) if (rt.tables[i].built && !on.has(i)) K.setTableBuilt(i, false); }   // BUF-19: aşama inince kanat masaları da kalkar
+        for (let s = S.stage + 1; s <= 10; s++) (STAGE_TABLES[s] || []).forEach(i => { if (i < KANAT_BASE && rt.tables[i]?.built) K.setTableBuilt(i, false); });   // aşama inince o aşamanın otomatik masaları (3: 6,7) da kalkar
         K.onLayout(); K.refreshSiklik();
         d.bus.emit('stage', { stage: S.stage });
         return true;
@@ -370,6 +371,7 @@ export function createRules(d: RulesDeps): RulesFull {
       case 'saveSign': dec.saveSign(String(c.text ?? ''), c.font as string | undefined); return true;
       case 'tapSlow': slow.tap(); return true;
       case 'acceptSolution': K.acceptSolution(); return true;
+      case 'dismissSolution': K.dismissSolution(); return true;
       case 'collectWelcome': off.collect(!!c.doubled); return true;
       case 'yeniGun': if (rt.uiLast.gunSonu) { delete rt.uiLast.gunSonu; if (rt.pauseWhy === 'gunSonu') { rt.paused = false; rt.pauseWhy = ''; } } return true;
       case 'skipCeremony': kar.finishKasa(); delete rt.uiLast.dayCard; if (off.isPending()) off.collect(false); return true;

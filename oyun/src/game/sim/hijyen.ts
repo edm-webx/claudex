@@ -29,7 +29,7 @@ export function martiYildizi(servis: number, hijyen: number, personelRutbe: numb
   return a >= 0.5 ? 2 : 1;
 }
 
-export interface HijyenSave { puan?: number; marti?: number; gelecek?: number; son?: number; sonuc?: HijyenSonuc; talep?: number; talepBitis?: number; uyariBitis?: number; gun?: number; ortSum?: number; ortN?: number; dun?: number; gelen?: number }
+export interface HijyenSave { puan?: number; marti?: number; gelecek?: number; son?: number; sonuc?: HijyenSonuc; talep?: number; talepBitis?: number; gun?: number; ortSum?: number; ortN?: number; dun?: number; gelen?: number }
 export function hijyenSave(S: { zones: Record<string, Record<string, unknown>> }): HijyenSave { return (S.zones.hijyen ||= {}) as unknown as HijyenSave; }
 /** tabela.ts tabelaFx: müfettiş sonrası geçici talep payı (+ iyi, - kötü) */
 export function hijyenTalep(S: { zones: Record<string, Record<string, unknown>>; day?: number }): number {
@@ -50,7 +50,7 @@ export interface HijyenApi {
 
 export function installHijyen(K: Kernel): HijyenApi {
   const S = K.state, rt = K.rt, rng = K.rng('hijyen');
-  let ema = 1, acc = 0, accM = 0;
+  let ema = 1, acc = 0, accM = 0, emaYuklu = false;   // ema kayıttan (z.puan) başlar: yeniden yüklemek müfettiş öncesi salonu 'temizlemesin'
   const gecerli = (): HijyenGirdi => {
     const built = rt.tables.filter(t => t && t.built);
     const masa = built.length ? built.reduce((s, t) => s + (t.dirty > 0 ? 0.4 + 0.6 * Math.min(1, (t.dirtyT || 0) / 120) : 0), 0) / built.length : 0;
@@ -75,6 +75,7 @@ export function installHijyen(K: Kernel): HijyenApi {
     id: 'hijyen', order: 47, phase: 'sim',
     step(ctx) {
       const z = hijyenSave(S);
+      if (!emaYuklu) { emaYuklu = true; if (typeof z.puan === 'number' && z.puan >= 0 && z.puan <= 1) ema = z.puan; }
       if (z.gun !== S.day) { if (z.gun != null && z.ortN) z.dun = Math.round(ort() * 100) / 100; z.gun = S.day; z.ortSum = 0; z.ortN = 0; }
       if (!rt.started) return;
       acc += ctx.dt; accM += ctx.dt;
@@ -98,7 +99,7 @@ export function installHijyen(K: Kernel): HijyenApi {
       const z = hijyenSave(S), s = hijyenSonucu(puan);
       z.son = S.day; z.sonuc = s; z.gelen = (z.gelen || 0) + 1; z.gelecek = S.day + rng.int(HIJYEN.aralik[0], HIJYEN.aralik[1]);
       if (s === 'iyi') { z.talep = HIJYEN.talepIyi; z.talepBitis = S.day + 1; K.toast('Hijyen müfettişi: pırıl pırıl! Bu akşam ve yarın biraz daha çok müşteri gelecek.', 'good'); }
-      else if (s === 'kotu') { z.talep = HIJYEN.talepKotu; z.talepBitis = S.day; z.uyariBitis = S.day; K.toast('Hijyen müfettişinden uyarı: masalar, zemin, tabaklar toparlansın. Ceza yok, bugün biraz az müşteri gelir.', 'bad'); }
+      else if (s === 'kotu') { z.talep = HIJYEN.talepKotu; z.talepBitis = S.day; K.toast('Hijyen müfettişinden uyarı: masalar, zemin, tabaklar toparlansın. Ceza yok, bugün biraz az müşteri gelir.', 'bad'); }
       else K.toast('Hijyen müfettişi: fena değil, biraz daha titizlik iyi olur.', 'info');
       K.stat('mufettis'); K.logEv('mufettis', { puan: Math.round(puan * 100), sonuc: s });
       yaz();

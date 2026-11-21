@@ -39,6 +39,8 @@ export function installWindow(K: Kernel, cu: ReturnType<typeof installCustomers>
   // view/world/stant-look.ts), then hands them out to the first window customer.
   const SHELF_N = 10;
   let layT = 0, staffT = 0;
+  /** Çok kalemli siparişte verilen BÜTÜN kalemler faturalanır (eskiden yalnız son kalem faturalanıyordu) */
+  const gotItems = (c: Customer): Item[] => { const out: Item[] = []; for (const k in c.got) for (let i = 0; i < (c.got[k as ProductId] || 0); i++) out.push({ type: k, tier: S.tiers[k as ProductId] || 1 } as Item); return out; };
   const shelf = (): ProductId[] => { const r = rt as unknown as { winShelf?: ProductId[] }; return (r.winShelf ??= []); };
   const staffServe = (dt: number) => {
     const wid = pencereWid(S); if (!wid || !(rt as unknown as { pencereAt?: boolean }).pencereAt || !rt.window) return;
@@ -59,7 +61,7 @@ export function installWindow(K: Kernel, cu: ReturnType<typeof installCustomers>
     const i = sh.findIndex(p => (left[p] || 0) > 0); if (i < 0) return;
     const [p] = sh.splice(i, 1); c.got[p] = (c.got[p] || 0) + 1;
     if (!Object.keys(cu.orderLeft(c)).length) {
-      settle(c, [{ type: p, tier: S.tiers[p] || 1 } as Item], { direct: true, at: rt.layout.window.standAt });
+      settle(c, gotItems(c), { direct: true, at: rt.layout.window.standAt });
       rt.window.sales++; K.stat('windowSales');
       cu.say(c, K.R.main.pick(['Sağ ol!', 'Eline sağlık!', 'Hızlıymışsınız!']), 1.5);
       cu.leave(c, false);
@@ -85,7 +87,7 @@ export function installWindow(K: Kernel, cu: ReturnType<typeof installCustomers>
           if (si >= 0) {
             const [p] = sh.splice(si, 1); c.got[p] = (c.got[p] || 0) + 1;
             if (!Object.keys(cu.orderLeft(c)).length) {
-              settle(c, [{ type: p, tier: S.tiers[p] || 1 } as Item], { direct: true, at: rt.layout.window.standAt });
+              settle(c, gotItems(c), { direct: true, at: rt.layout.window.standAt });
               rt.window.sales++; K.stat('windowSales'); cu.say(c, K.R.main.pick(['Sağ ol abi!', 'Yetiştim!', 'Eline sağlık!']), 1.5); cu.leave(c, false);
             }
             return 'continue';
@@ -95,7 +97,7 @@ export function installWindow(K: Kernel, cu: ReturnType<typeof installCustomers>
           if (i < 0) continue;
           const it = rt.carry.splice(i, 1)[0]; c.got[p] = (c.got[p] || 0) + 1;
           if (!Object.keys(cu.orderLeft(c)).length) {
-            const v = settle(c, [{ ...it }], { direct: true, at: rt.layout.window.standAt });
+            const v = settle(c, gotItems(c), { direct: true, at: rt.layout.window.standAt });
             rt.window.sales++; K.stat('windowSales');
             cu.say(c, K.R.main.pick(['Sağ ol abi!', 'Yetiştim!', 'Eline sağlık!']), 1.5);
             if (!S.tut.windowSale) { S.tut.windowSale = 1; K.logEv('firstWindowSale', { v }); }

@@ -21,6 +21,7 @@ import { TRAITS } from '../../content/traits';
 import { asamaDef } from '../../content/isletme-asama';
 import { tadilatBasla, tadilatAdim, tadilatBitir, tadilatSure, aciklar, type TadilatState } from './isletme-asama';
 import { skipGold } from '../../content/economy';
+import { createRng } from '../../engine/core';
 import { ISCI_GUN_UCRET, ILAN_YENILE_UCRET, ISLETME_ROL } from '../../content/isletme-kadro';
 import { ilanYap, kadroKur, yeniKisi, tohumluRng, strSeed, type Calisan, type IsKart } from './agents/isletme-kadro';
 import { IC_CANLI, icOfArsa, icIcinde, icHangi, icBina, bankaGise, IC_BY_ID, icDim, icWorld } from '../../content/ic-mekan';
@@ -42,7 +43,7 @@ export interface Env {
 }
 /** café growth names per level (same idea as the büfe stages) */
 export const KAFE_ASAMA = ['Köşe kafe', 'Kafe', 'Bistro', 'Teraslı bistro', 'Gurme bistro'];
-export interface Plot { tur: 'ev' | 'dukkan' | null; tip: string; lv: number; till: number; sat: number; fr: number; isci?: number; tadilat?: TadilatState; kadro?: Calisan[]; ilan?: IsKart[]; ilanGun?: number; maas?: number; esya?: string[]; tema?: string }
+export interface Plot { tur: 'ev' | 'dukkan' | null; tip: string; lv: number; till: number; sat: number; fr: number; isci?: number; tadilat?: TadilatState; kadro?: Calisan[]; ilan?: IsKart[]; ilanGun?: number; ilanN?: number; kasaBekle?: number; maas?: number; esya?: string[]; tema?: string }
 export interface ArsaSave { yedek?: { tl: number; esya: Record<string, number>; faizGun?: number }; plots: Record<string, Plot>; takim: { ad: string; renk: string; renk2?: string; arma?: string; kurulus?: number } | null; lastH: number; kredi?: { borc: number; gun: number } }
 export interface BankaRt { tl: number; esya: Record<string, number>; dirty: boolean; /** EKO-03: hesap düzeyi son faiz günü (karakter başına değil) */ faizGun?: number }
 
@@ -194,7 +195,8 @@ export function installMulk(K: Kernel) {
   };
   const kadroSync = (p: Plot) => { p.isci = (p.kadro || []).length; };
   const ilanOf = (ar: Arsa, p: Plot, yenile = false): IsKart[] => {
-    if (yenile || !p.ilan || !p.ilan.length || p.ilanGun !== S.day) { p.ilan = ilanYap(rng, ar.id, ARSA_ISLETME[ar.id], p.lv, kadroOf(ar, p), isciFiyat(kadroOf(ar, p).length), S.day); p.ilanGun = S.day; }
+    // ilan kendi tohumundan üretilir (arsa + gün + yenileme sayısı): panel/ipucu okuması ortak sim rng akışını tüketmez
+    if (yenile || !p.ilan || !p.ilan.length || p.ilanGun !== S.day) { if (yenile) p.ilanN = (p.ilanN || 0) + 1; let hs = 2166136261; for (const ch of ar.id) hs = Math.imul(hs ^ ch.charCodeAt(0), 16777619); p.ilan = ilanYap(createRng((hs ^ Math.imul(S.day + 1, 2654435761) ^ Math.imul((p.ilanN || 0) + 1, 40503)) >>> 0), ar.id, ARSA_ISLETME[ar.id], p.lv, kadroOf(ar, p), isciFiyat(kadroOf(ar, p).length), S.day); p.ilanGun = S.day; }
     return p.ilan;
   };
   function ilanAl(id: string, kartId: string) {
@@ -466,8 +468,11 @@ export function installMulk(K: Kernel) {
           p.fr += dukkanMusteri(t, p.lv) * ek.musK * (1 + ISCI_MUSTERI * isci) * dh; const n = Math.floor(p.fr); p.fr -= n;
           if (n > 0) { p.sat += n; p.till += n * Math.max(1, t.fiyat * (1 + p.lv * 0.04)); }
         }
+        if (p.till >= 1 && !yakin(ar)) p.kasaBekle = 1;   // para uzaktayken birikti: içeri girince bir kez 'kasa topla' sayılır
         if (p.till >= 1 && yakin(ar)) {
-          const v = Math.floor(p.till); p.till -= v; K.credit!('isletme', v); K.stat('mulkKasa');   // own business income, not a capped side faucet
+          const v = Math.floor(p.till); p.till -= v; K.credit!('isletme', v);   // own business income, not a capped side faucet
+          if (!p.kasaBekle) continue;   // içerideyken anlık satış: sessizce krediye döner (toast, istatistik ve sandık sayacı şişmez)
+          p.kasaBekle = 0; K.stat('mulkKasa');
           K.toast((ar.sabit ? isletmeOf(ar.id).ikon : t.ikon) + ' ' + (ar.ad || t.ad) + ' kasası: +' + fmtMoney(v), 'good');
         }
       }

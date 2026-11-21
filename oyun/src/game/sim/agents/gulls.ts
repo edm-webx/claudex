@@ -17,7 +17,7 @@ export const GULL_COUNT = 8;
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 interface V3 { x: number; y: number; z: number }
 interface Gull {
-  a: Actor; i: number; mode: string; perch: P3 | null; t: number; ang: number; stareT: number; first: boolean;
+  a: Actor; i: number; mode: string; perch: P3 | null; t: number; ang: number; stareT: number; first: boolean; blend?: number;
   fly: { from: V3; to: V3; t: number; dur: number; onLand?: (g: Gull) => void } | null;
 }
 
@@ -69,7 +69,11 @@ export function createGulls(env: AgentEnv): GullsSystem {
         }
         if (g.mode === 'glide') {
           g.ang += dt * 0.35;
-          a.x = Math.cos(g.ang + g.i) * 9; a.y = 6 + Math.sin(g.ang * 2 + g.i) * 1.2; a.z = -6 + Math.sin(g.ang + g.i) * 7; a.rot = g.ang + Math.PI; a.act = 'glide';
+          const gx = Math.cos(g.ang + g.i) * 9, gy = 6 + Math.sin(g.ang * 2 + g.i) * 1.2, gz = -6 + Math.sin(g.ang + g.i) * 7;
+          // uçuştan süzülmeye geçerken yörüngeye 2 sn'de yumuşakça karış (eskiden tek karede 6-17 m ışınlanıyordu)
+          if (g.blend != null) { g.blend = Math.min(1, g.blend + dt / 2); const r = Math.min(1, (2 + g.blend * 8) * dt); a.x += (gx - a.x) * r; a.y += (gy - a.y) * r; a.z += (gz - a.z) * r; if (Math.hypot(gx - a.x, gz - a.z) < 0.3) g.blend = undefined; }
+          else { a.x = gx; a.y = gy; a.z = gz; }
+          a.rot = g.ang + Math.PI; a.act = 'glide';
           a.speed = Math.hypot(a.x - ox, a.z - oz) / dt;
           continue;
         }
@@ -105,7 +109,7 @@ export function createGulls(env: AgentEnv): GullsSystem {
           host.stat('gullsChased'); S.tut.gullFirst = 1;
           host.heroSay(rng.pick(LINES[host.hero()].gull), 1.5);
           host.laughNearby(); host.earn(15 * host.venueMult(), sg.a); env.emit('gullChased');
-          sg.mode = 'takeoff'; fly(sg, { x: sg.a.x + 6, y: 7, z: sg.a.z - 10 }, 3, 'fly', (gg) => { gg.mode = 'glide'; });
+          sg.mode = 'takeoff'; fly(sg, { x: sg.a.x + 6, y: 7, z: sg.a.z - 10 }, 3, 'fly', (gg) => { gg.mode = 'glide'; gg.blend = 0; });
           stare = null; next = S.playT + rng.range(70, 130);
           return;
         }
@@ -115,7 +119,7 @@ export function createGulls(env: AgentEnv): GullsSystem {
           sg.a.carry = [{ type: 'simit', tier: S.tiers.simit || 1 }];
           host.stat('gullSnatch'); S.tut.gullFirst = 1;
           host.toast('Hoppaa! Martı simidi kaptı. Ama dert değil, yenisi tezgahta!', 'info'); host.laughNearby(); env.emit('gullSnatch');
-          fly(sg, { x: sg.a.x - 4, y: 8, z: sg.a.z - 14 }, 3.2, 'fly', (gg) => { gg.a.carry = []; gg.mode = 'glide'; });
+          fly(sg, { x: sg.a.x - 4, y: 8, z: sg.a.z - 14 }, 3.2, 'fly', (gg) => { gg.a.carry = []; gg.mode = 'glide'; gg.blend = 0; });
           stare = null; next = S.playT + rng.range(70, 130);
         }
       }

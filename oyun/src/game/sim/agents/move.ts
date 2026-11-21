@@ -16,7 +16,13 @@ export class Walker {
   goTo(target: Vec2): void {
     const from = { x: this.a.x, z: this.a.z };
     let p = this.nav.path(from, target);
-    if (!p.length) p = [{ x: target.x, z: target.z }];
+    if (!p.length) {
+      // yol yok: düz çizgiyle duvardan geçmek yerine hedefe en yakın yürünebilir noktayı dene; o da yoksa olduğu yerde bekle
+      const near = { x: target.x, z: target.z };
+      if (!this.nav.walkable(near) && this.nav.nearestWalkable) this.nav.nearestWalkable(target, near);
+      if (this.nav.walkable(near)) { const q = this.nav.path(from, near); if (q.length) p = q; }
+      if (!p.length) { this.path = []; this.goal = { x: target.x, z: target.z }; return; }
+    }
     // drop a leading point that is the start itself
     if (p.length > 1 && Math.hypot(p[0].x - from.x, p[0].z - from.z) < 0.05) p = p.slice(1);
     this.path = p.map((v) => ({ x: v.x, z: v.z }));

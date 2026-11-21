@@ -16,7 +16,7 @@ export interface GunSonuModel {
   // BUF-26 kalemler (karne.ts endDay): hepsi opsiyonel, eski kayıt/test modeliyle de açılır
   brut?: number; birimMaliyet?: number; kisiler?: { ad: string; maas: number; bahsis: number }[]; salon?: { gelir: number; misafir: number }; yan?: number;
   gider?: { kira: number; fatura: number; odenen: number; ertelendi: number }; netKar?: number; masa?: { servis: number; bekleS: number };
-  isletme?: { toplam: number; odenen: number; satirlar: { ad: string; tutar: number; odenen: boolean | number }[] };
+  isletme?: { toplam: number; odenen: number; satirlar: { ad: string; tutar: number; odenen: number }[] };
   hijyen?: { not?: string | number; mufettis?: string; marti?: number };
 }
 
@@ -85,7 +85,7 @@ export function createGunSonu(deps: { root: HTMLElement; rules: () => Rules | nu
     }
     if (m.isletme) {
       parts.push('<div class="gs-h2">İşletmeler</div>');
-      for (const s of m.isletme.satirlar) parts.push(row(esc(s.ad) + (s.odenen ? '' : ' (ertelendi)'), eksi(s.odenen ? s.tutar : 0), 'sub'));
+      for (const s of m.isletme.satirlar) parts.push(row(esc(s.ad) + (s.odenen >= s.tutar ? '' : s.odenen > 0 ? ' (kısmen ödendi, kalanı silindi)' : ' (ödenemedi, silindi)'), eksi(s.odenen), 'sub'));
       parts.push(row('İşletme maaşı toplamı', eksi(m.isletme.odenen)));
     }
     if (m.netKar !== undefined) parts.push(row('Net kâr', `<b class="${m.netKar < 0 ? 'gs-eksi' : 'gs-arti'}">${m.netKar < 0 ? '−' : ''}${fmtMoney(Math.abs(m.netKar))}</b>`, 'tot'));

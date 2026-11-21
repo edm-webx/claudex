@@ -12,7 +12,7 @@ export function installCounter(K: Kernel, reserved: () => Partial<Record<Product
   const rt = K.rt, S = K.state;
   const counterApi: CounterApi = {
     count: p => rt.counter[p].length,
-    put(it) { const b = rt.counter[it.type]; if (!b || b.length >= 8) return false; b.push(it); return true; },
+    put(it) { const b = rt.counter[it.type]; if (!b || b.length >= 12) return false; b.push(it); return true; },
     take(p, n, who) {
       if (who === 'gull') {
         const b = rt.counter[p];

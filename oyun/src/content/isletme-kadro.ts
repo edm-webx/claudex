@@ -19,5 +19,7 @@ export const ISLETME_ROL: Record<IsletmeId, IsletmeRol[]> = {
   oyuncak: [{ rol: 'danisman', ad: 'Satış danışmanı', huyRol: 'garson', gorunum: 'tost', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }],
 };
 /** wage is paid once at day end: same total as the old hourly cut (24 game hours) */
-export const ISCI_GUN_UCRET = ISCI_SAAT_UCRET * 24;
+/** oyun günü 08:00-03:00 = 19 saat; maaş yalnız çalışılan saat için işler (panelde 24 saat gösteriliyordu) */
+export const ISCI_GUN_SAAT = 19;
+export const ISCI_GUN_UCRET = ISCI_SAAT_UCRET * ISCI_GUN_SAAT;
 export const ILAN_YENILE_UCRET = 2000;

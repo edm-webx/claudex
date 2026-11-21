@@ -257,6 +257,7 @@ export interface Kernel extends Rules {
   hasRole(role: string): boolean;
   slowSolution(link: string, station?: string): Record<string, unknown>;
   acceptSolution(): void;
+  dismissSolution(): void;
   openOverlay(id: string, model: unknown): void;
   hiringHost(): import('./agents/hiring').HiringHost;
   startTadilat(paid: boolean, self?: boolean): boolean;

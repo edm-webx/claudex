@@ -76,6 +76,9 @@ export const kepenkCost = (level: number): number | null | undefined => { const 
 /** Altın Simit to finish a timer now (GDD: ceil(5 * hours^0.75)) */
 export const skipGold = (secondsLeft: number): number => secondsLeft <= 0 ? 0 : Math.max(1, Math.ceil(5 * Math.pow(secondsLeft / 3600, 0.75)));
 
+/** Ana büfe tadilatını Altın Simitle bitirme bedeli: tadilat ödülü (AS_TAD) geri geldiği için bedele eklenir, atlamak net Altın Simit kazandırmaz */
+export const tadilatSkipGold = (secondsLeft: number): number => secondsLeft <= 0 ? 0 : skipGold(secondsLeft) + P.AS_TAD;
+
 export const GRADES: { id: GradeId; label: string }[] = [
   { id: 'lezzet', label: 'Lezzet' }, { id: 'hiz', label: 'Hız' }, { id: 'siklik', label: 'Şıklık' },
   { id: 'sohret', label: 'Şöhret' }, { id: 'temizlik', label: 'Temizlik' }];

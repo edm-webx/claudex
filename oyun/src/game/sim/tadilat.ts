@@ -1,7 +1,7 @@
 /** Tadilat (renovation), tier upgrades, plaque, kepenk, magnet (v2 startTadilat..buyMagnet). Owner: Builder A. Pure. */
 import { KIOSK_STAGES } from '../../content/stages';
 import { STAGE_TABLES } from '../../content/pads';
-import { P, skipGold } from '../../content/economy';
+import { P, tadilatSkipGold } from '../../content/economy';
 import { PRODUCT_IDS, PRODUCTS, TIER_NAMES, tierCost } from '../../content/products';
 import { TRAITS } from '../../content/traits';
 import { LINES } from '../../content/lines';
@@ -44,7 +44,7 @@ export function installTadilat(K: Kernel) {
   const update = (dt: number) => { const t = S.tadilat as unknown as Tad | null; if (!t) return; t.left -= dt; if (t.left <= 0) finish(); };
   const skip = () => {
     const t = S.tadilat as unknown as Tad | null; if (!t) return;
-    const g = skipGold(t.left);
+    const g = tadilatSkipGold(t.left);
     if (S.gold < g) { K.toast(g + ' Altın Simit lazım.', 'bad'); return; }
     S.gold -= g; finish();
   };

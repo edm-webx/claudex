@@ -34,7 +34,7 @@ import { salonKatYan } from './salon';
 export const RESTORAN_KEY = 'restoran';
 /** oyuncu mutfaktan çıktıktan sonra bu kadar sn hâlâ mutfakta sayılır (yeni biletler yemek içerebilir) */
 const OYUNCU_MUTFAK_S = 45;
-interface Save { servis: number; no: number }
+interface Save { servis: number; no: number; kumbara?: number; sonDagitim?: BahsisDagitim | null }
 /**
  * Bilet kalemi: ya eski tezgâh ürünü (dish null, food = ProductId) ya da menüdeki bir yemek (food = dish = DishId). BUF-05: yemek
  * kendi adıyla kendi istasyonunda pişer ve kendi tabağıyla (Plate.type = DishId) masaya gider; taşıyıcı ürün köprüsü yok.
@@ -159,8 +159,10 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
   const kanatKat = (table: number) => { const km = kanatOf(table); return km ? salonKatYan(salonEsya(), S.stage || 1, kanatYanı(km.bolge)) : { mis: 1, adis: 1 }; };
   const tabakTasks = (t: Ticket, f: FoodId, eldeMi?: boolean) => gorevler.filter(g => g.tur === 'tabak' && g.ticket === t && g.p === f && (eldeMi === undefined || !!g.item === eldeMi)).length;
   // kumbara (BUF-10, sahip kararı 2026-11-09): bahşiş oyuncuya gelir olarak yazılmaz, garsonların ortak kumbarasında birikir,
-  // gün sonunda paylaşılır. Çalışma anı: yeniden yüklemede o günün birikimi sıfırlanır (kalıcı alan schema kararı bekliyor).
-  let kumbara = 0, sonDagitim: BahsisDagitim | null = null, isinlanma = 0;
+  // gün sonunda paylaşılır. 2026-11-21: birikim S.zones.restoran içinde saklanır (yeniden yüklemede sıfırlanmıyor).
+  let kumbara = 0, sonDagitim: BahsisDagitim | null = null, isinlanma = 0, kumbaraYuklu = false;
+  const kumbaraYukle = () => { if (kumbaraYuklu) return; kumbaraYuklu = true; const g = G(); kumbara = Math.max(0, Number(g.kumbara) || 0); sonDagitim = g.sonDagitim ?? null; };
+  const kumbaraYaz = () => { const g = G(); g.kumbara = Math.round(kumbara * 100) / 100; g.sonDagitim = sonDagitim; };
 
   // stations produce for open tickets too (room above the counter stock)
   rt.reserved.push(() => { const r: Order = {}; for (const t of tickets) for (const p in t.want) if (isProduct(p)) add(r, p, t.want[p] || 0); return r; });
@@ -258,7 +260,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     else if (garsonla) cu.say(c, rng.pick(ADISYON_LINES.hesap), 1.8);
     if (!garsonla) { cu.say(c, rng.pick(ADISYON_LINES.kendi), 2); K.stat('hesapKendisi'); }
     if (!garsonlar().length) tip = 0;
-    if (tip > 0) { kumbara += tip; K.stat('tips'); K.stat('kumbara', tip); K.logEv('tip', { tip, kumbara: true }); }
+    if (tip > 0) { kumbaraYukle(); kumbara += tip; kumbaraYaz(); K.stat('tips'); K.stat('kumbara', tip); K.logEv('tip', { tip, kumbara: true }); }
     K.logEv('hesap', { value, tip, x: c.x, z: c.z, garson: garsonla });
   }
   function fail(t: Ticket, c: Customer | null): void {
@@ -628,6 +630,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     }
   }
   function kumbaraDagit(day: number): BahsisDagitim | null {
+    kumbaraYukle();
     const toplam = Math.floor(kumbara);
     if (toplam <= 0) return null;
     let alan = garsonlar(); if (!alan.length) alan = S.workers.slice();
@@ -635,8 +638,10 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     const per = Math.floor(toplam / alan.length); if (per <= 0) return null;   // kişi başı 1 ₺ bile değil: ertesi güne kalır
     const kalan = kumbara - per * alan.length;
     const pay = alan.map(w => ({ wid: w.id, ad: w.name, tutar: per }));
-    kumbara = kalan;   // küsurat ertesi güne kalır (toplam korunur: dağıtılan + kalan = biriken)
-    sonDagitim = { day, toplam: per * alan.length, kalan: Math.round(kalan * 100) / 100, pay };
+    // pay gerçekten karşılığını bulur: her garson payıyla orantılı deneyim kazanır (rütbe terfisi bahşişle hızlanır)
+    for (const pp of pay) { const w = S.workers.find(x => x.id === pp.wid); if (w) w.xp = (w.xp || 0) + Math.max(1, Math.round(pp.tutar / 20)); }
+    kumbara = kalan; kumbaraYaz();   // küsurat ertesi güne kalır (toplam korunur: dağıtılan + kalan = biriken)
+    sonDagitim = { day, toplam: per * alan.length, kalan: Math.round(kalan * 100) / 100, pay }; kumbaraYaz();
     K.logEv('bahsisDagit', { day, toplam, kisi: pay.length, per });
     return sonDagitim;
   }
@@ -699,7 +704,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
       else { bolgeYenile(); if (id !== '*' && !bolgeList.some(b => b.id === id)) return false; elle.set(wid, id); }
       bolgeYenile(); return true;
     },
-    kumbara: () => ({ birikim: Math.round(kumbara * 100) / 100, son: sonDagitim }),
+    kumbara: () => (kumbaraYukle(), { birikim: Math.round(kumbara * 100) / 100, son: sonDagitim }),
     kumbaraDagit,
     kitchenClaim: (wid, opt) => hat.claim(wid, opt?.from),
     kitchenIst: wid => hat.ist(wid),

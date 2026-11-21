@@ -82,7 +82,7 @@ export function installQueue(K: Kernel, orderLeft: (c: { order: Order; got: Orde
       if (!S.tut.slowSeen) { S.tut.slowSeen = 1; K.toast('Kırmızı işarete dokun: bir yer tıkandı!', 'bad'); }
     }
     // an icon that times out unanswered rests for 3 min before the same warning comes back (was every 40 s)
-    if (rt.slow) { rt.slow.t += dt; if (rt.slow.t > 40 && !rt.slowCard) { cool[rt.slow.link + (rt.slow.station || '')] = S.playT + 180; rt.slow = null; } }
+    if (rt.slow) { rt.slow.t += dt; if (rt.slow.t > 40 && (!rt.slowCard || rt.slow.t > 90)) { cool[rt.slow.link + (rt.slow.station || '')] = S.playT + 180; rt.slow = null; rt.slowCard = null; sol = null; } }
   }
   let acc = 0;
   const update = (dt: number) => { acc += dt; if (acc >= 0.25) { check(acc); acc = 0; } };
@@ -102,6 +102,12 @@ export function installQueue(K: Kernel, orderLeft: (c: { order: Order; got: Orde
     else { if (rt.slow) cool[rt.slow.link + (rt.slow.station || '')] = S.playT + 120; rt.slow = null; }
     delete rt.uiLast.solution;
     sol = null;
+  };
+  /** 'Sonra': kartı kapat, simgeyi 2 dk dinlendir (eskiden slowCard sonsuza dek dolu kalıp ikon zaman aşımını kilitliyordu) */
+  K.dismissSolution = () => {
+    if (rt.slow) cool[rt.slow.link + (rt.slow.station || '')] = S.playT + 120;
+    rt.slow = null; rt.slowCard = null; sol = null;
+    delete rt.uiLast.solution;
   };
   return { update, tap };
 }

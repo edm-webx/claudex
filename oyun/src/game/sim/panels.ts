@@ -4,7 +4,7 @@
  * `panelActions(id)` -> { actionName: (arg) => command } (D turns each into `sim.command`). Owner: Builder A. Pure.
  */
 import { pencereWid } from './window';
-import { DECOR, DECOR_SETS, GRADES, GRADE_NAMES, STAR_RULES, skipGold, P } from '../../content/economy';
+import { DECOR, DECOR_SETS, GRADES, GRADE_NAMES, STAR_RULES, tadilatSkipGold, P } from '../../content/economy';
 import { PRODUCT_IDS, PRODUCTS, TIER_NAMES, price } from '../../content/products';
 import { KIOSK_STAGES } from '../../content/stages';
 import { ACHIEVEMENTS } from '../../content/achievements';
@@ -111,7 +111,7 @@ export function panelModel(id: ModelId | string, r: Rules): Record<string, any> 
       const needStars = n && n.req ? n.req.stars : 0;
       const tl = S.tadilat as unknown as { left: number } | null;
       const reason = !open ? '' : S.stars < needStars ? needStars + ' yıldız lazım (şimdi ' + S.stars + '). Karneye bak.' : S.money < (n!.cost || 0) ? 'Kasada ' + fmtMoney(n!.cost || 0) + ' olmalı.' : '';
-      return { stage: S.stage, stageName: cur.short, stages: KIOSK_STAGES.map(k => k.short), nextName: open ? n!.short : null, cost: open ? n!.cost : null, timeLeft: tl ? Math.ceil(tl.left) : 0, skipGold: tl ? skipGold(tl.left) : 0, canStart: open && x.tadilatReady() && S.money >= (n!.cost || 0), reason, need: needStars ? needStars + ' yıldız' : '', stars: S.stars, gold: S.gold, money: S.money, renewed: S.renewed.slice(), deniz: denizApi(r)?.summary() ?? null };
+      return { stage: S.stage, stageName: cur.short, stages: KIOSK_STAGES.map(k => k.short), nextName: open ? n!.short : null, cost: open ? n!.cost : null, timeLeft: tl ? Math.ceil(tl.left) : 0, skipGold: tl ? tadilatSkipGold(tl.left) : 0, canStart: open && x.tadilatReady() && S.money >= (n!.cost || 0), canStartSelf: open && x.tadilatReady() && S.money >= Math.round((n!.cost || 0) / 2), reasonSelf: !open ? '' : S.stars < needStars ? reason : S.money < Math.round((n!.cost || 0) / 2) ? 'Kasada ' + fmtMoney(Math.round((n!.cost || 0) / 2)) + ' olmalı.' : '', final: S.stage >= KIOSK_STAGES.length, reason, need: needStars ? needStars + ' yıldız' : '', stars: S.stars, gold: S.gold, money: S.money, renewed: S.renewed.slice(), deniz: denizApi(r)?.summary() ?? null };
     }
     case 'ayarlar': return { muted: !!S.settings.muted, quality: S.settings.quality || 'auto', hero: S.hero || 'sabri', tier: S.settings.autoTier || 'dengeli' };
     case 'jobBoard': return x.boardModel();
@@ -122,8 +122,7 @@ export function panelModel(id: ModelId | string, r: Rules): Record<string, any> 
 
 export function panelActions(id: ModelId | string): Record<string, (arg?: any) => SimCmd> {
   switch (id) {
-    case 'isciler': { const C = (op: string) => (a?: any) => ({ kind: 'calisan', op, id: a == null ? undefined : String(a) }) as SimCmd; return { train: a => ({ kind: 'calisan', op: 'sel', id: String(a) + '|kurs' }), fire: a => ({ kind: 'fire', id: a }), board: () => ({ kind: 'openJobBoard' }), pencere: (a?: any) => ({ kind: 'pencere', wid: Number(a) }) as unknown as SimCmd, pencereHire: () => ({ kind: 'pencere', op: 'hire' }) as unknown as SimCmd, kuryeOpen: () => ({ kind: 'kurye', op: 'open' }), cTab: C('tab'), cSel: C('sel'), cClose: C('close'), cKurs: C('kurs'), cCall: C('call') }; }
-    case 'kurye': { const Q = (op: string) => (a?: any) => ({ kind: 'kurye', op, id: a == null ? undefined : String(a) }) as SimCmd; return { kAccept: Q('accept'), kDecline: Q('decline'), kSelf: Q('self'), kHire: Q('hire'), kBuyVeh: Q('buyVeh'), kVeh: Q('veh'), kUpg: Q('upg'), kSus: Q('sus'), kSeen: Q('seen') }; }
+    case 'isciler': { const C = (op: string) => (a?: any) => ({ kind: 'calisan', op, id: a == null ? undefined : String(a) }) as SimCmd; return { train: a => ({ kind: 'calisan', op: 'sel', id: String(a) + '|kurs' }), fire: a => ({ kind: 'fire', id: a }), board: () => ({ kind: 'openJobBoard' }), pencere: (a?: any) => ({ kind: 'pencere', wid: Number(a) }) as unknown as SimCmd, pencereHire: () => ({ kind: 'pencere', op: 'hire' }) as unknown as SimCmd, cTab: C('tab'), cSel: C('sel'), cClose: C('close'), cKurs: C('kurs'), cCall: C('call') }; }
     case 'menu': return { upgrade: a => ({ kind: 'upgradeTier', id: a }), inv: a => ({ kind: 'invest', id: String(a) }) as SimCmd, kyBuy: a => ({ kind: 'kiyafet', op: 'buy', id: String(a) }) as SimCmd, kyWear: a => ({ kind: 'kiyafet', op: 'wear', id: String(a) }) as SimCmd, kyTake: a => ({ kind: 'kiyafet', op: 'take', id: String(a) }) as SimCmd, yy: a => ({ kind: 'yiyecek', arg: String(a ?? '') }) };
     case 'dekor': return { buy: a => ({ kind: 'decorBuy', id: a }), place: a => ({ kind: 'decorPlace', id: a }), remove: a => ({ kind: 'decorRemove', slot: a }), rot: a => ({ kind: 'decorRotate', slot: a }), zemin: a => (String(a).startsWith('desen:') ? { kind: 'zemin', op: 'desen', value: String(a).slice(6) } : { kind: 'zemin', op: String(a) }) as SimCmd, d2: a => ({ kind: 'dekor2', arg: String(a ?? '') }) };
     case 'gorevler': return { claim: a => ({ kind: 'claimOrder', id: a }), esnafOpen: a => ({ kind: 'esnaf', op: 'open', id: a }), esnafClaim: () => ({ kind: 'esnaf', op: 'claim' }), esnafAccept: () => ({ kind: 'esnaf', op: 'accept' }), miniOpen: () => ({ kind: 'mini', op: 'open' }), haritaOpen: () => ({ kind: 'disari', op: 'open' }) as unknown as SimCmd, havaOpen: () => ({ kind: 'hava', op: 'open' }) as SimCmd, denizOpen: () => ({ kind: 'deniz', op: 'open' }) as SimCmd, kolOpen: a => ({ kind: 'koleksiyon', op: 'open', id: a == null ? undefined : String(a) }), hikayeOpen: () => ({ kind: 'hikaye', op: 'open' }) };

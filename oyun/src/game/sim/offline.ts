@@ -16,8 +16,8 @@ export function installOffline(K: Kernel) {
   let pending: { amount: number } | null = null;
   function welcome(away: number): { amount: number; capped: boolean; capH: number } | null {
     if (away < P.WELCOME_MIN_S || away > 3600 * 24 * 60) return null;
-    const t = S.tadilat as unknown as { left?: number } | null;
-    if (t && typeof t.left === 'number') t.left = Math.max(0.1, t.left - away);
+    const t = S.tadilat as unknown as { left?: number; self?: boolean } | null;
+    if (t && typeof t.left === 'number') t.left = Math.max(0.1, t.left - (t.self ? away / 2 : away));   // 'kendin kur': usta yok, oyuncu yokken yarı hızda ilerler
     // Survey 2026-10-24: no offline earnings ("çevrimdışı kazanç yok"), so no welcome card. Flip OFFLINE_ON to bring it back.
     if (!OFFLINE_ON) return null;
     const off = offlineEarnings(away, idleRatePerMin(), S.kepenk);

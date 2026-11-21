@@ -12,6 +12,7 @@ export function normalizeState(d: GameState, notes: string[] = []): string[] {
   const def = defaultState(d.seed || 1);
   const rec = d as unknown as Record<string, unknown>, dr = def as unknown as Record<string, unknown>;
   for (const k of Object.keys(dr)) if (rec[k] === undefined || rec[k] === null && dr[k] !== null) { rec[k] = dr[k]; notes.push('fill ' + k); }
+  for (const k of ['xp', 'totalEarned'] as const) { const r = d as unknown as Record<string, unknown>; if (typeof r[k] !== 'number' || !Number.isFinite(r[k] as number)) { r[k] = Math.max(0, Number(r[k]) || 0); notes.push('num ' + k); } }
   d.tiers = { ...def.tiers, ...(isObj(d.tiers) ? d.tiers : {}) };
   d.grades = { ...def.grades, ...(isObj(d.grades) ? d.grades : {}) };
   d.settings = { ...defaultSettings(), ...(isObj(d.settings) ? d.settings : {}) };

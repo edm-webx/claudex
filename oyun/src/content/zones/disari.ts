@@ -447,7 +447,7 @@ export function ormanZone(): ZoneDef {
   [[836.5, 21.6], [862.4, 4.2], [813, 20.8], [878, -2.4 + 6.6], [824.6, 13.4], [843.6, 1.4]].forEach(([x, z], i) => props.push(P('stump' + i, 'mk.stump', x, z)));
   // trees: keep clear of trails, cross paths, the bus bay and every placed thing
   const busy: [number, number, number][] = props.filter(p => !/^(ground|trail|tv|yol)/.test(p.id)).map(p => [p.pos.x, p.pos.z, p.prefab === 'mk.orman.anit' ? 3.6 : p.prefab === 'mk.orman.gol' ? 5.2 : 1.3]);
-  busy.push([876, 21.5, 1.6], [O.kamp.x, O.kamp.z, 4.2], [847.5, 22.2, 3.0], [806, 9, 4.5]);
+  busy.push([876, 21.5, 1.6], [O.kamp.x, O.kamp.z, 4.2], [847.5, 22.2, 3.0], [806, 9, 4.5], [808, 10.5, 9]);   // 2026-11-21: duraktan inen kahraman dev ağaç tacının arkasında kalmasın: iniş noktasının çevresi geniş açıklık
   const free = (x: number, z: number, r: number) => x > x0 + 1.2 && x < x1 - 1.2
     && O.trailsZ.every(t => Math.abs(z - t) > 2.3) && O.cross.every(([cx, za, zb]) => Math.abs(x - cx) > 1.9 || z < za - 1 || z > zb + 1)
     && !(x < O.yol.x + O.yol.w / 2 + r && Math.abs(z - O.yol.z) < 1.7 + r) && busy.every(([bx, bz, br]) => Math.hypot(x - bx, z - bz) > br + r);

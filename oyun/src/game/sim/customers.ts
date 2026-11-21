@@ -163,7 +163,7 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
     const catiOk = S.workers.some(w => w.role === 'garson');   // BUF-20: çatı masasına yalnız garson varken oturulur (servis ve silme garsonun)
     for (let i = 0; i < rt.tables.length; i++) { const t = rt.tables[i]; if (t && t.built && t.dirty <= 0 && t.seats.every(sx => !sx.occ) && (catiOk || !masaCati(i))) frees.push(i); }
     if (!frees.length) return null;
-    const near = (a: number) => frees.filter(b => b !== a && TL[a] && TL[b] && masaCati(a) === masaCati(b) && dist2d(TL[a], TL[b]) <= GRUP.birlesM)   // çatı ile salon masası birleşmez.sort((p, q) => dist2d(TL[a], TL[p]) - dist2d(TL[a], TL[q]));
+    const near = (a: number) => frees.filter(b => b !== a && TL[a] && TL[b] && masaCati(a) === masaCati(b) && dist2d(TL[a], TL[b]) <= GRUP.birlesM).sort((p, q) => dist2d(TL[a], TL[p]) - dist2d(TL[a], TL[q]));   // çatı ile salon masası birleşmez; en yakın önce
     let best = frees[0];
     if (need > 1) { let bn = -1; for (const a of frees) { const k = Math.min(need - 1, near(a).length); if (k > bn) { bn = k; best = a; } } }
     return [best, ...(need > 1 ? near(best).slice(0, need - 1) : [])];
@@ -242,7 +242,7 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
     goTo(c, angry ? nearestSpawn({ x: c.x, z: c.z }) : spawnPoint());
   }
   const returnItemsToCounter = (c: Customer) => {
-    c.items.splice(0).forEach(it => { if (!isProduct(it.type)) return; const b = rt.counter[it.type]; if (b && b.length < 8) b.push(it as Item); });   // mutfak tabağı tezgâha stok olarak dönmez (BUF-05)
+    c.items.splice(0).forEach(it => { if (!isProduct(it.type)) return; const b = rt.counter[it.type]; if (b && b.length < 12) b.push(it as Item); });   // tezgâh sınırı counter.ts ile aynı (12); mutfak tabağı tezgâha stok olarak dönmez (BUF-05)
     c.got = {};
   };
   function freeSeat(n: number): { t: number; seat: number } | null {
@@ -474,7 +474,8 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
       const faceTable = (ti: number, q: Vec2) => { const tb = rt.layout.tables[ti]; return tb ? Math.atan2(tb.x - q.x, tb.z - q.z) : c.rot; };
       write(c.agent, sit && sp ? sp.x : c.x, sit && sp ? sp.z : c.z, sit && sp && c.seat ? faceTable(c.seat.table, sp) : c.rot, sit);
       c.members.forEach((m, i) => {
-        if (sit && c.seat) { const t = rt.tables[c.seat.table]; const free = t.seats.map((s, k) => (s.occ === c.id && k !== c.seat!.seat ? k : -1)).filter(k => k >= 0); const q = free[i] != null ? seatPos(c.seat.table, free[i]) : null; if (q) { write(m, q.x, q.z, faceTable(c.seat.table, q), true); return; } }
+        // ana masanın VE birleştirilen ek masaların koltukları (eskiden yalnız ana masa: 6 kişilik grubun 4'ü ayakta kalıyordu)
+        if (sit && c.seat) { const ps = partySeats(c); const ps_i = ps[i]; const q = ps_i ? seatPos(ps_i.table, ps_i.seat) : null; if (q && ps_i) { write(m, q.x, q.z, faceTable(ps_i.table, q), true); return; } }
         const sd = (i % 2 ? 1 : -1) * 0.5, bk = -0.45 * (Math.floor(i / 2) + 1);
         write(m, c.x + Math.cos(c.rot) * sd + Math.sin(c.rot) * bk, c.z - Math.sin(c.rot) * sd + Math.cos(c.rot) * bk, c.rot, false);
       });

@@ -159,7 +159,7 @@ export function createPanels(deps: PanelsDeps): Panels {
     if ((m = fresh('dayCard'))) {
       v2.dayCard({ ...m, fix: m.fix ? { ...m.fix, onClick: () => send({ kind: 'acceptSolution' }) } : undefined });
     }
-    if ((m = fresh('solution'))) v2.solution({ ...m, onAccept: () => send({ kind: 'acceptSolution' }) });
+    if ((m = fresh('solution'))) v2.solution({ ...m, onAccept: () => send({ kind: 'acceptSolution' }), onLater: () => send({ kind: 'dismissSolution' }) });
     if ((m = fresh('welcomeBack'))) v2.welcomeBack({ ...m, onCollect: (doubled: boolean) => send({ kind: 'collectWelcome', doubled }) });
     if ((m = fresh('kasaSayimi'))) v2.kasaSayimi(m).then(() => send({ kind: 'skipCeremony' }));
   }

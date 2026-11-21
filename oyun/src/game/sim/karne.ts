@@ -98,7 +98,7 @@ export function installKarne(K: Kernel) {
     const brut = Math.round((TX.sales || 0) + ham.reduce((a, w) => a + w.maas, 0)), birimMaliyet = Math.round(TX.cost || 0);
     const yan = Math.round(T0.earned) - (brut - maas - birimMaliyet), salon = Math.round(TX.salonGelir || 0);
     // opsiyonel: işletme maaşları (DKN kolu) ve hijyen/müfettiş/Martı yıldızı (veri sonra gelir; yoksa kart satırı gizlenir)
-    const im = rt.uiLast.isletmeMaas as { gun?: number; toplam?: number; odenen?: number; satirlar?: { ad: string; tutar: number; odenen: boolean | number }[] } | undefined;
+    const im = rt.uiLast.isletmeMaas as { gun?: number; toplam?: number; odenen?: number; satirlar?: { ad: string; tutar: number; odenen: number }[] } | undefined;
     const hj = rt.uiLast.hijyenGun as { day?: number; not?: string | number; mufettis?: string; marti?: number } | undefined;
     const netKar = Math.round(T0.earned) - (gider ? gider.odenen : 0);
     if ((rt as unknown as { gunSonuCard?: boolean }).gunSonuCard) {
