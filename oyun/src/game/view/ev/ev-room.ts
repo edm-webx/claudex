@@ -75,8 +75,9 @@ export function createEvRoom(deps: EvRoomDeps): EvRoomView {
       renderer = createLookRenderer({ canvas, antialias: true, exposure: LOOK_POZ.ev, pixelRatioMax: 2 });
     } catch (e) { console.warn('[ev-room] no webgl', e); renderer = null; }
     scene = new T.Scene();
-    scene.add(new T.HemisphereLight('#fff4e0', '#7a5a40', 1.1));
-    const sun = new T.DirectionalLight('#fff1d6', 1.2); sun.position.set(4, 8, 6); scene.add(sun);
+    // GRS-01: under ACES the old 1.1 / 1.2 pushed the cream walls to white; same mood, no clipping
+    scene.add(new T.HemisphereLight('#fff4e0', '#7a5a40', 0.8));
+    const sun = new T.DirectionalLight('#fff1d6', 0.95); sun.position.set(4, 8, 6); scene.add(sun);
     cam = new T.OrthographicCamera(-4, 4, 3, -3, 0.1, 60);
     cam.position.set(7, 6.5, 8); cam.lookAt(0, 0.8, 0);
     roomKey = ''; uiKey = '';

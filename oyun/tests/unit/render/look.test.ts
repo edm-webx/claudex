@@ -55,7 +55,7 @@ describe('tek look tablosu (GRS-01)', () => {
   });
 
   it('bekçi: oyun içi renderer yalnızca createLookRenderer ile kurulur', () => {
-    for (const f of ['src/engine/render/index.ts', 'src/game/view/ev/ev-room.ts', 'src/game/ui/kulis.ts']) {
+    for (const f of ['src/engine/render/index.ts', 'src/game/view/ev/ev-room.ts', 'src/game/ui/kulis.ts', 'src/game/ui/hali-saha-3d.ts']) {
       const s = src(f);
       expect(s, f).not.toContain('new T.WebGLRenderer(');
       expect(s, f).toContain('createLookRenderer');
@@ -66,5 +66,10 @@ describe('tek look tablosu (GRS-01)', () => {
     const s = src('src/engine/ui/skin.ts');
     expect(s).not.toContain('canvas{filter');
     expect(s).not.toMatch(/createElement\('div'\).*sb-vig|id = 'sb-vig'/);
+  });
+
+  it('tabela ışığı tavanlı: gece emissive 0.60 üstüne çıkmaz', () => {
+    const s = src('src/game/view/world/karsi-bina.ts');
+    expect(s).toMatch(/emissiveIntensity = Math\.min\(0\.25 \+ nk \* 0\.4, 0\.6\)/);
   });
 });

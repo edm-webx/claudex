@@ -6,6 +6,7 @@
 // which matches the input mapping of the 2D game. Returns null when WebGL or the rigs are missing (2D fallback).
 import * as T from 'three';
 import { esnafHeroOpts } from '../sim/esnafim';
+import { createLookRenderer, LOOK_POZ } from '../../engine/render/look';
 
 interface HeroLike { object: T.Object3D; setPose(p: { x: number; z: number }, r: number): void; setInput(i: Record<string, unknown>): void; update(dt: number, a: number): void; dispose(): void }
 export interface Pl3 { x: number; y: number; vx: number; vy: number; fx: number; fy: number; team: 0 | 1; gk: boolean; stun: number }
@@ -25,10 +26,9 @@ export function createHaliSaha3D(o: {
   const { L, WD } = o;
   BOARDS = o.clubName ? [o.clubName.toUpperCase(), 'MARTIKART', o.rivalName ? o.rivalName.toUpperCase() : 'AYRANBEY', 'BOĞAZ GAZOZU', o.clubName.toUpperCase(), 'NARÇİÇEK', 'MARTI SU', o.clubName.toUpperCase()] : BOARDS_BASE;
   let ren: T.WebGLRenderer;
-  try { ren = new T.WebGLRenderer({ antialias: true }); } catch { return null; }
-  ren.setPixelRatio(Math.min(1.5, window.devicePixelRatio || 1));   // PRF-04: 1.5 instead of 2 = 44% fewer pixels to fill on retina screens (owner should eyeball the stands)
+  // GRS-01: one look (sRGB + ACES, exposure 0.85 so the floodlights do not blow out); PRF-04: pixel ratio 1.5 instead of 2 on retina
+  try { ren = createLookRenderer({ antialias: true, exposure: LOOK_POZ.halisaha, pixelRatioMax: 1.5 }); } catch { return null; }
   ren.shadowMap.enabled = true; ren.shadowMap.type = T.PCFSoftShadowMap;
-  ren.outputColorSpace = T.SRGBColorSpace; ren.toneMapping = T.ACESFilmicToneMapping; ren.toneMappingExposure = 0.85;   // same filmic grade as the main scene: floodlights must not blow out
   const cv = ren.domElement; cv.style.cssText = 'position:absolute;inset:0;width:100%;height:100%';
   o.wrap.insertBefore(cv, o.wrap.firstChild);
   const scene = new T.Scene(); scene.background = new T.Color('#16233a'); scene.fog = new T.Fog('#16233a', 45, 95);

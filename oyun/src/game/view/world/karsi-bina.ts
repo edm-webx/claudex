@@ -324,7 +324,7 @@ export function createKarsiBina(d: BinaDeps): BinaView {
       }
       const nk = d.night(); t += dt;
       if (glowMat) glowMat.opacity = Math.min(1, nk * 1.1) * 0.95;
-      for (const m of signMats) m.emissiveIntensity = 0.25 + nk * 0.5;
+      for (const m of signMats) m.emissiveIntensity = Math.min(0.25 + nk * 0.4, 0.6);   // GRS-01: ceiling, a lit sign must not swallow its own text (S-138)
       if (flag) { const p = flag.geometry.attributes.position as T.BufferAttribute; for (let i = 0; i < p.count; i++) { const x = p.getX(i) + 0.9; p.setZ(i, Math.sin(t * 3.2 + x * 2.4) * 0.12 * x); } p.needsUpdate = true; }
     },
     dispose() { holder.parent?.remove(holder); },
