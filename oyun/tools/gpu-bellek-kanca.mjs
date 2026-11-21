@@ -53,7 +53,7 @@ export function gpuBellekKanca() {
     let tb = 0; for (const v of buf.values()) tb += v;
     let ekran = 0; for (const c of document.querySelectorAll('canvas')) { const gl = c.__gl; if (c.width && c.height && gl !== undefined) ekran += c.width * c.height * 8; }
     list.sort((a, b) => b.mb - a.mb);
-    return { dokuMB: +(d / MB).toFixed(2), rbMB: +(rbB / MB).toFixed(2), tamponMB: +(tb / MB).toFixed(2), ekranMB: +(ekran / MB).toFixed(2), toplamMB: +((d + rbB + tb + ekran) / MB).toFixed(2), doku: tex.size, rb: rb.size, tampon: buf.size, enBuyuk: list.slice(0, n) };
+    return { dokuMB: +(d / MB).toFixed(2), rbMB: +(rbB / MB).toFixed(2), tamponMB: +(tb / MB).toFixed(2), ekranMB: +(ekran / MB).toFixed(2), toplamMB: +((d + rbB + tb + ekran) / MB).toFixed(2), doku: tex.size, rb: rb.size, tampon: buf.size, enBuyuk: list.slice(0, n), rbListe: [...rb.values()].filter(r => r.b).map(r => ({ w: r.w, h: r.h, ornek: r.s, mb: +(r.b / MB).toFixed(2) })) };
   };
   const gc0 = HTMLCanvasElement.prototype.getContext;
   HTMLCanvasElement.prototype.getContext = function (t, ...a) { const c = gc0.call(this, t, ...a); if (c && /webgl/.test(t)) this.__gl = c; return c; };

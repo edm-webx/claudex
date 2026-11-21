@@ -107,7 +107,7 @@ function buildSet(scene: T.Scene, lowGpu: boolean) {
   add(new T.BoxGeometry(0.75, 0.08, 1.7), wood, -2.85, 0.82, -0.1);
   for (const z of [-0.85, 0.65]) add(new T.BoxGeometry(0.6, 0.8, 0.08), wood, -2.85, 0.41, z);
   add(new T.BoxGeometry(0.12, 1.55, 1.45), dark, -3.25, 1.75, -0.1);
-  const mirror = new Reflector(new T.PlaneGeometry(1.2, 1.3), { textureWidth: lowGpu ? 512 : 1024, textureHeight: lowGpu ? 512 : 1024, color: new T.Color('#c9d6dc'), clipBias: 0.003 });
+  const mirror = new Reflector(new T.PlaneGeometry(1.2, 1.3), { textureWidth: lowGpu ? 512 : 1024, textureHeight: lowGpu ? 512 : 1024, color: new T.Color('#c9d6dc'), clipBias: 0.003, multisample: 0 });   // MSAA x4 half-float at 1024² was 48 MB of renderbuffer for a 1.2 m mirror; the sampled texture needs none
   mirror.position.set(-3.18, 1.75, -0.1); mirror.rotation.y = Math.PI / 2; scene.add(mirror);
   const bulbM = M('#fff4cf', { emissive: '#ffe08a', emissiveIntensity: 1.6 });
   const bulb = new T.SphereGeometry(0.045, 10, 8);

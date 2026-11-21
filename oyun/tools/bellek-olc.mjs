@@ -49,7 +49,7 @@ await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=${tier
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 120000 });
 const hazirMs = Date.now() - t0;
 await p.evaluate(() => { const M = window.__marti; M.play('sabri'); M.renderFrames(2, 0.1); });
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(700); }
+const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(700); } await p.evaluate(() => { const M = window.__marti; M.command({ kind: 'esnafim', op: 'set', data: { ad: 'Olcum' } }); M.command({ kind: 'esnafim', op: 'done' }); M.renderFrames(2, 0.1); });   // ad zorunlu (UX-15): boş adla kl-go kulisi kapatmaz, kulis bağlamı ölçüme karışır
 await p.evaluate(() => { const M = window.__marti; M.simCmd('money', 9e9); M.simCmd('level', 40); });
 const settle = n => p.evaluate(n => { for (let k = 0; k < n; k++) window.__marti.renderFrames(2, 0.1); }, n);
 const sample = () => p.evaluate(() => { try { gc(); } catch { /* */ } const M = window.__marti, i = M.info(), g = window.__gpuBellek(6); return { gpuMB: g.toplamMB, dokuMB: g.dokuMB, rbMB: g.rbMB, tamponMB: g.tamponMB, glDoku: g.doku, glTampon: g.tampon, geos: i.geos, texs: i.texs, programs: i.programs, calls: i.calls, heapMB: +(performance.memory.usedJSHeapSize / 1048576).toFixed(1), dom: document.getElementsByTagName('*').length, enBuyuk: g.enBuyuk }; });

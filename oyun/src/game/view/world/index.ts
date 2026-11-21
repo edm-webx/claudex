@@ -428,7 +428,7 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
     const U = (h.sea?.material as T.ShaderMaterial | undefined)?.uniforms;
     if (U) {
       const el = t.el, az = t.az, sunDir = _sunDir.set(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el)).normalize();
-      U.uDeep.value.copy(t.deep); U.uShallow.value.copy(t.sh); U.uSky.value.copy(t.sky2); U.uSunCol.value.copy(t.sun); U.uSunDir.value.copy(sunDir); U.uNight.value = night;
+      U.uDeep.value.copy(t.deep); U.uShallow.value.copy(t.sh); U.uSky.value.copy(t.sky2); U.uSunCol.value.copy(t.sun); U.uSunDir.value.copy(sunDir); U.uNight.value = night; if (U.uSunI) U.uSunI.value = Math.min(1, t.si / 1.9);
     }
     setZeminSky(t.sky2);   // GRS-05: wet ground sheen reflects the current sky
     applyNight();
