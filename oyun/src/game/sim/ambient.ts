@@ -62,6 +62,8 @@ const DEFAULT_AREA: Rect = { x0: -16, z0: -13, x1: 16, z1: 10 };
 const G_RUN = GAIT_ORDER.indexOf('run');
 const Z_KARSI = ZONE_ORDER.indexOf('karsi');
 const MOVE_SOLID = { solids: true };
+/** BUF-25: seconds of game time for hunger to go 0 -> 1 at average appetite */
+const AC_SURE = 150;
 
 interface Walker {
   slot: number; zone: string; state: number; t: number; path: Vec2[]; wp: number; seat: number; speed: number; exit: boolean;
@@ -70,6 +72,7 @@ interface Walker {
   dog?: { x: number; z: number; rot: number; speed: number; ad: number } | null; dinle?: number; gizli?: boolean;
   /** sokak: seconds of free stepping (no grid collision): getting up from a bench, out of a corner; tries = unstick count on this path */
   free?: number; tries?: number;
+  /** BUF-25: hunger 0..1+, rises with game time; >= 1 = wants to eat at a shop */ ac?: number; acHiz?: number;
 }
 
 /** View-facing street state per agent slot (DNY-02/19): role, umbrella, dog follower. Read by view/disari/sokak-look.ts. */
@@ -491,6 +494,8 @@ export function createAmbient(deps: AmbientDeps): AmbientSystem {
             if (w.state === S_WALK) { w.path = []; w.wp = 0; w.varis = A_IDLE; w.kal = 0.1; w.oturak = null; } else w.t = Math.min(w.t, 0);
           }
         }
+        if (w.ac === undefined) { w.acHiz = rng.range(0.6, 1.4); w.ac = rng.range(0, 0.6); }   // BUF-25: each citizen has own appetite, deterministic (ambient stream)
+        w.ac += sdt * w.acHiz! / AC_SURE;
         w.t -= sdt;
         if (w.state === S_PAUSE || w.state === S_SIT) {
           SP[i] = 0;
@@ -657,6 +662,27 @@ export function createAmbient(deps: AmbientDeps): AmbientSystem {
         return slot;
       }
       return -1;
+    },
+    recruitHungry(near, maxD) {
+      const s = store;
+      if (!s || !sokak) return -1;
+      const X = s.f32('x'), Z = s.f32('z'), flags = s.u16('flags');
+      let best = -1, bd = maxD;
+      // nearest hungry citizen out on the street (not inside, not hidden far away, not a street role, not in a queue/seat); ties by slot
+      for (const slot of [...walkers.keys()].sort((a, b) => a - b)) {
+        const w = walkers.get(slot)!;
+        if (w.state === S_IN || w.gizli || (w.rol ?? -1) >= 0 || w.dog || (w.ac ?? 0) < 1 || (flags[slot] & AGENT_FLAG.scenery)) continue;
+        if (CITIZENS[s.u8('typeId')[slot]]?.scenery) continue;
+        const d = Math.hypot(X[slot] - near.x, Z[slot] - near.z);
+        if (d < bd) { bd = d; best = slot; }
+      }
+      if (best < 0) return -1;
+      const w = walkers.get(best)!;
+      releaseSeat(w); walkers.delete(best); recruited.add(best);
+      flags[best] = (flags[best] & ~(AGENT_FLAG.ambient | AGENT_FLAG.seated)) | AGENT_FLAG.visible;
+      s.u8('act')[best] = A_IDLE; s.f32('speed')[best] = 0;
+      if (durum) { durum.rol[best] = 0; durum.semsiye[best] = 0; }
+      return best;
     },
     release(agent) {
       const s = store;
