@@ -59,7 +59,7 @@ export function createAmbiyans(d: AmbiyansDeps): Ambiyans {
   const lis: Vec2 = { x: 0, z: 0 };
   const agirlik = new Map<string, { g: GainNode; cur: number }>();
   let timer: ReturnType<typeof setInterval> | null = null, imza = '';
-  let gokGorsel = false; const gokBekle: { t: number; vol: number }[] = [];
+  let gokGorsel = false, gokSon = 0; const gokBekle: { t: number; vol: number }[] = [];
   let hizliT = -1e9, nextOlay = 0, nextGok = 0, bagKey = '', bag: Canta<AmbOlay> | null = null;
   const log: { id: string; vol: number }[] = [];
   let canliPos: Vec2 | null = null, canliSon = -1e9, canliK: { g: GainNode; p: StereoPannerNode; src: AudioBufferSourceNode | null; cur: number } | null = null;
@@ -95,6 +95,7 @@ export function createAmbiyans(d: AmbiyansDeps): Ambiyans {
     const b = ambBolge(zone), e = evreIdx(phase), day = e < 2, dis = d.disarida();
     // şimşek görsel olarak bildirildiyse gürültü onu izler (1-4 sn, uzaktaysa kısık); yoksa seyrek rastgele (H-054)
     for (let i = gokBekle.length - 1; i >= 0; i--) if (t >= gokBekle[i].t) { const g = gokBekle.splice(i, 1)[0]; if (weather !== 'acik') fire({ id: 'thunder', vol: (dis ? 0.65 : 0.2) * g.vol, evre: [1, 1, 1, 1] }, t, day); }
+    if (gokGorsel && t - gokSon > 75) gokGorsel = false;   // şimşek uzun süredir bildirilmedi: rastgele gürültü geri açılır
     if (!gokGorsel && weather === 'firtina' && t >= nextGok) {
       nextGok = t + range(25, 60);
       fire({ id: 'thunder', vol: dis ? 0.6 : 0.2, evre: [1, 1, 1, 1] }, t, day);
@@ -175,7 +176,7 @@ export function createAmbiyans(d: AmbiyansDeps): Ambiyans {
     setWeather(w) { weather = w; },
     setListener(p) { lis.x = p.x; lis.z = p.z; },
     kazanc(id, fallback) { const w = katmanAgirlik(zone, phase, lis)[id]; return agirlik.has(id) || w || tabloDongu.has(id) ? node(id, w ?? 0).g : fallback; },
-    simsek() { gokGorsel = true; const dly = range(1, 4); gokBekle.push({ t: now() + dly, vol: 1 - 0.1 * dly }); if (gokBekle.length > 3) gokBekle.shift(); },
+    simsek() { gokGorsel = true; gokSon = now(); const dly = range(1, 4); gokBekle.push({ t: now() + dly, vol: 1 - 0.1 * dly }); if (gokBekle.length > 3) gokBekle.shift(); },
     canli(p) { canliPos = { x: p.x, z: p.z }; canliSon = now(); },
     aktif() { const o: Record<string, number> = {}; for (const [id, n] of agirlik) if (n.cur > 0) o[id] = +n.cur.toFixed(3); if (canliK) o.canli = +canliK.cur.toFixed(3); return o; },
     olaylar: () => log.slice(),

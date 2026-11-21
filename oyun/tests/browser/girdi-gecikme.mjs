@@ -11,7 +11,7 @@ const p = await (await b.newContext({ viewport: { width: 640, height: 360 } })).
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=akici&seed=3`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 90000 });
 await p.evaluate(() => window.__marti.play('sabri'));
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(500); }
+const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const ad = await p.$('input[name="ad"]'); if (ad) await ad.fill('Olcum'); await go.click({ force: true }); await p.waitForTimeout(500); }
 await p.evaluate(() => { const M = window.__marti; M.command({ kind: 'esnafim', op: 'done' }); M.setTime(13); M.step(2); });
 for (const hz of [60, 144, 30]) {
   const res = await p.evaluate(hz => {

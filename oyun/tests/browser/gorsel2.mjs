@@ -44,7 +44,7 @@ async function page(tier, extra) {
   await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=${tier}&seed=3${extra.noao ? '&noao=1' : ''}`);
   await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 180000 });
   await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-  const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(500); }
+  const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const ad = await p.$('input[name="ad"]'); if (ad) await ad.fill('Olcum'); await go.click({ force: true }); await p.waitForTimeout(500); }
   await p.evaluate((st) => { const M = window.__marti; M.command({ kind: 'esnafim', op: 'done' }); M.setStage(st); M.step(1); }, extra.stage || 3);
   await p.waitForTimeout(4000);
   await p.evaluate(() => { const M = window.__marti; M.camera({ tilt: -10 }); for (let k = 0; k < 30; k++) M.renderFrames(1, 0.1); });   // let the intro camera finish

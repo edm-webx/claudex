@@ -70,21 +70,22 @@ export function createCameraRig(deps: CameraDeps): MotorCameraRig {
     set zoom(z: number) { if (!fpv) CAM.zoom = clamp(+z || 1, ZOOM_MIN, ZOOM_MAX); },
     get introLeft() { return CAM.intro; },
     get yaw() { return yaw; },
-    turn(delta: number) { if (!fpv) yaw += delta; },
+    turn(delta: number) { if (!fpv && isFinite(delta)) { yawTo = null; yaw += delta; } },
     nearFixed(v) { nearPin = v; },
     /** dev/screenshot only: zoom without the ZOOM_MAX clamp */
     zoomRaw(z: number) { CAM.zoom = z; },
     fp(v) { if (!v && fpv) snapNext = true; fpv = v; },
     tilt(delta: number) { if (fpv) return; tiltTo = null; tilt = clamp(tilt + delta, PITCH_MIN - CAM.pitch, PITCH_MAX - CAM.pitch); },
     recenter() { if (fpv) return; yawTo = Math.round(yaw / (Math.PI * 2)) * Math.PI * 2; tiltTo = 0; },
-    follow(t: Vec2) { target.x = t.x; target.z = t.z; target.y = (t as { y?: number }).y || 0; },
-    snap(t: Vec2) { target.x = t.x; target.z = t.z; CAM.x = t.x; CAM.z = t.z; snapNext = true; },
+    follow(t: Vec2) { if (!isFinite(t.x) || !isFinite(t.z)) return; target.x = t.x; target.z = t.z; target.y = (t as { y?: number }).y || 0; },
+    snap(t: Vec2) { if (!isFinite(t.x) || !isFinite(t.z)) return; target.x = t.x; target.z = t.z; CAM.x = t.x; CAM.z = t.z; snapNext = true; },
     pan(at: Vec2, dur?: number) {
       if (pan) pan.resolve();
       return new Promise<void>(resolve => { pan = { x: at.x, z: at.z, t: 0, dur: Math.min(2, Math.max(1.2, dur || 1.6)), resolve }; });
     },
     intro(seconds = 3.2) {
       if (introResolve) introResolve();
+      if (!(seconds > 0)) { introResolve = null; CAM.intro = 0; return Promise.resolve(); }
       CAM.intro = seconds; CAM.introTotal = Math.max(0.01, seconds);
       return new Promise<void>(resolve => { introResolve = resolve; });
     },
@@ -92,6 +93,7 @@ export function createCameraRig(deps: CameraDeps): MotorCameraRig {
     setAspect(a: number) { if (a > 0 && isFinite(a)) { camera.aspect = a; camera.updateProjectionMatrix(); } },
     distance: baseDist,
     update(dt: number) {
+      dt = dt > 0 ? Math.min(dt, 0.25) : 0;   // NaN/negatif dt kamerayı kalıcı bozmasın
       if (fpv) {
         const p = fpv.pitch ?? -0.12;
         setNear(0.05);

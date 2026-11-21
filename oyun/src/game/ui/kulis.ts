@@ -266,6 +266,7 @@ ${e.sapka ? `<div class="kl-l">Şapka rengi</div>${sw('sapkaRenk', COLS, e.sapka
       gozAra: pick(['yakin', 'orta', 'uzak']), gozY: pick(['yukari', 'orta', 'asagi']), burun: pick(['kucuk', 'orta', 'iri', 'uzun']), agiz: pick(['dar', 'orta', 'genis']), kulak: pick(['kucuk', 'orta', 'kepce']), cil: Math.random() < 0.25, gamze: Math.random() < 0.3,
       sinif: s.id, ...s.kit,
     };
+    if (d.tip === 'b') { d.biyik = 'yok'; d.sakalStil = 'yok'; d.sakal = false; }   // kadın bedeninde bıyık/sakal üretme
     set(d);
   }
 
@@ -286,7 +287,7 @@ ${e.sapka ? `<div class="kl-l">Şapka rengi</div>${sw('sapkaRenk', COLS, e.sapka
     panel.addEventListener('click', e => {
       const el = (e.target as HTMLElement).closest('button') as HTMLButtonElement | null; if (!el || !m) return;
       if (el.dataset.go) { finish(); return; }
-      if (el.dataset.tab) { tab = el.dataset.tab as Tab; spin = 0; tap(); paint(); return; }
+      if (el.dataset.tab) { tab = el.dataset.tab as Tab; spin = 0; tap(); paint(); const kb = panel?.querySelector('.kl-b'); if (kb) kb.scrollTop = 0; return; }
       if (el.dataset.avm) {
         const g = AVM_GIY[el.dataset.avm];
         if (g) {

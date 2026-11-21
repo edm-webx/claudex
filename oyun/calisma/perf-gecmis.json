@@ -51,5 +51,58 @@
    "distMB": 6.443,
    "dosya": 31
   }
+ },
+ {
+  "surum": "060b172",
+  "tarih": "2026-11-21T20:45",
+  "ozet": {
+   "akici": {
+    "calls": 189,
+    "_calls": "karsi-yaka",
+    "tris": 422366,
+    "_tris": "avm-ici",
+    "programs": 101,
+    "_programs": "avm-ici",
+    "geos": 350,
+    "_geos": "avm-ici",
+    "texs": 137,
+    "_texs": "avm-ici",
+    "heapMB": 105.1,
+    "_heapMB": "avm-ici"
+   },
+   "dengeli": {
+    "calls": 237,
+    "_calls": "avm-ici",
+    "tris": 536505,
+    "_tris": "avm-ici",
+    "programs": 113,
+    "_programs": "avm-ici",
+    "geos": 398,
+    "_geos": "avm-ici",
+    "texs": 149,
+    "_texs": "avm-ici",
+    "heapMB": 105.3,
+    "_heapMB": "avm-ici"
+   },
+   "sahane": {
+    "calls": 237,
+    "_calls": "avm-ici",
+    "tris": 543261,
+    "_tris": "avm-ici",
+    "programs": 113,
+    "_programs": "avm-ici",
+    "geos": 397,
+    "_geos": "avm-ici",
+    "texs": 149,
+    "_texs": "avm-ici",
+    "heapMB": 105.5,
+    "_heapMB": "avm-ici"
+   }
+  },
+  "boyut": {
+   "gameJsMB": 2.796,
+   "distMB": 5.131,
+   "dosya": 31
+  }
  }
 ]

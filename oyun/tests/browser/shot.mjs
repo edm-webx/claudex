@@ -10,7 +10,7 @@ const errs = []; p.on('pageerror', e => errs.push(e.message));
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengeli&seed=3`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 60000 });
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(700); }
+const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const ad = await p.$('input[name="ad"]'); if (ad) await ad.fill('Olcum'); await go.click({ force: true }); await p.waitForTimeout(700); }
 await p.evaluate(t => { const M = window.__marti; if (t) M.setTime(+t); M.step(2); }, flag('time'));
 if (nums.length >= 2) await p.evaluate(([x, z]) => window.__marti.teleport(x, z), nums);
 if (flag('steps')) await p.evaluate(n => { for (let i = 0; i < +n; i++) { window.__marti.step(1); if (i % 20 === 0) window.__marti.renderFrames(1, 0.05); } }, flag('steps'));

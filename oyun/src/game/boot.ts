@@ -273,7 +273,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   input.setPicker(p => R.pick(p));
   let unlocked = false;
   const unlock = () => { if (unlocked) return; unlocked = true; make('audio.unlock', () => { audio?.unlock(); return true; }); };
-  canvas.addEventListener('pointerdown', unlock); window.addEventListener('keydown', unlock);
+  for (const ev of ['pointerdown', 'keydown', 'touchend'] as const) window.addEventListener(ev, unlock, { capture: true, once: true });   // DOM kaplamalar (Oyna/giriş kartı) canvas'ı örter: pencere düzeyinde yakala
 
   // ── save + sim (A's createGameSave over the engine store; the sim ref is late-bound)
   const seed = params.seed ?? (params.parity ? 1 : undefined);
@@ -514,7 +514,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     setMevsim: k => mevsimZorla(k),
     setMuted: m => { sim.state.settings.muted = m; if (audio) for (const b of Object.values(audio.buses)) (b as { muted: boolean }).muted = m; } })) : null;
   // J2: back to the slot screen (save first, then sign out and reload: the login screen opens again)
-  window.addEventListener('martikoy:karakter', () => { void (async () => { try { if (hesap() && saveOn()) { const code = await save.exportCode(); await bulutYaz(code, sim.state.playT || 0, esnafimSave(sim.state), sim.state.level || 1); } await cikisYap(); } finally { location.reload(); } })(); });
+  window.addEventListener('martikoy:karakter', () => { void (async () => { try { if (hesap() && saveOn()) { const code = await save.exportCode(); await bulutYaz(code, sim.state.playT || 0, esnafimSave(sim.state), sim.state.level || 1); } await cikisYap(); } catch (e) { console.warn('[karakter] çıkış/bulut yazımı başarısız', e); } finally { location.reload(); } })(); });
   let bulutT = 45;
   // KAL-01: bulut yazımı durum makinesinden geçer (rozet, yeniden deneme, çevrimdışı); sonuç sunucu onayıdır
   const kayitD = createKayitDurum({
