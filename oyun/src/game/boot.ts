@@ -85,7 +85,8 @@ import { esnafHeroOpts, esnafimSave } from './sim/esnafim';
 import { createOnline } from './online';
 import { createAdminPanel } from './ui/admin-panel';
 import { PAD_KEYS } from '../content/pads';
-import { regionAt } from '../content/disari/martikoy';
+import { regionAt, REGIONS } from '../content/disari/martikoy';
+import { realmAt } from '../content/realm';
 import { createHaliSaha } from './ui/hali-saha';
 import { createOrmanView } from './view/orman';
 import { createOtobusHud } from './ui/otobus-hud';
@@ -631,6 +632,8 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     lerpPose(walk, alpha, pose);
     simT += fdt;
     if (zones) guard('zones', () => { P.begin('zones.build'); zones.update(pos, cam.frustum()); P.end('zones.build'); });
+    // 2026-11-21 denetim: kapalı diyarda (stadyum / orman) komşu bölgenin tezgâhları zeminsiz, boşlukta havada görünüyordu: diyar dışı bölge çizilmez
+    if (zones) guard('zones.diyar', () => { const rl = realmAt(pos.x); for (const rg of REGIONS) { const root = zones.root(rg.zone); if (root) root.visible = !rl || (rg.x0 >= rl.x0 && rg.x1 <= rl.x1); } });
     const df = sim.rules.rt.uiLast.decorFocus as { x: number; z: number; until: number } | undefined;   // Faz 2: show a bought decor item
     if (df && !(df as AnyRec).sparked) { (df as AnyRec).sparked = true; try { (W as unknown as { sparkle?(p: unknown, n?: number, c?: string): void }).sparkle?.({ x: df.x, y: 1.0, z: df.z }, 40, '#ffd23f'); } catch { /* */ } }
     if (df && sim.state.playT > df.until) { delete sim.rules.rt.uiLast.decorFocus; if ((df as AnyRec).reopen) cmd('openPanel', { id: 'dekor' }); }
