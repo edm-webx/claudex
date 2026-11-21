@@ -1,0 +1,546 @@
+{
+ "iskele-11-akici": {
+  "ortY": 134.08,
+  "p98": 216,
+  "kirpik": 0,
+  "pastel": 0.0888,
+  "doyg": 0.3901,
+  "lab": [
+   56.01,
+   -2.6,
+   10.75
+  ],
+  "etiket": [],
+  "filtre": {
+   "filter": "saturate(1.06) contrast(1.04)",
+   "vig": true
+  }
+ },
+ "iskele-17-akici": {
+  "ortY": 110.55,
+  "p98": 194,
+  "kirpik": 0,
+  "pastel": 0.1376,
+  "doyg": 0.5383,
+  "lab": [
+   46.88,
+   3.93,
+   14.3
+  ],
+  "etiket": [],
+  "filtre": {
+   "filter": "saturate(1.06) contrast(1.04)",
+   "vig": true
+  }
+ },
+ "iskele-18_5-akici": {
+  "ortY": 78.21,
+  "p98": 168,
+  "kirpik": 0,
+  "pastel": 0.0115,
+  "doyg": 0.6562,
+  "lab": [
+   33.66,
+   8.73,
+   11.19
+  ],
+  "etiket": [],
+  "filtre": {
+   "filter": "saturate(1.06) contrast(1.04)",
+   "vig": true
+  }
+ },
+ "iskele-22-akici": {
+  "ortY": 45.86,
+  "p98": 183,
+  "kirpik": 0.0136,
+  "pastel": 0.0113,
+  "doyg": 0.6189,
+  "lab": [
+   18.95,
+   3.47,
+   -9.35
+  ],
+  "etiket": [],
+  "filtre": {
+   "filter": "saturate(1.06) contrast(1.04)",
+   "vig": true
+  }
+ },
+ "karsi-11-akici": {
+  "ortY": 103.43,
+  "p98": 208,
+  "kirpik": 0,
+  "pastel": 0.043,
+  "doyg": 0.5145,
+  "lab": [
+   44,
+   -3.39,
+   20.72
+  ],
+  "etiket": [],
+  "filtre": {
+   "filter": "saturate(1.06) contrast(1.04)",
+   "vig": true
+  }
+ },
+ "karsi-17-akici": {
+  "ortY": 76.14,
+  "p98": 174,
+  "kirpik": 0,
+  "pastel": 0.0037,
+  "doyg": 0.6729,
+  "lab": [
+   32.96,
+   4.93,
+   23.23
+  ],
+  "etiket": [],
+  "filtre": {
+   "filter": "saturate(1.06) contrast(1.04)",
+   "vig": true
+  }
+ },
+ "karsi-18_5-akici": {
+  "ortY": 42.25,
+  "p98": 120,
+  "kirpik": 0,
+  "pastel": 0.0008,
+  "doyg": 0.8082,
+  "lab": [
+   18.22,
+   11.21,
+   18.58
+  ],
+  "etiket": [],
+  "filtre": {
+   "filter": "saturate(1.06) contrast(1.04)",
+   "vig": true
+  }
+ },
+ "karsi-22-akici": {
+  "ortY": 15.99,
+  "p98": 60,
+  "kirpik": 0,
+  "pastel": 0.005,
+  "doyg": 0.6102,
+  "lab": [
+   4.77,
+   1.36,
+   -7.15
+  ],
+  "etiket": [],
+  "filtre": {
+   "filter": "saturate(1.06) contrast(1.04)",
+   "vig": true
+  }
+ },
+ "stadyum-11-akici": {
+  "ortY": 146.65,
+  "p98": 203,
+  "kirpik": 0,
+  "pastel": 0.3805,
+  "doyg": 0.3989,
+  "lab": [
+   61.12,
+   -17.1,
+   13.68
+  ],
+  "etiket": [],
+  "filtre": {
+   "filter": "saturate(1.06) contrast(1.04)",
+   "vig": true
+  }
+ },
+ "stadyum-17-akici": {
+  "ortY": 124.71,
+  "p98": 194,
+  "kirpik": 0,
+  "pastel": 0.0027,
+  "doyg": 0.4698,
+  "lab": [
+   52.4,
+   -5.21,
+   15.83
+  ],
+  "etiket": [],
+  "filtre": {
+   "filter": "saturate(1.06) contrast(1.04)",
+   "vig": true
+  }
+ },
+ "stadyum-18_5-akici": {
+  "ortY": 86.97,
+  "p98": 157,
+  "kirpik": 0,
+  "pastel": 0.3789,
+  "doyg": 0.6615,
+  "lab": [
+   37.71,
+   11.73,
+   17.9
+  ],
+  "etiket": [],
+  "filtre": {
+   "filter": "saturate(1.06) contrast(1.04)",
+   "vig": true
+  }
+ },
+ "stadyum-22-akici": {
+  "ortY": 21.77,
+  "p98": 90,
+  "kirpik": 0,
+  "pastel": 0.0006,
+  "doyg": 0.7817,
+  "lab": [
+   7.47,
+   2.75,
+   -12.96
+  ],
+  "etiket": [],
+  "filtre": {
+   "filter": "saturate(1.06) contrast(1.04)",
+   "vig": true
+  }
+ },
+ "orman-11-akici": {
+  "ortY": 135.91,
+  "p98": 203,
+  "kirpik": 0,
+  "pastel": 0.3674,
+  "doyg": 0.5297,
+  "lab": [
+   57,
+   -16.67,
+   20.18
+  ],
+  "etiket": [],
+  "filtre": {
+   "filter": "saturate(1.06) contrast(1.04)",
+   "vig": true
+  }
+ },
+ "orman-17-akici": {
+  "ortY": 116.95,
+  "p98": 194,
+  "kirpik": 0.0013,
+  "pastel": 0.0007,
+  "doyg": 0.5635,
+  "lab": [
+   49.41,
+   -4.9,
+   20.2
+  ],
+  "etiket": [],
+  "filtre": {
+   "filter": "saturate(1.06) contrast(1.04)",
+   "vig": true
+  }
+ },
+ "orman-18_5-akici": {
+  "ortY": 81.89,
+  "p98": 157,
+  "kirpik": 0.003,
+  "pastel": 0.3672,
+  "doyg": 0.7263,
+  "lab": [
+   35.62,
+   11.41,
+   19.51
+  ],
+  "etiket": [],
+  "filtre": {
+   "filter": "saturate(1.06) contrast(1.04)",
+   "vig": true
+  }
+ },
+ "orman-22-akici": {
+  "ortY": 9.47,
+  "p98": 18,
+  "kirpik": 0,
+  "pastel": 0,
+  "doyg": 0.8327,
+  "lab": [
+   2.75,
+   1.44,
+   -9.6
+  ],
+  "etiket": [],
+  "filtre": {
+   "filter": "saturate(1.06) contrast(1.04)",
+   "vig": true
+  }
+ },
+ "iskele-11-dengeli": {
+  "ortY": 125.53,
+  "p98": 210,
+  "kirpik": 0,
+  "pastel": 0.0367,
+  "doyg": 0.4109,
+  "lab": [
+   52.67,
+   -2.77,
+   10.79
+  ],
+  "etiket": [],
+  "filtre": {
+   "filter": "saturate(1.06) contrast(1.04)",
+   "vig": true
+  }
+ },
+ "iskele-17-dengeli": {
+  "ortY": 102.36,
+  "p98": 187,
+  "kirpik": 0,
+  "pastel": 0.0299,
+  "doyg": 0.5779,
+  "lab": [
+   43.6,
+   4.29,
+   15.27
+  ],
+  "etiket": [],
+  "filtre": {
+   "filter": "saturate(1.06) contrast(1.04)",
+   "vig": true
+  }
+ },
+ "iskele-18_5-dengeli": {
+  "ortY": 71.55,
+  "p98": 158,
+  "kirpik": 0,
+  "pastel": 0.0081,
+  "doyg": 0.7213,
+  "lab": [
+   31.02,
+   10.54,
+   14.53
+  ],
+  "etiket": [],
+  "filtre": {
+   "filter": "saturate(1.06) contrast(1.04)",
+   "vig": true
+  }
+ },
+ "iskele-22-dengeli": {
+  "ortY": 46.44,
+  "p98": 180,
+  "kirpik": 0.0002,
+  "pastel": 0.0164,
+  "doyg": 0.6142,
+  "lab": [
+   19.2,
+   4.17,
+   -7.91
+  ],
+  "etiket": [],
+  "filtre": {
+   "filter": "saturate(1.06) contrast(1.04)",
+   "vig": true
+  }
+ },
+ "karsi-11-dengeli": {
+  "ortY": 95.38,
+  "p98": 203,
+  "kirpik": 0,
+  "pastel": 0.0302,
+  "doyg": 0.5515,
+  "lab": [
+   40.72,
+   -3.33,
+   20.96
+  ],
+  "etiket": [],
+  "filtre": {
+   "filter": "saturate(1.06) contrast(1.04)",
+   "vig": true
+  }
+ },
+ "karsi-17-dengeli": {
+  "ortY": 67.11,
+  "p98": 171,
+  "kirpik": 0,
+  "pastel": 0.0168,
+  "doyg": 0.705,
+  "lab": [
+   29.09,
+   5.31,
+   22.84
+  ],
+  "etiket": [],
+  "filtre": {
+   "filter": "saturate(1.06) contrast(1.04)",
+   "vig": true
+  }
+ },
+ "karsi-18_5-dengeli": {
+  "ortY": 36.32,
+  "p98": 120,
+  "kirpik": 0.0001,
+  "pastel": 0.0008,
+  "doyg": 0.8446,
+  "lab": [
+   15.47,
+   11.45,
+   17.58
+  ],
+  "etiket": [],
+  "filtre": {
+   "filter": "saturate(1.06) contrast(1.04)",
+   "vig": true
+  }
+ },
+ "karsi-22-dengeli": {
+  "ortY": 12.01,
+  "p98": 54,
+  "kirpik": 0,
+  "pastel": 0.0038,
+  "doyg": 0.6942,
+  "lab": [
+   3.41,
+   1.47,
+   -6.19
+  ],
+  "etiket": [],
+  "filtre": {
+   "filter": "saturate(1.06) contrast(1.04)",
+   "vig": true
+  }
+ },
+ "stadyum-11-dengeli": {
+  "ortY": 141.3,
+  "p98": 204,
+  "kirpik": 0,
+  "pastel": 0.2976,
+  "doyg": 0.4282,
+  "lab": [
+   59.08,
+   -17.24,
+   14.43
+  ],
+  "etiket": [],
+  "filtre": {
+   "filter": "saturate(1.06) contrast(1.04)",
+   "vig": true
+  }
+ },
+ "stadyum-17-dengeli": {
+  "ortY": 120.4,
+  "p98": 197,
+  "kirpik": 0,
+  "pastel": 0.2491,
+  "doyg": 0.5006,
+  "lab": [
+   50.73,
+   -4.5,
+   17.54
+  ],
+  "etiket": [],
+  "filtre": {
+   "filter": "saturate(1.06) contrast(1.04)",
+   "vig": true
+  }
+ },
+ "stadyum-18_5-dengeli": {
+  "ortY": 82.95,
+  "p98": 159,
+  "kirpik": 0,
+  "pastel": 0.3574,
+  "doyg": 0.7181,
+  "lab": [
+   36.37,
+   14.9,
+   21.01
+  ],
+  "etiket": [],
+  "filtre": {
+   "filter": "saturate(1.06) contrast(1.04)",
+   "vig": true
+  }
+ },
+ "stadyum-22-dengeli": {
+  "ortY": 17.48,
+  "p98": 83,
+  "kirpik": 0,
+  "pastel": 0.0004,
+  "doyg": 0.7857,
+  "lab": [
+   5.57,
+   3.87,
+   -13.81
+  ],
+  "etiket": [],
+  "filtre": {
+   "filter": "saturate(1.06) contrast(1.04)",
+   "vig": true
+  }
+ },
+ "orman-11-dengeli": {
+  "ortY": 131.12,
+  "p98": 204,
+  "kirpik": 0,
+  "pastel": 0.2819,
+  "doyg": 0.5632,
+  "lab": [
+   55.16,
+   -16.77,
+   21.71
+  ],
+  "etiket": [],
+  "filtre": {
+   "filter": "saturate(1.06) contrast(1.04)",
+   "vig": true
+  }
+ },
+ "orman-17-dengeli": {
+  "ortY": 114.46,
+  "p98": 197,
+  "kirpik": 0,
+  "pastel": 0.2306,
+  "doyg": 0.6002,
+  "lab": [
+   48.48,
+   -4.3,
+   22.95
+  ],
+  "etiket": [],
+  "filtre": {
+   "filter": "saturate(1.06) contrast(1.04)",
+   "vig": true
+  }
+ },
+ "orman-18_5-dengeli": {
+  "ortY": 81.7,
+  "p98": 159,
+  "kirpik": 0,
+  "pastel": 0.346,
+  "doyg": 0.7675,
+  "lab": [
+   35.86,
+   13.98,
+   23.2
+  ],
+  "etiket": [],
+  "filtre": {
+   "filter": "saturate(1.06) contrast(1.04)",
+   "vig": true
+  }
+ },
+ "orman-22-dengeli": {
+  "ortY": 7.39,
+  "p98": 28,
+  "kirpik": 0,
+  "pastel": 0,
+  "doyg": 0.8255,
+  "lab": [
+   2.13,
+   1.98,
+   -8.36
+  ],
+  "etiket": [],
+  "filtre": {
+   "filter": "saturate(1.06) contrast(1.04)",
+   "vig": true
+  }
+ }
+}

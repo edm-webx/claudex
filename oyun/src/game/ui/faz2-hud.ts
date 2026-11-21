@@ -24,19 +24,19 @@ const CSS = `
 .sb-lab .say{padding:4px 8px 5px;font-size:13px;max-width:150px;border-radius:11px;margin-bottom:10px}
 .sb-sheet.dk-low{max-height:38dvh!important;max-height:min(38dvh,340px)!important;bottom:calc(var(--sbm) + var(--barh) + 6px)!important}
 .sb-sheet.dk-low .sb-shb{padding-bottom:6px}
-.f2-rail{position:absolute;right:calc(var(--sr,0px) + 8px);top:calc(var(--hudb,100px) + 70px);width:132px;z-index:23;display:flex;flex-direction:column;gap:5px;pointer-events:none;
+.f2-rail{position:absolute;right:calc(var(--sr,0px) + 8px);top:calc(var(--hudb,100px) + 70px);width:156px;z-index:23;display:flex;flex-direction:column;gap:5px;pointer-events:none;
   font-family:var(--body,system-ui,sans-serif);color:var(--ink,#3b2a20);transition:opacity .25s}
 .f2-rail.off{opacity:0;pointer-events:none!important}
 .f2-rail>*{pointer-events:auto}
-.f2-ph{display:flex;justify-content:space-between;align-items:center;gap:6px;background:#ffd23f;border:2px solid var(--ink,#3b2a20);border-radius:10px;padding:3px 7px;font:900 11.5px/1.2 var(--disp,system-ui);cursor:pointer;box-shadow:0 2px 0 var(--ink,#3b2a20)}
-.f2-note{font:700 12px/1.25 var(--body,system-ui);opacity:.9;padding:0 2px}
+.f2-ph{display:flex;justify-content:space-between;align-items:center;gap:6px;background:#ffd23f;border:2px solid var(--ink,#3b2a20);border-radius:10px;padding:3px 7px;font:900 13px/1.2 var(--disp,system-ui);cursor:pointer;box-shadow:0 2px 0 var(--ink,#3b2a20)}
+.f2-note{font:700 13px/1.25 var(--body,system-ui);color:#fff;background:rgba(11,19,38,.88);border-radius:10px;padding:5px 8px}
 .f2-top{background:var(--ink,#3b2a20);color:#fff8ec;border-radius:10px;padding:4px 7px;font:800 13px/1.25 var(--body,system-ui)}
 .f2-top b{color:#ffd23f}
 .f2-slip{background:#fffdf6;border:2px solid var(--ink,#3b2a20);border-radius:4px 4px 10px 10px;padding:3px 6px 4px;box-shadow:0 2px 0 var(--ink,#3b2a20);
-  font:800 11px/1.25 var(--body,system-ui);animation:f2-in .25s ease-out;background-image:repeating-linear-gradient(transparent 0 13px,rgba(59,42,32,.08) 13px 14px)}
+  font:800 13px/1.25 var(--body,system-ui);animation:f2-in .25s ease-out;background-image:repeating-linear-gradient(transparent 0 13px,rgba(59,42,32,.08) 13px 14px)}
 .f2-slip.sp{border-color:#d68910}
 .f2-slip.late{animation:f2-shake .5s ease-in-out infinite alternate}
-.f2-slip .h{display:flex;justify-content:space-between;font:900 12px/1.2 var(--disp,system-ui)}
+.f2-slip .h{display:flex;justify-content:space-between;font:900 13px/1.2 var(--disp,system-ui)}
 .f2-slip .h i{font-style:normal;background:var(--ink,#3b2a20);color:#fff;border-radius:7px;padding:0 5px}
 .f2-slip s{opacity:.45}
 .f2-slip .bar{height:5px;border-radius:3px;background:#e8dccb;margin-top:3px;overflow:hidden}
@@ -66,12 +66,12 @@ export function createFaz2Hud(d: Faz2HudDeps): Faz2Hud {
     const show = !!v && v.active;
     rail.classList.toggle('off', !show);
     if (!v || !show) return;
-    const sig = JSON.stringify([railOpen, v.servis, v.specialName, v.tickets.map(k => [k.no, k.table, Math.round(k.frac * 20), k.items.map(i => i.left)])]);
+    const sig = JSON.stringify([railOpen, v.servis, v.tickets.map(k => [k.no, k.table, Math.round(k.frac * 20), k.items.map(i => i.left)])]);
     if (sig === railSig) return; railSig = sig;
     const head = `<div class="f2-ph" data-rail="1"><span>🧾 Sipariş paneli (${v.tickets.length})</span><span>${railOpen ? '▾' : '▸'}</span></div>`;
     if (!railOpen) { rail.innerHTML = head; return; }
-    const top = `<div class="f2-top">Günün yemeği: <b>${esc(v.specialName)}</b><br>Servis: <b>${stars(v.servis)}</b></div><div class="f2-note">${v.tickets.length ? 'Garsonlar siparişleri halleder. Yetişmezlerse sen servis et.' : 'Bekleyen sipariş yok.'}</div>`;
-    rail.innerHTML = head + top + v.tickets.slice(0, 3).map(k => `<div class="f2-slip${k.special ? ' sp' : ''}${k.frac > 0.7 ? ' late' : ''}"><div class="h"><span>Sipariş ${k.no}</span><i>Masa ${k.table + 1}</i></div>
+    const top = `<div class="f2-top">Servis: <b>${stars(v.servis)}</b></div><div class="f2-note">${v.tickets.length ? 'Garsonlar siparişleri halleder. Yetişmezlerse sen servis et.' : 'Bekleyen sipariş yok.'}</div>`;
+    rail.innerHTML = head + top + v.tickets.slice(0, 3).map(k => `<div class="f2-slip${k.frac > 0.7 ? ' late' : ''}"><div class="h"><span>Sipariş ${k.no}</span><i>Masa ${k.table + 1}</i></div>
       ${k.items.map(i => (i.left ? '' : '<s>') + `${i.n}× ${esc(i.name)}` + (i.left ? '' : '</s>')).join('<br>')}
       <div class="bar"><u style="width:${Math.round((1 - k.frac) * 100)}%"></u></div></div>`).join('') + (v.tickets.length > 3 ? `<div class="f2-note">+${v.tickets.length - 3} sipariş daha</div>` : '');
   }

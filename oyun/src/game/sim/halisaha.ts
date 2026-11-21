@@ -67,7 +67,7 @@ export function installHaliSaha(K: Kernel, lig?: { mac(day: number): (MacGunu & 
       if (!rt.started) return;
       const zb = save();
       if (zb.bekleyen && !(rt as unknown as { _izle?: unknown })._izle && !rt.uiLast.haliSahaIzle) {   // the page was reloaded mid-match: the stake is refunded, never burnt
-        S.money += zb.bekleyen; K.toast('Maç yarıda kaldı: bahis ' + zb.bekleyen.toLocaleString('tr') + ' ₺ iade edildi.', 'info'); zb.bekleyen = 0;
+        K.cashIn!(zb.bekleyen); K.toast('Maç yarıda kaldı: bahis ' + zb.bekleyen.toLocaleString('tr') + ' ₺ iade edildi.', 'info'); zb.bekleyen = 0;
         if (rt.pauseWhy === 'halisaha') { rt.paused = false; rt.pauseWhy = ''; }
       }
       const fan = isMacGunu(S.day);

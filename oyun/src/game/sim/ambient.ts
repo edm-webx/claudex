@@ -93,8 +93,12 @@ export function createAmbient(deps: AmbientDeps): AmbientSystem {
   /** Seat anchors when the zone has them, else whole benches. */
   const seatsOf = (zone: string) => {
     const all = anchorsOf(zone);
-    const seats = all.filter(({ a }) => isKind(a, 'seat'));
-    return seats.length ? seats : all.filter(({ a }) => isKind(a, 'bench'));
+    // 2026-11-21: from stage 3 the walkway behind the büfe is the roofed staff passage to the kitchen (view bufe-buyume.ts GECIT): its
+    // bench is the staff's, citizens do not sit there. The passage exists when its closed east wall blocks the walk grid.
+    const gecit = !deps.nav.walkable({ x: BUFE_BOX.x1 - 0.05, z: (BUFE_BOX.z0 - 13.0) / 2 });
+    const ok = ({ a }: { a: AnchorDef }) => !gecit || !(a.pos.x > BUFE_BOX.x0 && a.pos.x < BUFE_BOX.x1 && a.pos.z > -13.0 && a.pos.z < BUFE_BOX.z0);
+    const seats = all.filter((e) => isKind(e.a, 'seat') && ok(e));
+    return seats.length ? seats : all.filter((e) => isKind(e.a, 'bench') && ok(e));
   };
   const exitsOf = (zone: string) => anchorsOf(zone).filter(({ id, a }) => isKind(a, 'spawn') && id !== 'playerStart');
 

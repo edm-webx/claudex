@@ -6,6 +6,7 @@
 // Decisions: runs on the engine ui root (CSS and HUD come from engine/ui); `env` supplies sfx/buzz/unlock/emit so there
 // is no global SB; DOM events 'ui:open' / 'ui:close' are dispatched on ui.root like engine/ui does.
 import { TIER_PRICE_X } from '../../content/ekonomi2';
+import { KIOSK_STAGES } from '../../content/stages';
 import type { Ui } from '../../engine/api';
 import { ICONS, INK } from '../../engine/ui/v2-style';
 import { renderEsnaf, renderKomsuSection } from './esnaf-panel';
@@ -493,7 +494,7 @@ U.confirm = function (o) {
 /* ---------- sheet panels ---------- */
 let sheet = null, sheetActs = {}, sheetModel = {}, sheetClose = null;
 const PANELS = {
-  isciler: { t: 'Ekip', s: 'İşçiler, rütbeler ve keyifler', ic: 'people', acc: 'var(--blue)' },
+  isciler: { t: 'Ekip', s: 'İşçiler ve rütbeler', ic: 'people', acc: 'var(--blue)' },
   menu: { t: 'Menü', s: 'Ürün kademeleri ve fiyatlar', ic: 'menu', acc: 'var(--red)' },
   dekor: { t: 'Dekor', s: 'Büfeni güzelleştir', ic: 'dekor', acc: 'var(--tile)' },
   gorevler: { t: 'Görevler', s: 'Sipariş Panosu ve başarımlar', ic: 'gorev', acc: 'var(--tea)' },
@@ -608,11 +609,6 @@ const pips = (n, of) => { let s = '<span class="sb-pips">'; for (let i = 0; i < 
 const meter = (p, color, cls) => `<div class="sb-meter ${cls || ''}"><i style="width:${(clamp(p, 0, 1) * 100).toFixed(1)}%;${color ? 'background:' + color : ''}"></i></div>`;
 
 const RANKS = ['Çırak', 'Acemi', 'Kalfa', 'Deneyimli', 'Usta', 'Kıdemli Usta', 'Başusta', 'Uzman', 'Usta Şef', 'Efsane'];
-const MOODS = [['Küs', '#e63946'], ['Küskün', '#d9822b'], ['Normal', '#ebc07a'], ['Keyifli', '#8daa5b'], ['Coşkulu', '#49b96a']];
-const moodFace = i => {
-  const m = ['M17 33q7-6 14 0', 'M17 32q7-3 14 0', 'M17 31h14', 'M17 29q7 5 14 0', 'M15 28q9 9 18 0'][i];
-  return svg(`<circle cx="24" cy="24" r="19" fill="${MOODS[i][1]}" ${K}/><circle cx="18" cy="20" r="2.4" fill="${INK}"/><circle cx="30" cy="20" r="2.4" fill="${INK}"/><path d="${m}" fill="${i === 4 ? '#fff' : 'none'}" ${K}/>`);
-};
 function traitParts(t) {
   if (!t) return { name: '', effect: '', flaw: '', line: '' };
   if (typeof t === 'string') return { name: t, effect: '', flaw: '', line: '' };
@@ -625,11 +621,11 @@ function renderIsciler(m, A) {
   const ws = m.workers || [];
   let s = '';
   try { s += renderCalisanSel(m.calisan, porTag); } catch (e) { console.error('[SB.ui] calisan', e); }
+  if (num(m.mutfakHizi) && m.mutfakHizi > 0) s += `<div class="sb-card"><b>+%${m.mutfakHizi} mutfak hızı (Şef)</b></div>`;   // BUF-05: şef etkisi tek yerden (sefHizi)
   if (!ws.length) s += `<div class="sb-empty">${ICONS.people}<span>Henüz işçin yok.<br>${m.hint ? esc(m.hint) : 'İskeledeki "İş ve İşçi Bulma" köşesine yürü ya da aşağıdaki düğmeye bas, panodan birini seç.'}</span></div>`;
   ws.forEach(w => {
     let ri = RANKS.indexOf(w.rankLabel); if (ri < 0) ri = clamp(num(w.rank) ? Math.round(w.rank) : 0, 0, 9);
     const t = traitParts(w.trait);
-    const mo = num(w.morale) ? clamp(w.morale, 0, 1) : 0.7, mi = clamp(Math.floor(mo * 5), 0, 4);
     s += `<div class="sb-card sb-wk">
       ${porTag(w.look || ('w' + w.id + w.name), 68, { bg: '#bfe6e9', eyes: 'open' })}
       <div class="sb-grow"><h3>${esc(w.name)} <span class="sb-chip">${I(ROLE_ICON(w.role || w.roleLabel))}${esc(w.roleLabel || '')}</span></h3>
@@ -637,7 +633,7 @@ function renderIsciler(m, A) {
         ${t.name ? `<div class="sb-trait"><b>${esc(t.name)}</b>${t.effect ? ': ' + esc(t.effect) : ''}</div>` : ''}
       </div>
       <div class="wb"><span class="sb-muted">${w.wage != null ? 'Maaş payı: <b>' + esc(wageTxt(w.wage)) + '</b>' : ''}${w.station ? '<br>İstasyon: <b>' + esc(w.station) + '</b>' : ''}</span>
-        ${A.train ? btn('Kurs', 'train', w.id, 'blue sm', null, { icon: 'karne' }) : ''}${A.tasi ? btn('Taşı', 'tasi', w.id, 'cream sm') : ''}${A.pencere && num(m.pencere) && m.pencere >= 0 ? btn(m.pencere === w.id ? 'Pencerede ✓' : 'Pencereye', 'pencere', w.id, m.pencere === w.id ? 'green sm' : 'cream sm', null, { icon: 'ferry' }) : ''}${A.fire ? btn('Çıkar', 'fire', w.id, 'cream sm') : ''}</div>
+        ${A.train ? btn('Kurs', 'train', w.id, 'blue sm', null, { icon: 'karne' }) : ''}${A.pencere && num(m.pencere) && m.pencere >= 0 ? btn(m.pencere === w.id ? 'Pencerede ✓' : 'Pencereye', 'pencere', w.id, m.pencere === w.id ? 'green sm' : 'cream sm', null, { icon: 'ferry' }) : ''}${A.fire ? btn('Çıkar', 'fire', w.id, 'cream sm') : ''}</div>
     </div>`;
   });
   if (A.board) s += btn('Yeni işçi bul', 'board', null, 'wide', null, { icon: 'newspaper' });
@@ -778,7 +774,8 @@ function renderKarne(m) {
   } else if (stars >= 5) s += `<div class="sb-card" style="text-align:center;font:900 16px/1.3 var(--disp)">Beş yıldız! Martıköy seninle gurur duyuyor.</div>`;
   return s;
 }
-const STAGES = [['Seyyar Araba', 'cart1'], ['Büfe', 'shop'], ['Çay Bahçesi', 'garden'], ['Lokanta', 'lokanta'], ['Aile Lokantası', 'lokanta'], ['İskele Terası', 'garden'], ['Balık Restoranı', 'lokanta'], ['Boğaz Restoranı', 'lokanta'], ['Şef Mutfağı', 'lokanta'], ['Fine Dining', 'lokanta']];
+const STAGE_ICON = ['cart1', 'shop', 'garden', 'garden', 'garden', 'lokanta', 'lokanta', 'lokanta', 'lokanta', 'lokanta'];
+const STAGES = KIOSK_STAGES.map((st, i) => [st.short, STAGE_ICON[i] || 'lokanta']);   // BUF-21: tek isim seti (content/stages.ts)
 function renderTadilat(m) {
   const stg = clamp(num(m.stage) ? m.stage : 1, 1, STAGES.length);
   const names = Array.isArray(m.stages) ? m.stages : null;
@@ -819,8 +816,6 @@ function renderAyarlar(m, A) {
   }
   if (A.setHaptic) { const hp = m.haptic !== false; s += `<div class="sb-card sb-set">${ICONS.vibrate}<div class="sb-grow"><h3>Titreşim</h3><p>Para toplarken kısa titreşim</p></div><button class="sb-tog${hp ? ' on' : ''}" data-a="setHaptic" data-v="${hp ? 0 : 1}" aria-label="Titreşim" aria-pressed="${hp}"></button></div>`; }
   s += `<div class="sb-card"><div class="sb-set" style="min-height:0;margin-bottom:8px">${ICONS.quality}<div class="sb-grow"><h3>Görüntü kalitesi</h3><p>Otomatik, telefonuna göre ayarlar.</p></div></div><div class="sb-seg">${QUAL.map(x => `<button class="${q === x[0] ? 'on' : ''}" data-a="setQuality" data-v="${x[0]}">${x[1]}</button>`).join('')}</div></div>`;
-  const hero = m.hero === 'sabriye' ? 'sabriye' : 'sabri';
-  s += `<div class="sb-card"><div class="sb-set" style="min-height:0;margin-bottom:8px">${ICONS.people}<div class="sb-grow"><h3>Büfeci</h3><p>Kim tezgahta dursun?</p></div></div><div class="sb-heros">${['sabri', 'sabriye'].map(h => `<button class="${hero === h ? 'on' : ''}" data-a="setHero" data-v="${h}">${porTag(h, 44, { bg: h === 'sabri' ? '#bfe6e9' : '#f9d9b8', round: true })}${h === 'sabri' ? 'Sabri' : 'Sabriye'}</button>`).join('')}</div></div>`;
   if (A.setHand) { const hd = m.hand === 'sol' ? 'sol' : 'sag'; s += `<div class="sb-card"><div class="sb-set" style="min-height:0;margin-bottom:8px">${ICONS.hand}<div class="sb-grow"><h3>El tarafı</h3><p>Düğmeler elinin tarafına geçer.</p></div></div><div class="sb-seg two"><button class="${hd === 'sol' ? 'on' : ''}" data-a="setHand" data-v="sol">Sol el</button><button class="${hd === 'sag' ? 'on' : ''}" data-a="setHand" data-v="sag">Sağ el</button></div></div>`; }
   if (A.setPerf) { const pf = !!m.perf; s += `<div class="sb-card"><div class="sb-set" style="min-height:0">${ICONS.stopwatch}<div class="sb-grow"><h3>Hız ölçer</h3><p>Kare hızı ve en yavaş parçalar. Raporu kopyalayıp gönderebilirsin.</p></div><button class="sb-tog${pf ? ' on' : ''}" data-a="setPerf" data-v="${pf ? 0 : 1}" aria-label="Hız ölçer" aria-pressed="${pf}"></button></div>${A.copyReport ? `<div class="sb-mrow" style="margin-top:8px">${btn('Raporu kopyala', 'copyReport', null, 'blue sm', null, { icon: 'newspaper' })}</div>` : ''}</div>`; }
   if (A.karakterDegis) s += `<div class="sb-card sb-set">${ICONS.people}<div class="sb-grow"><h3>Karakter değiştir</h3><p>Kaydeder, hesabına döner. 4 yuvadan başkasını seçersin.</p></div>${btn('Değiştir', 'karakterDegis', null, 'blue sm')}</div>`;
@@ -929,7 +924,7 @@ U.title = function (o) {
   if (titleEl) titleEl.remove();
   const t = titleEl = mk('div', 'sb-full sb-title');
   t.innerHTML = SCENE + `<div class="sb-tl-wrap"><div class="sb-tl-top"><div class="sb-logo" role="img" aria-label="Sabri'nin Büfesi"><span class="sb-pamuk">${PAMUK}</span><div class="sb-awn"></div><div class="sb-signb"><span class="l1">Sabri'nin</span><span class="l2">Büfesi</span></div></div>
-    <div class="sb-sub">${ICONS.gull}Martıköy İskelesi</div></div>
+    <div class="sb-sub">${ICONS.gull}Martıköy İskelesi</div><div class="sb-ver" aria-label="Sürüm 2.0">2.0</div></div>
     <div class="sb-tl-bot"><button class="sb-btn big" data-play>${ICONS.play}Oyna</button><div class="sb-tl-note">Hesabınla gir, arkadaşınla oda kur, beraber çalışın.</div></div></div>`;
   root.appendChild(t); artBackdrop(t);
   t.querySelector('[data-play]').addEventListener('click', () => {

@@ -2,7 +2,7 @@
 // Rules: no price-hike word, no em-dash (tools/content-lint.mjs). The v2 panel bodies keep their inline copy in game/ui/v2ui.ts.
 export interface PanelMeta { title: string; sub: string; icon: string; acc: string; }
 export const PANEL_META: Record<string, PanelMeta> = {
-  isciler: { title: 'Ekip', sub: 'İşçiler, rütbeler ve keyifler', icon: 'people', acc: 'var(--blue)' },
+  isciler: { title: 'Ekip', sub: 'İşçiler ve rütbeler', icon: 'people', acc: 'var(--blue)' },
   menu: { title: 'Menü', sub: 'Ürün kademeleri ve fiyatlar', icon: 'menu', acc: 'var(--red)' },
   dekor: { title: 'Dekor', sub: 'Büfeni güzelleştir', icon: 'dekor', acc: 'var(--tile)' },
   gorevler: { title: 'Görevler', sub: 'Sipariş Panosu ve başarımlar', icon: 'gorev', acc: 'var(--tea)' },

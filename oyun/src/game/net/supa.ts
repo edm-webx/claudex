@@ -13,11 +13,16 @@ export const SUPABASE_URL = 'https://fxvbtfkvpnrnhyuntcgj.supabase.co';
 export const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4dmJ0Zmt2cG5ybmh5dW50Y2dqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI4MjI2MDUsImV4cCI6MjEwODM5ODYwNX0.kXYXHCNg3xOIaBp0E3i3EOBofZQe01aeTpMDJWrwDVM';  // anon (public)
 
 let client: SupabaseClient | null = null;
+let jeton = '';
 export const supaReady = () => !!(SUPABASE_URL && SUPABASE_KEY);
 export function supa(): SupabaseClient | null {
   if (!supaReady()) return null;
   if (!client) {
-    try { client = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false, storageKey: 'martikoy-giris' }, realtime: { params: { eventsPerSecond: 12 } } }); } catch { client = null; }
+    try {
+      client = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false, storageKey: 'martikoy-giris' }, realtime: { params: { eventsPerSecond: 12 } } });
+      // KAL-01: kapanış yazımı (keepalive fetch) asenkron getSession bekleyemez; güncel erişim jetonunu burada tut (yenilenince de güncellenir)
+      client.auth.onAuthStateChange((_e, s) => { jeton = s?.access_token || ''; });
+    } catch { client = null; }
   }
   return client;
 }
@@ -95,12 +100,33 @@ export async function veriOku(): Promise<Record<string, unknown> | null> {
   try { const { data } = await c.from('kayitlar').select('veri').eq('id', me.id).maybeSingle(); return (data?.veri as Record<string, unknown>) || null; } catch { return null; }
 }
 let lastPush = '';
-export async function veriYaz(veri: Record<string, unknown>, esnaf: unknown): Promise<void> {
-  const c = supa(); if (!c || !me) return;
-  const key = JSON.stringify(veri); if (key === lastPush) return;
+/** true = sunucu onayladı (hata yoksa). Şimdiye dek upsert hatası yutuluyordu: rozet bu sonuca bakar. */
+export async function veriYaz(veri: Record<string, unknown>, esnaf: unknown): Promise<boolean> {
+  const c = supa(); if (!c || !me) return false;
+  const key = JSON.stringify(veri); if (key === lastPush) return true;   // aynı veri zaten onaylı gitti (başarısızlıkta lastPush sıfırlanır)
   lastPush = key;
   try {
-    await c.from('kayitlar').upsert({ id: me.id, veri, guncellendi: new Date().toISOString() });
-    if (esnaf) await c.from('oyuncular').update({ esnaf, guncellendi: new Date().toISOString() }).eq('id', me.id);
-  } catch { lastPush = ''; }
+    const r = await c.from('kayitlar').upsert({ id: me.id, veri, guncellendi: new Date().toISOString() });
+    if (r.error) { lastPush = ''; return false; }
+    if (esnaf) await c.from('oyuncular').update({ esnaf, guncellendi: new Date().toISOString() }).eq('id', me.id);   // yan veri: hata kaydı bozmaz
+    return true;
+  } catch { lastPush = ''; return false; }
+}
+
+/** keepalive isteklerinin toplam sınırı 64 KB; gövde bunu aşarsa kapanış yazımı denenmez (normal yazım zaten gider). */
+export const KAPANIS_LIMIT = 60_000;
+/**
+ * Sekme kapanırken son yazım: asenkron beklemeden, önbellekteki jetonla REST upsert (keepalive). Dönüş: istek atıldı mı.
+ * Sunucu onayı beklenmez (sayfa kapanıyor), bu yüzden lastPush'a dokunmaz ve rozet "Kaydedildi" demez.
+ */
+export function veriKapanisYaz(veri: Record<string, unknown>): boolean {
+  if (!me || !jeton) return false;
+  let body = '';
+  try { body = JSON.stringify({ id: me.id, veri, guncellendi: new Date().toISOString() }); } catch { return false; }
+  if (body.length > KAPANIS_LIMIT) return false;
+  try {
+    void fetch(SUPABASE_URL + '/rest/v1/kayitlar?on_conflict=id', { method: 'POST', keepalive: true,
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + jeton, 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' }, body }).catch(() => { /* sayfa kapanıyor */ });
+    return true;
+  } catch { return false; }
 }

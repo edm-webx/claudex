@@ -1,4 +1,5 @@
 import { UG } from '../../ustgecit';
+import { KANAT_MASALAR, type KanatBolge } from '../../kanat';
 /**
  * İskele geography and per-stage layout (pure data, no three, no DOM): v2 world.js constants, stageLayout(),
  * staticObstacles(), WALKABLE, benches, lamp posts, trophy spots. Ported 1:1 (numbers kept).
@@ -12,7 +13,8 @@ export interface StageLayout {
   counter: { pos: P3v; drop: P3v; standAt: P3v; span: [number, number] };
   queue: P3v[];
   kasa: { pos: P3v; pile: P3v };
-  tables: { x: number; z: number; ax: 'x' | 'z' }[];
+  /** 0..7 büfe masaları; 8+ kanat / salon / çatı masaları (content/kanat.ts, kurulu olanı aşama belirler) */
+  tables: { x: number; z: number; ax: 'x' | 'z'; bolge?: KanatBolge; cati?: 'W' | 'E' }[];
   window: { standAt: P3v; serve: P3v; queue: P3v[] };
   job: { board: [number, number, number]; pos: P3v };
   extraPads: Record<string, P3v>;
@@ -53,7 +55,12 @@ export function trophySpots(stage: number): { x: number; y: number; z: number; s
 }
 
 export function stageLayout(stage: number): StageLayout {
-  stage = Math.min(5, stage);   // stages 6-10 grow around the kiosk (view/world/bufe-buyume.ts), the kiosk itself stays at 5
+  const L = kioskLayout(Math.min(5, stage));   // stages 6-10 grow around the kiosk (view/world/bufe-buyume.ts), the kiosk itself stays at 5
+  // BUF-19/20: wing / hall / roof tables are sim tables at fixed indices 8+ (always listed; which are built follows the stage)
+  L.tables = L.tables.concat(KANAT_MASALAR.map(m => ({ x: m.x, z: m.z, ax: m.ax, bolge: m.bolge, cati: m.cati })));
+  return L;
+}
+function kioskLayout(stage: number): StageLayout {   // stages 6-10 grow around the kiosk (view/world/bufe-buyume.ts), the kiosk itself stays at 5
   const s1 = stage === 1, s3 = stage >= 3;
   const L = {} as StageLayout;
   L.stations = s1 ? {

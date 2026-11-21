@@ -1,5 +1,5 @@
 // Menü sheet tabs for the yiyecek feature (survey yiyecek-*, icecek-*, tarif-*, marka-*): Kademeler (the existing
-// renderMenu body plus freshness + çay ustalığı cards), Tarif Defteri, Deney Tezgahı and Anlaşma Masası. Pure HTML string
+// renderMenu body plus freshness + çay ustalığı cards), Tarif Defteri, and Anlaşma Masası. Pure HTML string
 // renderers in the v2ui style (sb-card / sb-btn / sb-chip); every button is data-a="yy" data-id="op:id", which
 // panelActions('menu').yy turns into { kind: 'yiyecek', arg }. Mascots and the vegetarian leaf are tiny code-made SVGs.
 import { ICONS } from '../../engine/ui/v2-style';
@@ -70,14 +70,12 @@ function tabs(m: any): string {
   return `<div class="yy-tabs">${T.map(([id, n, badge]) => `<button class="${m.tab === id ? 'on' : ''}" data-a="yy" data-id="tab:${id}">${esc(n)}${badge ? `<i>${esc(badge)}</i>` : ''}</button>`).join('')}</div>`;
 }
 
-/** Extra cards under the Kademeler list: tarif count, Gezgin Aşçı, çay ustalığı and the freshness line. */
+/** Extra cards under the Kademeler list: tarif count, Gezgin Aşçı, and çay ustalığı. */
 function kademeExtras(m: any): string {
   let s = `<div class="sb-card yy-row" data-a="yy" data-id="tab:defter">${I('menu')}<div class="sb-grow"><h3>Menüde ${m.openN} / ${m.total} tarif</h3><p>Müşteriler açık tariflerden adıyla ister: "Bir kokoreç lütfen!" Tarif farkı kasaya.</p></div></div>`;
   s += gezginCard(m.gezgin);
   const c = m.cay;
   if (c) s += `<div class="sb-card yy-row">${I('cay')}<div class="sb-grow"><h3>Çay ustalığı: ${esc(c.name)}</h3><p>${esc(c.line)}${c.pct ? ' Çay satışlarına +%' + c.pct + '.' : ''}</p><p>${fmt(c.sold)} çay satıldı${c.next ? ' · ' + esc(c.nextName) + ' için ' + fmt(c.next) : ''}</p></div></div>`;
-  const f = m.fresh;
-  if (f) s += `<div class="sb-card yy-row">${I('cat')}<div class="sb-grow"><h3>Tazelik çizgisi</h3><p>Tezgahta bekleyen yiyecek bir süre sonra bayatlar, ucuza gider. Daha da beklerse kediler alır. Çöp yok!</p><p>Şu an bayat: ${f.now} · Ucuza giden: ${fmt(f.bayat)} · Kedilere: ${fmt(f.kedi)}</p></div></div>`;
   return s;
 }
 
@@ -114,18 +112,6 @@ function detail(d: any): string {
   <div class="yy-note">Sabri'nin notu: ${esc(d.note)}</div></div>`;
 }
 
-function deney(m: any): string {
-  const d = m.deney || {};
-  let s = `<div class="sb-card sb-muted" style="font:700 15px/1.35 var(--body)">İki ya da üç malzeme seç, karıştır. Tutarsa yeni tarif, tutmazsa komik bir sonuç. ${d.free ? `Bugün ${d.free} deney bedava.` : `Bugünkü bedava deneyler bitti, her deney ${tl(d.cost)}.`}</div>`;
-  if (d.last) s += `<div class="sb-card yy-res ${d.last.ok ? 'ok' : 'no'}">${d.last.ok ? I('sparkle') : I('warn')} ${esc(d.last.text)}</div>`;
-  s += `<div class="yy-ings">${(d.ings || []).map((g: any) => `<button class="${g.on ? 'on' : ''}" data-a="yy" data-id="ing:${esc(g.id)}"><i style="background:${esc(g.color)}"></i>${esc(g.name)}</button>`).join('')}</div>`;
-  s += `<div class="sb-mrow" style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin-top:10px">${yb('Karıştır!', 'mix:', 'green', d.picks + ' / 3 malzeme', (d.picks || 0) < 2, 'En az iki malzeme seç.')}${yb('Temizle', 'clear:', 'cream')}</div>`;
-  s += `<div class="sb-sec">${I('sparkle')}Keşfedilen tarifler<span>${(d.found || []).length} / ${d.total || 0}</span></div>`;
-  s += (d.found || []).length ? `<div class="sb-card">${d.found.map((f: any) => `<span class="sb-chip ok" style="margin:2px">${esc(f.name)}</span>`).join('')}</div>` : `<div class="sb-card sb-muted">Henüz keşif yok. Sabri\'nin önlüğü temiz, demek ki deney yapılmamış.</div>`;
-  if ((d.hints || []).length) s += `<div class="yy-note">İpuçları: ${d.hints.map((h: string) => esc(h)).join(' / ')}</div>`;
-  return s;
-}
-
 function anlasma(m: any): string {
   const d = m.deal || {};
   let s = `<div class="sb-card sb-muted" style="font:700 15px/1.35 var(--body)">Her kategoride bir marka seç. Seçtiğin markanın adı büfenin tabelasına çıkar, o kategorinin satışlarına küçük bonus gelir. Ünlü markaları müşteriler adıyla ister, anlaşman varsa bahşiş bırakır. Bir kategori günde bir kere değişir.</div>`;
@@ -152,8 +138,8 @@ function mascots(d: any): string {
  */
 export function renderYiyecek(m: any): { head: string; tail: string; full: string | null } {
   if (!m) return { head: '', tail: '', full: null };
-  // Faz 2 (user items 11/12/14/17): the menu shows only the tier list. Tarif Defteri, Deney, Anlaşma and the big
-  // extra cards (tarif count, Gezgin Aşçı, çay ustalığı, tazelik) are gone; the code stays for a later redesign.
-  void tabs; void defter; void deney; void anlasma; void kademeExtras;
+  // Faz 2 (user items 11/12/14/17): the menu shows only the tier list. Tarif Defteri, Anlaşma and the big
+  // extra cards (tarif count, Gezgin Aşçı, çay ustalığı) are gone; the code stays for a later redesign.
+  void tabs; void defter; void anlasma; void kademeExtras;
   return { head: CSS, tail: '', full: null };
 }

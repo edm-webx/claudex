@@ -14,6 +14,7 @@
  * - Persistent: GameState.zones['deniz'] (defaults on read, old saves load). Runtime: `denizApi(rules)`.
  * - Commands: { kind: 'deniz', op, id? } op = open | ext | seatBuy | seatSet | tez | pier | bufe | photo.
  */
+import { KANAT_BASE } from '../../content/kanat';
 import type { Kernel, Item } from './state';
 import type { ProductId } from './schema';
 import { PRODUCT_IDS } from '../../content/products';
@@ -214,12 +215,13 @@ export function installDeniz(K: Kernel, cu?: CuLike): DenizApi {
         const sd = SEATS.find(x => x.id === id); if (!sd || sd.id === 'standart' || has(h.seatOwn, sd.id)) return true;
         if (!buyFixed(sd.cost, sd.name)) return true;
         h.seatOwn.push(sd.id);
-        const free = rt.tables.findIndex((t, i) => t.built && !h.seats[String(i)]); if (free >= 0) h.seats[String(free)] = sd.id;
+        const free = rt.tables.findIndex((t, i) => t.built && i < KANAT_BASE && !h.seats[String(i)]); if (free >= 0) h.seats[String(free)] = sd.id;
         K.toast(sd.icon + ' ' + sd.name + ' geldi! Masalara yerleştirebilirsin.', 'good'); KX.saveNow(); return true;
       }
       case 'seatSet': {
         const [ti, kind] = id.split(':'); const i = Number(ti);
         if (!rt.tables[i] || !rt.tables[i].built) return true;
+        if (i >= KANAT_BASE) return true;
         if (kind === 'standart') delete h.seats[String(i)];
         else if (has(h.seatOwn, kind)) h.seats[String(i)] = kind as SeatKind;
         K.dirty(); return true;
@@ -266,7 +268,7 @@ export function installDeniz(K: Kernel, cu?: CuLike): DenizApi {
       exterior: EXTERIOR.map(e => ({ id: e.id, name: e.name, icon: e.icon, text: e.text, cost: e.cost, bonus: Math.round(e.bonus * 100), owned: has(h.ext, e.id), why: why(e.minStage, e.cost) })),
       pencere: { name: WINDOW_NOTE.name, icon: WINDOW_NOTE.icon, text: WINDOW_NOTE.text, owned: !!st.owned.pencere },
       seats: SEATS.filter(s => s.id !== 'standart').map(s => ({ id: s.id, name: s.name, icon: s.icon, text: s.text, cost: s.cost, bonus: s.bonus * 100, owned: has(h.seatOwn, s.id), why: why(1, s.cost) })),
-      tables: rt.tables.map((t, i) => ({ i, built: t.built, kind: h.seats[String(i)] || 'standart' })).filter(t => t.built),
+      tables: rt.tables.map((t, i) => ({ i, built: t.built, kind: h.seats[String(i)] || 'standart' })).filter(t => t.built && t.i < KANAT_BASE),   // BUF-19: kanat / salon masaları kendi mobilyasıyla (deniz oturağı yalnız büfe masalarına)
       kinds: ['standart', ...h.seatOwn].map(k => { const s = SEATS.find(x => x.id === k)!; return { id: s.id, icon: s.icon, name: s.name }; }),
       tez: { n: h.tez, max: TEZGAH.max, cost: TEZGAH.cost, name: TEZGAH.name, icon: TEZGAH.icon, text: TEZGAH.text, why: why(1, TEZGAH.cost) },
       pier: PIER_EXP.map((p, i) => ({ id: p.id, name: p.name, icon: p.icon, text: p.text, perk: p.perk, cost: p.cost, bonus: Math.round(p.bonus * 100), owned: has(h.pier, p.id),

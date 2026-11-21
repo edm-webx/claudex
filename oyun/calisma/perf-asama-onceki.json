@@ -1,0 +1,447 @@
+{
+ "etiket": "onceki",
+ "kare": 60,
+ "asamalar": {
+  "3": {
+   "kadro": {
+    "say": {
+     "doner": 1,
+     "cay": 1,
+     "tost": 1,
+     "garson": 2,
+     "temizlik": 1,
+     "asci": 1,
+     "kasiyer": 1
+    },
+    "toplam": 8,
+    "stage": 3
+   },
+   "noktalar": {
+    "bufe-onu": {
+     "simAdimiMs": {
+      "p50": 0.3,
+      "p95": 2.2,
+      "maks": 8.4,
+      "ort": 0.62
+     },
+     "jsRenderMs": {
+      "p50": 5.7,
+      "p95": 18.8,
+      "maks": 1161.6,
+      "ort": 35.62
+     },
+     "cpuKareMs": {
+      "p50": 6.3,
+      "p95": 19,
+      "maks": 1163.7,
+      "ort": 36.24
+     },
+     "swiftShaderRasterMs": {
+      "p50": 0,
+      "p95": 0.1,
+      "maks": 0.1,
+      "ort": 0.02
+     },
+     "swiftShaderToplamKareMs": {
+      "p50": 6.3,
+      "p95": 19,
+      "maks": 1163.7,
+      "ort": 36.26
+     },
+     "calls": 286,
+     "tris": 430528,
+     "geos": 233,
+     "parcacik": 0,
+     "heapMB": 104,
+     "calisan": 8,
+     "musteri": 16,
+     "aktorToplam": 22,
+     "aktorTur": {
+      "cat": 4,
+      "worker": 8,
+      "dog": 1,
+      "gull": 8,
+      "parrot": 1
+     },
+     "sayac": {
+      "crowd.visible": 50,
+      "frameWorkMs": 1161.6000000005588
+     },
+     "enPahaliGuardMs": {
+      "render": {
+       "ortMs": 33.7567,
+       "maksMs": 1159.5,
+       "n": 60
+      },
+      "agents": {
+       "ortMs": 0.5683,
+       "maksMs": 3.1,
+       "n": 60
+      },
+      "playView": {
+       "ortMs": 0.26,
+       "maksMs": 2.2,
+       "n": 60
+      },
+      "world": {
+       "ortMs": 0.145,
+       "maksMs": 0.4,
+       "n": 60
+      },
+      "mulkView": {
+       "ortMs": 0.1083,
+       "maksMs": 1.3,
+       "n": 60
+      },
+      "crowd": {
+       "ortMs": 0.0967,
+       "maksMs": 0.6,
+       "n": 60
+      },
+      "hero": {
+       "ortMs": 0.0883,
+       "maksMs": 1.9,
+       "n": 60
+      },
+      "setTime": {
+       "ortMs": 0.0667,
+       "maksMs": 0.2,
+       "n": 9
+      },
+      "kirtasiyeFp": {
+       "ortMs": 0.0517,
+       "maksMs": 1.3,
+       "n": 60
+      },
+      "stadyumView": {
+       "ortMs": 0.045,
+       "maksMs": 0.2,
+       "n": 60
+      },
+      "zones": {
+       "ortMs": 0.0433,
+       "maksMs": 1.7,
+       "n": 60
+      },
+      "havaLook": {
+       "ortMs": 0.0417,
+       "maksMs": 0.1,
+       "n": 60
+      },
+      "yetenekBtn": {
+       "ortMs": 0.04,
+       "maksMs": 0.2,
+       "n": 60
+      },
+      "icMekan": {
+       "ortMs": 0.035,
+       "maksMs": 0.4,
+       "n": 60
+      }
+     }
+    }
+   },
+   "hata": []
+  },
+  "6": {
+   "kadro": {
+    "say": {
+     "doner": 1,
+     "cay": 1,
+     "tost": 1,
+     "garson": 2,
+     "temizlik": 1,
+     "asci": 2,
+     "komi": 2,
+     "bulasikci": 1,
+     "kasiyer": 2,
+     "guvenlik": 1,
+     "muzisyen": 1,
+     "hostes": 1,
+     "barista": 1,
+     "mudur": 1,
+     "kurye": 1
+    },
+    "toplam": 19,
+    "stage": 6
+   },
+   "noktalar": {
+    "bufe-onu": {
+     "simAdimiMs": {
+      "p50": 0.4,
+      "p95": 2.5,
+      "maks": 4.5,
+      "ort": 0.69
+     },
+     "jsRenderMs": {
+      "p50": 7.9,
+      "p95": 1040.4,
+      "maks": 1481.1,
+      "ort": 86.67
+     },
+     "cpuKareMs": {
+      "p50": 8.7,
+      "p95": 1040.9,
+      "maks": 1481.5,
+      "ort": 87.36
+     },
+     "swiftShaderRasterMs": {
+      "p50": 0,
+      "p95": 0.1,
+      "maks": 0.6,
+      "ort": 0.03
+     },
+     "swiftShaderToplamKareMs": {
+      "p50": 8.7,
+      "p95": 1041.5,
+      "maks": 1481.5,
+      "ort": 87.39
+     },
+     "calls": 331,
+     "tris": 543248,
+     "geos": 253,
+     "parcacik": 0,
+     "heapMB": 73.1,
+     "calisan": 19,
+     "musteri": 19,
+     "aktorToplam": 33,
+     "aktorTur": {
+      "cat": 4,
+      "worker": 19,
+      "dog": 1,
+      "gull": 8,
+      "parrot": 1
+     },
+     "sayac": {
+      "crowd.visible": 50,
+      "frameWorkMs": 1040.4000000003725
+     },
+     "enPahaliGuardMs": {
+      "render": {
+       "ortMs": 83.6033,
+       "maksMs": 1478,
+       "n": 60
+      },
+      "agents": {
+       "ortMs": 1.1817,
+       "maksMs": 9.5,
+       "n": 60
+      },
+      "playView": {
+       "ortMs": 0.3183,
+       "maksMs": 4.6,
+       "n": 60
+      },
+      "world": {
+       "ortMs": 0.28,
+       "maksMs": 2.9,
+       "n": 60
+      },
+      "mulkView": {
+       "ortMs": 0.15,
+       "maksMs": 1.2,
+       "n": 60
+      },
+      "hero": {
+       "ortMs": 0.1483,
+       "maksMs": 5.4,
+       "n": 60
+      },
+      "crowd": {
+       "ortMs": 0.09,
+       "maksMs": 0.5,
+       "n": 60
+      },
+      "setTime": {
+       "ortMs": 0.0889,
+       "maksMs": 0.2,
+       "n": 9
+      },
+      "nightLights": {
+       "ortMs": 0.0533,
+       "maksMs": 1.8,
+       "n": 60
+      },
+      "huyMotion": {
+       "ortMs": 0.0533,
+       "maksMs": 2.6,
+       "n": 60
+      },
+      "icMekan": {
+       "ortMs": 0.0517,
+       "maksMs": 0.7,
+       "n": 60
+      },
+      "yetenekBtn": {
+       "ortMs": 0.0517,
+       "maksMs": 0.2,
+       "n": 60
+      },
+      "havaLook": {
+       "ortMs": 0.05,
+       "maksMs": 0.2,
+       "n": 60
+      },
+      "kirtasiyeFp": {
+       "ortMs": 0.0483,
+       "maksMs": 1,
+       "n": 60
+      }
+     }
+    }
+   },
+   "hata": []
+  },
+  "10": {
+   "kadro": {
+    "say": {
+     "doner": 1,
+     "cay": 1,
+     "tost": 1,
+     "garson": 2,
+     "temizlik": 1,
+     "asci": 5,
+     "komi": 4,
+     "bulasikci": 2,
+     "kasiyer": 3,
+     "sef": 2,
+     "guvenlik": 2,
+     "muzisyen": 2,
+     "hostes": 2,
+     "barista": 2,
+     "mudur": 1,
+     "vale": 2,
+     "kurye": 2
+    },
+    "toplam": 35,
+    "stage": 10
+   },
+   "noktalar": {
+    "bufe-onu": {
+     "simAdimiMs": {
+      "p50": 0.5,
+      "p95": 4.5,
+      "maks": 6.5,
+      "ort": 0.94
+     },
+     "jsRenderMs": {
+      "p50": 8.9,
+      "p95": 1308.8,
+      "maks": 1612.7,
+      "ort": 138.68
+     },
+     "cpuKareMs": {
+      "p50": 9.5,
+      "p95": 1310.4,
+      "maks": 1614,
+      "ort": 139.62
+     },
+     "swiftShaderRasterMs": {
+      "p50": 0,
+      "p95": 0.1,
+      "maks": 0.2,
+      "ort": 0.02
+     },
+     "swiftShaderToplamKareMs": {
+      "p50": 9.5,
+      "p95": 1310.5,
+      "maks": 1614.1,
+      "ort": 139.65
+     },
+     "calls": 405,
+     "tris": 715630,
+     "geos": 303,
+     "parcacik": 9,
+     "heapMB": 82.4,
+     "calisan": 35,
+     "musteri": 42,
+     "aktorToplam": 49,
+     "aktorTur": {
+      "cat": 4,
+      "worker": 35,
+      "dog": 1,
+      "gull": 8,
+      "parrot": 1
+     },
+     "sayac": {
+      "crowd.visible": 50,
+      "frameWorkMs": 1251.4000000003725
+     },
+     "enPahaliGuardMs": {
+      "render": {
+       "ortMs": 135.595,
+       "maksMs": 1608.4,
+       "n": 60
+      },
+      "agents": {
+       "ortMs": 1.22,
+       "maksMs": 5.1,
+       "n": 60
+      },
+      "world": {
+       "ortMs": 0.37,
+       "maksMs": 3.9,
+       "n": 60
+      },
+      "playView": {
+       "ortMs": 0.3283,
+       "maksMs": 1.7,
+       "n": 60
+      },
+      "mulkView": {
+       "ortMs": 0.175,
+       "maksMs": 3.8,
+       "n": 60
+      },
+      "setTime": {
+       "ortMs": 0.1444,
+       "maksMs": 0.6,
+       "n": 9
+      },
+      "crowd": {
+       "ortMs": 0.0833,
+       "maksMs": 0.7,
+       "n": 60
+      },
+      "hero": {
+       "ortMs": 0.0783,
+       "maksMs": 1,
+       "n": 60
+      },
+      "havaLook": {
+       "ortMs": 0.05,
+       "maksMs": 0.7,
+       "n": 60
+      },
+      "yetenekBtn": {
+       "ortMs": 0.0483,
+       "maksMs": 0.4,
+       "n": 60
+      },
+      "carsi": {
+       "ortMs": 0.0467,
+       "maksMs": 2.3,
+       "n": 60
+      },
+      "stadyumView": {
+       "ortMs": 0.045,
+       "maksMs": 1,
+       "n": 60
+      },
+      "huyMotion": {
+       "ortMs": 0.0433,
+       "maksMs": 0.6,
+       "n": 60
+      },
+      "icMekan": {
+       "ortMs": 0.0417,
+       "maksMs": 0.2,
+       "n": 60
+      }
+     }
+    }
+   },
+   "hata": []
+  }
+ }
+}

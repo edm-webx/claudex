@@ -200,7 +200,7 @@ export interface SchedulerDeps { perf?: PerfMeter; log?: Logger; now?: () => num
 export type SaveReason = 'interval' | 'purchase' | 'hidden' | 'manual';
 export interface BackupInfo { id: string; kind: 'daily' | 'premigration' | 'slot'; at: number; version: number; bytes: number; }
 export interface Migration { from: number; to: number; up(old: any): any; }
-export interface SaveLoadResult<S> { data: S; from: 'idb' | 'ls' | 'backup' | 'fresh'; repaired: string[]; }
+export interface SaveLoadResult<S> { data: S; from: 'idb' | 'ls' | 'backup' | 'fresh'; repaired: string[]; /** KAL-02: depoda bu build'den YENİ sürümde bir kayıt var; salt-okunur moda geçildi, yazılmaz. */ newerVersion?: number; }
 export interface SaveStore<S> {
   load(): Promise<SaveLoadResult<S>>;
   save(reason: SaveReason): Promise<boolean>;
@@ -213,6 +213,8 @@ export interface SaveStore<S> {
   restore(id: string): Promise<boolean>;
   wipe(): Promise<void>;               // resetSave hook
   readonly mode: 'idb' | 'ls' | 'memory';
+  /** KAL-02: yeni sürüm kaydı görüldü; save() hiçbir şey yazmaz (yeni kayıt ezilmesin). wipe/importCode/restore kilidi açar. */
+  readonly readOnly?: boolean;
 }
 export interface SaveOpts<S> {
   key: string;                          // e.g. 'marti-bufe'
@@ -255,6 +257,13 @@ export interface Quality {
   /** PRF-12: continuous resolution scale (SCALE_MIN..1) the render multiplies onto the tier's pixel ratio; auto mode only. */
   scale?(): number;
   onScale?(cb: (s: number) => void): Disposer;
+  /** PRF-12: second fast rung: bloom pass cut (pass.enabled = false, no relink) once the scale sits at SCALE_MIN; auto mode only. */
+  postCut?(): boolean;
+  onPostCut?(cb: (cut: boolean) => void): Disposer;
+  /** PRF-03: while `inPlay()` is true an automatic tier change is only remembered (saved for the next load), not applied */
+  deferAuto?(inPlay: () => boolean): void;
+  /** PRF-03: applies a remembered automatic tier change now (pause/menu/hidden moment); true if one was applied */
+  flushAuto?(): boolean;
   batterySaver(on: boolean): void;         // forces 30 fps
   table: Readonly<Record<TierName, TierDef>>;
 }
@@ -322,6 +331,8 @@ export interface Input {
   setHand(h: 'left' | 'right'): void;
   /** Test hook `input(x,z)`: overrides joystick until cleared with null. */
   inject(move: Vec2 | null): void;
+  /** PRF-10: first-person counter: no hero movement from joystick/keys while on (taps still work). */
+  freeze?(on: boolean): void;
   /** Screen-space pick resolver (render.pick). */
   setPicker(fn: (p: ScreenPt) => string | null): void;
   readonly interactions: InteractionRegistry;
@@ -785,6 +796,8 @@ export interface RenderPipeline {
   warm?(scene: Scene, cam: Camera): Promise<void>;
   /** PRF-12: dynamic resolution multiplier on the tier's pixel ratio; optional, the fallback renderer has none. */
   setScale?(s: number): void;
+  /** PRF-12: skip the bloom pass (true) without rebuilding the post chain; optional. */
+  setPostCut?(cut: boolean): void;
   info(): RenderInfo;
   resize(): void;
   readonly scene: Scene;

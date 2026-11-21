@@ -66,6 +66,7 @@ describe('economy parity with the v2 bot curve', () => {
     const secs = Math.ceil(dayLen * 5) + 5;
     const at: Record<number, number> = {};
     const r = runBot(1, secs, (sec, sim) => { for (const d of [1, 3, 5]) if (sec === Math.round(dayLen * d)) at[d] = sim.rules.state.totalEarned; });
+    console.log('parity totalEarned', JSON.stringify(at));
     for (const d of [1, 3, 5]) {
       // Faz 2 re-baseline: the economy is deliberately flatter than v2 (user: "ekonomi çok cömert"), so the bot curve is
       // compared with the Faz 2 numbers recorded on this build. The v2 fixture is still kept for the unlock order.
@@ -75,7 +76,9 @@ describe('economy parity with the v2 bot curve', () => {
       // 240 s marks fall at different hours, so the early curve moved (day 5 stayed within 4 %).
       // 2026-10-24 re-baseline: user asked for a bit faster money (cheaper ingredients, more walk-ins)
       // 2026-11-04 re-baseline: the pier grew and the ferry berth moved 14 m east (passengers walk further to the window), day 1 measured 7077
-      const FAZ2_CUM: Record<number, number> = { 1: 7077, 3: 18192, 5: 33838 };
+      // 2026-11-21 EKO-02 re-baseline: tek gelir kapısı. Sipariş, yıldız, başarım ve tadilat ödülleri artık totalEarned'a yazılıyor (önce doğrudan cebe giriyordu),
+      // hedef ödülleri günlük 250 ₺ tavandan çıktı. Gün 1/3/5: 7077/18192/33838 -> 10047/30263/48501 (hesap değişikliği + hedef ödülü; EKO-05 dengeyi ayrıca ayarlar).
+      const FAZ2_CUM: Record<number, number> = { 1: 10047, 3: 30263, 5: 48501 };
       const ref = FAZ2_CUM[d];
       expect(Math.abs(at[d] - ref) / ref, `day ${d}: ${at[d]} vs v2 ${ref}`).toBeLessThanOrEqual(0.15);
     }

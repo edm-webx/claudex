@@ -29,12 +29,12 @@ export function installOrders(K: Kernel) {
     if (id === 'all') {
       if (od.allClaimed || !od.list.every(o => o.claimed)) return;
       od.allClaimed = true; const v = Math.round(Math.max(250, K.incomePerMin() * P.ORDER_ALL_MIN));
-      S.money += v; S.gold += P.AS_ORDER_ALL; K.toast('Bütün siparişler tamam! +' + fmtMoney(v) + ', +' + P.AS_ORDER_ALL + ' Altın Simit', 'good'); return;
+      K.credit!('gorev', v); S.gold += P.AS_ORDER_ALL; K.toast('Bütün siparişler tamam! +' + fmtMoney(v) + ', +' + P.AS_ORDER_ALL + ' Altın Simit', 'good'); return;
     }
     const o = od.list.find(x => x.id === id); if (!o || o.claimed || progress(o) < o.goal) return;
     o.claimed = true;
     const v = reward();
-    S.money += v; S.gold += P.AS_ORDER; K.addXP(P.XP.order); K.stat('ordersDone');
+    K.credit!('gorev', v); S.gold += P.AS_ORDER; K.addXP(P.XP.order); K.stat('ordersDone');
     K.toast('Sipariş tamam! +' + fmtMoney(v) + (P.AS_ORDER ? ', +' + P.AS_ORDER + ' Altın Simit' : ''), 'good'); K.logEv('orderClaim', { id, v });
     if (od.list.every(x => x.claimed)) claim('all');
     K.saveNow();

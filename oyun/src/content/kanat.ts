@@ -1,0 +1,121 @@
+/**
+ * BUF-19/20 kanat ve salon masaları (pure data, no three, no DOM). Büfe iskelede yerinde büyür: batı çay bahçesi, doğu
+ * dondurma terası, kahvaltı salonu (salonW), balık lokantası (salonE) ve aşama 8'den iki salonun çatı terası. Bu masaların
+ * HEPSİ sim masasıdır (rt.layout.tables, index 8+k sabit): müşteri yürüyüp oturur, garson gidip servis eder, hesap ödenir.
+ * Masa sayısı aşamadan türetilir (kayıt şeması değişmez): `kanatKurulu(stage)`.
+ *
+ * Koltuk düzeni sim'inkidir (customers.ts seatPos): ax 'x' masada iki koltuk x ekseninde ±0.78, garson z+0.95'te; ax 'z' masada
+ * koltuklar z ekseninde, garson x+0.95'te. Görünüm (view/world/bufe-buyume.ts, ic-mekan-look.ts) masayı aynı yerde, sandalyeleri
+ * aynı koltuklarda çizer; çarpışma (buyumeEngel) masa gövdesini kapatır, koltuk ve garson noktası boş kalır.
+ *
+ * Çatı terasları (aşama 8): sim 2B olduğu için çatıdaki aktör, salonun dış merdiveninden (stair) çıkan sabit bir rota izler (nav
+ * değil: merdiven yürünebilir ızgarada kapalıdır, yerdeki kimse oraya girmez) ve yüksekliğini `katY` verir (müşteri: crowd y,
+ * garson: actor y). Çatıdaki biri yalnız merdivenden iner; yerdeki kimse çatı yüksekliğine çıkmaz (yukarıda bayrağı yoksa 0).
+ */
+import type { Vec2 } from '../engine/api';
+
+export type KanatBolge = 'cay' | 'dondurma' | 'salonW' | 'salonE' | 'catiW' | 'catiE';
+export interface KanatMasa { x: number; z: number; ax: 'x' | 'z'; bolge: KanatBolge; asama: number; cati?: 'W' | 'E' }
+/** sim masa indexi bu sayıdan başlar (0..7 büfe önü / tabure / tavla masaları, content/prefabs/iskele/layout.ts) */
+export const KANAT_BASE = 8;
+/** salonların merkezi ve boyu (content/ic-mekan.ts salonW / salonE ile aynı), koltuk düzeni salon çerçevesinde */
+const SW = { x: -17.6, z: -13.9 }, SE = { x: 15.6, z: -13.9 };
+const salon = (c: { x: number; z: number }, bolge: KanatBolge, ilk: number): KanatMasa[] => {
+  const o: KanatMasa[] = [];
+  for (const v of [-0.2, 1.6]) for (const u of [-3.9, -1.9, 1.9, 3.9]) {
+    const on = v > 1 && Math.abs(u) < 3;   // kapıya yakın iki masa: aşama 10 fine dining masaları
+    o.push({ x: c.x + u, z: c.z + v, ax: 'x', bolge, asama: on ? 10 : ilk });
+  }
+  return o;
+};
+/** sıra = sim index sırası (asla değişmez; yeni masa sona eklenir) */
+export const KANAT_MASALAR: KanatMasa[] = [
+  // batı çay bahçesi: aşama 3'te 4, aşama 5'te 8 (pergola altı)
+  ...[[-18.6, -6.6], [-15.0, -6.6], [-18.6, -3.4], [-15.0, -3.4]].map(([x, z]) => ({ x, z, ax: 'x' as const, bolge: 'cay' as const, asama: 3 })),
+  ...[[-18.6, -0.2], [-15.0, -0.2], [-18.6, 2.2], [-15.0, 2.2]].map(([x, z]) => ({ x, z, ax: 'x' as const, bolge: 'cay' as const, asama: 5 })),
+  // doğu dondurma terası: aşama 4'te 4, aşama 7'de 6
+  ...[[11.6, -1.4], [14.2, -1.4], [11.6, 1.6], [14.2, 1.6]].map(([x, z]) => ({ x, z, ax: 'x' as const, bolge: 'dondurma' as const, asama: 4 })),
+  ...[[16.8, -1.4], [16.8, 1.6]].map(([x, z]) => ({ x, z, ax: 'x' as const, bolge: 'dondurma' as const, asama: 7 })),
+  // kahvaltı salonu (aşama 6) ve balık lokantası (aşama 7): 6 masa, aşama 10'da +2
+  ...salon(SW, 'salonW', 6),
+  ...salon(SE, 'salonE', 7),
+  // çatı terasları (aşama 8): salonun ortası boyunca 4 masa, koltuklar z ekseninde, garson masanın doğusunda
+  ...[-21.5, -18.9, -16.3, -13.7].map(x => ({ x, z: -13.9, ax: 'z' as const, bolge: 'catiW' as const, asama: 8, cati: 'W' as const })),
+  ...[11.1, 14.1, 17.1, 20.1].map(x => ({ x, z: -13.9, ax: 'z' as const, bolge: 'catiE' as const, asama: 8, cati: 'E' as const })),
+];
+export const KANAT_N = KANAT_MASALAR.length;
+/** sim masa indexinin kanat tanımı (büfe masası ise null) */
+export const kanatOf = (table: number): KanatMasa | null => KANAT_MASALAR[table - KANAT_BASE] ?? null;
+export const masaCati = (table: number): 'W' | 'E' | null => kanatOf(table)?.cati ?? null;
+/** o aşamada kurulu kanat masalarının sim indexleri */
+export const kanatKurulu = (stage: number): number[] => KANAT_MASALAR.map((m, k) => (stage >= m.asama ? KANAT_BASE + k : -1)).filter(i => i >= 0);
+/** tam o aşamada kurulan kanat masaları (tadilat bitince) */
+export const kanatYeni = (stage: number): number[] => KANAT_MASALAR.map((m, k) => (m.asama === stage ? KANAT_BASE + k : -1)).filter(i => i >= 0);
+/** bölge başına kurulu masa sayısı */
+export const kanatSay = (stage: number, b: KanatBolge): number => KANAT_MASALAR.filter(m => m.bolge === b && stage >= m.asama).length;
+
+/** Salon aleti (SALON_ESYA) hangi masalara etki eder: W -> çay bahçesi + kahvaltı salonu + batı çatısı, E -> dondurma + balık + doğu çatısı */
+export const kanatYanı = (b: KanatBolge): 'W' | 'E' => (b === 'cay' || b === 'salonW' || b === 'catiW' ? 'W' : 'E');
+
+/**
+ * Kanat masasında kişi başı adisyon çarpanı: masa hesabı = bilet kalemleri x bu çarpan (x salon aleti adisyon çarpanı).
+ * Kalibrasyon (2026-11-20, tam kadro, 16 dk sim, aşama başına): eski pasif salon geliri SALON.mis x SALON.adisyon / oyun saati idi
+ * (aşama 10: 156.000). Gerçek akışta kanatlar bir oyun saatinde (~25 sn) yalnız 0.6-3 misafir ağırlayabilir (masa devri ~80 sn,
+ * garson yürüyüşü, çatı merdiveni); SALON.mis'e yürüyen ajanla ulaşılamaz. Aradaki fark teras/salon fiyatı olarak hesaba girer
+ * (servis ücreti, serpme/balık porsiyonu, manzara, fine dining). Ölçülen gerçek salon geliri / eski pasif: aşama 3-10 sırasıyla
+ * 0.89 0.88 0.90 0.88 0.95 0.83 0.95 0.98 (eski seviyenin biraz altında: salon aletleri ve servis yıldızı üstüne biner). Index = aşama.
+ */
+export const KANAT_FIYAT_X = [1, 1, 1, 16, 20, 20, 42, 73, 100, 220, 290];
+export const kanatFiyatX = (stage: number) => KANAT_FIYAT_X[Math.max(0, Math.min(10, Math.round(stage) || 0))];
+
+/* ---------- çatı terası rotası ve yüksekliği ---------- */
+/** salon kat yüksekliği (bufe-buyume.ts hall(): ph 3.4) ve çatı döşemesi (top + 0.36) */
+export const catiY = (stage: number, s: 'W' | 'E'): number => (s === 'E' && stage >= 8 ? 2 : 1) * 3.4 + 0.36;
+/** merdiven (bufe-buyume.ts: x = r.x1 + 0.55 batıda, r.x0 - 0.55 doğuda; basamaklar z -10.9 .. -16.1), çatı ayak izi ve çatı koridoru */
+export const CATI = {
+  W: { sx: -11.65, x0: -23.0, x1: -12.2, entryX: -12.7 },
+  E: { sx: 9.05, x0: 9.6, x1: 21.6, entryX: 10.1 },
+} as const;
+const Z_ALT = -10.6, Z_UST = -16.1, Z0 = -17.2, Z1 = -10.6, KORIDOR = -15.7, MERD_YARI = 0.4;
+/** merdivenin ayağı (yerde, yürünebilir) */
+export const catiAyak = (s: 'W' | 'E'): Vec2 => ({ x: CATI[s].sx, z: Z_ALT + 0.35 });
+/** merdivenin yürünebilir ızgarada kapalı kutusu (aşama 8+; yerdeki kimse girmez) */
+export const merdivenKutu = (s: 'W' | 'E') => ({ x0: CATI[s].sx - 0.45, x1: CATI[s].sx + 0.45, z0: Z_UST - 0.3, z1: Z_ALT - 0.1 });
+/** merdiven ayağından çatıdaki `to` noktasına: basamaklar, çatıya giriş, koridor, hedef */
+export function catiYukari(s: 'W' | 'E', to: Vec2): Vec2[] {
+  const c = CATI[s];
+  return [{ x: c.sx, z: Z_ALT }, { x: c.sx, z: Z_UST }, { x: c.entryX, z: Z_UST }, { x: to.x, z: KORIDOR }, { x: to.x, z: to.z }];
+}
+/** çatıdaki `from` noktasından merdiven ayağına */
+export function catiAsagi(s: 'W' | 'E', from: Vec2): Vec2[] {
+  const c = CATI[s];
+  return [{ x: from.x, z: KORIDOR }, { x: c.entryX, z: Z_UST }, { x: c.sx, z: Z_UST }, { x: c.sx, z: Z_ALT }, catiAyak(s)];
+}
+/** çatıda bir noktadan ötekine (koridor üzerinden, masaların arasından değil) */
+export const catiIc = (from: Vec2, to: Vec2): Vec2[] => [{ x: from.x, z: KORIDOR }, { x: to.x, z: KORIDOR }, { x: to.x, z: to.z }];
+/** konumun çatı tarafı (x'e göre) */
+export const catiTaraf = (p: Vec2): 'W' | 'E' => (p.x < 0 ? 'W' : 'E');
+/**
+ * Yükseklik: merdiven kutusunda basamak yüksekliği, çatı ayak izinde (yalnız `yukari` iken: çatıdan / merdivenden gelen) çatı
+ * döşemesi, başka her yerde 0. Aşama 8 altında çatı yok.
+ */
+export function katY(stage: number, x: number, z: number, yukari: boolean): number {
+  if (stage < 8) return 0;
+  for (const s of ['W', 'E'] as const) {
+    const c = CATI[s], ry = catiY(stage, s);
+    if (Math.abs(x - c.sx) < MERD_YARI && z <= Z_ALT + 0.05 && z >= Z_UST - 0.3) return ry * Math.max(0, Math.min(1, (Z_ALT - z) / (Z_ALT - Z_UST)));
+    if (yukari && x > Math.min(c.x0, c.entryX) - 0.5 && x < Math.max(c.x1, c.entryX) + 0.5 && z > Z0 - 0.5 && z < Z1 + 0.5) return ry;
+  }
+  return 0;
+}
+
+/**
+ * Garson postları (boştayken bölgesinin başında bekler, işi alınca oradan çıkar): çay bahçesinin garsonu çay ocağının önünde
+ * çaycı olarak durur; terasın garsonu dondurma dolabının yanında; salon garsonu salonun içinde, açık büfenin önünde.
+ */
+export const KANAT_POST: Record<KanatBolge, Vec2> = {
+  cay: { x: -20.9, z: -7.9 }, dondurma: { x: 19.6, z: -0.2 }, salonW: { x: -17.6, z: -14.9 }, salonE: { x: 15.6, z: -14.9 },
+  catiW: { x: -11.65, z: -10.0 }, catiE: { x: 9.05, z: -9.9 },
+};
+/** aşama 9 açık ızgara mutfağı (doğu terası): şefin durduğu yer ve baktığı yön */
+export const ACIK_MUTFAK = { x: 19.9, z: -2.2, rot: Math.PI };

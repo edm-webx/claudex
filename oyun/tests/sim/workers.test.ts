@@ -33,7 +33,7 @@ describe('workers', () => {
   });
   it('uykucu sleeps and wakes when Sabri walks next to him (x3 boost)', () => {
     const sb = makeSandbox(4);
-    const w = addWorker(sb, 'doner', 'uykucu');
+    addWorker(sb, 'doner', 'uykucu');
     sb.step(5);
     sb.state.playT = 700;
     sb.step(3);
@@ -42,7 +42,6 @@ describe('workers', () => {
     sb.player.x = r.x + 0.5; sb.player.z = r.z;
     sb.step(1);
     expect(sb.events).toContain('wake');
-    expect(w.morale).toBeGreaterThanOrEqual(70);
   });
   it('rank up fires at 300 xp', () => {
     const sb = makeSandbox(5);

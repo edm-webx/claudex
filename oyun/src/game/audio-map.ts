@@ -4,6 +4,7 @@
 import type { Audio, Bus, DayPhase } from '../engine/api';
 import { EVENT_SFX, EVENT_VOICE } from '../content/sfx';
 import type { MotorAudio } from '../engine/audio';
+import { SES_ARALIK_MS } from '../engine/audio/mutfak-ses';
 
 export interface AudioMapDeps {
   bus: Bus<any>;
@@ -19,8 +20,10 @@ export interface AudioMapDeps {
   weather?: () => string;
   /** survey 2026-10-24: season for the ambience calls (ilkbahar / yaz / sonbahar / kis). */
   season?: () => string;
-  /** Grill (döner) world position for the sizzle loop. */
+  /** Grill (döner) world position: büfe döneri, yalnız oyuncu 'station.doner' ürettiği sırada cızırtı verir (BUF-08). */
   grill?: () => { x: number; z: number } | null;
+  /** BUF-08: aktif pişiren mutfak istasyonları (sim view().ist'ten boot kurar); kimse pişirmiyorsa boş liste. */
+  kitchen?: () => { x: number; z: number; w: number }[];
   /** DOM root that carries 'sb:radio' (İskele Radyosu line changed) events. */
   root?: HTMLElement | null;
 }
@@ -29,8 +32,11 @@ export interface AudioMap { update(): void; dispose(): void; }
 export function createAudioMap(deps: AudioMapDeps): AudioMap {
   const { bus, audio } = deps;
   const offs: Array<() => void> = [];
-  let lastTransferSfx = -1e9;
+  let lastTransferSfx = -1e9, lastDonerT = -1e9;
+  const lastHiz: Record<string, number> = {};
   const clockNow = () => (typeof performance !== 'undefined' ? performance.now() : 0);
+  // BUF-08: oyuncunun döner üretimi (station.doner transferleri ~0.18 sn'de bir) cızırtı için yeterli kanıt
+  offs.push(bus.on('transfer', (d: any) => { if (d && d.id === 'station.doner') lastDonerT = clockNow(); }) as () => void);
   for (const name of Object.keys(EVENT_SFX)) {
     const rule = EVENT_SFX[name];
     if (rule == null) continue;
@@ -39,6 +45,8 @@ export function createAudioMap(deps: AudioMapDeps): AudioMap {
       if (!id) return;
       // the sim transfers every 0.08-0.1 s; one pop per ~0.16 s reads as a soft roll instead of a rattle
       if (name === 'transfer' || name === 'pick') { const now = clockNow(); if (now - lastTransferSfx < 160) return; lastTransferSfx = now; }
+      // BUF-08: tava çarpması ve bulaşık şıngırtısı için en kısa aralık (SES_ARALIK_MS)
+      if (name in SES_ARALIK_MS) { const now = clockNow(); if (now - (lastHiz[name] ?? -1e9) < SES_ARALIK_MS[name as keyof typeof SES_ARALIK_MS]) return; lastHiz[name] = now; }
       const at = d && typeof d.x === 'number' && typeof d.z === 'number' ? { x: d.x, z: d.z } : undefined;
       try { audio.sfx(id, at ? { at } : undefined); } catch { /* audio is optional */ }
     }) as () => void);
@@ -61,7 +69,8 @@ export function createAudioMap(deps: AudioMapDeps): AudioMap {
           if (deps.event && ma.music?.setEvent) { const e = deps.event(); if (e !== lastEvent) { lastEvent = e; ma.music.setEvent(e); } }
           if (deps.weather && ma.music?.setWeather) { const w = deps.weather(); if (w !== lastWeather) { lastWeather = w; ma.music.setWeather(w); } }
           if (deps.season && ma.ambience?.setSeason) ma.ambience.setSeason(deps.season());
-          if (deps.grill && ma.ambience?.setGrill) ma.ambience.setGrill(deps.grill());
+          // BUF-08: cızırtı yalnız aktif ısı kaynaklarından (mutfak pişirenler + büfe dönerini üreten oyuncu)
+          if (ma.ambience?.setHeat) { const hs = [...(deps.kitchen?.() ?? [])]; const g = deps.grill?.(); if (g && clockNow() - lastDonerT < 600) hs.push({ x: g.x, z: g.z, w: 1 }); ma.ambience.setHeat(hs); }
         } catch { /* optional */ }
       }
       const p = deps.playerPos?.(); if (p) audio.ambience.setListener({ x: p.x, z: p.z });

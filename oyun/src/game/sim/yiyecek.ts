@@ -7,17 +7,13 @@
  *   station kademe (yiyecek-3), with a toast and a "Yeni" tag in the Tarif Defteri.
  * - Gezgin Aşçı (yiyecek-4/5): every 7 game days a regional recipe is on the menu; learn it for good with money or free
  *   after selling it GEZGIN_FREE_N times that week.
- * - Deney Tezgahı (tarif-8): pick 2-3 ingredients, mix: a matching combination unlocks a secret tarif, anything else
- *   gives a comic line (deterministic per combination, no chance involved). DENEY_FREE per day free, then DENEY_COST.
- * - Freshness line (tarif-4): food on the counter turns stale after STALE_S (sold at STALE_X) and a cat takes it after
- *   CAT_S. Nothing is thrown away.
  * - Çay ustalığı (icecek-1/2): sold çay count raises the demlik level, small extra on çay sales, a taze demleme now
  *   and then (+tips for 20 s).
  * - Anlaşma Masası (marka-5): one brand per category, small extra on that category's sales, name on the kiosk sign.
  *   Changeable once per category per game day. Brand-loyal customers (marka-6) tip more for their brand.
  * - Ads (marka-7): `reklam()` gives the view the weekly poster brand, the ferry ad brand and the signed brands.
  * Persistent state: GameState.zones['yiyecek'].y (created with defaults, so old saves load). Commands:
- * { kind: 'yiyecek', arg: 'op:id' } with ops tab, st, sel, ing, mix, clear, deal, learn.
+ * { kind: 'yiyecek', arg: 'op:id' } with ops tab, st, sel, deal, learn.
  */
 import type { System } from '../../engine/api';
 import type { Kernel, Customer, CustomerState, Item } from './state';
@@ -26,8 +22,8 @@ import { PRODUCT_IDS, PRODUCTS, STATIONS, price } from '../../content/products';
 import { CITIZENS } from '../../content/citizens';
 import {
   TARIFLER, TARIF_BY_ID, MENU_TARIFLER, AY_TARIFLER, GEZGIN_ORDER, FAM_LOOKS, TIER_LABELS, TARIF_ASK, DUBLE_ASK, LIKE_W, GEZGIN_W, SEASON_W,
-  GEZGIN_LEARN_X, GEZGIN_FREE_N, ASK_LINES, DUBLE_LINE, TARIF_THANKS, STALE_S, CAT_S, STALE_X, STALE_TOAST, CAT_LINES, FRESH_PRODUCTS,
-  CAY_USTA, TAZE_DEMLEME_S, TAZE_DEMLEME_TOAST, MALZEMELER, DENEY_TARIFLERI, DENEY_IPUCU, DENEY_FAIL, DENEY_FREE, DENEY_COST, type TarifDef,
+  GEZGIN_LEARN_X, GEZGIN_FREE_N, ASK_LINES, DUBLE_LINE, TARIF_THANKS,
+  CAY_USTA, TAZE_DEMLEME_S, TAZE_DEMLEME_TOAST, type TarifDef,
 } from '../../content/yiyecek';
 import {
   MARKALAR, MARKA_BY_ID, MASKOTLAR, KAT_NAMES, DEAL_KATS, dealBrands, DEAL_LEVEL, DEAL_TOAST, LOYAL_CHANCE, LOYAL_KATS, LOYAL_TIP, LOYAL_ASK, LOYAL_YES, LOYAL_NO,
@@ -40,12 +36,9 @@ interface YSave {
   open: string[]; seen: string[]; sold: Record<string, number>;
   deals: Record<string, string>; dealDay: Record<string, number>;
   learned: string[]; gezWeek: number; gezSold: number; gezToast: number;
-  found: string[]; tried: string[]; deneyDay: number; deneyN: number;
-  bayat: number; kedi: number;
 }
 interface Tag { p: ProductId | null; tid: string | null; duble: boolean; brand: string | null; kat: MarkaKat | null; said: boolean; }
 interface Seen { st: CustomerState; }
-export interface DeneyResult { ok: boolean; text: string; tid: string | null; again: boolean; }
 export interface ReklamModel { week: number; poster: string; ferry: string; deals: { id: string; name: string; color: string; ink: string }[]; pankart: string; }
 export interface YiyecekApi {
   handle(c: { kind: string; [k: string]: unknown }): boolean;
@@ -66,7 +59,7 @@ export function yiyecekApi(r: unknown): YiyecekApi | null {
   return ((r as { rt?: { yiyecek?: YiyecekApi } } | null)?.rt?.yiyecek) ?? null;
 }
 
-/** Faz 2 (user items 12/14): Tarif Defteri, Deney Tezgahı, Anlaşma Masası, Gezgin Aşçı and the freshness line are off.
+/** Faz 2 (user items 12/14): Tarif Defteri, Anlaşma Masası and Gezgin Aşçı are off.
  *  Kept in code (saves stay compatible); new food comes as stands (content/restoran.ts) instead. */
 export const YIYECEK_ON = false;
 
@@ -75,10 +68,8 @@ export function installYiyecek(K: Kernel): YiyecekApi {
   const rng = K.rng('sim.yiyecek');
   const seen = new Map<number, Seen>();
   const tags = new Map<number, Tag>();
-  const born = new WeakMap<Item, number>();
-  const stale = new WeakSet<Item>();
-  const ui = { tab: 'kademe', st: 'doner' as string, sel: '' as string, picks: [] as string[], last: null as DeneyResult | null };
-  let t = 0, tick = 0, staleToastT = -99, demlemeT = 0;
+  const ui = { tab: 'kademe', st: 'doner' as string, sel: '' as string };
+  let tick = 0, demlemeT = 0;
 
   function save(): YSave {
     const S = K.state;
@@ -92,9 +83,7 @@ export function installYiyecek(K: Kernel): YiyecekApi {
     if (!y.deals || typeof y.deals !== 'object') y.deals = {};
     if (!y.dealDay || typeof y.dealDay !== 'object') y.dealDay = {};
     if (!Array.isArray(y.learned)) y.learned = [];
-    if (!Array.isArray(y.found)) y.found = [];
-    if (!Array.isArray(y.tried)) y.tried = [];
-    for (const k of ['gezWeek', 'gezSold', 'gezToast', 'deneyDay', 'deneyN', 'bayat', 'kedi'] as const) if (typeof y[k] !== 'number' || !isFinite(y[k])) y[k] = k === 'gezWeek' || k === 'gezToast' ? -1 : 0;
+    for (const k of ['gezWeek', 'gezSold', 'gezToast'] as const) if (typeof y[k] !== 'number' || !isFinite(y[k])) y[k] = k === 'gezWeek' || k === 'gezToast' ? -1 : 0;
     return y;
   }
 
@@ -110,13 +99,13 @@ export function installYiyecek(K: Kernel): YiyecekApi {
     const y = save();
     if (d.how === 'ay') return false;
     if (d.how === 'gezgin') return y.learned.includes(d.id) || gezginId() === d.id;
-    if (d.how === 'deney') return y.found.includes(d.id);
+    if (d.how === 'deney') return false;
     return y.open.includes(d.id);
   }
   const available = (p: ProductId): string[] => (built(p) ? MENU_TARIFLER.filter(d => d.station === p && isOpen(d) && inSeason(d)).map(d => d.id) : []);
   function lockText(d: TarifDef): string {
     if (d.how === 'gezgin') return 'Gezgin Aşçı haftasında gelir, öğrenince kalıcı olur.';
-    if (d.how === 'deney') return 'Deney Tezgahında keşfedilir.';
+    if (d.how === 'deney') return 'Yakında.';
     if (d.how === 'ay') return 'Ay şubesi açılınca.';
     const parts: string[] = [];
     if (!built(d.station)) parts.push(STATIONS[d.station].name + ' kurulunca');
@@ -202,7 +191,7 @@ export function installYiyecek(K: Kernel): YiyecekApi {
         if (y.gezSold === GEZGIN_FREE_N) K.toast('Gezgin Aşçı: "' + d.name + ' artık senin de tarifin!" Öğrenmek bedava oldu.', 'good');
       }
       K.stat('tarifSatis'); if (tg.duble) K.stat('dubleSatis');
-      if (c.sayT <= 0.3 || !c.req) { c.say = rng.pick(TARIF_THANKS); c.sayT = 2.4; }
+      if (c.sayT <= 0.3) { c.say = rng.pick(TARIF_THANKS); c.sayT = 2.4; }
     } else if (tg.brand && tg.kat) {
       const b = MARKA_BY_ID[tg.brand];
       if (y.deals[tg.kat] === tg.brand) {
@@ -232,34 +221,6 @@ export function installYiyecek(K: Kernel): YiyecekApi {
     if (bonus > 0) { K.moneyApi.addToKasa(bonus); K.stat('markaBonus', bonus); }
   });
 
-  // ───────── freshness line ─────────
-  function freshness(): void {
-    const S = K.state;
-    for (const p of FRESH_PRODUCTS) {
-      const box = rt.counter[p]; if (!box) continue;
-      for (let i = box.length - 1; i >= 0; i--) {
-        const it = box[i];
-        let b = born.get(it);
-        if (b == null) { born.set(it, t); continue; }
-        const age = t - b;
-        if (age > CAT_S) {
-          box.splice(i, 1);
-          const y = save(); y.kedi++;
-          K.toast(fill(rng.pick(CAT_LINES), 'p', PRODUCTS[p].short.toLocaleLowerCase('tr')), 'info');
-          K.stat('kediyeBayat');
-          const cat = S.cats[0] as { trust?: number } | undefined;
-          if (cat) cat.trust = Math.min(100, (cat.trust || 0) + 1);
-          K.logEv('catFed' as never, { p } as never);
-        } else if (age > STALE_S && !stale.has(it)) {
-          stale.add(it); it.priceX = (it.priceX || 1) * STALE_X;
-          save().bayat++;
-          if (t - staleToastT > 45) { staleToastT = t; K.toast(STALE_TOAST, 'info'); }
-        }
-      }
-    }
-  }
-  const staleNow = () => { let n = 0; for (const p of FRESH_PRODUCTS) for (const it of rt.counter[p] || []) if (stale.has(it)) n++; return n; };
-
   // ───────── Gezgin Aşçı week ─────────
   function gezginWeek(): void {
     const y = save(), id = gezginId();
@@ -274,38 +235,6 @@ export function installYiyecek(K: Kernel): YiyecekApi {
   }
   function learnCost(): number { const id = gezginId(); if (!id) return 0; const d = TARIF_BY_ID[id]; return Math.round(price(d.station, K.state.tiers[d.station] || 1) * GEZGIN_LEARN_X); }
 
-  // ───────── Deney Tezgahı ─────────
-  function mix(): void {
-    const y = save(), S = K.state;
-    if (ui.picks.length < 2) { K.toast('En az iki malzeme seç.', 'info'); return; }
-    if (y.deneyDay !== S.day) { y.deneyDay = S.day; y.deneyN = 0; }
-    const free = y.deneyN < DENEY_FREE;
-    if (!free) {
-      if (S.money < DENEY_COST) { K.toast('Deney için kasada ' + DENEY_COST + ' ₺ olmalı. Yarın yine bedava!', 'info'); return; }
-      K.spend(DENEY_COST);
-    }
-    y.deneyN++;
-    const key = ui.picks.slice().sort().join('+');
-    const names = ui.picks.map(id => MALZEMELER.find(m => m.id === id)?.name || id).join(' + ');
-    if (!y.tried.includes(key)) { y.tried.push(key); if (y.tried.length > 80) y.tried.shift(); }
-    const tid = DENEY_TARIFLERI[key];
-    if (tid) {
-      const d = TARIF_BY_ID[tid];
-      if (y.found.includes(tid)) ui.last = { ok: true, text: d.name + ' zaten defterde. Ellerin ezberlemiş!', tid, again: true };
-      else {
-        y.found.push(tid);
-        ui.last = { ok: true, text: 'Tuttu! Yeni tarif: ' + d.name + '. ' + STATIONS[d.station].name + ' menüsüne eklendi.', tid, again: false };
-        K.toast('Deney tuttu! ' + d.name + ' menüde.', 'good'); K.addXP(2); K.stat('deneyOk');
-      }
-    } else {
-      let h = 0; for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
-      ui.last = { ok: false, text: fill(DENEY_FAIL[h % DENEY_FAIL.length], 'm', names), tid: null, again: false };
-      K.stat('deneyFail');
-    }
-    ui.picks = [];
-    K.dirty();
-  }
-
   // ───────── commands ─────────
   function handle(c: { kind: string; [k: string]: unknown }): boolean {
     if (c.kind !== 'yiyecek') return false;
@@ -313,18 +242,9 @@ export function installYiyecek(K: Kernel): YiyecekApi {
     const op = i < 0 ? raw : raw.slice(0, i), id = i < 0 ? String(c.id ?? '') : raw.slice(i + 1);
     const y = save(), S = K.state;
     switch (op) {
-      case 'tab': ui.tab = ['kademe', 'defter', 'deney', 'anlasma'].includes(id) ? id : 'kademe'; if (ui.tab !== 'deney') ui.last = null; break;
+      case 'tab': ui.tab = ['kademe', 'defter', 'anlasma'].includes(id) ? id : 'kademe'; break;
       case 'st': ui.st = id; ui.sel = ''; break;
       case 'sel': ui.sel = ui.sel === id ? '' : id; if (id && !y.seen.includes(id)) y.seen.push(id); break;
-      case 'ing': {
-        const k = ui.picks.indexOf(id);
-        if (k >= 0) ui.picks.splice(k, 1);
-        else if (ui.picks.length < 3 && MALZEMELER.some(m => m.id === id)) ui.picks.push(id);
-        else if (ui.picks.length >= 3) K.toast('En fazla üç malzeme.', 'info');
-        break;
-      }
-      case 'clear': ui.picks = []; ui.last = null; break;
-      case 'mix': mix(); break;
       case 'learn': {
         const gid = gezginId(); if (!gid || y.learned.includes(gid)) break;
         const freeNow = y.gezSold >= GEZGIN_FREE_N, cost = freeNow ? 0 : learnCost();
@@ -383,22 +303,13 @@ export function installYiyecek(K: Kernel): YiyecekApi {
     const gid = gezginId(), gd = gid ? TARIF_BY_ID[gid] : null;
     const cl = cayLevel(), cNext = CAY_USTA[cl + 1];
     const openN = MENU_TARIFLER.filter(isOpen).length;
-    const undiscovered = Object.values(DENEY_TARIFLERI).filter(id => !y.found.includes(id));
-    if (y.deneyDay !== S.day) { y.deneyDay = S.day; y.deneyN = 0; }
     return {
       tab: ui.tab, st, openN, total: MENU_TARIFLER.length, stations, list: list.map(card), sel,
       gezgin: gd ? {
         id: gd.id, name: gd.name, region: gd.region, station: STATIONS[gd.station].name, story: gd.story, learned: y.learned.includes(gd.id), stationBuilt: built(gd.station),
         cost: y.gezSold >= GEZGIN_FREE_N ? 0 : learnCost(), sold: Math.min(GEZGIN_FREE_N, y.gezSold), need: GEZGIN_FREE_N, daysLeft: 7 - (Math.max(0, S.day - 1) % 7),
       } : { soon: true, from: 3 },
-      fresh: { bayat: y.bayat, kedi: y.kedi, now: staleNow(), staleS: STALE_S, catS: CAT_S },
       cay: { name: CAY_USTA[cl].name, line: CAY_USTA[cl].line, level: cl + 1, of: CAY_USTA.length, sold: S.stats.sold_cay || 0, next: cNext ? cNext.n : 0, nextName: cNext ? cNext.name : '', pct: Math.round(CAY_USTA[cl].pct * 100) },
-      deney: {
-        ings: MALZEMELER.map(m => ({ id: m.id, name: m.name, color: m.color, on: ui.picks.includes(m.id) })), picks: ui.picks.length,
-        last: ui.last ? { ...ui.last, name: ui.last.tid ? TARIF_BY_ID[ui.last.tid].name : '' } : null,
-        free: Math.max(0, DENEY_FREE - y.deneyN), cost: DENEY_COST, found: y.found.map(id => ({ id, name: TARIF_BY_ID[id]?.name || id })), total: Object.keys(DENEY_TARIFLERI).length,
-        hints: undiscovered.slice(0, 2).map(id => DENEY_IPUCU[id] || ''), tried: y.tried.length,
-      },
       deal: {
         open: S.level >= DEAL_LEVEL, level: DEAL_LEVEL,
         kats: DEAL_KATS.map(dk => ({
@@ -428,10 +339,9 @@ export function installYiyecek(K: Kernel): YiyecekApi {
     step(ctx) {
       if (!YIYECEK_ON || !rt.started || rt.paused) return;
       const dt = ctx.dt;
-      t += dt;
       if ((tick -= dt) <= 0) {
         tick = 0.5;
-        syncUnlocks(); gezginWeek(); freshness();
+        syncUnlocks(); gezginWeek();
         if (built('cay') && cayLevel() >= 1 && (demlemeT += 0.5) >= TAZE_DEMLEME_S) { demlemeT = 0; rt.tipBoostT = Math.max(rt.tipBoostT, 20); K.toast(TAZE_DEMLEME_TOAST, 'good'); }
       }
       for (const c of rt.customers) {
@@ -450,7 +360,7 @@ export function installYiyecek(K: Kernel): YiyecekApi {
     },
   };
   K.addSystem(sys);
-  K.addStateView(() => { const y = save(); return { yiyecek: { open: MENU_TARIFLER.filter(isOpen).length, deals: { ...y.deals }, found: y.found.length, gezgin: gezginId(), bayat: y.bayat, kedi: y.kedi } }; });
+  K.addStateView(() => { const y = save(); return { yiyecek: { open: MENU_TARIFLER.filter(isOpen).length, deals: { ...y.deals }, gezgin: gezginId() } }; });
 
   const api: YiyecekApi = { handle, model, reklam, available };
   (rt as unknown as { yiyecek?: YiyecekApi }).yiyecek = api;

@@ -23,7 +23,7 @@ async function open(opts) {
   return { p, ctx, cdp, errs };
 }
 const frameMs = (p, n = 30) => p.evaluate(n => { const M = window.__marti, xs = []; for (let i = 0; i < n; i++) { const t = performance.now(); M.renderFrames(1, 1 / 60); xs.push(performance.now() - t); } return xs; }, n);
-const info = p => p.evaluate(() => { try { gc(); } catch { /* */ } const i = window.__marti.info(), c = document.getElementById('c'); return { geo: i.geos, tex: i.texs, prog: i.programs, calls: i.calls, tris: i.tris, heapMB: +((performance.memory?.usedJSHeapSize || 0) / 1048576).toFixed(1), cw: c.width, ch: c.height }; });
+const info = p => p.evaluate(() => { try { gc(); } catch { /* */ } const i = window.__marti.info(), c = document.getElementById('c'); return { geo: i.geos, tex: i.texs, prog: i.programs, calls: i.calls, tris: i.tris, heapMB: +((performance.memory?.usedJSHeapSize || 0) / 1048576).toFixed(1), cw: c.width, ch: c.height, sw: i.sceneW, sh: i.sceneH }; });
 
 // ── 1. dinamik çözünürlük
 if (BOL.includes('1')) {
@@ -33,9 +33,19 @@ if (BOL.includes('1')) {
   const b1 = await info(p), f07 = await frameMs(p);
   const t1 = await p.evaluate(() => { const M = window.__marti, t = performance.now(); M.setScale(1); M.renderFrames(1, 1 / 60); return performance.now() - t; });
   const c1 = await info(p);
-  console.log(`ölçek 1.0: tuval ${a.cw}x${a.ch} kare p50 ${med(f1).toFixed(1)} ms | 0.7: tuval ${b1.cw}x${b1.ch} kare p50 ${med(f07).toFixed(1)} ms | geçiş karesi ->0.7 ${t0.toFixed(1)} ms, ->1.0 ${t1.toFixed(1)} ms | program ${a.prog}/${b1.prog}/${c1.prog}`);
+  console.log(`ölçek 1.0: tuval ${a.cw}x${a.ch} sahne ${a.sw}x${a.sh} kare p50 ${med(f1).toFixed(1)} ms | 0.7: tuval ${b1.cw}x${b1.ch} sahne ${b1.sw}x${b1.sh} kare p50 ${med(f07).toFixed(1)} ms | geçiş karesi ->0.7 ${t0.toFixed(1)} ms, ->1.0 ${t1.toFixed(1)} ms | program ${a.prog}/${b1.prog}/${c1.prog}`);
   ok(a.prog === b1.prog && b1.prog === c1.prog, 'ölçek değişiminde shader program sayısı sabit');
-  ok(b1.cw < a.cw && c1.cw === a.cw, 'ölçek 0.7 tuvali küçültür, 1.0 geri verir');
+  // PRF-12: bloom kademesinde tuval tam boy kalır (yeniden boyutlama yok), yalnız sahne hedefi küçülür; son geçiş tuvale gerer
+  ok(b1.sw < a.sw && c1.sw === a.sw && b1.cw === a.cw, 'ölçek 0.7 sahne hedefini küçültür, tuval tam boy kalır, 1.0 geri verir');
+  // PRF-12 ikinci basamak: bloom geçişi kesilir (pass.enabled), program ve hedef yeniden kurulmaz
+  const fOn = await frameMs(p);
+  const tc = await p.evaluate(() => { const M = window.__marti, t = performance.now(); M.setPostCut(true); M.renderFrames(1, 1 / 60); return performance.now() - t; });
+  const fCut = await frameMs(p), e1 = await info(p);
+  if (process.env.SHOTDIR) await p.screenshot({ path: `${process.env.SHOTDIR}/olcek-bloom-kesik.png`, timeout: 300000 });
+  await p.evaluate(() => window.__marti.setPostCut(false)); await frameMs(p, 3); const e2 = await info(p);
+  if (process.env.SHOTDIR) { await p.screenshot({ path: `${process.env.SHOTDIR}/olcek-1.0.png`, timeout: 300000 }); await p.evaluate(() => { window.__marti.setScale(0.7); window.__marti.renderFrames(2, 1 / 60); }); await p.screenshot({ path: `${process.env.SHOTDIR}/olcek-0.7.png`, timeout: 300000 }); await p.evaluate(() => { window.__marti.setScale(1); window.__marti.renderFrames(2, 1 / 60); }); }
+  console.log(`bloom açık kare p50 ${med(fOn).toFixed(1)} ms | kesik ${med(fCut).toFixed(1)} ms | kesme karesi ${tc.toFixed(1)} ms | program ${a.prog}/${e1.prog}/${e2.prog}`);
+  ok(e1.prog === a.prog && e2.prog === a.prog, 'bloom kesme/geri açmada shader program sayısı sabit');
   ok(errs.length === 0, 'sayfa hatası yok ' + errs.join('|'));
   // bağlam kaybı
   await p.evaluate(() => window.__marti.loseGl(true)); await p.waitForTimeout(300);

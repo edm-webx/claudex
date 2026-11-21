@@ -7,7 +7,7 @@
 import { GIDER, fmtTL } from '../../content/ekonomi2';
 import type { Rules } from './state';
 
-export interface GiderModel { kira: number; fatura: number; malzeme: number; satis: number; paid: number }
+export interface GiderModel { kira: number; fatura: number; birimMaliyet: number; satis: number; paid: number; due: number; ertelendi: number }
 
 export function installGider(r: Rules): { last(): GiderModel | null } {
   let last: GiderModel | null = null;
@@ -19,10 +19,11 @@ export function installGider(r: Rules): { last(): GiderModel | null } {
     const fatura = Math.round(satis * GIDER.fatura);
     const due = kira + fatura, paid = Math.min(Math.max(0, S.money), due);
     S.money -= paid;
-    last = { kira, fatura, malzeme: Math.round(t.cost || 0), satis, paid };
+    last = { kira, fatura, birimMaliyet: Math.round(t.cost || 0), satis, paid, due, ertelendi: due - paid };
     (r.rt.uiLast as Record<string, unknown>).giderSon = { ...last, day: S.day };
     if (paid >= due && paid > 0) r.toast('Gün sonu: kira ' + fmtTL(kira) + ', fatura ' + fmtTL(fatura) + ' ödendi.', 'info');
-    else if (paid > 0) r.toast('Gün sonu: kasa yetmedi, ' + fmtTL(paid) + ' ödendi (kira ' + fmtTL(kira) + ', fatura ' + fmtTL(fatura) + ').', 'info');
+    else if (paid > 0) r.toast('Gün sonu: kasa yetmedi, ' + fmtTL(paid) + ' ödendi, ' + fmtTL(due - paid) + ' ertelendi (kira ' + fmtTL(kira) + ', fatura ' + fmtTL(fatura) + ').', 'info');
+    else if (due > 0) r.toast('Gün sonu: kasa boş, kira ve fatura ertelendi (' + fmtTL(due) + ').', 'info');
   });
   return { last: () => last };
 }
