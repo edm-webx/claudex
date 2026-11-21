@@ -37,7 +37,7 @@ export const P = {
   WELCOME_MIN_S: 120,
   // rewards in minutes of income. pacing.js uses 10 / 20 / 5, but its idle model has 100s of station levels to
   // sink money into; this build has only pads, K2-K4 tiers and two tadilats, so the bot-tuned values are lower.
-  ORDER_MIN: 0.6, ORDER_ALL_MIN: 1.2, KASA_MIN: 1,   // Faz 2: rewards < 1 minute of income (were 3/6/3 and doubled the income)
+  ORDER_MIN: 0.4, ORDER_ALL_MIN: 0.8, KASA_MIN: 1,   // Faz 2: rewards < 1 minute of income (were 3/6/3 and doubled the income). EKO-05: 0.6/1.2 -> 0.4/0.8
   // 2026-10-24 user: Altın Simit was far too easy, all sources cut to roughly a third
   AS_ACH: 1, AS_ORDER: 0, AS_ORDER_ALL: 3, AS_STAR: 2, AS_TAD: 4, AS_WEEKLY: 6,
   XP: { buy: 4, pad: 20, worker: 20, station: 25, star: 60, plaque: 50, tadilat: 80, order: 30, ach: 10 },

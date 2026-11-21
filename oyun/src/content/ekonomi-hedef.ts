@@ -37,6 +37,9 @@ export const HEDEF_GIDER_ORAN: { asama: number; band: [number, number] }[] = [
  * 76k / 207k / 355k ₺. (EKO-02 öncesi 62k / 163k / 284k: sipariş, yıldız, başarım, tadilat ödülleri artık toplama yazılıyor ve hedef ödülleri
  * günlük 250 ₺ tavandan çıktı. Gelir penceresi yalnız düzenli işi saydığı için ödül ödülü büyütmüyor.) Mevcut-bant: ölçülen değerin altı %35, üstü %40.
  * Bu bant EKO-05 dengeyi değiştirene dek gerilemeyi yakalar.
+ * EKO-05 (2026-11-21): ödüller sonradan kaymıştı (6 tohum ortalaması +%18/+%16/+%11). Küçük hedef ödülü 1. aşamada en çok
+ * reward x6 (önce x16), sipariş ödülü 0,4 / 0,8 dk gelir (önce 0,6 / 1,2). Sonra tohum 3,7,11,19,23,31 ortalaması 75k / 208k / 346k ₺
+ * (hedefe -%1 / %0 / -%2, tek tohum sapması en çok %8), 2. aşama ~45. dk. Bant değişmedi.
  * ZAMAN ÖLÇÜSÜ: oyun dakikası (S.playT). Anahtar: dakika, değer: [min, max] toplam kazanç (₺).
  */
 export const MEVCUT_TOPLAM_KAZANC: Record<number, [number, number]> = {

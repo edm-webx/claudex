@@ -78,7 +78,9 @@ describe('economy parity with the v2 bot curve', () => {
       // 2026-11-04 re-baseline: the pier grew and the ferry berth moved 14 m east (passengers walk further to the window), day 1 measured 7077
       // 2026-11-21 EKO-02 re-baseline: tek gelir kapısı. Sipariş, yıldız, başarım ve tadilat ödülleri artık totalEarned'a yazılıyor (önce doğrudan cebe giriyordu),
       // hedef ödülleri günlük 250 ₺ tavandan çıktı. Gün 1/3/5: 7077/18192/33838 -> 10047/30263/48501 (hesap değişikliği + hedef ödülü; EKO-05 dengeyi ayrıca ayarlar).
-      const FAZ2_CUM: Record<number, number> = { 1: 10047, 3: 30263, 5: 48501 };
+      // 2026-11-21 EKO-05 re-baseline: 1. aşama küçük hedef ödülü tavanı x16 -> x6, sipariş ödülü 0,6/1,2 -> 0,4/0,8 dk gelir (30/60/90. dk toplamı
+      // 6 tohumda 76k/207k/355k hedefine indi). Gün 1/3/5: 10047/30263/48501 -> 7223/19456/36916.
+      const FAZ2_CUM: Record<number, number> = { 1: 7223, 3: 19456, 5: 36916 };
       const ref = FAZ2_CUM[d];
       expect(Math.abs(at[d] - ref) / ref, `day ${d}: ${at[d]} vs v2 ${ref}`).toBeLessThanOrEqual(0.15);
     }
