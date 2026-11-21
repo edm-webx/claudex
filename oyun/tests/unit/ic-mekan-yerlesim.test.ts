@@ -63,3 +63,16 @@ describe('iç mekân yerleşimi: eşyalar duvara taşmaz, katı eşyalar iç iç
     expect(kotu, m.id).toEqual([]);
   });
 });
+
+describe('iç mekân yerleşimi: masa sandalyeleri duvara ve başka eşyaya girmez', () => {
+  for (const m of IC_MEKANLAR) it(m.id, () => {
+    const lay = icLayout(m), kotu: string[] = [];
+    for (const t of lay) {
+      if (!t.k.startsWith('masa') && t.k !== 'salonMasa') continue;
+      const four = t.k === 'masa4', sm = t.k === 'salonMasa';
+      const seats = four ? [[0.48, 0.48], [0.48, -0.48], [-0.48, 0.48], [-0.48, -0.48]] : sm ? [[0.78, 0], [-0.78, 0]] : [[0.68, 0], [-0.68, 0]];
+      for (const [du, dv] of seats) { const e = enYakin(m, t.u + du, t.v + dv, 0.2, i => i === t); if (e.d < -0.03) kotu.push(`${t.k}@${t.u},${t.v} sandalye -> ${e.k} ${e.d.toFixed(2)}`); }
+    }
+    expect(kotu, m.id).toEqual([]);
+  });
+});

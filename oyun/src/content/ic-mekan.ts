@@ -88,7 +88,7 @@ function kafeLayout(W: number, D: number, bistro: boolean): IcItem[] {
   ];
   if (!bistro) o.push(
     it('espresso', -2.7, bv, 0.6, 0.5, { esya: 'espresso', y: 1.05 }), it('barista', -0.4, bv, 0.9, 0.5, { esya: 'barista', y: 1.05 }),
-    it('vitrin', 2.0, bv, 1.4, 0.8, { esya: 'vitrin' }), it('koltuk', W / 2 - 1.2, D / 2 - 1.3, 1.8, 1.6, { esya: 'koltuk' }),
+    it('vitrin', 2.0, bv, 1.4, 0.8, { esya: 'vitrin' }), it('koltuk', W / 2 - 1.05, D / 2 - 1.3, 1.6, 1.6, { esya: 'koltuk' }),
     it('muzik', W / 2 - 0.55, -D / 2 + 0.55, 0.8, 0.6, { esya: 'muzik' }), it('kitaplik', -W / 2 + 0.3, 0.4, 3.2, 0.4, { esya: 'kitaplik', ry: 1 }),
     it('saksi', -W / 2 + 0.5, D / 2 - 0.5, 0.5, 0.5, { esya: 'saksi' }), it('saksi', W / 2 - 0.5, -0.6, 0.5, 0.5, { esya: 'saksi' }), it('isikTavan', 0, 0, W - 0.6, D - 0.6, { esya: 'isik' }));
   else o.push(
