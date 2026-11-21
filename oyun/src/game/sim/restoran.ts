@@ -19,7 +19,7 @@
  */
 import { mutfakEtki, sefHizi, mutfakEsya, MUTFAK_IST_BY_ID, PASS_KAP } from '../../content/mutfak';
 import { ADISYON, ADISYON_LINES, SERVIS, FAZ2_UI, type GarsonTur } from '../../content/restoran';
-import { bolgeleriKur, bolgeAtamasi, type Bolge } from './garson-bolge';
+import { bolgeleriKur, bolgeAtamasi, devriyeNoktalari, type Bolge } from './garson-bolge';
 import { YEMEK } from '../../content/ekonomi2';
 import { DISH_BY_ID, acikYemekler, menuPano, yemekAgirlik, yemekAd, isProduct, type DishId, type FoodId, type MenuAsama } from '../../content/yemek-menu';
 import { MUTFAK_NOKTA, icIcinde, mutfakDunya, mutfakStand, mutfakOda } from '../../content/ic-mekan';
@@ -98,6 +98,8 @@ export interface RestoranApi {
   bolgeler?(): { id: string; masalar: number[]; komsu: string[]; garsonlar: number[] }[];
   /** BUF-19: bölgesi bir kanat / salon olan garsonun boştaki postu (çay bahçesi: çay ocağı önü, çaycı) */
   garsonPost?(wid: number): ({ bolge: KanatBolge } & Vec2) | null;
+  /** 2026-11-21 (kullanıcı: "garsonlar neden yan yana bekliyor"): boştaki garsonun bölgesindeki devriye noktaları (masa arası koridorlar) */
+  garsonDevriye?(wid: number): Vec2[];
   /** garsonun bölgesi (null: bölgesiz / serbest) */
   bolgeOf?(wid: number): string | null;
   /** elle bölge ata: id bir bölge kimliği, '*' serbest, null otomatik. Çalışma anı (kayda yazılmaz). */
@@ -697,6 +699,12 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
       const enCok = (Object.keys(say) as KanatBolge[]).sort((p, q) => (say[q] || 0) - (say[p] || 0))[0];
       if (!enCok || (say[enCok] || 0) * 2 < b.masalar.length) return null;   // bölgenin çoğu büfe önündeyse tezgâh yanında bekler
       return { bolge: enCok, ...KANAT_POST[enCok] };
+    },
+    garsonDevriye(wid) {
+      bolgeYenile(); const z = atama.get(wid) ?? null;
+      const b = z ? bolgeList.find(x => x.id === z) : null;
+      const idx = (b ? b.masalar : bolgeList.flatMap(x => x.masalar)).filter(i => !masaCati(i) && rt.layout.tables[i]);
+      return devriyeNoktalari(idx.map(i => rt.layout.tables[i]));
     },
     bolgeAta(wid, id) {
       if (!garsonlar().some(w => w.id === wid)) return false;

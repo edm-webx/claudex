@@ -1002,7 +1002,9 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   if (import.meta.env.MODE !== 'production') reg('kaynakDokum', (derin?: number, max?: number) => kaynakDokum(scene, derin ?? 3, max ?? 40));   // PRF-15 doku/geometri baytı sahibine göre
   if (import.meta.env.MODE !== 'production') reg('dokuAkis', (tam?: boolean) => { if (tam !== undefined) akisZorla(!!tam); return akisDurum(); });   // PRF-15 A/B: akış kapalıyken (hep tam) görüntü aynı mı
   if (import.meta.env.MODE !== 'production') reg('kameraNear', (v: number | null) => { (cam as unknown as { nearFixed?(v: number | null): void }).nearFixed?.(v ?? null); return cam.camera.near; });   // PRF-09 A/B
-  if (import.meta.env.MODE !== 'production') reg('sahne', () => scene);   // dev: sahne ağacını sayfadan kurcalamak için (orman teşhisi)
+  if (import.meta.env.MODE !== 'production') reg('sahne', () => scene);
+  // 2026-11-21 mantık denetçisi (tests/browser/mantik-denetci.mjs): canlı aktörler (tür, rol, konum, durum) - yalnız geliştirme/ölçüm derlemesi
+  if (import.meta.env.MODE !== 'production') reg('ajanlar', () => (agentsOf()?.registry.list ?? []).filter(a => !a.dead).map(a => ({ id: a.id, kind: a.kind, key: a.key, role: (a.rig as { role?: string }).role ?? null, x: +a.x.toFixed(2), z: +a.z.toFixed(2), y: +(a.y || 0).toFixed(2), act: a.act, state: a.state })));   // dev: sahne ağacını sayfadan kurcalamak için (orman teşhisi)
   if (import.meta.env.MODE !== 'production') reg('heroPoz',() => { const o = H.object.position; return { x: +o.x.toFixed(3), y: +o.y.toFixed(3), z: +o.z.toFixed(3), camY: +cam.camera.position.y.toFixed(3), near: cam.camera.near }; });
   if (import.meta.env.MODE !== 'production') reg('yagmur', (k?: number, islak?: number) => { if (k !== undefined) HAVA_ZORLA.yagmur = k === null ? -1 : +k; if (islak !== undefined) HAVA_ZORLA.islak = +islak; return HAVA_ZORLA.yagmur; });   // GRS-05 ıslak zemin çekimi
   // GRS-06 A/B in one frame: ground AO uniform and contact planes on/off (measurement builds only)

@@ -27,7 +27,7 @@ export type { DishId, FoodId } from '../../../content/yemek-menu';
 
 interface WRt {
   w: WorkerSave; a: Actor; wk: Walker; st: ProductId | null;
-  state: string; t: number; boostT: number; boostX: number; made: number; pauseT: number;
+  state: string; t: number; boostT: number; boostX: number; made: number; pauseT: number; /** garson devriye noktası sırası */ dv: number;
   job: { index: number } | null; loadT: number; /** BUF-09: seconds since the garson claimed its current task */ isT: number; nextSleep: number; selfieNext: number; songNext: number; chatNext: number; sleepFor: number; selfieFor: number;
   jobKey: string;
 }
@@ -70,7 +70,9 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
       const post = host.garsonPost?.(rt.w.id);   // BUF-19: bölgesi kanat / salon olan garson orada bekler (çay bahçesi: çay ocağında çaycı)
       if (post) return { x: post.x, z: post.z };
       const i = rows.filter((x) => x.w.role === 'garson').indexOf(rt);
-      return side(book.get('counter.standAt'), 1.3 + i * 0.7, 0.1);
+      // masasız büfe: garsonlar tezgâhın iki ucuna dağılır (eskiden 0.7 m arayla yan yana diziliyorlardı)
+      const uc = i % 2 ? -1 : 1, sira = Math.floor(i / 2);
+      return side(book.get('counter.standAt'), uc * (1.6 + sira * 1.8), 0.1 + sira * 0.6);
     }
     if (rt.w.role === 'kasiyer') {   // BUF-12: kasa başı (L.kasa), birden çok kasiyer yan yana
       const i = rows.filter((x) => x.w.role === 'kasiyer').indexOf(rt), k = book.get('kasa'), kp = book.get('kasa.pile');
@@ -97,7 +99,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
     const a = reg.add('worker', String(w.id), { kind: 'worker', role: w.role, look: rolGorunumu((w as { look?: Record<string, unknown> }).look), seed }, start,
       { role: w.role, trait: traitId(w), name: w.name, rank: rankOf(w.xp || 0), rarity: w.rarity });
     const rt: WRt = {
-      w, a, wk: new Walker(a, env.nav), st, state: 'arrive', t: 0, boostT: 0, boostX: 1, made: 0, pauseT: 0,
+      w, a, wk: new Walker(a, env.nav), st, state: 'arrive', t: 0, boostT: 0, boostX: 1, made: 0, pauseT: 0, dv: 0,
       job: null, loadT: 0, isT: 0, nextSleep: 0, selfieNext: S.playT + 100, songNext: S.playT + 70, chatNext: S.playT + 25, sleepFor: 0, selfieFor: 0, jobKey: '',
     };
     const fx = traitFx(w);
@@ -215,7 +217,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
     }
     switch (rt.state) {
       case 'idle': {
-        if (rt.wk.walk(dt, speed)) { a.act = a.carry.length ? 'carry' : 'walk'; return; }
+        if (rt.wk.walk(dt, speed)) { a.act = a.carry.length ? 'carry' : 'walk'; if (rt.jobKey === 'devriye') rt.t = 0; return; }
         rt.loadT -= dt; if (rt.loadT > 0) return;
         rt.loadT = 0.4;
         if ((host.tepsi?.(wid) || []).length) { rt.isT = 0; garsonDevam(rt); return; }   // elde masa tabağı var: işine devam
@@ -230,6 +232,25 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
         }
         const p = garsonPick(rt);
         if (p) { rt.job = null; rt.jobKey = p; rt.state = 'toSrc'; goVia(rt, side(book.stationStand(p), 0.55, 0.2)); return; }
+        // 2026-11-21: boşta tezgâh yanında dizilmek yok: bölgesinin masa aralarında dolaşır, her durakta masalara göz atar
+        const dv = host.garsonDevriye?.(wid) || [];
+        if (dv.length) {
+          const durak = 4 + ((wid * 7) % 5);
+          if (rt.jobKey !== 'devriye' || rt.t >= durak) {
+            const gs = rows.filter((o) => o.w.role === 'garson'), sira = Math.max(0, gs.indexOf(rt));
+            let k = rt.jobKey === 'devriye' ? (rt.dv + 1) : (sira * 3 + wid);
+            for (let n = 0; n < dv.length; n++, k++) {   // başka garsonun durduğu / gittiği noktayı atla
+              const q = dv[k % dv.length];
+              if (!gs.some((o) => o !== rt && (Math.hypot(o.a.x - q.x, o.a.z - q.z) < 1.3 || (o.wk.goal && Math.hypot(o.wk.goal.x - q.x, o.wk.goal.z - q.z) < 1.3)))) break;
+            }
+            rt.dv = k % dv.length; rt.jobKey = 'devriye'; rt.t = 0;
+            goVia(rt, dv[rt.dv]); return;
+          }
+          let yak: Vec2 | null = null, yd = 1e9;   // durakta: en yakın masaya bakar
+          for (const q of dv) { const d = Math.hypot(q.x - a.x, q.z - a.z); if (d > 0.5 && d < yd) { yd = d; yak = q; } }
+          if (yak) rt.wk.face(yak, dt);
+          return;
+        }
         const h = home(rt, S); if (!near2(a, h, 0.4)) goVia(rt, h); else rt.wk.face(book.queue(0), dt);
         return;
       }

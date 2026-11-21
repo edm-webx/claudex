@@ -91,3 +91,30 @@ export function bolgeAtamasi(garsonlar: readonly number[], bolgeler: readonly Bo
   oto.forEach((w, i) => out.set(w, free.length ? free[i % free.length] : ids[i % ids.length]));
   return out;
 }
+
+/**
+ * 2026-11-21 (kullanıcı: "garsonlar neden yan yana bekliyor, servis yapmak yerine"): boştaki garson tezgâh yanında dizilmez,
+ * bölgesindeki masaların arasında dolaşır. Devriye noktaları: masa çiftlerinin orta noktaları (koridor) ve bölge merkezi;
+ * hiçbir masaya `DEVRIYE_MIN` m'den yakın olmayanlar (sandalyeye / masanın içine basmaz). Tek masada masanın dört yanı.
+ * Pure + deterministik (aynı masalar = aynı noktalar, aynı sıra).
+ */
+export const DEVRIYE_MIN = 1.15;
+export function devriyeNoktalari(T: readonly Vec2[]): Vec2[] {
+  if (!T.length) return [];
+  const aday: Vec2[] = [];
+  const cx = T.reduce((s, t) => s + t.x, 0) / T.length, cz = T.reduce((s, t) => s + t.z, 0) / T.length;
+  aday.push({ x: cx, z: cz });
+  for (let i = 0; i < T.length; i++) for (let j = i + 1; j < T.length; j++) {
+    const d = dist(T[i], T[j]); if (d < 2.3 || d > 5.5) continue;
+    aday.push({ x: (T[i].x + T[j].x) / 2, z: (T[i].z + T[j].z) / 2 });
+  }
+  if (T.length <= 2) for (const t of T) for (const [dx, dz] of [[1.5, 0], [-1.5, 0], [0, 1.5], [0, -1.5]]) aday.push({ x: t.x + dx, z: t.z + dz });
+  const out: Vec2[] = [];
+  for (const p of aday) {
+    if (T.some(t => dist(t, p) < DEVRIYE_MIN)) continue;
+    if (out.some(q => dist(q, p) < 1.2)) continue;
+    out.push({ x: Math.round(p.x * 100) / 100, z: Math.round(p.z * 100) / 100 });
+    if (out.length >= 8) break;
+  }
+  return out;
+}
