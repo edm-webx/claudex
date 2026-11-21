@@ -298,7 +298,7 @@ export function createHaliSaha3D(o: {
       s.pls.forEach((p, i) => {
         const hh = heroes[i]; if (!hh) return;
         const sp = Math.hypot(p.vx, p.vy), act = p.act ?? '';
-        hh.setPose({ x: p.x, z: p.y }, Math.atan2(p.fx, p.fy)); hh.object.position.y = 0;   // 2026-11-08: setPose lifts heroes onto the world's overpass (ustgecit) whose x/z overlap this pitch, so players floated
+        hh.setPose({ x: p.x, z: p.y }, Math.atan2(p.fx, p.fy)); hh.object.position.y = 0; hh.object.rotation.x = 0; hh.object.rotation.z = 0;   // 2026-11-21: setPose only sets rotation.y; the dive/tackle rotateZ/rotateX below piled up frame after frame and players rolled over   // 2026-11-08: setPose lifts heroes onto the world's overpass (ustgecit) whose x/z overlap this pitch, so players floated
         hh.setInput({ speed: sp, carry: 0, act: p.stun > 0 ? 'idle' : act === 'celebrate' ? 'cheer' : sp > 0.3 ? 'walk' : 'idle', mood: p.stun > 0 ? 'sad' : 'happy', t });
         hh.update(s.dt, 1);
         const dv = p.dive ?? 0;
@@ -309,7 +309,7 @@ export function createHaliSaha3D(o: {
       });
       if (refHero && s.ref) {
         const r = s.ref, sp = Math.hypot(r.vx, r.vy);
-        refHero.setPose({ x: r.x, z: r.y }, Math.atan2(r.fx, r.fy)); refHero.object.position.y = 0;
+        refHero.setPose({ x: r.x, z: r.y }, Math.atan2(r.fx, r.fy)); refHero.object.position.y = 0; refHero.object.rotation.x = 0; refHero.object.rotation.z = 0;
         refHero.setInput({ speed: sp, carry: 0, act: r.point > 0 || r.signal ? 'wave' : sp > 0.3 ? 'walk' : 'idle', mood: 'happy', t } as never);
         refHero.update(s.dt, 1);
       }

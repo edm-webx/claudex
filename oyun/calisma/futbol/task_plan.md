@@ -53,3 +53,10 @@ Ayrıntı ve ölçümler: fut02-ilerleme.md, olcum/fut02-sonra.md. macAyari -> i
 - Doğrulama: tests/browser/halisaha-gorsel.mjs (dunya-ust karesi eklendi), kanıt /mnt/project-files/sosisci-oyun/asama7-kanit/stadyum-gorsel-2026-11-21/. Maç geniş açı dengeli: 245 çizim, 375k üçgen (doluluk 1).
 - vitest: 4 kırmızı (ipucu, baglilik, ekonomi-egri, faz2-ekonomi) taban 7babb68'de de kırmızı, bizden değil.
 - Kalan (görsel): kulüp binası çatısı sade; maç sahnesi köşe blokları düz beton; "Nasıl oynanır" kartı açılışta sahayı kapatıyor (kontrol izinin işi).
+
+### Görsel 2. tur 2026-11-21 akşam (sahip: "kulüp binası görüşü engelliyor", "çevre düz ve yavan", "futbolcular yuvarlanıyor")
+- Kulüp binası OFIS (398, 25.8) = eski otoparkın yeri (sahanın batısı, ön yüz +z kameraya). Otopark eski bina yerine (417, 8.4), 3 araba, bordür, baba. Saydamlaştırma YAPILMADI (sahip istemedi).
+- Varsayılan kamera kuzeyde (+z) güneye bakar; üst tribün kameraya en yakın tribün, çatısı sahanın yarısını kapatıyordu: çatı kaldırıldı (roof:false), çatı soldurma kodu silindi.
+- Çevre: mk.ground.pitchzone haki -> çim; view'de 190 m çim disk, ~230 park ağacı (2 instanced çizim), uzak apartman silueti (1 instanced çizim). Yalnız oyuncu stadyum diyarındayken (x 392..452) görünür.
+- Yuvarlanma kök nedeni (ui/hali-saha-3d.ts): setPose yalnız rotation.y yazıyor, dalış rotateZ ve müdahale rotateX her kare birikiyordu; artık her kare x/z sıfırlanıyor (hakem dahil).
+- Araç: tests/browser/stadyum-kus.mjs. Kanıt: asama7-kanit/stadyum-gorsel-2026-11-21/tur2-*.png
