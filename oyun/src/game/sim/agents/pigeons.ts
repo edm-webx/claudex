@@ -10,4 +10,5 @@ export function pigeonArea(book: AnchorBook): PigeonArea {
   const pz = sp.length ? sp.reduce((s, v) => s + v.z, 0) / sp.length : 8;
   return { x0: -8, x1: 8, z0: pz - 2, z1: pz + 2, cx: 0, cz: pz, radius: 6 };
 }
-export const FLOCK = { y: 16, z: -30, radius: 26 };
+// 2026-11-21 denetim: sürü iskelenin üstünde kameranın içinden geçip ekranda büfeden büyük görünüyordu; açık denize, kamera yüksekliğinin altına alındı
+export const FLOCK = { y: 9, z: -62, radius: 20 };

@@ -393,7 +393,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const agentsOf = (): AgentsHandle | null => (sim.rules.rt as unknown as { agents?: AgentsHandle }).agents ?? null;
   const agentsView: AgentsView | null = playMode && chars ? make('agentsView', () => createAgentsView({
     chars: chars as MotorChars, quality, agents: agentsOf,
-    player: () => ({ x: pos.x, z: pos.z, moving: walk.speed > 0.15 }),
+    player: () => ({ x: pos.x, z: pos.z, moving: walk.speed > 0.15 }), camera: () => cam.camera,
   })) : null;
 
   // ── panels, labels, play view, audio map (play mode only)
