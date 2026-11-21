@@ -35,7 +35,7 @@ export function makeSea(mask?: any) {
     uniforms: T.UniformsUtils.merge([T.UniformsLib.fog, {
       uTime: { value: 0 }, uNight: { value: 0 },
       uDeep: { value: new T.Color('#2f86c2') }, uShallow: { value: new T.Color('#5ab8d8') }, uFoam: { value: new T.Color('#eefbfb') },
-      uSky: { value: new T.Color('#bfe3f7') }, uSunCol: { value: new T.Color('#fff1d6') }, uSunDir: { value: V3(0.3, 0.7, 0.4).normalize() },
+      uSky: { value: new T.Color('#bfe3f7') }, uSunCol: { value: new T.Color('#fff1d6') }, uSunDir: { value: V3(0.3, 0.7, 0.4).normalize() }, uSunI: { value: 1 },
       uMask: { value: null }, uMaskRect: { value: new T.Vector4(MASK.x0, MASK.z0, MASK.w, MASK.h) },
       uFerry: { value: new T.Vector4(0, -200, 0, 0) }, uFerryOn: { value: 0 },
       uReflect: { value: null }, uReflMat: { value: new T.Matrix4() }, uReflOn: { value: 0 }   // GRS-05: planar reflection (render/reflect.ts); off in akıcı
@@ -51,7 +51,7 @@ export function makeSea(mask?: any) {
         gl_Position = projectionMatrix * mvPosition;
         #include <fog_vertex>
       }`,
-    fragmentShader: `uniform float uTime, uNight, uFerryOn, uReflOn; uniform vec3 uDeep, uShallow, uFoam, uSky, uSunCol, uSunDir;
+    fragmentShader: `uniform float uTime, uNight, uFerryOn, uReflOn, uSunI; uniform vec3 uDeep, uShallow, uFoam, uSky, uSunCol, uSunDir;
       uniform sampler2D uMask, uReflect; uniform mat4 uReflMat; uniform vec4 uMaskRect, uFerry; varying vec3 vW;
       #include <common>
       #include <fog_pars_fragment>
@@ -104,15 +104,19 @@ export function makeSea(mask?: any) {
         // small elongated whitecaps (filled, sparse) and a soft swell tint
         float cr = vn(vec2(p.x * 0.8, p.y * 2.0) + vec2(t * 0.25, t * 0.08)) * 0.6 + vn(vec2(p.x * 2.0, p.y * 4.4) - vec2(t * 0.2, -t * 0.32)) * 0.4;
         float crest = smoothstep(0.72, 0.84, cr);
-        col = mix(col, uFoam, crest * (0.2 - 0.14 * uNight));
+        // the sea shader is unlit: foam and glint follow the light level, or they glow white at night (moon was a 1.1x sun)
+        vec3 fc = uFoam * mix(1.0, 0.3, uNight);
+        col = mix(col, fc, crest * (0.2 - 0.14 * uNight));
         col = mix(col, uDeep * 0.9, smoothstep(0.35, 0.15, cr) * 0.12);
         float edge = smoothstep(0.87, 0.95, m);
         float bands = smoothstep(0.7, 0.9, sin(m * 14.0 - t * 1.6)) * smoothstep(0.45, 0.8, m) * (1.0 - edge);
         float foam = clamp(edge + bands * 0.4, 0.0, 1.0) * (0.5 + 0.45 * vn(p * 3.2 + vec2(t * 0.6, 0.0)));
         foam = max(foam, ff);
-        col = mix(col, uFoam, foam * (1.0 - 0.35 * uNight));
+        col = mix(col, fc, foam * (1.0 - 0.35 * uNight));
         vec3 H = normalize(V + normalize(uSunDir));
-        col += uSunCol * pow(max(dot(n, H), 0.0), 220.0) * 1.1;
+        // sun glint: tight sparkles broken up by a fine ripple, not wide white blobs (the old 220 lobe painted cloud-sized patches)
+        float gl = pow(max(dot(n, H), 0.0), 900.0) * smoothstep(0.45, 0.75, vn(p * 7.0 + vec2(t * 1.3, -t)));
+        col += uSunCol * gl * 1.4 * uSunI * (1.0 - 0.8 * uNight);
         gl_FragColor = vec4(col, 1.0);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
