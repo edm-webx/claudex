@@ -905,6 +905,8 @@ export interface GameView {
 export interface AmbientSystem extends System {
   recruit(filter?: (typeId: string) => boolean): number;   // agent slot or -1
   release(agent: number): void;
+  /** BUF-25: take the nearest hungry street citizen within maxD m of `near` (agent slot or -1); it keeps its look and position. */
+  recruitHungry?(near: Vec2, maxD: number): number;
 }
 /** M0 player movement + collision (A, src/game/sim/walk.ts). */
 export interface PlayerWalk extends System {

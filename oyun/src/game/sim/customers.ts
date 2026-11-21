@@ -29,7 +29,9 @@ import { davranisOf, KASA, KASA_SOZ, kasaSure, kasaSiraNokta, GRUP, HAFTA_SONU, 
 
 const A_IDLE = ACT_ORDER.indexOf('idle'), A_WALK = ACT_ORDER.indexOf('walk'), A_CARRY = ACT_ORDER.indexOf('carry'), A_SIT = ACT_ORDER.indexOf('sit'), A_EAT = ACT_ORDER.indexOf('eat');
 
-export interface SpawnOpts { type?: CitizenTypeDef; n?: number; order?: Order; set?: string | null; from?: Vec2; near?: Vec2; kind?: 'q' | 'win' | 'masa'; patienceX?: number; say?: string; follower?: boolean; tag?: string }
+/** BUF-25: how far (m) a hungry citizen may be and still come to the büfe on its own */
+const HUNGRY_M = 45;
+export interface SpawnOpts { type?: CitizenTypeDef; n?: number; order?: Order; set?: string | null; from?: Vec2; near?: Vec2; kind?: 'q' | 'win' | 'masa'; patienceX?: number; say?: string; follower?: boolean; tag?: string; body?: number }
 
 export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (p: { value: number }[], v: number) => void, settle: (c: Customer, items: import('./state').Plate[]) => number) {
   const rt = K.rt, S = K.state;
@@ -206,7 +208,7 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
       agent: -1, members: [], items: [], seat: null, say: '', sayT: 0, calm: false, follower: !!o.follower, tag: o.tag || null, qi: -1,
     };
     if (pn.ad) c.grupAd = pn.ad;
-    c.agent = recruitBody(type, from);
+    c.agent = o.body !== undefined && o.body >= 0 ? o.body : recruitBody(type, from);
     for (let i = 1; i < Math.min(n, GRUP.max); i++) { const m = recruitBody(type, from); if (m < 0) break; c.members.push(m); }   // BUF-24: gövde sayısı grup kadar (en çok 6)
     rt.customers.push(c);
     if (kind === 'masa' && kume) {
@@ -387,6 +389,13 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
     if (spawnT > 0) return;
     spawnT = 60 / arrivalPerMin() * rng.range(0.75, 1.25);
     if (rt.queue.length >= Math.min(P.QUEUE_MAX, rt.layout.queue.length)) { spawnT = 1.5; return; }
+    // BUF-25: a hungry street citizen walks over by own will (same arrival count: it replaces one formula spawn)
+    const amb = K.ambient, hb = amb?.recruitHungry ? amb.recruitHungry(queueSpot(0), HUNGRY_M) : -1;
+    if (hb >= 0) {
+      const a = K.agents, ty = CITIZENS[a.u8('typeId')[hb]];
+      if (ty && !ty.scenery) { spawnCustomer({ type: ty, n: 1, from: { x: a.f32('x')[hb], z: a.f32('z')[hb] }, body: hb, say: 'Acıktım ya...', ...(restoranHook()?.wantMasa() ? { kind: 'masa' as const } : {}) }); return; }
+      amb!.release(hb);
+    }
     spawnCustomer(restoranHook()?.wantMasa() ? { kind: 'masa' } : {});
   }
 
