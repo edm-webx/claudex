@@ -283,6 +283,10 @@ export function createRender(deps: RenderDeps): MotorRender {
     pmrem ||= new T.PMREMGenerator(renderer);
     const s = new T.Scene(); s.add(new T.Mesh(sky.geometry, sky.material));
     const old = envRT; envRT = pmrem.fromScene(s, 0.02);
+    // PRF-15: the generator keeps its blur ping-pong target (768x1024 half float, 6 MB on the GPU) between regenerations, which
+    // come every half game hour. Free its GPU copy now; three re-creates the framebuffer on the next fromScene (target object,
+    // blur material and program stay, so no shader relink). three 0.160 private field.
+    (pmrem as unknown as { _pingPongRenderTarget: T.WebGLRenderTarget | null })._pingPongRenderTarget?.dispose();
     envSubs.forEach(cb => { try { cb(envRT!.texture); } catch (err) { deps.log?.warn('[render] env cb', err); } });
     if (old) old.dispose();
   }

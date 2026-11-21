@@ -148,6 +148,28 @@
         "once": 5.4,
         "sonra": 4.39,
         "_not": "oyunun ilk dakikasında inen tüm dosyalar (game.js gzip'siz sayıldı)"
+      },
+      "olculen": {
+        "_tarih": "2026-11-21, tools/yukleme-olc.mjs --build (üretim derlemesi, gzip, önbellek kapalı)",
+        "kablolu": {
+          "ilkBoyaMs": 56,
+          "gameJsMs": 270,
+          "hazirMs": 4878,
+          "tumVarlikMs": 4964
+        },
+        "4g": {
+          "ilkBoyaMs": 88,
+          "gameJsMs": 972,
+          "hazirMs": 4742,
+          "tumVarlikMs": 5592
+        },
+        "3g": {
+          "ilkBoyaMs": 172,
+          "gameJsMs": 4817,
+          "hazirMs": 7999,
+          "tumVarlikMs": 16589
+        },
+        "_not": "Yükleme ekranı her profilde ilk boyada görünür (siyah ekran yok). hazirMs'in ağ dışı payı SwiftShader'da JS + shader ısıtmasıdır; gerçek GPU'da kısalır."
       }
     }
   }
