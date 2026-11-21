@@ -3,9 +3,12 @@
 // dist/index.html in page-contract form is written afterwards by tools/build-artifact.mjs (Builder A).
 // Styles: do NOT import .css files (they would emit a separate file); inject CSS from TS (engine/ui).
 import { defineConfig } from 'vitest/config';
+import { fileURLToPath } from 'node:url';
 
 export default defineConfig({
   base: './',
+  // PRF-11: kullanılmayan Supabase modülleri boş taslakla değiştirilir (yalnız auth + postgrest + realtime kullanılıyor).
+  resolve: { alias: { '@supabase/storage-js': fileURLToPath(new URL('./tools/stubs/supabase-storage-stub.js', import.meta.url)), '@supabase/functions-js': fileURLToPath(new URL('./tools/stubs/supabase-functions-stub.js', import.meta.url)) } },
   publicDir: false,
   server: { port: 5173, host: true },
   build: {
