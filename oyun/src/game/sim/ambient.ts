@@ -32,6 +32,7 @@ import {
   type SokakHedef, type SokakNokta, type Yaka,
 } from '../../content/sokak';
 import { havaSokak } from './hava';
+import { gecitAcik } from '../../content/kilitli-bolge';
 
 export interface AmbientDeps {
   nav: Nav;
@@ -212,10 +213,12 @@ export function createAmbient(deps: AmbientDeps): AmbientSystem {
   };
 
   // ───────────────────────── sokak kipi (DNY-01) ─────────────────────────
+  let gecitOk = true;
   /** Path between any two points of the map; the road is crossed only on the footbridge (both flights walked). */
   const route = (from: Vec2, to: Vec2): Vec2[] => {
     const a = yakaOf(from), b = yakaOf(to);
     if (a === b) return deps.nav.path(from, to, { maxNodes: 20000 });
+    if (!gecitOk) return [];   // 2026-11-21: üst geçidin ortası inşaatta (content/kilitli-bolge UST_GECIT): karşıya yol yok
     const p1 = deps.nav.path(from, UG_AYAK[a], { maxNodes: 20000 }), p2 = deps.nav.path(UG_AYAK[b], to, { maxNodes: 20000 });
     if (!p1.length || !p2.length) return [];
     return [...p1, { x: UG_AYAK[b].x, z: UG_AYAK[b].z }, ...p2];
@@ -426,7 +429,8 @@ export function createAmbient(deps: AmbientDeps): AmbientSystem {
     const a = anchorsOf('iskele');
     if (!a.some(e => e.id === 'spawn.0')) return false;
     const nav = deps.nav;
-    return !nav.walkable({ x: 0, z: 20 }) && nav.walkable({ x: UG_AYAK.i.x, z: 20 }) && nav.walkable({ x: -3.9, z: 40 }) && nav.walkable(UG_AYAK.k);
+    // köprü koridoru güvertenin ilk açıklığında yoklanır (z 16): orta açıklık inşaatta ızgarada kapalı olabilir
+    return !nav.walkable({ x: 0, z: 20 }) && nav.walkable({ x: UG_AYAK.i.x, z: 16 }) && nav.walkable({ x: -3.9, z: 40 }) && nav.walkable(UG_AYAK.k);
   }
 
   const sys: AmbientSystem = {
@@ -434,6 +438,7 @@ export function createAmbient(deps: AmbientDeps): AmbientSystem {
     step(ctx: SimCtx) {
       const s = store ?? (store = ctx.world.soa(AGENTS, AGENT_CAP, AGENT_SCHEMA));
       const rng = ctx.rng.stream('ambient');
+      gecitOk = gecitAcik(ctx.state);
       const dt = ctx.dt;
       const X = s.f32('x'), Z = s.f32('z'), R = s.f32('rot'), SP = s.f32('speed');
       const act = s.u8('act'), flags = s.u16('flags'), lod = s.u8('lod');

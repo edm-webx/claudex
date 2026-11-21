@@ -110,6 +110,7 @@ import { createKarsiLook, type KarsiLookView } from './view/world/karsi-look';
 import { createKarsiBina, type BinaView } from './view/world/karsi-bina';
 import { createIsletmeInsaat, type InsaatView } from './view/world/isletme-insaat';
 import { createInsaatSahasi, type InsaatSahasiView } from './view/world/insaat-sahasi';
+import { gecitAcik } from '../content/kilitli-bolge';
 import { createBufeBuyume, mevsimZorla, type BuyumeView } from './view/world/bufe-buyume';
 import { createAcilis, type AcilisView } from './view/world/acilis';
 import { ARSALAR, ISLETME, ARSA_ISLETME } from '../content/esya';
@@ -346,7 +347,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     mutfak: () => { const rv = restoranApi(sim.rules)?.view(); return { ekip: sim.state.workers.filter(w => MUTFAK_ROL_BY_ID[w.role]).map(w => ({ rol: w.role, rank: rankOf(w.xp || 0) })), kds: (rv?.tickets || []).slice(0, 6).map(k => '#' + k.no + '  Masa ' + (k.table + 1) + ' · ' + k.items.filter(i => i.left).map(i => i.left + '× ' + i.name).join(', ')), pass: rv?.pass || [], ist: rv?.ist || {},
       bilet: (rv?.tickets || []).map(k => ({ no: k.no, masa: k.table + 1, kalem: k.items.filter(i => i.left).map(i => i.left + '× ' + i.name), frac: k.frac })), zeminKir: ((sim.state.zones as { zemin?: { kir?: number } }).zemin?.kir) ?? 0 }; } })) : null;   // BUF-05: pass rafı + istasyon tepsileri
   const karsiYasam: YasamView | null = playMode && zones && chars ? make('karsiYasam', () => createKarsiYasam({ root: () => zones.root('iskele') ?? null, chars, hero: () => walk.pos, hour: () => sim.clock.hour, sfx: (id, at) => { try { audio?.sfx(id, at ? { at } : undefined); } catch { /* */ } }, isci: () => { const m = mulkApi(sim.rules); return m ? m.view().plots.filter(p => p.sabit && p.owned).map(p => ({ id: p.id, n: p.isci, lv: p.lv, esya: (p as { esya?: string[] }).esya || [] })) : []; } })) : null;
-  const yolLook: YolLookView | null = playMode && zones ? make('yolLook', () => createYolLook({ root: () => zones.root('iskele') ?? null })) : null;
+  const yolLook: YolLookView | null = playMode && zones ? make('yolLook', () => createYolLook({ root: () => zones.root('iskele') ?? null, gecitAcik: () => gecitAcik(sim.state) })) : null;
 
   const izgaraLook: IzgaraLookView | null = playMode && uiReal ? make('izgaraLook', () => createIzgaraLook({ scene, host: U.root })) : null;
 
