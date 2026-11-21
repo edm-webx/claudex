@@ -73,7 +73,7 @@ export function makeSky(): T.Mesh {
     m.matrixWorld.makeTranslation(cam.position.x, cam.position.y, cam.position.z);
     // seconds since start (clouds drift ~0.01 sky units/s; a day-long session stays well inside float precision)
     mat.uniforms.uTime.value = (((typeof performance !== 'undefined' ? performance.now() : 0) - t0) / 1000) % 86400;
-    const f = s.fog as T.Fog | null; if (f && f.isFog && m.userData.autoFog !== false) { const d = Math.hypot(cam.position.x, cam.position.y, cam.position.z + 4), fm = +m.userData.fogMul || 1; f.near = (d * 0.9 + 32) * fm; f.far = (d * 1.5 + 140) * fm; }
+    const f = s.fog as T.Fog | null; if (f && f.isFog && m.userData.autoFog !== false) { const d = +m.userData.fogD > 0 ? +m.userData.fogD : Math.hypot(cam.position.x, cam.position.y, cam.position.z + 4), fm = +m.userData.fogMul || 1; f.near = (d * 0.9 + 32) * fm; f.far = (d * 1.5 + 140) * fm; }
   };
   return m;
 }

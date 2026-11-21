@@ -568,7 +568,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const bankaRt = () => (sim.rules.rt as unknown as { banka?: { tl: number; esya: Record<string, number>; dirty: boolean } }).banka;
   let bankaT = 0;
   // 16:52 user: 42B bus from the stop across the büfe to Belgrad Ormanı (view/orman, ui/otobus-hud)
-  const ormanView = ACIK_DUNYA && playMode ? make('ormanView', () => createOrmanView({ scene, rules: () => sim.rules, hero: () => pos, chars: chars as never, hour: () => sim.clock.hour, setSolid: r => nav.setSolids('otobus', r) })) : null;
+  const ormanView = ACIK_DUNYA && playMode ? make('ormanView', () => createOrmanView({ scene, rules: () => sim.rules, hero: () => pos, chars: chars as never, hour: () => sim.clock.hour, setSolid: r => nav.setSolids('otobus', r), camera: () => cam.camera })) : null;
   // the glass shelter is solid too (back + side panels), you wait in front of it
   if (ormanView) { try { nav.setSolids('durak', [{ x0: 3.9, x1: 8.1, z0: 14.4, z1: 14.75 }, { x0: 3.85, x1: 4.15, z0: 12.9, z1: 14.75 }, { x0: 7.85, x1: 8.15, z0: 12.9, z1: 14.75 }]); } catch { /* */ } }
   const otobusHud = ACIK_DUNYA && playMode && uiReal ? make('otobusHud', () => createOtobusHud({ root: U.root, rules: () => sim.rules, command, hour: () => sim.clock.hour, sfx: (id, at) => { try { audio?.sfx(id, at ? { at } : undefined); } catch { /* */ } } })) : null;
@@ -908,6 +908,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   if (import.meta.env.MODE !== 'production') reg('kaynakDokum', (derin?: number, max?: number) => kaynakDokum(scene, derin ?? 3, max ?? 40));   // PRF-15 doku/geometri baytı sahibine göre
   if (import.meta.env.MODE !== 'production') reg('dokuAkis', (tam?: boolean) => { if (tam !== undefined) akisZorla(!!tam); return akisDurum(); });   // PRF-15 A/B: akış kapalıyken (hep tam) görüntü aynı mı
   if (import.meta.env.MODE !== 'production') reg('kameraNear', (v: number | null) => { (cam as unknown as { nearFixed?(v: number | null): void }).nearFixed?.(v ?? null); return cam.camera.near; });   // PRF-09 A/B
+  if (import.meta.env.MODE !== 'production') reg('sahne', () => scene);   // dev: sahne ağacını sayfadan kurcalamak için (orman teşhisi)
   if (import.meta.env.MODE !== 'production') reg('heroPoz',() => { const o = H.object.position; return { x: +o.x.toFixed(3), y: +o.y.toFixed(3), z: +o.z.toFixed(3), camY: +cam.camera.position.y.toFixed(3), near: cam.camera.near }; });
   reg('lights', () => nightLights?.stats() ?? null);   // PRF-08: gece ışığı havuzu durumu
   reg('setTime', (h: number) => { sim.command({ kind: 'setTime', hour: h }); lastHour = -1; timeT = 0; gSaat.sifirla(sim.clock.hour, sim.state.day); guard('setTime', () => { R.setTime(sim.clock.hour, sim.clock.season); havaLook?.relight(); }); });

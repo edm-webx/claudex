@@ -205,7 +205,7 @@ export function disariPrefabs(): PrefabDef[] {
   defs.push(house('mk.kosk.b', 8, 6, 6, '#cfe0ef', '#7e8b8f', 1, [box(8.4, 0.2, 2, 0, 2.6, 3.8, '#7e8b8f', 'balcony')]));
   defs.push({ id: 'mk.bikes', parts: [box(4, 0.1, 0.1, 0, 0.6, 0, '#3b3b3b'), ...[-1.5, -0.5, 0.5, 1.5].flatMap((x, i) => [cyl(0.32, 0.05, 0.32, x, 0.34, -0.4, '#2b2b2b', 10), cyl(0.32, 0.05, 0.32, x, 0.34, 0.4, '#2b2b2b', 10), box(0.08, 0.5, 0.8, x, 0.62, 0, ['#e0533c', '#3fb5b0', '#ffd23f', '#8c5a9a'][i])])], colliders: [R(4, 1)] });
   // Belgrad Ormanı (16:52 user): oaks and pines, a stone fountain, mangal spots, picnic tables, logs, rocks, a trail
-  g('mk.ground.orman', 110, 64, '#6f9e55', 0.014);   // 2026-11-21 denetim: kenardaki ağaçların altı boşluk kalmasın (zemin yürünebilir alandan geniş)
+  g('mk.ground.orman', 320, 210, '#6f9e55', 0.014);   // 2026-11-21: bölgenin (780..900) çok ötesine uzanır, kenarda gökyüzü boşluğu görünmez   // 2026-11-21 denetim: kenardaki ağaçların altı boşluk kalmasın (zemin yürünebilir alandan geniş)
   // DNY-10: the trail prefab sat inside the comment above, so the forest had no trails at all
   g('mk.trail', 84, 3.2, '#b89a6a', 0.02);
   g('mk.trail.v', 2.4, 20, '#b39466', 0.024); g('mk.trail.v9', 2.4, 9, '#b39466', 0.024); g('mk.trail.v3', 2.2, 3, '#b39466', 0.024);

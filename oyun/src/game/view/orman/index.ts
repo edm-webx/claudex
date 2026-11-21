@@ -17,15 +17,17 @@ import { REALM_BY_ID } from '../../../content/realm';
 import { createKit, buildBus, buildBusStop, buildMushroom } from '../atolye';
 import { createDoga, gunBandi } from './doga';
 import { createYasam, MANGALS, type CharsLike } from './yasam';
+import { createUzakOrman } from './uzak-orman';
 
 interface HeroLike { object: T.Object3D; setPose(p: { x: number; z: number }, r: number): void; setInput(i: Record<string, unknown>): void; update(dt: number, a: number): void; dispose(): void }
 export interface OrmanViewDeps { scene: T.Scene; rules: () => Rules | null; hero: () => { x: number; z: number }; chars: { makeHero(o: never): unknown } | null; hour: () => number;
   /** 17:24 user: the bus was a ghost. Its body is a nav solid while it is on screen. */
+  /** render kamerası: sis mesafesi kameranın baktığı zemin noktasından hesaplanır (sky.ts kuralı dünya orijinine göre olduğundan x=800'de sis yok oluyordu) */
+  camera?: () => T.Camera;
   setSolid?: (rects: { x0: number; x1: number; z0: number; z1: number }[]) => void }
 export interface OrmanView { update(dt: number): void; dispose(): void }
 
 const ease = (k: number) => 1 - Math.pow(1 - Math.min(1, Math.max(0, k)), 3);
-const fr = (x: number) => x - Math.floor(x);
 
 export function createOrmanView(d: OrmanViewDeps): OrmanView {
   const kit = createKit();
@@ -52,32 +54,8 @@ export function createOrmanView(d: OrmanViewDeps): OrmanView {
   const doga = createDoga(kit, forest);
   const yasam = createYasam(d.chars as CharsLike | null, root);
 
-  // J7: dense instanced forest beyond the walkable band (z < -10 and z > 28), in chunks with hi/lo LOD by distance to the hero
-  const chunks: { cx: number; hi: T.Object3D[]; lo: T.Object3D }[] = [];
-  {
-    const R = (i: number) => fr(Math.sin(i * 57.3 + 1.7) * 24634.6345);
-    const trunkG = new T.CylinderGeometry(0.16, 0.24, 1.8, 6); trunkG.translate(0, 0.9, 0);
-    const coneA = new T.ConeGeometry(1.5, 3.2, 7); coneA.translate(0, 3.0, 0);
-    const coneB = new T.ConeGeometry(1.05, 2.4, 7); coneB.translate(0, 4.6, 0);
-    const loG = new T.ConeGeometry(1.5, 5.6, 5); loG.translate(0, 2.8, 0);
-    const mTrunk = kit.mat('#6b4a2e'), mA = kit.mat('#ffffff'), mB = kit.mat('#ffffff'), mLo = kit.mat('#437f4b');
-    const tint = ['#3f7a48', '#2f6e44', '#4d8f55', '#5b9a4a', '#356c3e', '#6a9e52'].map(c => new T.Color(c)), tc = new T.Color();
-    const CH = 5, W = 100, N = 110;
-    for (let c = 0; c < CH; c++) {
-      const x0 = 790 + c * (W / CH) * 1.1, o = new T.Object3D();
-      const mk = (g: T.BufferGeometry, m: T.Material) => new T.InstancedMesh(g, m, N);
-      const a = mk(trunkG, mTrunk), b = mk(coneA, mA), e = mk(coneB, mB), l = mk(loG, mLo);
-      for (let i = 0; i < N; i++) {
-        const k = c * 1000 + i, north = i % 2 === 0;
-        const z = north ? 29 + R(k) * 30 : -11 - R(k) * 30, x = x0 + R(k + 3) * (W / CH * 1.1);
-        o.position.set(x, 0, z); o.rotation.set(0, R(k + 5) * 6, 0); o.scale.setScalar(0.85 + R(k + 7) * 0.8); o.updateMatrix();
-        for (const im of [a, b, e, l]) im.setMatrixAt(i, o.matrix);
-        tc.copy(tint[Math.floor(R(k + 9) * tint.length)]); b.setColorAt(i, tc); e.setColorAt(i, tc.offsetHSL(0, 0, 0.05));
-      }
-      for (const im of [a, b, e, l]) { im.castShadow = false; im.receiveShadow = false; im.computeBoundingSphere(); root.add(im); }
-      chunks.push({ cx: x0 + W / CH * 0.55, hi: [a, b, e], lo: l });
-    }
-  }
+  // uzak koru: yürünebilir bandın dört yanında yoğun örnekli orman (uzak-orman.ts), mesafeye göre hi/lo LOD
+  const uzak = createUzakOrman(kit, root);
 
   // mangal smoke while the families are out
   const smokeTex = kit.paint(64, 64, (g) => { const gr = g.createRadialGradient(32, 32, 2, 32, 32, 30); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, 64, 64); });
@@ -101,7 +79,10 @@ export function createOrmanView(d: OrmanViewDeps): OrmanView {
   const spM = new T.PointsMaterial({ size: 0.42, map: spTex, color: '#fff6c8', transparent: true, opacity: 0.8, depthWrite: false, blending: T.AdditiveBlending, sizeAttenuation: true });
   const sparkle = new T.Points(spGeo, spM); sparkle.frustumCulled = false; forest.add(sparkle);
 
-  let fogBase = 0, fogSet = 0, hazeK = 0, t = 0;
+  const fogDir = new T.Vector3();
+  // geceleri ormanda ay ışığı gibi soğuk, çok hafif bir gökyüzü/zemin aydınlığı; ışık sahnede hep durur (yalnızca şiddeti değişir: ışık sayısı değişince tüm gölgelendiriciler yeniden derlenirdi)
+  const ay = new T.HemisphereLight('#8aa0e0', '#2c3d3a', 0); ay.name = 'orman-ay'; root.add(ay);
+  let hazeK = 0, t = 0;
   return {
     update(dt) {
       t += dt;
@@ -123,7 +104,9 @@ export function createOrmanView(d: OrmanViewDeps): OrmanView {
         bus.object.visible = true; bus.object.position.set(x, 0, z);
         bus.set({ doors, lights: h >= 19 || h < 7 ? 1 : 0.2, moved });
       } else { bus.object.visible = false; busKey = ''; if (solidOn && d.setSolid) { d.setSolid([]); solidOn = false; } }
-      for (const c of chunks) { const dx = Math.abs(p.x - c.cx), hi = dx < 70, lo = !hi && dx < 170; c.hi.forEach(m => { m.visible = hi; }); c.lo.visible = lo; }
+      uzak.update(p.x, p.z);
+      { const sky = d.scene.getObjectByName('sky'), cm = d.camera?.();
+        if (sky && cm) { if (p.x > 700 && p.x < 980) { const dir = cm.getWorldDirection(fogDir); sky.userData.fogD = (dir.y < -0.15 ? Math.min(120, cm.position.y / -dir.y) : 45) * (1 - 0.3 * hazeK * (1 - gunBandi(h).night * 0.5)); } else if (sky.userData.fogD) delete sky.userData.fogD; } }
       { const gv = (rl?.rt as unknown as { gizem?: { view(): { sabriBelgrad: boolean; sabriBuldu: boolean } } } | undefined)?.gizem?.view(), want = !!gv && gv.sabriBelgrad && !gv.sabriBuldu && Math.abs(p.x - SABRI_AT.x) < 70;
         if (want && !sabriH && d.chars) { try { sabriH = d.chars.makeHero({ kind: 'regular', seed: 777 } as never) as HeroLike; root.add(sabriH.object); } catch { sabriH = null; } }
         if (!want && sabriH) { sabriH.dispose(); root.remove(sabriH.object); sabriH = null; }
@@ -135,8 +118,7 @@ export function createOrmanView(d: OrmanViewDeps): OrmanView {
       yasam.update(dt, p, h, !!rl?.rt.paused, b || null);
       // a light green haze while inside: the sky sets the fog distance by the hour, we only shorten whatever it set
       hazeK += ((near ? 1 : 0) - hazeK) * Math.min(1, dt * 1.5);
-      { const f = d.scene.fog as T.Fog | null;
-        if (f && 'far' in f) { if (Math.abs(f.far - fogSet) > 1e-3) fogBase = f.far; const k = 1 - 0.35 * hazeK * (1 - gunBandi(h).night * 0.5); fogSet = fogBase * k; f.far = fogSet; } }
+      ay.intensity = 0.55 * hazeK * gunBandi(h).night;
       if (near) {
         const famOn = h >= 11 && h < 19.5;
         smoke.forEach((pt, i) => {
@@ -163,6 +145,6 @@ export function createOrmanView(d: OrmanViewDeps): OrmanView {
       spGeo.setDrawRange(0, sp); (spGeo.getAttribute('position') as T.BufferAttribute).needsUpdate = true; spM.opacity = 0.55 + 0.3 * Math.sin(t * 2.4);
       for (const [i, o] of shrooms) if (!want.has(i)) { root.remove(o); shrooms.delete(i); }
     },
-    dispose() { if (sabriH) sabriH.dispose(); yasam.dispose(); doga.dispose(); smokeMat.dispose(); smoke.forEach(p => p.geometry.dispose()); spGeo.dispose(); spM.dispose(); d.scene.remove(root); kit.dispose(); },
+    dispose() { ay.dispose?.(); if (sabriH) sabriH.dispose(); uzak.dispose(); yasam.dispose(); doga.dispose(); smokeMat.dispose(); smoke.forEach(p => p.geometry.dispose()); spGeo.dispose(); spM.dispose(); d.scene.remove(root); kit.dispose(); },
   };
 }
