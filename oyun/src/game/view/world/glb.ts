@@ -23,6 +23,17 @@ export function useSkyEnv(m: T.MeshStandardMaterial, kind: 'matte' | 'glass') {
   if (kind === 'glass') { m.envMapIntensity = 1.15; envMats.add(m); if (envTex) { m.envMap = envTex; m.needsUpdate = true; } return; }
   envReg(m, 'matte');
 }
+/* PRF-15: every Kenney kit file points at the same Textures/colormap.png with the same material; each GLTFLoader load made its own
+   texture (one 512x512+mip GPU copy per car/building, ~1.4 MB each) and material. Identical materials of one kit folder are shared. */
+const kitMats = new Map<string, T.MeshStandardMaterial>();
+function sharedMat(name: string, m: T.MeshStandardMaterial): T.MeshStandardMaterial {
+  if (!m.isMeshStandardMaterial) return m;
+  const k = name.split('/')[0] + '|' + [m.name, m.color.getHexString(), m.emissive.getHexString(), m.metalness, m.roughness, m.side, m.transparent ? 1 : 0, m.opacity, m.map?.name ?? '-', m.map ? 1 : 0, m.normalMap ? 1 : 0, m.vertexColors ? 1 : 0].join(',');
+  const have = kitMats.get(k);
+  if (!have) { kitMats.set(k, m); return m; }
+  if (have !== m) { if (m.map && m.map !== have.map) m.map.dispose(); m.dispose(); }   // never uploaded: nothing on the GPU yet
+  return have;
+}
 export function loadGlb(name: string): Promise<T.Object3D | null> {
   let p = cache.get(name);
   if (!p) {
@@ -31,7 +42,7 @@ export function loadGlb(name: string): Promise<T.Object3D | null> {
         const { GLTFLoader } = await import('three/examples/jsm/loaders/GLTFLoader.js');
         const g = await new GLTFLoader().loadAsync('modeller/' + name + '.glb');
         const kind: EnvKind = name.startsWith('auto/') ? 'glossy' : name.startsWith('dogal/') ? 'skip' : 'matte';   // trees keep their own greens
-        g.scene.traverse(o => { const m = o as T.Mesh; if (m.isMesh) { m.castShadow = false; m.receiveShadow = true; (Array.isArray(m.material) ? m.material : [m.material]).forEach(mm => envReg(mm as T.MeshStandardMaterial, kind)); } });
+        g.scene.traverse(o => { const m = o as T.Mesh; if (m.isMesh) { m.castShadow = false; m.receiveShadow = true; if (!Array.isArray(m.material)) m.material = sharedMat(name, m.material as T.MeshStandardMaterial); (Array.isArray(m.material) ? m.material : [m.material]).forEach(mm => envReg(mm as T.MeshStandardMaterial, kind)); } });
         return g.scene;
       } catch { return null; }
     })();

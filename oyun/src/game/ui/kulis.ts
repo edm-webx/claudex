@@ -6,6 +6,7 @@
 // for identity and class. Every change sends { kind: 'esnafim', op: 'set' }; "Sahneye çık" sends op 'done'.
 import * as T from 'three';
 import { Reflector } from 'three/examples/jsm/objects/Reflector.js';
+import { createLookRenderer, LOOK_POZ } from '../../engine/render/look';
 import type { Rules } from '../sim/state';
 import { SINIFLAR, esnafHeroOpts, type EsnafimSave } from '../sim/esnafim';
 import { YETENEK } from '../sim/yetenek';
@@ -276,8 +277,7 @@ ${e.sapka ? `<div class="kl-l">Şapka rengi</div>${sw('sapkaRenk', COLS, e.sapka
     rnd.onclick = randomize;
     panel = document.createElement('div'); panel.className = 'kl-p'; deps.root.appendChild(panel);
     try {
-      R = new T.WebGLRenderer({ canvas, antialias: true });
-      R.setPixelRatio(Math.min(2, window.devicePixelRatio || 1)); R.outputColorSpace = T.SRGBColorSpace; R.toneMapping = T.ACESFilmicToneMapping;
+      R = createLookRenderer({ canvas, antialias: true, exposure: LOOK_POZ.kulis, pixelRatioMax: 2 });   // GRS-01: one look (sRGB + ACES, look.ts)
       scene = new T.Scene(); cam = new T.PerspectiveCamera(40, 1, 0.05, 40);
       buildSet(scene, (window.devicePixelRatio || 1) > 2 || Math.min(window.innerWidth, window.innerHeight) < 500);
     } catch { R = null; }

@@ -353,13 +353,14 @@ export function createIcMekan(d: IcDeps): IcView {
         if (!r.g.visible) continue;
         const a = r.an;
         for (const s of a.spin) s.rotation.y += dt * 2.2;
-        for (const f of a.fire) { const k = 0.75 + 0.35 * Math.sin(t * 13 + f.userData.ph) + 0.15 * Math.sin(t * 29 + f.userData.ph * 2); f.scale.set(1, k, 1); }
+        for (const f of a.fire) { const k = 0.8 + 0.25 * Math.sin(t * 9 + f.userData.ph) + 0.08 * Math.sin(t * 15 + f.userData.ph * 2); f.scale.set(1, k, 1); }   // GRS-02: slower, softer flame
         for (const f of a.fish) { const w = f.userData.w as number, x = Math.sin(t * 0.4 + f.userData.ph) * (w / 2 - 0.25); f.position.x = x; f.rotation.y = Math.cos(t * 0.4 + f.userData.ph) > 0 ? 0 : Math.PI; f.position.y += Math.sin(t * 2 + f.userData.ph) * 0.0015; }
         for (let i = 0; i < a.screens.length; i++) a.screens[i].color.setHSL(((t * 0.05 + i * 0.3) % 1), 0.55, 0.42 + 0.06 * Math.sin(t * 3 + i));
         for (const p of a.bob) p.rotation.z = Math.sin(t * 1.4 + p.position.x * 3) * 0.04;
         for (const w of a.walkers) { const P = w.p, n = P.length, i0 = Math.floor(w.t) % n, i1 = (i0 + 1) % n, L = Math.max(0.5, Math.hypot(P[i1][0] - P[i0][0], P[i1][1] - P[i0][1])); w.t = (w.t + dt * w.sp / L) % n; const f = w.t - Math.floor(w.t); w.o.position.set(P[i0][0] + (P[i1][0] - P[i0][0]) * f, Math.abs(Math.sin(t * 8)) * 0.03, P[i0][1] + (P[i1][1] - P[i0][1]) * f); w.o.rotation.y = Math.atan2(P[i1][0] - P[i0][0], P[i1][1] - P[i0][1]); }
         if (a.kds && (a.kdsT = (a.kdsT || 0) - dt) <= 0) { a.kdsT = 0.7; a.kds.draw(d.mutfak().kds); }
-        if (a.flick.length && a.lamps) a.lamps.visible = Math.sin(t * 23) + Math.sin(t * 7.3) > -1.2;
+        // GRS-02 (owner H-052, survey 2026-10-24 "ışık titremesi ASLA"): the morg lamps no longer blink on/off several times a second
+        if (a.flick.length && a.lamps) a.lamps.visible = true;
         void nk;
       }
     },

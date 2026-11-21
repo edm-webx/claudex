@@ -7,7 +7,7 @@
 // - Undo / redo (unlimited), one entry per finished drag / rotate / inspector edit.
 // - Kaydet: content overrides -> IndexedDB + localStorage mirror (overrides.ts), applied live and on next load;
 //   returns (and "Kopyala" copies) the TS/JSON patch to paste into src/content/zones/*.ts.
-// - Inspector (lil-gui): placement x/z/rotY/scale, prefab params and part colour/size; prefab edits call
+// - Inspector (mini-gui, lil-gui API alt kümesi): placement x/z/rotY/scale, prefab params and part colour/size; prefab edits call
 //   prefab.redefine(def) so every instance rebuilds ("change one table, all hundred change"). Prefab redefines are
 //   session-only (copy the def with "Prefabı kopyala").
 // - "Hız ölçer" button toggles the perf overlay (perf.show), which carries "Raporu kopyala".
@@ -15,7 +15,7 @@
 //   instances(prefabId) (id, object uuid, world pos), overrides(zone), open(on), state().
 // Decision: overrides are re-applied whenever a zone turns warm/hot (its instances are rebuilt then).
 import * as THREE from 'three';
-import GUI from 'lil-gui';
+import GUI from './mini-gui';   // PRF-11: lil-gui yerine küçük denetçi (oyuncu derlemesinde ~42 KB)
 import type { Editor, EditorDeps, EditorAttach, PrefabPlacement, PrefabDef, PrefabInstance, PerfMeter, TapEvent, Vec2, Disposer } from '../api';
 import { emptyOverrides, loadOverrides, storeOverrides, patchText, pickFields, zoneOverrides, type OverrideFile, type PlacementFields } from './overrides';
 

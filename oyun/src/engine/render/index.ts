@@ -14,17 +14,19 @@
  */
 import * as T from 'three';
 import type { RenderPipeline, RenderDeps, TierDef, Season, WeatherState, RenderInfo, Vec3, ScreenPt, Disposer, DayPhase } from '../api';
+import { DAY_START_H, DAY_END_H } from '../api';
 import { createCameraRig, type MotorCameraRig } from '../camera';
 import { makeSky } from './sky';
 import { createShadowCull } from './shadow-cull';
 import { createWarmGate } from './warm-gate';
-import { applyLookDefaults } from './look';
-import { todAt, phaseAt, type Tod } from './tod';
+import { createLookRenderer, lookAt, LOOK_POZ, AKICI_POZ, installLookToneMap } from './look';
+import { todAt, phaseAt, DAWN_EXTRA, type Tod } from './tod';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+import { akisGuncelle } from './doku-akis';
 
 export { todAt, phaseAt, TOD } from './tod';
 export type { Tod } from './tod';
@@ -50,6 +52,8 @@ export interface MotorRender extends RenderPipeline {
   readonly bloomOn: boolean;
   /** PRF-08: outdoor hemisphere multiplier (night-lights eases it to 0.85 inside a room); setTime and hava-look multiply it in. */
   hemiMul: number;
+  /** GRS-01: light colour multiplier for the akıcı grade (golden hour / night tint without the GRADE pass); [1,1,1] when GRADE runs */
+  readonly lightTint: readonly [number, number, number];
   /** PRF-06: leave out shadow casters whose shadow cannot reach the camera view (default on; off only for A/B measurement) */
   shadowCull: boolean;
   shadowStats(): { casters: number; culled: number };
@@ -62,6 +66,7 @@ export interface MotorRender extends RenderPipeline {
 }
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
+const NO_TINT = [1, 1, 1] as const;
 
 /** PRF-03: OutputPass picks its defines inside its first render() (a define change = relink inside the frame). Same rule as
  *  three 0.160 OutputPass.render, done ahead so warm() compiles the program the first frame really uses. */
@@ -76,16 +81,17 @@ function primeOutputPass(op: OutputPass, r: T.WebGLRenderer): void {
   o.material.defines = d; o.material.needsUpdate = true;
 }
 
-/** Display-space colour grade after OutputPass: saturation, contrast around mid grey, tint, soft vignette. */
+/** Display-space colour grade after OutputPass: saturation, contrast around a pivot, tint, soft vignette (values: look.ts lookAt). */
+const L0 = lookAt(11, 0);
 const GRADE = {
-  uniforms: { tDiffuse: { value: null }, uSat: { value: 1.1 }, uCon: { value: 1.06 }, uTint: { value: new T.Vector3(1, 1, 1) }, uVig: { value: 0.2 } },
+  uniforms: { tDiffuse: { value: null }, uSat: { value: L0.sat }, uCon: { value: L0.con }, uPiv: { value: L0.pivot }, uTint: { value: new T.Vector3(...L0.tint) }, uVig: { value: L0.vig } },
   vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-  fragmentShader: `uniform sampler2D tDiffuse; uniform float uSat; uniform float uCon; uniform vec3 uTint; uniform float uVig; varying vec2 vUv;
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float uSat; uniform float uCon; uniform float uPiv; uniform vec3 uTint; uniform float uVig; varying vec2 vUv;
 void main() {
   vec4 c = texture2D(tDiffuse, vUv); vec3 col = c.rgb;
   float l = dot(col, vec3(0.2126, 0.7152, 0.0722));
   col = mix(vec3(l), col, uSat);
-  col = (col - 0.5) * uCon + 0.5;
+  col = (col - uPiv) * uCon + uPiv;
   col *= uTint;
   vec2 d = vUv - 0.5; col *= 1.0 - uVig * smoothstep(0.35, 0.85, length(d * vec2(1.25, 1.0)));
   gl_FragColor = vec4(clamp(col, 0.0, 1.0), c.a);
@@ -232,11 +238,20 @@ export function createRender(deps: RenderDeps): MotorRender {
     const want = !!(renderer && t.flags && t.flags.bloom);
     // PRF-15: EffectComposer.dispose frees only its own two targets; the bloom pass keeps ~10 half-float mip targets and every
     // pass its material, so each switch to a no-bloom tier leaked them on the GPU. Passes are disposed first now.
+    // GRS-01: without the post chain (akıcı) the grade runs inside tone mapping (look.ts CustomToneMapping); with it, ACES + GRADE pass
+    if (renderer) { renderer.toneMapping = want ? T.ACESFilmicToneMapping : T.CustomToneMapping; renderer.toneMappingExposure = want ? LOOK_POZ.ana : LOOK_POZ.ana * AKICI_POZ; }
     if (!want) { if (composer) { composer.passes.forEach(ps => { try { ps.dispose(); } catch { /* */ } }); composer.dispose(); composer = null; rpass = null; bloom = null; grade = null; } return; }
     if (composer) return;
     const { w, h } = size(), pr = renderer!.getPixelRatio();
     const target = new T.WebGLRenderTarget(Math.round(w * pr), Math.round(h * pr), { type: T.HalfFloatType, samples: t.antialias ? 4 : 0 });
     composer = new EffectComposer(renderer!, target);
+    // PRF-15: the composer clones its target, so both ping-pong buffers were 4x MSAA half-float with a depth buffer (~69 MB of
+    // renderbuffers each at 1600x900). Only the scene pass needs that: it draws into readBuffer (rt2), the bloom pass blends back
+    // into rt2, OutputPass writes rt1 and the grade quad reads rt1 to the screen. rt1 keeps the same half-float format (same
+    // pixels) without MSAA and depth.
+    { const c = composer as unknown as { renderTarget1: T.WebGLRenderTarget; writeBuffer: T.WebGLRenderTarget };
+      const rt1 = new T.WebGLRenderTarget(target.width, target.height, { type: T.HalfFloatType, depthBuffer: false });
+      rt1.texture.name = 'EffectComposer.rt1'; target.dispose(); c.renderTarget1 = rt1; c.writeBuffer = rt1; }
     rpass = new RenderPass(scene, rig.camera); composer.addPass(rpass);
     bloom = new UnrealBloomPass(new T.Vector2(w, h), 0.22, 0.4, 0.92); composer.addPass(bloom);
     composer.addPass(new OutputPass());
@@ -244,14 +259,16 @@ export function createRender(deps: RenderDeps): MotorRender {
     composer.setPixelRatio(pr); composer.setSize(w, h);
     tuneBloom();
   }
+  let look = lookAt(hour, night);
   function tuneBloom() {
-    if (grade) {   // colour grade follows the day: warm golden hour, cool blue night
-      const u = grade.uniforms, gold = clamp(1 - Math.abs(hour - 18.5) / 2.2, 0, 1) * (1 - night);
-      u.uSat.value = 1.06 - 0.1 * night; u.uCon.value = 1.03;
-      u.uTint.value.set(1 + 0.05 * gold - 0.04 * night, 1 + 0.01 * gold - 0.01 * night, 1 - 0.05 * gold + 0.06 * night);
-      u.uVig.value = 0.2 + 0.12 * night;
+    look = lookAt(hour, night);   // colour grade follows the day: warm golden hour, cool blue night (look.ts)
+    if (grade) {
+      const u = grade.uniforms;
+      u.uSat.value = look.sat; u.uCon.value = look.con; u.uPiv.value = look.pivot;
+      u.uTint.value.set(look.tint[0], look.tint[1], look.tint[2]); u.uVig.value = look.vig;
     }
-    if (!bloom) return; bloom.strength = 0.1 + 0.22 * night; bloom.threshold = 0.97 - 0.12 * night; bloom.radius = 0.3 + 0.08 * night; }   // 2026-11-08 user: glare made in-game text unreadable
+    // 2026-11-08 user: glare made in-game text unreadable (threshold floor 0.90 at night: a sign's glow does not swallow its text)
+    if (!bloom) return; bloom.strength = look.bloom.strength; bloom.threshold = look.bloom.threshold; bloom.radius = look.bloom.radius; }
 
   // sky environment map (PMREM from the sky dome): reflections on standard materials (Kenney models, metal props)
   const sCull = createShadowCull();
@@ -304,6 +321,7 @@ export function createRender(deps: RenderDeps): MotorRender {
     get lost() { return lost; },
     sun, hemi, sky,
     get bloomOn() { return !!composer; },
+    get lightTint() { return composer ? NO_TINT : look.tint; },
     hemiMul: 1,
     shadowCull: true,
     shadowStats: () => sCull.stats(),
@@ -311,19 +329,21 @@ export function createRender(deps: RenderDeps): MotorRender {
     init(canvas: HTMLCanvasElement, t: TierDef) {
       if (renderer && canvasEl === canvas) { api.setTier(t); return; }
       canvasEl = canvas;
-      renderer = new T.WebGLRenderer({ canvas, antialias: !!t.antialias, powerPreference: 'high-performance' });
+      installLookToneMap();
+      renderer = createLookRenderer({ canvas, antialias: !!t.antialias && !t.flags?.bloom, exposure: LOOK_POZ.ana, powerPreference: 'high-performance' });   // sRGB + ACES (look.ts)
       // 2026-11-09 Chrome freeze root cause: with checkShaderErrors on, three calls getProgramInfoLog for every new
       // program right after linking, which blocks the main thread until the GPU process finishes compiling (no parallel
       // compile). On Windows/ANGLE that was seconds per new area. Errors are only checked in dev builds now.
       renderer.debug.checkShaderErrors = !!(import.meta as { env?: { DEV?: boolean } }).env?.DEV;
       try {
         const c = renderer.getContext();
+        // PRF-15: with the post chain (bloom tiers) the scene is antialiased in the composer's MSAA target and the canvas only gets
+        // the final full-screen quad, so a multisampled canvas back buffer (~46 MB at 1600x900) bought nothing; akıcı has no AA.
         if (typeof WebGL2RenderingContext !== 'undefined' && c instanceof WebGL2RenderingContext) { gl2 = c; gpuExt = c.getExtension('EXT_disjoint_timer_query_webgl2') as typeof gpuExt; }
         const dbg = c.getExtension('WEBGL_debug_renderer_info');
         deps.perf?.meta('gpu', dbg ? String(c.getParameter(dbg.UNMASKED_RENDERER_WEBGL)) : 'bilinmiyor');
         deps.perf?.meta('gpuZamanOlcer', gpuExt ? 'var' : 'yok');
       } catch { /* headless */ }
-      applyLookDefaults(renderer);   // sRGB + ACES filmic, exposure 0.98 (look.ts: the same output for every canvas in the game)
       renderer.shadowMap.type = T.PCFSoftShadowMap;
       renderer.shadowMap.enabled = true;
       wantAA = !!t.antialias;
@@ -339,18 +359,22 @@ export function createRender(deps: RenderDeps): MotorRender {
       if (renderer) renderer.setPixelRatio(Math.min((typeof window !== 'undefined' && window.devicePixelRatio) || 1, t.pixelRatio) * resScale);
       setupPost(t);
       api.resize();
+      if (renderer) api.setTime(hour);   // GRS-01: the light tint follows the post chain (GRADE vs akıcı tone-map grade)
     },
     setTime(h: number, _season?: Season) {
-      hour = clamp(+h || 12, 8, 24);
+      // GRS-02: the game day runs to DAY_END_H (03:00 = 27); 27..32 is the visual dawn corridor after the gün sonu card (32 = 08:00)
+      hour = clamp(+h || 12, DAY_START_H, DAY_END_H + DAWN_EXTRA);
       tod = todAt(hour); night = tod.n;
       const su = (sky.material as T.ShaderMaterial).uniforms;
       su.uTop.value.copy(tod.top); su.uHor.value.copy(tod.hor); su.uLow.value.copy(tod.low); su.uSunCol.value.copy(tod.sun); su.uNight.value = night;
       sunDir.set(Math.sin(tod.az) * Math.cos(tod.el), Math.sin(tod.el), Math.cos(tod.az) * Math.cos(tod.el)).normalize();
       su.uSunDir.value.copy(sunDir); placeSun();
+      tuneBloom();
       sun.color.copy(tod.sun); sun.intensity = tod.si;
       hemi.color.copy(tod.hs); hemi.groundColor.copy(tod.hg); hemi.intensity = tod.hi * api.hemiMul;
+      // GRS-01: akıcı has no GRADE pass; its golden-hour / night tint goes into the light colours instead (never both)
+      const [tr, tg, tb] = api.lightTint; sun.color.r *= tr; sun.color.g *= tg; sun.color.b *= tb; hemi.color.r *= tr; hemi.color.g *= tg; hemi.color.b *= tb;
       (scene.fog as T.Fog).color.copy(tod.fog);
-      tuneBloom();
       timeSubs.forEach(cb => { try { cb(tod, hour); } catch (err) { deps.log?.warn('[render] time cb', err); } });
     },
     setWeather(_w: WeatherState) { /* M5 */ },
@@ -367,6 +391,7 @@ export function createRender(deps: RenderDeps): MotorRender {
       frameNo++;
       if (frameNo % 10 === 1) { const f = rig.focus(); api.setFocus(f.x, f.z); }
       if (frameNo % 30 === 2 || !envRT) refreshEnv();
+      if ((cam as T.PerspectiveCamera).isPerspectiveCamera) akisGuncelle(sc, cam as T.PerspectiveCamera, renderer.domElement.height || 720);   // PRF-15 doku akışı
       renderer.info.autoReset = false; renderer.info.reset();   // info() = everything drawn for this frame (composer passes, shadow pass)
       gateStep(sc, cam);
       // PRF-06: casters whose shadow cannot reach the view skip the shadow pass (same picture, fewer draws)
