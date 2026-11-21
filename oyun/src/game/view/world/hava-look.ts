@@ -21,6 +21,7 @@ import { PIER, PIER_LAMPS, BUFE } from '../../../content/prefabs/iskele/layout';
 import { UMBRELLA, MARKET } from '../../../content/hava';
 import type { HtmlLabels, HtmlLabel } from '../../ui/labels';
 import { crowdWeather } from '../chars/weather-pose';
+import { BULUT_TEMEL } from '../../../engine/render/sky';
 
 export interface HavaLookDeps {
   scene: T.Scene;
@@ -58,7 +59,7 @@ export function yildirimEk(age: number): number {
 export function yildirimAra(kd: string, r: number): number { return kd === 'firtina' ? 20 + 30 * r : 40 + 60 * r; }
 
 interface RenderLike {
-  sun?: T.DirectionalLight; hemi?: T.HemisphereLight; sky?: T.Mesh; /** PRF-08 room dimming (night-lights), multiplied in, never accumulated */ hemiMul?: number; /** GRS-01 akıcı grade tint for the light colours ([1,1,1] with the GRADE pass) */ lightTint?: readonly [number, number, number]; tod?: () => { top: T.Color; hor: T.Color; low: T.Color; fog: T.Color; sun: T.Color; si: number; hs: T.Color; hg: T.Color; hi: number; n: number };
+  sun?: T.DirectionalLight; hemi?: T.HemisphereLight; sky?: T.Mesh; /** PRF-08 room dimming (night-lights), multiplied in, never accumulated */ hemiMul?: number; /** GRS-01 akıcı grade tint for the light colours ([1,1,1] with the GRADE pass) */ lightTint?: readonly [number, number, number]; /** GRS-02 GRADE saturation multiplier (rain washes the colours) */ weatherSat?: number; tod?: () => { top: T.Color; hor: T.Color; low: T.Color; fog: T.Color; sun: T.Color; si: number; hs: T.Color; hg: T.Color; hi: number; n: number };
 }
 
 export function createHavaLook(d: HavaLookDeps): HavaLookView {
@@ -260,6 +261,9 @@ export function createHavaLook(d: HavaLookDeps): HavaLookView {
     const lt = R.lightTint; if (lt) { R.sun.color.r *= lt[0]; R.sun.color.g *= lt[1]; R.sun.color.b *= lt[2]; R.hemi.color.r *= lt[0]; R.hemi.color.g *= lt[1]; R.hemi.color.b *= lt[2]; }
     baseHemi = tod.hi * (1 - dark * 0.15); R.hemi.intensity = baseHemi * (R.hemiMul ?? 1);
     const su = (R.sky?.material as T.ShaderMaterial | undefined)?.uniforms;
+    // GRS-02: grey weather washes the colours a little (at most -21 % saturation) and fills the sky with clouds
+    if (R.weatherSat !== undefined) R.weatherSat = 1 - dark * 0.3;
+    if (su && su.uCloud) su.uCloud.value = BULUT_TEMEL + (0.85 - BULUT_TEMEL) * clamp(dark / 0.55, 0, 1);
     if (su && su.uTop && su.uHor) { su.uTop.value.copy(tod.top).lerp(GREY, dark * (1 - tod.n * 0.7)); su.uHor.value.copy(tod.hor).lerp(FOGC, dark * (1 - tod.n * 0.7)); if (su.uLow) su.uLow.value.copy(tod.low).lerp(GREY, dark * 0.8 * (1 - tod.n * 0.7)); }
     const fog = d.scene.fog as T.Fog | null;
     if (fog) {

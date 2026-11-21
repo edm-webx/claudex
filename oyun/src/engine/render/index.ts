@@ -54,6 +54,8 @@ export interface MotorRender extends RenderPipeline {
   hemiMul: number;
   /** GRS-01: light colour multiplier for the akıcı grade (golden hour / night tint without the GRADE pass); [1,1,1] when GRADE runs */
   readonly lightTint: readonly [number, number, number];
+  /** GRS-02: weather saturation multiplier for the GRADE pass (hava-look: rain / fog / snow wash the colours a little); 1 = clear */
+  weatherSat: number;
   /** PRF-06: leave out shadow casters whose shadow cannot reach the camera view (default on; off only for A/B measurement) */
   shadowCull: boolean;
   shadowStats(): { casters: number; culled: number };
@@ -323,6 +325,7 @@ export function createRender(deps: RenderDeps): MotorRender {
     get bloomOn() { return !!composer; },
     get lightTint() { return composer ? NO_TINT : look.tint; },
     hemiMul: 1,
+    weatherSat: 1,
     shadowCull: true,
     shadowStats: () => sCull.stats(),
     onEnv(cb) { envSubs.add(cb); try { cb(envRT ? envRT.texture : null); } catch { /* ignore */ } return () => { envSubs.delete(cb); }; },
@@ -358,6 +361,8 @@ export function createRender(deps: RenderDeps): MotorRender {
       applyShadows(t);
       if (renderer) renderer.setPixelRatio(Math.min((typeof window !== 'undefined' && window.devicePixelRatio) || 1, t.pixelRatio) * resScale);
       setupPost(t);
+      // GRS-02: akıcı skips the cloud noise in the sky shader (a uniform, no relink); the gradient, sun, stars and moon stay
+      (sky.material as T.ShaderMaterial).uniforms.uCloudQ.value = t.name === 'akici' ? 0 : 1;
       api.resize();
       if (renderer) api.setTime(hour);   // GRS-01: the light tint follows the post chain (GRADE vs akıcı tone-map grade)
     },
@@ -369,6 +374,7 @@ export function createRender(deps: RenderDeps): MotorRender {
       su.uTop.value.copy(tod.top); su.uHor.value.copy(tod.hor); su.uLow.value.copy(tod.low); su.uSunCol.value.copy(tod.sun); su.uNight.value = night;
       sunDir.set(Math.sin(tod.az) * Math.cos(tod.el), Math.sin(tod.el), Math.cos(tod.az) * Math.cos(tod.el)).normalize();
       su.uSunDir.value.copy(sunDir); placeSun();
+      sky.userData.fogMul = tod.fd;   // GRS-02: light morning haze, clearer noon, slightly closer night (sky.ts fog rule)
       tuneBloom();
       sun.color.copy(tod.sun); sun.intensity = tod.si;
       hemi.color.copy(tod.hs); hemi.groundColor.copy(tod.hg); hemi.intensity = tod.hi * api.hemiMul;
@@ -394,6 +400,7 @@ export function createRender(deps: RenderDeps): MotorRender {
       if ((cam as T.PerspectiveCamera).isPerspectiveCamera) akisGuncelle(sc, cam as T.PerspectiveCamera, renderer.domElement.height || 720);   // PRF-15 doku akışı
       renderer.info.autoReset = false; renderer.info.reset();   // info() = everything drawn for this frame (composer passes, shadow pass)
       gateStep(sc, cam);
+      if (grade) { const ws = clamp(+api.weatherSat || 1, 0.6, 1); grade.uniforms.uSat.value = look.sat * ws; }   // GRS-02 rain/fog wash
       // PRF-06: casters whose shadow cannot reach the view skip the shadow pass (same picture, fewer draws)
       const draw = () => {
         if (api.shadowCull) sCull.begin(sc, cam, sun);

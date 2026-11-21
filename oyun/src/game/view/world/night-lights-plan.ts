@@ -7,7 +7,7 @@
  * Also the lamp positions that are pure content: interior ceiling lamp grid (same grid as ic-mekan-look 'lamba') and the büfe floresan
  * per stage (same numbers as kiosk.ts K2.flo).
  */
-import { icDim, icWorld, type IcMekan } from '../../../content/ic-mekan';
+import { icDim, icWorld, icKapi, type IcMekan } from '../../../content/ic-mekan';
 import { BUFE } from '../../../content/prefabs/iskele/layout';
 
 export const PLAN_DT = 0.4, FADE_TAU = 0.3, HYST_MARGIN = 2;
@@ -75,4 +75,21 @@ export function icLambalar(m: IcMekan): { x: number; y: number; z: number }[] {
 /** büfe floresan tube per stage (kiosk.ts K2.flo: stage 1 closed shell front, stage 2+ kitchen back wall). */
 export function floresanNoktasi(stage: number): { x: number; y: number; z: number } {
   return stage <= 1 ? { x: 0.2, y: 2.12, z: BUFE.z1 + 1.12 } : { x: 0, y: 2.31, z: BUFE.z0 + 0.3 };
+}
+
+/**
+ * GRS-02 shop fronts at night (owner B-010: lambalar yanınca yerde ışık havuzu): every building with a door on the far shore throws a soft
+ * warm pool on the pavement in front of its door. Dimmer than a street lamp (i 0.42) so the street lamps still lead; they go through the same
+ * pool and planner as every other lamp (no own PointLight, no light count change).
+ */
+export const VITRIN_I = 0.42, VITRIN_RENK = '#ffd49a';
+export function vitrinLambalari(mekanlar: readonly IcMekan[]): { x: number; y: number; z: number; i: number; color: string }[] {
+  const out: { x: number; y: number; z: number; i: number; color: string }[] = [];
+  for (const m of mekanlar) {
+    if (!m.bina || m.tur === 'morg') continue;   // the morgue has no shop window
+    const p = icKapi(m, 1.1);
+    if (mekanlar.some(o => o !== m && Math.abs(p.x - o.x) < o.wx / 2 && Math.abs(p.z - o.z) < o.wz / 2)) continue;   // annex door inside its main building (acil)
+    out.push({ x: p.x, y: Math.min(2.8, m.h - 0.2), z: p.z, i: VITRIN_I, color: VITRIN_RENK });
+  }
+  return out;
 }

@@ -8,7 +8,7 @@
  * - Every PLAN_DT seconds (dt-based, same moments at 30/60/144 Hz) the planner picks the nearest lamps with hysteresis and each light
  *   keeps its lamp if it can; a light that must move fades out, jumps while dark and fades back in (no flicker, owner H-052).
  * - Lamps come from registered sources (addSource): iskele lamp posts, every 'ts.lamp' placement in every zone, the büfe floresan at its
- *   stage position. Other packages give lamp positions through addSource; they never create their own PointLight.
+ *   stage position, the far-shore shop doors (GRS-02, dimmer warm pools). Other packages give lamp positions through addSource; they never create their own PointLight.
  * - Inside a room (kafe, banka, okul, büfe salonları, mutfak) up to 4 lights go to the room's ceiling lamps (dim by day too), the rest stay
  *   outside; the outdoor hemisphere light eases down to 85 % (R.hemiMul, hava-look multiplies it in).
  * - Brightness follows the time of day: off by day, fading in at dusk, full at night (tod.n). Smaller pools get a slightly longer reach
@@ -18,8 +18,8 @@ import * as T from 'three';
 import type { ZoneManager, Vec2, Disposer } from '../../../engine/api';
 import { todAt } from '../../../engine/render/tod';
 import { LAMPS } from '../../../content/prefabs/iskele/pier';
-import { PLAN_DT, pickLamps, assignSlots, stepFade, smooth01, floresanNoktasi, type FadeState } from './night-lights-plan';
-import { IC_BY_ID } from '../../../content/ic-mekan';
+import { PLAN_DT, pickLamps, assignSlots, stepFade, smooth01, floresanNoktasi, vitrinLambalari, type FadeState } from './night-lights-plan';
+import { IC_BY_ID, IC_MEKANLAR } from '../../../content/ic-mekan';
 import { icLambalar } from './night-lights-plan';
 
 export interface LampDef { x: number; y: number; z: number; color?: string; /** relative intensity, default 1 */ i?: number; flo?: boolean }
@@ -189,6 +189,8 @@ export function createNightLights(o: { scene: T.Scene; zones: ZoneManager | null
     if (zs) for (const id of zs.ids()) { const d = zs.def(id); if (!d) continue; for (const p of d.props || []) if (p.prefab === 'ts.lamp') out.push({ x: p.pos.x, y: 3.2, z: p.pos.z }); }
     return out;
   });
+  const vitrin = vitrinLambalari(IC_MEKANLAR);   // GRS-02: warm pools in front of the far-shore shop doors
+  api.addSource('vitrin', () => vitrin);
   api.addSource('bufe-floresan', () => [{ ...floresanNoktasi(stageFn ? stageFn() : 2), flo: true }]);
   if (o.zones) o.zones.onState((_id, s) => { if (s === 'warm' || s === 'hot') dirty = true; });
   resize(o.tier?.lights ?? tune.pool);
