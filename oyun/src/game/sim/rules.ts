@@ -59,6 +59,7 @@ import { installMini } from './mini';
 import { installYiyecek } from './yiyecek';
 import { installHava } from './hava';
 import { installKoleksiyon } from './koleksiyon';
+import { installAvmGecis } from './avm-gecis';
 import { installDisari } from './disari';
 import { installDeniz } from './deniz';
 import { installHikaye } from './hikaye';
@@ -72,7 +73,7 @@ import { hourOf, clamp } from './util';
 export interface RulesDeps {
   state: GameState; ctx: SimCtx; bus: Bus<SimEvents>; content: Content; rng: (name: string) => Rng; nav: Nav; agents: SoAStore;
   interactions: InteractionRegistry; player: Entity; clock: GameClock; ambient: AmbientSystem | null;
-  walk: { readonly pos: Vec2; readonly speed: number; teleport(x: number, z: number): void };
+  walk: { readonly pos: Vec2; readonly speed: number; teleport(x: number, z: number, kat?: number): void };
   addSystem(s: System): void;
 }
 export interface RulesFull extends Rules {
@@ -194,7 +195,8 @@ export function createRules(d: RulesDeps): RulesFull {
   const havaM = installHava(K); // hava, mevsimler, etkinlikler, Gece Pazarı (hava.ts)
   installKurye(K); installHijyen(K);   // BUF-15 paket servis (kurye, telefon siparişi) + BUF-16 hijyen, müfettiş sonucu, Martı yıldızı
   const kolM = installKoleksiyon(K); // koleksiyonlar, Altın Simit, Altın Fırın
-  const disariM = installDisari(K, (x, z) => d.walk.teleport(x, z)); // Martıköy haritası, mahalleler, dolmuş, buluntular (disari.ts)
+  const disariM = installDisari(K, (x, z) => d.walk.teleport(x, z));
+  const avmGecis = installAvmGecis(K, (x, z, kat) => d.walk.teleport(x, z, kat));   // Martı AVM: kapıdan ayrı haritaya (avm-gecis.ts) // Martıköy haritası, mahalleler, dolmuş, buluntular (disari.ts)
   const denizM = installDeniz(K, cu as never); // deniz canlıları, tekneler, güverte koşusu, iskele büyümesi (deniz.ts)
   const hikayeM = installHikaye(K); // hikaye bölümleri, rakipler, karakterli öğreticiler (hikaye.ts)
   const calisanM = installCalisan(K); // Kurs Merkezi, bekleyenler (calisan.ts)
@@ -265,6 +267,7 @@ export function createRules(d: RulesDeps): RulesFull {
       haliSahaM.update();
       slow.update(dt);
       padsM.update(dt);
+      avmGecis.update(dt);
       if ((tT -= dt) <= 0) { tT = 0.2; tut.update(); }
       if ((t1 -= dt) <= 0) { t1 = 1; ord.notify(); }
       if ((t5 -= dt) <= 0) { t5 = 5; rt.rate = ec.incomePerMin(); }

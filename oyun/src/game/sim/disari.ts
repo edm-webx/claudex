@@ -19,7 +19,7 @@ import {
   LOST_ITEMS, VEHICLES, FARES, DOLMUS, TRAVEL_SEC, OTOBUS, NECMI_LINES, ASK_LINES, GUIDE_CAT, AWAY_LINES, BACK_LINE, BAND, type Region, type RegionId,
 } from '../../content/disari/martikoy';
 import { fmtMoney } from './util';
-import { REALMS, REALM_BY_ID, REALM_WALLS, realmAt, realmOfRegion, realmSpawn, type RealmId } from '../../content/realm';
+import { BUS_REALMS, REALM_BY_ID, REALM_WALLS, realmAt, realmOfRegion, realmSpawn, type RealmId } from '../../content/realm';
 
 interface DSave {
   seen: string[]; stops: string[]; opened: string[];
@@ -88,7 +88,7 @@ export function installDisari(K: Kernel, teleport: (x: number, z: number) => voi
   let bus: BusView | null = null;
   // 42B: one line linking the three realms' stops (content/realm REALMS: İskele büfe karşısı, Stadyum Kapısı, Orman Durağı).
   // Boarding happens on the road at the bus's front door, not from the shelter.
-  const atBusStop = (): RealmId | null => { const p = K.playerPos; const r = REALMS.find(r => Math.hypot(p.x - r.stop.x, p.z - r.stop.z) < 4.2); return r ? r.id : null; };
+  const atBusStop = (): RealmId | null => { const p = K.playerPos; const r = BUS_REALMS.find(r => Math.hypot(p.x - r.stop.x, p.z - r.stop.z) < 4.2); return r ? r.id : null; };
   // J1 Belgrad dönüş fix: the door follows the bus (it was pinned to the büfe stop, so nobody could board in the forest)
   const busDoor = () => { const s = bus || OTOBUS.stop; return { x: s.x + 1.5, z: s.z - 1.0 }; };
   const realmTarget = (rid: RealmId) => { const r = REALM_BY_ID[rid], reg = REGION_BY_ID[r.regions[0]]; return reg; };
@@ -312,7 +312,7 @@ export function installDisari(K: Kernel, teleport: (x: number, z: number) => voi
       }
       // lock push-back: the first locked region blocks everything east of it
       const lockR = REGIONS.find(r => !isOpen(r));
-      if (lockR && p.x > lockR.x0 - 0.3 && !travel) {
+      if (lockR && p.x > lockR.x0 - 0.3 && !travel && realmAt(p.x)?.id !== 'avm') {
         teleport(lockR.x0 - 1.0, walkZ(regionAt(lockR.x0 - 1.0)?.id, p.z));
         if (lockToastT <= 0) { lockToastT = 4; K.toast(lockR.lockLine + ' (' + lockR.name + ', ' + lockR.level + '. seviye)', 'info'); }
       }
@@ -388,7 +388,7 @@ export function installDisari(K: Kernel, teleport: (x: number, z: number) => voi
       region: reg ? reg.id : null, away: p.x > 62,
       locked: lockR ? { x: lockR.x0, region: lockR.name, line: lockR.lockLine } : (() => { const w = REALM_WALLS.find(x => Math.abs(p.x - x) < 45); return w != null ? { x: w, region: 'realm', line: OTOBUS.line + ' ile geçilir. Yürüyerek değil!' } : null; })(),
       travel: travel ? { ...travel } : null, guide: d.guide, arrow, bus: bus ? { ...bus } : null, atBusStop: atBusStop(), atBusDoor: !!bus && atBusDoor(), realm: curRealm(),
-      busTo: REALMS.filter(r => atBusStop() && r.id !== atBusStop()).map(r => ({ id: realmTarget(r.id).id, name: r.name })),
+      busTo: BUS_REALMS.filter(r => atBusStop() && r.id !== atBusStop()).map(r => ({ id: realmTarget(r.id).id, name: r.name })),
       catsLeft: HIDDEN_CATS.filter(c => !d.cats.includes(c.id)).map(c => ({ id: c.id, x: c.x, z: c.z })),
       coins: d.coins.filter(i => !d.coinsTaken.includes(i)).map(i => ({ i, x: COIN_SPOTS[i].x, z: COIN_SPOTS[i].z })),
       photos: PHOTO_SPOTS.map(ph => ({ id: ph.id, x: ph.x, z: ph.z, done: d.photos.includes(ph.id) })),
@@ -404,7 +404,7 @@ export function installDisari(K: Kernel, teleport: (x: number, z: number) => voi
     const carrying = d.carrying ? LOST_ITEMS.find(l => l.id === d.carrying) : null;
     return {
       here: reg ? reg.id : null, x: p.x, money: S.money, level: S.level, guide: d.guide ? d.guide.name : null, travel: !!travel,
-      realm: curRealm(), realms: REALMS.map(r => ({ id: r.id, name: r.name, stop: r.stop.name, here: r.id === curRealm() })),
+      realm: curRealm(), realms: BUS_REALMS.map(r => ({ id: r.id, name: r.name, stop: r.stop.name, here: r.id === curRealm() })),
       regions: REGIONS.filter(r => realmOfRegion(r.id)).map(r => ({ id: r.id, name: r.name, short: r.short, x0: r.x0, x1: r.x1, color: r.color, blurb: r.blurb, level: r.level, open: isOpen(r) && !!realmOfRegion(r.id), seen: d.seen.includes(r.id),
         realm: realmOfRegion(r.id)?.id || null, bus: (realmOfRegion(r.id)?.id || null) !== curRealm(),
         stop: r.stop.name, stopKnown: knownStop(d, r.id), vapur: !!r.vapur, map: r.map, island: !!r.island, lockLine: realmOfRegion(r.id) ? r.lockLine : 'Şimdilik kapalı. Yakında açılacak!' })),

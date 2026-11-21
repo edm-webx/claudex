@@ -91,6 +91,7 @@ import { PAD_KEYS } from '../content/pads';
 import { regionAt, REGIONS } from '../content/disari/martikoy';
 import { sesBolgesi } from '../content/ses/bolgeler';
 import { realmAt } from '../content/realm';
+import { avmIcinde } from '../content/avm-kat';
 import { createHaliSaha } from './ui/hali-saha';
 import { createOrmanView } from './view/orman';
 import { createOtobusHud } from './ui/otobus-hud';
@@ -116,6 +117,7 @@ import { createBufeBuyume, mevsimZorla, type BuyumeView } from './view/world/buf
 import { createAcilis, type AcilisView } from './view/world/acilis';
 import { ARSALAR, ISLETME, ARSA_ISLETME } from '../content/esya';
 import { createKarsiYasam, type YasamView } from './view/world/karsi-yasam';
+import { createAvmIc, type AvmIcView } from './view/world/avm-ic';
 import { createIcMekan, type IcView } from './view/world/ic-mekan-look';
 import { restoranApi } from './sim/restoran';
 import { MUTFAK_ROL_BY_ID } from '../content/mutfak';
@@ -318,7 +320,14 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   // D's tutorial (v2 TUT incl. cat/gull/Rıza/kapkaç arrows): a sim system, read by the play view
   const tutorial: Tutorial | null = playMode ? make('tutorial', () => installTutorial(sim.rules)) : null;
 
-  const pose = { x: 0, z: 0, rot: 0 };
+  const pose: { x: number; z: number; rot: number; y?: number; kat?: number } = { x: 0, z: 0, rot: 0 };
+  let lastPoseX = 0, lastPoseZ = 0, perdeEl: HTMLDivElement | null = null;
+  const perde = () => {
+    try {
+      if (!perdeEl) { perdeEl = document.createElement('div'); perdeEl.style.cssText = 'position:fixed;inset:0;background:#0b0d12;pointer-events:none;z-index:40;opacity:0;transition:opacity .45s ease-out'; document.body.appendChild(perdeEl); }
+      const el = perdeEl; el.style.transition = 'none'; el.style.opacity = '1'; void el.offsetWidth; el.style.transition = 'opacity .45s ease-out'; el.style.opacity = '0';
+    } catch { /* */ }
+  };
   const pos: Vec2 = pose; // same object: pos.x/pos.z are the interpolated ground position
   const walk = sim.walk;
 
@@ -343,7 +352,8 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const acilis: AcilisView | null = playMode && zones ? make('acilis', () => createAcilis({ root: () => zones.root('iskele') ?? null, hero: () => walk.pos, ses: (id) => { try { audio?.sfx(id); } catch { /* */ } } })) : null;
   if (acilis) sim.bus.on('tadilatDone', (e) => acilis.baslat(Number((e as { stage?: number } | undefined)?.stage) || sim.state.stage));
   // 2026-11-09 "her binaya girilebilmeli": interiors of every far-side building and the büfe halls
-  const icMekan: IcView | null = playMode && zones ? make('icMekan', () => createIcMekan({ root: () => zones.root('iskele') ?? null, hero: () => walk.pos, night: () => nightK,
+  const avmIc: AvmIcView | null = playMode && zones ? make('avmIc', () => createAvmIc({ root: () => scene, hero: () => walk.pos, night: () => nightK })) : null;   // Martı AVM içi (ayrı diyar)
+  const icMekan: IcView | null = playMode && zones ? make('icMekan', () => createIcMekan({ root: () => zones.root('iskele') ?? null, sahne: () => scene, hero: () => walk.pos, night: () => nightK,
     isletme: () => { const m = mulkApi(sim.rules), o: Record<string, { lv: number; isci: number; esya: string[]; tema?: string }> = {}; if (m) for (const p of m.view().plots) if (p.sabit && p.owned) o[p.id] = { lv: p.lv, isci: p.isci, esya: (p as { esya?: string[] }).esya || [], tema: (p as { tema?: string }).tema || '' }; return o; },
     salon: () => ({ stage: sim.state.stage || 1, esya: ((sim.state.zones as { salon?: { esya?: string[] } }).salon?.esya) || [] }),
     mutfak: () => { const rv = restoranApi(sim.rules)?.view(); return { ekip: sim.state.workers.filter(w => MUTFAK_ROL_BY_ID[w.role]).map(w => ({ rol: w.role, rank: rankOf(w.xp || 0) })), kds: (rv?.tickets || []).slice(0, 6).map(k => '#' + k.no + '  Masa ' + (k.table + 1) + ' · ' + k.items.filter(i => i.left).map(i => i.left + '× ' + i.name).join(', ')), pass: rv?.pass || [], ist: rv?.ist || {},
@@ -435,7 +445,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const agentsOf = (): AgentsHandle | null => (sim.rules.rt as unknown as { agents?: AgentsHandle }).agents ?? null;
   const agentsView: AgentsView | null = playMode && chars ? make('agentsView', () => createAgentsView({
     chars: chars as MotorChars, quality, agents: agentsOf,
-    player: () => ({ x: pos.x, z: pos.z, moving: walk.speed > 0.15 }), camera: () => cam.camera,
+    player: () => ({ x: pos.x, z: pos.z, moving: walk.speed > 0.15, kat: (pos as { kat?: number }).kat }), camera: () => cam.camera,
     hideUp: (x, z) => salonUstGizli(x, z),
   })) : null;
 
@@ -542,7 +552,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     } })) : null;
   let adminEditor: () => void = () => { /* set below once the editor deps exist */ };
   const adminPanel = playMode && uiReal && online ? make('adminPanel', () => createAdminPanel({ root: U.root, peers: () => online.peers(), toast: t => U.toast(t, 'info'), sfx: id => { try { audio?.sfx(id); } catch { /* */ } },
-    teleport: (x, z) => { sim.command({ kind: 'teleport', x, z }); camHold = null; cam.snap(walk.pos); }, myPos: () => ({ x: walk.pos.x, z: walk.pos.z }),
+    teleport: (x, z, kat?: number) => { sim.command({ kind: 'teleport', x, z, kat }); camHold = null; cam.snap(walk.pos); }, myPos: () => ({ x: walk.pos.x, z: walk.pos.z }),
     addMoney: n => { sim.state.money = Math.max(0, sim.state.money + n); }, addGold: n => { sim.state.gold = Math.max(0, (sim.state.gold || 0) + n); },
     setMoney: n => { sim.state.money = n; }, setGold: n => { sim.state.gold = n; }, editor: () => adminEditor(), stands: () => (restoranApi(sim.rules)?.view().stands ?? []).map(t => ({ id: t.id, name: t.name, owned: t.owned, x: t.x, z: t.z })), izgara: () => { const v = !(izgaraLook?.get()); izgaraLook?.set(v); return v; },
     resetMe: () => { void (async () => { try { sim.load(defaultState(seed ?? 1) as never); esnafimSave(sim.state).done = false; await save.save('manual'); if (hesap()) { const code = await save.exportCode(); await bulutYaz(code, 0, esnafimSave(sim.state), 1); } } finally { location.reload(); } })(); },
@@ -648,7 +658,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     // ses-1 place signature: Sabri'nin evi overlay, Çarşı Sokağı by position, else the pier
     // 16:52 user: music + ambience follow the place: every region has its own (orman, gece pazarı, sahil...), the halı saha match its stand
     zone: () => { if (evRoom?.isOpen()) return 'ev'; if (document.querySelector('.hs-game')) return 'halisaha'; return sesBolgesi(pos); },   // DNY-17: ses bölgesi (iç mekan, karşı yaka alt bölgeleri, şerit)
-    interior: () => icMekan?.icinde() ?? null,
+    interior: () => icMekan?.icinde() ?? (avmIcinde(pos, 2) ? 'avmHol' : null),
     crowd: () => Math.min(1, (sim.agents.count || 0) / 45),
     weather: () => havaApi(sim.rules)?.view().kind ?? 'acik',
     season: () => havaApi(sim.rules)?.view().season ?? 'sonbahar',
@@ -744,6 +754,9 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (st.recenter) (cam as unknown as { recenter(): void }).recenter();
     if (st.moving) { camHold = null; acilis?.atla(); }
     lerpPose(walk, alpha, pose);
+    // Martı AVM kapısı / büyük ışınlanma: kamera kaymasın, ekran kısa bir an kararıp açılsın
+    if (Math.hypot(pose.x - lastPoseX, pose.z - lastPoseZ) > 15) { cam.snap(pos); camHold = null; perde(); }
+    lastPoseX = pose.x; lastPoseZ = pose.z;
     simT += fdt;
     if (zones) guard('zones', () => { P.begin('zones.build'); zones.update(pos, cam.frustum()); P.end('zones.build'); });
     // 2026-11-21 denetim: kapalı diyarda (stadyum / orman) komşu bölgenin tezgâhları zeminsiz, boşlukta havada görünüyordu: diyar dışı bölge çizilmez
@@ -753,7 +766,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (df && sim.state.playT > df.until) { delete sim.rules.rt.uiLast.decorFocus; if ((df as AnyRec).reopen) cmd('openPanel', { id: 'dekor' }); }
     const inBufe = pos.x > BUFE.x0 && pos.x < BUFE.x1 && pos.z > BUFE.z0 && pos.z < BUFE.z1;   // Faz 2 (38): inside the büfe the camera centres on it
     const bufeFocus = { x: (BUFE.x0 + BUFE.x1) / 2, z: (BUFE.z0 + BUFE.z1) / 2 };
-    guard('camera.follow', () => cam.follow((t => onUg(t.x, t.z) ? { x: t.x, z: t.z, y: ugY(t.x, t.z) } : t)(acilis?.kamera() ?? (df && sim.state.playT <= df.until ? df : camHold ?? (inBufe ? { x: pos.x + (bufeFocus.x - pos.x) * 0.25, z: pos.z + (bufeFocus.z - pos.z) * 0.25 } : pos))), fdt));
+    guard('camera.follow', () => cam.follow((t => onUg(t.x, t.z) ? { x: t.x, z: t.z, y: ugY(t.x, t.z) } : t === pos && pose.y ? { x: t.x, z: t.z, y: pose.y } : t)(acilis?.kamera() ?? (df && sim.state.playT <= df.until ? df : camHold ?? (inBufe ? { x: pos.x + (bufeFocus.x - pos.x) * 0.25, z: pos.z + (bufeFocus.z - pos.z) * 0.25 } : pos))), fdt));
     if (playMode) guard('sign', syncSign);
     guard('world', () => W.update(sim.state, fdt, alpha));
     if (ferryLook) guard('ferryLook', () => ferryLook.update(fdt));
@@ -766,6 +779,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (acilis) guard('acilis', () => acilis.update(fdt));
     if (karsiYasam) guard('karsiYasam', () => karsiYasam.update(fdt));
     if (icMekan) guard('icMekan', () => icMekan.update(fdt));
+    if (avmIc) guard('avmIc', () => avmIc.update(fdt));
     if (tipJar) guard('tipJar', () => tipJar.update(fdt));
     if (stantLook) guard('stantLook', () => stantLook.update(fdt));
     if (faz2Hud) guard('faz2Hud', () => faz2Hud.update(fdt));
@@ -1014,7 +1028,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   reg('izgara', (on?: boolean) => { if (on !== undefined) izgaraLook?.set(!!on); return izgaraLook?.get() ?? null; });
   reg('hucre', (name: string) => cellRect(name));
   reg('acilis', (to: number) => acilis?.baslat(Number(to)));   // dev: BUF-30 açılış anını yeniden oynat
-  reg('teleport', (x: number, z: number) => { sim.command({ kind: 'teleport', x, z }); camHold = null; cam.snap(walk.pos); });
+  reg('teleport', (x: number, z: number, kat?: number) => { sim.command({ kind: 'teleport', x, z, kat }); camHold = null; cam.snap(walk.pos); });
   reg('camera', (o: { x?: number; z?: number; zoom?: number; zoomRaw?: number; yaw?: number; tilt?: number } = {}) => {
     if (o.zoom !== undefined) cam.zoom = o.zoom;
     const cr = cam as unknown as { zoomRaw?: (z: number) => void; turn(d: number): void; tilt(d: number): void; yaw: number };

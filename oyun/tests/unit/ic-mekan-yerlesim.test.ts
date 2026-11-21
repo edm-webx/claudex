@@ -5,7 +5,7 @@
 import { describe, it, expect } from 'vitest';
 import { IC_MEKANLAR, IC_BY_ID, IC_DUVAR, icDim, icLayout, icItemRect, icZeminEngeli, icYol, personelGeo, PERSONEL_R, type IcItem, type IcMekan } from '../../src/content/ic-mekan';
 
-const ODALAR = ['kafe1', 'kafe2', 'okul', 'avm', 'tesis', 'kirtasiye', 'avm_moda', 'avm_tekno', 'avm_oyuncak'];
+const ODALAR = ['kafe1', 'kafe2', 'okul', 'tesis', 'kirtasiye', ...IC_MEKANLAR.filter(m => m.bina === 'avm').map(m => m.id)];
 type R = { u0: number; u1: number; v0: number; v1: number };
 const discRect = (u: number, v: number, r: R, rad: number) => { const du = Math.max(r.u0 - u, 0, u - r.u1), dv = Math.max(r.v0 - v, 0, v - r.v1); return Math.hypot(du, dv) - rad; };
 function duvarlar(m: IcMekan): R[] {
