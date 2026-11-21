@@ -65,7 +65,7 @@ export const ARSALAR: Arsa[] = [
   { id: 'a4', x: 279.6, z: 0.4, fiyat: 800000, seviye: 11, rotY: 0 },
   { id: 'a5', x: 284.5, z: 18.2, fiyat: 1800000, seviye: 14, rotY: Math.PI },
   // karşı yaka kafeler (Kenney building-c at these spots, karsi-look.ts); door faces the square (+x)
-  { id: 'k1', x: -17.5, z: 37.9, fiyat: 90000, seviye: 2, rotY: Math.PI / 2, sabit: 'kafe', kapi: { x: -11.8, z: 37.9 }, ad: 'Meydan Kafe' },
+  { id: 'k1', x: -17.5, z: 37.9, fiyat: 90000, seviye: 3, rotY: Math.PI / 2, sabit: 'kafe', kapi: { x: -11.8, z: 37.9 }, ad: 'Meydan Kafe' },
   { id: 'k2', x: -17.5, z: 51.5, fiyat: 120000, seviye: 3, rotY: Math.PI / 2, sabit: 'kafe', kapi: { x: -11.8, z: 51.5 }, ad: 'Sahil Bistro' },
   // 2026-11-09: every business building can be bought from a level and run (interiors: content/ic-mekan.ts)
   { id: 'k3', x: 28, z: 35.2, fiyat: 140000, seviye: 4, rotY: Math.PI, sabit: 'kafe', kapi: { x: 28, z: 32.6 }, ad: 'Martı Kırtasiye' },

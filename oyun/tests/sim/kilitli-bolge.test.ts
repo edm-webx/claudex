@@ -74,7 +74,7 @@ it('üst geçit kapalıyken oyuncu açıklıktan geçemez; seviye 2 olunca geçe
   sim.command({ kind: 'teleport', x: UG.x, z: 15.6 }); sim.step(0.1);
   sim.input({ x: 0, z: 1 }); for (let i = 0; i < 40; i++) sim.step(0.1);
   expect(sim.state.player.z).toBeLessThan(UST_GECIT.z0);
-  sim.input({ x: 0, z: 0 }); sim.state.level = 2; for (let i = 0; i < 20; i++) sim.step(0.25);
+  sim.input({ x: 0, z: 0 }); sim.state.level = UST_GECIT.seviye; for (let i = 0; i < 20; i++) sim.step(0.25);
   expect(sim.events(0).some((e: any) => e.name === 'toast' && /Üst geçit tamamlandı/.test(e.data?.text ?? e.text ?? ''))).toBe(true);
   sim.input({ x: 0, z: 1 }); for (let i = 0; i < 40; i++) sim.step(0.1);
   expect(sim.state.player.z).toBeGreaterThan(UST_GECIT.z1);
