@@ -12,7 +12,7 @@ export const BECERILER: [number, number][] = [[0.6, 0.6], [0.68, 0.52], [0.52, 0
 
 /** Yazılı hedef eşikler (FUT-01). Test bunları sert ya da raporla kipinde kullanır. */
 export const ESIK = {
-  kaleciKovalama: 0.01, kaleciAlanDisi: 0.01, takilmaSn: 3, jitter: 2, pasIsabet: [0.6, 0.85], sutTakim: [6, 14], golMac: [3, 12], faulMac: [2, 6],
+  kaleciKovalama: 0.01, kaleciAlanDisi: 0.01, takilmaSn: 3, jitter: 2, pasIsabet: [0.6, 0.85], sutTakim: [6, 14], golMac: [3, 12], faulMac: [1, 5],
 } as const;
 
 export interface MacMetrik {
@@ -50,14 +50,14 @@ export function insanBotu(kisilik: Kisilik, seed: number) {
       tasima += dt;
       const dx = Math.abs(gx - p.x), yy = (WD / 2 - p.y) / 8;
       let opp = 99; for (const q of m.pls) if (q.team !== team && !q.gk) opp = Math.min(opp, Math.hypot(q.x - p.x, q.y - p.y));
-      m.input.ix = dir; m.input.iy = yy + (opp < 2.5 ? (R() - 0.5) * 1.2 : 0);
+      m.input.ix = dir; m.input.iy = yy + (opp < 2.5 ? (R() - 0.5) * 1.2 : 0); m.input.kos = opp > 2.5;   // boş alana koşarak sürer
       if (dx < sutX) { m.act('sut', 0.35 + R() * 0.45); tasima = 0; }
       else if (kisilik === 'calimci' && opp < 2 && p.cd2 <= 0) m.act('calim');
       else if (kisilik === 'pasci' && (opp < 2.4 || tasima > 1.2 + R())) { m.act('pas', 0.5, R() < 0.3); tasima = 0; }
       else if (opp < 1.3) { if (p.cd2 <= 0 && R() < 0.5) m.act('calim'); else { m.act('pas'); tasima = 0; } }
     } else {
       tasima = 0;
-      const d = Math.hypot(b.x - p.x, b.y - p.y) || 1; m.input.ix = (b.x - p.x) / d; m.input.iy = (b.y - p.y) / d;
+      const d = Math.hypot(b.x - p.x, b.y - p.y) || 1; m.input.ix = (b.x - p.x) / d; m.input.iy = (b.y - p.y) / d; m.input.kos = d > 2.5;   // topa koşar, yaklaşınca yavaşlar
       const o = b.owner >= 0 ? m.pls[b.owner] : null;
       if (o && o.team !== team && d < (kisilik === 'saldirgan' ? 1.6 : 1.3) && R() < 0.5) {
         const arkadan = ((p.x - o.x) * o.fx + (p.y - o.y) * o.fy) < -0.35 * Math.hypot(p.x - o.x, p.y - o.y);   // arkadan girmek faul: insan da çoğunlukla kaçınır

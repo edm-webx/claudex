@@ -6,7 +6,7 @@
 
 export type Eylem = 'sut' | 'pas' | 'uzun' | 'calim' | 'mudahale' | 'degis';
 export type Kaynak = 'klavye' | 'dokunmatik' | 'gamepad';
-export type MotorEylem = 'sut' | 'pas' | 'calim';
+export type MotorEylem = 'sut' | 'pas' | 'calim' | 'uzun';
 
 export const SARJ_SUT_SN = 0.8;      // şut gücü bu sürede 1'e çıkar
 export const SARJ_SUT_OTO_SN = 1.0;  // bu kadar basılı kalırsa tam güçle kendiliğinden çıkar
@@ -101,7 +101,7 @@ export function createGirdi(o: GirdiOpts) {
     if (e === 'sut' || e === 'pas') {
       if (!o.sahip()) { o.act(e); return; }   // topsuz: müdahale / oyuncu değiştir, anında
       if (!sarjDurum) sarjDurum = { a: e, t0: o.simdi(), src };
-    } else if (e === 'uzun') { if (o.sahip()) o.act('pas', 0.5, true); }
+    } else if (e === 'uzun') { if (o.sahip()) o.act('uzun'); }   // havadan uzun top (ara pas Boşluk basılı tutunca)
     else if (e === 'calim') o.act('calim');
     else if (e === 'mudahale') { if (!o.sahip()) o.act('sut'); }
     else if (e === 'degis') { if (!o.sahip()) o.act('pas'); }
@@ -190,8 +190,8 @@ export function nisanYazi(iy: number, portrait: boolean): string {
 
 /** Yardım kartı satırları (kaynağa göre). */
 export function yardimSatirlari(k: Kaynak | 'hepsi' = 'hepsi'): string[] {
-  const kl = ['WASD / oklar: koş', 'Shift: hızlı koş', 'Boşluk: pas (basılı tut: ara pas)', 'E: uzun pas', 'F: şut (basılı tut: güç, bırak: vur)', 'X: çalım', 'C: müdahale · Q: oyuncu değiştir'];
+  const kl = ['WASD / oklar: koş', 'Shift: hızlı koş', 'Boşluk: pas (basılı tut: ara pas)', 'E: havadan uzun top', 'F: şut (basılı tut: güç, bırak: vur)', 'X: çalım', 'C: müdahale · Q: oyuncu değiştir'];
   const dk = ['Sol yarı: sürükle, koş', 'ŞUT: basılı tut, bırak (topsuzken müdahale)', 'PAS: dokun (basılı: ara pas, topsuzken değiştir)', 'ÇALIM: top sürerken hızlan'];
-  const gp = ['Sol çubuk: koş · RT: hızlı koş', 'A: pas · B: şut (basılı: güç)', 'X: çalım · Y: oyuncu değiştir', 'LB: müdahale · RB: uzun pas'];
+  const gp = ['Sol çubuk: koş · RT: hızlı koş', 'A: pas · B: şut (basılı: güç)', 'X: çalım · Y: oyuncu değiştir', 'LB: müdahale · RB: havadan uzun top'];
   return k === 'klavye' ? kl : k === 'dokunmatik' ? dk : k === 'gamepad' ? gp : [...kl, ...dk, ...gp];
 }

@@ -130,7 +130,7 @@ it('FUT-13: çetele toplamları maç istatistiklerinin toplamına eşit, sezon/r
     const ist = { takim: [mt.teamStats(0), mt.teamStats(1)], oyuncu: mt.pls.filter(p => p.team === 0).map(p => ({ ad: p.name, rol: p.role, ...p.st })) };
     const [a, b] = mt.score; z.played++; z.goals += a; if (a > b) z.won++; else if (a === b) z.drawn++; else z.lost++;
     recordStats(z as never, ist, a, b, { sezon: seed > 4 ? 1 : 0, rakip: 'lodosspor', rakipAd: 'Lodosspor', gun: 3 }); gol += a; sut += mt.teamStats(0).shots;
-    expect(mt.pls.filter(p => p.team === 0).reduce((s, p) => s + p.st.goals, 0)).toBe(a);   // goals = sum of the scorers
+    expect(mt.pls.filter(p => p.team === 0).reduce((s, p) => s + p.st.goals, 0) + mt.kk[0]).toBe(a);   // goals = sum of the scorers + rakibin kendi kalesine attıkları
   }
   const c = ceteleOf(z)!; expect(c.oyun).toBe(3); expect(c.oyuncu.reduce((s, p) => s + p.gol, 0)).toBe(gol); expect(c.takim.sut).toBe(sut);
   expect(c.sezon.map(x => x.sezon)).toEqual([2, 1]); expect(c.sezon[0].o + c.sezon[1].o).toBe(3); expect(c.rakip[0]).toMatchObject({ ad: 'Lodosspor', o: 3 });

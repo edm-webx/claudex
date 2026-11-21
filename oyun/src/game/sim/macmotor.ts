@@ -80,8 +80,8 @@ export function createMatch(o: MatchOpts = {}) {
   }
   const ball: Ball = { x: L / 2, y: WD / 2, z: 0, vx: 0, vy: 0, vz: 0, owner: -1, lastTouch: 0, lastKicker: -1 };
   const m = {
-    pls, ball, score: [0, 0] as [number, number], clock: 0, half: 1, over: false, freeze: 1.4, ctrl: o.humanSlot ?? 3, input: { ix: 0, iy: 0 }, events: [] as Ev[],
-    restart: null as null | { taker: number; kind: RestartKind; t: number }, poss: [0, 0] as [number, number], corners: [0, 0] as [number, number], fouls: [0, 0] as [number, number],
+    pls, ball, score: [0, 0] as [number, number], clock: 0, half: 1, over: false, freeze: 1.4, ctrl: o.humanSlot ?? 3, input: { ix: 0, iy: 0, kos: false as boolean | undefined }, events: [] as Ev[],
+    restart: null as null | { taker: number; kind: RestartKind; t: number }, poss: [0, 0] as [number, number], corners: [0, 0] as [number, number], fouls: [0, 0] as [number, number], kk: [0, 0] as [number, number],
     /** FUT-05 hakem: sahada topu çaprazdan izler; signal karar işareti (kol), t işaretin kalan süresi (sn). vx/vy yürüyüş animasyonu için. */
     ref: { x: L / 2, y: WD / 2 + 4, vx: 0, vy: 0, signal: '' as RefSignal, t: 0 },
     /** FUT-02: takım oyun planları ve tribün heyecanı (0..1: tehlikeli atak, şut, kurtarış, direk, faul, gol = 1). */
@@ -179,6 +179,7 @@ export function createMatch(o: MatchOpts = {}) {
     if (Math.hypot(ix, iy) > 0.25) { dx = ix; dy = iy; }
     const d = len(dx, dy), sp = Math.hypot(p.vx, p.vy) + 3.2;
     ball.vx = dx / d * sp; ball.vy = dy / d * sp; p.touch = 0.32; p.boost = 0.5; p.cd2 = 1.4;
+    const ps = Math.max(Math.hypot(p.vx, p.vy), 5.2); p.vx = p.vx * 0.4 + dx / d * ps * 0.6; p.vy = p.vy * 0.4 + dy / d * ps * 0.6;   // ani kesme: çalım ivme sınırını bir kez aşar
     for (const o of pls) if (o.team !== p.team && Math.hypot(o.x - p.x, o.y - p.y) < 2.6) o.kickCd = Math.max(o.kickCd, 0.22 + (1 - o.sk.tackle) * 0.25);
     sfx('puff');
   }
@@ -193,7 +194,7 @@ export function createMatch(o: MatchOpts = {}) {
     const db = Math.hypot(ball.x - q.x, ball.y - q.y), dc = Math.hypot(o.x - q.x, o.y - q.y), reach = 0.5 + q.sk.tackle * 0.55, qs = Math.hypot(q.vx, q.vy);
     const behind = ((q.x - o.x) * o.fx + (q.y - o.y) * o.fy) / (dc || 1) < -0.35, shielded = dc + 0.3 < db && Math.hypot(ball.x - o.x, ball.y - o.y) < 0.8;
     if (db < reach && !behind && !shielded) { o.stun = 0.45; take(qi, true); sfx('kick'); return true; }
-    if (dc < 1.0 && (behind || (qs > 6.5 && dc < 0.8 && db > reach + 0.3))) { foul(qi, o, behind && qs > 6); return false; }   // arkadan ya da topa gitmeyen sert giriş
+    if (dc < 1.25 && (behind || (qs > 4.6 && dc < 0.85 && db > reach + 0.2))) { foul(qi, o, behind && qs > 5.4); return false; }   // arkadan ya da topa gitmeyen sert giriş
     q.stun = 0.28; return false;
   }
 
@@ -435,10 +436,11 @@ export function createMatch(o: MatchOpts = {}) {
 
   function goal(team: 0 | 1) {
     m.score[team]++; const sc = ball.lastKicker >= 0 && pls[ball.lastKicker].team === team ? ball.lastKicker : -1;
+    if (sc < 0) m.kk[team]++;   // kendi kalesine: golü yazan oyuncu yok, çeteleye ayrı sayılır
     if (sc >= 0) { pls[sc].st.goals++; if (m.lastPasser >= 0 && m.lastPasser !== sc && pls[m.lastPasser].team === team && m.clock - m.lastPasserT < 5) pls[m.lastPasser].st.assists++; }
     for (const p of pls) if (p.team === team) setAct(p, 'celebrate', 2.1);
     sfx('net'); sfx('crowdCheer'); if (human !== null && team !== human) sfx('crowdOoh');
-    say('GOOOOL!', 2.2); m.freeze = 2.2; emit({ k: 'shake', t: 0.4 }); emit({ k: 'goal', team, scorer: sc });
+    say(sc < 0 ? 'KENDİ KALESİNE!' : 'GOOOOL!', 2.2); m.freeze = 2.2; emit({ k: 'shake', t: 0.4 }); emit({ k: 'goal', team, scorer: sc });
     after(2.1, () => { if (!m.over) kickoff(team === 0 ? 1 : 0); });
   }
 
@@ -580,6 +582,29 @@ export function createMatch(o: MatchOpts = {}) {
     const dGoal = Math.min(Math.hypot(ball.x, ball.y - WD / 2), Math.hypot(L - ball.x, ball.y - WD / 2)), base = 0.12 + clamp((14 - dGoal) / 14, 0, 1) * 0.4;
     m.heat = clamp(Math.max(base, m.heat - dt * 0.12) + up, 0, 1);
   }
+  /**
+   * 2026-11-21 his: ivme sınırlı sürüş. Hız istenen hıza üstel değil sabit ivmeyle yaklaşır (acc m/s², frenleme/yön tersine brk):
+   * oyuncu ağırlık taşır, yarım saniyede tam hıza çıkar, koşarken geri dönmek önce frenlemeyi gerektirir. Eski model 0.1 sn'de
+   * tam hıza çıkıp anında 180 derece dönüyordu (çizimde karakterler fırıl fırıl dönüyordu).
+   */
+  function surus(p: Pl, wx: number, wy: number, dt: number, acc: number, brk: number) {
+    const dx = wx - p.vx, dy = wy - p.vy, a = Math.hypot(dx, dy); if (a < 1e-6) return;
+    const sp = Math.hypot(p.vx, p.vy), ws = Math.hypot(wx, wy), fren = ws < sp - 0.3 || (sp > 1 && (wx * p.vx + wy * p.vy) < 0.3 * ws * sp);
+    const k = Math.min(a, (fren ? brk : acc) * dt) / a; p.vx += dx * k; p.vy += dy * k;
+  }
+  /**
+   * Gövde yönü (fx, fy) hıza anında yapışmaz, saniyede en çok ~600 derece döner. Yavaşken (<1.3 m/s) topa bakar (taşıyıcı değilse).
+   * Duran top vurucusu yönünü korur. Çizim bu yönü okur; vuruş/çalım/arkadan müdahale hesapları da aynı gerçek gövde yönünü kullanır.
+   */
+  function yuzCevir(p: Pl, i: number, dt: number) {
+    if (m.restart && m.restart.taker === i) return;
+    const s = Math.hypot(p.vx, p.vy); let tx: number, ty: number;
+    if (s > 1.3) { tx = p.vx / s; ty = p.vy / s; }
+    else if (ball.owner !== i) { const bx = ball.x - p.x, by = ball.y - p.y, bd = Math.hypot(bx, by); if (bd < 0.3) return; tx = bx / bd; ty = by / bd; }
+    else if (s > 0.6) { tx = p.vx / s; ty = p.vy / s; } else return;
+    const a0 = Math.atan2(p.fy, p.fx); let da = Math.atan2(ty, tx) - a0; if (da > Math.PI) da -= 2 * Math.PI; else if (da < -Math.PI) da += 2 * Math.PI;
+    const w = (s > 1.3 ? 10.5 : 7) * dt, a1 = a0 + clamp(da, -w, w); p.fx = Math.cos(a1); p.fy = Math.sin(a1);
+  }
   function stepIn(dt: number) {
     if (m.bannerT > 0) m.bannerT -= dt;
     for (const p of pls) if (p.actT > 0) { p.actT -= dt; if (p.actT <= 0) { p.actT = 0; p.act = ''; } }
@@ -621,7 +646,10 @@ export function createMatch(o: MatchOpts = {}) {
           if (d > 0.3) { ix = dx / d; iy = dy / d; }
         } else if (idle && ball.owner === i) { const dx = ball.x - p.x, dy = ball.y - p.y, d = Math.hypot(dx, dy); if (d > 0.7) { ix = dx / d * 0.5; iy = dy / d * 0.5; } }
         if (p.boost > 0 && Math.hypot(ix, iy) < 0.3) { ix = p.fx; iy = p.fy; }
-        const spd = (ball.owner === i ? 6.7 : 7.1) * bm; p.vx += (ix * spd - p.vx) * Math.min(1, dt * 10); p.vy += (iy * spd - p.vy) * Math.min(1, dt * 10);
+        const im = Math.hypot(ix, iy); if (im > 1) { ix /= im; iy /= im; }
+        // 2026-11-21 his: Shift/RT (input.kos) gerçekten koşturur; koşmadan tempolu koşu. Topla biraz yavaş.
+        const kos = !!m.input.kos || p.boost > 0, spd = (ball.owner === i ? (kos ? 6.4 : 5.0) : (kos ? 7.1 : 5.5)) * bm;
+        surus(p, ix * spd, iy * spd, dt, 17, 24);
       }
       else {
         if (ball.owner === i && !p.gk) carrierAI(p, i, dt);
@@ -633,13 +661,13 @@ export function createMatch(o: MatchOpts = {}) {
         }
         let tx = p.tx, ty = p.ty;
         if (ball.owner === i && Math.hypot(ball.x - p.x, ball.y - p.y) > 0.6) { tx = ball.x + ball.vx * 0.15; ty = ball.y + ball.vy * 0.15; }   // topu kovala
-        const dx = tx - p.x, dy = ty - p.y, d = Math.hypot(dx, dy), want = d > 0.15 ? Math.min(p.spd * bm, d * 3) : 0;
-        p.vx += ((d > 0 ? dx / d * want : 0) - p.vx) * Math.min(1, dt * 7); p.vy += ((d > 0 ? dy / d * want : 0) - p.vy) * Math.min(1, dt * 7);
+        const dx = tx - p.x, dy = ty - p.y, d = Math.hypot(dx, dy), want = d > 0.3 ? Math.min(p.spd * bm * (p.gk ? 1 : 0.86 + p.sk.pace * 0.24), (d - 0.2) * 2.5) : 0;
+        surus(p, d > 0 ? dx / d * want : 0, d > 0 ? dy / d * want : 0, dt, p.gk ? 18 : 10 + p.sk.pace * 6, 20);
       }
       const ox = p.x, oy = p.y;
       p.x = clamp(p.x + p.vx * dt, 0.4, L - 0.4); p.y = clamp(p.y + p.vy * dt, 0.4, WD - 0.4); p.st.dist += Math.hypot(p.x - ox, p.y - oy);
       if (p.gk && !isHuman(i)) { const og = ownX(p.team), x1 = og + dirOf(p.team) * (BOX_D - 0.4); p.x = clamp(p.x, Math.min(og, x1), Math.max(og, x1)); p.y = clamp(p.y, BOX_Y0 + 0.4, BOX_Y1 - 0.4); }
-      const s = Math.hypot(p.vx, p.vy); if (s > 0.6 && p.dive <= 0) { p.fx = p.vx / s; p.fy = p.vy / s; }
+      if (p.dive <= 0) yuzCevir(p, i, dt);
     });
     for (let a = 0; a < pls.length; a++) for (let b = a + 1; b < pls.length; b++) {
       const A = pls[a], B = pls[b], dx = B.x - A.x, dy = B.y - A.y, d = Math.hypot(dx, dy);
@@ -670,8 +698,11 @@ export function createMatch(o: MatchOpts = {}) {
         if (d >= reach || ball.z > (hands ? GH + 0.35 : 1.2)) continue;
         if (hands && bs > 11 && m.shot && m.shot.team !== p.team) {   // a real shot on the keeper: catch or parry by speed and skill
           // tut / yumrukla / kaçır: hız, vücuttan uzaklık (dalışta gövde uzanır), yükseklik ve beceri
-          const dd = p.dive > 0 ? Math.max(0, d - 0.9) : d, sv = clamp(1.05 - (bs - 10) * 0.035 - Math.max(0, dd - 0.45) * 0.9 - Math.max(0, ball.z - 1.6) * 0.5 + (p.sk.gk - 0.5) * 0.8, 0.1, 0.95), u = R();
-          if (u >= sv) { p.kickCd = 0.3; continue; }
+          const rx = ball.x - p.x, ry = ball.y - p.y, vv = ball.vx * ball.vx + ball.vy * ball.vy || 1, tc = Math.max(0, -(rx * ball.vx + ry * ball.vy) / vv), cd = Math.hypot(rx + ball.vx * tc, ry + ball.vy * tc);   // topun kaleciye en yakın geçeceği mesafe
+          const dd = cd, sv = clamp(0.98 - (bs - 10) * 0.04 - Math.max(0, dd - 0.3) * (p.dive > 0 ? 0.5 : 1.1) - Math.max(0, ball.z - 1.6) * 0.5 + (p.sk.gk - 0.5) * 1.1, 0.1, 0.95), u = R();
+          // 2026-11-21: gövdeye gelen top kalecinin içinden geçmez; kaçırırsa önüne seker (dönen top). Yalnız uzanarak yetişilen top geçebilir.
+          if (u >= sv && dd > 0.4) { p.kickCd = 0.3; continue; }
+          if (u >= sv) { const sp2 = bs * (0.18 + R() * 0.12); ball.vx = -Math.sign(ball.vx) * sp2 * 0.8 + (R() - 0.5) * 3; ball.vy = (R() - 0.5) * sp2; ball.vz = R() * 1.2; p.kickCd = 0.45; p.st.saves++; m.shot = null; ball.lastTouch = p.team; emit({ k: 'save', team: p.team }); sfx('post'); sfx('crowdOoh'); break; }
           if (u > sv * 0.55 || bs > 21) { ball.vx = R() < 0.35 ? ball.vx * 0.5 : -ball.vx * 0.3 + (R() - 0.5) * 6; ball.vy = (R() - 0.5) * 9; ball.vz = R() * 2.5; p.kickCd = 0.4; p.st.saves++; m.shot = null; ball.lastTouch = p.team; emit({ k: 'save', team: p.team }); sfx('post'); sfx('crowdOoh'); break; }
           sfx('crowdOoh');
         }
