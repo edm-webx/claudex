@@ -12,6 +12,8 @@ export interface AudioMapDeps {
   /** Current player position (listener). */
   playerPos?: () => { x: number; z: number };
   zone?: () => string;
+  /** İç mekân id (ic-mekan icinde()) ya da null: iç mekânda dış deniz/martı kesilir, yalnız iç atmosfer çalar. */
+  interior?: () => string | null;
   phase?: () => DayPhase;
   /** ses-1: crowd size 0..1 (music layers). */
   crowd?: () => number;
@@ -62,6 +64,7 @@ export function createAudioMap(deps: AudioMapDeps): AudioMap {
   }
   const onRadio = () => { try { ma.jingle?.(); setTimeout(() => { try { audio.voice('radyo'); } catch { /* */ } }, 900); } catch { /* */ } };
   if (deps.root) { deps.root.addEventListener('sb:radio', onRadio); offs.push(() => deps.root?.removeEventListener('sb:radio', onRadio)); }
+  let lastInterior: string | null | undefined;
   let lastZone = '', lastPhase = '', lastEvent: string | null | undefined, lastWeather = '', crowdS = 0.5, slowT = 0;
   return {
     update() {
@@ -79,6 +82,7 @@ export function createAudioMap(deps: AudioMapDeps): AudioMap {
       }
       const p = deps.playerPos?.(); if (p) audio.ambience.setListener({ x: p.x, z: p.z });
       const z = deps.zone?.(); if (z && z !== lastZone) { lastZone = z; audio.music.setZone(z); }
+      if (deps.interior && ma.atmosphere) { const i = deps.interior() ?? null; if (i !== lastInterior) { lastInterior = i; ma.atmosphere.setInterior(i); } }
       const ph = deps.phase?.(); if (ph && ph !== lastPhase) { lastPhase = ph; audio.music.setPhase(ph); }
     },
     dispose() { offs.forEach(o => { try { o(); } catch { /* */ } }); offs.length = 0; },

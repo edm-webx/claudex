@@ -32,6 +32,7 @@ import { createBank, type Bank, type SesDb } from './msynth';
 import { createMusicPlayer } from './msynth/player';
 import { babble, type VoiceProfile } from './msynth/voice';
 import { createMoneyGate, isMoney } from './gate';
+import { createAtmosphere, createVoiceCap, DEFAULT_TABLE, type Atmosphere, type AmbienceTable, type AtmoHost } from './atmosphere';
 
 /** One sfx() call as seen by tests / window.__marti.audio: which path produced the sound. */
 export type PlayPath = 'sample' | 'bank' | 'recipe' | 'fallback-pop' | 'gated' | 'silent';
@@ -43,6 +44,8 @@ export interface MotorAudio extends Audio {
   music: Audio['music'] & { setEvent(id: string | null): void; setWeather(kind: string): void; duck(sec: number): void; layers(): string[] };
   ambience: Audio['ambience'] & { setGrill(pos: Vec2 | null): void; setSeason(s: string): void; setHeat(list: IsiKaynagi[]): void };
   jingle(): void;
+  /** Bölgesel atmosfer: yalnız bulunulan bölge/iç mekân katmanları açık (atmosphere.ts). */
+  atmosphere: { setInterior(id: string | null): void; setTable(t: AmbienceTable): void; active(): string[]; live(): string[]; scope(): string };
   /** Arcade babble for a line of text in a character's voice (ses-db `voices`). */
   speak(text: string, who?: string, mood?: 'ok' | 'happy' | 'angry'): void;
   /** Martı Synth bank (debug / editor sound list). */
@@ -75,7 +78,7 @@ export function createAudio(deps: AudioDeps): MotorAudio {
   let heat: IsiKaynagi[] = [], heatG: GainNode | null = null, humG: GainNode | null = null;
   let bank: Bank | null = null;
   let ambWeather = 'acik', ambSeason = 'sonbahar';
-  let duckM = 1, duckA = 1;
+  let duckM = 1, duckA = 1, atmoTable: AmbienceTable = DEFAULT_TABLE;
   const duckTimers: Array<ReturnType<typeof setTimeout>> = [];
   const moneyGate = createMoneyGate();
   const LOG_MAX = 200;
@@ -293,7 +296,7 @@ export function createAudio(deps: AudioDeps): MotorAudio {
   }
 
   // ---------- ambience (cached loops: sea, grill, weather; sparse one-shots) ----------
-  let ambOn = false, ambNodes: AudioScheduledSourceNode[] = [], ambTimer: ReturnType<typeof setTimeout> | null = null;
+  let ambOn = false, ambNodes: AudioScheduledSourceNode[] = [];
   let sizzleG: GainNode | null = null, weatherG: GainNode | null = null, weatherSrc: AudioBufferSourceNode | null = null, weatherKey = '';
   function loopTo(id: string, out: AudioNode, vol: number, onNode?: (s: AudioBufferSourceNode, g: GainNode) => void) {
     if (!bank || !ac) return;
@@ -315,64 +318,61 @@ export function createAudio(deps: AudioDeps): MotorAudio {
     weatherKey = key;
     if (weatherSrc && weatherG) { const s = weatherSrc, g = weatherG; try { g.gain.setTargetAtTime(0, ac.currentTime, 1.5); s.stop(ac.currentTime + 6); } catch { /* */ } }
     weatherSrc = null; weatherG = null;
-    if (key) loopTo(key, busOut(buses.ambience), ambWeather === 'firtina' ? 0.75 : key === 'ruzgar' ? 0.4 : 0.55, (s, g) => { if (weatherLoop() === key) { weatherSrc = s; weatherG = g; } else { try { s.stop(); } catch { /* */ } } });
+    if (key) loopTo(key, wxOut ?? busOut(buses.ambience), ambWeather === 'firtina' ? 0.75 : key === 'ruzgar' ? 0.4 : 0.55, (s, g) => { if (weatherLoop() === key) { weatherSrc = s; weatherG = g; } else { try { s.stop(); } catch { /* */ } } });
   }
+  // ---- bölgesel atmosfer: katmanlar atmosphere.ts tablosundan, yalnız oyuncunun bulunduğu bölge/iç mekân için kurulur ----
+  const voiceCap = createVoiceCap(deps.platform.device?.mobile ? 12 : 24);
+  let atmo: Atmosphere | null = null, atmoTimer: ReturnType<typeof setInterval> | null = null, wxOut: GainNode | null = null;
+  let atmoZone = '', atmoInterior: string | null = null;
+  const atmoHost: AtmoHost = {
+    start(def) {
+      if (!ac || !ambOn) return null;
+      const out = busOut(buses.ambience), fadeG = ac.createGain(); fadeG.gain.value = 0; fadeG.connect(out);
+      let stopped = false, src: AudioScheduledSourceNode | null = null, extra: AudioScheduledSourceNode | null = null;
+      if (def.loop === 'crowdBed') { const n = crowdBed(fadeG); src = n.a; extra = n.b; }
+      else if (def.loop) {
+        bank?.loop(def.loop, buf => {
+          if (stopped || !ac) return;
+          let dest: AudioNode = fadeG;
+          if (def.dyn === 'grill') { sizzleG = ac.createGain(); sizzleG.gain.value = 0; sizzleG.connect(fadeG); dest = sizzleG; updateSizzle(); }
+          const s = ac.createBufferSource(); s.buffer = buf; s.loop = true; s.connect(dest); s.start(ac.currentTime, Math.random() * buf.duration); src = s;
+        });
+      }
+      return {
+        setGain(g, tc) { try { fadeG.gain.setTargetAtTime(g, ac!.currentTime, tc); } catch { /* */ } },
+        stop() { stopped = true; for (const n of [src, extra]) { try { n?.stop(); } catch { /* */ } } try { fadeG.disconnect(); } catch { /* */ } if (def.dyn === 'grill') sizzleG = null; },
+      };
+    },
+    shoot(_def, s) {
+      if (!live() || !ac || !ambOn || !voiceCap.take(deps.platform.clock.now(), 2500, 0)) return;
+      const pan = ac.createStereoPanner(), g = ac.createGain(), pr = s.pan ?? 0.8;
+      pan.pan.value = Math.max(-1, Math.min(1, (Math.random() * 2 - 1) * pr)); g.gain.value = s.gain; g.connect(pan); pan.connect(busOut(buses.ambience));
+      const day = phase === 'morning' || phase === 'noon';
+      if (s.id === 'seasonCall') seasonCall(g, day); else if (s.id === 'simitci') SFX.simitci(g);
+      else if (!playId(s.id, g) && SFX[s.id]) SFX[s.id](g);
+    },
+  };
+  function syncAtmo() { if (!atmo) return; atmo.setZone(atmoZone); atmo.setInterior(atmoInterior); if (wxOut && ac) try { wxOut.gain.setTargetAtTime(atmo.outdoor() ? 1 : 0.2, ac.currentTime, 0.6); } catch { /* */ } }
   function startAmbience() {
     if (ambOn || !ac || !live()) return;
     ambOn = true;
-    const out = busOut(buses.ambience);
-    const loop = sample(`amb.${zone || 'iskele'}`);
-    if (loop) { const s = playBuffer(loop, out, 0.5, 1, true); if (s) ambNodes.push(s); }
-    else if (zone === 'orman') loopTo('ruzgar', out, 0.16);        // leaves in the wind, no sea
-    else if (zone === 'halisaha' || zone === 'stadyum') crowdBed(out);
-    else if (zone !== 'ev') {
-      loopTo('deniz', out, 0.42);
-      // grill: level follows the listener's distance to the döner (setGrill)
-      if (ac) { sizzleG = ac.createGain(); sizzleG.gain.value = 0; sizzleG.connect(out); loopTo('izgara', sizzleG, 1); updateSizzle(); }
-    }
+    wxOut = ac.createGain(); wxOut.connect(busOut(buses.ambience));
+    atmo = createAtmosphere(atmoHost, { table: atmoTable });
+    syncAtmo();
     weatherKey = ''; syncWeather();
-    const tick = () => {
-      if (!ambOn) return;
-      if (live() && ac && (zone === 'orman' || zone === 'halisaha' || zone === 'stadyum')) {
-        const g = ac.createGain(); const pan = ac.createStereoPanner(); pan.pan.value = Math.random() * 1.6 - 0.8; g.connect(pan); pan.connect(out);
-        const r = Math.random(), day = phase === 'morning' || phase === 'noon';
-        if (zone === 'orman') {
-          g.gain.value = 0.5;
-          if (!day && phase === 'night') { g.gain.value = 1; seasonCall(g, false); }
-          else if (r < 0.45) SFX.birdTrill(g); else if (r < 0.75) SFX.birdCall(g); else if (r < 0.88) SFX.woodpecker(g); else { g.gain.value = 0.25; playId('sizzle', g); }
-          ambTimer = setTimeout(tick, 2500 + Math.random() * 4000); return;
-        }
-        g.gain.value = 0.55;
-        if (r < 0.35) SFX.clapChant(g); else if (r < 0.6) SFX.tribunDavul(g); else if (r < 0.8) SFX.crowdCheer(g); else SFX.crowdOoh(g);
-        ambTimer = setTimeout(tick, 2600 + Math.random() * 2600); return;
-      }
-      if (live() && ac && zone !== 'ev') {
-        const r = Math.random();
-        const pan = ac.createStereoPanner(); pan.pan.value = Math.max(-1, Math.min(1, (Math.random() * 24 - 12 - listener.x * 0.1) / 12));
-        const g = ac.createGain(); g.gain.value = 0.4; g.connect(pan); pan.connect(out);
-        const day = phase === 'morning' || phase === 'noon';
-        if (ambWeather === 'firtina' && r < 0.25) { g.gain.value = 0.7; playId('thunder', g); }
-        else if (r < 0.4) playId('gull', g);
-        else if (r < 0.55) playId('creak', g);
-        else if (r < 0.66) { g.gain.value = 0.3; playId('spoon', g); }
-        else if (r < 0.74) { g.gain.value = 0.22; playId('horn', g); }          // uzaktan vapur düdüğü
-        else if (r < 0.84 && day) { g.gain.value = 0.4; SFX.simitci(g); }        // uzaktan 'taze simiiit'
-        else seasonCall(g, day);
-      }
-      ambTimer = setTimeout(tick, 9000 + Math.random() * 9000);
-    };
-    ambTimer = setTimeout(tick, 4000);
+    const tickAtmo = () => { try { atmo?.tick(deps.platform.clock.now(), { phase, weather: ambWeather }); } catch { /* */ } };
+    tickAtmo(); atmoTimer = setInterval(tickAtmo, 250);
   }
   /** halı saha / stadium: a constant murmuring crowd (band-passed noise, slow swell), kept in ambNodes. */
-  function crowdBed(out: AudioNode) {
-    if (!ac) return;
+  function crowdBed(out: AudioNode): { a: AudioScheduledSourceNode; b: AudioScheduledSourceNode } {
+    if (!ac) throw new Error('no ctx');
     if (!noiseBuf) { noiseBuf = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
     const n = ac.createBufferSource(); n.buffer = noiseBuf; n.loop = true;
     const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 700; bp.Q.value = 0.7;
     const g = ac.createGain(); g.gain.value = 0.0; g.gain.setTargetAtTime(0.16, ac.currentTime, 1.5);
     const lfo = ac.createOscillator(); lfo.frequency.value = 0.13; const lg = ac.createGain(); lg.gain.value = 0.06; lfo.connect(lg); lg.connect(g.gain);
     n.connect(bp); bp.connect(g); g.connect(out); n.start(); lfo.start();
-    ambNodes.push(n, lfo);
+    return { a: n, b: lfo };
   }
   /** survey 2026-10-24 (mevsim sesleri): procedural season calls. Summer days: ağustos böceği; warm nights: cırcır
    *  böceği; autumn and winter: a wind gust through the pier; spring: a little bird trill. */
@@ -430,7 +430,8 @@ export function createAudio(deps: AudioDeps): MotorAudio {
     if (sizzleG) { try { sizzleG.disconnect(); } catch { /* */ } }
     heatG = null; humG = null;
     sizzleG = null; weatherG = null; weatherSrc = null; weatherKey = '';
-    ambOn = false; if (ambTimer) clearTimeout(ambTimer); ambTimer = null;
+    ambOn = false; if (atmoTimer) clearInterval(atmoTimer); atmoTimer = null; atmo?.dispose(); atmo = null;
+    if (wxOut) { try { wxOut.disconnect(); } catch { /* */ } wxOut = null; }
     for (const n of ambNodes) { try { n.stop(); } catch { /* already */ } }
     ambNodes = [];
   }
@@ -457,6 +458,13 @@ export function createAudio(deps: AudioDeps): MotorAudio {
       } catch { /* */ }
     },
     bank: () => bank,
+    atmosphere: {
+      setInterior(id) { atmoInterior = id; syncAtmo(); },
+      setTable(t) { atmoTable = t; atmo?.setTable(t); },
+      active: () => atmo?.active() ?? [],
+      live: () => atmo?.live() ?? [],
+      scope: () => atmo?.scope() ?? '',
+    },
     sfx(id, opts) {
       try {
         if (sfxSilent() || !ac) { note(id, 'silent', !!opts?.at, 0); return; }
@@ -495,7 +503,7 @@ export function createAudio(deps: AudioDeps): MotorAudio {
     },
     debug: () => ({ log: playLog.slice(), counts: { ...counts }, buses: Object.fromEntries(Object.entries(buses).map(([k, b]) => [k, { volume: b.volume, muted: b.muted }])), ambOn, bank: bank ? bank.stats() : null }),
     music: {
-      setZone(id) { if (id === zone) return; zone = id; lofiPlace = id; try { lofi?.setPlace(id); refreshMusic(); if (ambOn && id !== 'ev') { stopAmbience(); startAmbience(); } } catch { /* ignore */ } },
+      setZone(id) { if (id === zone) return; zone = id; lofiPlace = id; atmoZone = id; try { syncAtmo(); lofi?.setPlace(id); refreshMusic(); } catch { /* ignore */ } },
       setPhase(p) { if (p === phase) return; phase = p; try { lofi?.setPhase(p); refreshMusic(); } catch { /* ignore */ } },
       setIntensity(v) { intensity = Math.max(0, Math.min(1, +v || 0)); lofi?.setIntensity(intensity); (buses.music as unknown as { apply: () => void }).apply(); },
       setEvent(id) { lofiEvent = id; lofi?.setEvent(id); },
