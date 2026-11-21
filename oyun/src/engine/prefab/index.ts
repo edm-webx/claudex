@@ -255,7 +255,9 @@ export function createPrefabs(deps: PrefabDeps): MotorPrefabSystem {
   }
 
   function place(pl: PrefabPlacement, parent: T.Object3D): PrefabInstance {
-    const old = instances.get(pl.id); if (old) old.remove();
+    // 2026-11-21: kimlik sahne genelinde tek sayılıyordu; iki bölgenin 'ground' yerleştirmesi birbirini siliyordu (orman zemini hiç çizilmiyordu).
+    // Aynı kimliği yalnızca aynı üst nesnede (aynı bölge kökü) yeniden kurmak eskisini değiştirir.
+    const old = instances.get(pl.id); if (old && old._parent === parent) old.remove();
     const proxy = new T.Group(); proxy.name = pl.id; proxy.userData.placement = pl.id; proxy.userData.prefab = pl.prefab;
     const inst: Inst = {
       id: pl.id,
