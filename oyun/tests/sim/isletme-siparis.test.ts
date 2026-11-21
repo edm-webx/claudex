@@ -1,6 +1,6 @@
 // DKN-05: every guest asks for an item of the business's own menu, the worker makes and carries exactly that
 import { it, expect } from 'vitest';
-import { played } from './m1-helpers';
+import { played, kareyeGit } from './m1-helpers';
 import { ISLETME, ARSA_ISLETME } from '../../src/content/esya';
 import { KALEM, ISTASYON_SIRA } from '../../src/content/isletme-istasyon';
 
@@ -13,7 +13,7 @@ it('veri bütünlüğü: 136 kalemin (17 işletme x 8) hepsinin istasyonu/süres
 });
 it('k1-k6: istek menüden, işçi tam o kalemi taşır, satış o kalemin fiyatı, gün sonu k: anahtarı', () => {
   for (const id of ['k1', 'k2', 'k3', 'k4', 'k5', 'k6']) {
-    const { sim, S, h, c } = mk(); c({ op: 'arsaAl', id }); c({ op: 'yukselt', id }); c({ op: 'adminTadilatBitir', id }); c({ op: 'yukselt', id }); c({ op: 'adminTadilatBitir', id }); c({ op: 'yukselt', id });
+    const { sim, S, h, c } = mk(); kareyeGit(sim, id); c({ op: 'arsaAl', id }); c({ op: 'yukselt', id }); c({ op: 'adminTadilatBitir', id }); c({ op: 'yukselt', id }); c({ op: 'adminTadilatBitir', id }); c({ op: 'yukselt', id });
     c({ op: 'adminIsci', id }); c({ op: 'adminIsci', id });
     const menu = ISLETME[ARSA_ISLETME[id]].menu.map(m => m.id), carried = new Set<string>();
     for (let i = 0; i < 1500; i++) {

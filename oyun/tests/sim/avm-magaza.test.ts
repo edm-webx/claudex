@@ -3,7 +3,7 @@
 // its floor, bought from a level (and after the floor's anchor shop), own menu (net price, no stock), equipment, crew, live guests
 // and staff who walk in through the mall entrance and ride up, stage renovation. The player's own AVM shopping (avmAl) still works.
 import { it, expect } from 'vitest';
-import { played } from './m1-helpers';
+import { played, kareyeGit } from './m1-helpers';
 import { mulkApi } from '../../src/game/sim/mulk';
 import { IC_BY_ID, IC_CANLI, icBina, icHangi, icWorld, icDim, icLayout, icIcinde, icColliders } from '../../src/content/ic-mekan';
 import { ARSALAR, ARSA_ISLETME, ISLETME, arsaKapi, kafeMenu, dukkanMusteri, DUKKAN_BY_ID } from '../../src/content/esya';
@@ -16,11 +16,11 @@ import { AVM, HOL, SERIT, MERD, GIRIS_KAPI, AVM_BINA, AVM_DIS, holEngel, katY, a
 
 const ROOMS = icBina('avm'), IDS = ROOMS.map(m => m.arsa!).sort();
 const RETAIL = ['k7', 'k8', 'k9'], NEW = IDS.filter(id => id !== 'k5');
-const mk = () => { const sim = played(1) as any; sim.step(1); const S = sim.state; return { sim, S, m: mulkApi(sim.rules)!, h: sim.rules.rt.kafeHost, c: (x: any) => sim.command({ kind: 'mulk', ...x }) }; };
+const mk = () => { const sim = played(1) as any; sim.step(1); const S = sim.state; return { sim, S, m: mulkApi(sim.rules)!, h: sim.rules.rt.kafeHost, c: Object.assign((x: any) => sim.command({ kind: 'mulk', ...x }), { sim }) }; };
 const roomOf = (id: string) => ROOMS.find(m => m.arsa === id)!;
 const plot = (id: string) => ARSALAR.find(a => a.id === id)!;
 const kafeActors = (sim: any, room: string, kind: string) => sim.rules.rt.agents.registry.list.filter((a: any) => !a.dead && a.key.startsWith('kafe-' + room + '-') && a.kind === kind);
-const buyAll = (c: any, ...ids: string[]) => { for (const id of ids) c({ op: 'arsaAl', id }); };
+const buyAll = (c: any, ...ids: string[]) => { for (const id of ids) { kareyeGit(c.sim, id); c({ op: 'arsaAl', id }); } };
 
 it('AVM: 3 kat x 4 dükkân, aynı kattakiler kesişmez, hepsi binada; her birinin kendi kapısı (kendi katının holünde) ve arsası var', () => {
   expect(ROOMS).toHaveLength(12); expect(IC_CANLI).toEqual(expect.arrayContaining(IDS));
@@ -101,8 +101,9 @@ it('satın al: seviye kilidi + katın öncü dükkânı şartı; kapıda doğru 
   sim.command({ kind: 'teleport', x: ic.x, z: ic.z, kat: 1 }); sim.step(0.3); expect(m.view().arsaYakin).toBe('k11');
   sim.command({ kind: 'teleport', x: ic.x, z: ic.z, kat: 0 }); sim.step(0.3); expect(m.view().arsaYakin).toBe('k7');   // the shop under it
   S.money = 1e8; S.level = 40;
-  c({ op: 'arsaAl', id: 'k11' }); expect(S.zones.arsa.plots.k11).toBeUndefined();   // the floor's anchor (şekerci k10) first
-  c({ op: 'arsaAl', id: 'k10' }); const m0 = S.money; c({ op: 'arsaAl', id: 'k11' });
+  c({ op: 'arsaAl', id: 'k10' }); expect(S.zones.arsa.plots.k10).toBeUndefined();   // panelden / uzaktan alınmaz: yalnız kapısındaki sarı kare
+  buyAll(c, 'k11'); expect(S.zones.arsa.plots.k11).toBeUndefined();   // the floor's anchor (şekerci k10) first
+  buyAll(c, 'k10'); const m0 = S.money; buyAll(c, 'k11');
   expect(S.zones.arsa.plots.k11).toMatchObject({ tur: 'dukkan', lv: 1 }); expect(m0 - S.money).toBe(plot('k11').fiyat);
   for (const k of Object.keys(S.zones.arsa.plots.k11)) expect(['esya', 'fr', 'ilan', 'ilanGun', 'isci', 'kadro', 'lv', 'sat', 'till', 'tip', 'tur', 'maas', 'tadilat', 'tema']).toContain(k);   // the generic Plot, no new save field
 });
@@ -185,6 +186,25 @@ it('tadilat: AVM dükkânı süreli yükselir (sokak cephesi yok), aşama kuyru�
   expect(p.tadilat).toMatchObject({ to: 2 });
   for (let i = 0; i < 2000 && p.tadilat; i++) sim.step(0.25);
   expect(p.lv).toBe(2); expect(h.info('k7').kuyruk).toBe(2);
+});
+
+it('tadilat: üst kattaki AVM dükkânına iki gerçek usta girişten yürüyüp merdivenle çıkar, içeride çalışır, bitince çıkıp gider', () => {
+  const { sim, S, c } = mk(); S.level = 40; S.money = 1e9;
+  const id = ROOMS.find(m => (m.kat || 0) === 1)!.arsa!; for (const a of ARSALAR) if (ROOMS.some(m => m.arsa === a.id)) buyAll(c, a.id);
+  const p = S.zones.arsa.plots[id], m = roomOf(id); expect(p).toBeTruthy();
+  const usta = () => sim.rules.rt.agents.registry.list.filter((a: any) => !a.dead && a.key.startsWith('insaat-' + id + '-'));
+  c({ op: 'yukselt', id }); expect(p.tadilat).toBeTruthy();
+  sim.step(0.25); expect(usta().length).toBe(2);
+  const y0 = usta()[0].y; expect(y0).toBeLessThan(0.5);   // zemin kattaki girişte belirir
+  const inRoom = (a: any) => Math.abs(a.x - m.x) < m.wx / 2 && Math.abs(a.z - m.z) < m.wz / 2;
+  let geldi = false, calisti = false;
+  for (let i = 0; i < 400 && p.tadilat; i++) { sim.step(0.25); const u = usta(); if (u.length === 2 && u.every(inRoom)) geldi = true; if (u.some((a: any) => a.act === 'sweep' && inRoom(a))) calisti = true; if (geldi && calisti) break; }
+  expect(geldi).toBe(true); expect(calisti).toBe(true);
+  for (const a of usta()) expect(a.y).toBeCloseTo(katY(1), 1);
+  c({ op: 'adminTadilatBitir', id }); expect(p.tadilat).toBeFalsy();
+  sim.step(0.25); expect(usta().length).toBe(2);   // yok olmazlar, yürüyerek çıkarlar
+  for (let i = 0; i < 600 && usta().length; i++) sim.step(0.25);
+  expect(usta().length).toBe(0);
 });
 
 it('AVM alışverişi (avmAl) mağazaların içinde de çalışır, dışarıda çalışmaz', () => {
