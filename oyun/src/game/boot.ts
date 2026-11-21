@@ -74,7 +74,7 @@ import { createParity, type Parity } from './parity';
 import { createContent } from '../content/index';
 import { defaultSign } from '../content/sign-fonts';
 import { createSim, openNav, lerpPose, type SimFull } from './headless';
-import { defaultState, SAVE_KEY, type GameState, type HeroId } from './sim/schema';
+import { defaultState, SAVE_KEY, SAVE_VERSION, type GameState, type HeroId } from './sim/schema';
 import { createGameSave } from './sim/save';
 import { installBekci, type BekciHandle } from './sim/bekci';
 import { createGunSonu } from './ui/gun-sonu';
@@ -98,7 +98,7 @@ import { createKirtasiyeFp } from './ui/kirtasiye-fp';
 import { IC_BY_ID as KT_IC, icWorld as ktWorld, icDim as ktDim, icIcinde as ktIcinde } from '../content/ic-mekan';
 import { createMulkView } from './view/mulk';
 import { bankaOku, bankaYaz } from './net/slots';
-import { bulutKapanisYaz } from './net/slots';
+import { bulutKapanisYaz, kayitKilidi, kayitKilitle, kodSurumu, yerelYedekYaz, yerelYedekOku, yerelYedekSil, type KayitKilidi } from './net/slots';
 import { createKayitDurum } from './net/kayit-durum';
 import { createKayitRozet } from './ui/kayit-rozet';
 import { panelModel, panelActions } from './sim/panels';
@@ -487,15 +487,27 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
       // 2026-10-25 user: a different account must NOT inherit the previous account's progress. The local save remembers
       // which account owns it; an unowned (guest/legacy) save is claimed by the first account that logs in.
       const me = hesap(); if (!me) return;
+      // KAYIT-GUV: the cloud record must have been read; an unreadable/unopenable cloud save is never replaced by an empty character
+      let c: { code: string; playT: number } | null;
+      try { c = await bulutOku(); } catch { bulutKilitle('okunamadi'); return; }
       let owner = ''; try { owner = localStorage.getItem('martikoy-save-owner') || ''; } catch { /* */ }
       // J2: an empty slot always starts a fresh character (kulis opens, the name is chosen once)
       const slotFresh = slotYeni();
       const foreign = (!!owner && owner !== me.id) || slotFresh;
-      const c = await bulutOku();
+      if (c && c.code) { const kv = kodSurumu(c.code); if (kv === null || kv > SAVE_VERSION) { bulutKilitle(kv === null ? 'bozuk' : 'surum'); return; } }
+      // offline close/refresh: this browser's copy of the slot, if it grew from exactly this cloud save and is further on
+      let yedek: { code: string; playT: number } | null = null;
+      if (slotFresh) yerelYedekSil();
+      else { const y = yerelYedekOku(c); const yv = y ? kodSurumu(y.code) : null; if (y && yv !== null && yv <= SAVE_VERSION) yedek = { code: y.code, playT: y.playT }; }
       let synced = ''; try { synced = localStorage.getItem('martikoy-cloud-synced') || ''; } catch { /* */ }
       const wiped = !c && synced === me.id;   // it had a cloud save before and an admin deleted it
-      if (c && c.code && (foreign || c.playT > (sim.state.playT || 0)) && await save.importCode(c.code)) { const r = await save.load(); sim.load(r.data); }
-      else if (foreign || wiped) { sim.load(defaultState(seed ?? 1) as never); esnafimSave(sim.state).done = false; }
+      let yuklendi = false;
+      if (yedek && await save.importCode(yedek.code)) { const r = await save.load(); sim.load(r.data); yuklendi = true; setTimeout(() => bulutPush(), 0); }
+      if (!yuklendi && c && c.code && (foreign || cloudOnly || c.playT > (sim.state.playT || 0))) {
+        if (await save.importCode(c.code)) { const r = await save.load(); sim.load(r.data); yuklendi = true; }
+        else { bulutKilitle('bozuk'); return; }   // never fall through to a fresh character that would overwrite this slot
+      }
+      if (!yuklendi && (foreign || wiped)) { sim.load(defaultState(seed ?? 1) as never); esnafimSave(sim.state).done = false; }
       if (slotFresh) esnafimSave(sim.state).done = false;
       else if (isNew) esnafimSave(sim.state).done = false;
       { const bk = bankaOku(); (sim.rules.rt as unknown as { banka: unknown }).banka = { tl: bk.tl, esya: bk.esya, dirty: false, faizSaat: bk.faizSaat || 0, saat: Date.now() / 1000 }; }   // the account bank, shared by all 4 slots
@@ -516,12 +528,28 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   // J2: back to the slot screen (save first, then sign out and reload: the login screen opens again)
   window.addEventListener('martikoy:karakter', () => { void (async () => { try { if (hesap() && saveOn()) { const code = await save.exportCode(); await bulutYaz(code, sim.state.playT || 0, esnafimSave(sim.state), sim.state.level || 1); } await cikisYap(); } finally { location.reload(); } })(); });
   let bulutT = 45;
+  // KAYIT-GUV: cloud write lock (cloud save of a newer build / unreadable / another tab advanced this character). Shown once.
+  const KILIT_METNI: Record<Exclude<KayitKilidi, null>, string> = {
+    surum: 'Bu karakterin kaydı oyunun daha yeni bir sürümünden. Kaydın korunuyor, bu sekme hiçbir şey yazmıyor; sayfayı yenile.',
+    bozuk: 'Bulut kaydın açılamadı. Kaydın korunuyor, bu sekme hiçbir şey yazmıyor; sayfayı yenile.',
+    okunamadi: 'Bulut kaydın okunamadı. Kaydın korunuyor, bu sekme hiçbir şey yazmıyor; sayfayı yenile.',
+    cakisma: 'Bu karakter başka bir sekmede ya da cihazda ilerledi. Onun kaydını ezmemek için bu sekme artık kaydetmiyor; sayfayı yenile.',
+  };
+  let kilitGosterildi = false;
+  function kilitGoster(): void {
+    const k = kayitKilidi(); if (!k) return;
+    kayitD.saltOkunur(KILIT_METNI[k]);
+    if (!kilitGosterildi) { kilitGosterildi = true; try { U.toast(KILIT_METNI[k], 'bad'); } catch { /* */ } }
+  }
+  function bulutKilitle(k: Exclude<KayitKilidi, null>): void { kayitKilitle(k); kilitGoster(); }
   // KAL-01: bulut yazımı durum makinesinden geçer (rozet, yeniden deneme, çevrimdışı); sonuç sunucu onayıdır
   const kayitD = createKayitDurum({
     gonder: async () => {
       if (!hesap() || !saveOn()) return true;
+      if (kayitKilidi()) { kilitGoster(); return false; }
       const code = await save.exportCode();
       const ok = await bulutYaz(code, sim.state.playT || 0, esnafimSave(sim.state), sim.state.level || 1);
+      if (!ok && kayitKilidi()) kilitGoster();
       if (ok) { try { const h = hesap(); if (h) localStorage.setItem('martikoy-cloud-synced', h.id); } catch { /* */ } }
       return ok;
     },
@@ -529,10 +557,19 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     zamanla: (fn, ms) => setTimeout(fn, ms), iptal: h => clearTimeout(h as ReturnType<typeof setTimeout>),
   });
   if (save.readOnly) kayitD.saltOkunur();   // depoda bu build'den yeni sürüm kaydı var: buluta da yazılmaz (yeni kayıt ezilmesin)
-  const bulutPush = () => { if (!hesap() || !saveOn()) return; if (save.readOnly) { kayitD.saltOkunur(); return; } kayitD.istek(); };
+  /** this browser's copy of the active slot (survives an offline refresh/close; slots.ts yerelYedekOku decides at login) */
+  const yedekYaz = (code: string) => { try { yerelYedekYaz(code, sim.state.playT || 0, platform.clock.wall()); } catch { /* */ } };
+  const bulutPush = () => {
+    if (!hesap() || !saveOn()) return;
+    if (save.readOnly) { kayitD.saltOkunur(); return; }
+    if (kayitKilidi()) { kilitGoster(); return; }
+    void save.exportCode().then(code => { yedekYaz(code); kayitD.istek(); }, () => kayitD.istek());
+  };
   /** sekme kapanırken: asenkron zincire güvenme, keepalive isteği hemen at (gövde 60 KB'ı aşarsa atılmaz, normal yazım dener) */
-  const bulutKapanis = () => { try { if (!hesap() || !saveOn() || save.readOnly) return; void save.exportCode().then(code => { bulutKapanisYaz(code, sim.state.playT || 0, esnafimSave(sim.state), sim.state.level || 1); }); } catch { /* */ } };
+  const bulutKapanis = () => { try { if (!hesap() || !saveOn() || save.readOnly || kayitKilidi()) return; void save.exportCode().then(code => { yedekYaz(code); bulutKapanisYaz(code, sim.state.playT || 0, esnafimSave(sim.state), sim.state.level || 1); }); } catch { /* */ } };
   addEventListener('pagehide', bulutKapanis);
+  // unsaved progress (offline / failing): the browser asks before closing (the local copy is kept anyway)
+  addEventListener('beforeunload', e => { try { if (hesap() && saveOn() && !kayitKilidi() && kayitD.bekleyenVar()) { bulutKapanis(); e.preventDefault(); e.returnValue = ''; } } catch { /* */ } });
   addEventListener('online', () => kayitD.baglandi());
   const kayitRozet = playMode && uiReal ? make('kayitRozet', () => createKayitRozet({ root: U.root, durum: kayitD, gorunur: () => !!hesap() && saveOn() })) : null;
   const yetenekBtn = playMode && uiReal ? make('yetenekBtn', () => createYetenekBtn({ root: U.root, rules: () => sim.rules, command: c => command(c as never) })) : null;
@@ -721,7 +758,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (mulkPanel) guard('mulkPanel', () => mulkPanel.update(fdt));
     if (mulkView) guard('mulkView', () => mulkView.update(fdt));
     if (stadyumView) guard('stadyumView', () => stadyumView.update(fdt));
-    if ((bankaT -= fdt) <= 0) { bankaT = 2; const b = bankaRt(); if (b && b.saat !== undefined) b.saat = Date.now() / 1000; if (b?.dirty && hesap()) { b.dirty = false; void bankaYaz({ tl: b.tl, esya: b.esya, faizSaat: b.faizSaat }); } }   // the sim is pure: the wall clock for the account-level interest stamp comes from here
+    if ((bankaT -= fdt) <= 0) { bankaT = 2; const b = bankaRt(); if (b && b.saat !== undefined) b.saat = Date.now() / 1000; if (b?.dirty && hesap() && saveOn()) { b.dirty = false; void bankaYaz({ tl: b.tl, esya: b.esya, faizSaat: b.faizSaat }).then(ok => { if (!ok && !kayitKilidi()) b.dirty = true; }); } }
     if (otobusHud) guard('otobusHud', () => otobusHud.update(fdt));
     if (nightLights) guard('nightLights', () => nightLights.update(pos, gSaat.saat, fdt, roomLightsFor(icMekan?.icinde())));   // GRS-02: lamps follow the drawn hour (lit behind the gün sonu card, fade at dawn)
     if (playMode) guard('heroKind', syncHeroKind);
