@@ -210,7 +210,7 @@ function avmOdaLayout(W: number, D: number, tur: IcTur): IcItem[] {
   else if (tur === 'donerci') o.push(ct('lavasSac', -2.0, 0.55, 0.45, 'lavas_sac'), ct('bicak', -1.2, 0.5, 0.3, 'dayi_bicak'), ct('kazan', -0.35, 0.5, 0.45, 'pilav_kazan', { c: 'pilav' }),
     arka('doner', -1.85, 0.6, 0.5, 'doner_ocak'), arka('doner', -0.95, 0.6, 0.5, 'ikinci_sis'), arka('yayik', 0.0, 0.6, 0.5, 'ayran_yayik'), arka('kavanoz', 1.0, 0.85, 0.4, 'tursu', { c: 'tursu' }),
     yan('ledPano', -1, 'led_d', { c: R.c, y: 1.8 }));
-  else if (tur === 'kumpir') o.push(ct('benmari', -1.6, 1.3, 0.55, 'malzeme_bar'), ct('tepsiTezgah', -0.35, 0.6, 0.45, 'ezme_tezgah', { c: 'tereyag' }),
+  else if (tur === 'kumpir') o.push(ct('benmari', -1.6, 1.3, 0.55, 'ic_bari'), ct('tepsiTezgah', -0.35, 0.6, 0.45, 'ezme_tezgah', { c: 'tereyag' }),
     arka('kumpirFirin', -1.6, 1.1, 0.5, 'kumpir_firin'), arka('fritoz', -0.5, 0.7, 0.5, 'fritoz_k'), arka('buzdolap', 0.45, 0.6, 0.5, 'limonata_dispenser', { c: 'limon' }),
     arka('ustaOcak', 1.35, 0.8, 0.5, 'usta_k'), yan('ledPano', -1, 'neon', { c: '#ff4fa3', y: 1.8 }), it('vitrin', 2.05, 1.05, 0.55, 0.6, { esya: 'kule_vitrin', c: 'kumpir' }));
   else if (tur === 'midye') o.push(ct('tepsiTezgah', -1.9, 0.8, 0.5, 'midye_tabla', { c: 'midye' }), ct('tepsiTezgah', -1.0, 0.5, 0.4, 'limon_sepet', { c: 'limon' }), ct('tepsiTezgah', -0.3, 0.6, 0.45, 'mido_tezgah', { c: 'altin' }),

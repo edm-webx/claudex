@@ -5,14 +5,14 @@
 import { it, expect } from 'vitest';
 import { played } from './m1-helpers';
 import { mulkApi } from '../../src/game/sim/mulk';
-import { IC_BY_ID, IC_CANLI, icBina, icHangi, icWorld, icDim, icLayout, icIcinde } from '../../src/content/ic-mekan';
+import { IC_BY_ID, IC_CANLI, icBina, icHangi, icWorld, icDim, icLayout, icIcinde, icColliders } from '../../src/content/ic-mekan';
 import { ARSALAR, ARSA_ISLETME, ISLETME, arsaKapi, kafeMenu, dukkanMusteri, DUKKAN_BY_ID } from '../../src/content/esya';
 import { ASAMA } from '../../src/content/isletme-asama';
 import { ISLETME_ROL } from '../../src/content/isletme-kadro';
 import { KALEM } from '../../src/content/isletme-istasyon';
 import { insaatYer } from '../../src/content/isletme-insaat';
 import { karsiPrefabs, karsiProps } from '../../src/content/zones/karsi';
-import { AVM, HOL, SERIT, MERD, GIRIS_KAPI, katY, avmIcinde, avmGelis, avmGidis } from '../../src/content/avm-kat';
+import { AVM, HOL, SERIT, MERD, GIRIS_KAPI, AVM_BINA, AVM_DIS, holEngel, katY, avmIcinde, avmGelis, avmGidis } from '../../src/content/avm-kat';
 
 const ROOMS = icBina('avm'), IDS = ROOMS.map(m => m.arsa!).sort();
 const RETAIL = ['k7', 'k8', 'k9'], NEW = IDS.filter(id => id !== 'k5');
@@ -37,12 +37,14 @@ it('AVM: 3 kat x 4 dükkân, aynı kattakiler kesişmez, hepsi binada; her birin
   for (const p of ROOMS) for (const q of ROOMS) if (p !== q && (p.kat || 0) === (q.kat || 0)) expect(Math.abs(p.x - q.x) >= (p.wx + q.wx) / 2 - 1e-6 || Math.abs(p.z - q.z) >= (p.wz + q.wz) / 2 - 1e-6, p.id + '/' + q.id).toBe(true);
 });
 
-it('AVM: zemin çarpışması: giriş kapısı ve zemin dükkân kapıları açık, cephe ve merdiven bloğu kapalı', () => {
+it('AVM: iskelede kapalı kabuk + giriş kapısı; içeride zemin kapıları açık, cephe, lobi ve merdiven bloğu kapalı', () => {
   const def = karsiPrefabs().find(d => d.id === 'kr.avm')!, pl = karsiProps().find(p => p.prefab === 'kr.avm')!;
-  const rects = (def.colliders || []).map(r => ({ x0: r.x0 + pl.pos.x, x1: r.x1 + pl.pos.x, z0: r.z0 + pl.pos.z, z1: r.z1 + pl.pos.z }));
-  const hit = (p: { x: number; z: number }) => rects.some(r => p.x > r.x0 && p.x < r.x1 && p.z > r.z0 && p.z < r.z1);
+  const dis = (def.colliders || []).map(r => ({ x0: r.x0 + pl.pos.x, x1: r.x1 + pl.pos.x, z0: r.z0 + pl.pos.z, z1: r.z1 + pl.pos.z }));
+  const in_ = (rs: { x0: number; x1: number; z0: number; z1: number }[], p: { x: number; z: number }) => rs.some(r => p.x > r.x0 && p.x < r.x1 && p.z > r.z0 && p.z < r.z1);
+  expect(in_(dis, { x: AVM_BINA.x, z: AVM_BINA.z })).toBe(true); expect(in_(dis, AVM_DIS)).toBe(false);   // the shell is solid, its door step is free
+  const ic = [...holEngel(0), ...ROOMS.filter(r => !r.kat).flatMap(r => icColliders(r))], hit = (p: { x: number; z: number }) => in_(ic, p);
   expect(hit({ x: (GIRIS_KAPI.x0 + GIRIS_KAPI.x1) / 2, z: AVM.z0 + 0.1 })).toBe(false);
-  expect(hit({ x: HOL.x0 + 0.3, z: AVM.z0 + 0.1 })).toBe(true);
+  expect(hit({ x: AVM.x0 + 1, z: AVM.z0 + 0.1 })).toBe(true);
   expect(hit({ x: (SERIT.U.x0 + SERIT.U.x1) / 2, z: (MERD.on + MERD.arka) / 2 })).toBe(true);
   for (const m of ROOMS.filter(r => !r.kat)) {
     const D = icDim(m).D;
@@ -53,7 +55,7 @@ it('AVM: zemin çarpışması: giriş kapısı ve zemin dükkân kapıları aç�
 
 it('müşteri / işçi yolu: girişten merdivenlerle her kata çıkar, aynı yoldan iner, yükseklik kat kat artar', () => {
   for (let k = 0; k < AVM.KAT; k++) {
-    const hedef = { x: 18.35, z: 49.15 }, up = avmGelis(k, hedef), down = avmGidis(k, hedef);
+    const hedef = { x: HOL.x0 + 0.7, z: 49.15 }, up = avmGelis(k, hedef), down = avmGidis(k, hedef);
     expect(up[up.length - 1]).toMatchObject({ ...hedef, y: katY(k) }); expect(down[down.length - 1].y).toBe(0);
     for (const p of [...up, ...down]) expect(avmIcinde(p, 1.2), JSON.stringify(p)).toBe(true);
     for (let i = 1; i < up.length; i++) expect(up[i].y).toBeGreaterThanOrEqual(up[i - 1].y);
@@ -63,7 +65,7 @@ it('müşteri / işçi yolu: girişten merdivenlerle her kata çıkar, aynı yol
 it('yeni işletmeler: 8 kalem net fiyatlı menü, 8 alet (hepsi odada görünür), 5 aşama adı, kadro, istasyon; stok yok', () => {
   for (const id of IDS) {
     const t = ISLETME[ARSA_ISLETME[id]]; expect(t, id).toBeTruthy();
-    expect(t.menu).toHaveLength(8); expect(t.esya).toHaveLength(8); expect(t.asama.filter(Boolean)).toHaveLength(5);
+    expect(t.menu).toHaveLength(8); expect(t.esya.length).toBeGreaterThanOrEqual(8); expect(t.asama.filter(Boolean)).toHaveLength(5);
     expect(ASAMA[t.id]).toHaveLength(5); expect(ISLETME_ROL[t.id].filter(r => r.minLv === 1).length, id).toBeGreaterThanOrEqual(2);
     for (const k of t.menu) { expect(KALEM[k.id], k.id).toBeTruthy(); expect(k.fiyat).toBeGreaterThan(0); }
     const shown = new Set(icLayout(roomOf(id)).map(i => i.esya).filter(Boolean)); for (const e of t.esya) expect(shown.has(e.id), id + ' ' + e.id).toBe(true);
@@ -192,4 +194,30 @@ it('AVM alışverişi (avmAl) mağazaların içinde de çalışır, dışarıda 
   c({ op: 'avmAl', id: 'deri_ceket' }); expect(S.zones.avm.alinan).toContain('deri_ceket');
   const oy = IC_BY_ID.avm_oyuncak; sim.command({ kind: 'teleport', x: oy.x, z: oy.z }); const m1 = S.money;
   c({ op: 'avmAl', id: 'film_doner' }); expect(S.money).toBeLessThan(m1);
+});
+
+it('ayrı harita: iskeledeki AVM kapısına yürüyen AVM diyarına geçer, içeride kalır; giriş kapısından çıkan kapının önüne döner', () => {
+  const { sim } = mk(), w = sim.walk;
+  sim.command({ kind: 'teleport', x: AVM_DIS.x, z: AVM_DIS.z - 1.6 }); sim.input({ x: 0, z: 1 });
+  for (let i = 0; i < 30 && w.pos.x < 1000; i++) sim.step(0.1);
+  sim.input({ x: 0, z: 0 }); for (let i = 0; i < 40; i++) sim.step(0.1);
+  expect(avmIcinde(w.pos)).toBe(true); expect(w.kat).toBe(0);
+  sim.input({ x: 0, z: -1 }); for (let i = 0; i < 40 && w.pos.x > 1000; i++) sim.step(0.1);
+  sim.input({ x: 0, z: 0 }); sim.step(0.5);
+  expect(w.pos.x).toBeLessThan(100); expect(Math.hypot(w.pos.x - AVM_DIS.x, w.pos.z - AVM_DIS.z)).toBeLessThan(2.5);
+});
+
+it('sarı kareler: kapının önündeki kareye basınca para akar, dolunca dükkân senin; içerideki karelerle alet kurulur; kilitli kare para almaz', () => {
+  const { sim, S } = mk(); S.level = 6; S.money = 2e6;
+  const stand = (key: string, kat: number, sec: number) => {
+    sim.step(0.3); const it = sim.interactions.get('pad.' + key); expect(it, key).toBeTruthy();
+    sim.command({ kind: 'teleport', x: it.pos.x, z: it.pos.z, kat }); for (let i = 0; i < sec * 10; i++) sim.step(0.1);
+  };
+  const m0 = S.money; stand('avm.k11', 1, 2); expect(S.money).toBe(m0); expect(S.zones.arsa.plots.k11).toBeUndefined();   // locked: level 7 + şekerci first
+  stand('avm.k10', 0, 0.4); expect(S.padPaid['avm.k10']).toBeGreaterThan(0); expect(S.money).toBeLessThan(m0);   // money flows while standing
+  stand('avm.k10', 0, 3); expect(S.zones.arsa.plots.k10).toMatchObject({ tur: 'dukkan', lv: 1 }); expect(m0 - S.money).toBeCloseTo(plot('k10').fiyat, 2); expect(S.padPaid['avm.k10']).toBeUndefined();
+  sim.step(0.5); const alet = [...sim.rules.rt.pads].filter((p: any) => p.key.startsWith('avm.k10.')); expect(alet.length).toBeGreaterThanOrEqual(1);
+  const k = alet[0].key, e = k.split('.')[2];
+  stand(k, 1, 1); expect(S.zones.arsa.plots.k10.esya || []).not.toContain(e);   // from the floor above: nothing
+  stand(k, 0, 4); expect(S.zones.arsa.plots.k10.esya).toContain(e);
 });

@@ -10,6 +10,7 @@
  *   arsa: arsaAl id | arsaKur id tur tip | yukselt id | evAc id
  *   stadyum (near the gate): bilet | takim name
  */
+import { installAvmKareler } from './avm-kareler';
 import { stadSave, tahminDoluluk, fiyatAyarla, FORMASYONLAR, KAPASITE, FIYAT_MIN, FIYAT_MAX } from './stadyum';
 import type { Kernel } from './state';
 import {
@@ -439,6 +440,8 @@ export function installMulk(K: Kernel) {
     K.spend(STADYUM.takim); a.takim = { ad, renk: HEX.test(r1 || '') ? r1! : '#e0533c', renk2: HEX.test(r2 || '') ? r2! : '#f2c230', arma: ARMALAR.includes(arma || '') ? arma : '🦅', kurulus: S.day }; K.toast('⚽ ' + ad + ' kuruldu!', 'good'); K.addXP(60); K.saveNow();
   }
 
+  // Martı AVM: dükkân satın alma ve alet kurma büfedeki gibi sarı karelerle (avm-kareler.ts)
+  const avmKare = installAvmKareler(K, { arsaAl, kafeEsya, plot: id => arsa().plots[id] as never });
   // ── tick: board roll, shops, level-up chests, collecting tills ──
   let acc = 0, lastLevel = S.level;
   K.addSystem({
@@ -448,6 +451,7 @@ export function installMulk(K: Kernel) {
       kafeHost.fp = kt.on; ktStep(ctx.dt);
       acc += ctx.dt; if (acc < 0.25) return;
       const dt = acc; acc = 0;
+      avmKare.sync();
       const e = env(); if (e.gunluk.gun !== S.day) { rollBoard(S.day); faizGun(); }
       if (S.level > lastLevel) { for (let l = lastLevel; l < S.level; l++) onStat('seviye', 1); }
       lastLevel = S.level;

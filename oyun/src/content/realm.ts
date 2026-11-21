@@ -18,7 +18,7 @@ export const REALMS: Realm[] = [
   { id: 'stadyum', name: 'Stadyum Mahallesi', x0: 392, x1: 452, stop: { x: 404, z: 12.2, name: 'Stadyum Kapısı' }, regions: ['stadyum'] },
   { id: 'belgrad', name: 'Belgrad Ormanı', x0: 780, x1: 900, stop: { x: 806, z: 9, name: 'Orman Durağı' }, regions: ['orman'] },
   // 2026-11-21 owner: "AVM'ye girildiğinde başka bir haritaya geçilsin, ayrı bir level design gibi" (content/avm-kat.ts AVM_OX)
-  { id: 'avm', name: 'Martı AVM', x0: 1150, x1: 1250, stop: { x: 1200.15, z: 47.4, name: 'AVM Girişi' }, regions: [], bus: false },
+  { id: 'avm', name: 'Martı AVM', x0: 1150, x1: 1250, stop: { x: 1200.15, z: 44.8, name: 'AVM Girişi' }, regions: [], bus: false },
 ];
 /** realms the 42B bus serves */
 export const BUS_REALMS = REALMS.filter(r => r.bus !== false);
