@@ -12,7 +12,7 @@ async function sekme(): Promise<Slots> { vi.resetModules(); return await import(
 async function gir(t: Slots, slot: number) { expect(await t.slotlariYukle()).toBe(true); t.slotSec(slot); return t.bulutOku(); }
 
 const sl = (code: string, ad: string, playT = 100) => ({ code, ad, sinif: 'asci', tip: 'a', level: 3, playT, dukkan: '' });
-type V = { rev?: number; code?: string; slots: (ReturnType<typeof sl> | null)[]; banka: { tl: number; esya: Record<string, number> } };
+type V = { rev?: number; code?: string; slots: (ReturnType<typeof sl> | null)[]; banka: { tl: number; esya: Record<string, number>; faizSaat?: number } };
 const veri = () => srv.row!.veri as unknown as V;
 
 beforeEach(() => {
@@ -107,6 +107,16 @@ describe('çift sekme / iki cihaz (sev4)', () => {
     expect(await b.bankaYaz({ tl: 550, esya: { simit: 1, cay: 3 } })).toBe(true);   // +50, -1 simit, +3 çay
     expect(veri().banka).toEqual({ tl: 650, esya: { simit: 1, cay: 3 } });
     expect(veri().slots[0]!.code).toBe('C0'); expect(veri().slots[1]!.code).toBe('C1');
+  });
+  it('mevduat faiz damgası (faizSaat) çakışma birleştirmesinde ve kapanış yazımında düşmez, büyük olan kalır', async () => {
+    const a = await sekme(); await gir(a, 0);
+    const b = await sekme(); await gir(b, 1);
+    expect(await a.bankaYaz({ tl: 500, esya: {}, faizSaat: 5000 })).toBe(true);
+    expect(await b.bankaYaz({ tl: 500, esya: {}, faizSaat: 4000 })).toBe(true);   // b eski damgayla yazar: sunucudaki 5000 kalmalı
+    expect(veri().banka.faizSaat).toBe(5000);
+    expect(b.bankaOku().faizSaat).toBe(5000);
+    expect(b.bulutKapanisYaz('C1-k', 150, { ad: 'iki' }, 3)).toBe(true);
+    expect(veri().banka.faizSaat).toBe(5000);
   });
   it('kendi kapanış (keepalive) yazımı sonraki yazımda çakışma sayılmaz, banka iki kez eklenmez', async () => {
     const t = await sekme(); await gir(t, 0);

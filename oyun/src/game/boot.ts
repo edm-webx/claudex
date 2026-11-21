@@ -785,7 +785,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (mulkPanel) guard('mulkPanel', () => mulkPanel.update(fdt));
     if (mulkView) guard('mulkView', () => mulkView.update(fdt));
     if (stadyumView) guard('stadyumView', () => stadyumView.update(fdt));
-    if ((bankaT -= fdt) <= 0) { bankaT = 2; const b = bankaRt(); if (b && b.saat !== undefined) b.saat = Date.now() / 1000; if (b?.dirty && hesap() && saveOn()) { b.dirty = false; void bankaYaz({ tl: b.tl, esya: b.esya, faizSaat: b.faizSaat }).then(ok => { if (!ok && !kayitKilidi()) b.dirty = true; }); } }
+    if ((bankaT -= fdt) <= 0) { bankaT = 2; const b = bankaRt(); if (b && b.saat !== undefined) b.saat = Date.now() / 1000; if (b?.dirty && hesap() && saveOn()) { b.dirty = false; void bankaYaz({ tl: b.tl, esya: b.esya, faizSaat: b.faizSaat }).then(ok => { if (!ok && !kayitKilidi()) b.dirty = true; }); } }   // the sim is pure: the wall clock for the account-level interest stamp comes from here
     if (otobusHud) guard('otobusHud', () => otobusHud.update(fdt));
     if (nightLights) guard('nightLights', () => nightLights.update(pos, gSaat.saat, fdt, roomLightsFor(icMekan?.icinde())));   // GRS-02: lamps follow the drawn hour (lit behind the gün sonu card, fade at dawn)
     if (playMode) guard('heroKind', syncHeroKind);
