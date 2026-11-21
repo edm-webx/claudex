@@ -22,6 +22,7 @@ import { padDef } from '../../content/pads';
 import { KIOSK_STAGES } from '../../content/stages';
 import { PRODUCTS, PRODUCT_IDS } from '../../content/products';
 import { clamp, fmtMoney } from './util';
+import { realmAt } from '../../content/realm';
 
 export const HEDEF_KEY = 'hedef';
 
@@ -61,6 +62,7 @@ export function installHedef(r: Rules): HedefApi {
     return g;
   };
   const stat = (k: string) => Number(S().stats[k]) || 0;
+  const realmNow = () => realmAt(r.playerPos.x)?.id || 'iskele';
   const def = (id: string): SmallGoalDef | undefined => SMALL_GOALS.find(d => d.id === id);
   const rewardOf = (d: SmallGoalDef) => round5(Math.max(d.reward, (r.rt.rate || 0) * d.min));
 
@@ -69,6 +71,7 @@ export function installHedef(r: Rules): HedefApi {
     const st = S();
     if (d.needs && !st.owned[d.needs]) return false;
     if (d.minDay && st.day < d.minDay) return false;
+    if (d.realm && d.realm !== realmNow()) return false;   // DNY-10 bölge hedefi
     if (g.slots.some(s => s && s.id === d.id)) return false;
     // two goals on the same stat at once would complete together
     if (g.slots.some(s => { const o = s && def(s.id); return !!o && o.stat === d.stat; })) return false;
@@ -92,6 +95,7 @@ export function installHedef(r: Rules): HedefApi {
       const d = def(s.id);
       if (!d) { roll(i); continue; }
       if (s.doneAt >= 0) { if (t - s.doneAt >= GOAL_NEXT_S) roll(i); continue; }
+      if (d.realm && d.realm !== realmNow() && stat(d.stat) - s.base < d.n) { roll(i); continue; }   // DNY-10: left the realm, swap the goal
       if (stat(d.stat) - s.base >= d.n) {
         s.doneAt = t; g.doneN++;
         const rw = rewardOf(d);
