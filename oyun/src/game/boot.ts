@@ -94,6 +94,9 @@ import { createKirtasiyeFp } from './ui/kirtasiye-fp';
 import { IC_BY_ID as KT_IC, icWorld as ktWorld, icDim as ktDim } from '../content/ic-mekan';
 import { createMulkView } from './view/mulk';
 import { bankaOku, bankaYaz } from './net/slots';
+import { bulutKapanisYaz } from './net/slots';
+import { createKayitDurum } from './net/kayit-durum';
+import { createKayitRozet } from './ui/kayit-rozet';
 import { panelModel, panelActions } from './sim/panels';
 import type { AgentsHandle } from './sim/agents';
 import { createFerryLook, type FerryLookView } from './view/world/ferry-look';
@@ -488,7 +491,25 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   // J2: back to the slot screen (save first, then sign out and reload: the login screen opens again)
   window.addEventListener('martikoy:karakter', () => { void (async () => { try { if (hesap() && saveOn()) { const code = await save.exportCode(); await bulutYaz(code, sim.state.playT || 0, esnafimSave(sim.state), sim.state.level || 1); } await cikisYap(); } finally { location.reload(); } })(); });
   let bulutT = 45;
-  const bulutPush = () => { if (!hesap() || !saveOn()) return; void save.exportCode().then(code => bulutYaz(code, sim.state.playT || 0, esnafimSave(sim.state), sim.state.level || 1).then(() => { try { const h = hesap(); if (h) localStorage.setItem('martikoy-cloud-synced', h.id); } catch { /* */ } })).catch(() => { /* next time */ }); };
+  // KAL-01: bulut yazımı durum makinesinden geçer (rozet, yeniden deneme, çevrimdışı); sonuç sunucu onayıdır
+  const kayitD = createKayitDurum({
+    gonder: async () => {
+      if (!hesap() || !saveOn()) return true;
+      const code = await save.exportCode();
+      const ok = await bulutYaz(code, sim.state.playT || 0, esnafimSave(sim.state), sim.state.level || 1);
+      if (ok) { try { const h = hesap(); if (h) localStorage.setItem('martikoy-cloud-synced', h.id); } catch { /* */ } }
+      return ok;
+    },
+    simdi: () => platform.clock.wall(), cevrimici: () => { try { return navigator.onLine !== false; } catch { return true; } },
+    zamanla: (fn, ms) => setTimeout(fn, ms), iptal: h => clearTimeout(h as ReturnType<typeof setTimeout>),
+  });
+  if (save.readOnly) kayitD.saltOkunur();   // depoda bu build'den yeni sürüm kaydı var: buluta da yazılmaz (yeni kayıt ezilmesin)
+  const bulutPush = () => { if (!hesap() || !saveOn()) return; if (save.readOnly) { kayitD.saltOkunur(); return; } kayitD.istek(); };
+  /** sekme kapanırken: asenkron zincire güvenme, keepalive isteği hemen at (gövde 60 KB'ı aşarsa atılmaz, normal yazım dener) */
+  const bulutKapanis = () => { try { if (!hesap() || !saveOn() || save.readOnly) return; void save.exportCode().then(code => { bulutKapanisYaz(code, sim.state.playT || 0, esnafimSave(sim.state), sim.state.level || 1); }); } catch { /* */ } };
+  addEventListener('pagehide', bulutKapanis);
+  addEventListener('online', () => kayitD.baglandi());
+  const kayitRozet = playMode && uiReal ? make('kayitRozet', () => createKayitRozet({ root: U.root, durum: kayitD, gorunur: () => !!hesap() && saveOn() })) : null;
   const yetenekBtn = playMode && uiReal ? make('yetenekBtn', () => createYetenekBtn({ root: U.root, rules: () => sim.rules, command: c => command(c as never) })) : null;
   const kulis = playMode && uiReal ? make('kulis', () => createKulis({ root: U.root, rules: () => sim.rules, command: c => command(c as never), chars: chars as never, sfx: id => { try { audio?.sfx(id); } catch { /* */ } },
     dolap: () => { const z = kiyafetSave(sim.state); return { owned: z.owned, worn: z.worn as Record<string, string>, gold: sim.state.gold || 0 }; }, worn: () => wornLook(), avm: () => ((sim.state.zones as { avm?: { alinan?: string[] } }).avm?.alinan) || [] })) : null;
@@ -640,6 +661,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (gunSonu) guard('gunSonu', () => gunSonu.update());
     if (kulis) guard('kulis', () => kulis.update(fdt));
     if (yetenekBtn) guard('yetenekBtn', () => yetenekBtn.update());
+    if (kayitRozet) guard('kayitRozet', () => kayitRozet.guncelle());
     if (online) guard('online', () => online.update(fdt));
     if (adminPanel) guard('adminPanel', () => adminPanel.update(fdt));
     if (kasaToast > 0 && (kasaT -= fdt) <= 0) { kasaT = 6; U.toast(kasaFrom + ' kasaya +' + Math.floor(kasaToast) + ' ₺ kattı!', 'good'); kasaToast = 0; }
@@ -747,10 +769,12 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   platform.visibility.onChange(hidden => {
     if (hidden) {
       pause('hidden');
+      bulutKapanis();
       if (saveOn()) void save.save('hidden').then(bulutPush);
       if (audio) make('audio.suspend', () => { audio.suspend(true); return true; });
     } else {
       resume('hidden');
+      kayitD.baglandi();
       if (audio) make('audio.suspend', () => { audio.suspend(false); return true; });
     }
   });
@@ -903,6 +927,8 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   P.context(() => ({ x: +pos.x.toFixed(1), z: +pos.z.toFixed(1), saat: +sim.clock.hour.toFixed(1) }));
   reg('perfShow', (on = true) => P.show(!!on));
   reg('exportSave', () => save.exportCode());
+  reg('kayitDurum', () => kayitD.gorunum());
+  reg('kayitIstek', () => { kayitD.istek(); });
   reg('importSave', async (code: string) => { const ok = await save.importCode(code); if (ok) { const r = await save.load(); sim.load(r.data); } return ok; });
   reg('loop', () => ({ tick: loop.tick, paused: loop.paused, pauseWhy: loop.pauseWhy, simTime: loop.simTime, ...loop.stats(), nav: nav.stats?.() }));
   for (const k of ['select', 'drag', 'save']) if (!(target.editor as AnyRec | undefined)?.[k]) reg(`editor.${k}`, () => { throw new Error('editor not loaded (?edit=1)'); });
