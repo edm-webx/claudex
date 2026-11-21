@@ -28,3 +28,8 @@ Commit+push: BUF-01..10,12..16,13,23,24,26,27 (c9b9659), BUF-19/20 kanat/salon/�
 Dalga 5b (BUF-22 mutfak aşamayla büyüme, BUF-21 inşaat sahası + aşama adları, BUF-30 açılış töreni) opus ajanıyla BAŞLANDI, yarıda kesildi; WIP commit'te (tsc/test kırmızı olabilir). Devam: `git show --stat HEAD`, yarımı tamamla, qa:hizli, ekran görüntüleri (bufe22-*).
 Kalan: BUF-28 sim botu, BUF-29 perf, son ekran görüntüleri, qa, ana thread'e bildir; BUF-25 DNY kolunda; BUF-11/17/18 kafe/çalışan kolunda.
 Açık: salon içindeyken çatı ajanları görünür kalıyor; aşama 10 kanat hesap rakamları büyük (×290); BUF-07 sabit kirli tabak ile BUF-13 yığını çift çizim olabilir; vale park arabaları çizilmiyor; kumbara/bölge kalıcı değil (şema kararı).
+
+## DURUM (2026-11-21 son) — TÜM DALGALAR TAMAM
+Dal claude/project-thread-ukvrqf @410a4a1 (+ bu not). BUF-01..10,12..16,19..24,26..30 bitti; qa:hizli yeşil (~418 test). Şema (schema.ts/save.ts) değişmedi.
+Görsel mantık düzeltmesi (410a4a1): kapalı servis geçidi, mutfak cephesi/çatı kuralı, büfe içi dolgu, farklı salonlar, çatı masalarını temizlikçi siler. Ekran görüntüleri: sosisci-oyun/bufe-v2-shots/ (bufe-mantik-*).
+Açık: BUF-25 (DNY kolu), BUF-11/17/18 (DKN kolu); vale park arabası çizimi; hijyen HUD/uyarı tabelası görseli; kumbara/bölge/devir kalıcılığı (şema kararı); ekip-tahta panel bağlantısı; canliMuzik sesi; eski PaketMartı kalıntıları; aşama 10 kanat hesap ×290; aşama 10 batı cam duvar dışı müşteriler.
