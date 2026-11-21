@@ -27,12 +27,12 @@ export function ornekleyici(M, esik) {
         const o = onceki.get(i);
         if (o && o.tip === ty[i]) {
           const d = Math.hypot(p.x - o.x, p.z - o.z);
-          if (d > esik.ziplama) ekle('isinlanma', i, { ...w, mesafe: +d.toFixed(2), dt: +dt.toFixed(2), from: { x: +o.x.toFixed(1), z: +o.z.toFixed(1) }, to: { x: +p.x.toFixed(1), z: +p.z.toFixed(1) } }, t);
+          if (d > esik.ziplama && o.gor && (f & F.visible)) ekle('isinlanma', i, { ...w, mesafe: +d.toFixed(2), dt: +dt.toFixed(2), from: { x: +o.x.toFixed(1), z: +o.z.toFixed(1) }, to: { x: +p.x.toFixed(1), z: +p.z.toFixed(1) } }, t);
           if (d < esik.hareketsizMesafe && sp[i] > esik.hizli && !bekle(f)) {
             o.dur += dt; if (o.dur >= esik.hareketsizSn) ekle('takili', i, { ...w, sn: +o.dur.toFixed(1), hiz: +sp[i].toFixed(2), konum: { x: +p.x.toFixed(1), z: +p.z.toFixed(1) } }, t);
           } else o.dur = 0;
-          o.x = p.x; o.z = p.z;
-        } else onceki.set(i, { x: p.x, z: p.z, tip: ty[i], dur: 0 });
+          o.x = p.x; o.z = p.z; o.gor = !!(f & F.visible);   // iceride bekleyen (cizilmeyen) ajanin kapidan cikisi isinlanma sayilmaz
+        } else onceki.set(i, { x: p.x, z: p.z, tip: ty[i], dur: 0, gor: !!(f & F.visible) });
         if (!bekle(f) && (f & F.visible)) {
           if (!nav.walkable(p)) { const n = (solidSay.get(i) || 0) + 1; solidSay.set(i, n); if (n >= esik.solidArdisik) ekle('solidIcinde', i, { ...w, konum: { x: +p.x.toFixed(1), z: +p.z.toFixed(1) } }, t); } else solidSay.set(i, 0);
           if (act[i] === ACT_NONE && sp[i] > esik.hizli) ekle('tpose', i, { ...w, hiz: +sp[i].toFixed(2) }, t);
