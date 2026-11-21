@@ -5,6 +5,8 @@
 // The view (arrow + ring marker, UI hand) reads `tutorial.current()`; it never writes sim state.
 import type { Rules } from './sim/state';
 import type { Vec2 } from '../engine/api';
+import { IC_MEKANLAR, type IcMekan } from '../content/ic-mekan';
+import { regionAt } from '../content/disari/martikoy';
 
 export interface TutStep { id: string; urgent?: boolean; rush?: boolean; repeat?: boolean; hand?: boolean; y?: number; show(v: any): boolean; done(v: any): boolean; at?(v: any): Vec2 | null | undefined; }
 export interface TutCurrent { id: string; hand: boolean; at: Vec2 | null; y: number | null; }
@@ -29,12 +31,60 @@ export const TUT: readonly TutStep[] = [
   { id: 'money', show: v => v.kasaPile > 0, done: v => !!v.tutFlags.firstCollect, at: v => v.anchors.kasa },
   padStep('cay'),
   { id: 'cay', show: v => v.owned.includes('cay'), done: v => !!v.tutFlags.cayUsed, at: v => v.anchors.stations.cay },
-  padStep('ayran'), padStep('simit'), padStep('tabure1'), padStep('isbul'),
+  // UX-06: ilk 10 dakika: çay (ilk satın alma) sonra hemen ilk işçi, ardından menü ve oturma genişlemesi
+  padStep('isbul'),
   { id: 'isbul', show: v => v.owned.includes('isbul'), done: v => v.workers.length > 0, at: v => v.anchors.job },
+  padStep('ayran'), padStep('simit'), padStep('tabure1'),
   padStep('pencere'),
 ];
 
+/** UX-06: tek seferlik sakin ipuçları (kayıt: st.tut['ip_<id>']). Bir yere ilk girişte tek satır; sahip: "binaya ilk girişte ipucu çipi olsun". */
+export const IPUCU_ARALIK_S = 10;
+const KAFE_IPUCU = 'işletmenin aletleri Mülk düğmesinde, alınca içeride görünür.';
+const BINA_IPUCU: Record<string, string> = {
+  kafe1: 'Meydan Kafe: ' + KAFE_IPUCU,
+  kafe2: 'Sahil Bistro: ' + KAFE_IPUCU,
+  avm: 'Martı AVM: giyim ve bakım ürünleri karakter dolabına girer.',
+  tesis: 'Halı Saha Tesisleri: sahibi olduğun işletmeler Mülk düğmesinde.',
+  salonW: 'Kahvaltı salonu: ekipmanı Mülk düğmesinde, Salonlar sekmesinde.',
+  salonE: 'Balık lokantası: ekipmanı Mülk düğmesinde, Salonlar sekmesinde.',
+  mutfak: 'Sabri Mutfağı: istasyonlar büfe aşamasıyla açılır, ekibi işçi bulma panosundan alırsın.',
+  banka: 'Banka içindesin. Para ve eşya işleri alttaki Mülk düğmesinde, Banka sekmesinde.',
+  kirtasiye: 'Kırtasiye bir işletme. Sahibiysen tezgaha geçip kendin satabilirsin.',
+  okul: 'Martıköy İlkokulu: dersler ve sınavlar burada.',
+  hastane: 'Devlet Hastanesi: gezilebilir bir şehir binası, işletme değil.',
+  acil: 'Acil: gezilebilir bir şehir binası, işletme değil.',
+  morg: 'Morg: gezilebilir bir şehir binası, işletme değil.',
+};
+const BOLGE_IPUCU: Record<string, string> = {
+  stadyum: 'Stadyum Mahallesi: halı sahalar ve maçlar burada.',
+  orman: 'Belgrad Ormanı: sepetini al, mantar ara.',
+};
+const inside = (m: IcMekan, p: Vec2) => Math.abs(p.x - m.x) < m.wx / 2 && Math.abs(p.z - m.z) < m.wz / 2;
+/** İlk karşılaşılan yeni yer için ipucu kimliği ve metni (yoksa null). Saf: test edilir. */
+export function ipucuFor(p: Vec2, seen: (id: string) => boolean): { id: string; text: string } | null {
+  const ic = IC_MEKANLAR.find(m => inside(m, p));
+  if (ic && !seen('bina_' + ic.id)) return { id: 'bina_' + ic.id, text: BINA_IPUCU[ic.id] ?? `${ic.ad}: içeri girdin.` };
+  const r = regionAt(p.x);
+  if (r && BOLGE_IPUCU[r.id] && !seen('bolge_' + r.id)) return { id: 'bolge_' + r.id, text: BOLGE_IPUCU[r.id] };
+  return null;
+}
+
 export function installTutorial(rules: Rules): Tutorial {
+  let ipAcc = 0, ipLast = -1e9;
+  rules.addSystem({
+    id: 'ipucu', order: 91, phase: 'sim',
+    step(ctx: any) {
+      if (!rules.rt.started || rules.rt.paused) return;
+      ipAcc -= typeof ctx?.dt === 'number' ? ctx.dt : 1 / 30; if (ipAcc > 0) return; ipAcc = 0.5;
+      const st = rules.state;
+      if (st.playT - ipLast < IPUCU_ARALIK_S) return;
+      const h = ipucuFor(rules.playerPos, id => !!st.tut['ip_' + id]);
+      if (!h) return;
+      st.tut['ip_' + h.id] = Math.round(st.playT); ipLast = st.playT;
+      try { (rules.bus as any).emit('toast', { text: '💡 ' + h.text, kind: 'info' }); } catch { /* bus optional */ }
+    },
+  });
   let cur: TutStep | null = null;
   let curSnap: any = null;
   let shown: string | null = null;

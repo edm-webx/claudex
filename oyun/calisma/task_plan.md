@@ -52,3 +52,24 @@ Aşamalar (oturum): [ ] 0 Karar ve ölçüm (12-14) [ ] 1 Temizlik ve temel (60-
 - PRF-12 (a3fa614): bloom kademelerinde ölçek yalnız sahne hedefini küçültür (tuval sabit): setScale 994-16605 ms -> 0.1-0.9 ms (headless), geçiş karesi 4777/6057 -> 6.6/12.0 ms, program sabit. Bloom kesme basamağı (ölçek tabanda + hâlâ yavaş). Taban 0.7 (sahip kararı: 0.8/0.7/0.6).
 - PRF-07 motor (f6a8e9e): zones görüşe göre kurar (kesik + 14 m pay, sis önü en çok 200 m), sıçramada (otobüs/ışınlanma) varış bölgesi aynı karede. tests/browser/pop-in.mjs: ekranda pop 4 -> 0, varışta 5 -> 0. three compileAsync takılması (atılan malzeme) düzeltildi.
 - Açık (diğer kollar): orman ağacı LOD/impostor ve solma (view/orman), tribün seyircisi LOD (view/stadyum), karşı yaka sadeleştirme (karsi-*). Headless'ta orman/sahil varışının ilk karesi 2-56 sn (SwiftShader, bölge kurulumu değil: 4-9 ms).
+## UX thread (claude/project-thread-m0d31m), DURAKLATILDI 2026-11-20 18:40
+Yapıldı (ekranda DOĞRULANMADI, a1.png alındı ama bakılmadı): admin düğmesi .sb-hbtns içine taşındı (ui/admin-panel.ts), geniş ekranda panel sağ kanat olur ve --sr değişkenini yazar (HUD/dock/kartlar sola kayar). Test kancası: net/admin.ts `__adminUiTest(true)` yalnız ?noloop sayfasında.
+Sıradaki: (1) admin kanadını ekranda doğrula; (2) yazı min 14px + kontrast (yeni-hud.ts, hedef-card, v2-style); Hedefler kartı cam zemini daha opak, sol; sipariş paneli çakışması; (3) envanterde dükkan adları; (4) ana menüde "2.0" etiketi (v2ui.ts U.title .sb-sub yanına); (5) ilk 10 dk (tutorial.ts, ölü hedefler reg1/regular/herzaman); (6) karakter yaratıcı EN SON (kulis.ts, UX-15). Ana thread'e haber: engine/ui/index.ts toast() ve boot.ts'e dokunmadan önce yaz.
+Ekran aracı: /tmp/claude-0/s/cap.mjs (oturuma özel; tests/browser/shot.mjs benzeri).
+
+### UX thread güncelleme 2026-11-21
+Yapıldı (ekranda doğrulandı, 1280x720 + 844x390): admin kanadı; yazı tabanı 13px (v2-style/kulis/giris/hedef-card/yeni-hud); HUD cam zemini .8, Hedefler .9 opak; çevrimiçi şerit admin açıkken ve yatay telefonda HUD'un üstüne binmiyor; ana menüde 2.0 etiketi + not yazısı gölgeli; ölü hedefler (reg1/regular/herzaman) gerçek hedeflere çevrildi + birim testi (tests/unit/hedef-tamamlanabilir.test.ts). qa:hizli yeşil.
+Notu: 'herzaman' başarımı goal 25 iken first-session testini bozdu (altın ödül ekonomiyi kaydırıyor), 200 yapıldı.
+Kalan: sipariş panelinin (faz2-hud f2-rail) çakışması test edilmedi (rail ekranda çıkmadı), bildirim çift görünümü (toast hayalet), kontrast betiği, karakter yaratıcı (UX-15, en son), envanter dükkan adları mulk-panel'de var (ana thread alanı), "ilk binaya giriş ipucu" sahip kararı bekliyor (kodlanmadı).
+
+### UX-15 ilk dilim (karakter yaratıcı) 2026-11-21
+Yapıldı: Kimlik sekmesine 'Bedenin: Erkek/Kadın' (Vücut sekmesinden taşındı), Kadın seçilince sakal/bıyık temizlenir; yeni karakterde ad kutusu boş ('Adını yaz'), ad yazılmadan 'Sahneye çık' Kimlik sekmesine döndürür. Ekranda doğrulandı (k2.png).
+Yapılmadı / karar bekliyor: Ayarlar'daki 'Büfeci: Sabri/Sabriye' (v2ui.ts ~822) kalksın mı (sahip kararı); 7 sakal etiketi 4 mesh (esnafim/chars-v2, SANAT rolü asset üretecek); saç şapka altında yassılaşma (H-076); canlı yüz ifadesi önizlemesi; AVM giyim 5 ürün; kozmetik ürünleri. Sipariş paneli (f2-rail) çakışma testi ve kontrast betiği (tools/kontrast.mjs) yapılmadı.
+
+### UX thread 3. tur 2026-11-21
+Yapıldı: Ayarlar'dan Büfeci Sabri/Sabriye kalktı (sahip onayı); ilk giriş ipuçları tutorial.ts 'ipucu' sistemi (bina: banka/kırtasiye/okul, bölge: stadyum/orman; kayıt st.tut['ip_*'], 10 sn aralık; toast ile; birim testi ipucu.test.ts); bildirim merkezi engine/ui/index.ts (zil, son 30, okunmamış sayacı, toast 14px/3,2 sn, aria-live); tools/kontrast.mjs (13px altı + kontrast taraması, node tools/kontrast.mjs).
+Açık: view/world/hava-look.ts:480 tarih rozeti 12.5px (ana thread alanı, bir sayı değişikliği); sipariş paneli (faz2-hud f2-rail) ekranda çıkmadığı için görsel doğrulanmadı (CSS konumu rozetin altında, sağ sütun); ilk 10 dk tutorial sırası olduğu gibi bırakıldı (17 adım), yeni dakika haritası sahip girdisi bekler.
+
+### UX thread 4. tur 2026-11-21
+Yapıldı: her iç mekan için özel ipucu (tests/unit/ipucu.test.ts hepsini kapsar); ilk 10 dk sırası: çay > ilk işçi (isbul) > ayran/simit/tabure (first-session testi yeşil); sipariş paneli stage=6'da ekrana getirildi, rozetin altında çakışmıyor, 'Bekleyen sipariş yok' satırı okunur yapıldı, panel 156px.
+Kalan: saç/sakal mesh'leri (7 sakal etiketi 4 mesh, chars-v2.ts, SANAT rolü), canlı yüz önizlemesi, hava-look tarih rozeti 12.5px (ana thread).

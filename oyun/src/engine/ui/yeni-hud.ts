@@ -5,11 +5,11 @@
  * tab with an amber rule. Loaded after every other sheet so it wins; panels keep the porcelain look (skin.ts).
  */
 export const YENI_CSS = `
-#sbui{--glass:rgba(11,19,38,.6);--glass2:rgba(11,19,38,.88);--hair:rgba(255,255,255,.13);--amb:#ffb627;--mint:#6ef2ab}
+#sbui{--glass:rgba(11,19,38,.8);--glass2:rgba(11,19,38,.88);--hair:rgba(255,255,255,.13);--amb:#ffb627;--mint:#6ef2ab}
 #sbui .sb-hud{align-items:flex-start;gap:10px}
 #sbui .sb-lvl{width:66px!important;height:66px!important;border:0!important;box-shadow:0 10px 26px rgba(4,10,24,.5),0 0 0 5px var(--glass)!important;background:conic-gradient(var(--amb) calc(var(--p,0)*1turn),rgba(255,255,255,.16) 0)!important}
 #sbui .sb-lvl-in{width:52px!important;height:52px!important;border:0!important;background:radial-gradient(circle at 30% 22%,#4a6fb8,#12214a)!important;font:900 24px/1 var(--disp)!important;text-shadow:none!important;letter-spacing:-.02em}
-#sbui .sb-lvl small{background:var(--amb)!important;color:#14213d!important;border:0!important;font-size:9px!important;letter-spacing:.14em!important;bottom:-8px!important;padding:3px 7px 2px!important;border-radius:6px!important}
+#sbui .sb-lvl small{background:var(--amb)!important;color:#14213d!important;border:0!important;font-size:13px!important;letter-spacing:.14em!important;bottom:-8px!important;padding:3px 7px 2px!important;border-radius:6px!important}
 #sbui .sb-hmid{flex:none!important;gap:0!important;padding:8px 14px 9px!important;border-radius:18px;background:var(--glass);border:1px solid var(--hair);backdrop-filter:blur(16px) saturate(1.3);-webkit-backdrop-filter:blur(16px) saturate(1.3);box-shadow:0 12px 30px rgba(4,10,24,.42);min-width:176px;position:relative}
 #sbui .sb-hl{gap:14px!important}
 #sbui .sb-hl+.sb-hl{margin-top:7px;padding-top:7px;border-top:1px solid var(--hair)}
@@ -17,7 +17,7 @@ export const YENI_CSS = `
 #sbui .sb-pill svg{width:26px!important;height:26px!important;filter:drop-shadow(0 2px 3px rgba(0,0,0,.45))}
 #sbui .sb-money b{color:var(--mint)!important}
 #sbui .sb-gold b{color:#ffd166!important;font-size:19px}
-#sbui .sb-day{font:800 12.5px/1 var(--body)!important;letter-spacing:.08em;overflow:visible!important;padding-bottom:6px!important;color:rgba(255,255,255,.8)!important}
+#sbui .sb-day{font:800 13px/1 var(--body)!important;letter-spacing:.08em;overflow:visible!important;padding-bottom:6px!important;color:rgba(255,255,255,.8)!important}
 #sbui .sb-day svg{width:22px!important;height:22px!important}
 #sbui .sb-day b{color:#ff8f80!important;font-family:var(--disp)}
 #sbui .sb-day .clk{color:#fff;font-weight:900;font-size:15px;letter-spacing:.02em;margin-left:auto}
@@ -37,9 +37,9 @@ export const YENI_CSS = `
 #sbui .sb-bi.on{background:linear-gradient(180deg,rgba(255,182,39,.0),rgba(255,182,39,.22))!important;box-shadow:inset 0 -3px 0 var(--amb)!important;color:#fff!important}
 #sbui .sb-badge{background:#ff5a4e!important;border:2px solid var(--glass2)!important;font-family:var(--disp)}
 /* goals tab */
-body .hd-card{background:var(--glass,rgba(11,19,38,.74))!important;border:1px solid rgba(255,255,255,.13)!important;border-right:3px solid #ffb627!important;border-radius:0 14px 14px 0!important;left:0!important;right:auto!important;top:calc(var(--hudb,100px) + 56px)!important;width:min(232px,58vw)!important;box-shadow:0 14px 32px rgba(4,10,24,.45)!important;color:#fff!important;backdrop-filter:blur(16px) saturate(1.3);-webkit-backdrop-filter:blur(16px) saturate(1.3)}
+body .hd-card{background:rgba(11,19,38,.9)!important;border:1px solid rgba(255,255,255,.18)!important;border-right:3px solid #ffb627!important;border-radius:0 14px 14px 0!important;left:0!important;right:auto!important;top:calc(var(--hudb,100px) + 56px)!important;width:min(232px,58vw)!important;box-shadow:0 14px 32px rgba(4,10,24,.45)!important;color:#fff!important;backdrop-filter:blur(16px) saturate(1.3);-webkit-backdrop-filter:blur(16px) saturate(1.3)}
 body .hd-hd{background:transparent!important;border:0!important;padding:9px 12px 4px!important}
-body .hd-hd b{font:800 12px/1 var(--body)!important;letter-spacing:.12em!important;color:rgba(255,255,255,.85)}
+body .hd-hd b{font:800 13px/1 var(--body)!important;letter-spacing:.12em!important;color:rgba(255,255,255,.85)}
 body .hd-hd i{background:#ffb627!important;color:#14213d!important;border:0!important;border-radius:7px!important}
 body .hd-main{border-bottom:1px solid rgba(255,255,255,.1)!important}
 body .hd-main .lb{color:#fff;font-size:15px}
@@ -53,8 +53,8 @@ body .hd-sm{color:rgba(255,255,255,.88)}
 body .hd-sm .ck{background:transparent!important;border-color:rgba(255,255,255,.4)!important;color:#fff}
 body .hd-sm.done .ck{background:#2fbf71!important;border-color:#2fbf71!important}
 /* online strip, chat, skill button */
-body .on-pill{top:12px!important;min-width:0!important;background:rgba(11,19,38,.74)!important;border:1px solid rgba(255,255,255,.13)!important;color:rgba(255,255,255,.92)!important;font:800 13px/1.3 var(--body)!important;letter-spacing:.04em;padding:5px 14px!important;box-shadow:0 8px 20px rgba(4,10,24,.4)!important;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
-body .on-oda{top:44px!important;min-width:0!important;min-height:30px!important;background:rgba(255,182,39,.95)!important;color:#14213d!important;border:0!important;box-shadow:0 8px 20px rgba(255,182,39,.28)!important;font:900 12px/1 var(--body)!important;letter-spacing:.06em;padding:0 16px!important}
+body .on-pill{top:12px!important;left:calc(50% - var(--sr,0px)/2)!important;max-width:calc(100vw - var(--sr,0px) - 460px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0!important;background:rgba(11,19,38,.74)!important;border:1px solid rgba(255,255,255,.13)!important;color:rgba(255,255,255,.92)!important;font:800 13px/1.3 var(--body)!important;letter-spacing:.04em;padding:5px 14px!important;box-shadow:0 8px 20px rgba(4,10,24,.4)!important;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+body .on-oda{top:44px!important;left:calc(50% - var(--sr,0px)/2)!important;min-width:0!important;min-height:30px!important;background:rgba(255,182,39,.95)!important;color:#14213d!important;border:0!important;box-shadow:0 8px 20px rgba(255,182,39,.28)!important;font:900 13px/1 var(--body)!important;letter-spacing:.06em;padding:0 16px!important}
 body .on-log{background:transparent!important;border:0!important;height:auto!important;max-height:84px;justify-content:flex-end;overflow:hidden!important;-webkit-mask-image:linear-gradient(to top,#000 70%,transparent);mask-image:linear-gradient(to top,#000 70%,transparent)}
 body .on-chat{bottom:84px!important;width:min(280px,calc(100vw - 20px))!important}
 body .on-log div{background:rgba(11,19,38,.55)!important;border:0!important;color:#fff!important;font-size:13px!important;padding:2px 8px!important}
@@ -68,6 +68,8 @@ body .yt-b.cd{filter:saturate(.3) brightness(.8)}
 body .yt-b span{background:#ffb627!important;color:#14213d!important}
 /* kısa yatay telefon: yukarıdaki !important kuralları v2-style'daki yatay medya sorgusunu eziyordu; burada aynı değerler yeniden uygulanır */
 @media (orientation:landscape) and (max-height:540px){
+body .on-pill{top:calc(var(--hudb,64px) + 6px)!important}
+body .on-oda{top:calc(var(--hudb,64px) + 38px)!important}
 #sbui .sb-lvl{width:52px!important;height:52px!important}
 #sbui .sb-lvl-in{width:38px!important;height:38px!important;font-size:18px!important}
 #sbui .sb-bar{max-width:calc(42vw - 16px)!important}
@@ -76,3 +78,4 @@ body .yt-b span{background:#ffb627!important;color:#14213d!important}
 #sbui .sb-bi svg{width:30px!important;height:30px!important}
 }
 `;
+

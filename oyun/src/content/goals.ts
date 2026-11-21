@@ -15,7 +15,7 @@ export const SMALL_GOALS: SmallGoalDef[] = [
   { id: 'clean3', text: 'Üç masayı pırıl pırıl yap', stat: 'cleaned', n: 3, reward: 60, min: 0.8, needs: 'tabure2' },
   { id: 'tips3', text: 'Masalardan 3 bahşiş topla', stat: 'tips', n: 3, reward: 45, min: 0.6, needs: 'tabure1' },
   { id: 'win3', text: 'Vapur kalkmadan 3 müşteriye yetiş', stat: 'windowSales', n: 3, reward: 70, min: 1.0, needs: 'pencere' },
-  { id: 'reg1', text: 'Bir müdavime selam ver, her zamankini getir', stat: 'regularOk', n: 1, reward: 60, min: 0.8, minDay: 2 },
+  { id: 'ferry3', text: 'Üç vapuru iskelede karşıla', stat: 'ferries', n: 3, reward: 60, min: 0.8, minDay: 2 },
   { id: 'pet2', text: 'Kedileri 2 kez sev', stat: 'pets', n: 2, reward: 25, min: 0.3 },
   { id: 'set2', text: '2 menü seti sat', stat: 'sets', n: 2, reward: 60, min: 0.8, needs: 'ayran' },
   { id: 'ayran4', text: '4 ayran köpürt', stat: 'sold_ayran', n: 4, reward: 45, min: 0.6, needs: 'ayran' },

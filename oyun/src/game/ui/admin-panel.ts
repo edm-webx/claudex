@@ -20,15 +20,16 @@ interface Deps {
 }
 
 const CSS = `
-.ad-fab{position:fixed;right:120px;top:calc(env(safe-area-inset-top,0px) + 12px);z-index:59;pointer-events:auto;width:42px;height:42px;border-radius:50%;border:3px solid #3b2a20;background:#ffd23f;box-shadow:0 4px 0 #3b2a20;font-size:22px;cursor:pointer}
-.ad-p{position:fixed;right:10px;top:calc(env(safe-area-inset-top,0px) + 62px);z-index:61;pointer-events:auto;width:min(380px,calc(100vw - 20px));max-height:calc(100vh - 80px);overflow:auto;background:#fdf3e1;color:#3b2a20;border:4px solid #3b2a20;border-radius:18px;box-shadow:0 6px 0 #3b2a20;padding:10px;font:700 14px/1.3 var(--body);display:none}
+#sbui .ad-fab{pointer-events:auto;color:#ffb627}#sbui .ad-fab svg{width:22px;height:22px;filter:none!important;opacity:1}#sbui .ad-fab.on{background:#ffb627!important}#sbui .ad-fab.on svg{color:#14213d}
+.ad-p{position:fixed;right:calc(env(safe-area-inset-right,0px) + 10px);top:calc(var(--hudb,64px) + 8px);bottom:10px;z-index:61;pointer-events:auto;width:min(380px,calc(100vw - 20px));overflow:auto;background:#fdf3e1;color:#3b2a20;border:4px solid #3b2a20;border-radius:18px;box-shadow:0 6px 0 #3b2a20;padding:10px;font:700 14px/1.3 var(--body);display:none}
+/* geniş ekran: panel sağ kenarda kanat olur, oyun arayüzü (--sr) onun kadar sola kayar, altında hiçbir şey kapanmaz */
+@media (min-width:900px){.ad-p{top:0;bottom:0;right:0;width:var(--adw,440px);max-height:none;border-width:0 0 0 4px;border-radius:0;box-shadow:-6px 0 0 rgba(59,42,32,.35)}}
 .ad-p.on{display:block}
 .ad-h{font:900 18px var(--disp);margin:0 0 6px}
 .ad-top{position:sticky;top:-12px;z-index:2;background:#fdf3e1;margin:-12px -12px 6px;padding:10px 12px 4px;border-bottom:3px solid #3b2a20}
 .ad-top .ad-x{float:right;min-height:30px;min-width:30px}
 .ad-stat{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:8px}.ad-stat div{border:2px solid #3b2a20;border-radius:9px;background:#fff;padding:3px 6px;font:800 12px var(--body)}.ad-stat b{display:block;font:900 14px var(--disp)}
 .ad-b.cur{background:#ffd23f;outline:3px solid #e0533c}
-@media (min-width:900px){.ad-p{width:440px;max-height:calc(100vh - 110px)}}
 .ad-tabs{display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap}
 .ad-t{flex:1;min-height:38px;border:3px solid #3b2a20;border-radius:10px;background:#fff6e6;font:900 13px var(--disp);color:#3b2a20;cursor:pointer;padding:0 4px}.ad-t.on{background:#ffd23f}
 .ad-row{display:flex;align-items:center;gap:6px;border:2px solid #3b2a20;border-radius:10px;background:#fff;padding:5px 8px;margin-bottom:5px}
@@ -44,11 +45,12 @@ const CSS = `
 .ad-sel{border:3px solid #ffd23f;border-radius:12px;padding:8px;margin:6px 0;background:#fffbe8}
 `;
 
+const WRENCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.1L3.5 17.2a2 2 0 0 0 2.8 2.8l5.8-5.8a4 4 0 0 0 5.1-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/></svg>';
 const esc = (s: string) => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string));
 
 export function createAdminPanel(d: Deps): AdminPanelView {
   const st = document.createElement('style'); st.textContent = CSS; d.root.appendChild(st);
-  let fab: HTMLButtonElement | null = null, panel: HTMLDivElement | null = null;
+  let fab: HTMLButtonElement | null = null, panel: HTMLDivElement | null = null, closeAdmin: () => void = () => { /* ensureUi kurar */ };
   let stSel = '';
   let tab: 'oy' | 'ara' | 'isl' | 'ben' | 'arac' | 'dunya' | 'duyuru' | 'liste' | 'log' = ((): 'oy' => { try { return (localStorage.getItem('ad-tab') as 'oy') || 'oy'; } catch { return 'oy'; } })(), sel: { id: string; ad: string; peer?: AdminPeer } | null = null, found: { id: string; ad: string }[] = [], msg = '', arm = '', names = new Map<string, string>();
   // oturum logu (2026-10-27): kişi listesi > kişinin kayıtları > tek kayıt
@@ -61,13 +63,26 @@ export function createAdminPanel(d: Deps): AdminPanelView {
 
   function ensureUi() {
     if (fab || !adminMi()) return;
-    fab = document.createElement('button'); fab.className = 'ad-fab'; fab.textContent = '🛠'; fab.title = 'Yönetici paneli';
+    const slot = d.root.querySelector('.sb-hbtns');
+    if (!slot) return;   // HUD henüz kurulmadı: sonraki güncellemede tekrar denenir
+    fab = document.createElement('button'); fab.className = 'sb-ib ad-fab'; fab.title = 'Yönetici paneli'; fab.setAttribute('aria-label', 'Yönetici paneli');
+    fab.innerHTML = WRENCH;
     panel = document.createElement('div'); panel.className = 'ad-p';
-    d.root.appendChild(fab); d.root.appendChild(panel);
-    fab.onclick = () => { panel!.classList.toggle('on'); namesT = 0; listT = 0; paint(); };
+    slot.appendChild(fab); d.root.appendChild(panel);
+    const wide = () => window.matchMedia('(min-width:900px)').matches;
+    const setOpen = (on: boolean) => {
+      panel!.classList.toggle('on', on); fab!.classList.toggle('on', on);
+      if (on) { namesT = 0; listT = 0; paint(); }
+      // sağ güvenli alan = panel genişliği: HUD, dock, kartlar ve paneller onun soluna oturur
+      if (on && wide()) d.root.style.setProperty('--sr', `calc(env(safe-area-inset-right,0px) + ${Math.round(panel!.getBoundingClientRect().width || 440)}px)`);
+      else d.root.style.removeProperty('--sr');
+    };
+    closeAdmin = () => setOpen(false);
+    fab.onclick = () => setOpen(!panel!.classList.contains('on'));
+    window.addEventListener('resize', () => { if (panel!.classList.contains('on')) setOpen(true); });
     for (const ev of ['pointerdown', 'wheel', 'keydown', 'keyup'] as const) panel.addEventListener(ev, e => e.stopPropagation(), { passive: true } as never);
     panel.addEventListener('click', onClick);
-    window.addEventListener('keydown', e => { if (e.key === 'Escape' && panel?.classList.contains('on')) { panel.classList.remove('on'); } });
+    window.addEventListener('keydown', e => { if (e.key === 'Escape' && panel?.classList.contains('on')) closeAdmin(); });
     paint();
   }
 
@@ -163,7 +178,7 @@ ${sel.peer ? `<button class="ad-b" data-a="tp-to">Yanına git</button><button cl
     if (el.dataset.tab) { tab = el.dataset.tab as typeof tab; try { localStorage.setItem('ad-tab', tab); } catch { /* */ } arm = ''; msg = ''; paint(); return; }
     if (el.dataset.sel) { sel = { id: el.dataset.sel, ad: el.dataset.ad || '?', peer: d.peers().find(p => p.uid === el.dataset.sel) }; arm = ''; msg = ''; paint(); return; }
     const a = el.dataset.a; if (!a) return;
-    if (a === 'kapat') { panel!.classList.remove('on'); return; }
+    if (a === 'kapat') { closeAdmin(); return; }
     if (a === 'tadBitir') { d.command({ kind: 'force', what: 'tadilatBitir' }); say('✓ Tadilat bitiyor.'); return; }
     if (a === 'tadBaslat') { d.command({ kind: 'force', what: 'stars', value: 5 }); const m = d.isletme?.(); if (m) d.addMoney(1e10); d.command({ kind: 'startTadilat' }); say('✓ Tadilat başladı (vinç ve işçiler restoran alanında).'); return; }
     if (a === 'kafeLv') { d.command({ kind: 'mulk', op: 'adminKafe', id: el.dataset.id, n: Number(el.dataset.n) }); say('✓ Kafe ayarlandı.'); setTimeout(paint, 50); return; }
@@ -241,7 +256,7 @@ ${sel.peer ? `<button class="ad-b" data-a="tp-to">Yanına git</button><button cl
 
   return {
     update(dt: number) {
-      if (!hesap()) return;
+      if (!hesap() && !adminMi()) return;
       ensureUi();
       if ((susT -= dt) <= 0) { susT = 20; void susturmalariYenile(); }
       if ((pollT -= dt) <= 0) { pollT = 4; void komutlariCek().then(ks => ks.forEach(uygula)); }

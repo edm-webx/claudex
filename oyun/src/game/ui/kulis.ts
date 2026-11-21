@@ -64,7 +64,7 @@ const CSS = `
 .kl-cls{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .kl-cl{text-align:left;padding:8px 10px;border-radius:14px;border:3px solid #3b2a20;background:#fff6e6;color:#3b2a20;cursor:pointer;box-shadow:0 3px 0 #3b2a20;font:900 16px/1.15 var(--disp)}
 .kl-cl.on{background:#ffd23f}.kl-cl i{font-style:normal;font-size:24px;display:block}
-.kl-cl small{display:block;font:700 12px/1.25 var(--body);opacity:.8;margin-top:3px}.kl-cl b{display:block;font:900 12px/1.2 var(--body);color:#2e7d32;margin-top:4px}
+.kl-cl small{display:block;font:700 13px/1.25 var(--body);opacity:.8;margin-top:3px}.kl-cl b{display:block;font:900 13px/1.2 var(--body);color:#2e7d32;margin-top:4px}
 .kl-f{padding:10px 14px 14px;border-top:3px dashed #d8c3a3}
 .kl-go{width:100%;min-height:58px;border-radius:16px;border:4px solid #3b2a20;background:#8fd06b;box-shadow:0 5px 0 #3b2a20;font:900 21px/1 var(--disp);color:#3b2a20;cursor:pointer}
 .kl-rnd{position:fixed;left:14px;bottom:14px;z-index:62;min-height:50px;padding:6px 16px;border-radius:14px;border:4px solid #3b2a20;background:#fff6e6;box-shadow:0 4px 0 #3b2a20;font:900 17px var(--disp);color:#3b2a20;cursor:pointer}
@@ -188,9 +188,10 @@ export function createKulis(deps: {
   function body(e: EsnafimSave): string {
     switch (tab) {
       case 'kimlik': return `<div class="kl-h">Kulise hoş geldin!</div><div class="kl-sub">Perde açılmadan esnafını hazırla. Herkesin kendi dükkanı var.</div>
-<div class="kl-l">Adın${e.adKilit ? ' 🔒 <small>(bir kez seçilir, değişmez)</small>' : ' <small>(bir kez seçilir, sonra değişmez!)</small>'}</div><input class="kl-in" name="ad" maxlength="14" value="${esc(e.ad)}"${e.adKilit ? ' readonly' : ''}>
+<div class="kl-l">Adın${e.adKilit ? ' 🔒 <small>(bir kez seçilir, değişmez)</small>' : ' <small>(bir kez seçilir, sonra değişmez!)</small>'}</div><input class="kl-in" name="ad" maxlength="14" value="${esc(e.ad)}" placeholder="Adını yaz"${e.adKilit ? ' readonly' : ''}>
+<div class="kl-l">Bedenin <small style="font:700 13px var(--body);opacity:.7">(iki sade beden, gerisini sen süslersin)</small></div>${ch('tip', [['a', 'Erkek'], ['b', 'Kadın']], e.tip)}
 <div class="kl-l">Dükkanının adı</div><input class="kl-in" name="dukkan" maxlength="22" value="${esc(e.dukkan)}">
-<div class="kl-l">Sınıfın <small style="font:700 12px var(--body);opacity:.7">(her şeyi yapabilirsin, sınıfın en iyi olduğun iş)</small></div>
+<div class="kl-l">Sınıfın <small style="font:700 13px var(--body);opacity:.7">(her şeyi yapabilirsin, sınıfın en iyi olduğun iş)</small></div>
 <div class="kl-cls">${SINIFLAR.map(s => `<button class="kl-cl${s.id === e.sinif ? ' on' : ''}" data-sinif="${s.id}"><i>${s.icon}</i>${s.ad}<small>${s.desc}</small><b>${s.perk}</b><b style="color:#7d3c98">${YETENEK[s.id].icon} ${YETENEK[s.id].ad}</b></button>`).join('')}</div>`;
       case 'yuz': return `<div class="kl-h">Ayna karşısı</div><div class="kl-sub">Yüzün, makyajın, gözlerin.</div>
 <div class="kl-l">Ten</div>${sw('ten', SKINS, e.ten, { vals: SKINS.map((_, i) => i) })}
@@ -205,7 +206,7 @@ export function createKulis(deps: {
 <div class="kl-l">Allık</div>${ch('allik', [['0', 'Yok'], ['0.2', 'Hafif'], ['0.42', 'Pembiş']], e.allik >= 0.35 ? '0.42' : e.allik >= 0.1 ? '0.2' : '0')}
 <div class="kl-l">Ruj</div>${sw('ruj', LIPS, e.ruj, { none: true })}
 <div class="kl-l">Ayrıntılar</div><div class="kl-row">${tog('cil', e.cil, 'Çiller')}${tog('gamze', e.gamze, 'Gamze')}</div>
-<div class="kl-l">Yüz ifadesi <small style="font:700 12px var(--body);opacity:.7">(dururken)</small></div>${ch('ifade', [['notr', 'Nötr'], ['gulumser', 'Gülümser'], ['nese', 'Neşeli'], ['ciddi', 'Ciddi'], ['gozkirp', 'Göz kırpar'], ['dalgin', 'Dalgın'], ['huzurlu', 'Huzurlu'], ['uykulu', 'Uykulu']], e.ifade || 'notr')}`;
+<div class="kl-l">Yüz ifadesi <small style="font:700 13px var(--body);opacity:.7">(dururken)</small></div>${ch('ifade', [['notr', 'Nötr'], ['gulumser', 'Gülümser'], ['nese', 'Neşeli'], ['ciddi', 'Ciddi'], ['gozkirp', 'Göz kırpar'], ['dalgin', 'Dalgın'], ['huzurlu', 'Huzurlu'], ['uykulu', 'Uykulu']], e.ifade || 'notr')}`;
       case 'sac': return `<div class="kl-h">Kuaför koltuğu</div><div class="kl-sub">Saç, bıyık, sakal. Pembe saç da olur, burası kulis.</div>
 <div class="kl-l">Saç</div>${ch('sac', HAIR, e.sac)}
 <div class="kl-l">Saç rengi</div>${sw('sacRenk', HAIRC, e.sacRenk)}
@@ -225,9 +226,9 @@ export function createKulis(deps: {
         const SL: Record<string, string> = { ust: 'Üst', alt: 'Alt', ayakkabi: 'Ayakkabı', aksesuar: 'Aksesuar', sapka: 'Şapka', kostum: 'Kostüm' };
         const avm = (deps.avm ? deps.avm() : []).filter(id => AVM_GIY[id]);
         return `<div class="kl-h">Dolap</div>${avm.length ? `<div class="kl-l">Martı AVM'den aldıkların</div><div class="kl-row">${avm.map(id => `<button class="kl-ch" data-avm="${id}">${AVM_BY_ID[id].ikon} ${esc(AVM_BY_ID[id].ad)} · Giy</button>`).join('')}</div>` : '<div class="kl-sub">Martı AVM\'den aldığın kıyafetler burada giyilir.</div>'}<div class="kl-sub">Markalı kıyafetler Altın Simitle alınır. AVM'den giydiğin parça, aynı yerdeki gardrop parçasının yerine geçer. Kasanda ${dz.gold} Altın Simit var.</div>
-${KIYAFET_ZINCIRLER.map(z => `<div class="kl-l">${esc(z.name)} <small style="font:700 12px var(--body);opacity:.7">${esc(z.tagline)}</small></div><div class="kl-row">${KIYAFET_URUNLER.filter(u => u.zincir === z.id).map(u => {
+${KIYAFET_ZINCIRLER.map(z => `<div class="kl-l">${esc(z.name)} <small style="font:700 13px var(--body);opacity:.7">${esc(z.tagline)}</small></div><div class="kl-row">${KIYAFET_URUNLER.filter(u => u.zincir === z.id).map(u => {
           const own = dz.owned.includes(u.id), worn = dz.worn[u.slot] === u.id;
-          return `<button class="kl-ch${worn ? ' on' : ''}" data-ky="${own ? (worn ? 'take' : 'wear') : 'buy'}" data-id="${u.id}" ${!own && dz.gold < u.gold ? 'style="opacity:.55"' : ''}><span style="display:inline-block;width:14px;height:14px;border-radius:50%;border:2px solid #3b2a20;vertical-align:-2px;background:${u.colors[0]}"></span> ${esc(u.name)} <small style="font:700 11px var(--body)">${SL[u.slot] || ''} · ${own ? (worn ? 'giyili ✓' : 'giy') : u.gold + ' 🥯'}</small></button>`;
+          return `<button class="kl-ch${worn ? ' on' : ''}" data-ky="${own ? (worn ? 'take' : 'wear') : 'buy'}" data-id="${u.id}" ${!own && dz.gold < u.gold ? 'style="opacity:.55"' : ''}><span style="display:inline-block;width:14px;height:14px;border-radius:50%;border:2px solid #3b2a20;vertical-align:-2px;background:${u.colors[0]}"></span> ${esc(u.name)} <small style="font:700 13px var(--body)">${SL[u.slot] || ''} · ${own ? (worn ? 'giyili ✓' : 'giy') : u.gold + ' 🥯'}</small></button>`;
         }).join('')}</div>`).join('')}`;
       }
       case 'aksesuar': return `<div class="kl-h">Şapka masası</div><div class="kl-sub">Son dokunuşlar.</div>
@@ -238,7 +239,6 @@ ${e.sapka ? `<div class="kl-l">Şapka rengi</div>${sw('sapkaRenk', COLS, e.sapka
 <div class="kl-l">Kravat</div>${sw('kravat', ['#c0392b', '#2e3a59', '#3fa35a', '#f2c230', '#7d3c98'], e.kravat, { none: true })}
 <div class="kl-l">Takı</div><div class="kl-row">${tog('kupe', e.kupe, 'Küpe')}</div>`;
       case 'vucut': return `<div class="kl-h">Boy aynası</div><div class="kl-sub">Kalıbını seç, gerisini sen süsle.</div>
-<div class="kl-l">Cinsiyet</div>${ch('tip', [['a', 'Erkek'], ['b', 'Kadın']], e.tip)}
 <div class="kl-l">Yapı</div>${ch('vucut', [['slim', 'İnce'], ['mid', 'Orta'], ['round', 'Tombul']], e.vucut)}
 <div class="kl-l">Boy</div>${ch('boy', [['0.92', 'Kısa'], ['1', 'Orta'], ['1.08', 'Uzun']], e.boy <= 0.95 ? '0.92' : e.boy >= 1.05 ? '1.08' : '1')}`;
     }
@@ -270,7 +270,7 @@ ${e.sapka ? `<div class="kl-l">Şapka rengi</div>${sw('sapkaRenk', COLS, e.sapka
   }
 
   function open(model: EsnafimSave) {
-    m = { ...model }; tab = model.done ? 'yuz' : 'kimlik'; heroKey = '';
+    m = { ...model }; if (!model.adKilit && !model.done) m.ad = ''; tab = model.done ? 'yuz' : 'kimlik'; heroKey = '';
     canvas = document.createElement('canvas'); canvas.className = 'kl-c'; deps.root.appendChild(canvas);
     tag = document.createElement('div'); tag.className = 'kl-tag'; deps.root.appendChild(tag);
     rnd = document.createElement('button'); rnd.className = 'kl-rnd'; rnd.textContent = '🎲 Rastgele'; deps.root.appendChild(rnd);
@@ -306,6 +306,7 @@ ${e.sapka ? `<div class="kl-l">Şapka rengi</div>${sw('sapkaRenk', COLS, e.sapka
       if (el.dataset.ky) { deps.command({ kind: 'kiyafet', op: el.dataset.ky, id: el.dataset.id }); tap(); heroKey = ''; setTimeout(paint, 30); return; }
       if (el.dataset.sinif) { const sn = SINIFLAR.find(x => x.id === el.dataset.sinif); if (sn) set({ sinif: sn.id, ...sn.kit }); return; }
       const k = el.dataset.k!, v = el.dataset.v!;
+      if (k === 'tip' && v === 'b') { set({ tip: 'b', sakalStil: 'yok', biyik: 'yok', sakal: false }); return; }   // iki beden: uyumsuz sakal/bıyık kalmasın
       if (el.dataset.null) { set({ [k]: null }); return; }
       if (el.dataset.bool) { set({ [k]: v === '1' }); return; }
       if (k === 'ten' || k === 'desen' || k === 'boy' || k === 'allik') { set({ [k]: Number(v) }); return; }
@@ -324,6 +325,11 @@ ${e.sapka ? `<div class="kl-l">Şapka rengi</div>${sw('sapkaRenk', COLS, e.sapka
 
   function finish() {
     if (!m) return;
+    if (!m.adKilit && !m.ad.trim()) {   // herkes kendi adını yazar: sabit ana karakter yok
+      tab = 'kimlik'; paint(); try { deps.sfx?.('error'); } catch { /* */ }
+      const inp = panel?.querySelector('input[name="ad"]') as HTMLInputElement | null; if (inp) { inp.focus(); inp.style.borderColor = '#e0533c'; }
+      return;
+    }
     deps.command({ kind: 'esnafim', op: 'set', data: { ad: m.ad, dukkan: m.dukkan } });
     deps.command({ kind: 'saveSign', text: m.dukkan, font: 'vapur' });
     deps.command({ kind: 'esnafim', op: 'done' });
