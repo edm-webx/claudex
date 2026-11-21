@@ -4,7 +4,7 @@
 import { supaReady, girisYap, kayitOl, cikisYap } from '../net/supa';
 import { girisSonrasi, adminAdiMi, adminDogrula } from '../net/admin';
 import { girisLogu } from '../net/log';
-import { slotlariYukle, slotListesi, slotSec, aktifSlot, slotSil } from '../net/slots';
+import { slotlariYukle, slotListesi, slotSec, aktifSlot, slotSil, slotsHazir } from '../net/slots';
 import { SINIFLAR } from '../sim/esnafim';
 
 export interface GirisView { show(go: () => void): void }
@@ -47,8 +47,8 @@ export function createGiris(deps: { root: HTMLElement; afterLogin: (isNew: boole
         void girisSonrasi().then(async r => {
           if (r.yasak) { await cikisYap(); paint(r.yasak); return; }
           logged = true; void girisLogu(isNew);
-          await slotlariYukle();
-          slotsScreen();
+          // KAYIT-GUV: a failed read is not "4 empty slots": nothing opens (and nothing is written) until the record was read
+          if (await slotlariYukle()) slotsScreen(); else okumaHatasi();
         });
       };
       const enter = async () => {
@@ -59,9 +59,15 @@ export function createGiris(deps: { root: HTMLElement; afterLogin: (isNew: boole
       // Metin2 style: 4 character slots per account (karar paketi C). The slot picked here is the cloud save that loads.
       const slotsScreen = () => {
         inServers = false;
+        if (!slotsHazir()) { okumaHatasi(); return; }
         const list = slotListesi(), cur = aktifSlot(), pt = (s: number) => s >= 3600 ? Math.floor(s / 3600) + ' sa ' + Math.floor(s % 3600 / 60) + ' dk' : Math.max(1, Math.floor(s / 60)) + ' dk';
         bg.innerHTML = `<div class="gr-card"><div class="gr-h">🧑 Karakterini seç</div><div class="gr-sub">Hesabında 4 yuva var. Banka hepsinin ortak. Adı bir kez seçersin, sonra değişmez.</div>
 <div class="gr-slots">${list.map((s, i) => s ? `<div class="gr-row"><button class="gr-sl${i === cur ? ' on' : ''}" data-slot="${i}"><i>${SINIFLAR.find(x => x.id === s.sinif)?.icon || '🧑'}</i><span>${s.ad.replace(/[<>&]/g, '')}<small>${s.level}. seviye · ${SINIFLAR.find(x => x.id === s.sinif)?.ad || ''} · ${pt(s.playT)} oynandı</small></span></button><button class="gr-del" data-del="${i}" aria-label="${s.ad.replace(/[<>&"]/g, '')} karakterini sil" title="Karakteri sil">🗑</button></div>` : `<button class="gr-sl empty" data-slot="${i}"><i>＋</i><span>Yeni karakter<small>Boş yuva ${i + 1}</small></span></button>`).join('')}</div></div>`;
+      };
+      const okumaHatasi = () => {
+        inServers = false;
+        bg.innerHTML = `<div class="gr-card"><div class="gr-h">☁️ Kayıtların okunamadı</div><div class="gr-warn">Sunucuya şu an ulaşılamıyor. Karakterlerin ve bankan güvende, hiçbir şey silinmedi ya da üzerine yazılmadı.</div>
+<button class="gr-go" data-retry="1">Tekrar dene</button><div class="gr-note">İnternetini kontrol edip tekrar dene.</div></div>`;
       };
       // Karakter silme: iki onay. 1) "emin misin" 2) karakterin adını yaz, kırmızı düğme ancak ad eşleşince açılır. Yalnız o yuva silinir, banka ve diğer yuvalar kalır.
       const delScreen = (i: number, step: 1 | 2, err = '') => {
@@ -107,6 +113,7 @@ export function createGiris(deps: { root: HTMLElement; afterLogin: (isNew: boole
       };
       bg.addEventListener('click', e => {
         const el = (e.target as HTMLElement).closest('button') as HTMLButtonElement | null; if (!el) return;
+        if (el.dataset.retry) { el.disabled = true; el.textContent = 'Bekle...'; void slotlariYukle().then(ok => { if (ok) slotsScreen(); else { try { deps.sfx?.('error'); } catch { /* */ } okumaHatasi(); } }); return; }
         if (el.dataset.no) { try { deps.sfx?.('pick'); } catch { /* */ } slotsScreen(); return; }
         if (el.dataset.del) { delScreen(Number(el.dataset.del), 1); return; }
         if (el.dataset.d1) { delScreen(Number(el.dataset.d1), 2); return; }
