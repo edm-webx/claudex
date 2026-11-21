@@ -35,7 +35,8 @@ function ozet(sf) {
   };
   gez(sf);
   // dinamik import('./x') yolları
-  const dyn = n => { if (ts.isCallExpression(n) && n.expression.kind === ts.SyntaxKind.ImportKeyword && n.arguments[0] && ts.isStringLiteral(n.arguments[0])) iceri.push(n.arguments[0].text); ts.forEachChild(n, dyn); };
+  // import.meta.glob('../content/x.ts') (joker içermeyen yol) de içe aktarım sayılır (boot.ts art-manifest'i böyle yükler)
+  const dyn = n => { if (ts.isCallExpression(n) && (n.expression.kind === ts.SyntaxKind.ImportKeyword || /import\.meta\.glob$/.test(n.expression.getText())) && n.arguments[0] && ts.isStringLiteral(n.arguments[0]) && !/[*?{]/.test(n.arguments[0].text)) iceri.push(n.arguments[0].text); ts.forEachChild(n, dyn); };
   dyn(sf);
   return { disa, iceri, kullanilan };
 }

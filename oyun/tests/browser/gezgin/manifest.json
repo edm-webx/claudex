@@ -1,0 +1,960 @@
+{
+ "surum": 1,
+ "binalar": [
+  {
+   "id": "kafe1",
+   "ad": "Meydan Kafe",
+   "tur": "kafe",
+   "canli": true,
+   "arsa": "k1",
+   "bina": "kafe1",
+   "merkez": {
+    "x": -17.5,
+    "z": 37.9
+   },
+   "boy": {
+    "wx": 7,
+    "wz": 9.4
+   },
+   "kapiDis": {
+    "x": -12.4,
+    "z": 37.9
+   },
+   "kapi": {
+    "x": -14,
+    "z": 37.9
+   },
+   "kapiIc": {
+    "x": -15.3,
+    "z": 37.9
+   },
+   "noktalar": [
+    {
+     "ad": "kapı içi",
+     "x": -15.3,
+     "z": 37.9
+    },
+    {
+     "ad": "orta",
+     "x": -17.5,
+     "z": 37.9
+    },
+    {
+     "ad": "tezgah",
+     "x": -18.8,
+     "z": 39.1
+    },
+    {
+     "ad": "kasa",
+     "x": -18.8,
+     "z": 37
+    },
+    {
+     "ad": "masa2",
+     "x": -18.2,
+     "z": 41.2
+    },
+    {
+     "ad": "masa2",
+     "x": -16.3,
+     "z": 41.2
+    },
+    {
+     "ad": "masa2",
+     "x": -17.2,
+     "z": 39.7
+    },
+    {
+     "ad": "masa2",
+     "x": -17.9,
+     "z": 36
+    }
+   ],
+   "ebeveyn": null
+  },
+  {
+   "id": "kafe2",
+   "ad": "Sahil Bistro",
+   "tur": "bistro",
+   "canli": true,
+   "arsa": "k2",
+   "bina": "kafe2",
+   "merkez": {
+    "x": -17.5,
+    "z": 51.5
+   },
+   "boy": {
+    "wx": 7,
+    "wz": 9.4
+   },
+   "kapiDis": {
+    "x": -12.4,
+    "z": 51.5
+   },
+   "kapi": {
+    "x": -14,
+    "z": 51.5
+   },
+   "kapiIc": {
+    "x": -15.3,
+    "z": 51.5
+   },
+   "noktalar": [
+    {
+     "ad": "kapı içi",
+     "x": -15.3,
+     "z": 51.5
+    },
+    {
+     "ad": "orta",
+     "x": -17.5,
+     "z": 51.5
+    },
+    {
+     "ad": "tezgah",
+     "x": -18.8,
+     "z": 52.7
+    },
+    {
+     "ad": "kasa",
+     "x": -18.8,
+     "z": 50.6
+    },
+    {
+     "ad": "masa4",
+     "x": -18.2,
+     "z": 54.8
+    },
+    {
+     "ad": "masa2",
+     "x": -16.3,
+     "z": 54.8
+    },
+    {
+     "ad": "masa2",
+     "x": -17.2,
+     "z": 53.3
+    },
+    {
+     "ad": "masa4",
+     "x": -17.9,
+     "z": 49.6
+    }
+   ],
+   "ebeveyn": null
+  },
+  {
+   "id": "kirtasiye",
+   "ad": "Martı Kırtasiye",
+   "tur": "kirtasiye",
+   "canli": true,
+   "arsa": "k3",
+   "bina": "kirtasiye",
+   "merkez": {
+    "x": 28,
+    "z": 35.2
+   },
+   "boy": {
+    "wx": 7.1,
+    "wz": 3.6
+   },
+   "kapiDis": {
+    "x": 28,
+    "z": 31.8
+   },
+   "kapi": {
+    "x": 28,
+    "z": 33.4
+   },
+   "kapiIc": {
+    "x": 28,
+    "z": 34.7
+   },
+   "noktalar": [
+    {
+     "ad": "kapı içi",
+     "x": 28,
+     "z": 34.7
+    },
+    {
+     "ad": "orta",
+     "x": 28,
+     "z": 35.2
+    },
+    {
+     "ad": "tezgah",
+     "x": 25.55,
+     "z": 36.1
+    },
+    {
+     "ad": "kasa",
+     "x": 25.55,
+     "z": 35.6
+    },
+    {
+     "ad": "fotokopi:fotokopi",
+     "x": 25.05,
+     "z": 35.4
+    },
+    {
+     "ad": "pos:pos",
+     "x": 25.55,
+     "z": 34.6
+    },
+    {
+     "ad": "laminasyon:laminasyon",
+     "x": 25.55,
+     "z": 35.95
+    },
+    {
+     "ad": "kitaplik:kitap_raf",
+     "x": 31.25,
+     "z": 36
+    }
+   ],
+   "ebeveyn": null
+  },
+  {
+   "id": "okul",
+   "ad": "Martıköy İlkokulu",
+   "tur": "okul",
+   "canli": true,
+   "arsa": "k4",
+   "bina": "okul",
+   "merkez": {
+    "x": 48.85,
+    "z": 37.25
+   },
+   "boy": {
+    "wx": 18.3,
+    "wz": 7.5
+   },
+   "kapiDis": {
+    "x": 48.85,
+    "z": 31.9
+   },
+   "kapi": {
+    "x": 48.85,
+    "z": 33.5
+   },
+   "kapiIc": {
+    "x": 48.85,
+    "z": 34.8
+   },
+   "noktalar": [
+    {
+     "ad": "kapı içi",
+     "x": 48.85,
+     "z": 34.8
+    },
+    {
+     "ad": "orta",
+     "x": 48.85,
+     "z": 37.25
+    },
+    {
+     "ad": "tezgah",
+     "x": 43.65,
+     "z": 38.85
+    },
+    {
+     "ad": "kasa",
+     "x": 41.95,
+     "z": 38.85
+    },
+    {
+     "ad": "tostMak:tost_mak",
+     "x": 44.85,
+     "z": 38.85
+    },
+    {
+     "ad": "buzdolap:buzdolap",
+     "x": 40.35,
+     "z": 39.5
+    },
+    {
+     "ad": "semaver:semaver_k",
+     "x": 43.45,
+     "z": 38.85
+    },
+    {
+     "ad": "firinK:mikrodalga",
+     "x": 46.45,
+     "z": 39.5
+    }
+   ],
+   "ebeveyn": null
+  },
+  {
+   "id": "avm",
+   "ad": "Martı AVM",
+   "tur": "lokanta",
+   "canli": true,
+   "arsa": "k5",
+   "bina": "avm",
+   "merkez": {
+    "x": 20.15,
+    "z": 51.8
+   },
+   "boy": {
+    "wx": 16.9,
+    "wz": 10.6
+   },
+   "kapiDis": {
+    "x": 20.15,
+    "z": 44.9
+   },
+   "kapi": {
+    "x": 20.15,
+    "z": 46.5
+   },
+   "kapiIc": {
+    "x": 20.15,
+    "z": 47.8
+   },
+   "noktalar": [
+    {
+     "ad": "kapı içi",
+     "x": 20.15,
+     "z": 47.8
+    },
+    {
+     "ad": "orta",
+     "x": 20.15,
+     "z": 51.8
+    },
+    {
+     "ad": "tezgah",
+     "x": 25.15,
+     "z": 54.8
+    },
+    {
+     "ad": "kasa",
+     "x": 22.55,
+     "z": 54.8
+    },
+    {
+     "ad": "masa4",
+     "x": 26.55,
+     "z": 52.1
+    },
+    {
+     "ad": "masa4",
+     "x": 23.75,
+     "z": 52.1
+    },
+    {
+     "ad": "masa4",
+     "x": 26.55,
+     "z": 49.7
+    },
+    {
+     "ad": "masa4",
+     "x": 23.75,
+     "z": 49.7
+    }
+   ],
+   "ebeveyn": null
+  },
+  {
+   "id": "tesis",
+   "ad": "Halı Saha Tesisleri",
+   "tur": "kafeterya",
+   "canli": true,
+   "arsa": "k6",
+   "bina": "tesis",
+   "merkez": {
+    "x": -54.1,
+    "z": 45.4
+   },
+   "boy": {
+    "wx": 3.7,
+    "wz": 17.8
+   },
+   "kapiDis": {
+    "x": -50.65,
+    "z": 45.4
+   },
+   "kapi": {
+    "x": -52.25,
+    "z": 45.4
+   },
+   "kapiIc": {
+    "x": -53.55,
+    "z": 45.4
+   },
+   "noktalar": [
+    {
+     "ad": "kapı içi",
+     "x": -53.55,
+     "z": 45.4
+    },
+    {
+     "ad": "orta",
+     "x": -54.1,
+     "z": 45.4
+    },
+    {
+     "ad": "tezgah",
+     "x": -54.1,
+     "z": 50.2
+    },
+    {
+     "ad": "kasa",
+     "x": -54.1,
+     "z": 48.3
+    },
+    {
+     "ad": "masa2",
+     "x": -54,
+     "z": 51.8
+    },
+    {
+     "ad": "masa2",
+     "x": -54,
+     "z": 49
+    },
+    {
+     "ad": "semaver:cay_mak",
+     "x": -54.1,
+     "z": 51.2
+    },
+    {
+     "ad": "buzdolap:icecek_dolap",
+     "x": -54.5,
+     "z": 53.3
+    }
+   ],
+   "ebeveyn": null
+  },
+  {
+   "id": "banka",
+   "ad": "Martı Kasası Bankası",
+   "tur": "banka",
+   "canli": false,
+   "arsa": null,
+   "bina": "banka",
+   "merkez": {
+    "x": 11.7,
+    "z": 36.8
+   },
+   "boy": {
+    "wx": 10,
+    "wz": 8.4
+   },
+   "kapiDis": {
+    "x": 11.7,
+    "z": 42.6
+   },
+   "kapi": {
+    "x": 11.7,
+    "z": 41
+   },
+   "kapiIc": {
+    "x": 11.7,
+    "z": 39.7
+   },
+   "noktalar": [
+    {
+     "ad": "kapı içi",
+     "x": 11.7,
+     "z": 39.7
+    },
+    {
+     "ad": "orta",
+     "x": 11.7,
+     "z": 36.8
+    }
+   ],
+   "ebeveyn": null
+  },
+  {
+   "id": "hastane",
+   "ad": "Devlet Hastanesi",
+   "tur": "hastane",
+   "canli": false,
+   "arsa": null,
+   "bina": "hastane",
+   "merkez": {
+    "x": 46.95,
+    "z": 53.55
+   },
+   "boy": {
+    "wx": 16.9,
+    "wz": 6.7
+   },
+   "kapiDis": {
+    "x": 46.95,
+    "z": 48.6
+   },
+   "kapi": {
+    "x": 46.95,
+    "z": 50.2
+   },
+   "kapiIc": {
+    "x": 46.95,
+    "z": 51.5
+   },
+   "noktalar": [
+    {
+     "ad": "kapı içi",
+     "x": 46.95,
+     "z": 51.5
+    },
+    {
+     "ad": "orta",
+     "x": 46.95,
+     "z": 53.55
+    }
+   ],
+   "ebeveyn": null
+  },
+  {
+   "id": "acil",
+   "ad": "Acil",
+   "tur": "acil",
+   "canli": false,
+   "arsa": null,
+   "bina": "acil",
+   "merkez": {
+    "x": 57.3,
+    "z": 52
+   },
+   "boy": {
+    "wx": 3.3,
+    "wz": 3.2
+   },
+   "kapiDis": {
+    "x": 54.05,
+    "z": 52
+   },
+   "kapi": {
+    "x": 55.65,
+    "z": 52
+   },
+   "kapiIc": {
+    "x": 56.95,
+    "z": 52
+   },
+   "noktalar": [
+    {
+     "ad": "kapı içi",
+     "x": 56.95,
+     "z": 52
+    },
+    {
+     "ad": "orta",
+     "x": 57.3,
+     "z": 52
+    }
+   ],
+   "ebeveyn": "hastane"
+  },
+  {
+   "id": "morg",
+   "ad": "Morg",
+   "tur": "morg",
+   "canli": false,
+   "arsa": null,
+   "bina": "morg",
+   "merkez": {
+    "x": 57.3,
+    "z": 55.5
+   },
+   "boy": {
+    "wx": 3.3,
+    "wz": 3.2
+   },
+   "kapiDis": {
+    "x": 54.05,
+    "z": 55.5
+   },
+   "kapi": {
+    "x": 55.65,
+    "z": 55.5
+   },
+   "kapiIc": {
+    "x": 56.95,
+    "z": 55.5
+   },
+   "noktalar": [
+    {
+     "ad": "kapı içi",
+     "x": 56.95,
+     "z": 55.5
+    },
+    {
+     "ad": "orta",
+     "x": 57.3,
+     "z": 55.5
+    }
+   ],
+   "ebeveyn": "hastane"
+  },
+  {
+   "id": "salonW",
+   "ad": "Kahvaltı salonu",
+   "tur": "kahvalti",
+   "canli": false,
+   "arsa": null,
+   "bina": null,
+   "merkez": {
+    "x": -17.6,
+    "z": -13.9
+   },
+   "boy": {
+    "wx": 10.8,
+    "wz": 6.6
+   },
+   "kapiDis": {
+    "x": -17.6,
+    "z": -9
+   },
+   "kapi": {
+    "x": -17.6,
+    "z": -10.6
+   },
+   "kapiIc": {
+    "x": -17.6,
+    "z": -11.9
+   },
+   "noktalar": [
+    {
+     "ad": "kapı içi",
+     "x": -17.6,
+     "z": -11.9
+    },
+    {
+     "ad": "orta",
+     "x": -17.6,
+     "z": -13.9
+    },
+    {
+     "ad": "masa4",
+     "x": -21.6,
+     "z": -14.6
+    },
+    {
+     "ad": "masa4",
+     "x": -21.6,
+     "z": -12.7
+    },
+    {
+     "ad": "masa4",
+     "x": -19.7,
+     "z": -13.6
+    },
+    {
+     "ad": "masa4",
+     "x": -15.4,
+     "z": -13.6
+    },
+    {
+     "ad": "masa4",
+     "x": -13.5,
+     "z": -14.6
+    },
+    {
+     "ad": "masa4",
+     "x": -13.5,
+     "z": -12.7
+    }
+   ],
+   "ebeveyn": null
+  },
+  {
+   "id": "mutfak",
+   "ad": "Sabri Mutfağı",
+   "tur": "mutfak",
+   "canli": false,
+   "arsa": null,
+   "bina": null,
+   "merkez": {
+    "x": 0,
+    "z": -15.2
+   },
+   "boy": {
+    "wx": 18,
+    "wz": 4.4
+   },
+   "kapiDis": {
+    "x": 0,
+    "z": -11.4
+   },
+   "kapi": {
+    "x": 0,
+    "z": -13
+   },
+   "kapiIc": {
+    "x": 0,
+    "z": -14.3
+   },
+   "noktalar": [
+    {
+     "ad": "kapı içi",
+     "x": 0,
+     "z": -14.3
+    },
+    {
+     "ad": "orta",
+     "x": 0,
+     "z": -15.2
+    },
+    {
+     "ad": "sogukOda:soguk_oda",
+     "x": -8.1,
+     "z": -15.85
+    },
+    {
+     "ad": "ocakK:ocak",
+     "x": -6.3,
+     "z": -15.85
+    },
+    {
+     "ad": "ocakK:ocak2",
+     "x": -4.5,
+     "z": -15.85
+    },
+    {
+     "ad": "izgaraK:izgara",
+     "x": -2.7,
+     "z": -15.85
+    },
+    {
+     "ad": "izgaraK:izgara2",
+     "x": -0.9,
+     "z": -15.85
+    },
+    {
+     "ad": "fritoz:fritoz",
+     "x": 0.8,
+     "z": -15.85
+    }
+   ],
+   "ebeveyn": null
+  },
+  {
+   "id": "salonE",
+   "ad": "Balık lokantası",
+   "tur": "balik",
+   "canli": false,
+   "arsa": null,
+   "bina": null,
+   "merkez": {
+    "x": 15.6,
+    "z": -13.9
+   },
+   "boy": {
+    "wx": 12,
+    "wz": 6.6
+   },
+   "kapiDis": {
+    "x": 15.6,
+    "z": -9
+   },
+   "kapi": {
+    "x": 15.6,
+    "z": -10.6
+   },
+   "kapiIc": {
+    "x": 15.6,
+    "z": -11.9
+   },
+   "noktalar": [
+    {
+     "ad": "kapı içi",
+     "x": 15.6,
+     "z": -11.9
+    },
+    {
+     "ad": "orta",
+     "x": 15.6,
+     "z": -13.9
+    },
+    {
+     "ad": "masa4",
+     "x": 11.4,
+     "z": -14.4
+    },
+    {
+     "ad": "masa4",
+     "x": 11.4,
+     "z": -12.5
+    },
+    {
+     "ad": "masa4",
+     "x": 13.4,
+     "z": -13.4
+    },
+    {
+     "ad": "masa4",
+     "x": 17.8,
+     "z": -13.8
+    },
+    {
+     "ad": "masa4",
+     "x": 18.2,
+     "z": -13.8
+    },
+    {
+     "ad": "masa4",
+     "x": 20.1,
+     "z": -14.4
+    }
+   ],
+   "ebeveyn": null
+  }
+ ],
+ "arsalar": [
+  {
+   "id": "a1",
+   "ad": "",
+   "sabit": "",
+   "x": 259.5,
+   "z": 0.4,
+   "kapi": null
+  },
+  {
+   "id": "a2",
+   "ad": "",
+   "sabit": "",
+   "x": 266.2,
+   "z": 0.4,
+   "kapi": null
+  },
+  {
+   "id": "a3",
+   "ad": "",
+   "sabit": "",
+   "x": 272.9,
+   "z": 0.4,
+   "kapi": null
+  },
+  {
+   "id": "a4",
+   "ad": "",
+   "sabit": "",
+   "x": 279.6,
+   "z": 0.4,
+   "kapi": null
+  },
+  {
+   "id": "a5",
+   "ad": "",
+   "sabit": "",
+   "x": 284.5,
+   "z": 18.2,
+   "kapi": null
+  },
+  {
+   "id": "k1",
+   "ad": "Meydan Kafe",
+   "sabit": "kafe",
+   "x": -17.5,
+   "z": 37.9,
+   "kapi": {
+    "x": -11.8,
+    "z": 37.9
+   }
+  },
+  {
+   "id": "k2",
+   "ad": "Sahil Bistro",
+   "sabit": "kafe",
+   "x": -17.5,
+   "z": 51.5,
+   "kapi": {
+    "x": -11.8,
+    "z": 51.5
+   }
+  },
+  {
+   "id": "k3",
+   "ad": "Martı Kırtasiye",
+   "sabit": "kafe",
+   "x": 28,
+   "z": 35.2,
+   "kapi": {
+    "x": 28,
+    "z": 32.6
+   }
+  },
+  {
+   "id": "k4",
+   "ad": "Okul Kantini",
+   "sabit": "kafe",
+   "x": 48.85,
+   "z": 37.25,
+   "kapi": {
+    "x": 48.85,
+    "z": 32.6
+   }
+  },
+  {
+   "id": "k5",
+   "ad": "Martı Lokantası (AVM)",
+   "sabit": "kafe",
+   "x": 20.15,
+   "z": 51.8,
+   "kapi": {
+    "x": 20.15,
+    "z": 45.6
+   }
+  },
+  {
+   "id": "k6",
+   "ad": "Tesis Kafeteryası",
+   "sabit": "kafe",
+   "x": -54.1,
+   "z": 45.4,
+   "kapi": {
+    "x": -51,
+    "z": 45.4
+   }
+  }
+ ],
+ "duraklar": [
+  {
+   "ad": "iskele-bufe",
+   "x": 0,
+   "z": 0
+  },
+  {
+   "ad": "iskele-ferry",
+   "x": -6,
+   "z": 4
+  },
+  {
+   "ad": "stadyum-kapi",
+   "x": 404,
+   "z": 13
+  },
+  {
+   "ad": "stadyum-saha",
+   "x": 425,
+   "z": 20
+  },
+  {
+   "ad": "belgrad-durak",
+   "x": 806,
+   "z": 10
+  },
+  {
+   "ad": "belgrad-orman",
+   "x": 840,
+   "z": 20
+  },
+  {
+   "ad": "belgrad-derin",
+   "x": 870,
+   "z": 40
+  }
+ ],
+ "ozet": {
+  "bina": 13,
+  "ic_ice": 2,
+  "canli": 6,
+  "arsa": 11,
+  "icNokta": 80
+ }
+}

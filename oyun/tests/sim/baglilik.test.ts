@@ -15,8 +15,9 @@ const A = analiz();
 
 describe('içerik <-> tüketici (tools/baglilik.mjs)', () => {
   it('hiçbir yerden içe aktarılmayan içerik modülü listesi bilinen halinden büyümedi', () => {
-    // art-manifest/ui-text: ileride bağlanacak ya da silinecek (KAL-15 raporu). ekonomi-hedef: yalnız araç/test tüketir (EKO-01).
-    const bilinen = new Set(['src/content/art-manifest.ts', 'src/content/ui-text.ts', 'src/content/ekonomi-hedef.ts']);
+    // ui-text: kimse içe aktarmıyor, ileride bağlanacak ya da silinecek (KAL-15 raporu). ekonomi-hedef: yalnız araç/test tüketir (EKO-01).
+    // art-manifest boot.ts'te import.meta.glob ile yüklenir (bağlı).
+    const bilinen = new Set(['src/content/ui-text.ts', 'src/content/ekonomi-hedef.ts']);
     const yeni = A.modulYetim.filter((m: string) => !bilinen.has(m));
     expect(yeni, 'Bağlanmamış yeni içerik modülü: ya bir yerden kullan ya sil: ' + yeni.join(', ')).toEqual([]);
   });

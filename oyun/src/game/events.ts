@@ -34,6 +34,7 @@ export const ENGINE_EVENT_NAMES = [
   'esnafGreet',     // M2
   'shopOpen',       // M2 { shop }
   'shopClose',      // M2 { shop }
+  'anomali',        // KAL-13 bekçi (?qa=1): { tur, anahtar, t, gun, ayrinti }
 ] as const;
 
 export const EVENT_NAMES = [...V2_EVENT_NAMES, ...ENGINE_EVENT_NAMES] as const;

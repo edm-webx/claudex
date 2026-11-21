@@ -76,6 +76,7 @@ import { defaultSign } from '../content/sign-fonts';
 import { createSim, openNav, lerpPose, type SimFull } from './headless';
 import { defaultState, SAVE_KEY, type GameState, type HeroId } from './sim/schema';
 import { createGameSave } from './sim/save';
+import { installBekci, type BekciHandle } from './sim/bekci';
 import { createGunSonu } from './ui/gun-sonu';
 import { createKulis } from './ui/kulis';
 import { createYetenekBtn } from './ui/yetenek-btn';
@@ -907,6 +908,8 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   });
   reg('zone', (id: string) => (zones ? { id, state: zones.state(id), def: !!zones.def(id), anchors: Object.keys(zones.anchors(id) ?? {}).length, pending: zones.pending() } : null));
   reg('events', (since?: number) => sim.events(since));
+  // KAL-13: ?qa=1 ile oyun içi bekçi; anomaliler window.__marti.bekci.anomaliler() ile toplanır (üretimde kurulmaz)
+  if (params.raw.qa) make('bekci', () => { const b: BekciHandle = installBekci(sim.rules); reg('bekci', b); return b; });
   reg('save', () => save.save('manual'));
   reg('resetSave', () => save.wipe());
   reg('loseContext', () => R.loseContext());
@@ -939,6 +942,9 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   // ── hooks (v2 __bufe surface, M1)
   const cmd = (kind: string, extra: AnyRec = {}) => command({ kind, ...extra });
   reg('play', playHook);
+  // KAL-13 gezgin botlar: kayıtlı etkileşim noktaları ve (kapı kapalı fixture'ı için) yürünebilir ağda dikdörtgen kapatma
+  reg('etkilesimler', () => sim.rules.interactions.all().map(i => ({ id: i.id, x: +i.pos.x.toFixed(2), z: +i.pos.z.toFixed(2), radius: i.radius, kind: i.kind })));
+  reg('navKapat', (r: { x0: number; x1: number; z0: number; z1: number }, on = true) => { sim.nav.setBlocked(r, !!on); return true; });
   reg('path', (a: Vec2, b: Vec2) => { const p = sim.nav.path(a, b); return p && p.length ? p.map(q => ({ x: q.x, z: q.z })) : [{ x: b.x, z: b.z }]; });
   reg('log', () => sim.events(0).map(r => ({ ...((r.data as AnyRec) || {}), ev: r.name, t: +r.t.toFixed(2) })));
   Object.defineProperty(target, 'uiLast', { configurable: true, enumerable: true, get: () => sim.rules.rt.uiLast });

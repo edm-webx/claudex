@@ -128,7 +128,8 @@ export function createMulkView(d: MulkViewDeps): MulkView {
       // solid walls: bank body and every built plot
       if ((solidT -= dt) <= 0 && d.setSolid) {
         solidT = 0.5;
-        const rects = [{ x0: BANKA.x - BANKA.w / 2, x1: BANKA.x + BANKA.w / 2, z0: BANKA.z - BANKA.d / 2, z1: BANKA.z + BANKA.d / 2 }];
+        // KAL-13: banka gövdesi artık burada tam dikdörtgen duvar OLMAZ; iç mekan duvarları kapı boşluğuyla zone çarpıştırıcılarından gelir (kr.banka, icCollidersLocal). Eski tam gövde kapıyı kapatıyordu, gezgin bot yakaladı.
+        const rects: { x0: number; x1: number; z0: number; z1: number }[] = [];
         for (const pv of v.plots) if (pv.tur && !pv.sabit) { const a = ARSALAR.find(x => x.id === pv.id)!; const s = a.rotY ? -1 : 1; rects.push({ x0: a.x - 2.6, x1: a.x + 2.6, z0: a.z - 2.2 - (s > 0 ? 0 : 0), z1: a.z + 0.9 }); if (a.rotY) { rects[rects.length - 1].z0 = a.z - 0.9; rects[rects.length - 1].z1 = a.z + 2.2; } }
         const k = JSON.stringify(rects); if (k !== solidKey) { solidKey = k; d.setSolid(rects); }
       }
