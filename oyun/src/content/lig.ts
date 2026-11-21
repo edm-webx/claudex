@@ -4,9 +4,18 @@
  * Invented clubs only (no real names). The player's club is KULUP and starts in the lower division.
  */
 export interface LigTakim { id: string; ad: string; renk: [string, string]; guc: number }
-export const KULUP: LigTakim = { id: 'sabri', ad: "Sabri'nin Büfesi SK", renk: ['#e0533c', '#f2c230'], guc: 0 };
+export const KULUP_GUC_TABAN = 50, KULUP_GUC_TAVAN = 64;
+export const KULUP: LigTakim = { id: 'sabri', ad: "Sabri'nin Büfesi SK", renk: ['#e0533c', '#f2c230'], guc: KULUP_GUC_TABAN };
+/** Club strength (same 40-70 scale as the AI clubs): a base plus experience from the career ledger (matches played, wins). */
+export const kulupGuc = (oyun: number, galibiyet: number) => Math.round(Math.min(KULUP_GUC_TAVAN, KULUP_GUC_TABAN + Math.max(0, oyun) * 0.6 + Math.max(0, galibiyet) * 0.9));
+/** Strength 40-70 -> engine skill 0.5-0.7 (macmotor.ts MatchOpts.skill). */
+export const gucSkill = (guc: number) => Math.min(0.7, Math.max(0.5, 0.5 + (guc - 40) / 150));
+/** Season-end prizes of the own club. */
+export const LIG_ODUL = { yuksel: 10000, sampiyon: 40000 };
 export const LIG_ADI = ['Boğaz Süper Ligi', 'Mahalle Ligi'] as const;
 export const SEZON_TUR = 5;
+/** Table zone of row i (0-based) in division b: the last of the top division drops, the first of the lower one rises. */
+export const bolge = (b: number, i: number, n: number): '' | 'yuksel' | 'dus' => (b === 1 && i === 0 ? 'yuksel' : b === 0 && i === n - 1 ? 'dus' : '');
 export const AI_TAKIMLAR: LigTakim[] = [
   { id: 'lodosspor', ad: 'Lodosspor', renk: ['#2ec4c4', '#ff8a3d'], guc: 66 },
   { id: 'vapurspor', ad: 'Vapurspor', renk: ['#a990dd', '#b8bec6'], guc: 64 },

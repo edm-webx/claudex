@@ -3,23 +3,24 @@
  * taraftar), and in the afternoon a fan offers Sabri a halı saha match. Accepting pauses the büfe and opens the
  * playable match (ui/hali-saha.ts); the result comes back as a command and pays a small reward.
  * Parody teams only (content/traits.ts TEAMS), never real club names. Cosmetic-light economy: small money, Altın Simit.
- * State: S.zones.halisaha = { offerDay, played, won, drawn, lost, goals }.
+ * State: S.zones.halisaha = { offerDay, played, won, drawn, lost, goals, conceded, form, team, players (by name, kept for old saves),
+ *   oyuncu (by shirt number), sezon, rakip, rekor, son (çetele), izlenen, bekleyen + bahis (pending bet), tuz (bet salt), bahisGun/bahisN, bahisKazanc }.
  * Commands: { kind: 'halisaha', op: 'kabul' | 'red' | 'sonuc', biz?, onlar? } and op 'teklif' (debug: offer now).
  */
 import type { Kernel } from './state';
 import { TEAMS } from '../../content/traits';
-import { LIG_BY_ID } from '../../content/lig';
-import { stadSave, tahminDoluluk, kapiGeliri, FIYAT_VARSAYILAN } from './stadyum';
+import { LIG_BY_ID, gucSkill, kulupGuc } from '../../content/lig';
+import { stadSave, tahminDoluluk, kapiGeliri, FIYAT_VARSAYILAN, KADRO, RAKIP_KADRO, kadroNo } from './stadyum';
 import { createMatch, FORMATIONS, rng } from './macmotor';
 
 export const MAC_GUNU_EVERY = 7;          // one fan day a game week
 export const MAC_GUNU_OFFSET = 3;          // day 3, 10, 17, ...
 export const TEKLIF_SAAT = 15;             // the offer comes in the afternoon
-export const MAC_ODUL = { win: 1500, draw: 600, loss: 250, goldWin: 1, goldDraw: 0 };
-/** 2026-11-08 user: "kulüp kurduysam o kulüp adıyla oynarım, puanı yükselir, maç kazanılırsa para kazanılır". Own-club league match prize. */
-export const KULUP_ODUL = { win: 6000, draw: 2000, loss: 600, goldWin: 2 };
-/** Spectator betting at the gate ("seyirciler izleyip ufak bahis yapabilir"): stake limits; odds come from the two sides' strength. */
-export const BAHIS = { min: 100, max: 5000, halfS: 60 };
+/** The one place of match prizes. anlik = ticket match (no club), kulup = own club's league match. The owner still has to pick between these and 15k/5k/2k. */
+export const ODUL = { anlik: { win: 1500, draw: 600, loss: 250, goldWin: 1, goldDraw: 0 }, kulup: { win: 6000, draw: 2000, loss: 600, goldWin: 2, goldDraw: 0 } } as const;
+export const MAC_ODUL = ODUL.anlik, KULUP_ODUL = ODUL.kulup;
+/** Spectator betting at the gate ("seyirciler izleyip ufak bahis yapabilir"): stake limits, bets per game day; odds come from the two sides' strength. */
+export const BAHIS = { min: 100, max: 5000, halfS: 60, gunluk: 10 };
 
 /** Odds and the real result of a watched match (seeded, headless, same engine and fixed 1/60 step as the view). */
 export function izleMac(seed: number) {
@@ -33,18 +34,65 @@ export function izleMac(seed: number) {
   const [a, b] = m.score; return { s0, s1, f, oran, sonuc: (a > b ? '1' : a === b ? 'X' : '2') as '1' | 'X' | '2', skor: [a, b] as [number, number] };
 }
 
-interface Save { izlenen?: number; bekleyen?: number; bahisKazanc?: number; offerDay: number; played: number; won: number; drawn: number; lost: number; goals: number; conceded?: number; form?: string[]; team?: Record<string, number>; players?: Record<string, Record<string, number>> }
+type Say = Record<string, number>;
+type Tahmin = '1' | 'X' | '2';
+interface Bahis { seed: number; bahis: Tahmin; n: number; oran: number }
+interface Save {
+  izlenen?: number; bekleyen?: number; bahis?: Bahis; tuz?: number; bahisGun?: number; bahisN?: number; bahisKazanc?: number;
+  offerDay: number; played: number; won: number; drawn: number; lost: number; goals: number; conceded?: number; form?: string[]; team?: Say;
+  players?: Record<string, Say>; oyuncu?: Record<string, Say>; sezon?: Record<string, Say>; rakip?: Record<string, Say & { ad?: unknown }>; rekor?: Say; son?: Record<string, unknown>;
+}
 const N = (v: unknown, max = 99999) => { const n = Number(v); return Number.isFinite(n) ? Math.max(0, Math.min(max, Math.round(n))) : 0; };
+const clean = (v: unknown, n: number) => String(v ?? '').replace(/[<>]/g, '').slice(0, n);
 const TEAM_KEYS = ['shots', 'onTarget', 'passes', 'passesOk', 'tackles', 'saves', 'corners', 'possession'] as const;
 const PL_KEYS = ['goals', 'assists', 'shots', 'onTarget', 'passes', 'passesOk', 'tackles', 'saves', 'touches'] as const;
+const SEZON_SAKLA = 10;
+/** Season index of a game day (same grid as lig.ts: match days every 7 days from day 3, 5 rounds a season). */
+const sezonOfDay = (day: number) => Math.max(0, Math.floor(Math.floor((day - MAC_GUNU_OFFSET) / MAC_GUNU_EVERY) / 5));
+const mac3 = (r: Say | undefined, biz: number, onlar: number): Say => { const a = r || {}, k = biz > onlar ? 'g' : biz === onlar ? 'b' : 'm'; a.o = (a.o || 0) + 1; a.ag = (a.ag || 0) + biz; a.yg = (a.yg || 0) + onlar; a[k] = (a[k] || 0) + 1; return a; };
+
+/** Old saves keyed the player ledger by name: copy it to the shirt-number key once (the name key stays as a mirror for older readers). */
+function oyuncuDefteri(z: Save): Record<string, Say> {
+  if (z.oyuncu) return z.oyuncu;
+  const o: Record<string, Say> = (z.oyuncu = {});
+  for (const [ad, r] of Object.entries(z.players || {})) { const no = kadroNo(ad); if (no) o[no] = { ...r }; }
+  return o;
+}
+export interface CeteleCtx { sezon?: number; rakip?: string; rakipAd?: string; kapi?: number; gun?: number }
 /** Fold one match's stats ({takim:[ours,theirs], oyuncu:[...]} from the match view) into the career ledger (çetele). Untrusted input, so clamped. */
-export function recordStats(z: Save, ist: unknown, biz: number, onlar: number) {
+export function recordStats(z: Save, ist: unknown, biz: number, onlar: number, ctx: CeteleCtx = {}) {
   z.conceded = (z.conceded || 0) + onlar; z.form = [...(z.form || []), biz > onlar ? 'G' : biz === onlar ? 'B' : 'M'].slice(-5);
+  const rk = (z.rekor ||= {}); if (biz > onlar && biz - onlar > (rk.fark || 0)) { rk.fark = biz - onlar; rk.farkB = biz; rk.farkO = onlar; }
+  rk.gol = Math.max(rk.gol || 0, biz); rk.cur = biz > onlar ? (rk.cur || 0) + 1 : 0; rk.seri = Math.max(rk.seri || 0, rk.cur);
+  const sz = (z.sezon ||= {}), sk = String(ctx.sezon ?? 0); sz[sk] = mac3(sz[sk], biz, onlar);
+  for (const k of Object.keys(sz).sort((a, b) => Number(a) - Number(b)).slice(0, -SEZON_SAKLA)) delete sz[k];
+  if (ctx.rakip) { const ra = (z.rakip ||= {}), id = clean(ctx.rakip, 24); ra[id] = Object.assign(mac3(ra[id], biz, onlar), { ad: clean(ctx.rakipAd || id, 24) }) as never; }
+  z.son = { biz, onlar, rakip: clean(ctx.rakipAd || ctx.rakip, 24), kapi: N(ctx.kapi, 1e7), gun: N(ctx.gun, 1e6) };
   const o = ist as { takim?: Record<string, unknown>[]; oyuncu?: Record<string, unknown>[] } | undefined; if (!o || !Array.isArray(o.takim) || !Array.isArray(o.oyuncu)) return;
   const t = (z.team ||= {}), a = o.takim[0] || {}; for (const k of TEAM_KEYS) t[k] = (t[k] || 0) + N(a[k], 200); t.possSum = (t.possSum || 0) + N(a.possession, 100);
-  const P = (z.players ||= {}); for (const q of o.oyuncu.slice(0, 8)) { const ad = String(q.ad || '').replace(/[<>]/g, '').slice(0, 20); if (!ad) continue; const r = (P[ad] ||= { oyun: 0 }); r.oyun++; for (const k of PL_KEYS) r[k] = (r[k] || 0) + N(q[k], 200); }
+  const P = (z.players ||= {}), D = oyuncuDefteri(z);
+  for (const q of o.oyuncu.slice(0, 8)) {
+    const ad = clean(q.ad, 20); if (!ad) continue;
+    const r = (P[ad] ||= { oyun: 0 }); r.oyun++; for (const k of PL_KEYS) r[k] = (r[k] || 0) + N(q[k], 200);
+    const no = kadroNo(ad); if (!no) continue;   // only the fixed squad has a shirt number to key by
+    const d = (D[no] ||= { oyun: 0 }); d.oyun++; for (const k of PL_KEYS) d[k] = (d[k] || 0) + N(q[k], 200);
+  }
 }
-export interface MacGunu { team: string; name: string; colors: [string, string]; rival: string; rivalName: string; rivalColors: [string, string]; ligG?: number }
+/** View model of the ledger for the coordinator's Çetele page (null before the first match). */
+export function ceteleOf(z0: unknown) {
+  const z = z0 as Save | null; if (!z || !z.played) return null;
+  const D = oyuncuDefteri(z), t = z.team || {}, sat = (r: Say) => ({ o: r.o || 0, g: r.g || 0, b: r.b || 0, m: r.m || 0, ag: r.ag || 0, yg: r.yg || 0 });
+  return {
+    oyun: z.played, g: z.won, b: z.drawn, m: z.lost, gol: z.goals, yenilen: z.conceded || 0, form: [...(z.form || [])],
+    takim: { sut: t.shots || 0, isabet: t.onTarget || 0, pas: t.passes || 0, pasIsabet: t.passesOk || 0, top: t.tackles || 0, kurtaris: t.saves || 0, korner: t.corners || 0, sahiplik: Math.round((t.possSum || 0) / z.played) },
+    oyuncu: KADRO.map(k => { const r = D[k.no] || {}; return { no: k.no, ad: k.ad, oyun: r.oyun || 0, gol: r.goals || 0, asist: r.assists || 0, kurtaris: r.saves || 0, sut: r.shots || 0 }; }),
+    sezon: Object.entries(z.sezon || {}).map(([s, r]) => ({ sezon: Number(s) + 1, ...sat(r) })).sort((a, b) => b.sezon - a.sezon),
+    rakip: Object.entries(z.rakip || {}).map(([id, r]) => ({ id, ad: String(r.ad || id), ...sat(r) })).sort((a, b) => b.o - a.o).slice(0, 6),
+    rekor: { fark: z.rekor?.fark ? [z.rekor.farkB, z.rekor.farkO] as [number, number] : null, seri: z.rekor?.seri || 0, gol: z.rekor?.gol || 0 },
+    son: (z.son as { biz: number; onlar: number; rakip: string; kapi: number } | undefined) || null,
+  };
+}
+export interface MacGunu { team: string; name: string; colors: [string, string]; rival: string; rivalName: string; rivalColors: [string, string]; ligG?: number; doluluk?: number; formasyon?: string }
 
 export function isMacGunu(day: number): boolean { return day >= MAC_GUNU_OFFSET && (day - MAC_GUNU_OFFSET) % MAC_GUNU_EVERY === 0; }
 export function macGunuOf(day: number): MacGunu {
@@ -52,7 +100,27 @@ export function macGunuOf(day: number): MacGunu {
   return { team: a.id, name: a.name, colors: a.colors, rival: b.id, rivalName: b.name, rivalColors: b.colors };
 }
 
-export function installHaliSaha(K: Kernel, lig?: { mac(day: number): (MacGunu & { ligG: number }) | null; siradaki?(day: number): (MacGunu & { ligG: number }) | null; sonuc(g: number, biz: number, onlar: number): boolean }) {
+const hashId = (s: string) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
+/**
+ * Everything the match view needs to build createMatch(): pure, from the save and the offer. Own strength grows with the club's ledger (kulupGuc),
+ * the rival's comes from its league strength; plan is the tactic name per side for the engine's MatchOpts.plan ('pres' | 'dengeli' | 'kontra').
+ */
+export function macAyari(S: { zones: Record<string, unknown> }, t: Pick<MacGunu, 'rival' | 'colors' | 'rivalColors'>) {
+  const ar = S.zones.arsa as { takim?: unknown; stad?: { formasyon?: string } } | undefined, h = S.zones.halisaha as Save | undefined, FK = Object.keys(FORMATIONS);
+  const own = kulupGuc(h?.played || 0, h?.won || 0), rakipGuc = LIG_BY_ID[t.rival]?.guc ?? 55;
+  const fo = ar?.stad?.formasyon || '', f0 = ar?.takim && FORMATIONS[fo] ? fo : '2-2', f1 = FK[hashId(t.rival) % FK.length];
+  const plan = (g: number) => (g >= 60 ? 'pres' : g <= 46 ? 'kontra' : 'dengeli');
+  return {
+    skill: [gucSkill(own), gucSkill(rakipGuc)] as [number, number], formations: [f0, f1] as [string, string],
+    names: [KADRO.map(k => k.ad), [...RAKIP_KADRO]] as [string[], string[]], colors: [t.colors, t.rivalColors] as [[string, string], [string, string]], plan: [plan(own), plan(rakipGuc)] as [string, string],
+  };
+}
+
+type LigIf = { mac(day: number): (MacGunu & { ligG: number }) | null; siradaki?(day: number): (MacGunu & { ligG: number }) | null; sonuc(g: number, biz: number, onlar: number): boolean };
+type Izle = { sonuc: Tahmin; skor: [number, number]; bahis: Tahmin | null; n: number; oran: number; ad: [string, string] };
+type RtX = { _izle?: Izle; macGunu?: MacGunu | null };
+
+export function installHaliSaha(K: Kernel, lig?: LigIf) {
   const S = K.state, rt = K.rt, odul = (v: number) => (K.earnTam ? K.earnTam(v) : K.earn(v));
   const save = (): Save => {
     const z = (S.zones.halisaha ||= {}) as unknown as Save;
@@ -60,16 +128,55 @@ export function installHaliSaha(K: Kernel, lig?: { mac(day: number): (MacGunu & 
     return z;
   };
   let announced = -1;
-  const izleRng = K.rng('sim.izle');   // the watched match's seed is drawn when the ticket is bought: it cannot be precomputed from day/hour
-  const R = rt as unknown as { macGunu?: MacGunu | null };
+  const izleRng = K.rng('sim.izle');   // the watched match's seed is drawn when the ticket is bought, mixed with the save's salt: it cannot be precomputed
+  const R = rt as unknown as RtX;
+  const kulupVar = () => !!(S.zones.arsa as { takim?: unknown } | undefined)?.takim;
+  const lockClear = () => { if (rt.pauseWhy === 'halisaha') { rt.paused = false; rt.pauseWhy = ''; } };
+
+  /** Pay or burn a settled bet; shared by the live result and by the load-time settlement of a bet whose match never finished on screen. */
+  function bahisCoz(z: Save, b: { bahis: Tahmin | null; n: number; oran: number }, sonuc: Tahmin, skor: string, ozel = '') {
+    if (b.bahis && b.bahis === sonuc) { const kaz = Math.round(b.n * b.oran); odul(kaz); z.bahisKazanc = (z.bahisKazanc || 0) + kaz - b.n; K.toast(ozel + '🎉 Bahsi tutturdun (' + skor + ')! +' + kaz.toLocaleString('tr') + ' ₺', 'good'); }
+    else if (b.bahis) { z.bahisKazanc = (z.bahisKazanc || 0) - b.n; K.toast(ozel + 'Bahis yattı: maç ' + skor + ' bitti. Haftaya!', 'info'); }
+    else K.toast('Maç ' + skor + ' bitti. Güzel maçtı!', 'info');
+  }
+
+  /** The one match-closing flow: validate, ledger, gate receipts, prize, league record and the toast all happen here, once per offer. */
+  function maciKapat(t: MacGunu, c: { biz?: unknown; onlar?: unknown; ist?: unknown }): boolean {
+    const z = save(), biz = Math.min(30, Math.max(0, Math.round(Number(c.biz) || 0))), onlar = Math.min(30, Math.max(0, Math.round(Number(c.onlar) || 0)));
+    delete rt.uiLast.haliSahaMac; lockClear();
+    const kulup = kulupVar() && t.ligG != null;   // the founded club's own league match
+    if (kulup && !(lig && lig.sonuc(t.ligG!, biz, onlar))) { K.toast('Bu lig maçı zaten kayıtlı: ikinci kez ödül ve puan yok.', 'info'); K.saveNow(); return true; }
+    const st = kulup ? stadSave(S.zones.arsa as never) : null, ode = kulup ? ODUL.kulup : ODUL.anlik, kapi = st ? kapiGeliri(t.doluluk ?? tahminDoluluk(st.fiyat, z.form || [], LIG_BY_ID[t.rival]?.guc || 55), st.fiyat) : 0;
+    z.played++; z.goals += biz; recordStats(z, c.ist, biz, onlar, { sezon: kulup ? Math.floor(t.ligG! / 5) : sezonOfDay(S.day), rakip: t.rival, rakipAd: t.rivalName, kapi, gun: S.day });
+    if (st) {   // gate receipts: the fill was fixed when the match was offered (before kick-off), the cash comes in now
+      const dol = t.doluluk ?? tahminDoluluk(st.fiyat, [], LIG_BY_ID[t.rival]?.guc || 55);
+      st.doluluk = dol; st.son = kapi; st.gelir += kapi; st.maclar++; odul(kapi); K.toast('🎟️ Kapı geliri: ' + kapi.toLocaleString('tr') + ' ₺ (doluluk %' + Math.round(dol * 100) + ')', 'good');
+    }
+    K.stat('macOyun'); if (biz > onlar) K.stat('macGalibiyet');
+    const sonuc = biz > onlar ? 'win' : biz === onlar ? 'draw' : 'loss';
+    if (sonuc === 'win') z.won++; else if (sonuc === 'draw') z.drawn++; else z.lost++;
+    odul(ode[sonuc]); if (sonuc === 'win') S.gold += ode.goldWin; else if (sonuc === 'draw') S.gold += ode.goldDraw;
+    const para = ode[sonuc].toLocaleString('tr') + ' ₺';
+    if (kulup) K.toast((sonuc === 'win' ? '🏆 ' + t.name + ' kazandı ' : sonuc === 'draw' ? '🤝 Berabere ' : '😤 Kaybettik ') + biz + '-' + onlar + ' · Lig: +' + (sonuc === 'win' ? 3 : sonuc === 'draw' ? 1 : 0) + ' puan · +' + para, biz >= onlar ? 'good' : 'info');
+    else if (sonuc === 'win') K.toast('Maçı kazandın ' + biz + '-' + onlar + '! Taraftar seni omuzlarda taşıdı.', 'good');
+    else if (sonuc === 'draw') K.toast('Berabere ' + biz + '-' + onlar + '. Çaylar senden!', 'info');
+    else K.toast('Kaybettin ' + biz + '-' + onlar + '. Olsun, döner herkese iyi geldi.', 'info');
+    K.logEv('haliSaha', { op: 'sonuc', biz, onlar }); K.saveNow();
+    return true;
+  }
+
   return {
     update(): void {
       if (!rt.started) return;
       const zb = save();
-      if (zb.bekleyen && !(rt as unknown as { _izle?: unknown })._izle && !rt.uiLast.haliSahaIzle) {   // the page was reloaded mid-match: the stake is refunded, never burnt
-        K.cashIn!(zb.bekleyen); K.toast('Maç yarıda kaldı: bahis ' + zb.bekleyen.toLocaleString('tr') + ' ₺ iade edildi.', 'info'); zb.bekleyen = 0;
-        if (rt.pauseWhy === 'halisaha') { rt.paused = false; rt.pauseWhy = ''; }
+      const calisiyor = !!R._izle || !!rt.uiLast.haliSahaIzle;
+      if (zb.bekleyen && !calisiyor) {   // the page was reloaded mid-match: the seeded result is settled now (no refund trick), a broken record is refunded
+        const b = zb.bahis, ok = !!b && Number.isFinite(b.seed) && (b.bahis === '1' || b.bahis === 'X' || b.bahis === '2') && b.n === zb.bekleyen;
+        if (ok) { const r = izleMac(b!.seed); bahisCoz(zb, b!, r.sonuc, r.skor[0] + '-' + r.skor[1], 'Maç yarıda kaldı, sonuç yazıldı. '); }
+        else { K.cashIn!(zb.bekleyen); K.toast('Maç yarıda kaldı: bahis ' + zb.bekleyen.toLocaleString('tr') + ' ₺ iade edildi.', 'info'); }
+        zb.bekleyen = 0; delete zb.bahis;
       }
+      if (rt.pauseWhy === 'halisaha' && !calisiyor && !rt.uiLast.haliSahaMac) lockClear();   // an unfinished match never keeps the game locked
       const fan = isMacGunu(S.day);
       R.macGunu = fan ? macGunuOf(S.day) : null;
       if (!fan) return;
@@ -85,64 +192,44 @@ export function installHaliSaha(K: Kernel, lig?: { mac(day: number): (MacGunu & 
     run(c: { op: string; biz?: unknown; onlar?: unknown; ist?: unknown; bahis?: unknown; n?: unknown }): boolean {
       const z = save();
       if (c.op === 'teklif') {
-        const kl = (S.zones.arsa as { takim?: unknown } | undefined)?.takim ? lig?.siradaki?.(S.day) : null;
+        const kl = kulupVar() ? lig?.siradaki?.(S.day) : null;
         const mg = kl || macGunuOf(Math.max(MAC_GUNU_OFFSET, S.day)); rt.uiLast.haliSahaTeklif = { ...mg }; return true;
       }
       if (c.op === 'izle') {   // spectator ticket + bet: the result is fixed here by the seeded engine, the view only replays it
         const bahis = (['1', 'X', '2'] as const).find(x => x === c.bahis) || null, n = bahis ? Math.max(BAHIS.min, Math.min(BAHIS.max, N(c.n))) : 0;
         if (rt.uiLast.haliSahaIzle || rt.uiLast.haliSahaMac) return false;
         if (n > S.money) { K.toast('Bahis için para yetmiyor.', 'bad'); return false; }
-        const seed = (Math.floor(izleRng.next() * 0x7fffffff) | 1), im = izleMac(seed), tm = macGunuOf(Math.max(MAC_GUNU_OFFSET, S.day) + 7 * ((z.izlenen || 0) + 1));
-        if (n) { K.spend(n); z.bekleyen = n; }   // persisted until the result is settled
+        if (n && z.bahisGun === S.day && (z.bahisN || 0) >= BAHIS.gunluk) { K.toast('Bugünlük bahis hakkın bitti (' + BAHIS.gunluk + '). Yarın yine gel!', 'info'); return false; }
+        z.tuz ??= Math.floor(izleRng.next() * 0x7fffffff);   // salt lives in the save; the seed shown to the view is mixed with it and with a fresh draw
+        const seed = ((Math.floor(izleRng.next() * 0x7fffffff) ^ z.tuz ^ Math.imul((z.izlenen || 0) + 1, 0x9e3779b1)) & 0x7fffffff) | 1, im = izleMac(seed), tm = macGunuOf(Math.max(MAC_GUNU_OFFSET, S.day) + 7 * ((z.izlenen || 0) + 1));
+        if (n) { K.spend(n); z.bekleyen = n; z.bahis = { seed, bahis: bahis!, n, oran: im.oran[bahis!] }; z.bahisN = (z.bahisGun === S.day ? z.bahisN || 0 : 0) + 1; z.bahisGun = S.day; }   // persisted until the result is settled
         z.izlenen = (z.izlenen || 0) + 1;
         rt.uiLast.haliSahaIzle = { ...tm, seed, s0: im.s0, s1: im.s1, f: im.f, oran: im.oran, bahis, n, halfS: BAHIS.halfS };
-        (rt as unknown as { _izle?: unknown })._izle = { sonuc: im.sonuc, skor: im.skor, bahis, n, oran: bahis ? im.oran[bahis] : 0, ad: [tm.name, tm.rivalName] };
+        R._izle = { sonuc: im.sonuc, skor: im.skor, bahis, n, oran: bahis ? im.oran[bahis] : 0, ad: [tm.name, tm.rivalName] };
         rt.paused = true; rt.pauseWhy = 'halisaha'; K.logEv('haliSaha', { op: 'izle', bahis, n });
         return true;
       }
       if (c.op === 'izleSonuc') {
-        const iz = (rt as unknown as { _izle?: { sonuc: string; skor: [number, number]; bahis: string | null; n: number; oran: number; ad: [string, string] } })._izle;
-        delete rt.uiLast.haliSahaIzle; if (rt.pauseWhy === 'halisaha') { rt.paused = false; rt.pauseWhy = ''; }
-        z.bekleyen = 0;
-        if (!iz) return false; delete (rt as unknown as { _izle?: unknown })._izle;
-        const skor = iz.skor[0] + '-' + iz.skor[1];
-        if (iz.bahis && iz.bahis === iz.sonuc) { const kaz = Math.round(iz.n * iz.oran); odul(kaz); z.bahisKazanc = (z.bahisKazanc || 0) + kaz - iz.n; K.toast('🎉 Bahsi tutturdun (' + skor + ')! +' + kaz.toLocaleString('tr') + ' ₺', 'good'); }
-        else if (iz.bahis) { z.bahisKazanc = (z.bahisKazanc || 0) - iz.n; K.toast('Bahis yattı: maç ' + skor + ' bitti. Haftaya!', 'info'); }
-        else K.toast('Maç ' + skor + ' bitti. Güzel maçtı!', 'info');
-        K.logEv('haliSaha', { op: 'izleSonuc', skor, bahis: iz.bahis, sonuc: iz.sonuc }); K.saveNow();
+        const iz = R._izle;
+        delete rt.uiLast.haliSahaIzle; lockClear();
+        z.bekleyen = 0; delete z.bahis;
+        if (!iz) return false; delete R._izle;
+        bahisCoz(z, iz, iz.sonuc, iz.skor[0] + '-' + iz.skor[1]);
+        K.logEv('haliSaha', { op: 'izleSonuc', skor: iz.skor.join('-'), bahis: iz.bahis, sonuc: iz.sonuc }); K.saveNow();
         return true;
       }
       if (c.op === 'red') { delete rt.uiLast.haliSahaTeklif; K.toast('"Peki abi, haftaya!" Taraftar omuz silkti.', 'info'); return true; }
       if (c.op === 'kabul') {
         const t = rt.uiLast.haliSahaTeklif as MacGunu | undefined; if (!t) return false;
         delete rt.uiLast.haliSahaTeklif;
-        rt.uiLast.haliSahaMac = { ...t, doluluk: tahminDoluluk((S.zones.arsa as { takim?: unknown } | undefined)?.takim ? stadSave(S.zones.arsa as never).fiyat : FIYAT_VARSAYILAN, z.form || [], LIG_BY_ID[t.rival]?.guc || 55), formasyon: ((S.zones.arsa as { takim?: unknown; stad?: { formasyon?: string } } | undefined)?.takim ? stadSave(S.zones.arsa as never).formasyon : '2-2') }; rt.paused = true; rt.pauseWhy = 'halisaha';
+        const club = kulupVar(), st = club ? stadSave(S.zones.arsa as never) : null;   // the gate is sold BEFORE kick-off: fill uses the form going in and the rival's real strength
+        rt.uiLast.haliSahaMac = { ...t, doluluk: tahminDoluluk(st ? st.fiyat : FIYAT_VARSAYILAN, z.form || [], LIG_BY_ID[t.rival]?.guc || 55), formasyon: st ? st.formasyon : '2-2', ayar: macAyari(S, t) }; rt.paused = true; rt.pauseWhy = 'halisaha';
         K.logEv('haliSaha', { op: 'kabul', team: t.team });
         return true;
       }
       if (c.op === 'sonuc') {
         const t = rt.uiLast.haliSahaMac as MacGunu | undefined; if (!t) return false;
-        const biz = Math.min(30, Math.max(0, Math.round(Number(c.biz) || 0))), onlar = Math.min(30, Math.max(0, Math.round(Number(c.onlar) || 0)));
-        delete rt.uiLast.haliSahaMac; if (rt.pauseWhy === 'halisaha') { rt.paused = false; rt.pauseWhy = ''; }
-        const ar = S.zones.arsa as { takim?: unknown } | undefined, kulupMaci = !!ar?.takim && t.ligG != null;   // the founded club's own league match
-        const ligOk = t.ligG != null && lig ? lig.sonuc(t.ligG, biz, onlar) : false;   // lig kaydı tutmadıysa bildirimde puan yazılmaz
-        const formOnce = z.form || [];   // the gate is sold BEFORE this match's result: fill uses the form going in and the rival's real strength
-        z.played++; z.goals += biz; recordStats(z, c.ist, biz, onlar);
-        if (kulupMaci) {   // gate receipts of the club's own league match
-          const st = stadSave(ar as never), dol = tahminDoluluk(st.fiyat, formOnce, LIG_BY_ID[t.rival]?.guc || 55), gel = kapiGeliri(dol, st.fiyat);
-          st.doluluk = dol; st.son = gel; st.gelir += gel; st.maclar++; odul(gel); K.toast('🎟️ Kapı geliri: ' + gel.toLocaleString('tr') + ' ₺ (doluluk %' + Math.round(dol * 100) + ')', 'good');
-        }
-        K.stat('macOyun'); if (biz > onlar) K.stat('macGalibiyet');
-        if (kulupMaci) {   // own club in the league: bigger prize, league points
-          const pu = biz > onlar ? 3 : biz === onlar ? 1 : 0;
-          if (biz > onlar) z.won++; else if (biz === onlar) z.drawn++; else z.lost++;
-          odul(biz > onlar ? KULUP_ODUL.win : biz === onlar ? KULUP_ODUL.draw : KULUP_ODUL.loss); if (biz > onlar) S.gold += KULUP_ODUL.goldWin;
-          K.toast((biz > onlar ? '🏆 ' + t.name + ' kazandı ' : biz === onlar ? '🤝 Berabere ' : '😤 Kaybettik ') + biz + '-' + onlar + (ligOk ? ' · Lig: +' + pu + ' puan' : '') + ' · +' + (biz > onlar ? KULUP_ODUL.win : biz === onlar ? KULUP_ODUL.draw : KULUP_ODUL.loss).toLocaleString('tr') + ' ₺', biz >= onlar ? 'good' : 'info');
-        } else if (biz > onlar) { z.won++; odul(MAC_ODUL.win); S.gold += MAC_ODUL.goldWin; K.toast('Maçı kazandın ' + biz + '-' + onlar + '! Taraftar seni omuzlarda taşıdı.', 'good'); }
-        else if (biz === onlar) { z.drawn++; odul(MAC_ODUL.draw); S.gold += MAC_ODUL.goldDraw; K.toast('Berabere ' + biz + '-' + onlar + '. Çaylar senden!', 'info'); }
-        else { z.lost++; odul(MAC_ODUL.loss); K.toast('Kaybettin ' + biz + '-' + onlar + '. Olsun, döner herkese iyi geldi.', 'info'); }
-        K.logEv('haliSaha', { op: 'sonuc', biz, onlar }); K.saveNow();
-        return true;
+        return maciKapat(t, c);
       }
       return false;
     },

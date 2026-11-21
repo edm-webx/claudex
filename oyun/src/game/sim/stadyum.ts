@@ -4,8 +4,17 @@
  * Doluluk = kulüp formu + rakip gücü + ligdeki rakip - fiyat; gelir = doluluk x kapasite x fiyat / 50.
  * Pure functions on the save record so the sim, the view and the panel all read the same numbers.
  */
+import { FORMATIONS } from './macmotor';
 export const KAPASITE = 120, FIYAT_MIN = 1000, FIYAT_MAX = 15000, FIYAT_ADIM = 500, FIYAT_VARSAYILAN = 4000;
-export const FORMASYONLAR = [{ id: '2-2', ad: '2-2 Dengeli', not: 'İki savunma, iki forvet' }, { id: '1-2-1', ad: '1-2-1 Elmas', not: 'Tek stoper, iki orta, tek forvet' }, { id: '2-1-1', ad: '2-1-1 Köprü', not: 'İki savunma, bir orta, bir forvet' }] as const;
+/** One source of truth: the engine's FORMATIONS table; only the Turkish name and note live here. */
+const FORMASYON_BILGI: Record<string, { ad: string; not: string }> = {
+  '2-2': { ad: '2-2 Dengeli', not: 'İki savunma, iki forvet' }, '1-2-1': { ad: '1-2-1 Elmas', not: 'Tek stoper, iki orta, tek forvet' }, '2-1-1': { ad: '2-1-1 Köprü', not: 'İki savunma, bir orta, bir forvet' },
+};
+export const FORMASYONLAR = Object.keys(FORMATIONS).map(id => ({ id, ad: FORMASYON_BILGI[id]?.ad || id, not: FORMASYON_BILGI[id]?.not || '' }));
+/** The fixed squad (slot order = formation slot order: keeper first) with shirt numbers; SABRİ is the player's own. */
+export const KADRO: readonly { no: number; ad: string }[] = [{ no: 1, ad: 'Kaleci Nuri' }, { no: 4, ad: 'Hamdi' }, { no: 5, ad: 'Cemil' }, { no: 10, ad: 'SABRİ' }, { no: 9, ad: 'Tayyar' }];
+export const RAKIP_KADRO: readonly string[] = ['Kaleci Rıfkı', 'Bülent', 'Oktay', 'Ferdi', 'Sinan'];
+export const kadroNo = (ad: string) => KADRO.find(k => k.ad === ad)?.no ?? 0;
 export interface StadSave { fiyat: number; doluluk: number; gelir: number; son: number; maclar: number; formasyon: string }
 export function stadSave(arsa: Record<string, unknown>): StadSave {
   const s = ((arsa as { stad?: Partial<StadSave> }).stad ||= {}) as StadSave;
