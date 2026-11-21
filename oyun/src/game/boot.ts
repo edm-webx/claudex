@@ -597,6 +597,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   if (nightLights) quality.onChange(t => make('nightLights.setTier', () => { nightLights.setTier(t); return true; }));   // PRF-08: ışık sayısı yalnız kademe değişiminde
   quality.onChange(() => { void R.warm?.(scene, cam.camera); });   // PRF-03: gölge + ışık havuzu değişti; yeni programlar paralel derlensin (kare içinde değil)
   quality.onScale?.(sc => make('render.setScale', () => { R.setScale?.(sc); P.count('olcekYuzde', Math.round(sc * 100)); return true; }));
+  quality.onPostCut?.(cut => make('render.setPostCut', () => { R.setPostCut?.(cut); P.count('bloomKesik', cut ? 1 : 0); return true; }));   // PRF-12 ikinci basamak
   if (chars) make('crowd.setBudget', () => { chars.crowd.setBudget(quality.current().crowd); return true; });
   sim.state.settings.quality = quality.setting();
 
@@ -907,8 +908,8 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     return rows.join('\n');
   });
   reg('zone', (id: string) => (zones ? { id, state: zones.state(id), def: !!zones.def(id), anchors: Object.keys(zones.anchors(id) ?? {}).length, pending: zones.pending() } : null));
-  reg('events', (since?: number) => sim.events(since));
   reg('zonePop', (o: { reset?: boolean; viewAware?: boolean } = {}) => { const mz = zones as unknown as { popStats?(r?: boolean): unknown; setViewAware?(on: boolean): void } | null; if (!mz?.popStats) return null; if (o.viewAware !== undefined) mz.setViewAware?.(o.viewAware); return { ...(mz.popStats(!!o.reset) as object), states: zones!.states() }; });   // PRF-07 pop-in ölçümü (tests/browser/pop-in.mjs)
+  reg('events', (since?: number) => sim.events(since));
   // KAL-13: ?qa=1 ile oyun içi bekçi; anomaliler window.__marti.bekci.anomaliler() ile toplanır (üretimde kurulmaz)
   if (params.raw.qa) make('bekci', () => { const b: BekciHandle = installBekci(sim.rules); reg('bekci', b); return b; });
   reg('save', () => save.save('manual'));
@@ -986,6 +987,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   reg('applyTier', (name: TierName) => quality.set(name));
   reg('scale', () => quality.scale?.() ?? 1);
   reg('setScale', (v: number) => { R.setScale?.(v); return true; });   // PRF-12 ölçüm kancası (profil.mjs)
+  reg('setPostCut', (cut: boolean) => { R.setPostCut?.(!!cut); return true; });   // PRF-12 ölçüm kancası (profil.mjs)
   reg('warmStats', () => (R as unknown as { warmStats?: () => unknown }).warmStats?.() ?? null);   // PRF-03: ısıtma/karede doğan shader sayısı
   reg('warmBusy', () => !!((R as unknown as { warmStats?: () => { busy: boolean } }).warmStats?.().busy));
   reg('loseGl', (on = true) => { const e = R.renderer?.getContext().getExtension('WEBGL_lose_context') as { loseContext(): void; restoreContext(): void } | null; if (!e) return false; if (on) e.loseContext(); else e.restoreContext(); return true; });   // PRF-13: bağlam kaybı sınaması

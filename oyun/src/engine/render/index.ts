@@ -65,6 +65,8 @@ export interface MotorRender extends RenderPipeline {
   reflectSea: T.Object3D | null;
   /** PRF-12: dynamic resolution; multiplies the tier's pixel ratio (0.6..1). Resizes targets only, no shader relink. */
   setScale(s: number): void;
+  /** PRF-12: bloom pass on/off inside the existing composer (pass.enabled; no relink, no target rebuild). */
+  setPostCut(cut: boolean): void;
   /** PRF-03: parallel shader compile of everything visible, in both shadow states (so a later tier change links nothing). Never draws. */
   warm(sc: T.Scene, cam: T.Camera): Promise<void>;
   /** PRF-03: programs born in warm() vs inside a frame (blocking), a warm still compiling, and the last frame-born program names */
@@ -248,7 +250,15 @@ export function createRender(deps: RenderDeps): MotorRender {
   let tier: TierDef | null = null;
   let wantAA: boolean | null = null;
   let hour = 11, tod = todAt(11), night = 0;
-  let frameNo = 0, lost = false, resScale = 1;
+  let frameNo = 0, lost = false, resScale = 1, postCut = false;
+  // PRF-12: on a post-chain tier (bloom) the dynamic resolution scale shrinks only the composer's targets: the scene is drawn
+  // smaller and the last full-screen pass (GRADE) stretches it to the full canvas with linear filtering. Resizing the canvas
+  // itself is a synchronous drawing-buffer reallocation (1-16 s per step in headless SwiftShader, olcek-gecis.mjs) and it was
+  // done twice per step (setPixelRatio + resize). Akıcı has no post chain, so its canvas still follows the scale, once.
+  const basePR = (t: TierDef) => Math.min((typeof window !== 'undefined' && window.devicePixelRatio) || 1, t.pixelRatio);
+  const postTier = (t: TierDef) => !!(t.flags && t.flags.bloom);
+  const canvasPR = (t: TierDef) => postTier(t) ? basePR(t) : basePR(t) * resScale;
+  const _rs = new T.Vector2();
   const timeSubs = new Set<(t: Tod, h: number) => void>();
   const lostSubs = new Set<() => void>(), restoredSubs = new Set<() => void>();
   let loseExt: { loseContext(): void; restoreContext(): void } | null = null;
@@ -264,7 +274,7 @@ export function createRender(deps: RenderDeps): MotorRender {
     if (renderer) { renderer.toneMapping = want ? T.ACESFilmicToneMapping : T.CustomToneMapping; renderer.toneMappingExposure = want ? LOOK_POZ.ana : LOOK_POZ.ana * AKICI_POZ; }
     if (!want) { if (composer) { composer.passes.forEach(ps => { try { ps.dispose(); } catch { /* */ } }); composer.dispose(); composer = null; rpass = null; bloom = null; grade = null; } return; }
     if (composer) return;
-    const { w, h } = size(), pr = renderer!.getPixelRatio();
+    const { w, h } = size(), pr = basePR(t) * resScale;
     const target = new T.WebGLRenderTarget(Math.round(w * pr), Math.round(h * pr), { type: T.HalfFloatType, samples: t.antialias ? 4 : 0 });
     composer = new EffectComposer(renderer!, target);
     // PRF-15: the composer clones its target, so both ping-pong buffers were 4x MSAA half-float with a depth buffer (~69 MB of
@@ -280,6 +290,7 @@ export function createRender(deps: RenderDeps): MotorRender {
     grade = new ShaderPass(GRADE); composer.addPass(grade);
     composer.setPixelRatio(pr); composer.setSize(w, h);
     tuneBloom();
+    bloom.enabled = !postCut;
   }
   let look = lookAt(hour, night);
   function tuneBloom() {
@@ -387,7 +398,7 @@ export function createRender(deps: RenderDeps): MotorRender {
       if (wantAA !== null && !!t.antialias !== wantAA) deps.log?.info('[render] antialias change applies on next load');
       applyShadows(t);
       reflector.setBudget(reflectBudget(t.name));
-      if (renderer) renderer.setPixelRatio(Math.min((typeof window !== 'undefined' && window.devicePixelRatio) || 1, t.pixelRatio) * resScale);
+      if (renderer && renderer.getPixelRatio() !== canvasPR(t)) renderer.setPixelRatio(canvasPR(t));
       setupPost(t);
       // GRS-02: akıcı skips the cloud noise in the sky shader (a uniform, no relink); the gradient, sun, stars and moon stay
       (sky.material as T.ShaderMaterial).uniforms.uCloudQ.value = t.name === 'akici' ? 0 : 1;
@@ -425,7 +436,7 @@ export function createRender(deps: RenderDeps): MotorRender {
       frameNo++;
       if (frameNo % 10 === 1) { const f = rig.focus(); api.setFocus(f.x, f.z); }
       if (frameNo % 30 === 2 || !envRT) refreshEnv();
-      if ((cam as T.PerspectiveCamera).isPerspectiveCamera) akisGuncelle(sc, cam as T.PerspectiveCamera, renderer.domElement.height || 720);   // PRF-15 doku akışı
+      if ((cam as T.PerspectiveCamera).isPerspectiveCamera) akisGuncelle(sc, cam as T.PerspectiveCamera, Math.round((renderer.domElement.height || 720) / (composer ? 1 : resScale)));   // PRF-15 doku akışı; PRF-12: ölçeksiz yükseklik (dinamik çözünürlük adımı dokuları yeniden çizdirmez)
       renderer.info.autoReset = false; renderer.info.reset();   // info() = everything drawn for this frame (composer passes, shadow pass)
       gateStep(sc, cam);
       if (grade) { const ws = clamp(+api.weatherSat || 1, 0.6, 1); grade.uniforms.uSat.value = look.sat * ws; }   // GRS-02 rain/fog wash
@@ -445,6 +456,7 @@ export function createRender(deps: RenderDeps): MotorRender {
       } else { draw(); scanProgs('draw', sc); }
       // GRS-05: mirrored water pass after the main draw (shadow map is fresh); the sea samples it next frame
       if ((cam as T.PerspectiveCamera).isPerspectiveCamera && api.reflectSea && api.reflectSea.visible) {
+        reflector.resMul = composer ? resScale : 1;   // PRF-12: the mirror follows the scene's scaled size (canvas stays full on post tiers)
         const rd = () => reflector.render(renderer!, sc, cam as T.PerspectiveCamera, api.reflectSea);
         if (pf) pf.time('render.reflect', rd); else rd();
       }
@@ -456,7 +468,11 @@ export function createRender(deps: RenderDeps): MotorRender {
       const nv = clamp(+v || 1, 0.5, 1);
       if (nv === resScale) return;
       resScale = nv;
-      if (renderer && tier) { renderer.setPixelRatio(Math.min((typeof window !== 'undefined' && window.devicePixelRatio) || 1, tier.pixelRatio) * resScale); api.resize(); }
+      if (renderer && tier) { const cp = canvasPR(tier); if (renderer.getPixelRatio() !== cp) renderer.setPixelRatio(cp); api.resize(); }
+    },
+    setPostCut(cut: boolean) {
+      postCut = !!cut;
+      if (bloom) bloom.enabled = !postCut;   // the composer skips a disabled pass (no swap); OutputPass + GRADE still run
     },
     warm(sc: T.Scene, cam: T.Camera) {
       // Compiles the variant the frame really draws: with bloom the scene goes into the composer's half-float target, and three
@@ -468,12 +484,15 @@ export function createRender(deps: RenderDeps): MotorRender {
     warmStats: () => ({ born: { ...born }, busy: warmJobs > 0, lastDrawBorn: [...lastDrawBorn] }),
     info() {
       if (renderer) { lastInfo.geos = renderer.info.memory.geometries; lastInfo.texs = renderer.info.memory.textures; }
-      return { ...lastInfo, programs: renderer ? ((renderer.info as { programs?: unknown[] }).programs?.length ?? 0) : 0, programNames: progList().filter(Boolean).map(progName), born: { ...born }, frameNo };
+      const sw = composer ? (composer as unknown as { readBuffer: T.WebGLRenderTarget }).readBuffer.width : renderer?.domElement.width ?? 0;
+      const sh = composer ? (composer as unknown as { readBuffer: T.WebGLRenderTarget }).readBuffer.height : renderer?.domElement.height ?? 0;
+      return { ...lastInfo, sceneW: sw, sceneH: sh, programs: renderer ? ((renderer.info as { programs?: unknown[] }).programs?.length ?? 0) : 0, programNames: progList().filter(Boolean).map(progName), born: { ...born }, frameNo };
     },
     resize() {
       const { w, h } = size();
-      if (renderer) renderer.setSize(w, h, false);
-      if (composer && renderer) { composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(w, h); }
+      // a canvas size write reallocates the drawing buffer even when the value is the same: only when something changed
+      if (renderer) { const pr = renderer.getPixelRatio(), cv = renderer.domElement; renderer.getSize(_rs); if (_rs.x !== w || _rs.y !== h || cv.width !== Math.floor(w * pr) || cv.height !== Math.floor(h * pr)) renderer.setSize(w, h, false); }
+      if (composer && renderer) { composer.setPixelRatio(tier ? basePR(tier) * resScale : renderer.getPixelRatio()); composer.setSize(w, h); }
       rig.setAspect(w / h);
     },
     registerPick(id: string, p: Vec3, radius: number) {

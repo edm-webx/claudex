@@ -119,4 +119,20 @@ describe('quality: dinamik çözünürlük (PRF-12)', () => {
     expect(q.scale!()).toBe(SCALE_MIN);
     q.set('dengeli'); run(q, 3, 25); expect(q.scale!()).toBe(1);
   });
+  it('tabandan sonra bloom kesilir, kademe ondan sonra düşer; toparlanınca önce bloom döner', () => {
+    const q = mk('sahane'); const cuts: boolean[] = []; q.onPostCut!(c => cuts.push(c)); const tiers: string[] = [];
+    q.onChange(t => tiers.push(t.name));
+    for (let i = 0; i < 20 * 60 && q.scale!() > SCALE_MIN; i++) q.feed(25, 1 / 60, 25);   // 6 steps -> floor, bloom still on
+    expect(q.scale!()).toBe(SCALE_MIN); expect(q.postCut!()).toBe(false);
+    run(q, 2.5, 25);
+    expect(q.postCut!()).toBe(true); expect(tiers).toEqual([]);
+    for (let i = 0; i < 20 * 60 && cuts.length < 2; i++) q.feed(16.7, 1 / 60, 6);   // calm: bloom back first, scale still at the floor
+    expect(cuts).toEqual([true, false]); expect(q.scale!()).toBe(SCALE_MIN);
+    run(q, 40, 16.7, 6); expect(q.scale!()).toBe(1); expect(q.postCut!()).toBe(false);
+  });
+  it('bloom olmayan kademede (akıcı) kesme basamağı yok; kademe değişimi kesmeyi kaldırır', () => {
+    const a = mk('akici'); run(a, 30, 50); expect(a.postCut!()).toBe(false);
+    const q = mk('sahane'); run(q, 15, 25); expect(q.postCut!()).toBe(true);
+    q.set('dengeli'); expect(q.postCut!()).toBe(false); expect(q.scale!()).toBe(1);
+  });
 });

@@ -257,6 +257,9 @@ export interface Quality {
   /** PRF-12: continuous resolution scale (SCALE_MIN..1) the render multiplies onto the tier's pixel ratio; auto mode only. */
   scale?(): number;
   onScale?(cb: (s: number) => void): Disposer;
+  /** PRF-12: second fast rung: bloom pass cut (pass.enabled = false, no relink) once the scale sits at SCALE_MIN; auto mode only. */
+  postCut?(): boolean;
+  onPostCut?(cb: (cut: boolean) => void): Disposer;
   /** PRF-03: while `inPlay()` is true an automatic tier change is only remembered (saved for the next load), not applied */
   deferAuto?(inPlay: () => boolean): void;
   /** PRF-03: applies a remembered automatic tier change now (pause/menu/hidden moment); true if one was applied */
@@ -793,6 +796,8 @@ export interface RenderPipeline {
   warm?(scene: Scene, cam: Camera): Promise<void>;
   /** PRF-12: dynamic resolution multiplier on the tier's pixel ratio; optional, the fallback renderer has none. */
   setScale?(s: number): void;
+  /** PRF-12: skip the bloom pass (true) without rebuilding the post chain; optional. */
+  setPostCut?(cut: boolean): void;
   info(): RenderInfo;
   resize(): void;
   readonly scene: Scene;

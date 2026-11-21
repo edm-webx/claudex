@@ -31,6 +31,8 @@ export interface Reflector {
   /** true when the last frame produced a usable image */
   readonly on: boolean;
   setBudget(b: ReflectBudget | null): void;
+  /** PRF-12: dynamic resolution multiplier on the drawing-buffer size (the render pipeline sets it on post tiers). */
+  resMul: number;
   /** Draws the mirrored view when due. `hide` objects (the sea itself) are hidden during the pass. */
   render(r: T.WebGLRenderer, scene: T.Scene, cam: T.PerspectiveCamera, hide: T.Object3D | null): void;
   stats(): { w: number; h: number; renders: number };
@@ -49,6 +51,7 @@ export function createReflector(planeY: number): Reflector {
     matrix,
     get texture() { return rt ? rt.texture : null; },
     get on() { return on; },
+    resMul: 1,
     setBudget(b) {
       budget = b;
       if (!b) { rt?.dispose(); rt = null; on = false; }
@@ -57,7 +60,7 @@ export function createReflector(planeY: number): Reflector {
       if (!budget) { on = false; return; }
       if (tick++ % budget.every !== 0 && rt) return;
       const sz = r.getDrawingBufferSize(new T.Vector2());
-      const w = Math.max(64, Math.round(sz.x * budget.scale)), h = Math.max(64, Math.round(sz.y * budget.scale));
+      const k = budget.scale * (api.resMul || 1), w = Math.max(64, Math.round(sz.x * k)), h = Math.max(64, Math.round(sz.y * k));
       if (!rt) { rt = new T.WebGLRenderTarget(w, h, { type: T.HalfFloatType, depthBuffer: true, generateMipmaps: false, minFilter: T.LinearFilter, magFilter: T.LinearFilter }); rt.texture.name = 'sea-reflect'; }
       else if (rt.width !== w || rt.height !== h) rt.setSize(w, h);
       // camera below the plane looks up through it: nothing to mirror

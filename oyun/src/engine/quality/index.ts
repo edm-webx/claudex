@@ -12,6 +12,9 @@
  *   1 s buckets: bucket frame time > 1.1x target -> one step down (at most every 2 s); work time < 0.7x target for 3 s in a row
  *   and no step down in the last 6 s -> one step up. The slow layer (tier drop) only starts once the scale sits at SCALE_MIN;
  *   a tier change resets the scale to 1.
+ *   Second fast rung (B-082 "bloom kapanır"): on a bloom tier, once the scale sits at SCALE_MIN and a bucket is still slow, the
+ *   bloom pass is cut (postCut, pass.enabled = false: no relink, no target rebuild); recovery restores bloom first, then the
+ *   scale (reverse order, same 3 s calm / 6 s since the last step down). The tier drop waits until both rungs are used.
  * PRF-03: with deferAuto(inPlay) set (boot), an automatic tier change during play is saved (next load starts there) but applied
  *   only at flushAuto() - hidden tab or a full-screen overlay covering the world - because it relinks every material.
  */
@@ -46,6 +49,13 @@ export function createQuality(deps: QualityDeps): Quality {
   const subs = new Set<(t: TierDef, why: Why) => void>();
   const scaleSubs = new Set<(s: number) => void>();
   let scale = 1, scaleHold = 0, scaleCalm = 0, scaleLastDown = -1e9, scaleLastStep = -1e9;
+  const postSubs = new Set<(cut: boolean) => void>();
+  let postCut = false;
+  const setPostCut = (v: boolean) => {
+    if (v === postCut) return;
+    postCut = v;
+    for (const cb of [...postSubs]) { try { cb(postCut); } catch (e) { deps.log?.error('quality post cb', e); } }
+  };
   const setScale = (v: number) => {
     v = Math.round(Math.max(SCALE_MIN, Math.min(1, v)) * 100) / 100;
     if (v === scale) return;
@@ -70,7 +80,7 @@ export function createQuality(deps: QualityDeps): Quality {
     if (n === cur) return;
     cur = n;
     buckets.length = 0; bSum = 0; bN = 0; bT = 0; calm = 0; scaleCalm = 0;
-    setScale(1);
+    setScale(1); setPostCut(false);
     for (const cb of [...subs]) { try { cb(TIER_TABLE[cur], why); } catch (e) { deps.log?.error('quality cb', e); } }
   };
 
@@ -86,9 +96,11 @@ export function createQuality(deps: QualityDeps): Quality {
     onChange(cb): Disposer { subs.add(cb); return () => { subs.delete(cb); }; },
     scale: () => scale,
     onScale(cb): Disposer { scaleSubs.add(cb); return () => { scaleSubs.delete(cb); }; },
+    postCut: () => postCut,
+    onPostCut(cb): Disposer { postSubs.add(cb); return () => { postSubs.delete(cb); }; },
     feed(frameMs, dt, workMs) {
       t += dt;
-      if (setting !== 'auto' || p.params.tier) { if (scale !== 1) setScale(1); return; }
+      if (setting !== 'auto' || p.params.tier) { if (scale !== 1) setScale(1); setPostCut(false); return; }
       bSum += frameMs; bN++; bT += dt; scaleHold += workMs ?? frameMs;
       if (bT < 1) return;
       const avg1 = bSum / bN, work1 = scaleHold / bN; bSum = 0; bN = 0; bT = 0; scaleHold = 0;
@@ -96,18 +108,20 @@ export function createQuality(deps: QualityDeps): Quality {
       const fps = battery ? 30 : TIER_TABLE[cur].fps;
       const target = 1000 / fps;
       if (avg1 < target * 0.8) calm += 1; else calm = 0;
-      // fast layer: resolution scale
-      if (avg1 > target * 1.1 && scale > SCALE_MIN + 1e-6) {
-        if (t - scaleLastStep >= 2) { scaleLastStep = scaleLastDown = t; setScale(scale - SCALE_STEP); }
+      // fast layer: resolution scale, then the bloom cut
+      const canCut = !!TIER_TABLE[cur].flags.bloom;
+      const atFloor = scale <= SCALE_MIN + 1e-6;
+      if (avg1 > target * 1.1 && (!atFloor || (canCut && !postCut))) {
+        if (t - scaleLastStep >= 2) { scaleLastStep = scaleLastDown = t; if (!atFloor) setScale(scale - SCALE_STEP); else setPostCut(true); }
         scaleCalm = 0;
       } else if (work1 < target * 0.7 && avg1 <= target * 1.1) {
-        if (++scaleCalm >= 3 && scale < 1 && t - scaleLastDown >= 6) { scaleCalm = 0; scaleLastStep = t; setScale(scale + SCALE_STEP); }
+        if (++scaleCalm >= 3 && (postCut || scale < 1) && t - scaleLastDown >= 6) { scaleCalm = 0; scaleLastStep = t; if (postCut) setPostCut(false); else setScale(scale + SCALE_STEP); }
       } else scaleCalm = 0;
       if (t - lastChange < 60) return;
       if (buckets.length >= 10) {
         const avg = buckets.reduce((a, b) => a + b, 0) / buckets.length;
         const i = ORDER.indexOf(cur);
-        if (avg > target * 1.5 && i > 0 && scale <= SCALE_MIN + 1e-6) {   // slow layer waits until the scale has hit the floor
+        if (avg > target * 1.5 && i > 0 && atFloor && (postCut || !canCut)) {   // slow layer waits until both fast rungs are used
           lastChange = t; downThisSession = true; autoTier = ORDER[i - 1]; persist(); autoApply(autoTier); return; }
       }
       // 2026-11-09 Chrome freeze: auto mode used to step back up after 120 calm seconds; a tier change toggles shadows,
