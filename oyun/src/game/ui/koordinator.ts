@@ -14,7 +14,7 @@ type M = Record<string, any>;
 const CSS = `
 .kd-bg{position:fixed;inset:0;z-index:63;display:none;align-items:center;justify-content:center;background:rgba(28,18,14,.62);padding:10px;pointer-events:auto;font-family:var(--body)}
 .kd-bg.on{display:flex}
-.kd-card{width:min(680px,100%);max-height:calc(100vh - 20px);display:flex;flex-direction:column;background:#fdf3e1;color:#2b1d15;border:4px solid #3b2a20;border-radius:22px;box-shadow:0 8px 0 #3b2a20;overflow:hidden}
+.kd-card{width:min(680px,100%);max-height:calc(100vh - 20px);max-height:calc(100dvh - 20px);display:flex;flex-direction:column;background:#fdf3e1;color:#2b1d15;border:4px solid #3b2a20;border-radius:22px;box-shadow:0 8px 0 #3b2a20;overflow:hidden}
 .kd-top{flex:none;display:flex;align-items:center;gap:10px;padding:12px 14px 6px}.kd-top h2{flex:1;margin:0;font:900 22px/1.1 var(--disp)}
 .kd-av{width:52px;height:52px;border-radius:50%;border:3px solid #3b2a20;background:#ffd23f;display:grid;place-items:center;font-size:30px;flex:none}
 .kd-chip{font:900 15px var(--disp);background:#fff;border:3px solid #3b2a20;border-radius:12px;padding:3px 10px;white-space:nowrap}

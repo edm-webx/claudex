@@ -15,12 +15,13 @@ type OpenTab = Tab | 'stadyum' | 'lig';
 const CSS = `
 .mp-bg{position:fixed;inset:0;z-index:62;display:none;align-items:center;justify-content:center;background:rgba(40,22,18,.55);padding:12px;pointer-events:auto;font-family:var(--body)}
 .mp-bg.on{display:flex}
-.mp-card{width:min(640px,100%);max-height:calc(100vh - 24px);display:flex;flex-direction:column;background:#fdf3e1;color:#3b2a20;border:4px solid #3b2a20;border-radius:22px;box-shadow:0 8px 0 #3b2a20;overflow:hidden}
+.mp-card{width:min(640px,100%);max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);display:flex;flex-direction:column;background:#fdf3e1;color:#3b2a20;border:4px solid #3b2a20;border-radius:22px;box-shadow:0 8px 0 #3b2a20;overflow:hidden}
 .mp-top{display:flex;align-items:center;gap:8px;padding:12px 14px 6px}.mp-top h2{flex:1;margin:0;font:900 22px/1.1 var(--disp)}
 .mp-chip{font:900 14px var(--disp);background:#fff;border:3px solid #3b2a20;border-radius:12px;padding:2px 10px;white-space:nowrap}
 .mp-x{min-height:44px;min-width:44px;border:3px solid #3b2a20;border-radius:12px;background:#ffd23f;font:900 18px var(--disp);color:#3b2a20;cursor:pointer}
 .mp-tabs{display:flex;gap:5px;padding:0 14px 8px;overflow-x:auto;scrollbar-width:none}
-.mp-t{flex:none;min-height:42px;padding:0 12px;border:3px solid #3b2a20;border-radius:12px;background:#fff6e6;font:900 15px var(--disp);color:#3b2a20;cursor:pointer}.mp-t.on{background:#ffd23f}
+.mp-tabs.mr{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 30px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 30px),transparent)}.mp-tabs.ml{-webkit-mask-image:linear-gradient(270deg,#000 calc(100% - 30px),transparent);mask-image:linear-gradient(270deg,#000 calc(100% - 30px),transparent)}.mp-tabs.ml.mr{-webkit-mask-image:linear-gradient(90deg,transparent,#000 26px,#000 calc(100% - 26px),transparent);mask-image:linear-gradient(90deg,transparent,#000 26px,#000 calc(100% - 26px),transparent)}
+.mp-t{flex:none;min-height:42px;padding:6px 12px;line-height:1.2;white-space:nowrap;border:3px solid #3b2a20;border-radius:12px;background:#fff6e6;font:900 15px var(--disp);color:#3b2a20;cursor:pointer}.mp-t.on{background:#ffd23f}
 .mp-body{overflow-y:auto;padding:4px 14px 14px;flex:1}
 .mp-sec{font:900 15px var(--disp);margin:12px 0 6px}
 .mp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
@@ -165,7 +166,13 @@ ${a.isci < a.isciMax ? `<div class="mp-sec" style="margin:8px 0 4px">İlan panos
     const sc = (bg.querySelector('.mp-body') as HTMLElement | null)?.scrollTop || 0, tsc = (bg.querySelector('.mp-tabs') as HTMLElement | null)?.scrollLeft || 0;
     bg.innerHTML = `<div class="mp-card"><div class="mp-top"><h2>${TABS.find(x => x[0] === tab)![1]}</h2><span class="mp-chip">${tl(m.money)}</span><span class="mp-chip">🥨 ${m.gold}</span><button class="mp-x" data-a="close">✕</button></div>
 <div class="mp-tabs">${TABS.map(([k, l]) => `<button class="mp-t${tab === k ? ' on' : ''}" data-tab="${k}">${l}</button>`).join('')}</div><div class="mp-body">${body}</div></div>`;
-    (bg.querySelector('.mp-body') as HTMLElement).scrollTop = sc; (bg.querySelector('.mp-tabs') as HTMLElement).scrollLeft = tsc;
+    (bg.querySelector('.mp-body') as HTMLElement).scrollTop = sc;
+    // etkin sekme şeritte görünür kalsın, taşma ipucu (solma) çıksın
+    const tb = bg.querySelector('.mp-tabs') as HTMLElement; tb.scrollLeft = tsc;
+    const on = tb.querySelector('.mp-t.on') as HTMLElement | null;
+    if (on && (on.offsetLeft < tb.scrollLeft || on.offsetLeft + on.offsetWidth > tb.scrollLeft + tb.clientWidth)) tb.scrollLeft = Math.max(0, on.offsetLeft - (tb.clientWidth - on.offsetWidth) / 2);
+    const fade = () => { tb.classList.toggle('ml', tb.scrollLeft > 2); tb.classList.toggle('mr', tb.scrollLeft + tb.clientWidth < tb.scrollWidth - 2); };
+    tb.addEventListener('scroll', fade, { passive: true }); fade();
   }
 
   bg.addEventListener('pointerdown', e => e.stopPropagation());

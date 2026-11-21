@@ -56,7 +56,7 @@ export function installHedef(r: Rules): HedefApi {
     if (!Array.isArray(g.slots)) g.slots = [null, null];
     while (g.slots.length < 2) g.slots.push(null);
     if (!Array.isArray(g.lastIds)) g.lastIds = [];
-    g.doneN = g.doneN | 0; if (g.fold === undefined) g.fold = true; g.fold = !!g.fold; g.pin = typeof g.pin === 'string' ? g.pin : '';
+    g.doneN = g.doneN | 0; if (g.fold === undefined) g.fold = (S().day | 0) > 1;   // ilk gün kart açık: ilk hedefler görünsün g.fold = !!g.fold; g.pin = typeof g.pin === 'string' ? g.pin : '';
     g.jar = g.jar | 0; g.jarDay = g.jarDay | 0; g.jarFull = !!g.jarFull; g.jarFullAt = Number(g.jarFullAt) || 0;
     g.prevEarned = Number(g.prevEarned) || 0;
     return g;

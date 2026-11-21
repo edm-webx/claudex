@@ -110,7 +110,7 @@ const CSS = `
 .on-b.g{background:#8fd06b}.on-b.y{background:#ffd23f}
 .on-code{width:100%;box-sizing:border-box;min-height:56px;border:4px solid #3b2a20;border-radius:14px;text-align:center;font:900 30px var(--disp);letter-spacing:5px;text-transform:uppercase;background:#fff;color:#3b2a20}
 .on-srv{display:grid;grid-template-columns:1fr 1fr;gap:6px}.on-s{min-height:42px;border:3px solid #3b2a20;border-radius:12px;background:#fff6e6;font:900 15px var(--disp);color:#3b2a20;cursor:pointer;text-align:left;padding:2px 8px;display:flex;align-items:center;gap:6px}.on-s.on{background:#ffd23f}.on-s i{width:14px;height:14px;border-radius:50%;border:2px solid #3b2a20;flex:none}
-.on-card{max-height:calc(100vh - 32px);overflow:auto}
+.on-card{max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);overflow:auto}
 .on-err{min-height:18px;color:#b3261e;font:800 13px var(--body);text-align:center;margin-top:6px}
 `;
 

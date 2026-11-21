@@ -66,11 +66,14 @@ const CSS = `
 .kl-cl.on{background:#ffd23f}.kl-cl i{font-style:normal;font-size:24px;display:block}
 .kl-cl small{display:block;font:700 13px/1.25 var(--body);opacity:.8;margin-top:3px}.kl-cl b{display:block;font:900 13px/1.2 var(--body);color:#2e7d32;margin-top:4px}
 .kl-f{padding:10px 14px 14px;border-top:3px dashed #d8c3a3}
+.kl-ft{font:800 13px/1.3 var(--body);text-align:center;margin:0 0 8px;opacity:.75}.kl-ft.bad{color:#b3261e;opacity:1}
 .kl-go{width:100%;min-height:58px;border-radius:16px;border:4px solid #3b2a20;background:#8fd06b;box-shadow:0 5px 0 #3b2a20;font:900 21px/1 var(--disp);color:#3b2a20;cursor:pointer}
 .kl-rnd{position:fixed;left:14px;bottom:14px;z-index:62;min-height:50px;padding:6px 16px;border-radius:14px;border:4px solid #3b2a20;background:#fff6e6;box-shadow:0 4px 0 #3b2a20;font:900 17px var(--disp);color:#3b2a20;cursor:pointer}
 .kl-tag{position:fixed;left:14px;top:14px;z-index:62;padding:8px 14px;border-radius:14px;background:rgba(40,22,18,.78);color:#ffe9b0;font:900 18px/1.2 var(--disp);pointer-events:none}
 .kl-tag small{display:block;font:700 13px var(--body);color:#f4dcc0}
-@media (max-width:700px){.kl-p{top:auto;height:56vh;left:8px;right:8px;width:auto;bottom:8px}.kl-rnd{bottom:auto;top:70px}.kl-t{flex-basis:30%;font-size:13px}}
+@media (max-width:700px){.kl-p{top:auto;height:56vh;height:56dvh;left:8px;right:8px;width:auto;bottom:8px}.kl-rnd{bottom:auto;top:70px}.kl-tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}.kl-tabs::-webkit-scrollbar{display:none}.kl-t{flex:0 0 auto;min-height:42px;padding:4px 12px;font-size:13px;white-space:nowrap}.kl-f{padding:8px 12px 10px}.kl-go{min-height:52px}}
+@media (orientation:landscape) and (max-height:540px){.kl-p{top:8px;bottom:8px;height:auto;left:auto;right:8px;width:min(380px,52vw)}.kl-rnd{top:auto;bottom:10px}.kl-tag{top:8px}.kl-go{min-height:46px;font-size:18px}.kl-f{padding:6px 12px 8px}.kl-ft{margin-bottom:5px}}
+body:has(.kl-p) #sbui .sb-bar{pointer-events:none;opacity:0}
 `;
 
 /** Painted textures, code made (no image files) */
@@ -245,12 +248,13 @@ ${e.sapka ? `<div class="kl-l">Şapka rengi</div>${sw('sapkaRenk', COLS, e.sapka
   }
   const TAGS: Record<Tab, [string, string]> = { kimlik: ['🎭 Kulis', 'Spot ışığının altında'], yuz: ['💄 Makyaj aynası', 'Yüzüne yakından bak'], sac: ['💇 Kuaför koltuğu', 'Aynada saçın'], kiyafet: ['👕 Gardrop', 'Askıdaki kıyafetler'], dolap: ['🛍️ Dolap', 'Altın Simitle alınan kıyafetler'], aksesuar: ['🎩 Şapka masası', 'Aksesuarlar'], vucut: ['🧍 Boy aynası', 'Baştan aşağı'] };
 
+  let nameErr = false;
   function paint() {
     if (!panel || !m) return;
     const keep = document.activeElement && panel.contains(document.activeElement) ? (document.activeElement as HTMLInputElement).name : '';
     const scroll = panel.querySelector('.kl-b')?.scrollTop ?? 0;
     panel.innerHTML = `<div class="kl-tabs">${TABS.map(([id, ic, l]) => `<button class="kl-t${id === tab ? ' on' : ''}" data-tab="${id}">${ic} ${l}</button>`).join('')}</div>
-<div class="kl-b">${body(m)}</div><div class="kl-f"><button class="kl-go" data-go="1">Sahneye çık ✨</button></div>`;
+<div class="kl-b">${body(m)}</div><div class="kl-f"><div class="kl-ft${nameErr ? ' bad' : ''}" role="status">${nameErr ? 'Önce adını yaz, sonra sahneye çıkarsın.' : 'Sınıfın: ' + esc(SINIFLAR.find(s => s.id === m!.sinif)?.ad || '') + ' (Kimlik sekmesinde değiştir)'}</div><button class="kl-go" data-go="1">Sahneye çık ✨</button></div>`;
     const b = panel.querySelector('.kl-b'); if (b) b.scrollTop = scroll;
     if (keep) { const el = panel.querySelector(`input[name="${keep}"]`) as HTMLInputElement | null; if (el) { el.focus(); const n = el.value.length; el.setSelectionRange(n, n); } }
     if (tag) tag.innerHTML = `${TAGS[tab][0]}<small>${TAGS[tab][1]}</small>`;
@@ -313,7 +317,7 @@ ${e.sapka ? `<div class="kl-l">Şapka rengi</div>${sw('sapkaRenk', COLS, e.sapka
       if ((k === 'sapka' || k === 'gozluk') && v === '') { set({ [k]: null }); return; }
       set({ [k]: v });
     });
-    panel.addEventListener('input', e => { const tg = e.target as HTMLInputElement; if (m && (tg.name === 'ad' || tg.name === 'dukkan')) { (m as unknown as Record<string, string>)[tg.name] = tg.value; deps.command({ kind: 'esnafim', op: 'set', data: { [tg.name]: tg.value } }); } });
+    panel.addEventListener('input', e => { const tg = e.target as HTMLInputElement; if (m && (tg.name === 'ad' || tg.name === 'dukkan')) { (m as unknown as Record<string, string>)[tg.name] = tg.value; if (nameErr && tg.name === 'ad' && tg.value.trim()) { nameErr = false; const f = panel!.querySelector('.kl-ft'); if (f) { f.classList.remove('bad'); f.textContent = 'Sınıfın: ' + (SINIFLAR.find(s => s.id === m!.sinif)?.ad || '') + ' (Kimlik sekmesinde değiştir)'; } } deps.command({ kind: 'esnafim', op: 'set', data: { [tg.name]: tg.value } }); } });
     panel.addEventListener('keydown', e => e.stopPropagation());
     // drag on the stage turns the hero around
     canvas.addEventListener('pointerdown', e => { drag = { x: e.clientX, s: spin }; canvas?.setPointerCapture(e.pointerId); });
@@ -326,7 +330,7 @@ ${e.sapka ? `<div class="kl-l">Şapka rengi</div>${sw('sapkaRenk', COLS, e.sapka
   function finish() {
     if (!m) return;
     if (!m.adKilit && !m.ad.trim()) {   // herkes kendi adını yazar: sabit ana karakter yok
-      tab = 'kimlik'; paint(); try { deps.sfx?.('error'); } catch { /* */ }
+      tab = 'kimlik'; nameErr = true; paint(); try { deps.sfx?.('error'); } catch { /* */ }
       const inp = panel?.querySelector('input[name="ad"]') as HTMLInputElement | null; if (inp) { inp.focus(); inp.style.borderColor = '#e0533c'; }
       return;
     }

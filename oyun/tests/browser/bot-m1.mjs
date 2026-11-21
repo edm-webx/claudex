@@ -44,14 +44,20 @@ await p.goto(`${url}?seed=${SEED}&tier=${TIER}&noloop&fresh=1`);
 await p.waitForFunction(() => window.__marti && window.__marti.ready && window.__marti.ready(), null, { timeout: 30000 });
 await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
 await p.screenshot({ path: SHOT('00-title') });
-// title and portrait pick through the UI when the buttons exist, else the hook
+// v2 akışı: Oyna -> (giriş formu) -> Kulis (ad yaz, "Sahneye çık"). Giriş formu kancayla atlanır, Kulis gerçek arayüzden geçilir.
 const clicked = await p.evaluate(() => { const x = document.querySelector('[data-play]'); if (x) { x.click(); return true; } return false; });
 await p.waitForTimeout(400);
 await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
 await p.screenshot({ path: SHOT('01-pick') });
-const picked = await p.evaluate(() => { const x = document.querySelector('[data-h="sabri"]'); if (x) { x.click(); return true; } return false; });
-await p.waitForTimeout(900);
 await p.evaluate(() => { const M = window.__marti; if (!M.state().started) M.play('sabri'); });
+const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null);
+let picked = false;
+if (go) {
+  const ad = await p.$('input[name="ad"]');
+  if (ad && !(await ad.inputValue()).trim()) await ad.fill('Sabri');
+  await go.click({ force: true }); picked = true;
+}
+await p.waitForTimeout(900);
 console.log('title/pick through the UI:', clicked, picked);
 
 await p.evaluate(botSrc);
