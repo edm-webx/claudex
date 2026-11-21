@@ -21,12 +21,12 @@ const CSS = `
 .gr-go{margin-top:14px;width:100%;min-height:56px;border-radius:16px;border:4px solid #3b2a20;background:#8fd06b;box-shadow:0 5px 0 #3b2a20;font:900 20px/1 var(--disp);color:#3b2a20;cursor:pointer}
 .gr-go:disabled{opacity:.6;cursor:wait}
 .gr-guest{margin-top:12px;width:100%;min-height:46px;border-radius:14px;border:3px dashed #3b2a20;background:transparent;font:900 16px var(--disp);color:#3b2a20;cursor:pointer}
-.gr-slots{display:grid;gap:8px;margin-top:6px}.gr-sl{display:flex;align-items:center;gap:10px;min-height:64px;border:3px solid #3b2a20;border-radius:14px;background:#fff6e6;font:900 17px var(--disp);color:#3b2a20;cursor:pointer;padding:4px 12px;text-align:left;box-shadow:0 3px 0 #3b2a20}.gr-sl:hover{background:#ffeab0}.gr-sl i{font-style:normal;font-size:30px;width:40px;text-align:center}.gr-sl small{display:block;font:700 12px var(--body);opacity:.7}.gr-sl.empty{border-style:dashed;background:transparent;box-shadow:none}.gr-sl.on{background:#ffd23f}
+.gr-slots{display:grid;gap:8px;margin-top:6px}.gr-sl{display:flex;align-items:center;gap:10px;min-height:64px;border:3px solid #3b2a20;border-radius:14px;background:#fff6e6;font:900 17px var(--disp);color:#3b2a20;cursor:pointer;padding:4px 12px;text-align:left;box-shadow:0 3px 0 #3b2a20}.gr-sl:hover{background:#ffeab0}.gr-sl i{font-style:normal;font-size:30px;width:40px;text-align:center}.gr-sl small{display:block;font:700 13px var(--body);opacity:.7}.gr-sl.empty{border-style:dashed;background:transparent;box-shadow:none}.gr-sl.on{background:#ffd23f}
 .gr-err{min-height:20px;margin-top:8px;font:800 14px/1.3 var(--body);color:#b3261e;text-align:center}
-.gr-srv{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:6px}.gr-s{min-height:50px;border:3px solid #3b2a20;border-radius:12px;background:#fff6e6;font:900 16px var(--disp);color:#3b2a20;cursor:pointer;display:flex;align-items:center;gap:8px;padding:2px 10px;text-align:left;box-shadow:0 3px 0 #3b2a20}.gr-s.on{background:#ffd23f}.gr-s i{width:16px;height:16px;border-radius:50%;border:2px solid #3b2a20;flex:none}.gr-s small{display:block;font:700 11px var(--body);opacity:.7}
+.gr-srv{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:6px}.gr-s{min-height:50px;border:3px solid #3b2a20;border-radius:12px;background:#fff6e6;font:900 16px var(--disp);color:#3b2a20;cursor:pointer;display:flex;align-items:center;gap:8px;padding:2px 10px;text-align:left;box-shadow:0 3px 0 #3b2a20}.gr-s.on{background:#ffd23f}.gr-s i{width:16px;height:16px;border-radius:50%;border:2px solid #3b2a20;flex:none}.gr-s small{display:block;font:700 13px var(--body);opacity:.7}
 .gr-card{max-height:calc(100vh - 32px);overflow:auto}
-.gr-adm{display:block;margin:10px auto 0;background:none;border:0;font:800 12px var(--body);color:#3b2a20;opacity:.55;text-decoration:underline;cursor:pointer}
-.gr-note{font:700 12px/1.35 var(--body);opacity:.7;text-align:center;margin-top:10px}
+.gr-adm{display:block;margin:10px auto 0;background:none;border:0;font:800 13px var(--body);color:#3b2a20;opacity:.55;text-decoration:underline;cursor:pointer}
+.gr-note{font:700 13px/1.35 var(--body);opacity:.7;text-align:center;margin-top:10px}
 `;
 
 export function createGiris(deps: { root: HTMLElement; afterLogin: (isNew: boolean) => Promise<void>; sfx?: (id: string) => void }): GirisView {

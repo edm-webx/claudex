@@ -929,7 +929,7 @@ U.title = function (o) {
   if (titleEl) titleEl.remove();
   const t = titleEl = mk('div', 'sb-full sb-title');
   t.innerHTML = SCENE + `<div class="sb-tl-wrap"><div class="sb-tl-top"><div class="sb-logo" role="img" aria-label="Sabri'nin Büfesi"><span class="sb-pamuk">${PAMUK}</span><div class="sb-awn"></div><div class="sb-signb"><span class="l1">Sabri'nin</span><span class="l2">Büfesi</span></div></div>
-    <div class="sb-sub">${ICONS.gull}Martıköy İskelesi</div></div>
+    <div class="sb-sub">${ICONS.gull}Martıköy İskelesi</div><div class="sb-ver" aria-label="Sürüm 2.0">2.0</div></div>
     <div class="sb-tl-bot"><button class="sb-btn big" data-play>${ICONS.play}Oyna</button><div class="sb-tl-note">Hesabınla gir, arkadaşınla oda kur, beraber çalışın.</div></div></div>`;
   root.appendChild(t); artBackdrop(t);
   t.querySelector('[data-play]').addEventListener('click', () => {

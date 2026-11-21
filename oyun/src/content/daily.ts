@@ -7,7 +7,7 @@ export const DAILY_TASKS: DailyTask[] = [
   { id: 'pencere', text: 'Vapur penceresinde {n} satış yap', stat: 'windowSales', base: 8, per: 0, needs: 'pencere' },
   { id: 'set', text: '{n} menü seti sat', stat: 'sets', base: 4, per: 0, needs: 'ayran' },
   { id: 'tips', text: 'Masalardan {n} bahşiş topla', stat: 'tips', base: 6, per: 0, needs: 'tabure1' },
-  { id: 'regular', text: 'Bir müdavimin her zamankini doğru getir', stat: 'regularOk', base: 1, per: 0, minDay: 3 },
+  { id: 'serve', text: '{n} müşteriyi güler yüzle gönder', stat: 'served', base: 12, per: 0, minDay: 3 },
   { id: 'gazoz', text: '{n} gazoz sat', stat: 'sold_gazoz', base: 12, per: 0, needs: 'gazoz' }
 ];
 export const taskGoal = (t: DailyTask, day: number): number => Math.max(1, Math.round(t.base + t.per * Math.max(0, (day || 1) - 1)));
