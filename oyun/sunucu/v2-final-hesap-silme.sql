@@ -3,7 +3,7 @@
 -- Yedek: veritabanında `yedek` şemasında (API'ye kapalı) duruyor:
 --   yedek.hesaplar_20261121 (id, e-posta, tarihler), yedek.oyuncular_20261121, yedek.kayitlar_20261121 (tam kayıtlar),
 --   yedek.oturum_log_20261121. Özet: proje dosyaları sosisci-oyun/sunucu/yedek-2026-11-21/YEDEK-OZETI.md
--- Test hesapları testv2deneme ve testkilit (2026-11-21 canlı testler) de bu silmeyle gider.
+-- Test hesapları testv2deneme, testkilit ve testmevduat (2026-11-21 canlı testler) de bu silmeyle gider.
 -- Yönetici kodları (admin_kodlar) ve tablo yapısı KALIR. admin/xynena yeniden kayıt olunca admin_otomatik
 -- tetikleyicisi yönetici satırını kendisi açar; panele yine gizli anahtar kodla girilir.
 begin;
