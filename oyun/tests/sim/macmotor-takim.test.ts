@@ -1,6 +1,7 @@
 // FUT-02: takım yapay zekâsı: oyun planı (MatchOpts.plan), seed'li eğilim, alan sahipliği + emniyet (rol akışkanlığı), güç farkı, m.heat.
 import { describe, it, expect } from 'vitest';
 import { createMatch, PLANLAR, WD, L } from '../../src/game/sim/macmotor';
+import { gucSkill } from '../../src/content/lig';
 import { gucFarki } from '../../src/game/sim/mac-olcum';
 import { izleMac } from '../../src/game/sim/halisaha';
 
@@ -34,6 +35,22 @@ describe('takım yapay zekâsı', () => {
     let goal = false, lo = 1, hi = 0;
     oynat(createMatch({ seed: 44 }), m => { lo = Math.min(lo, m.heat); hi = Math.max(hi, m.heat); if (m.events.some(e => e.k === 'goal')) { goal = true; expect(m.heat).toBe(1); } });
     expect(goal).toBe(true); expect(lo).toBeGreaterThanOrEqual(0); expect(hi).toBeLessThanOrEqual(1); expect(lo).toBeLessThan(0.4);
+  });
+  it('savunma tavrı: macAyari adları (pres/dengeli/kontra) motorda karşılık bulur, hücum biçimiyle birleşebilir', () => {
+    const a = createMatch({ seed: 4, plan: ['pres', 'kanat-kontra'] });
+    expect(a.tavir).toEqual(['pres', 'kontra']); expect(a.plan[1]).toBe('kanat'); expect(PLANLAR).toContain(a.plan[0]);
+    expect(createMatch({ seed: 4 }).tavir).toEqual(['dengeli', 'dengeli']);
+  });
+  it('pres takımı savunma çizgisini kontra takımından belirgin önde kurar', () => {
+    const blok = (tv: string) => { let s = 0, n = 0; for (const seed of [8, 9, 10]) oynat(createMatch({ seed, plan: [tv, 'dengeli'] }), m => {
+      if (m.freeze > 0 || m.restart || m.ball.owner < 0 || m.pls[m.ball.owner].team !== 1) return;
+      const xs = m.pls.filter(p => p.team === 0 && !p.gk).map(p => p.x).sort((a, b) => a - b); s += (xs[0] + xs[1]) / 2; n++; }); return s / n; };   // en geri iki oyuncu = savunma çizgisi
+    const pres = blok('pres'), kontra = blok('kontra'); console.log('blok x', pres.toFixed(2), kontra.toFixed(2));
+    expect(pres).toBeGreaterThan(kontra + 2);
+  });
+  it('zorluk eğrisi: lig gücü 66 olan takım 40 olanı çoğunlukla yener, 40 ara sıra kazanır', () => {
+    const r = gucFarki(gucSkill(66), gucSkill(40), 80, 77, 60); console.log('guc 66-40', r);
+    expect(r.galibiyet).toBeGreaterThan(0.55); expect(r.yenilgi).toBeGreaterThan(0.04); expect(r.yenilgi).toBeLessThan(0.35);
   });
   it('bahis izleMac deterministik (aynı seed = aynı sonuç ve skor)', () => {
     for (const s of [11, 12345, 999]) expect(izleMac(s)).toEqual(izleMac(s));

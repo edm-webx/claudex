@@ -43,3 +43,6 @@ Dört izin işi dala birleştirildi (tsc temiz; qa:hizli ve testler birleşik h�
 - İz 4 kontrol: girdi modülü, olay-ses tablosu, sabit adım, tuş şeması, yardım kartı commit'li. Ekran görüntüsü ve gamepad gerçek cihaz doğrulaması yok.
 - İz 2 görsel: YARIM (WIP commit): ortak.ts, hali-saha-3d.ts, dünya stadyumu (view/stadyum/index.ts). Ekran görüntüsüyle doğrulanmadı, çıplak stadyum bulgusu kapanmadı.
 Kalan: motor FUT-02+heat, görseli bitir ve ekranla doğrula, macAyari bağlama, hali-saha.ts ↔ yeni motor alanları (ball.z, dive, ref, heat) uyumu, qa:hizli, ekran görüntüleri, Ana İş'e bildirim.
+
+## FUT-02 BİTTİ 2026-11-21 (thread "Halı saha takım yapay zekası", dal claude/project-thread-1upa5a)
+Ayrıntı ve ölçümler: fut02-ilerleme.md, olcum/fut02-sonra.md. macAyari -> insan maçı bağlandı. m.heat zaten vardı (test yeşil).

@@ -34,6 +34,9 @@ export type Egilim = 'pasci' | 'calimci' | 'sutor' | 'yerkapan';
 /** FUT-02 takım oyun planı: kısa pas, uzun top, kanat. */
 export const PLANLAR = ['kisa', 'uzun', 'kanat'] as const;
 export type Plan = typeof PLANLAR[number];
+/** FUT-02 savunma tavrı (halisaha.macAyari'den): pres = yüksek blok + erken ikinci presçi, kontra = derin blok, top kazanınca forvet derine koşar. */
+export const TAVIRLAR = ['pres', 'dengeli', 'kontra'] as const;
+export type Tavir = typeof TAVIRLAR[number];
 /** z/vz: top yüksekliği (m, yerde 0) ve dikey hızı. Taşınan top yerdedir. */
 export interface Ball { x: number; y: number; z: number; vx: number; vy: number; vz: number; owner: number; lastTouch: 0 | 1; lastKicker: number }
 export type Ev = { k: 'sfx'; id: string } | { k: 'banner'; text: string; t: number } | { k: 'goal'; team: 0 | 1; scorer: number } | { k: 'end' } | { k: 'shake'; t: number }
@@ -58,8 +61,11 @@ export function createMatch(o: MatchOpts = {}) {
   const R = rng(o.seed ?? 1), HALF = o.halfS ?? 75, human = o.human === undefined ? null : o.human;
   const form: [string, string] = o.formations || ['2-2', '2-2'];
   const names = o.names || [defNames[0], defNames[1]];
-  const asPlan = (v: string | undefined): Plan => (PLANLAR as readonly string[]).includes(v || '') ? v as Plan : PLANLAR[Math.floor(R() * 3)];
-  const plans: [Plan, Plan] = [asPlan(o.plan?.[0]), asPlan(o.plan?.[1])];
+  // plan dizgesi hücum biçimi ve/veya savunma tavrı taşır: 'kanat', 'pres', 'kanat-pres'. Hücum biçimi yoksa seed'li seçilir.
+  const parca = (v: string | undefined) => (v || '').split(/[-+ ,]/);
+  const asPlan = (v: string | undefined): Plan => parca(v).find(x => (PLANLAR as readonly string[]).includes(x)) as Plan || PLANLAR[Math.floor(R() * 3)];
+  const asTavir = (v: string | undefined): Tavir => parca(v).find(x => (TAVIRLAR as readonly string[]).includes(x)) as Tavir || 'dengeli';
+  const plans: [Plan, Plan] = [asPlan(o.plan?.[0]), asPlan(o.plan?.[1])], tavir: [Tavir, Tavir] = [asTavir(o.plan?.[0]), asTavir(o.plan?.[1])];
   const EG: Egilim[] = ['pasci', 'calimci', 'sutor', 'yerkapan'];
   const pls: Pl[] = [];
   for (const team of [0, 1] as const) {
@@ -79,7 +85,7 @@ export function createMatch(o: MatchOpts = {}) {
     /** FUT-05 hakem: sahada topu çaprazdan izler; signal karar işareti (kol), t işaretin kalan süresi (sn). vx/vy yürüyüş animasyonu için. */
     ref: { x: L / 2, y: WD / 2 + 4, vx: 0, vy: 0, signal: '' as RefSignal, t: 0 },
     /** FUT-02: takım oyun planları ve tribün heyecanı (0..1: tehlikeli atak, şut, kurtarış, direk, faul, gol = 1). */
-    plan: plans, heat: 0.15,
+    plan: plans, tavir, heat: 0.15,
     pass: null as null | { from: number; team: 0 | 1 }, shot: null as null | { team: 0 | 1; t: number }, lastPasser: -1, lastPasserT: -9, switchT: 0, planT: 0,
     timers: [] as { t: number; fn: () => void }[], banner: 'Başlıyoruz!', bannerT: 1.6,
     /** Top ayaktan uzaktayken (dokun-kovala) basılan vuruş, top 1.5 m'ye girince (en çok 0.5 sn içinde) yapılır. */
@@ -200,7 +206,8 @@ export function createMatch(o: MatchOpts = {}) {
     p.tx = clamp(p.x + dir * 6 + ux * 1.4, 1.5, L - 1.5); p.ty = clamp(ty0 + uy * 1.4, 2, WD - 2); p.spd = 4.9 + p.sk.pace * 2 - (press < 1.5 ? 0.4 : 0);
     const near = Math.hypot(ball.x - p.x, ball.y - p.y) < 1.0;
     p.think -= dt; if (p.think > 0 || p.kickCd > 0 || (m.restart && m.restart.taker === i && m.restart.t < 0.6) || (!near && !m.restart)) return;   // top ayaktan uzaktayken (dokun-kovala) karar yok
-    p.think = 0.18 + R() * 0.3 * (1.3 - p.sk.vision * 0.5);
+    // karar zamanlaması: baskı altında ve son üçte birde hızlı, boşta ve kendi yarısında sakin; görüşü iyi oyuncu daha seri
+    p.think = (press < 1.8 ? 0.14 + R() * 0.16 : dGoal < 13 ? 0.15 + R() * 0.2 : 0.2 + R() * 0.32) * (1.25 - p.sk.vision * 0.45);
     const eg = p.egilim, pl = m.plan[p.team];
     if (near && press < 1.7 && p.cd2 <= 0 && !m.restart && R() < 0.1 + p.sk.flair * 0.2 + (eg === 'calimci' ? 0.15 : 0)) { calim(p, 0, 0); return; }
     const shotV = xg(p), [mate, ps] = passOption(p);
@@ -212,8 +219,30 @@ export function createMatch(o: MatchOpts = {}) {
         const side = R() < 0.5 ? -1 : 1, aim = WD / 2 + side * (0.9 + R() * 0.8);
         kick(p, gx + dir * 0.5 - p.x, aim - p.y + (R() - 0.5) * (1 - p.sk.shoot) * 1.6, 17 + p.sk.shoot * 6, 'sut', kd === 'penalti' ? 0.3 + R() * 1.6 : 2.6 + R() * 1.2); return;
       }
-      if (kd === 'korner') { const t = pls.filter(q => q.team === p.team && !q.gk).sort((a, b) => Math.abs(a.x - gx) - Math.abs(b.x - gx))[0]; if (t) { if (R() < 0.5) loft(p, t.x, t.y); else kick(p, t.x - p.x, t.y - p.y, clamp(len(t.x - p.x, t.y - p.y) * 1.5 + 4, 9, 17), 'pas'); } }
-      else if (mate) kick(p, mate.x - p.x, mate.y - p.y, clamp(len(mate.x - p.x, mate.y - p.y) * 1.4 + 6, 9, 17), 'pas'); else kick(p, dir, 0, 12, 'pas');
+      // duran top seçenekleri (FUT-02): kısa / ceza alanına / uzun, plana ve boşluğa göre seed'li seçilir
+      const ground = (q: Pl) => kick(p, q.x - p.x, q.y - p.y, clamp(len(q.x - p.x, q.y - p.y) * 1.5 + 4, 9, 17), 'pas');
+      const outs = pls.filter(q => q.team === p.team && !q.gk && q !== p), open = (q: Pl) => nearestOpp(p, q.x, q.y) > 2 && laneClear(p, q.x, q.y) > 1.1;
+      if (kd === 'korner') {
+        const short = outs.filter(q => Math.hypot(q.x - p.x, q.y - p.y) < 6 && open(q))[0], box = outs.filter(q => Math.abs(gx - q.x) < BOX_D + 2).sort((a, b) => Math.abs(a.x - gx) - Math.abs(b.x - gx));
+        const u = R();
+        if (short && u < 0.25) ground(short);
+        else if (box.length) { const t = u < 0.6 ? box[0] : box[box.length - 1]; if (R() < 0.6) loft(p, t.x, clamp(t.y + (u < 0.6 ? 0 : (WD / 2 - p.y) * 0.25), 2, WD - 2)); else ground(t); }   // ön direk ya da arka direk
+        else if (mate) ground(mate);
+        return;
+      }
+      if (kd === 'kale' || kd === 'aut') {   // kale vuruşu: boş savunmacıya kısa, yoksa (ya da uzun/kontra planında) forvete havadan
+        const longP = pl === 'uzun' || m.tavir[p.team] === 'kontra' ? 0.55 : 0.2, fwd = outs.slice().sort((a, b) => (b.x - a.x) * dir)[0];
+        const short = outs.filter(q => Math.abs(q.x - p.x) < 14 && open(q)).sort((a, b) => nearestOpp(p, b.x, b.y) - nearestOpp(p, a.x, a.y))[0];
+        if (short && R() > longP) ground(short); else if (fwd) loft(p, fwd.x + dir * 1.5, fwd.y); else kick(p, dir, 0, 13, 'pas');
+        return;
+      }
+      if (kd === 'tac') {   // taç: çizgi boyunca öndeki arkadaşa ya da en boş kısa seçeneğe
+        const line = outs.filter(q => (q.x - p.x) * dir > 2 && Math.abs(q.y - p.y) < 7 && open(q))[0];
+        if (line && R() < 0.4) { const tx = clamp(line.x + dir * 1.5, 1, L - 1); kick(p, tx - p.x, line.y - p.y, clamp(len(tx - p.x, line.y - p.y) * 1.4 + 5, 9, 16), 'pas'); }
+        else if (mate) ground(mate); else kick(p, dir, 0, 12, 'pas');
+        return;
+      }
+      if (mate) kick(p, mate.x - p.x, mate.y - p.y, clamp(len(mate.x - p.x, mate.y - p.y) * 1.4 + 6, 9, 17), 'pas'); else kick(p, dir, 0, 12, 'pas');
       return;
     }
     if (dGoal < 16 && shotV > 0.085 + R() * 0.07 + (press > 2.5 ? 0.03 : 0) + (eg === 'sutor' ? -0.03 : eg === 'pasci' ? 0.02 : 0) && shotV >= xg(mate || p) - 0.02) {
@@ -226,7 +255,7 @@ export function createMatch(o: MatchOpts = {}) {
       if (box && R() < 0.55) { loft(p, box.x + box.vx * 0.5, box.y + box.vy * 0.5); return; }
     }
     if (mate && (ps > carry * 1.4 || (press < 1.5 && ps > -0.5))) {
-      const thr = (mate.x - p.x) * dir > 2 && nearestOpp(mate) > 2.2 && R() < 0.25 + p.sk.vision * 0.3;   // ara pas: önündeki boşluğa
+      const thr = (mate.x - p.x) * dir > 2 && nearestOpp(mate) > 2.2 && R() < 0.25 + p.sk.vision * 0.3 + (m.tavir[p.team] === 'kontra' ? 0.2 : 0);   // ara pas: önündeki boşluğa
       const tx2 = clamp(mate.x + mate.vx * 0.3 + (thr ? dir * 2.5 : 0), 1, L - 1), ty2 = clamp(mate.y + mate.vy * 0.3, 1, WD - 1), d = len(tx2 - p.x, ty2 - p.y);
       if ((d > 13 && laneClear(p, tx2, ty2) < 1.2) || (pl === 'uzun' && d > 10 && R() < 0.5)) loft(p, tx2, ty2); else kick(p, tx2 - p.x, ty2 - p.y, clamp(d * 1.5 + 6, 9, 18), 'pas');
       return;
@@ -277,17 +306,19 @@ export function createMatch(o: MatchOpts = {}) {
   function plan() {
     const holder = ball.owner >= 0 ? pls[ball.owner] : null;
     for (const team of [0, 1] as const) {
-      const dir = dirOf(team), mates = pls.filter(p => p.team === team), opps = pls.filter(p => p.team !== team), pl = m.plan[team];
+      const dir = dirOf(team), mates = pls.filter(p => p.team === team), opps = pls.filter(p => p.team !== team), pl = m.plan[team], tv = m.tavir[team];
       const bp = clamp((team === 0 ? ball.x : L - ball.x) / L, 0, 1);
       const phase = holder ? (holder.team === team ? 'atk' : 'def') : 'loose';
-      const shift = (bp - 0.5) * 0.4 + (phase === 'atk' ? 0.1 : phase === 'def' ? -0.07 : 0);
+      // blok yüksekliği: pres takımı savunmada önde bekler, kontra takımı kendi yarısına çekilir
+      const shift = (bp - 0.5) * 0.4 + (phase === 'atk' ? 0.1 : phase === 'def' ? (tv === 'pres' ? 0.01 : tv === 'kontra' ? -0.15 : -0.07) : 0);
       const outf = mates.filter(p => !p.gk && !isHuman(pls.indexOf(p)) && p !== holder);
       const eta = (p: Pl, x: number, y: number) => Math.hypot(p.x - x, p.y - y) / (5.5 + p.sk.pace * 1.6);
       const rel = (x: number) => (team === 0 ? x : L - x) / L;   // 0 kendi kalesi, 1 rakip kalesi
       const anchor = (p: Pl): [number, number] => {
         let ax = clamp(p.ax + shift * (p.role === 'DEF' ? 0.8 : 1), 0.08, 0.92); const wide = pl === 'kanat' ? 1.25 : 1;
         const ay = clamp(0.5 + (p.ay - 0.5) * wide + (ball.y / WD - 0.5) * 0.4, 0.1, 0.9);
-        if (p.role === 'FWD' && phase === 'atk') ax = Math.max(ax, (pl === 'uzun' ? 0.68 : 0.62) + (bp - 0.5) * 0.2);
+        if (p.role === 'FWD' && phase === 'atk') ax = Math.max(ax, (pl === 'uzun' || tv === 'kontra' ? 0.68 : 0.62) + (bp - 0.5) * 0.2);
+        if (p.role === 'FWD' && phase === 'def' && tv === 'kontra') ax = Math.max(ax, 0.52);   // kontra: bir forvet çizgide bekler, top kazanılınca derine koşu hazır
         return [team === 0 ? ax * L : (1 - ax) * L, ay * WD];
       };
       const run = (p: Pl) => 5 + p.sk.pace * 2;
@@ -325,17 +356,22 @@ export function createMatch(o: MatchOpts = {}) {
         const ranked = outf.slice().sort((a, b) => Math.hypot(a.x - ball.x, a.y - ball.y) - Math.hypot(b.x - ball.x, b.y - ball.y));
         const hold = holder!, og = ownX(team), loose = Math.hypot(ball.x - hold.x, ball.y - hold.y) > 1.0;
         const back = (ball.vx * dirOf(hold.team) < -2), wall = hold.y < 2.5 || hold.y > WD - 2.5;
-        const trig = loose || back || wall, press = ranked[0], press2 = trig ? ranked[1] : null, cover = trig ? ranked[2] : ranked[1];
+        // pres tetikleri: kötü kontrol, geri pas, çizgiye sıkışma. Pres tavrında rakip kendi yarısındayken de ikinci presçi gider;
+        // kontra tavrında rakip yarı sahada ikinci presçi hiç çıkmaz (blok bozulmaz).
+        const trig = (loose || back || wall || (tv === 'pres' && bp > 0.45)) && !(tv === 'kontra' && bp > 0.55);
+        const press = ranked[0], press2 = trig ? ranked[1] : null, cover = trig ? ranked[2] : ranked[1];
         const free = opps.filter(o => !o.gk && o !== hold), used = new Set<Pl>();
         for (const p of outf) {
           let [tx, ty] = anchor(p), sp = 4.6 + p.sk.pace * 1.6;
           if (p === press || p === press2) {   // kale tarafından kapan, yakınken jokey; tetikte daha sert
             const gd = len(og - hold.x, WD / 2 - hold.y), off = p === press2 ? 1.6 : 0.9, px = hold.x + (og - hold.x) / gd * off, py = hold.y + (WD / 2 - hold.y) / gd * off + (p === press2 ? (hold.y < WD / 2 ? 1 : -1) * 1.2 : 0);
-            const dd = Math.hypot(px - p.x, py - p.y); tx = px; ty = py; sp = dd > 3 ? 5.8 + p.sk.pace * 1.6 + (trig ? 0.5 : 0) : 4.6;
-          } else if (p === cover) { tx = hold.x + (og - hold.x) * 0.45; ty = hold.y + (WD / 2 - hold.y) * 0.45; sp = 5.2 + p.sk.pace; }
+            const dd = Math.hypot(px - p.x, py - p.y); tx = px; ty = py; sp = dd > 3 ? 5.8 + p.sk.pace * 1.6 + (trig ? 0.5 : 0) + (tv === 'pres' ? 0.3 : 0) : 4.6;
+          } else if (p === cover) { const c = tv === 'kontra' ? 0.6 : tv === 'pres' ? 0.35 : 0.45; tx = hold.x + (og - hold.x) * c; ty = hold.y + (WD / 2 - hold.y) * c; sp = 5.2 + p.sk.pace; }
           else {
+            // markaj: pres takımı adamını sıkı ve yüksekte tutar, kontra takımı bölgesinde kalıp adamı yalnız yakınsa alır
+            const w = tv === 'pres' ? 0.85 : tv === 'kontra' ? 0.4 : 0.65, gap = tv === 'pres' ? 1.2 : 1.7;
             let mk: Pl | null = null, md = 1e9; for (const o of free) if (!used.has(o)) { const d = Math.hypot(o.x - tx, o.y - ty); if (d < md) { md = d; mk = o; } }
-            if (mk && md < 9) { used.add(mk); const gd = len(og - mk.x, WD / 2 - mk.y); tx = tx * 0.35 + (mk.x + (og - mk.x) / gd * 1.7) * 0.65; ty = ty * 0.35 + (mk.y + (WD / 2 - mk.y) / gd * 1.7) * 0.65; }
+            if (mk && md < (tv === 'pres' ? 12 : 9)) { used.add(mk); const gd = len(og - mk.x, WD / 2 - mk.y); tx = tx * (1 - w) + (mk.x + (og - mk.x) / gd * gap) * w; ty = ty * (1 - w) + (mk.y + (WD / 2 - mk.y) / gd * gap) * w; }
           }
           p.tx = tx; p.ty = ty; p.spd = sp;
         }

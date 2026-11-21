@@ -223,7 +223,7 @@ export function installHaliSaha(K: Kernel, lig?: LigIf) {
         const t = rt.uiLast.haliSahaTeklif as MacGunu | undefined; if (!t) return false;
         delete rt.uiLast.haliSahaTeklif;
         const club = kulupVar(), st = club ? stadSave(S.zones.arsa as never) : null;   // the gate is sold BEFORE kick-off: fill uses the form going in and the rival's real strength
-        rt.uiLast.haliSahaMac = { ...t, doluluk: tahminDoluluk(st ? st.fiyat : FIYAT_VARSAYILAN, z.form || [], LIG_BY_ID[t.rival]?.guc || 55), formasyon: st ? st.formasyon : '2-2' }; rt.paused = true; rt.pauseWhy = 'halisaha';
+        rt.uiLast.haliSahaMac = { ...t, doluluk: tahminDoluluk(st ? st.fiyat : FIYAT_VARSAYILAN, z.form || [], LIG_BY_ID[t.rival]?.guc || 55), formasyon: st ? st.formasyon : '2-2', ayar: macAyari(S, t) }; rt.paused = true; rt.pauseWhy = 'halisaha';
         K.logEv('haliSaha', { op: 'kabul', team: t.team });
         return true;
       }
