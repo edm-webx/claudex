@@ -20,7 +20,7 @@
  *   (v2 behaviour), others override the face row; LOD B/C use the 4-expression far set.
  * - Every root carries userData.parity = 'dyn' (parity masks) and v2 names (crowd, hero-*, cat-*, dog-*, gull-*, pigeons).
  */
-import { ugY, onUg } from '../../../content/ustgecit';
+import { ugY, onUg, zeminY } from '../../../content/ustgecit';
 import * as T from 'three';
 import { CH } from './v2/chars-v2';
 import * as K from './v2/kit';
@@ -42,6 +42,7 @@ const FACE_ROW = FACES.map(f => f.crowdRow), FAR_ROW = FACES.map(f => f.farRow);
 // 'count' ActId'de yok ama garsonun hesap sayma hareketi sim'den bu adla gelir (workers.ts); görünümde para sayma animasyonuna eşlenir
 const V2ACT: Partial<Record<ActId | 'count', string>> = { count: 'count', cut: 'cut', pour: 'pour', serve: 'pour', sweep: 'wipe', sleep: 'sleep', phone: 'selfie', wave: 'wave', sit: 'sit', cheer: 'cheer', perform: 'talk', dance: 'dance' };
 const CROWD_ACT: Partial<Record<ActId, string>> = { sip: 'drink', eat: 'eat', wave: 'wave', sleep: 'sleep', phone: 'phone', cheer: 'cheer', perform: 'cheer', dance: 'dance', serve: 'point', grab: 'point' };
+Object.assign(CROWD_ACT, { read: 'photo', fish: 'point' });   // DNY-02/03: gazete iki elde, olta önde (sim ACT_ORDER eki)
 const moving = (s: number) => s > 0.15;
 const v2speed = (s: number) => (moving(s) ? Math.min(1, s / 1.2) : 0);
 
@@ -206,7 +207,7 @@ export function createChars(deps: CharsDeps): MotorChars {
         }
         const a = ACT_ORDER[act[i]] as ActId, m = MOOD_ORDER[mood[i]], e = expr[i];
         let rot = PR[i]; { let d = RO[i] - rot; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; rot += d * alpha; }
-        set.x = PX[i] + (X[i] - PX[i]) * alpha; set.z = PZ[i] + (Z[i] - PZ[i]) * alpha; set.rot = rot; set.y = crowd.heightOf ? crowd.heightOf(i) : 0;
+        set.x = PX[i] + (X[i] - PX[i]) * alpha; set.z = PZ[i] + (Z[i] - PZ[i]) * alpha; set.rot = rot; set.y = Math.max(crowd.heightOf ? crowd.heightOf(i) : 0, zeminY(set.x as number, set.z as number));   // DNY-15: üst geçit merdiveni/güvertesi
         set.speed = moving(SP[i]) ? Math.min(1, SP[i] / 0.9) : 0;
         set.sit = a === 'sit' || (flags[i] & AGENT_FLAG.seated) !== 0;
         set.carry = carry[i] > 0;
