@@ -54,6 +54,11 @@ function rectW(m: IcMekan, u0: number, u1: number, v0: number, v1: number): Rect
   const a = icWorld(m, u0, v0), b = icWorld(m, u1, v1);
   return { x0: Math.min(a.x, b.x), x1: Math.max(a.x, b.x), z0: Math.min(a.z, b.z), z1: Math.max(a.z, b.z) };
 }
+/** dünya (x, z) -> oda çerçevesi (u, v): icWorld'ün tersi */
+export function icUV(m: IcMekan, x: number, z: number): { u: number; v: number } {
+  const t = YAW[m.kapi], c = Math.round(Math.cos(t)), s = Math.round(Math.sin(t)), dx = x - m.x, dz = z - m.z;
+  return { u: dx * c - dz * s, v: dx * s + dz * c };
+}
 export const IC_DUVAR = 0.25, IC_KAPI = 1.7;
 /** is p inside the room (margin < 0 shrinks) */
 export function icIcinde(m: IcMekan, p: { x: number; z: number }, margin = 0): boolean {
@@ -74,10 +79,11 @@ const SALON_U = [-3.9, -1.9, 1.9, 3.9], SALON_V = [-0.2, 1.6];
 const salonMasalar = (): IcItem[] => SALON_V.flatMap(v => SALON_U.map(u => it('salonMasa', u, v, 0.9, 0.8, { solid: true, ...(v > 1 && Math.abs(u) < 3 ? { asama: 10 } : {}) })));
 
 function kafeLayout(W: number, D: number, bistro: boolean): IcItem[] {
-  const bv = -D / 2 + 1.2, o: IcItem[] = [
-    it('rafArka', -1.2, -D / 2 + 0.32, 5.6, 0.36), it('tezgah', -1.2, bv, 5.0, 0.75, { solid: true, c: bistro ? '#1d4f86' : '#7a3b1c' }), it('kasa', 0.9, bv, 0.4, 0.4, { y: 1.05 }),
+  // 2026-11-21 denetim: tezgâh arkasında 0.9 m personel koridoru (raf duvara yaslı, tezgâh öne alındı; eskiden 0.33 m kalıyordu)
+  const bv = -D / 2 + 1.95, o: IcItem[] = [
+    it('rafArka', -1.2, -D / 2 + IC_DUVAR + 0.18, 5.6, 0.36), it('tezgah', -1.2, bv, 5.0, 0.75, { solid: true, c: bistro ? '#1d4f86' : '#7a3b1c' }), it('kasa', 0.9, bv, 0.4, 0.4, { y: 1.05 }),
     it('menuPano', -1.2, -D / 2 + 0.27, 3.0, 0.05, { y: 2.3, txt: bistro ? 'SAHİL BİSTRO' : 'MEYDAN KAFE' }),
-    masa(-3.3, 0.2, bistro ? 'masa4' : 'masa2'), masa(-3.3, 2.1), masa(-1.8, 1.2), masa(1.9, 0.5, bistro ? 'masa4' : 'masa2'), masa(1.9, 2.3),
+    masa(-3.1, 0.5, bistro ? 'masa4' : 'masa2'), masa(-3.1, 2.4), masa(-1.6, 1.45), masa(1.9, 0.85, bistro ? 'masa4' : 'masa2'), masa(1.9, 2.55),
     it('saksiB', W / 2 - 0.45, D / 2 - 0.45, 0.6, 0.6), it('lamba', 0, 0, W, D),
   ];
   if (!bistro) o.push(
@@ -88,17 +94,18 @@ function kafeLayout(W: number, D: number, bistro: boolean): IcItem[] {
   else o.push(
     it('espresso', -2.7, bv, 0.6, 0.5, { esya: 'kahve_bar', y: 1.05 }), it('waffle', -0.5, bv, 0.6, 0.45, { esya: 'waffle_mak', y: 1.05 }), it('bicak', 0.3, bv, 0.5, 0.3, { esya: 'sef_seti', y: 1.05 }),
     it('buzVitrin', 2.1, bv, 1.6, 0.85, { esya: 'buz_vitrin' }), it('akvaryum', -W / 2 + 0.32, 0.6, 3.2, 0.45, { esya: 'akvaryum', ry: 1 }),
-    it('mangal', W / 2 - 0.65, -D / 2 + 0.6, 1.0, 0.8, { esya: 'mangal' }), it('piyano', W / 2 - 1.1, D / 2 - 1.1, 1.5, 1.2, { esya: 'piyano' }), it('isikTavan', 0, 0, W - 0.6, D - 0.6, { esya: 'isik' }));
+    it('mangal', W / 2 - 0.7, -D / 2 + 0.6, 0.9, 0.7, { esya: 'mangal' }), it('piyano', W / 2 - 1.1, D / 2 - 1.1, 1.5, 1.2, { esya: 'piyano' }), it('isikTavan', 0, 0, W - 0.6, D - 0.6, { esya: 'isik' }));
   return o;
 }
 function kirtasiyeLayout(W: number, D: number): IcItem[] {
+  // 2026-11-21 denetim: tezgâh doğu duvarından 0.9 m içeride (kasiyer arkada sıkışmıyor), okuma köşesi kapı yolundan alındı
   return [
-    it('rafArka', -0.9, -D / 2 + 0.45, W - 2.8, 0.5, { solid: true, c: 'kirtasiye' }), it('tezgah', W / 2 - 1.1, 0.0, 1.8, 0.7, { solid: true, ry: 1, c: '#2b6fb8' }), it('kasa', W / 2 - 1.1, 0.5, 0.4, 0.4, { y: 1.05 }),
+    it('rafArka', -0.9, -D / 2 + 0.45, W - 2.8, 0.5, { solid: true, c: 'kirtasiye' }), it('tezgah', W / 2 - 1.55, 0.0, 1.8, 0.7, { solid: true, ry: 1, c: '#2b6fb8' }), it('kasa', W / 2 - 1.55, 0.5, 0.4, 0.4, { y: 1.05 }),
     it('stand', -1.6, 0.5, 1.3, 0.55, { solid: true }), it('lamba', 0, 0, W, D),
-    it('fotokopi', W / 2 - 0.6, -D / 2 + 0.6, 0.9, 0.7, { esya: 'fotokopi' }), it('pos', W / 2 - 1.1, -0.4, 0.3, 0.3, { esya: 'pos', y: 1.05 }),
-    it('laminasyon', W / 2 - 1.1, 0.15, 0.5, 0.4, { esya: 'laminasyon', y: 1.05 }), it('kitaplik', -W / 2 + 0.3, 0.1, 2.6, 0.4, { esya: 'kitap_raf', ry: 1 }),
+    it('fotokopi', W / 2 - 0.6, -D / 2 + 0.6, 0.9, 0.7, { esya: 'fotokopi' }), it('pos', W / 2 - 1.55, -0.4, 0.3, 0.3, { esya: 'pos', y: 1.05 }),
+    it('laminasyon', W / 2 - 1.55, 0.15, 0.5, 0.4, { esya: 'laminasyon', y: 1.05 }), it('kitaplik', -W / 2 + 0.3, 0.1, 2.6, 0.4, { esya: 'kitap_raf', ry: 1 }),
     it('kalemVitrin', 1.2, -D / 2 + 0.55, 1.2, 0.6, { esya: 'vitrin_k' }), it('oyuncak', -W / 2 + 1.3, D / 2 - 0.6, 1.2, 0.7, { esya: 'oyuncak' }),
-    it('yazici3d', -2.9 + 0.2, -D / 2 + 0.45, 0.6, 0.5, { esya: 'yazici3d', y: 1.25 }), it('okuma', 0.2, 0.7, 1.2, 1.0, { esya: 'okuma' }),
+    it('yazici3d', -2.9 + 0.2, -D / 2 + 0.45, 0.6, 0.5, { esya: 'yazici3d', y: 1.25 }), it('okuma', -1.9, -0.5, 1.1, 0.9, { esya: 'okuma' }),
   ];
 }
 function okulLayout(W: number, D: number): IcItem[] {
@@ -106,8 +113,8 @@ function okulLayout(W: number, D: number): IcItem[] {
     it('dolap', -4.8, D / 2 - 0.35, 3.4, 0.45, { solid: true, ry: 2 }), it('pano', -8.9, 0, 2.4, 0.06, { ry: 1, y: 1.6 }), it('bolme', 0.2, -1.2, 0.18, D - 2.4 - 0.5, { solid: true })];
   for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++) o.push(it('sira', -7.6 + c * 1.55, -1.3 + r * 1.4, 1.1, 0.55, { solid: true }));
   // the school canteen (business k4) in the east half
-  const bv = -D / 2 + 1.15;
-  o.push(it('tezgah', 5.2, bv, 4.6, 0.7, { solid: true, c: '#e0533c' }), it('rafArka', 5.2, -D / 2 + 0.32, 4.8, 0.36), it('kasa', 6.9, bv, 0.4, 0.4, { y: 1.05 }),
+  const bv = -D / 2 + 1.95;   // 2026-11-21 denetim: kantin tezgâhı öne, arkada 0.9 m personel koridoru
+  o.push(it('tezgah', 5.2, bv, 4.6, 0.7, { solid: true, c: '#e0533c' }), it('rafArka', 5.2, -D / 2 + IC_DUVAR + 0.18, 4.8, 0.36), it('kasa', 6.9, bv, 0.4, 0.4, { y: 1.05 }),
     it('menuPano', 5.2, -D / 2 + 0.27, 2.6, 0.05, { y: 2.2, txt: 'KANTİN' }),
     it('tostMak', 4.0, bv, 0.5, 0.4, { esya: 'tost_mak', y: 1.05 }), it('buzdolap', 8.5, -D / 2 + 0.5, 0.9, 0.7, { esya: 'buzdolap' }),
     it('semaver', 5.4, bv, 0.4, 0.4, { esya: 'semaver_k', y: 1.05 }), it('firinK', 2.4, -D / 2 + 0.5, 0.9, 0.7, { esya: 'mikrodalga' }),
@@ -118,11 +125,11 @@ function okulLayout(W: number, D: number): IcItem[] {
 /** AVM lokanta strip (W 5.2): counter at the back, staff behind it, cooking line on the back wall, tables in a column on the
  *  east side so the queue lanes on the west side stay clear */
 function avmLayout(W: number, D: number): IcItem[] {
-  const bv = -D / 2 + 1.6, bw = -D / 2 + 0.5;
+  const bv = -D / 2 + 2.15, bw = -D / 2 + IC_DUVAR + 0.25;   // 2026-11-21 denetim: pişirme hattı ile tezgâh arası 0.95 m
   return [
     it('lamba', 0, 0, W, D), it('zemin', 0, 0, W, D, { c: 'avm' }),
     it('tezgah', -0.5, bv, 3.6, 0.8, { solid: true, c: '#a2472f' }), it('kasa', 1.0, bv, 0.4, 0.4, { y: 1.05 }), it('menuPano', -0.5, -D / 2 + 0.27, 3.4, 0.05, { y: 2.75, txt: 'MARTI LOKANTASI' }),
-    masa(-1.6, -0.9, 'masa4'), masa(-1.6, 1.1, 'masa4'), masa(-1.6, 3.1, 'masa4'), it('saksiB', W / 2 - 0.55, D / 2 - 0.55, 0.5, 0.5, { solid: true }),
+    masa(-1.6, -0.2, 'masa4'), masa(-1.6, 1.7, 'masa4'), masa(-1.6, 3.6, 'masa4'), it('saksiB', W / 2 - 0.55, D / 2 - 0.55, 0.5, 0.5, { solid: true }),
     it('benmari', -1.6, bv, 1.4, 0.6, { esya: 'benmari', y: 1.05 }), it('corba', -0.45, bv, 0.5, 0.5, { esya: 'corba_kazan', y: 1.05 }), it('semaver', 0.3, bv, 0.4, 0.4, { esya: 'cay_ocak', y: 1.05 }),
     // back wall cooking line; the staff lane (v ~ bv - 0.7) stays free in front of it
     it('tasFirin', -1.75, bw, 1.0, 0.5, { esya: 'pide_firin' }), it('mangal', -0.7, bw, 0.9, 0.5, { esya: 'ocakbasi' }), it('doner', 0.1, bw, 0.5, 0.5, { esya: 'doner' }),
@@ -167,13 +174,13 @@ function magazaLayout(W: number, D: number, tur: 'giyim' | 'elektronik' | 'oyunc
   return o;
 }
 function kafeteryaLayout(W: number, D: number): IcItem[] {
-  const bv = -D / 2 + 0.85;
+  const bv = -D / 2 + 1.45;   // 2026-11-21 denetim: tezgâh arkasında 0.9 m koridor; masalar kuyruğun önünden doğuya alındı
   return [
     it('lamba', 0, 0, W, D), it('tezgah', -4.8, bv, 4.6, 0.6, { solid: true, c: '#2f9e5a' }), it('kasa', -2.9, bv, 0.4, 0.4, { y: 1.05 }), it('menuPano', -4.8, -D / 2 + 0.27, 2.8, 0.05, { y: 2.0, txt: 'KAFETERYA' }),
-    masa(-6.4, 1.0), masa(-3.6, 1.0), it('dolap', 5.6, -D / 2 + 0.3, 5.0, 0.45, { solid: true }), it('bank', 5.6, 0.2, 3.6, 0.4, { solid: true }),
+    masa(1.1, 0.7), masa(2.8, 0.7), it('dolap', 5.6, -D / 2 + 0.3, 5.0, 0.45, { solid: true }), it('bank', 5.6, 0.2, 3.6, 0.4, { solid: true }),
     it('pano', 2.2, -D / 2 + 0.17, 1.6, 0.06, { y: 1.5, txt: 'SOYUNMA' }), it('dus', 8.2, 0.9, 1.0, 1.2),
     it('semaver', -5.8, bv, 0.4, 0.4, { esya: 'cay_mak', y: 1.05 }), it('buzdolap', -7.9, -D / 2 + 0.45, 0.9, 0.7, { esya: 'icecek_dolap' }),
-    it('ekran', -0.8, -D / 2 + 0.2, 1.8, 0.08, { esya: 'mac_tv', y: 1.7 }), it('langirt', -0.8, 0.7, 1.3, 0.75, { esya: 'langirt' }),
+    it('ekran', -0.8, -D / 2 + 0.2, 1.8, 0.08, { esya: 'mac_tv', y: 1.7 }), it('langirt', -1.0, 1.0, 1.3, 0.75, { esya: 'langirt' }),
     it('kupa', 1.0, -D / 2 + 0.35, 1.2, 0.45, { esya: 'kupa' }), it('izgara', -6.9, -D / 2 + 0.45, 0.9, 0.55, { esya: 'izgara_t' }),
     it('formaDuvar', 3.2, -D / 2 + 0.16, 2.0, 0.06, { esya: 'forma_duvar', y: 1.6 }), it('vip', -8.2, 1.0, 0.9, 1.4, { esya: 'vip' }),
   ];
@@ -305,7 +312,7 @@ const cache = new Map<string, IcItem[]>();
  */
 function mutfakLayout(W: number, D: number, stage: number): IcItem[] {
   const bv = -D / 2 + 0.55, fv = D / 2 - 0.55, yari = W / 2 - IC_DUVAR;
-  const st = (id: string) => { const y = MUTFAK_YER[id]; return it(y.k, y.u, y.sira === 'arka' ? bv : y.sira === 'on' ? fv : 0.1, y.w, 0.9, { esya: id, ...(y.sira === 'on' ? { ry: 2 } : {}) }); };
+  const st = (id: string) => { const y = MUTFAK_YER[id]; return it(y.k, y.u, y.sira === 'arka' ? bv : y.sira === 'on' ? fv : 0.1, y.w, 0.75, { esya: id, ...(y.sira === 'on' ? { ry: 2 } : {}) }); };
   const hood = stage >= 9 ? [-8.4, 2.0] : stage >= 6 ? [-6.4, 2.0] : [-2.9, 2.0];
   return [
     ...Object.keys(MUTFAK_YER).map(st),
@@ -329,7 +336,17 @@ export function icLayout(m: IcMekan, stage = 10): IcItem[] {
     : m.tur === 'lokanta' ? avmLayout(W, D) : m.tur === 'kafeterya' ? kafeteryaLayout(W, D) : m.tur === 'banka' ? bankaLayout(W, D) : m.tur === 'hastane' ? hastaneLayout(W, D)
     : m.tur === 'giyim' || m.tur === 'elektronik' || m.tur === 'oyuncak' ? magazaLayout(W, D, m.tur)
     : m.tur === 'mutfak' ? mutfakLayout(W, D, stage) : m.tur === 'kahvalti' ? kahvaltiLayout(W, D) : m.tur === 'balik' ? balikLayout(W, D) : m.tur === 'acil' ? acilLayout(W, D) : morgLayout(W, D);
+  o = o.map(i => duvaraOturt(i, W, D));
   cache.set(key, o); return o;
+}
+/** 2026-11-21 denetim: zemin eşyası duvarın içine taşmaz; taşan eşya duvar yüzüne yaslanacak kadar içeri kayar (ince duvar panoları,
+ *  kapılar ve kasa kapağı gibi derinliği 0.25 m'den az olanlar duvarda kalır). */
+function duvaraOturt(i: IcItem, W: number, D: number): IcItem {
+  if (!icZeminEngeli(i)) return i;
+  const r = icItemRect(i), t = IC_DUVAR, sw = r.u1 - r.u0, sd = r.v1 - r.v0; let du = 0, dv = 0;
+  if (sw > 0.25 && sw < W - 2 * t) { if (r.u0 < -W / 2 + t) du = -W / 2 + t - r.u0; else if (r.u1 > W / 2 - t) du = W / 2 - t - r.u1; }
+  if (sd > 0.25 && sd < D - 2 * t) { if (r.v0 < -D / 2 + t) dv = -D / 2 + t - r.v0; else if (r.v1 > D / 2 - t) dv = D / 2 - t - r.v1; }
+  return du || dv ? { ...i, u: i.u + du, v: i.v + dv } : i;
 }
 
 /** World-space colliders: walls with the door gap plus solid furniture (`stage`: büfe salonunda o aşamada kurulmamış masa yok). */
@@ -347,3 +364,97 @@ export const icCollidersLocal = (m: IcMekan, cx = m.x, cz = m.z): Rect[] => icCo
 export const icBinaCollidersLocal = (bina: string, cx: number, cz: number): Rect[] => icBina(bina).flatMap(m => icCollidersLocal(m, cx, cz));
 /** bank teller window: bank ops work here too */
 export function bankaGise(): { x: number; z: number } { const m = IC_BY_ID.banka; return icWorld(m, 0, -icDim(m).D / 2 + 2.6); }
+
+/* ---------- personel geometrisi (2026-11-21 görsel mantık denetimi) ----------
+ * Kullanıcı: "kafeye girince çalışanlar tezgâhın arasında kağıt gibi sıkışmış". Tezgâh arkasındaki çalışan yeri, tezgâh
+ * hattının ucu ve koridor derinliği tek yerden hesaplanır (sim/agents/kafe.ts ve tests/unit/ic-mekan-yerlesim.test.ts).
+ * Çerçeve: a = tezgâh boyunca konum, b = tezgâhtan uzaklık (müşteri tarafı +, personel tarafı -). */
+/** çalışan gövde yarıçapı (görsel karakter omuz genişliği ~0.44 m) */
+export const PERSONEL_R = 0.22;
+/** u/v dikdörtgeni (kapı çerçevesi) */
+export function icItemRect(i: IcItem): { u0: number; u1: number; v0: number; v1: number } {
+  const sw = (i.ry || 0) % 2 ? i.d : i.w, sd = (i.ry || 0) % 2 ? i.w : i.d;
+  return { u0: i.u - sw / 2, u1: i.u + sw / 2, v0: i.v - sd / 2, v1: i.v + sd / 2 };
+}
+/** zeminde duran, yürümeye engel olan öğe mi (tavan / duvar paneli / tezgâh üstü cihaz / zemin deseni değil) */
+export function icZeminEngeli(i: IcItem): boolean {
+  if (i.k === 'lamba' || i.k === 'zemin' || i.k === 'isikTavan' || i.k === 'kuyruk' || i.k === 'islakTabela') return false;
+  if (i.y !== undefined && i.y >= 0.9) return false;   // tezgâh üstü (1.05) ya da duvara asılı
+  return true;
+}
+export interface PersonelGeo { tz: IcItem; vert: boolean; arka: number; cu: number; endU: number; lo: number; hi: number }
+/** tezgâhlı işletme odasında personelin durduğu bant: arka = tezgâh merkezinden personel noktasına uzaklık */
+export function personelGeo(m: IcMekan): PersonelGeo | null {
+  const lay = icLayout(m), tz = lay.find(i => i.k === 'tezgah'); if (!tz) return null;
+  const vert = (tz.ry || 0) % 2 === 1, arka = tz.d / 2 + 0.36;
+  // tezgâh hattına bitişik zemin öğeleri (vitrin dolabı vb.) hattı uzatır: personel ucun ötesinden dolaşır, içinden geçmez
+  const along = (i: IcItem) => { const r = icItemRect(i); return vert ? [r.v0, r.v1] : [r.u0, r.u1]; };
+  const off = (i: IcItem) => (vert ? i.u - tz.u : i.v - tz.v);
+  let a0 = vert ? tz.v - tz.w / 2 : tz.u - tz.w / 2, a1 = vert ? tz.v + tz.w / 2 : tz.u + tz.w / 2;
+  for (const i of lay) if (i !== tz && icZeminEngeli(i) && Math.abs(off(i)) < 0.3) { const [x0, x1] = along(i); if (x1 >= a1 - 0.05 && x0 <= a1 + 0.3) a1 = Math.max(a1, x1); if (x0 <= a0 + 0.05 && x1 >= a0 - 0.3) a0 = Math.min(a0, x0); }
+  const cu = vert ? a0 + 0.3 : tz.u - tz.w / 2 + 1.0, endU = a1 + 0.55;
+  return { tz, vert, arka, cu, endU, lo: cu + 0.2, hi: a1 - 0.4 };
+}
+/** oda içinde u/v çerçevesinde engelden kaçan yol (ızgara A*, 0.15 m, sonra görüş hattıyla sadeleştirilir). Duvarlar ve zemin
+ *  eşyaları `rad` kadar şişirilir. Başlangıç / hedef bir engele değiyorsa en yakın boş hücreden başlar. Izgara oda başına bir kez kurulur. */
+const yolCache = new Map<string, { u: number; v: number }[]>();
+interface YolIzgara { nu: number; nv: number; W: number; D: number; ok: Uint8Array }
+const izgaraCache = new Map<string, YolIzgara>();
+const YS = 0.15;
+function yolIzgara(m: IcMekan, rad: number, stage: number): YolIzgara {
+  const key = `${m.id}|${m.wx}|${stage}|${rad}`; let g = izgaraCache.get(key); if (g) return g;
+  const { W, D } = icDim(m), t = IC_DUVAR;
+  const rs: { u0: number; u1: number; v0: number; v1: number }[] = [
+    { u0: -W / 2, u1: -W / 2 + t, v0: -D / 2, v1: D / 2 }, { u0: W / 2 - t, u1: W / 2, v0: -D / 2, v1: D / 2 }, { u0: -W / 2, u1: W / 2, v0: -D / 2, v1: -D / 2 + t },
+    { u0: -W / 2, u1: -IC_KAPI / 2, v0: D / 2 - t, v1: D / 2 }, { u0: IC_KAPI / 2, u1: W / 2, v0: D / 2 - t, v1: D / 2 },
+    ...icLayout(m, stage).filter(i => icZeminEngeli(i) && (i.asama ?? 0) <= stage).map(icItemRect)];
+  const nu = Math.ceil(W / YS), nv = Math.ceil((D + 3) / YS), ok = new Uint8Array(nu * nv);
+  for (let j = 0; j < nv; j++) for (let i = 0; i < nu; i++) {
+    const u = -W / 2 + (i + 0.5) * YS, v = -D / 2 + (j + 0.5) * YS; let f = 1;
+    for (const r of rs) if (u > r.u0 - rad && u < r.u1 + rad && v > r.v0 - rad && v < r.v1 + rad) { f = 0; break; }
+    ok[j * nu + i] = f;
+  }
+  g = { nu, nv, W, D, ok }; izgaraCache.set(key, g); return g;
+}
+export function icYol(m: IcMekan, from: { u: number; v: number }, to: { u: number; v: number }, rad = 0.2, stage = 10): { u: number; v: number }[] {
+  const key = `${m.id}|${m.wx}|${stage}|${from.u.toFixed(2)},${from.v.toFixed(2)}|${to.u.toFixed(2)},${to.v.toFixed(2)}|${rad}`;
+  const hit = yolCache.get(key); if (hit) return hit.slice();
+  const G = yolIzgara(m, rad, stage), { nu, nv, W, D, ok } = G;
+  const ci = (u: number) => Math.floor((u + W / 2) / YS), cj = (v: number) => Math.floor((v + D / 2) / YS);
+  const free = (u: number, v: number) => { const i = ci(u), j = cj(v); return i >= 0 && j >= 0 && i < nu && j < nv && ok[j * nu + i] === 1; };
+  const los = (a: { u: number; v: number }, b: { u: number; v: number }) => { const n = Math.ceil(Math.hypot(b.u - a.u, b.v - a.v) / 0.05); for (let k = 0; k <= n; k++) if (!free(a.u + (b.u - a.u) * k / n, a.v + (b.v - a.v) * k / n)) return false; return true; };
+  const cu = (i: number) => -W / 2 + (i + 0.5) * YS, cv = (j: number) => -D / 2 + (j + 0.5) * YS;
+  const cell = (p: { u: number; v: number }) => {
+    const i0 = ci(p.u), j0 = cj(p.v); let bi = -1, bd = 1e9;
+    for (let r = 0; r < 10 && bi < 0; r++) for (let i = i0 - r; i <= i0 + r; i++) for (let j = j0 - r; j <= j0 + r; j++) { if (i < 0 || j < 0 || i >= nu || j >= nv || !ok[j * nu + i]) continue; const d = Math.hypot(cu(i) - p.u, cv(j) - p.v); if (d < bd) { bd = d; bi = j * nu + i; } }
+    return bi;
+  };
+  let out: { u: number; v: number }[] = [to];
+  const s0 = cell(from), g0 = cell(to);
+  if (s0 >= 0 && g0 >= 0 && !los(from, to)) {
+    const N = nu * nv, gs = new Float32Array(N).fill(Infinity), prev = new Int32Array(N).fill(-1), done = new Uint8Array(N);
+    const gi = g0 % nu, gj = Math.floor(g0 / nu), h = (k: number) => { const di = Math.abs(k % nu - gi), dj = Math.abs(Math.floor(k / nu) - gj); return Math.max(di, dj) + 0.4142 * Math.min(di, dj); };
+    // binary heap on f = g + h
+    const hk: number[] = [], hf: number[] = [];
+    const push = (k: number, f: number) => { let i = hk.length; hk.push(k); hf.push(f); while (i > 0) { const p = (i - 1) >> 1; if (hf[p] <= hf[i]) break; [hk[p], hk[i]] = [hk[i], hk[p]]; [hf[p], hf[i]] = [hf[i], hf[p]]; i = p; } };
+    const pop = () => { const k = hk[0], lk = hk.pop()!, lf = hf.pop()!; if (hk.length) { hk[0] = lk; hf[0] = lf; let i = 0; for (;;) { const l = 2 * i + 1, r = l + 1; let m2 = i; if (l < hk.length && hf[l] < hf[m2]) m2 = l; if (r < hk.length && hf[r] < hf[m2]) m2 = r; if (m2 === i) break; [hk[m2], hk[i]] = [hk[i], hk[m2]]; [hf[m2], hf[i]] = [hf[i], hf[m2]]; i = m2; } } return k; };
+    gs[s0] = 0; push(s0, h(s0));
+    while (hk.length) {
+      const k = pop(); if (k === g0) break; if (done[k]) continue; done[k] = 1;
+      const i = k % nu, j = Math.floor(k / nu);
+      for (let di = -1; di <= 1; di++) for (let dj = -1; dj <= 1; dj++) {
+        if (!di && !dj) continue; const ii = i + di, jj = j + dj; if (ii < 0 || jj < 0 || ii >= nu || jj >= nv) continue;
+        const n = jj * nu + ii; if (done[n] || !ok[n] || (di && dj && (!ok[j * nu + ii] || !ok[jj * nu + i]))) continue;
+        const c = gs[k] + (di && dj ? 1.4142 : 1); if (c < gs[n]) { gs[n] = c; prev[n] = k; push(n, c + h(n)); }
+      }
+    }
+    if (prev[g0] >= 0 || g0 === s0) {
+      const raw: { u: number; v: number }[] = []; for (let k = g0; k >= 0; k = prev[k]) raw.unshift({ u: cu(k % nu), v: cv(Math.floor(k / nu)) });
+      raw.unshift(from); raw.push(to);
+      out = []; let a = 0;
+      while (a < raw.length - 1) { let b = raw.length - 1; while (b > a + 1 && !los(raw[a], raw[b])) b--; out.push(raw[b]); a = b; }
+    }
+  }
+  if (yolCache.size > 400) yolCache.clear();   // keys carry positions: keep the cache bounded
+  yolCache.set(key, out); return out.slice();
+}
