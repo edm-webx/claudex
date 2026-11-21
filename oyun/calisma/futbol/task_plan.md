@@ -35,3 +35,11 @@ Tüm alt ajanlar durduruldu. Kodda hiçbir değişiklik commit'lenmedi; yalnızc
 - kontrol ajanı: src/game/ui/hali-saha-girdi.ts başlangıç iskeleti (worktree agent-ade8b9f61acd7a983, commit'siz).
 - görsel ve kulüp/lig ajanları: hiçbir dosya üretmedi.
 Devam emri gelince: iz tablosundaki 4 işi baştan başlat (motor opus, görsel opus, kulüp/kontrol sonnet). İlk adım: FUT-01 ölçüm düzeneği.
+
+## DURAKLATILDI 2026-11-21 16:15 (sahip: önce Dünya ve Sesler bitsin)
+Dört izin işi dala birleştirildi (tsc temiz; qa:hizli ve testler birleşik hâlde HENÜZ çalıştırılmadı).
+- İz 3 kulüp/lig/koordinatör/bahis: BİTTİ (ccf66e9, 9a81671). Bağlanacak: macAyari(S,t) -> {skill, formations, names, colors, plan:['pres'|'dengeli'|'kontra']} hali-saha.ts'e bağlanmadı. qa:hizli'de tests/sim/faz2-ekonomi ve yuk.test.ts taban dalda da kırmızı (bizden değil). ekonomi-istismar.test.ts'te bahis .fails kaldırıldı (ana işin dosyası, onay).
+- İz 1 motor: FUT-01 ölçüm, FUT-04 kaleci, FUT-03 top fiziği, FUT-05 hakem commit'li. FUT-02 takım yapay zekası YARIM (WIP commit, macmotor.ts + macmotor-takim.test.ts): doğrulanmadı, determinizm ve güç farkı ölçümü yapılmadı. Sonraki adım: `node tools/mac-metrik.mjs` ile önce/sonra, FUT-02'yi tamamla, m.heat.
+- İz 4 kontrol: girdi modülü, olay-ses tablosu, sabit adım, tuş şeması, yardım kartı commit'li. Ekran görüntüsü ve gamepad gerçek cihaz doğrulaması yok.
+- İz 2 görsel: YARIM (WIP commit): ortak.ts, hali-saha-3d.ts, dünya stadyumu (view/stadyum/index.ts). Ekran görüntüsüyle doğrulanmadı, çıplak stadyum bulgusu kapanmadı.
+Kalan: motor FUT-02+heat, görseli bitir ve ekranla doğrula, macAyari bağlama, hali-saha.ts ↔ yeni motor alanları (ball.z, dive, ref, heat) uyumu, qa:hizli, ekran görüntüleri, Ana İş'e bildirim.
