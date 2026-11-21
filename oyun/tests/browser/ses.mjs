@@ -10,6 +10,7 @@ await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengel
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 60000 });
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
 const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(700); }
+await p.mouse.click(640, 360); await p.keyboard.press('Space'); await p.waitForTimeout(800);
 const SPOTS = { iskele: [0, 2, ['deniz', 'izgara']], mutfak: [0, -15, ['mutfak_oda']], salonE: [15.6, -12, ['ic_mirilti']], hastane: [46.95, 51.5, ['steril_oda']] };
 let bad = 0;
 for (const [ad, [x, z, beklenen]] of Object.entries(SPOTS)) {
