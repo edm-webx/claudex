@@ -62,7 +62,8 @@ export function installHedef(r: Rules): HedefApi {
   };
   const stat = (k: string) => Number(S().stats[k]) || 0;
   const def = (id: string): SmallGoalDef | undefined => SMALL_GOALS.find(d => d.id === id);
-  const rewardOf = (d: SmallGoalDef) => round5(Math.max(d.reward, (r.rt.rate || 0) * d.min));
+  // EKO-05: gelire bağlı ödülün tavanı 16x taban ödül. Büfe salon/kanat geliriyle hedefler 2,6x sık biter; tavansız ödül 30. dk'da 48k ₺ (eskiden 9k) ödüyordu.
+  const rewardOf = (d: SmallGoalDef) => round5(Math.max(d.reward, Math.min((r.rt.rate || 0) * d.min, d.reward * 16)));
 
   // ───────── small goals ─────────
   const eligible = (d: SmallGoalDef, g: HedefSave): boolean => {
