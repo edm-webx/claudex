@@ -124,7 +124,6 @@ import { createIzgaraLook, type IzgaraLookView } from './view/world/izgara-look'
 import { cellRect } from '../content/izgara';
 import { createDekorLook, type DekorLookView } from './view/world/dekor-look';
 import { createEvRoom, type EvRoomView } from './view/ev/ev-room';
-import { createTipJar, type TipJarView } from './view/world/tip-jar';
 import { createReklam, type ReklamView } from './view/world/reklam';
 import { createHavaLook, HAVA_ZORLA, type HavaLookView } from './view/world/hava-look';
 import { Batch } from '../engine/prefab/batch';
@@ -459,7 +458,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const hikayeScene: HikayeSceneView | null = panels ? make('hikayeScene', () => createHikayeScene({ root: U.root, rules: () => sim.rules as never, command, sfx: (id, o) => { try { audio?.sfx(id, o); } catch { /* */ } } })) : null;
   // Hedefler kartı (DOM) and the bahşiş kavanozu on the counter (goals.ts)
   const hedefCard: HedefCard | null = panels && labels ? make('hedefCard', () => createHedefCard({ root: U.root, v2: panels.v2 as never, rules: () => sim.rules, command, sfx: id => { try { audio?.sfx(id); } catch { /* */ } } })) : null;
-  const tipJar: TipJarView | null = playMode ? make('tipJar', () => createTipJar({ scene, rules: () => sim.rules })) : null;
+  // 2026-11-21 owner: "bağış kutusunu kaldır": the BAHŞİŞ jar on the counter is gone (view deleted; the sim counter stays silent)
   const stantLook: StantLookView | null = playMode ? make('stantLook', () => createStantLook({ scene, rules: () => sim.rules })) : null;
   if (playMode && uiReal) (sim.rules.rt as unknown as { gunSonuCard?: boolean }).gunSonuCard = true;   // headless sims/tests roll days over without the card
   // 2026-10-24 açık dünya: online ilk deneme over the claude.ai room (online.ts); offline anywhere else
@@ -702,7 +701,6 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (acilis) guard('acilis', () => acilis.update(fdt));
     if (karsiYasam) guard('karsiYasam', () => karsiYasam.update(fdt));
     if (icMekan) guard('icMekan', () => icMekan.update(fdt));
-    if (tipJar) guard('tipJar', () => tipJar.update(fdt));
     if (stantLook) guard('stantLook', () => stantLook.update(fdt));
     if (faz2Hud) guard('faz2Hud', () => faz2Hud.update(fdt));
     if (gunSonu) guard('gunSonu', () => gunSonu.update());

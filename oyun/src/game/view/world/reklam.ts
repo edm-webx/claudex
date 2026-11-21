@@ -9,6 +9,7 @@
  * No colliders (the board hangs on an existing lamp collider), nav and zones untouched. Code-made, no image files.
  */
 import * as T from 'three';
+import { counterExtra } from '../../../content/prefabs/iskele/layout';
 import { yiyecekApi, type ReklamModel } from '../../sim/yiyecek';
 import { MARKA_BY_ID, MASKOTLAR } from '../../../content/markalar';
 import type { Rules } from '../../sim/state';
@@ -122,7 +123,7 @@ export function createReklam(d: ReklamDeps): ReklamView {
       plaqueTex.t.needsUpdate = true;
     }
     plaque.visible = m.deals.length > 0;
-    const c = r.rt.layout.counter; plaque.position.set(c.pos.x + 0.62, c.drop.y, c.pos.z + 0.1);
+    { const q = counterExtra(r.rt.layout, 'plaque'); plaque.position.set(q.x, q.y, q.z); }
     if (m.pankart !== banKey) {
       banKey = m.pankart; const g = banTex.g;
       g.fillStyle = '#fff3c4'; g.fillRect(0, 0, 512, 64); g.strokeStyle = '#c0392b'; g.lineWidth = 6; g.strokeRect(3, 3, 506, 58);

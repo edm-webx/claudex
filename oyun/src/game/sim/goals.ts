@@ -163,11 +163,9 @@ export function installHedef(r: Rules): HedefApi {
     if (g.jarDay !== S().day) { g.jarDay = S().day; g.jar = 0; g.jarFull = false; }
     if (g.jarFull) return;
     g.jar += n;
-    if (line && g.jar < jarCap()) r.toast(line, 'info');
+    void line;   // 2026-11-21: the counter jar (view) was removed on the owner's request, so no jar toasts
     if (g.jar >= jarCap()) {
       g.jar = jarCap(); g.jarFull = true; g.jarFullAt = S().playT;
-      const ws = S().workers;
-      r.toast(ws.length ? rng.pick(JAR_FULL_LINES) : JAR_FULL_ALONE, 'good');
       r.stat('jarFull');
     }
   }

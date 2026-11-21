@@ -16,7 +16,7 @@ import { MAT } from '../../../content/prefabs/common/v2kit';
 import { padDef, padCost } from '../../../content/pads';
 import { mutfakDunya, mutfakUst } from '../../../content/ic-mekan';
 import { BULASIK } from '../../../content/mutfak';
-import { STATION_KINDS } from '../../../content/prefabs/iskele/layout';
+import { STATION_KINDS, counterSlot } from '../../../content/prefabs/iskele/layout';
 import type { StageLayout } from '../../../content/prefabs/iskele/layout';
 
 export interface RtEnv {
@@ -159,7 +159,8 @@ export function createRtView(env: RtEnv): RtView {
       const arr = rt.counter[p]; if (!arr) return;
       arr.forEach((it, i) => {
         const col = Math.floor(i / 4); let y = 0; for (let n = col * 4; n < i; n++) y += itemH(arr[n]);
-        emit(it, itemKey(it), { x: d.x + (pi - 2.5) * 0.24, y: (d.y || 1) + y, z: d.z + (col ? -0.14 : 0.06) }, 0, itemH(it), hand(0, []), 0.28, 0.5);
+        const sl = counterSlot(L, pi, col);
+        emit(it, itemKey(it), { x: sl.x, y: (d.y || 1) + y, z: sl.z }, 0, itemH(it), hand(0, []), 0.28, 0.5);
       });
     });
     // kasa pile
