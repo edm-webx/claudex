@@ -97,39 +97,68 @@ export async function girisYap(ad: string, sifre: string): Promise<string | null
 
 export async function cikisYap() { const c = supa(); me = null; try { await c?.auth.signOut(); } catch { /* */ } }
 
-/** Whole cloud record of the account (kayitlar.veri): active slot code + slots + bank (net/slots.ts shapes it). */
-export async function veriOku(): Promise<Record<string, unknown> | null> {
-  const c = supa(); if (!c || !me) return null;
-  try { const { data } = await c.from('kayitlar').select('veri').eq('id', me.id).maybeSingle(); return (data?.veri as Record<string, unknown>) || null; } catch { return null; }
-}
-let lastPush = '';
-/** true = sunucu onayladı (hata yoksa). Şimdiye dek upsert hatası yutuluyordu: rozet bu sonuca bakar. */
-export async function veriYaz(veri: Record<string, unknown>, esnaf: unknown): Promise<boolean> {
-  const c = supa(); if (!c || !me) return false;
-  const key = JSON.stringify(veri); if (key === lastPush) return true;   // aynı veri zaten onaylı gitti (başarısızlıkta lastPush sıfırlanır)
-  lastPush = key;
+/**
+ * Whole cloud record of the account (kayitlar.veri): active slot code + slots + bank (net/slots.ts shapes it).
+ * KAYIT-GUV (2026-11-21): a failed read is NOT "no record". ok=false means the server could not be asked/answered;
+ * the caller must not write anything then (a write built on an empty read would wipe every slot and the bank).
+ * satir = the row exists (needed to pick insert vs. conditional update).
+ */
+export interface VeriOkuma { ok: boolean; veri: Record<string, unknown> | null; satir: boolean }
+export async function veriOku(): Promise<VeriOkuma> {
+  const c = supa(); if (!c || !me) return { ok: false, veri: null, satir: false };
   try {
-    const r = await c.from('kayitlar').upsert({ id: me.id, veri, guncellendi: new Date().toISOString() });
-    if (r.error) { lastPush = ''; return false; }
-    if (esnaf) await c.from('oyuncular').update({ esnaf, guncellendi: new Date().toISOString() }).eq('id', me.id);   // yan veri: hata kaydı bozmaz
-    return true;
-  } catch { lastPush = ''; return false; }
+    const { data, error } = await c.from('kayitlar').select('veri').eq('id', me.id).maybeSingle();
+    if (error) return { ok: false, veri: null, satir: false };
+    const veri = data?.veri && typeof data.veri === 'object' ? data.veri as Record<string, unknown> : null;
+    return { ok: true, veri, satir: !!data };
+  } catch { return { ok: false, veri: null, satir: false }; }
+}
+
+/** Result of a conditional write: ok = stored; cakisma = someone else wrote since our read (re-read + merge); hata = network/server. */
+export type YazSonuc = 'ok' | 'cakisma' | 'hata';
+/**
+ * Optimistic lock on veri.rev (no schema change): the row is only updated while its stored rev still equals `rev`
+ * (the rev we read). Another tab/device that wrote in between makes this a 'cakisma' instead of a silent overwrite.
+ * satir=false: no row yet, insert (a unique-key clash = someone created it first = cakisma).
+ */
+export async function veriYazKosullu(veri: Record<string, unknown>, rev: number, satir: boolean, esnaf: unknown): Promise<YazSonuc> {
+  const c = supa(); if (!c || !me) return 'hata';
+  const guncellendi = new Date().toISOString();
+  try {
+    if (!satir) {
+      const r = await c.from('kayitlar').insert({ id: me.id, veri, guncellendi });
+      if (r.error) return r.error.code === '23505' ? 'cakisma' : 'hata';
+    } else {
+      let q = c.from('kayitlar').update({ veri, guncellendi }).eq('id', me.id);
+      q = rev > 0 ? q.eq('veri->>rev', String(rev)) : q.is('veri->>rev', null);
+      const r = await q.select('id');
+      if (r.error) return 'hata';
+      if (!r.data || r.data.length === 0) return 'cakisma';
+    }
+    if (esnaf) { try { await c.from('oyuncular').update({ esnaf, guncellendi }).eq('id', me.id); } catch { /* yan veri: hata kaydı bozmaz */ } }
+    return 'ok';
+  } catch { return 'hata'; }
 }
 
 /** keepalive isteklerinin toplam sınırı 64 KB; gövde bunu aşarsa kapanış yazımı denenmez (normal yazım zaten gider). */
 export const KAPANIS_LIMIT = 60_000;
 /**
- * Sekme kapanırken son yazım: asenkron beklemeden, önbellekteki jetonla REST upsert (keepalive). Dönüş: istek atıldı mı.
- * Sunucu onayı beklenmez (sayfa kapanıyor), bu yüzden lastPush'a dokunmaz ve rozet "Kaydedildi" demez.
+ * Sekme kapanırken son yazım: asenkron beklemeden, önbellekteki jetonla REST (keepalive). Dönüş: istek atıldı mı.
+ * Same optimistic lock as veriYazKosullu (PATCH filtered on veri->>rev), so a closing stale tab can never overwrite a
+ * newer save of another tab/device. Sunucu onayı beklenmez (sayfa kapanıyor), rozet "Kaydedildi" demez.
  */
-export function veriKapanisYaz(veri: Record<string, unknown>): boolean {
+export function veriKapanisYaz(veri: Record<string, unknown>, rev: number, satir: boolean): boolean {
   if (!me || !jeton) return false;
+  const guncellendi = new Date().toISOString();
   let body = '';
-  try { body = JSON.stringify({ id: me.id, veri, guncellendi: new Date().toISOString() }); } catch { return false; }
-  if (body.length > KAPANIS_LIMIT) return false;
+  try { body = JSON.stringify(satir ? { veri, guncellendi } : { id: me.id, veri, guncellendi }); } catch { return false; }
+  if (body.length > KAPANIS_LIMIT) { try { console.warn('[kayit] kapanış gövdesi sınırı aştı', body.length); } catch { /* */ } return false; }
+  const url = satir
+    ? SUPABASE_URL + '/rest/v1/kayitlar?id=eq.' + encodeURIComponent(me.id) + '&' + encodeURIComponent('veri->>rev') + '=' + (rev > 0 ? 'eq.' + rev : 'is.null')
+    : SUPABASE_URL + '/rest/v1/kayitlar';
   try {
-    void fetch(SUPABASE_URL + '/rest/v1/kayitlar?on_conflict=id', { method: 'POST', keepalive: true,
-      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + jeton, 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' }, body }).catch(() => { /* sayfa kapanıyor */ });
+    void fetch(url, { method: satir ? 'PATCH' : 'POST', keepalive: true,
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + jeton, 'Content-Type': 'application/json', Prefer: 'return=minimal' }, body }).catch(() => { /* sayfa kapanıyor */ });
     return true;
   } catch { return false; }
 }

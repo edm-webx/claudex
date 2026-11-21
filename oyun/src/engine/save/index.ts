@@ -137,7 +137,9 @@ export function createSave<S>(o: SaveOpts<S>): SaveStore<S> {
   const adopt = async (json: string, notes: string[]): Promise<S> => {
     let data = JSON.parse(json) as any;
     if (!data || typeof data !== 'object') throw new Error('not an object');
-    let v = typeof data.version === 'number' ? data.version : 0;
+    // a string version ("1") is still that version; a missing one is v0 (the game's v0 -> v1 migration adopts it)
+    let v = Number.isFinite(Number(data.version)) && data.version !== null && data.version !== '' ? Math.floor(Number(data.version)) : 0;
+    if (data.version !== v) data.version = v;
     if (v > o.version) throw new Error(`save version ${v} newer than ${o.version}`);
     if (v < o.version) {
       await primary.set(`${K}:pre:${v}:${now()}`, JSON.stringify({ seq: 0, at: now(), v, sum: checksum(json), json } satisfies Rec));

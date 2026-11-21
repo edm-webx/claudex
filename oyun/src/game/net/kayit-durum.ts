@@ -23,23 +23,23 @@ export const beklemeMs = (deneme: number): number => GERI_CEKILME_MS[Math.min(GE
 const pad = (n: number) => (n < 10 ? '0' : '') + n;
 const saatVarsayilan = (ms: number) => { const d = new Date(ms); return pad(d.getHours()) + ':' + pad(d.getMinutes()); };
 
-export function rozetMetni(durum: KayitDurumu, sonOk: number, saat: (ms: number) => string = saatVarsayilan): string {
+export function rozetMetni(durum: KayitDurumu, sonOk: number, saat: (ms: number) => string = saatVarsayilan, saltMetin = ''): string {
   switch (durum) {
     case 'bos': return sonOk ? 'Kaydedildi ' + saat(sonOk) : '';
     case 'bekliyor': return 'Kaydediliyor...';
     case 'tamam': return 'Kaydedildi ' + saat(sonOk);
     case 'hata': return 'Kaydedilemedi, tekrar deniyorum';
-    case 'cevrimdisi': return 'Bağlantı yok, bağlanınca kaydedilecek';
-    case 'salt': return 'Bu kayıt daha yeni bir sürümden, sayfayı yenile';
+    case 'cevrimdisi': return 'Bağlantı yok: bu cihazda saklandı, bağlanınca buluta gidecek';
+    case 'salt': return saltMetin || 'Bu kayıt daha yeni bir sürümden, sayfayı yenile';
   }
 }
 
 export function createKayitDurum(o: KayitOpts) {
   let durum: KayitDurumu = 'bos', sonOk = 0, deneme = 0, sonraki = 0;
-  let timer: unknown = null, ucta = false, tekrar = false;
+  let timer: unknown = null, ucta = false, tekrar = false, saltMetin = '';
   const subs = new Set<(g: KayitGorunum) => void>();
   const saat = o.saatMetni || saatVarsayilan;
-  const gorunum = (): KayitGorunum => ({ durum, metin: rozetMetni(durum, sonOk, saat), sonOk, deneme, sonrakiMs: sonraki });
+  const gorunum = (): KayitGorunum => ({ durum, metin: rozetMetni(durum, sonOk, saat, saltMetin), sonOk, deneme, sonrakiMs: sonraki });
   const yay = () => { const g = gorunum(); subs.forEach(cb => { try { cb(g); } catch { /* */ } }); };
   const dur = (yeni: KayitDurumu) => { durum = yeni; yay(); };
   const zamanlaTekrar = () => {
@@ -57,6 +57,7 @@ export function createKayitDurum(o: KayitOpts) {
     let ok = false;
     try { ok = await o.gonder(); } catch { ok = false; }
     ucta = false;
+    if ((durum as KayitDurumu) === 'salt') return;   // gönderim sırasında kilitlendi (çakışma / sürüm): yeniden deneme yok
     if (ok) {
       deneme = 0; sonraki = 0; sonOk = o.simdi();
       if (tekrar) { tekrar = false; dur('tamam'); void gonder(); return; }   // gönderirken yeni değişiklik olduysa bir tur daha
@@ -74,7 +75,10 @@ export function createKayitDurum(o: KayitOpts) {
     simdiKaydet(): Promise<void> { deneme = 0; return gonder(); },
     /** online / visibilitychange(visible): bekleyen hata ya da çevrimdışı varsa hemen dener. */
     baglandi(): void { if (durum === 'hata' || durum === 'cevrimdisi') { deneme = 0; void gonder(); } },
-    saltOkunur(): void { if (timer != null) { o.iptal(timer); timer = null; } dur('salt'); },
+    /** Yazım kilidi: rozet `metin` gösterir (yoksa yeni sürüm metni), bir daha göndermez. */
+    saltOkunur(metin = ''): void { if (timer != null) { o.iptal(timer); timer = null; } saltMetin = metin; tekrar = false; dur('salt'); },
+    /** Kaydedilmemiş ilerleme var mı (sekme kapanırken uyarı için). */
+    bekleyenVar(): boolean { return durum === 'hata' || durum === 'cevrimdisi' || durum === 'bekliyor'; },
     gorunum, durum: () => durum,
     abone(cb: (g: KayitGorunum) => void): () => void { subs.add(cb); cb(gorunum()); return () => { subs.delete(cb); }; },
   };
