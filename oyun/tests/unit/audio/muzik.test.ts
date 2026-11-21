@@ -63,3 +63,22 @@ describe('yeni parçalar', () => {
     expect(music.tracks.canli_saz.pad).toBe(0); expect(music.tracks.canli_saz.perc).toBe('none');
   });
 });
+
+describe('MUZ-ic: iç mekan müziği ve oda tonları', () => {
+  it('AVM mağazaları kendi parçası; okul ve kırtasiye sessiz; gece iskele havuzunda 3 parça', () => {
+    for (const t of ['giyim', 'elektronik', 'oyuncak']) expect(pickTrack(music, 'noon', 'acik', 'ic.' + t, null)).toBe('avm');
+    for (const t of ['okul', 'kirtasiye']) expect(pickTrack(music, 'noon', 'acik', 'ic.' + t, null)).toBe('');
+    expect(trackAdaylari(music, 'night', 'acik', 'iskele', null)).toEqual(['gece', 'gece2', 'gece3']);
+  });
+  it('yeni parçalar (avm, gece3) tam döngü, dikişsiz, sonlu ve tepe sınırlı', () => {
+    for (const id of ['avm', 'gece3']) {
+      const T = music.tracks[id], b = renderTrack(id, T);
+      expect(Math.abs(b.length / 24000 - T.bars! * 240 / T.bpm)).toBeLessThan(0.05);
+      let mx = 0, pk = 0; for (let i = 1; i < b.length; i++) { mx = Math.max(mx, Math.abs(b[i] - b[i - 1])); pk = Math.max(pk, Math.abs(b[i])); }
+      expect(b.some(v => !Number.isFinite(v))).toBe(false);
+      expect(pk).toBeLessThanOrEqual(0.62);
+      expect(Math.abs(b[b.length - 1] - b[0])).toBeLessThanOrEqual(mx + 1e-6);
+      expect(b.length * 4).toBeLessThan(5 * 1024 * 1024);   // tek parça bellek tavanı (12 MB bütçe içinde 2 parça + döngü)
+    }
+  });
+});

@@ -135,3 +135,32 @@ describe('morg ve canlı müzik', () => {
     expect(ambBolge('ic.kafe').ic).toBe(true);
   });
 });
+
+describe('MUZ-ic: iç mekan oda tonları (kafede kafe, mutfakta mutfak, dış ses yok)', () => {
+  const KOK = ['iskele', 'deniz', 'gull', 'horn'];
+  it('her iç mekan kimliğinin bir oda tonu var ve döngü ses-db içinde', async () => {
+    const { IC_MEKANLAR } = await import('../../../src/content/ic-mekan');
+    const { IC_ODA } = await import('../../../src/content/ses/ambiyans');
+    for (const m of IC_MEKANLAR) expect(IC_ODA[m.id], m.id).toBeTruthy();
+    for (const [id, o] of Object.entries(IC_ODA)) { expect(db.loops[o.loop], id).toBeTruthy(); expect(o.vol).toBeLessThanOrEqual(0.55); }
+  });
+  it('oda tonu döngüleri 10-20 sn, dikişsiz, sonlu', () => {
+    for (const id of ['ic_kafe', 'ic_lokanta', 'ic_avm', 'ic_hastane', 'ic_okul', 'ic_oda', 'ic_mutfak']) {
+      const def = db.loops[id] as never as Parameters<typeof renderLoop>[1];
+      expect(def.dur).toBeGreaterThanOrEqual(10); expect(def.dur).toBeLessThanOrEqual(20);
+      const b = renderLoop(id, def, { sr: SR_LOOP, patches: db.patches });
+      let mx = 0; for (let i = 1; i < b.length; i++) mx = Math.max(mx, Math.abs(b[i] - b[i - 1]));
+      expect(Math.abs(b[b.length - 1] - b[0])).toBeLessThanOrEqual(mx + 1e-6);
+      expect(b.some(v => !Number.isFinite(v))).toBe(false);
+    }
+  });
+  it('kapı: kafe1 içinde yalnız ic_kafe açık, mutfakta ic_mutfak, dışarı sesleri hiç yok', () => {
+    const t = kapiTablosu('noon', O, 'iskele', {}, DEFAULT_TABLE as never);
+    const at = createAtmosphere({ start: () => ({ setGain() { /**/ }, stop() { /**/ } }), shoot() { /**/ } }, { table: t as unknown as AmbienceTable });
+    for (const [id, loop] of [['kafe1', 'ic_kafe'], ['kafe2', 'ic_lokanta'], ['mutfak', 'ic_mutfak'], ['hastane', 'ic_hastane'], ['avm_moda', 'ic_avm']] as const) {
+      at.setInterior(id); expect(at.active(), id).toEqual([loop]);
+      for (const k of KOK) expect(at.active()).not.toContain(k);
+    }
+    at.setInterior(null); at.setZone('iskele'); expect(at.active()).toContain('deniz');
+  });
+});

@@ -2486,6 +2486,570 @@
      }
     }
    ]
+  },
+  "ic_kafe": {
+   "dur": 14,
+   "gain": 0.34,
+   "rev": 0.2,
+   "note": "Kafe/kahvaltı salonu: kısık masa mırıltısı, ara sıra fincan-tabak şıngırtısı, uzak makine buharı.",
+   "layers": [
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 620,
+      "q": 0.6
+     },
+     "v": 0.22,
+     "swell": {
+      "rate": 0.11,
+      "depth": 0.3,
+      "rand": 0.7
+     }
+    },
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 240,
+      "q": 0.6
+     },
+     "v": 0.16
+    },
+    {
+     "k": "noise",
+     "color": "white",
+     "filter": {
+      "type": "bp",
+      "f": 5200,
+      "q": 0.5
+     },
+     "v": 0.012,
+     "swell": {
+      "rate": 0.07,
+      "depth": 0.8,
+      "rand": 0.9
+     }
+    }
+   ],
+   "events": [
+    {
+     "every": [
+      3.5,
+      8
+     ],
+     "layer": {
+      "k": "tone",
+      "f": 3900,
+      "harm": [
+       1,
+       0,
+       0.2
+      ],
+      "a": 0.001,
+      "d": 0.1,
+      "v": 0.05
+     }
+    },
+    {
+     "every": [
+      9,
+      18
+     ],
+     "layer": {
+      "k": "noise",
+      "color": "pink",
+      "filter": {
+       "type": "bp",
+       "f": 2600,
+       "f1": 900,
+       "q": 0.9
+      },
+      "a": 0.6,
+      "d": 0.9,
+      "hold": 0.5,
+      "r": 0.5,
+      "v": 0.04
+     }
+    }
+   ]
+  },
+  "ic_lokanta": {
+   "dur": 16,
+   "gain": 0.36,
+   "rev": 0.24,
+   "note": "Lokanta/balık salonu: biraz daha dolu masa uğultusu, çatal-bıçak ve tabak sesleri, uzak mutfak kapısı.",
+   "layers": [
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 700,
+      "q": 0.6
+     },
+     "v": 0.27,
+     "swell": {
+      "rate": 0.13,
+      "depth": 0.35,
+      "rand": 0.7
+     }
+    },
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 300,
+      "q": 0.6
+     },
+     "v": 0.2
+    },
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 1300,
+      "q": 0.8
+     },
+     "v": 0.07,
+     "swell": {
+      "rate": 0.19,
+      "depth": 0.6,
+      "rand": 0.9
+     }
+    }
+   ],
+   "events": [
+    {
+     "every": [
+      2.5,
+      6
+     ],
+     "layer": {
+      "k": "tone",
+      "f": 3300,
+      "harm": [
+       1,
+       0,
+       0.3
+      ],
+      "a": 0.001,
+      "d": 0.09,
+      "v": 0.055
+     }
+    },
+    {
+     "every": [
+      5,
+      11
+     ],
+     "layer": {
+      "k": "tone",
+      "f": 2400,
+      "harm": [
+       1,
+       0,
+       0.15
+      ],
+      "a": 0.001,
+      "d": 0.14,
+      "v": 0.04
+     }
+    },
+    {
+     "every": [
+      14,
+      26
+     ],
+     "layer": {
+      "k": "noise",
+      "color": "brown",
+      "filter": {
+       "type": "bp",
+       "f": 380,
+       "q": 1
+      },
+      "a": 0.05,
+      "d": 0.35,
+      "v": 0.06
+     }
+    }
+   ]
+  },
+  "ic_avm": {
+   "dur": 16,
+   "gain": 0.3,
+   "rev": 0.4,
+   "note": "Alışveriş merkezi: geniş hacimde yumuşak uğultu, uzaktan ayak sesleri ve yumuşak havalandırma.",
+   "layers": [
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 210,
+      "q": 0.6
+     },
+     "v": 0.3,
+     "swell": {
+      "rate": 0.04,
+      "depth": 0.25,
+      "rand": 0.5
+     }
+    },
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 520,
+      "q": 0.5
+     },
+     "v": 0.13,
+     "swell": {
+      "rate": 0.09,
+      "depth": 0.35,
+      "rand": 0.8
+     }
+    },
+    {
+     "k": "noise",
+     "color": "white",
+     "filter": {
+      "type": "bp",
+      "f": 3200,
+      "q": 0.4
+     },
+     "v": 0.01,
+     "swell": {
+      "rate": 0.05,
+      "depth": 0.4,
+      "rand": 0.6
+     }
+    }
+   ],
+   "events": [
+    {
+     "every": [
+      6,
+      14
+     ],
+     "layer": {
+      "k": "tone",
+      "f": 820,
+      "f1": 780,
+      "a": 0.01,
+      "d": 0.5,
+      "v": 0.025
+     }
+    },
+    {
+     "every": [
+      2,
+      5
+     ],
+     "layer": {
+      "k": "noise",
+      "color": "brown",
+      "filter": {
+       "type": "lp",
+       "f": 420,
+       "q": 0.7
+      },
+      "a": 0.002,
+      "d": 0.05,
+      "v": 0.05
+     }
+    }
+   ]
+  },
+  "ic_hastane": {
+   "dur": 16,
+   "gain": 0.28,
+   "rev": 0.35,
+   "note": "Hastane/acil/morg: havalandırma uğultusu, floresan vızıltısı, çok uzak monitör bip'i. Sert alarm yok.",
+   "layers": [
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 160,
+      "q": 0.7
+     },
+     "v": 0.34,
+     "swell": {
+      "rate": 0.03,
+      "depth": 0.15,
+      "rand": 0.4
+     }
+    },
+    {
+     "k": "tone",
+     "f": 100,
+     "v": 0.05,
+     "swell": {
+      "rate": 0.07,
+      "depth": 0.2,
+      "rand": 0.3
+     }
+    },
+    {
+     "k": "tone",
+     "f": 50,
+     "v": 0.05
+    },
+    {
+     "k": "noise",
+     "color": "white",
+     "filter": {
+      "type": "bp",
+      "f": 6500,
+      "q": 0.6
+     },
+     "v": 0.006
+    }
+   ],
+   "events": [
+    {
+     "every": [
+      9,
+      20
+     ],
+     "layer": {
+      "k": "tone",
+      "f": 1180,
+      "a": 0.004,
+      "d": 0.14,
+      "v": 0.018
+     }
+    }
+   ]
+  },
+  "ic_okul": {
+   "dur": 14,
+   "gain": 0.3,
+   "rev": 0.35,
+   "note": "Okul koridoru: uzaktan çocuk mırıltısı, ayak sesleri, tahta tebeşir.",
+   "layers": [
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 1500,
+      "q": 0.5
+     },
+     "v": 0.16,
+     "swell": {
+      "rate": 0.17,
+      "depth": 0.45,
+      "rand": 0.9
+     }
+    },
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 260,
+      "q": 0.6
+     },
+     "v": 0.16
+    },
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 2300,
+      "q": 0.7
+     },
+     "v": 0.05,
+     "swell": {
+      "rate": 0.23,
+      "depth": 0.7,
+      "rand": 0.9
+     }
+    }
+   ],
+   "events": [
+    {
+     "every": [
+      5,
+      12
+     ],
+     "layer": {
+      "k": "noise",
+      "color": "brown",
+      "filter": {
+       "type": "lp",
+       "f": 380,
+       "q": 0.7
+      },
+      "a": 0.002,
+      "d": 0.05,
+      "v": 0.06
+     }
+    }
+   ]
+  },
+  "ic_oda": {
+   "dur": 12,
+   "gain": 0.2,
+   "rev": 0.2,
+   "note": "Sakin oda sesi (banka, kırtasiye, ev): çok kısık hava ve oda tonu, uzaktan klavye/saat tıkı.",
+   "layers": [
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 190,
+      "q": 0.6
+     },
+     "v": 0.26,
+     "swell": {
+      "rate": 0.05,
+      "depth": 0.2,
+      "rand": 0.4
+     }
+    },
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 900,
+      "q": 0.5
+     },
+     "v": 0.03,
+     "swell": {
+      "rate": 0.07,
+      "depth": 0.4,
+      "rand": 0.8
+     }
+    }
+   ],
+   "events": [
+    {
+     "every": [
+      1,
+      1.001
+     ],
+     "layer": {
+      "k": "tone",
+      "f": 1700,
+      "harm": [
+       1,
+       0,
+       0.1
+      ],
+      "a": 0.001,
+      "d": 0.025,
+      "v": 0.018
+     }
+    },
+    {
+     "every": [
+      7,
+      15
+     ],
+     "layer": {
+      "k": "tone",
+      "f": 2100,
+      "a": 0.001,
+      "d": 0.03,
+      "v": 0.03
+     }
+    }
+   ]
+  },
+  "ic_mutfak": {
+   "dur": 12,
+   "gain": 0.26,
+   "rev": 0.15,
+   "note": "Mutfak oda tonu (pişirme sesinden bağımsız): buzdolabı uğultusu, musluk damlası, tezgâh tıkırtısı.",
+   "layers": [
+    {
+     "k": "tone",
+     "f": 50,
+     "v": 0.07
+    },
+    {
+     "k": "tone",
+     "f": 100,
+     "v": 0.03,
+     "swell": {
+      "rate": 0.06,
+      "depth": 0.25,
+      "rand": 0.4
+     }
+    },
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 200,
+      "q": 0.6
+     },
+     "v": 0.2
+    },
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 1800,
+      "q": 0.5
+     },
+     "v": 0.015,
+     "swell": {
+      "rate": 0.1,
+      "depth": 0.5,
+      "rand": 0.8
+     }
+    }
+   ],
+   "events": [
+    {
+     "every": [
+      5,
+      10
+     ],
+     "layer": {
+      "k": "tone",
+      "f": 1500,
+      "f1": 900,
+      "a": 0.001,
+      "d": 0.05,
+      "v": 0.04
+     }
+    },
+    {
+     "every": [
+      7,
+      14
+     ],
+     "layer": {
+      "k": "tone",
+      "f": 2500,
+      "harm": [
+       1,
+       0,
+       0.3
+      ],
+      "a": 0.001,
+      "d": 0.07,
+      "v": 0.035
+     }
+    }
+   ]
   }
  },
  "music": {
@@ -2521,7 +3085,10 @@
     "orman": "orman",
     "orman.aksam": "orman_aksam",
     "orman.gece": "orman_gece",
-    "halisaha": ["mac","halisaha"],
+    "halisaha": [
+     "mac",
+     "halisaha"
+    ],
     "stadyum": "stadyum",
     "gece": "pazar",
     "sahil": "sahil",
@@ -2538,7 +3105,8 @@
     ],
     "iskele.gece": [
      "gece",
-     "gece2"
+     "gece2",
+     "gece3"
     ],
     "karsi": [
      "karsi",
@@ -2566,7 +3134,12 @@
     "ic.banka": "",
     "ic.hastane": "",
     "ic.acil": "",
-    "ic.morg": ""
+    "ic.morg": "",
+    "ic.giyim": "avm",
+    "ic.elektronik": "avm",
+    "ic.oyuncak": "avm",
+    "ic.kirtasiye": "",
+    "ic.okul": ""
    },
    "event": "senlik"
   },
@@ -4387,6 +4960,134 @@
     "rev": 0.22,
     "gain": 0.5,
     "density": 0.65
+   },
+   "avm": {
+    "note": "AVM içi: sakin lounge, elektrik piyano ve yumuşak vurmalı.",
+    "bpm": 92,
+    "root": "C4",
+    "scale": [
+     0,
+     2,
+     4,
+     5,
+     7,
+     9,
+     11
+    ],
+    "chords": [
+     [
+      0,
+      [
+       0,
+       4,
+       7,
+       11
+      ]
+     ],
+     [
+      9,
+      [
+       0,
+       3,
+       7,
+       10
+      ]
+     ],
+     [
+      5,
+      [
+       0,
+       4,
+       7,
+       11
+      ]
+     ],
+     [
+      7,
+      [
+       0,
+       4,
+       7,
+       10
+      ]
+     ]
+    ],
+    "chordBars": 2,
+    "bars": 12,
+    "arp": "epiano",
+    "lead": "none",
+    "perc": "dum",
+    "pad": 0.09,
+    "bass": 0.14,
+    "lpf": 4200,
+    "rev": 0.3,
+    "gain": 0.4,
+    "density": 0.55
+   },
+   "gece3": {
+    "note": "Gece geç saat: ney ve müzik kutusu, çok yavaş, 02:00-03:00 için uzun gece havuzu.",
+    "bpm": 60,
+    "root": "E3",
+    "scale": [
+     0,
+     2,
+     3,
+     5,
+     7,
+     8,
+     10
+    ],
+    "chords": [
+     [
+      0,
+      [
+       0,
+       3,
+       7
+      ]
+     ],
+     [
+      5,
+      [
+       0,
+       3,
+       7
+      ]
+     ],
+     [
+      8,
+      [
+       0,
+       4,
+       7
+      ]
+     ],
+     [
+      7,
+      [
+       0,
+       3,
+       7
+      ]
+     ]
+    ],
+    "chordBars": 2,
+    "bars": 12,
+    "arp": "kutu",
+    "lead": "ney",
+    "leadBars": [
+     5,
+     6,
+     9,
+     10
+    ],
+    "perc": "none",
+    "pad": 0.12,
+    "bass": 0.1,
+    "lpf": 2600,
+    "rev": 0.45,
+    "gain": 0.36,
+    "density": 0.4
    }
   }
  },
