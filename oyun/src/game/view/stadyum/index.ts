@@ -27,7 +27,9 @@ export interface StadyumView { update(dt: number): void; dispose(): void }
 type Rect = { x0: number; x1: number; z0: number; z1: number };
 type Takim = { ad: string; renk: string; renk2?: string; arma?: string };
 const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>)[c]);
-const OFIS = { x: 417, z: 8.5, w: 8, d: 5 }, GISE = { x: 404.5, z: 9, w: 3.2, d: 2.2 };
+// 2026-11-21 owner: the club building stood between the pitch and the street and blocked the view; it now sits on the old car park
+// west of the pitch (front +z toward the camera), the car park takes its old footprint (low cars never hide anything).
+const OFIS = { x: 398, z: 25.8, w: 8, d: 5 }, GISE = { x: 404.5, z: 9, w: 3.2, d: 2.2 };
 const PITCH = { x: 426, z: 19.5 };
 // playing surface of the mk.pitch prefab (content/zones/disari.ts): 30 x 15.4, z 11.8..27.2
 const PL = 30, PW = 15.4, PZ0 = 19.5 - PW / 2;
@@ -37,8 +39,9 @@ const R = (x: number, z: number, w: number, d: number): Rect => ({ x0: x - w / 2
 // static solids on open plaza only (checked against the zone walk grid): end stands, masts, cars, barriers, trees
 const END_W: Rect = { x0: 404.6, x1: 410.1, z0: 13.9, z1: 27.1 }, END_E: Rect = { x0: 441.9, x1: 447.4, z0: 13.9, z1: 27.1 };
 const MASTS: [number, number][] = [[403.4, 14.4], [448.6, 14.4], [407.6, 33.4], [444.4, 33.4]];
-const CARS: [number, number, number, string][] = [[394.3, 29.0, Math.PI, '#c0392b'], [396.8, 29.0, Math.PI, '#e9ecef'], [401.8, 29.0, Math.PI, '#2b4a7a'], [400.6, 17.4, 0, '#3a3d42']];
-const TREES: [number, number][] = [[393.4, 23.2], [450.6, 21.0], [450.6, 29.5], [399, 43], [406, 44], [414, 43.5], [422, 44.2], [430, 43.4], [438, 44], [446, 43.2], [452, 41]];
+const CARS: [number, number, number, string][] = [[413.3, 8.4, 0, '#c0392b'], [415.8, 8.4, 0, '#e9ecef'], [420.8, 8.4, 0, '#2b4a7a']];
+const PARK = { x: 417, z: 8.4, w: 10.4, d: 5.6 };
+const TREES: [number, number][] = [[393.2, 17.2], [450.6, 21.0], [450.6, 29.5], [399, 43], [406, 44], [414, 43.5], [422, 44.2], [430, 43.4], [438, 44], [446, 43.2], [452, 41]];
 
 export function createStadyumView(d: StadyumViewDeps): StadyumView {
   const tier = tierNow(), lo = tier === 'akici';
@@ -60,10 +63,10 @@ export function createStadyumView(d: StadyumViewDeps): StadyumView {
   // ───────────── static structures (club independent) ─────────────
   const steel = M('#7d8792', { metalness: 0.6, roughness: 0.45 });
   // roofed upper tier right behind the prefab stand's back wall (outside the walk area, z > 32)
-  const upper = buildStand(kit, root, { len: 34, rows: 7, depth: 0.9, rise: 0.55, base: 3.75, roof: true, aisle: 12, concrete: '#9097a0', id: 0 }, { x: PITCH.x, z: 34.55, rotY: Math.PI });
+  const upper = buildStand(kit, root, { len: 34, rows: 7, depth: 0.9, rise: 0.55, base: 3.75, roof: false, aisle: 12, concrete: '#9097a0', id: 0 }, { x: PITCH.x, z: 34.55, rotY: Math.PI });
   const ends = [buildStand(kit, root, { len: 13, rows: 6, aisle: 8, concrete: '#9097a0', id: 1 }, { x: 410.0, z: 20.5, rotY: Math.PI / 2 }),
     buildStand(kit, root, { len: 13, rows: 6, aisle: 8, concrete: '#9097a0', id: 2 }, { x: 442.0, z: 20.5, rotY: -Math.PI / 2 })];
-  const roofMats = new Set<T.Material>(); upper.roof.forEach(m => roofMats.add(m.material as T.Material));
+  // no roof on the upper tier: it is the camera-side stand (default camera looks south from behind it) and a roof hid half the pitch
   // back of the upper tier faces the default camera: ribs, two stair towers, gate signs
   {
     const b = boxBatch(kit), zb = 34.55 + upper.back + 0.32, wall = M('#8a919a', { roughness: 0.9 }), dark = M('#2a3038');
@@ -117,15 +120,15 @@ export function createStadyumView(d: StadyumViewDeps): StadyumView {
     const bm = M('#ffffff', { map: atlas, emissive: '#ffffff', emissiveMap: atlas, emissiveIntensity: 0.18, roughness: 0.6 });
     const b = boxBatch(kit); parts.forEach(g => b.add(bm, g)); backs.forEach(g => b.add(M('#2a3038'), g)); b.flush(root, false);
   }
-  // car park: asphalt, painted bays, crowd barriers with an entrance gap and a barrier arm, parked cars
+  // car park on the old club footprint: asphalt, kerb, painted bays, parked cars
   {
     const asph = M('#62666e', { roughness: 0.95 }); zeminDetay(asph, { force: 0, ds: 0.7, ns: 0.8 });
-    const ap = new T.Mesh(kit.geo(new T.PlaneGeometry(11.4, 17)), asph); ap.rotation.x = -Math.PI / 2; ap.position.set(398.2, 0.018, 23); ap.receiveShadow = true; root.add(ap);
+    const ap = new T.Mesh(kit.geo(new T.PlaneGeometry(PARK.w, PARK.d)), asph); ap.rotation.x = -Math.PI / 2; ap.position.set(PARK.x, 0.018, PARK.z); ap.receiveShadow = true; root.add(ap);
     const b = boxBatch(kit), paint = M('#e9e6dc', { roughness: 0.8 });
-    for (let i = 0; i <= 4; i++) { b.box(paint, 0.1, 0.01, 4.8, 393 + i * 2.5, 0.024, 29.0); if (i >= 2) b.box(paint, 0.1, 0.01, 4.8, 393 + i * 2.5, 0.024, 17.4); }
-    b.box(paint, 10, 0.01, 0.1, 398, 0.024, 26.6); b.box(paint, 5, 0.01, 0.1, 400.5, 0.024, 19.8);
-    for (const [x0, x1] of [[392.8, 397], [399.2, 403.6]]) { for (let x = x0; x < x1 - 0.1; x += 2.1) { const w = Math.min(2.1, x1 - x); b.box(steel, w, 0.05, 0.05, x + w / 2, 1.05, 14.2); b.box(steel, w, 0.05, 0.05, x + w / 2, 0.25, 14.2); for (let k = 1; k < 6; k++) b.box(steel, 0.025, 0.8, 0.025, x + k * w / 6, 0.65, 14.2); b.box(steel, 0.06, 1.1, 0.06, x, 0.55, 14.2); } }
-    b.box(M('#d93a3a'), 0.3, 1.0, 0.3, 397.3, 0.5, 14.2); b.box(M('#f4f4f0'), 1.9, 0.08, 0.08, 398.2, 0.95, 14.2);
+    for (let i = 0; i <= 4; i++) b.box(paint, 0.1, 0.01, 4.6, PARK.x - 5 + i * 2.5, 0.024, PARK.z + 0.2);
+    b.box(paint, 10, 0.01, 0.1, PARK.x, 0.024, PARK.z - 2.15);
+    b.box(M('#bdb8ac', { roughness: 0.9 }), PARK.w + 0.3, 0.14, 0.2, PARK.x, 0.07, PARK.z + PARK.d / 2 + 0.1);   // kerb on the pitch side
+    for (const x of [PARK.x - 5.2, PARK.x + 5.2]) b.box(M('#e0b23a', { roughness: 0.6 }), 0.18, 0.8, 0.18, x, 0.4, PARK.z + PARK.d / 2 - 0.2);   // bollards
     for (const [x, z, ry, c] of CARS) {   // parked cars: body, cabin glass, roof, four tyres (local frame turned by ry)
       const body = M(c, { metalness: 0.5, roughness: 0.35 }), glassC = M('#1c2735', { metalness: 0.4, roughness: 0.15 }), tyre = M('#16171a');
       const part = (m: T.Material, g: T.BufferGeometry, lx: number, ly: number, lz: number) => { g.translate(lx, ly, lz); g.rotateY(ry); g.translate(x, 0, z); b.add(m, g); };
@@ -146,8 +149,38 @@ export function createStadyumView(d: StadyumViewDeps): StadyumView {
     });
     tr.castShadow = true; lf.castShadow = true; root.add(tr, lf);
   }
-  const staticSolids: Rect[] = [END_W, END_E, ...MASTS.filter(([, z]) => z < 32).map(([x, z]) => R(x, z, 1.0, 1.0)), ...CARS.map(([x, z]) => R(x, z, 2.0, 4.4)),
-    { x0: 392.8, x1: 397.15, z0: 14.05, z1: 14.35 }, { x0: 399.2, x1: 403.6, z0: 14.05, z1: 14.35 }, ...TREES.filter(([, z]) => z < 32).map(([x, z]) => R(x, z, 0.6, 0.6))];
+  // surroundings of the stadium realm (owner: "aşırı düz ve yavan"): grass beyond the zone ground, a ring of park trees, a far city skyline.
+  // Only drawn while Sabri is inside the stadium realm (x 392..452) so it never pokes into the neighbouring districts.
+  const surround = new T.Group(); root.add(surround);
+  {
+    const grassM = M('#6f9a52', { roughness: 0.97 }); zeminDetay(grassM, { force: 2, ds: 0.6, ns: 0.7 });
+    const gd = new T.Mesh(kit.geo(new T.CircleGeometry(190, 40)), grassM); gd.rotation.x = -Math.PI / 2; gd.position.set(422, -0.03, 18); gd.receiveShadow = true; surround.add(gd);
+    let rs2 = 21; const r2 = () => { rs2 = (rs2 * 1664525 + 1013904223) >>> 0; return rs2 / 4294967296; };
+    const pts: [number, number, number][] = [];
+    for (let i = 0; pts.length < (lo ? 110 : 230) && i < 6000; i++) {
+      const x = 422 + (r2() - 0.5) * 190, z = 18 + (r2() - 0.5) * 170;
+      if (x > 389 && x < 455 && z > -8 && z < 48) continue;   // keep the walkable district and the cages clear
+      if (Math.hypot(x - 422, (z - 18) * 1.1) > 78) continue;
+      pts.push([x, z, 0.75 + r2() * 0.7]);
+    }
+    const trunkG = kit.geo(new T.CylinderGeometry(0.18, 0.28, 2.6, 6)); trunkG.translate(0, 1.3, 0);
+    const crownG = kit.geo(new T.IcosahedronGeometry(1.9, 0)); crownG.translate(0, 3.9, 0);
+    const tr = new T.InstancedMesh(trunkG, M('#5a3d26', { roughness: 0.9 }), pts.length), cr = new T.InstancedMesh(crownG, M('#ffffff', { roughness: 0.85, flatShading: true }), pts.length);
+    const m4 = new T.Matrix4(), q = new T.Quaternion(), v = new T.Vector3(), sc = new T.Vector3(), c = new T.Color();
+    pts.forEach(([x, z, k], i) => { v.set(x, 0, z); q.setFromAxisAngle(new T.Vector3(0, 1, 0), x * 1.7); sc.set(k, k * (0.9 + (i % 3) * 0.12), k); m4.compose(v, q, sc); tr.setMatrixAt(i, m4); cr.setMatrixAt(i, m4); cr.setColorAt(i, c.set(['#3f7a3a', '#4f8a3a', '#356b33', '#5c8f3e'][i % 4])); });
+    tr.castShadow = false; cr.castShadow = false; surround.add(tr, cr);
+    // far skyline: apartment blocks with window rows (Istanbul hills feel), one instanced draw
+    const facade = kit.canvas(64, 128, (g, w, h) => { g.fillStyle = '#e8e0d2'; g.fillRect(0, 0, w, h); for (let y = 6; y < h - 4; y += 11) { g.fillStyle = 'rgba(0,0,0,.06)'; g.fillRect(0, y + 8, w, 2); for (let x = 5; x < w - 4; x += 11) { g.fillStyle = (x * 7 + y * 3) % 5 ? '#5b6f86' : '#8aa0b6'; g.fillRect(x, y, 6, 7); } } });
+    facade.wrapS = facade.wrapT = T.RepeatWrapping; facade.repeat.set(2, 3);
+    const n = lo ? 36 : 72, bIM = new T.InstancedMesh(kit.geo(new T.BoxGeometry(1, 1, 1)), M('#ffffff', { map: facade, roughness: 0.9 }), n);
+    for (let i = 0; i < n; i++) {
+      const a = (i / n) * Math.PI * 2 + r2() * 0.06, rr = 125 + r2() * 40, h = 9 + r2() * r2() * 26;
+      v.set(422 + Math.cos(a) * rr, h / 2 + Math.max(0, Math.sin(a * 3) * 4), 18 + Math.sin(a) * rr * 0.9); q.setFromAxisAngle(new T.Vector3(0, 1, 0), -a); sc.set(10 + r2() * 12, h, 9 + r2() * 8);
+      bIM.setMatrixAt(i, m4.compose(v, q, sc)); bIM.setColorAt(i, c.set(['#f4ece0', '#e9d6c2', '#dfe3e8', '#f0dcc8', '#d8c7b4'][i % 5]));
+    }
+    bIM.castShadow = false; surround.add(bIM);
+  }
+  const staticSolids: Rect[] = [END_W, END_E, ...MASTS.filter(([, z]) => z < 32).map(([x, z]) => R(x, z, 1.0, 1.0)), ...CARS.map(([x, z]) => R(x, z, 2.0, 4.4)), ...TREES.filter(([, z]) => z < 32).map(([x, z]) => R(x, z, 0.6, 0.6))];
 
   // seats of every stand (prefab low stand too) in one list: crowd and bucket seats are rebuilt with the club colours
   const lowSeats: Seat[] = [];
@@ -243,12 +276,12 @@ export function createStadyumView(d: StadyumViewDeps): StadyumView {
     d.setSolid?.([R(OFIS.x, OFIS.z, OFIS.w, OFIS.d), R(GISE.x, GISE.z, GISE.w, GISE.d), ...staticSolids]);
   }
   const put = (lb: ReturnType<HtmlLabels['label']>, x: number, y: number, z: number, html: string) => { at.x = x; at.y = y; at.z = z; if (d.project(at, tmp)) lb.set(tmp.x, tmp.y, html, 'say'); else lb.hide(); };
-  let tt = 0, chant = 0, chantT = 6, roofOp = 1;
+  let tt = 0, chant = 0, chantT = 6;
   const crowdIn = { heat: 0, cheer: [0, 0] as [number, number] };
 
   return {
     update(dt) {
-      const h = d.hero(), near = h.x > 380 && h.x < 465; root.visible = near;
+      const h = d.hero(), near = h.x > 380 && h.x < 465; root.visible = near; surround.visible = h.x > 392 && h.x < 452;
       if (!near) { labGise.hide(); labOfis.hide(); return; }
       tt += dt;
       const rl = d.rules(), api = rl ? mulkApi(rl) : null, md = api ? api.model() as unknown as { takim: Takim | null; stad: { fiyat: number; tahmin: number; doluluk: number } | null } : null;
@@ -260,8 +293,6 @@ export function createStadyumView(d: StadyumViewDeps): StadyumView {
       chant = Math.max(0, chant - dt * 0.3);
       crowdIn.heat = t ? 0.22 : 0.08; crowdIn.cheer[0] = t ? Math.min(1, chant * 1.1) : 0; crowd?.update(dt, crowdIn);
       if (!lo) for (const fl of flags) { const p = fl.geometry.attributes.position as T.BufferAttribute; for (let i = 0; i < p.count; i++) { const x = p.getX(i) + 0.75; p.setZ(i, Math.sin(tt * 4 + x * 3 + fl.position.x) * 0.12 * x); } p.needsUpdate = true; }
-      // upper-tier roof fades while Sabri walks north of the pitch (the camera looks over it from the north side)
-      const op = h.z > 22 ? 0.15 : 1; if (Math.abs(op - roofOp) > 0.01) { roofOp += (op - roofOp) * Math.min(1, dt * 4); for (const mt of roofMats) { (mt as T.MeshStandardMaterial).opacity = roofOp; mt.depthWrite = roofOp > 0.95; } }
       const st = md?.stad;
       if (Math.hypot(h.x - GISE.x, h.z - GISE.z) < 24) put(labGise, GISE.x, 4.2, GISE.z + 1, st ? '🎟️ BİLET ' + st.fiyat.toLocaleString('tr') + ' ₺ · doluluk %' + Math.round(st.tahmin * 100) : '🎟️ Bilet gişesi (önce kulüp kur)'); else labGise.hide();
       if (Math.hypot(h.x - OFIS.x, h.z - OFIS.z) < 24) put(labOfis, OFIS.x, 8.2, OFIS.z + OFIS.d / 2 + 0.6, t ? esc((t.arma || '🛡️') + ' ' + t.ad) + ' · Kulüp Binası' : '🛡️ Kulüp kurma ofisi'); else labOfis.hide();
