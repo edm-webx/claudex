@@ -33,7 +33,7 @@ export async function girisSonrasi(): Promise<{ yasak?: string }> {
 
 /** usernames that need the secret key code (2026-10-25 user: only the owner's key code + password opens them) */
 export const ADMIN_ADLARI = ['admin', 'xynena'];
-export const adminAdiMi = (ad: string) => ADMIN_ADLARI.includes(ad.trim().toLowerCase());
+export const adminAdiMi = (ad: string) => ADMIN_ADLARI.includes(ad.trim().toLocaleLowerCase('tr'));
 /** key code check on the server (hash lives in the DB, never in the game). 'yok' = the SQL is not installed yet. */
 export async function adminDogrula(kod: string): Promise<'ok' | 'yanlis' | 'yok'> {
   const c = supa(); if (!c) return 'yok';

@@ -6,9 +6,14 @@
  * the door is at v = +D/2 and u runs along the door wall. Walls get colliders with a door gap; `solid` furniture collides.
  * Items with `esya` show only when that equipment is bought (never solid, so the static walk grid stays valid).
  */
+import { ODA_X, ODA_Z } from './avm-kat';
 export type Yon = '+x' | '-x' | '+z' | '-z';
-export type IcTur = 'kafe' | 'bistro' | 'kirtasiye' | 'okul' | 'lokanta' | 'kafeterya' | 'banka' | 'hastane' | 'acil' | 'morg' | 'kahvalti' | 'balik' | 'mutfak' | 'giyim' | 'elektronik' | 'oyuncak';
-export interface IcMekan { id: string; ad: string; tur: IcTur; x: number; z: number; wx: number; wz: number; kapi: Yon; arsa?: string; bina?: string; salon?: 'W' | 'E'; mutfak?: boolean; h: number }
+export type IcTur = 'kafe' | 'bistro' | 'kirtasiye' | 'okul' | 'lokanta' | 'kafeterya' | 'banka' | 'hastane' | 'acil' | 'morg' | 'kahvalti' | 'balik' | 'mutfak' | 'giyim' | 'elektronik' | 'oyuncak'
+  | AvmYemekTur;
+/** AVM'nin yemek / yemeğe yakın dükkânları (2026-11-21): tezgâhlı, kapısı hola bakan oda (avmYemekLayout) */
+export type AvmYemekTur = 'sekerci' | 'kahveci' | 'dondurma' | 'baklava' | 'kuruyemis' | 'donerci' | 'kumpir' | 'midye' | 'avmLokanta';
+/** kat: AVM katı (content/avm-kat.ts), yok = 0. Kat > 0 odalar zemin çarpışmasına girmez, oyuncunun katı tutunca görünür. */
+export interface IcMekan { id: string; ad: string; tur: IcTur; x: number; z: number; wx: number; wz: number; kapi: Yon; arsa?: string; bina?: string; salon?: 'W' | 'E'; mutfak?: boolean; h: number; kat?: number }
 export interface IcItem { k: string; u: number; v: number; w: number; d: number; ry?: number; solid?: boolean; esya?: string; y?: number; txt?: string; c?: string; /** büfe salonu: o aşamada kurulur (BUF-20 aşama 10 masaları) */ asama?: number }
 export interface Rect { x0: number; x1: number; z0: number; z1: number }
 
@@ -17,13 +22,10 @@ export const IC_MEKANLAR: IcMekan[] = [
   { id: 'kafe2', ad: 'Sahil Bistro', tur: 'bistro', x: -17.5, z: 51.5, wx: 7, wz: 9.4, kapi: '+x', arsa: 'k2', bina: 'kafe2', h: 3.1 },
   { id: 'kirtasiye', ad: 'Martı Kırtasiye', tur: 'kirtasiye', x: 28, z: 35.2, wx: 7.1, wz: 3.6, kapi: '-z', arsa: 'k3', bina: 'kirtasiye', h: 3.0 },
   { id: 'okul', ad: 'Martıköy İlkokulu', tur: 'okul', x: 48.85, z: 37.25, wx: 18.3, wz: 7.5, kapi: '-z', arsa: 'k4', bina: 'okul', h: 3.2 },
-  // 2026-11-20 owner: "AVM içindeki mağazalar ayrı, satın alınıp işletilebilen işletmeler olsun". The mall footprint
-  // (x 11.7..28.6, z 46.5..57.1) is cut into strips side by side, each with its own door on the -z front: lokanta (k5, keeps
-  // the room id 'avm') + Martı Moda (k7) + Tekno Martı (k8) + Oyuncak Dünyası (k9). The rooms touch but never overlap.
-  { id: 'avm', ad: 'Martı Lokantası', tur: 'lokanta', x: 26.0, z: 51.8, wx: 5.2, wz: 10.6, kapi: '-z', arsa: 'k5', bina: 'avm', h: 3.6 },
-  { id: 'avm_moda', ad: 'Martı Moda', tur: 'giyim', x: 21.45, z: 51.8, wx: 3.9, wz: 10.6, kapi: '-z', arsa: 'k7', bina: 'avm', h: 3.6 },
-  { id: 'avm_tekno', ad: 'Tekno Martı', tur: 'elektronik', x: 17.55, z: 51.8, wx: 3.9, wz: 10.6, kapi: '-z', arsa: 'k8', bina: 'avm', h: 3.6 },
-  { id: 'avm_oyuncak', ad: 'Oyuncak Dünyası', tur: 'oyuncak', x: 13.65, z: 51.8, wx: 3.9, wz: 10.6, kapi: '-z', arsa: 'k9', bina: 'avm', h: 3.6 },
+  // 2026-11-20 owner: "AVM içindeki mağazalar ayrı, satın alınıp işletilebilen işletmeler olsun". 2026-11-21 owner: "merdiven var ama
+  // işlevsiz, her katında mağaza olsun": three floors (content/avm-kat.ts), each with four shops either side of the central hall
+  // (escalators in the middle). West rooms x 11.7..17.65 open +x, east rooms x 22.65..28.6 open -x; front z 46.5..51.8, back ..57.1.
+  ...avmOdalar(),
   { id: 'tesis', ad: 'Halı Saha Tesisleri', tur: 'kafeterya', x: -54.1, z: 45.4, wx: 3.7, wz: 17.8, kapi: '+x', arsa: 'k6', bina: 'tesis', h: 2.8 },
   { id: 'banka', ad: 'Martı Kasası Bankası', tur: 'banka', x: 11.7, z: 36.8, wx: 10, wz: 8.4, kapi: '+z', bina: 'banka', h: 3.3 },
   { id: 'hastane', ad: 'Devlet Hastanesi', tur: 'hastane', x: 46.95, z: 53.55, wx: 16.9, wz: 6.7, kapi: '-z', bina: 'hastane', h: 3.0 },
@@ -37,8 +39,8 @@ export const IC_MEKANLAR: IcMekan[] = [
 ];
 export const IC_BY_ID: Record<string, IcMekan> = Object.fromEntries(IC_MEKANLAR.map(m => [m.id, m]));
 /** business rooms run by the live room sim (sim/agents/kafe.ts): real guests + real workers, no props */
-export const IC_CANLI = ['k1', 'k2', 'k3', 'k4', 'k5', 'k6', 'k7', 'k8', 'k9'];
-/** every room of one building (the AVM has four) */
+export const IC_CANLI = ['k1', 'k2', 'k3', 'k4', 'k5', 'k6', 'k7', 'k8', 'k9', 'k10', 'k11', 'k12', 'k13', 'k14', 'k15', 'k16', 'k17'];
+/** every room of one building (the AVM has twelve, four per floor) */
 export const icBina = (bina: string) => IC_MEKANLAR.filter(m => m.bina === bina);
 export const icOfArsa = (arsa: string) => IC_MEKANLAR.find(m => m.arsa === arsa);
 
@@ -61,10 +63,11 @@ export function icUV(m: IcMekan, x: number, z: number): { u: number; v: number }
 }
 export const IC_DUVAR = 0.25, IC_KAPI = 1.7;
 /** is p inside the room (margin < 0 shrinks) */
-export function icIcinde(m: IcMekan, p: { x: number; z: number }, margin = 0): boolean {
-  return Math.abs(p.x - m.x) < m.wx / 2 + margin && Math.abs(p.z - m.z) < m.wz / 2 + margin;
+/** p.kat (oyuncu konumu walk.pos.kat taşır; yoksa 0) odanın katıyla aynı olmalı: AVM'de üst üste odalar ayrışır */
+export function icIcinde(m: IcMekan, p: { x: number; z: number; kat?: number }, margin = 0): boolean {
+  return (m.kat || 0) === (p.kat || 0) && Math.abs(p.x - m.x) < m.wx / 2 + margin && Math.abs(p.z - m.z) < m.wz / 2 + margin;
 }
-export const icHangi = (p: { x: number; z: number }, margin = 0) => IC_MEKANLAR.find(m => icIcinde(m, p, margin)) || null;
+export const icHangi = (p: { x: number; z: number; kat?: number }, margin = 0) => IC_MEKANLAR.find(m => icIcinde(m, p, margin)) || null;
 /** door point just outside / inside */
 export const icKapi = (m: IcMekan, off = 0.6) => icWorld(m, 0, icDim(m).D / 2 + off);
 
@@ -122,56 +125,101 @@ function okulLayout(W: number, D: number): IcItem[] {
     it('ekran', 5.2, -D / 2 + 0.2, 1.4, 0.08, { esya: 'ekran_k', y: 2.0 }), it('izgara', 7.3, -D / 2 + 0.55, 0.9, 0.6, { esya: 'izgara_k' }));
   return o;
 }
-/** AVM lokanta strip (W 5.2): counter at the back, staff behind it, cooking line on the back wall, tables in a column on the
- *  east side so the queue lanes on the west side stay clear */
-function avmLayout(W: number, D: number): IcItem[] {
-  const bv = -D / 2 + 2.15, bw = -D / 2 + IC_DUVAR + 0.25;   // 2026-11-21 denetim: pişirme hattı ile tezgâh arası 0.95 m
+/* ---------- Martı AVM odaları (2026-11-21: 3 kat x 4 dükkân, content/avm-kat.ts) ----------
+ * Her oda 5.3 (kapı duvarı) x 5.95 (derinlik), kapı hola bakar. Ortak iskelet: tezgâh arkada (u -2.3..1.3, v -0.925), arkasında 0.9 m
+ * personel koridoru, arka duvarda aletler (v bw), tezgâhın doğu ucunda 1.1 m personel geçidi; kuyruk tezgâh önünde (v ~0.2).
+ * Yemek dükkânlarında kapı tarafında iki masa, mağazalarda yan duvarda reyon + ortada teşhir masası (müşteri önce bakınır).
+ * Aletler (`esya`) yalnız alınınca görünür, hiçbiri katı değil. */
+function avmOdalar(): IcMekan[] {   // (IC_MEKANLAR'dan önce çağrılır: sabitler içeride)
+  const AVM_ODA = { W: 5.3, D: 5.95 } as const;
+  const AVM_SLOT = { WF: { x: ODA_X.W, z: ODA_Z.F, kapi: '+x' as Yon }, WB: { x: ODA_X.W, z: ODA_Z.B, kapi: '+x' as Yon }, EF: { x: ODA_X.E, z: ODA_Z.F, kapi: '-x' as Yon }, EB: { x: ODA_X.E, z: ODA_Z.B, kapi: '-x' as Yon } };   // AVM realm coords
+  const o = (id: string, ad: string, tur: IcTur, arsa: string, kat: number, s: keyof typeof AVM_SLOT): IcMekan =>
+    ({ id, ad, tur, x: AVM_SLOT[s].x, z: AVM_SLOT[s].z, wx: AVM_ODA.D, wz: AVM_ODA.W, kapi: AVM_SLOT[s].kapi, arsa, bina: 'avm', h: 3.6, ...(kat ? { kat } : {}) });
   return [
-    it('lamba', 0, 0, W, D), it('zemin', 0, 0, W, D, { c: 'avm' }),
-    it('tezgah', -0.5, bv, 3.6, 0.8, { solid: true, c: '#a2472f' }), it('kasa', 1.0, bv, 0.4, 0.4, { y: 1.05 }), it('menuPano', -0.5, -D / 2 + 0.27, 3.4, 0.05, { y: 2.75, txt: 'MARTI LOKANTASI' }),
-    masa(-1.6, -0.2, 'masa4'), masa(-1.6, 1.7, 'masa4'), masa(-1.6, 3.6, 'masa4'), it('saksiB', W / 2 - 0.55, D / 2 - 0.55, 0.5, 0.5, { solid: true }),
-    it('benmari', -1.6, bv, 1.4, 0.6, { esya: 'benmari', y: 1.05 }), it('corba', -0.45, bv, 0.5, 0.5, { esya: 'corba_kazan', y: 1.05 }), it('semaver', 0.3, bv, 0.4, 0.4, { esya: 'cay_ocak', y: 1.05 }),
-    // back wall cooking line; the staff lane (v ~ bv - 0.7) stays free in front of it
-    it('tasFirin', -1.75, bw, 1.0, 0.5, { esya: 'pide_firin' }), it('mangal', -0.7, bw, 0.9, 0.5, { esya: 'ocakbasi' }), it('doner', 0.1, bw, 0.5, 0.5, { esya: 'doner' }),
-    it('ustaOcak', 0.9, bw, 0.8, 0.5, { esya: 'sef_ocak' }), it('tatliVitrin', W / 2 - 0.75, bw, 0.8, 0.5, { esya: 'tatli_vitrin' }),
-    it('ekran', -0.5, -D / 2 + 0.2, 1.6, 0.08, { esya: 'led_menu', y: 1.85 }),
+    // giriş katı: mağazalar + şekerci
+    o('avm_moda', 'Martı Moda', 'giyim', 'k7', 0, 'WF'), o('avm_tekno', 'Tekno Martı', 'elektronik', 'k8', 0, 'WB'),
+    o('avm_oyuncak', 'Oyuncak Dünyası', 'oyuncak', 'k9', 0, 'EF'), o('avm_seker', 'Hacı Martı Şekerleme', 'sekerci', 'k10', 0, 'EB'),
+    // 1. kat: kahve & tatlı
+    o('avm_kahve', 'Telve Kahve Laboratuvarı', 'kahveci', 'k11', 1, 'WF'), o('avm_baklava', 'Şerbetçi Baklava Sarayı', 'baklava', 'k13', 1, 'WB'),
+    o('avm_dondurma', 'Maraşlı Martı Dondurma', 'dondurma', 'k12', 1, 'EF'), o('avm_kuruyemis', 'Çıtırcı Kuruyemiş', 'kuruyemis', 'k14', 1, 'EB'),
+    // 2. kat: yemek katı (Martı Lokantası buraya taşındı; oda kimliği 'avm' aynı kaldı)
+    o('avm', 'Martı Lokantası', 'avmLokanta', 'k5', 2, 'WF'), o('avm_doner', 'Dürümcü Dayı', 'donerci', 'k15', 2, 'WB'),
+    o('avm_kumpir', 'Kumpir Kulesi', 'kumpir', 'k16', 2, 'EF'), o('avm_midye', 'Midyeci Mido', 'midye', 'k17', 2, 'EB'),
   ];
 }
-/** AVM shop strip (W 3.9, D 10.6), door at v = +D/2. The till counter stands along the depth (ry 3: front to the customers on
- *  the -u side, like the stationery shop), the stock shelf behind it on the +u wall, goods racks on the -u wall, a display
- *  table near the door. The middle lane (u ~ -0.6..0.2) stays empty: guests walk door -> racks -> till in straight lines.
- *  Equipment (`esya`) never collides. */
-export const MAGAZA_RENK: Record<'giyim' | 'elektronik' | 'oyuncak', { c: string; txt: string }> = {
+/** dükkân rengi ve tabela yazısı (iç pano, cephe / galeri tabelası) */
+export const AVM_TABELA: Record<string, { c: string; txt: string }> = {
   giyim: { c: '#c94f6d', txt: 'MARTI MODA' }, elektronik: { c: '#2b6fb8', txt: 'TEKNO MARTI' }, oyuncak: { c: '#e8892b', txt: 'OYUNCAK DÜNYASI' },
+  sekerci: { c: '#b8326e', txt: 'HACI MARTI ŞEKERLEME' }, kahveci: { c: '#5a3a24', txt: 'TELVE KAHVE LAB.' }, dondurma: { c: '#2f9bd6', txt: 'MARAŞLI MARTI' },
+  baklava: { c: '#3f7a34', txt: 'ŞERBETÇİ BAKLAVA' }, kuruyemis: { c: '#c07a2c', txt: 'ÇITIRCI KURUYEMİŞ' }, avmLokanta: { c: '#a2472f', txt: 'MARTI LOKANTASI' },
+  donerci: { c: '#c0392b', txt: 'DÜRÜMCÜ DAYI' }, kumpir: { c: '#e2a82b', txt: 'KUMPİR KULESİ' }, midye: { c: '#1d4f86', txt: 'MİDYECİ MİDO' },
 };
-function magazaLayout(W: number, D: number, tur: 'giyim' | 'elektronik' | 'oyuncak'): IcItem[] {
-  const R = MAGAZA_RENK[tur], tv = -2.6, tu = 0.25,   // 2026-11-21 denetim: kasiyerler depo rafına yapışıyordu, tezgâh 0.25 m batıya
-    wl = -W / 2 + 0.5, wr = W / 2 - 0.4, fv = D / 2 - 0.55;
+/** eski ad (karsi-bina, tests): mağaza renkleri */
+export const MAGAZA_RENK = AVM_TABELA as Record<'giyim' | 'elektronik' | 'oyuncak', { c: string; txt: string }>;
+const MAGAZA_TUR = new Set<IcTur>(['giyim', 'elektronik', 'oyuncak', 'sekerci', 'kuruyemis']);
+/** müşterinin önce reyonlara bakındığı dükkânlar (agents/kafe.ts) */
+export const icMagaza = (t: IcTur) => MAGAZA_TUR.has(t);
+function avmOdaLayout(W: number, D: number, tur: IcTur): IcItem[] {
+  const R = AVM_TABELA[tur] || AVM_TABELA.avmLokanta, bv = -D / 2 + 2.05, bw = -D / 2 + IC_DUVAR + 0.27, cy = 1.05;
+  const ct = (k: string, u: number, w: number, d: number, esya?: string, o: Partial<IcItem> = {}) => it(k, u, bv, w, d, { y: cy, ...(esya ? { esya } : {}), ...o });
+  const arka = (k: string, u: number, w: number, d: number, esya?: string, o: Partial<IcItem> = {}) => it(k, u, bw + (0.5 - d) / 2, w, d, { ...(esya ? { esya } : {}), ...o });
   const o: IcItem[] = [
     it('lamba', 0, 0, W, D), it('zemin', 0, 0, W, D, { c: 'avm' }),
-    it('tezgah', tu, tv, 3.0, 0.6, { solid: true, ry: 3, c: R.c }), it('kasa', tu, tv + 1.15, 0.4, 0.4, { y: 1.05, ry: 3 }),
-    it('depoRaf', wr + 0.05, tv, 3.0, 0.3, { ry: 3, c: tur }), it('paketMasa', tu, tv + 0.45, 0.5, 0.4, { y: 1.05, ry: 3, c: tur }),
-    it('menuPano', 0, -D / 2 + 0.27, 2.8, 0.05, { y: 2.55, txt: R.txt }),
-    it('reyon', wl + 0.05, -2.15, 3.5, 0.4, { solid: true, ry: 1, c: tur }), it('reyon', wl + 0.05, 2.0, 3.2, 0.4, { solid: true, ry: 1, c: tur }),
-    it('teshir', 0.9, 2.2, 0.9, 1.3, { solid: true, c: tur }),
+    it('tezgah', -0.5, bv, 3.6, 0.75, { solid: true, c: R.c }), it('kasa', 0.85, bv, 0.4, 0.4, { y: cy }),
+    it('menuPano', -0.5, -D / 2 + 0.27, 3.0, 0.05, { y: 2.6, txt: R.txt }),
   ];
-  if (tur === 'giyim') o.push(
-    it('askilik', 0.95, 0.55, 0.9, 0.9, { esya: 'askilik' }), it('manken', wl + 0.15, fv, 0.5, 0.5, { esya: 'manken' }), it('manken', wr - 0.05, fv, 0.5, 0.5, { esya: 'manken', c: 'b' }),
-    it('prova', wl + 0.3, -D / 2 + 0.75, 1.0, 1.0, { esya: 'prova' }), it('ayna', -W / 2 + 0.3, 0.0, 0.7, 0.06, { esya: 'ayna', ry: 1 }),
-    it('ayakkabi', wr + 0.1, 0.55, 1.1, 0.3, { esya: 'ayakkabi', ry: 3 }), it('aksesuar', 0.9, 3.65, 0.55, 0.55, { esya: 'aksesuar' }),
-    it('ledPano', 0.45, -D / 2 + 0.2, 1.5, 0.05, { esya: 'led_vitrin', y: 1.5, c: R.c }), it('dikis', tu, tv - 0.95, 0.55, 0.45, { esya: 'tasarim', y: 1.05, ry: 3 }));
-  else if (tur === 'elektronik') o.push(
-    it('testMasa', tu, tv - 0.9, 0.6, 0.45, { y: 1.05, ry: 3 }),
-    it('demoMasa', 0.95, 0.55, 0.8, 0.9, { esya: 'demo_masa' }), it('tamir', tu, tv - 0.3, 0.5, 0.4, { esya: 'tamir', y: 1.05, ry: 3 }),
-    it('tvDuvar', W / 2 - 0.27, 2.2, 2.4, 0.06, { esya: 'tv_duvar', y: 1.75, ry: 3 }), it('kulaklikStand', wl + 0.15, fv, 0.5, 0.5, { esya: 'kulaklik_stand' }),
-    it('konsol', wl + 0.3, -D / 2 + 0.75, 1.0, 1.0, { esya: 'konsol' }), it('vr', wr - 0.05, fv, 0.6, 0.6, { esya: 'vr' }),
-    it('drone', -0.2, 1.0, 0.6, 0.6, { esya: 'drone', y: 2.35 }), it('ledPano', 0.45, -D / 2 + 0.2, 1.5, 0.05, { esya: 'led_e', y: 1.5, c: R.c }));
-  else o.push(
-    it('testMasa', tu, tv - 0.9, 0.6, 0.45, { y: 1.05, ry: 3 }),
-    it('pelusSepet', 0.95, 0.55, 0.8, 0.8, { esya: 'pelus_sepet' }), it('balon', wl + 0.15, fv, 0.5, 0.5, { esya: 'balon' }),
-    it('trenPist', 0.9, 2.2, 0.8, 1.2, { esya: 'tren_pist', y: 0.8 }), it('legoDuvar', wr + 0.1, 0.55, 1.1, 0.3, { esya: 'lego_duvar', ry: 3 }),
-    it('oyunKale', wl + 0.3, -D / 2 + 0.75, 1.0, 1.0, { esya: 'oyun_kale' }), it('maskot', wr - 0.05, fv, 0.6, 0.6, { esya: 'maskot' }),
-    it('hediye', tu, tv - 0.3, 0.5, 0.4, { esya: 'hediye_paket', y: 1.05, ry: 3 }), it('ledPano', 0.45, -D / 2 + 0.2, 1.5, 0.05, { esya: 'led_o', y: 1.5, c: R.c }));
+  if (MAGAZA_TUR.has(tur)) {
+    // mağaza: batı duvarında reyon, ortada teşhir masası (yolun iki yanında 1.4 m), kapının iki yanında vitrin köşeleri
+    o.push(it('reyon', -W / 2 + IC_DUVAR + 0.2, 1.0, 2.3, 0.4, { solid: true, ry: 1, c: tur }), it('teshir', 0.3, 1.3, 1.0, 0.7, { solid: true, c: tur }));
+    if (tur === 'giyim') o.push(arka('depoRaf', -0.6, 3.0, 0.3, undefined, { c: tur }), ct('paketMasa', -0.4, 0.5, 0.4, undefined, { c: tur }),
+      it('askilik', -1.3, 2.0, 0.7, 0.7, { esya: 'askilik' }), it('manken', -1.95, 2.6, 0.5, 0.5, { esya: 'manken' }), it('manken', 1.95, 2.6, 0.5, 0.5, { esya: 'manken', c: 'b' }),
+      it('prova', 1.9, 1.0, 0.9, 0.9, { esya: 'prova' }), it('ayna', W / 2 - IC_DUVAR - 0.03, 2.05, 0.6, 0.06, { esya: 'ayna', ry: 3 }),
+      arka('ayakkabi', 1.75, 0.9, 0.3, 'ayakkabi'), ct('aksesuar', -2.0, 0.45, 0.45, 'aksesuar'), ct('dikis', -1.2, 0.55, 0.45, 'tasarim'),
+      it('ledPano', -W / 2 + IC_DUVAR + 0.03, 1.0, 1.6, 0.05, { esya: 'led_vitrin', y: 2.35, ry: 1, c: R.c }));
+    else if (tur === 'elektronik') o.push(arka('depoRaf', -0.6, 3.0, 0.3, undefined, { c: tur }), ct('testMasa', -2.0, 0.6, 0.45),
+      it('demoMasa', -1.3, 2.0, 0.7, 0.7, { esya: 'demo_masa' }), ct('tamir', -1.2, 0.5, 0.4, 'tamir'), it('tvDuvar', W / 2 - IC_DUVAR - 0.03, 1.0, 1.8, 0.06, { esya: 'tv_duvar', y: 1.75, ry: 3 }),
+      it('kulaklikStand', -1.95, 2.6, 0.5, 0.5, { esya: 'kulaklik_stand' }), it('konsol', 1.9, 1.0, 0.85, 0.85, { esya: 'konsol' }), it('vr', 1.95, 2.6, 0.55, 0.55, { esya: 'vr' }),
+      it('drone', 0.3, 0.4, 0.6, 0.6, { esya: 'drone', y: 2.35 }), it('ledPano', -W / 2 + IC_DUVAR + 0.03, 1.0, 1.6, 0.05, { esya: 'led_e', y: 2.35, ry: 1, c: R.c }));
+    else if (tur === 'oyuncak') o.push(arka('depoRaf', -0.6, 3.0, 0.3, undefined, { c: tur }), ct('testMasa', -2.0, 0.6, 0.45),
+      it('pelusSepet', -1.3, 2.0, 0.7, 0.7, { esya: 'pelus_sepet' }), it('balon', -1.95, 2.6, 0.5, 0.5, { esya: 'balon' }), it('trenPist', 0.3, 1.3, 0.8, 0.6, { esya: 'tren_pist', y: 0.8 }),
+      arka('legoDuvar', 1.75, 0.9, 0.3, 'lego_duvar'), it('oyunKale', 1.9, 1.0, 0.85, 0.85, { esya: 'oyun_kale' }), it('maskot', 1.95, 2.6, 0.55, 0.55, { esya: 'maskot' }),
+      ct('hediye', -1.2, 0.5, 0.4, 'hediye_paket'), it('ledPano', -W / 2 + IC_DUVAR + 0.03, 1.0, 1.6, 0.05, { esya: 'led_o', y: 2.35, ry: 1, c: R.c }));
+    else if (tur === 'sekerci') o.push(arka('kavanoz', -1.0, 1.7, 0.4, undefined, { c: 'seker' }),
+      ct('tepsiTezgah', -2.0, 0.6, 0.45, 'lokum_tezgah', { c: 'lokum' }), it('kavanoz', 0.3, 1.3, 0.9, 0.5, { esya: 'cam_kavanoz', y: 0.78, c: 'akide' }),
+      it('tepsiTezgah', -1.95, 2.6, 0.55, 0.5, { esya: 'macuncu', y: 0.75, c: 'macun' }), arka('hamurMasa', 0.95, 0.85, 0.5, 'pismaniye_tezgah', { c: 'pismaniye' }),
+      arka('kazan', 1.95, 0.6, 0.5, 'kestane_ocak', { c: 'kestane' }), it('hediye', 1.95, 2.6, 0.5, 0.5, { esya: 'hediye_kutu', y: 0.4 }),
+      it('vitrin', 1.9, 1.0, 0.85, 0.85, { esya: 'cikolata_vitrin', c: 'cikolata' }), ct('tepsiTezgah', -1.2, 0.6, 0.45, 'osmanli_tezgah', { c: 'altin' }));
+    else o.push(arka('kavanoz', -1.0, 1.7, 0.4, 'cam_hazne', { c: 'cerez' }),   // kuruyemiş
+      ct('terazi', -2.0, 0.45, 0.4, 'terazi'), it('cuval', -1.3, 2.0, 0.8, 0.7, { esya: 'cuval' }), arka('kavurucu', 0.95, 0.85, 0.5, 'kavurma_kazan'),
+      it('cuval', 1.9, 1.0, 0.85, 0.85, { esya: 'kuru_meyve', c: 'meyve' }), arka('paketMasa', 1.95, 0.6, 0.45, 'paket_mak', { c: 'kuruyemis' }),
+      ct('tepsiTezgah', -1.2, 0.6, 0.45, 'tadim', { c: 'cerez' }), it('kavurucu', 1.95, 2.6, 0.55, 0.5, { esya: 'kavurma_ustasi', c: 'kucuk' }), it('saksi', -1.95, 2.6, 0.5, 0.5));
+    return o;
+  }
+  // yemek dükkânı: kapı tarafında iki masa (sandalyeler duvara 0.2 m mesafede), ön köşelerde saksı
+  o.push(masa(-1.45, 1.95), masa(1.45, 1.95), it('saksi', -2.05, 2.6, 0.45, 0.45));
+  const yan = (k: string, s: -1 | 1, esya: string, o2: Partial<IcItem> = {}) => it(k, s * (W / 2 - IC_DUVAR - 0.03), 0.45, 1.5, 0.06, { esya, ry: s < 0 ? 1 : 3, y: 1.6, ...o2 });
+  if (tur === 'kahveci') o.push(ct('kumOcak', -2.0, 0.6, 0.45, 'kum_ocak'), ct('espresso', -1.2, 0.6, 0.5, 'espresso_t'), ct('degirmen', -0.35, 0.3, 0.3, 'degirmen'),
+    arka('kavanoz', -1.95, 0.8, 0.4, 'dibek_havan', { c: 'kahve' }), arka('kavanoz', -1.0, 0.85, 0.4, 'demleme_bar', { c: 'demleme' }), arka('barista', -0.05, 0.85, 0.5, 'latte_sanat'),
+    arka('kavurucu', 1.0, 0.85, 0.5, 'kavurucu'), it('falci', 2.0, 1.05, 0.6, 0.6, { esya: 'falci' }), yan('bakirDuvar', -1, '', { c: 'cezve' }));
+  else if (tur === 'dondurma') o.push(ct('dondurmaTezgah', -1.45, 1.4, 0.55, 'dondurma_vitrin'), ct('waffle', 0.15, 0.55, 0.45, 'waffle_mak_d'),
+    arka('kazan', -1.95, 0.6, 0.5, 'dovme_kazan', { c: 'dovme' }), arka('firinK', -1.0, 0.8, 0.5, 'kulah_kalip'), arka('buzdolap', -0.05, 0.8, 0.5, 'sorbe'),
+    arka('buzdolap', 1.0, 0.8, 0.5, 'kar_dolap', { c: 'kar' }), yan('dondurmaSov', -1, 'sopa_sov'), yan('dondurmaSov', 1, 'zil', { c: 'zil', v: 0.2, w: 0.8 }));
+  else if (tur === 'baklava') o.push(ct('corba', -2.0, 0.5, 0.45, 'serbet_kazan', { c: 'serbet' }), ct('tepsiTezgah', -1.2, 0.7, 0.5, 'kunefe_ocak', { c: 'kunefe' }), ct('tepsiTezgah', -0.35, 0.6, 0.45, 'serbetci_usta', { c: 'baklava' }),
+    arka('hamurMasa', -1.95, 0.8, 0.5, 'oklava', { c: 'yufka' }), arka('tasFirin', -0.9, 1.0, 0.5, 'tas_firin_b'), arka('buzdolap', 0.15, 0.7, 0.5, 'kaymak'),
+    arka('tatliVitrin', 1.1, 0.8, 0.5, 'tatli_vitrin_b'), yan('bakirDuvar', -1, 'bakir_tepsi'));
+  else if (tur === 'donerci') o.push(ct('lavasSac', -2.0, 0.55, 0.45, 'lavas_sac'), ct('bicak', -1.2, 0.5, 0.3, 'dayi_bicak'), ct('kazan', -0.35, 0.5, 0.45, 'pilav_kazan', { c: 'pilav' }),
+    arka('doner', -1.85, 0.6, 0.5, 'doner_ocak'), arka('doner', -0.95, 0.6, 0.5, 'ikinci_sis'), arka('yayik', 0.0, 0.6, 0.5, 'ayran_yayik'), arka('kavanoz', 1.0, 0.85, 0.4, 'tursu', { c: 'tursu' }),
+    yan('ledPano', -1, 'led_d', { c: R.c, y: 1.8 }));
+  else if (tur === 'kumpir') o.push(ct('benmari', -1.6, 1.3, 0.55, 'ic_bari'), ct('tepsiTezgah', -0.35, 0.6, 0.45, 'ezme_tezgah', { c: 'tereyag' }),
+    arka('kumpirFirin', -1.6, 1.1, 0.5, 'kumpir_firin'), arka('fritoz', -0.5, 0.7, 0.5, 'fritoz_k'), arka('buzdolap', 0.45, 0.6, 0.5, 'limonata_dispenser', { c: 'limon' }),
+    arka('ustaOcak', 1.35, 0.8, 0.5, 'usta_k'), yan('ledPano', -1, 'neon', { c: '#ff4fa3', y: 1.8 }), it('vitrin', 2.05, 1.05, 0.55, 0.6, { esya: 'kule_vitrin', c: 'kumpir' }));
+  else if (tur === 'midye') o.push(ct('tepsiTezgah', -1.9, 0.8, 0.5, 'midye_tabla', { c: 'midye' }), ct('tepsiTezgah', -1.0, 0.5, 0.4, 'limon_sepet', { c: 'limon' }), ct('tepsiTezgah', -0.3, 0.6, 0.45, 'mido_tezgah', { c: 'altin' }),
+    arka('ocakK', -1.85, 0.8, 0.5, 'tava_ocak'), arka('buzVitrin', -0.75, 1.1, 0.5, 'buz_tezgah_m'), arka('tasFirin', 0.45, 0.9, 0.5, 'guvec_firin'),
+    yan('agSus', 1, 'ag_sus'), it('akvaryum', -W / 2 + IC_DUVAR + 0.22, 0.45, 1.5, 0.4, { esya: 'akvaryum_m', ry: 1 }));
+  else o.push(   // Martı Lokantası (k5): esnaf lokantası aletleri bu odaya sığacak şekilde
+    ct('benmari', -1.7, 1.2, 0.55, 'benmari'), ct('corba', -0.75, 0.45, 0.45, 'corba_kazan'), ct('semaver', -0.2, 0.35, 0.35, 'cay_ocak'),
+    arka('tasFirin', -1.75, 0.9, 0.5, 'pide_firin'), arka('mangal', -0.8, 0.8, 0.5, 'ocakbasi'), arka('doner', 0.0, 0.5, 0.5, 'doner'), arka('ustaOcak', 0.75, 0.7, 0.5, 'sef_ocak'),
+    arka('tatliVitrin', 1.75, 0.7, 0.5, 'tatli_vitrin'), yan('ledPano', -1, 'led_menu', { c: R.c, y: 1.8 }));
   return o;
 }
 function kafeteryaLayout(W: number, D: number): IcItem[] {
@@ -334,8 +382,7 @@ export function icLayout(m: IcMekan, stage = 10): IcItem[] {
   let o = cache.get(key); if (o) return o;
   const { W, D } = icDim(m);
   o = m.tur === 'kafe' ? kafeLayout(W, D, false) : m.tur === 'bistro' ? kafeLayout(W, D, true) : m.tur === 'kirtasiye' ? kirtasiyeLayout(W, D) : m.tur === 'okul' ? okulLayout(W, D)
-    : m.tur === 'lokanta' ? avmLayout(W, D) : m.tur === 'kafeterya' ? kafeteryaLayout(W, D) : m.tur === 'banka' ? bankaLayout(W, D) : m.tur === 'hastane' ? hastaneLayout(W, D)
-    : m.tur === 'giyim' || m.tur === 'elektronik' || m.tur === 'oyuncak' ? magazaLayout(W, D, m.tur)
+    : m.bina === 'avm' ? avmOdaLayout(W, D, m.tur) : m.tur === 'kafeterya' ? kafeteryaLayout(W, D) : m.tur === 'banka' ? bankaLayout(W, D) : m.tur === 'hastane' ? hastaneLayout(W, D)
     : m.tur === 'mutfak' ? mutfakLayout(W, D, stage) : m.tur === 'kahvalti' ? kahvaltiLayout(W, D) : m.tur === 'balik' ? balikLayout(W, D) : m.tur === 'acil' ? acilLayout(W, D) : morgLayout(W, D);
   o = o.map(i => duvaraOturt(i, W, D));
   cache.set(key, o); return o;
@@ -361,8 +408,8 @@ export function icColliders(m: IcMekan, stage = 99): Rect[] {
 }
 /** Same, relative to the building centre (prefab-local colliders for an unrotated placement). */
 export const icCollidersLocal = (m: IcMekan, cx = m.x, cz = m.z): Rect[] => icColliders(m).map(r => ({ x0: r.x0 - cx, x1: r.x1 - cx, z0: r.z0 - cz, z1: r.z1 - cz }));
-/** every room of a building, relative to the building centre (the AVM shell holds four rooms) */
-export const icBinaCollidersLocal = (bina: string, cx: number, cz: number): Rect[] => icBina(bina).flatMap(m => icCollidersLocal(m, cx, cz));
+/** every ground-floor room of a building, relative to the building centre (upper AVM floors: content/avm-kat.ts katEngel) */
+export const icBinaCollidersLocal = (bina: string, cx: number, cz: number): Rect[] => icBina(bina).filter(m => !m.kat).flatMap(m => icCollidersLocal(m, cx, cz));
 /** bank teller window: bank ops work here too */
 export function bankaGise(): { x: number; z: number } { const m = IC_BY_ID.banka; return icWorld(m, 0, -icDim(m).D / 2 + 2.6); }
 

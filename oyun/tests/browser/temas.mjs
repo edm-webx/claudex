@@ -12,7 +12,7 @@ const errs = []; p.on('pageerror', e => errs.push(e.message));
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengeli&seed=3`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 90000 });
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(700); }
+const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const ad = await p.$('input[name="ad"]'); if (ad) await ad.fill('Olcum'); await go.click({ force: true }); await p.waitForTimeout(700); }
 await p.evaluate(() => { const M = window.__marti; M.command({ kind: 'esnafim', op: 'done' }); M.setTime(13); M.step(2); M.renderFrames(40, 0.1); });   // intro descent ends before the first shot
 await p.addStyleTag({ content: 'body > *:not(#app), #app > *:not(canvas){display:none!important}' });
 const shot = async (name) => { await p.screenshot({ path: join(out, pre + name + '.png'), timeout: 540000 }); console.log('çekildi', pre + name); };

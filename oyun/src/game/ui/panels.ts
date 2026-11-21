@@ -84,6 +84,8 @@ export function createPanels(deps: PanelsDeps): Panels {
       out.setOwnMusic = b => { const on = !!b; deps.audio?.ownMusicMode(on); set('ownMusic', on); setTimeout(() => { if (rt().panel === 'ayarlar') renderPanel('ayarlar'); }, 0); };
       out.setQuality = q => set('quality', q);
       out.setHand = h => { set('hand', h === 'sol' ? 'left' : 'right'); };
+      out.setTextScale = v => { set('textScale', +v || 1); };
+      out.setCb = b => { set('colorBlindIcons', !!b); setTimeout(() => { if (rt().panel === 'ayarlar') renderPanel('ayarlar'); }, 0); };
       out.setHero = h => send({ kind: 'setHero', hero: h });
       out.reset = () => send({ kind: 'resetSave' });
       out.karakterDegis = () => { window.dispatchEvent(new CustomEvent('martikoy:karakter')); };
@@ -130,7 +132,7 @@ export function createPanels(deps: PanelsDeps): Panels {
     let model = models.panelModel(id, rules());
     if (id === 'ayarlar') {
       const st = S().settings || {};
-      model = { ...model, vol: deps.audio ? { music: deps.audio.buses.music.volume, sfx: deps.audio.buses.sfx.volume, voice: deps.audio.buses.voice.volume } : null, ownMusic: !!st.ownMusic, haptic: ui.settings.haptics !== false, hand: (st.hand || ui.settings.hand) === 'left' ? 'sol' : 'sag', perf: deps.perf ? deps.perf.visible() : undefined, tierNow: deps.quality?.current().label ?? null };
+      model = { ...model, vol: deps.audio ? { music: deps.audio.buses.music.volume, sfx: deps.audio.buses.sfx.volume, voice: deps.audio.buses.voice.volume } : null, ownMusic: !!st.ownMusic, haptic: ui.settings.haptics !== false, hand: (st.hand || ui.settings.hand) === 'left' ? 'sol' : 'sag', textScale: st.textScale || 1, cb: !!st.colorBlindIcons, perf: deps.perf ? deps.perf.visible() : undefined, tierNow: deps.quality?.current().label ?? null };
     }
     v2.open(id, model, actionsFor(id));
   }

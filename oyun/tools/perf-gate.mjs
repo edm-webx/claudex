@@ -37,7 +37,7 @@ let chromium; try { ({ chromium } = require('playwright')); } catch { ({ chromiu
 // ── yürüyüş rotası (koordinatlar oyun içeriğinden: büfe başlangıcı, kafe/AVM kapıları, halı saha kapısı, orman durağı)
 const ROTA = [
   ['iskele', 0, -8], ['bufe-ici', 0.2, -2.6], ['hali-saha', 399, 12.2], ['orman', 806, 9],
-  ['karsi-yaka', -30, 45], ['avm-ici', 18.5, 49.2],
+  ['karsi-yaka', -30, 45], ['avm-ici', 1200.15, 46.0],
 ];
 
 const mime = { '.js': 'text/javascript', '.html': 'text/html; charset=utf-8', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.json': 'application/json', '.glb': 'model/gltf-binary' };
@@ -49,7 +49,7 @@ const srv = createServer((req, res) => {
   res.writeHead(200, { 'content-type': mime[extname(f)] || 'application/octet-stream' }); res.end(readFileSync(f));
 });
 await new Promise(r => srv.listen(0, '127.0.0.1', r));
-const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--enable-precise-memory-info'] });
+const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--enable-precise-memory-info', '--js-flags=--expose-gc'] });
 
 const walk = d => readdirSync(d).flatMap(f => { const p = join(d, f); return statSync(p).isDirectory() ? walk(p) : [p]; });
 const dosyalar = walk(DIST);
@@ -62,10 +62,10 @@ async function olc(tier) {
   await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=${tier}&seed=3&stage=10`);
   await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 120000 });
   await p.evaluate(() => { const M = window.__marti; M.play('sabri'); M.renderFrames(2, 0.1); });
-  const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(700); } await p.evaluate(() => { const M = window.__marti; M.command({ kind: 'esnafim', op: 'set', data: { ad: 'Olcum' } }); M.command({ kind: 'esnafim', op: 'done' }); M.renderFrames(2, 0.1); });   // ad zorunlu (UX-15): boş adla kl-go kulisi kapatmaz, kulis bağlamı ölçüme karışır
+  const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const ad = await p.$('input[name="ad"]'); if (ad) await ad.fill('Olcum'); await go.click({ force: true }); await p.waitForTimeout(700); } await p.evaluate(() => { const M = window.__marti; M.command({ kind: 'esnafim', op: 'set', data: { ad: 'Olcum' } }); M.command({ kind: 'esnafim', op: 'done' }); M.renderFrames(2, 0.1); });   // ad zorunlu (UX-15): boş adla kl-go kulisi kapatmaz, kulis bağlamı ölçüme karışır
   await p.evaluate(() => { const M = window.__marti; M.simCmd('money', 9e9); M.simCmd('level', 40); });
   const settle = n => p.evaluate(n => { for (let k = 0; k < n; k++) window.__marti.renderFrames(2, 0.1); }, n);
-  const sample = () => p.evaluate(() => { const M = window.__marti, i = M.info(), t = i.timers || {}; return { calls: i.calls, tris: i.tris, geos: i.geos, texs: i.texs, programs: i.programs, heapMB: +(performance.memory ? performance.memory.usedJSHeapSize / 1048576 : 0).toFixed(1), timers: t }; });
+  const sample = () => p.evaluate(() => { try { window.gc && window.gc(); } catch { /* */ } const M = window.__marti, i = M.info(), t = i.timers || {}; return { calls: i.calls, tris: i.tris, geos: i.geos, texs: i.texs, programs: i.programs, heapMB: +(performance.memory ? performance.memory.usedJSHeapSize / 1048576 : 0).toFixed(1), timers: t }; });
   const noktalar = {};
   for (const [ad, x, z] of ROTA) {
     await p.evaluate(([x, z]) => window.__marti.teleport(x, z), [x, z]);

@@ -128,7 +128,7 @@ export function createAudio(deps: AudioDeps): MotorAudio {
         master.connect(comp); comp.connect(lim); lim.connect(lp); lp.connect(ac.destination);
       } catch { master.connect(ac.destination); }
       for (const b of Object.values(buses)) { b.node = ac.createGain(); b.node.connect(master); }
-      try { bank = createBank(ac, SES_DB as unknown as SesDb); } catch { bank = null; }
+      try { bank = createBank(ac, SES_DB as unknown as SesDb, deps.platform.device?.mobile ? 7 * 1024 * 1024 : undefined); } catch { bank = null; }
       applyAll();
     } catch { ac = null; }
     return ac;
@@ -329,6 +329,7 @@ export function createAudio(deps: AudioDeps): MotorAudio {
   }
   // ---- bölgesel atmosfer: katmanlar atmosphere.ts tablosundan, yalnız oyuncunun bulunduğu bölge/iç mekân için kurulur ----
   const voiceCap = createVoiceCap(deps.platform.device?.mobile ? 12 : 24);
+  const sfxCap = createVoiceCap(deps.platform.device?.mobile ? 10 : 20);   // eşzamanlı sfx tavanı (ses çorbası önlemi)
   let atmo: Atmosphere | null = null, atmoTimer: ReturnType<typeof setInterval> | null = null, wxOut: GainNode | null = null;
   let atmoZone = '', atmoInterior: string | null = null;
   const atmoHost: AtmoHost = {
@@ -497,6 +498,7 @@ export function createAudio(deps: AudioDeps): MotorAudio {
     sfx(id, opts) {
       try {
         if (sfxSilent() || !ac) { note(id, 'silent', !!opts?.at, 0); return; }
+        if (!sfxCap.take(deps.platform.clock.now(), 500, isMoney(id) || isUi(id) ? 3 : opts?.at ? 1 : 2)) { note(id, 'silent', !!opts?.at, 0); return; }
         let out: AudioNode = busOut(isUi(id) ? buses.ui : buses.sfx);
         let vol = opts?.vol ?? 1, pitch = opts?.pitch ?? 1;
         if (isMoney(id)) {   // single money gate: same habituation on every path (sample, bank, recipe)
@@ -508,6 +510,7 @@ export function createAudio(deps: AudioDeps): MotorAudio {
           const g = ac.createGain();
           if (opts?.at) {
             const dx = opts.at.x - listener.x, dz = opts.at.z - listener.z, d = Math.hypot(dx, dz);
+            if (d > 40) { note(id, 'silent', true, 0); return; }   // duyulmayacak kadar uzak: kaynak kurma
             vol *= 1 / (1 + d / 10);
             const p = ac.createStereoPanner(); p.pan.value = Math.max(-1, Math.min(1, dx / 12)); g.connect(p); p.connect(out);
           } else g.connect(out);

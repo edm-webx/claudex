@@ -2,6 +2,8 @@
 import { boot } from './game/boot';
 import { installSkin } from './engine/ui/skin';
 installSkin();
+try { window.addEventListener('unhandledrejection', e => { console.warn('[yakalanmamış söz reddi]', e.reason); }); } catch { /* */ }
+try { document.documentElement.lang = 'tr'; } catch { /* */ }   // sayfa sözleşmesinde <html> yok: uppercase/i-İ için dil
 
 // 2026-10-25 user: the game restarts as a brand new world. Change this tag to wipe every device's local save,
 // remembered login and settings once on the next load (the server side is wiped with supabase-herkesi-sil.sql).

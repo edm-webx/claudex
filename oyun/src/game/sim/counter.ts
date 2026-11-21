@@ -42,30 +42,39 @@ export function installCounter(K: Kernel, reserved: () => Partial<Record<Product
     get x() { const c = rt.layout.counter, px = S.player.x; return px < c.span[0] ? c.span[0] : px > c.span[1] ? c.span[1] : px; },
     get z() { return rt.layout.counter.standAt.z; },
   };
+  /**
+   * Which carried item goes down next (index in rt.carry, -1 = none). 2026-11-21 owner (angry, long-standing): "tepsimde
+   * bişey varken HALA tezgaha koyamıyorum ki sıradaki müşteri alsın". Root cause: every open table ticket (stage 3+, up to
+   * 48 tables with the wings), the VIP and the window queue RESERVED the matching items in Sabri's hands, so on a busy day
+   * the whole tray counted as reserved and nothing was put down while the counter queue stood there wanting exactly
+   * those items. Now the counter queue comes first: whatever the first five queued customers still need (minus what is
+   * already on the counter) is always put down. Only the surplus beyond that stays in hand for table / window service.
+   */
+  function pickDrop(): number {
+    if (!rt.carry.length) return -1;
+    const qNeed = counterApi.need() as Record<string, number>;
+    const res = { ...reserved() } as Record<string, number>;
+    let fallback = -1;
+    for (let i = rt.carry.length - 1; i >= 0; i--) {
+      const p = rt.carry[i].type, box = rt.counter[p];
+      if (!box || box.length >= 12) continue;
+      if ((qNeed[p] || 0) > 0) return i;
+      if ((res[p] || 0) > 0) { res[p]--; continue; }
+      if (fallback < 0) fallback = i;
+    }
+    return fallback;
+  }
   let reg = false;
   const register = () => {
     if (reg) return; reg = true;
     K.interactions.register({
       id: 'counter', pos: cpos, radius: 1.0, kind: 'counter', dwell: DWELL_DEFAULTS.counter, interval: 0.08,
-      canAct: () => {
-        if (!rt.carry.length) return false;
-        const res = { ...reserved() };
-        for (let i = rt.carry.length - 1; i >= 0; i--) {
-          const it = rt.carry[i];
-          if ((res[it.type] || 0) > 0) { res[it.type] = (res[it.type] || 0) - 1; continue; }
-          if (rt.counter[it.type] && rt.counter[it.type].length < 12) return true;
-        }
-        return false;
-      },
+      canAct: () => pickDrop() >= 0,
       act: () => {
-        const res = reserved();
-        for (let i = rt.carry.length - 1; i >= 0; i--) {
-          const it = rt.carry[i], box = rt.counter[it.type];
-          if ((res[it.type] || 0) > 0) { res[it.type] = (res[it.type] || 0) - 1; continue; }
-          if (box && box.length < 12) { box.push(rt.carry.splice(i, 1)[0]); if (!S.tut.firstDrop) { S.tut.firstDrop = 1; K.logEv('firstDrop'); } break; }
-        }
+        const i = pickDrop();
+        if (i >= 0) { const it = rt.carry.splice(i, 1)[0]; rt.counter[it.type].push(it); if (!S.tut.firstDrop) { S.tut.firstDrop = 1; K.logEv('firstDrop'); } }
         // 2026-10-25 user: 'elimdekiler tezgaha gitmiyor' - say why nothing was put down
-        if (rt.carry.length && !rt.carry.some(it => (res[it.type] || 0) <= 0 && rt.counter[it.type] && rt.counter[it.type].length < 12)) K.toast(rt.carry.some(it => (res[it.type] || 0) > 0) ? 'Bunlar pencere ya da masa siparişine ayrıldı: elden servis et.' : 'Tezgah dolu. Müşteriler alana kadar bekle.', 'info');
+        if (rt.carry.length && pickDrop() < 0) K.toast(rt.carry.some(it => rt.counter[it.type] && rt.counter[it.type].length < 12) ? 'Bunlar pencere ya da masa siparişine ayrıldı: elden servis et.' : 'Tezgah dolu. Müşteriler alana kadar bekle.', 'info');
         return 'continue';
       },
     });

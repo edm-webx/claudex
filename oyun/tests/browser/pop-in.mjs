@@ -16,7 +16,7 @@ const t0 = Date.now(), log = s => console.log(`${String(((Date.now() - t0) / 100
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=${process.env.TIER || 'dengeli'}&seed=3&stage=10&time=12`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 180000 });
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(500); }
+const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const ad = await p.$('input[name="ad"]'); if (ad) await ad.fill('Olcum'); await go.click({ force: true }); await p.waitForTimeout(500); }
 log('hazır');
 const ADIM = Number(process.env.ADIM || 1), KARE = Number(process.env.KARE || 1), Z = 9, X0 = Number(process.env.X0 || 20), X1 = Number(process.env.X1 || 110);
 const KAMERA = { varsayilan: { zoom: 1, tilt: 0 }, uzak: { zoom: 2.1, tilt: 0 }, yatik: { zoom: 1, tilt: -0.55 } };

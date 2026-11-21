@@ -34,6 +34,7 @@ import type {
   GameView, HeroHandle, TestHooks, Editor, Vec2, Vec3, ScreenPt, Logger, TierName, ArtManifest, SaveStore, QualitySetting, Rect, WalkGrid,
 } from '../engine/api';
 import type { Object3D } from 'three';
+import * as T from 'three';
 import { createHooks } from '../engine/debug';
 import { fallbackRender, fallbackWorld, fallbackHero, fallbackUi, fallbackHud } from '../engine/debug/fallbacks';
 import { createPlatform } from '../engine/platform';
@@ -74,7 +75,7 @@ import { createParity, type Parity } from './parity';
 import { createContent } from '../content/index';
 import { defaultSign } from '../content/sign-fonts';
 import { createSim, openNav, lerpPose, type SimFull } from './headless';
-import { defaultState, SAVE_KEY, type GameState, type HeroId } from './sim/schema';
+import { defaultState, SAVE_KEY, SAVE_VERSION, type GameState, type HeroId } from './sim/schema';
 import { createGameSave } from './sim/save';
 import { installBekci, type BekciHandle } from './sim/bekci';
 import { createGunSonu } from './ui/gun-sonu';
@@ -90,6 +91,7 @@ import { PAD_KEYS } from '../content/pads';
 import { regionAt, REGIONS } from '../content/disari/martikoy';
 import { sesBolgesi } from '../content/ses/bolgeler';
 import { realmAt } from '../content/realm';
+import { avmIcinde } from '../content/avm-kat';
 import { createHaliSaha } from './ui/hali-saha';
 import { createOrmanView } from './view/orman';
 import { createOtobusHud } from './ui/otobus-hud';
@@ -98,7 +100,7 @@ import { createKirtasiyeFp } from './ui/kirtasiye-fp';
 import { IC_BY_ID as KT_IC, icWorld as ktWorld, icDim as ktDim, icIcinde as ktIcinde } from '../content/ic-mekan';
 import { createMulkView } from './view/mulk';
 import { bankaOku, bankaYaz } from './net/slots';
-import { bulutKapanisYaz } from './net/slots';
+import { bulutKapanisYaz, kayitKilidi, kayitKilitle, kodSurumu, yerelYedekYaz, yerelYedekOku, yerelYedekSil, type KayitKilidi } from './net/slots';
 import { createKayitDurum } from './net/kayit-durum';
 import { createKayitRozet } from './ui/kayit-rozet';
 import { panelModel, panelActions } from './sim/panels';
@@ -110,10 +112,12 @@ import { createKarsiLook, type KarsiLookView } from './view/world/karsi-look';
 import { createKarsiBina, type BinaView } from './view/world/karsi-bina';
 import { createIsletmeInsaat, type InsaatView } from './view/world/isletme-insaat';
 import { createInsaatSahasi, type InsaatSahasiView } from './view/world/insaat-sahasi';
+import { gecitAcik } from '../content/kilitli-bolge';
 import { createBufeBuyume, mevsimZorla, type BuyumeView } from './view/world/bufe-buyume';
 import { createAcilis, type AcilisView } from './view/world/acilis';
 import { ARSALAR, ISLETME, ARSA_ISLETME } from '../content/esya';
 import { createKarsiYasam, type YasamView } from './view/world/karsi-yasam';
+import { createAvmIc, type AvmIcView } from './view/world/avm-ic';
 import { createIcMekan, type IcView } from './view/world/ic-mekan-look';
 import { restoranApi } from './sim/restoran';
 import { MUTFAK_ROL_BY_ID } from '../content/mutfak';
@@ -124,7 +128,6 @@ import { createIzgaraLook, type IzgaraLookView } from './view/world/izgara-look'
 import { cellRect } from '../content/izgara';
 import { createDekorLook, type DekorLookView } from './view/world/dekor-look';
 import { createEvRoom, type EvRoomView } from './view/ev/ev-room';
-import { createTipJar, type TipJarView } from './view/world/tip-jar';
 import { createReklam, type ReklamView } from './view/world/reklam';
 import { createHavaLook, HAVA_ZORLA, type HavaLookView } from './view/world/hava-look';
 import { Batch } from '../engine/prefab/batch';
@@ -220,6 +223,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
 
   // ── world + characters
   const prefab: PrefabSystem | null = dress ? make('prefab', () => createPrefabs({ dress, perf: P, log })) : null;
+  const ZONE_IDS_OCC = ['iskele', 'test-sokak', 'sahil', 'yokus', 'meydan', 'barinak', 'gece', 'stadyum', 'tersane', 'metro', 'tepe', 'adalar', 'orman'];
   const zones: ZoneManager | null = prefab && dress ? make('zones', () => createZones({ scene, prefab, dress, quality, perf: P, log })) : null;
   const nav: Nav = make('nav', () => createNav({ log })) ?? openNav();
   const anim: AnimApi | null = make('anim', () => createAnim({ log }));
@@ -273,7 +277,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   input.setPicker(p => R.pick(p));
   let unlocked = false;
   const unlock = () => { if (unlocked) return; unlocked = true; make('audio.unlock', () => { audio?.unlock(); return true; }); };
-  canvas.addEventListener('pointerdown', unlock); window.addEventListener('keydown', unlock);
+  for (const ev of ['pointerdown', 'keydown', 'touchend'] as const) window.addEventListener(ev, unlock, { capture: true, once: true });   // DOM kaplamalar (Oyna/giriş kartı) canvas'ı örter: pencere düzeyinde yakala
 
   // ── save + sim (A's createGameSave over the engine store; the sim ref is late-bound)
   const seed = params.seed ?? (params.parity ? 1 : undefined);
@@ -315,7 +319,14 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   // D's tutorial (v2 TUT incl. cat/gull/Rıza/kapkaç arrows): a sim system, read by the play view
   const tutorial: Tutorial | null = playMode ? make('tutorial', () => installTutorial(sim.rules)) : null;
 
-  const pose = { x: 0, z: 0, rot: 0 };
+  const pose: { x: number; z: number; rot: number; y?: number; kat?: number } = { x: 0, z: 0, rot: 0 };
+  let lastPoseX = 0, lastPoseZ = 0, perdeEl: HTMLDivElement | null = null;
+  const perde = () => {
+    try {
+      if (!perdeEl) { perdeEl = document.createElement('div'); perdeEl.style.cssText = 'position:fixed;inset:0;background:#0b0d12;pointer-events:none;z-index:40;opacity:0;transition:opacity .45s ease-out'; document.body.appendChild(perdeEl); }
+      const el = perdeEl; el.style.transition = 'none'; el.style.opacity = '1'; void el.offsetWidth; el.style.transition = 'opacity .45s ease-out'; el.style.opacity = '0';
+    } catch { /* */ }
+  };
   const pos: Vec2 = pose; // same object: pos.x/pos.z are the interpolated ground position
   const walk = sim.walk;
 
@@ -340,13 +351,14 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const acilis: AcilisView | null = playMode && zones ? make('acilis', () => createAcilis({ root: () => zones.root('iskele') ?? null, hero: () => walk.pos, ses: (id) => { try { audio?.sfx(id); } catch { /* */ } } })) : null;
   if (acilis) sim.bus.on('tadilatDone', (e) => acilis.baslat(Number((e as { stage?: number } | undefined)?.stage) || sim.state.stage));
   // 2026-11-09 "her binaya girilebilmeli": interiors of every far-side building and the büfe halls
-  const icMekan: IcView | null = playMode && zones ? make('icMekan', () => createIcMekan({ root: () => zones.root('iskele') ?? null, hero: () => walk.pos, night: () => nightK,
+  const avmIc: AvmIcView | null = playMode && zones ? make('avmIc', () => createAvmIc({ root: () => scene, hero: () => walk.pos, night: () => nightK })) : null;   // Martı AVM içi (ayrı diyar)
+  const icMekan: IcView | null = playMode && zones ? make('icMekan', () => createIcMekan({ root: () => zones.root('iskele') ?? null, sahne: () => scene, hero: () => walk.pos, night: () => nightK,
     isletme: () => { const m = mulkApi(sim.rules), o: Record<string, { lv: number; isci: number; esya: string[]; tema?: string }> = {}; if (m) for (const p of m.view().plots) if (p.sabit && p.owned) o[p.id] = { lv: p.lv, isci: p.isci, esya: (p as { esya?: string[] }).esya || [], tema: (p as { tema?: string }).tema || '' }; return o; },
     salon: () => ({ stage: sim.state.stage || 1, esya: ((sim.state.zones as { salon?: { esya?: string[] } }).salon?.esya) || [] }),
     mutfak: () => { const rv = restoranApi(sim.rules)?.view(); return { ekip: sim.state.workers.filter(w => MUTFAK_ROL_BY_ID[w.role]).map(w => ({ rol: w.role, rank: rankOf(w.xp || 0) })), kds: (rv?.tickets || []).slice(0, 6).map(k => '#' + k.no + '  Masa ' + (k.table + 1) + ' · ' + k.items.filter(i => i.left).map(i => i.left + '× ' + i.name).join(', ')), pass: rv?.pass || [], ist: rv?.ist || {},
       bilet: (rv?.tickets || []).map(k => ({ no: k.no, masa: k.table + 1, kalem: k.items.filter(i => i.left).map(i => i.left + '× ' + i.name), frac: k.frac })), zeminKir: ((sim.state.zones as { zemin?: { kir?: number } }).zemin?.kir) ?? 0 }; } })) : null;   // BUF-05: pass rafı + istasyon tepsileri
   const karsiYasam: YasamView | null = playMode && zones && chars ? make('karsiYasam', () => createKarsiYasam({ root: () => zones.root('iskele') ?? null, chars, hero: () => walk.pos, hour: () => sim.clock.hour, sfx: (id, at) => { try { audio?.sfx(id, at ? { at } : undefined); } catch { /* */ } }, isci: () => { const m = mulkApi(sim.rules); return m ? m.view().plots.filter(p => p.sabit && p.owned).map(p => ({ id: p.id, n: p.isci, lv: p.lv, esya: (p as { esya?: string[] }).esya || [] })) : []; } })) : null;
-  const yolLook: YolLookView | null = playMode && zones ? make('yolLook', () => createYolLook({ root: () => zones.root('iskele') ?? null })) : null;
+  const yolLook: YolLookView | null = playMode && zones ? make('yolLook', () => createYolLook({ root: () => zones.root('iskele') ?? null, gecitAcik: () => gecitAcik(sim.state) })) : null;
 
   const izgaraLook: IzgaraLookView | null = playMode && uiReal ? make('izgaraLook', () => createIzgaraLook({ scene, host: U.root })) : null;
 
@@ -408,11 +420,31 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
 
   // ── agents view (workers, regulars, gurme, kapkaççı, cats, Karamel, gulls, pigeons, far flock)
   /** 2026-11-21: the player is inside a büfe salon (its roof / upper floor is cut away, view/world/bufe-buyume.ts): people up on that roof would float */
+  // Kamera occlusion: alçak kamerada hero ile kamera arasındaki yüksek (>=1.8 m) opak mesh'e (duvar/bina/direk) girmesin. Aday liste ~1 sn'de bir yenilenir.
+  if (zones && cam.setOcclusion) {
+    const ray = new T.Raycaster(), org = new T.Vector3(), dir = new T.Vector3(), box = new T.Box3();
+    let cand: T.Object3D[] = [], candAt = -1e9;
+    const refresh = () => {
+      cand = [];
+      for (const id of ZONE_IDS_OCC) { const r = zones.def(id) ? zones.root(id) : null; if (!r || !r.visible) continue;
+        r.traverse(o => { const m = o as T.Mesh; if (!m.isMesh || (m as T.SkinnedMesh).isSkinnedMesh || (m as T.InstancedMesh).isInstancedMesh || !o.visible) return;
+          const mt = m.material as T.Material | T.Material[]; const mm = Array.isArray(mt) ? mt[0] : mt; if (!mm || mm.transparent || (mm as T.Material & { opacity: number }).opacity < 0.99) return;
+          if (!m.geometry.boundingBox) m.geometry.computeBoundingBox(); box.copy(m.geometry.boundingBox!).applyMatrix4(m.matrixWorld);
+          if (box.max.y - box.min.y >= 1.8 && box.min.y < 1.2) cand.push(o); }); }
+    };
+    cam.setOcclusion((fx, fz, tx, tz) => {
+      const now = performance.now(); if (now - candAt > 1000) { candAt = now; refresh(); }
+      const len = Math.hypot(tx - fx, tz - fz); if (len < 0.5) return 1;
+      org.set(fx, 1.2, fz); dir.set((tx - fx) / len, 0, (tz - fz) / len); ray.set(org, dir); ray.far = len;
+      const hit = ray.intersectObjects(cand, false)[0];
+      return hit ? Math.max(0, hit.distance / len) : 1;
+    });
+  }
   const salonUstGizli = (x: number, z: number) => { for (const m of [KT_IC.salonW, KT_IC.salonE]) if (ktIcinde(m, pos, 0.2) && ktIcinde(m, { x, z }, 0.4)) return true; return false; };
   const agentsOf = (): AgentsHandle | null => (sim.rules.rt as unknown as { agents?: AgentsHandle }).agents ?? null;
   const agentsView: AgentsView | null = playMode && chars ? make('agentsView', () => createAgentsView({
     chars: chars as MotorChars, quality, agents: agentsOf,
-    player: () => ({ x: pos.x, z: pos.z, moving: walk.speed > 0.15 }), camera: () => cam.camera,
+    player: () => ({ x: pos.x, z: pos.z, moving: walk.speed > 0.15, kat: (pos as { kat?: number }).kat }), camera: () => cam.camera,
     hideUp: (x, z) => salonUstGizli(x, z),
   })) : null;
 
@@ -421,6 +453,8 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (key === 'quality') make('quality.set', () => { quality.set(String(value) as QualitySetting); return true; });
     else if (key === 'hand') { const h = value === 'left' ? 'left' : 'right'; U.settings.hand = h; input.setHand(h); }
     else if (key === 'haptics') U.settings.haptics = !!value;
+    else if (key === 'textScale') { const v = Math.min(1.6, Math.max(0.8, Number(value) || 1)); U.settings.textScale = v; U.root.style.setProperty('--ts', String(v)); }
+    else if (key === 'colorBlindIcons') { U.settings.colorBlindIcons = !!value; U.root.classList.toggle('sb-cb', !!value); }
   };
   const copyReport = () => { void platform.copyText(P.dump().kayit ? JSON.stringify(P.dump()) : P.report()).then(ok => U.toast(ok ? 'Rapor kopyalandı.' : 'Kopyalanamadı, hız ölçerden dene.', ok ? 'good' : 'info')); };
   const panels: Panels | null = playMode && uiReal ? make('panels', () => createPanels({
@@ -459,7 +493,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const hikayeScene: HikayeSceneView | null = panels ? make('hikayeScene', () => createHikayeScene({ root: U.root, rules: () => sim.rules as never, command, sfx: (id, o) => { try { audio?.sfx(id, o); } catch { /* */ } } })) : null;
   // Hedefler kartı (DOM) and the bahşiş kavanozu on the counter (goals.ts)
   const hedefCard: HedefCard | null = panels && labels ? make('hedefCard', () => createHedefCard({ root: U.root, v2: panels.v2 as never, rules: () => sim.rules, command, sfx: id => { try { audio?.sfx(id); } catch { /* */ } } })) : null;
-  const tipJar: TipJarView | null = playMode ? make('tipJar', () => createTipJar({ scene, rules: () => sim.rules })) : null;
+  // 2026-11-21 owner: "bağış kutusunu kaldır": the BAHŞİŞ jar on the counter is gone (view deleted; the sim counter stays silent)
   const stantLook: StantLookView | null = playMode ? make('stantLook', () => createStantLook({ scene, rules: () => sim.rules })) : null;
   if (playMode && uiReal) (sim.rules.rt as unknown as { gunSonuCard?: boolean }).gunSonuCard = true;   // headless sims/tests roll days over without the card
   // 2026-10-24 açık dünya: online ilk deneme over the claude.ai room (online.ts); offline anywhere else
@@ -487,15 +521,27 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
       // 2026-10-25 user: a different account must NOT inherit the previous account's progress. The local save remembers
       // which account owns it; an unowned (guest/legacy) save is claimed by the first account that logs in.
       const me = hesap(); if (!me) return;
+      // KAYIT-GUV: the cloud record must have been read; an unreadable/unopenable cloud save is never replaced by an empty character
+      let c: { code: string; playT: number } | null;
+      try { c = await bulutOku(); } catch { bulutKilitle('okunamadi'); return; }
       let owner = ''; try { owner = localStorage.getItem('martikoy-save-owner') || ''; } catch { /* */ }
       // J2: an empty slot always starts a fresh character (kulis opens, the name is chosen once)
       const slotFresh = slotYeni();
       const foreign = (!!owner && owner !== me.id) || slotFresh;
-      const c = await bulutOku();
+      if (c && c.code) { const kv = kodSurumu(c.code); if (kv === null || kv > SAVE_VERSION) { bulutKilitle(kv === null ? 'bozuk' : 'surum'); return; } }
+      // offline close/refresh: this browser's copy of the slot, if it grew from exactly this cloud save and is further on
+      let yedek: { code: string; playT: number } | null = null;
+      if (slotFresh) yerelYedekSil();
+      else { const y = yerelYedekOku(c); const yv = y ? kodSurumu(y.code) : null; if (y && yv !== null && yv <= SAVE_VERSION) yedek = { code: y.code, playT: y.playT }; }
       let synced = ''; try { synced = localStorage.getItem('martikoy-cloud-synced') || ''; } catch { /* */ }
       const wiped = !c && synced === me.id;   // it had a cloud save before and an admin deleted it
-      if (c && c.code && (foreign || c.playT > (sim.state.playT || 0)) && await save.importCode(c.code)) { const r = await save.load(); sim.load(r.data); }
-      else if (foreign || wiped) { sim.load(defaultState(seed ?? 1) as never); esnafimSave(sim.state).done = false; }
+      let yuklendi = false;
+      if (yedek && await save.importCode(yedek.code)) { const r = await save.load(); sim.load(r.data); yuklendi = true; setTimeout(() => bulutPush(), 0); }
+      if (!yuklendi && c && c.code && (foreign || cloudOnly || c.playT > (sim.state.playT || 0))) {
+        if (await save.importCode(c.code)) { const r = await save.load(); sim.load(r.data); yuklendi = true; }
+        else { bulutKilitle('bozuk'); return; }   // never fall through to a fresh character that would overwrite this slot
+      }
+      if (!yuklendi && (foreign || wiped)) { sim.load(defaultState(seed ?? 1) as never); esnafimSave(sim.state).done = false; }
       if (slotFresh) esnafimSave(sim.state).done = false;
       else if (isNew) esnafimSave(sim.state).done = false;
       { const bk = bankaOku(); (sim.rules.rt as unknown as { banka: unknown }).banka = { tl: bk.tl, esya: bk.esya, dirty: false, faizSaat: bk.faizSaat || 0, saat: Date.now() / 1000 }; }   // the account bank, shared by all 4 slots
@@ -505,7 +551,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     } })) : null;
   let adminEditor: () => void = () => { /* set below once the editor deps exist */ };
   const adminPanel = playMode && uiReal && online ? make('adminPanel', () => createAdminPanel({ root: U.root, peers: () => online.peers(), toast: t => U.toast(t, 'info'), sfx: id => { try { audio?.sfx(id); } catch { /* */ } },
-    teleport: (x, z) => { sim.command({ kind: 'teleport', x, z }); camHold = null; cam.snap(walk.pos); }, myPos: () => ({ x: walk.pos.x, z: walk.pos.z }),
+    teleport: (x, z, kat?: number) => { sim.command({ kind: 'teleport', x, z, kat }); camHold = null; cam.snap(walk.pos); }, myPos: () => ({ x: walk.pos.x, z: walk.pos.z }),
     addMoney: n => { sim.state.money = Math.max(0, sim.state.money + n); }, addGold: n => { sim.state.gold = Math.max(0, (sim.state.gold || 0) + n); },
     setMoney: n => { sim.state.money = n; }, setGold: n => { sim.state.gold = n; }, editor: () => adminEditor(), stands: () => (restoranApi(sim.rules)?.view().stands ?? []).map(t => ({ id: t.id, name: t.name, owned: t.owned, x: t.x, z: t.z })), izgara: () => { const v = !(izgaraLook?.get()); izgaraLook?.set(v); return v; },
     resetMe: () => { void (async () => { try { sim.load(defaultState(seed ?? 1) as never); esnafimSave(sim.state).done = false; await save.save('manual'); if (hesap()) { const code = await save.exportCode(); await bulutYaz(code, 0, esnafimSave(sim.state), 1); } } finally { location.reload(); } })(); },
@@ -514,14 +560,30 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     setMevsim: k => mevsimZorla(k),
     setMuted: m => { sim.state.settings.muted = m; if (audio) for (const b of Object.values(audio.buses)) (b as { muted: boolean }).muted = m; } })) : null;
   // J2: back to the slot screen (save first, then sign out and reload: the login screen opens again)
-  window.addEventListener('martikoy:karakter', () => { void (async () => { try { if (hesap() && saveOn()) { const code = await save.exportCode(); await bulutYaz(code, sim.state.playT || 0, esnafimSave(sim.state), sim.state.level || 1); } await cikisYap(); } finally { location.reload(); } })(); });
+  window.addEventListener('martikoy:karakter', () => { void (async () => { try { if (hesap() && saveOn()) { const code = await save.exportCode(); await bulutYaz(code, sim.state.playT || 0, esnafimSave(sim.state), sim.state.level || 1); } await cikisYap(); } catch (e) { console.warn('[karakter] çıkış/bulut yazımı başarısız', e); } finally { location.reload(); } })(); });
   let bulutT = 45;
+  // KAYIT-GUV: cloud write lock (cloud save of a newer build / unreadable / another tab advanced this character). Shown once.
+  const KILIT_METNI: Record<Exclude<KayitKilidi, null>, string> = {
+    surum: 'Bu karakterin kaydı oyunun daha yeni bir sürümünden. Kaydın korunuyor, bu sekme hiçbir şey yazmıyor; sayfayı yenile.',
+    bozuk: 'Bulut kaydın açılamadı. Kaydın korunuyor, bu sekme hiçbir şey yazmıyor; sayfayı yenile.',
+    okunamadi: 'Bulut kaydın okunamadı. Kaydın korunuyor, bu sekme hiçbir şey yazmıyor; sayfayı yenile.',
+    cakisma: 'Bu karakter başka bir sekmede ya da cihazda ilerledi. Onun kaydını ezmemek için bu sekme artık kaydetmiyor; sayfayı yenile.',
+  };
+  let kilitGosterildi = false;
+  function kilitGoster(): void {
+    const k = kayitKilidi(); if (!k) return;
+    kayitD.saltOkunur(KILIT_METNI[k]);
+    if (!kilitGosterildi) { kilitGosterildi = true; try { U.toast(KILIT_METNI[k], 'bad'); } catch { /* */ } }
+  }
+  function bulutKilitle(k: Exclude<KayitKilidi, null>): void { kayitKilitle(k); kilitGoster(); }
   // KAL-01: bulut yazımı durum makinesinden geçer (rozet, yeniden deneme, çevrimdışı); sonuç sunucu onayıdır
   const kayitD = createKayitDurum({
     gonder: async () => {
       if (!hesap() || !saveOn()) return true;
+      if (kayitKilidi()) { kilitGoster(); return false; }
       const code = await save.exportCode();
       const ok = await bulutYaz(code, sim.state.playT || 0, esnafimSave(sim.state), sim.state.level || 1);
+      if (!ok && kayitKilidi()) kilitGoster();
       if (ok) { try { const h = hesap(); if (h) localStorage.setItem('martikoy-cloud-synced', h.id); } catch { /* */ } }
       return ok;
     },
@@ -529,10 +591,19 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     zamanla: (fn, ms) => setTimeout(fn, ms), iptal: h => clearTimeout(h as ReturnType<typeof setTimeout>),
   });
   if (save.readOnly) kayitD.saltOkunur();   // depoda bu build'den yeni sürüm kaydı var: buluta da yazılmaz (yeni kayıt ezilmesin)
-  const bulutPush = () => { if (!hesap() || !saveOn()) return; if (save.readOnly) { kayitD.saltOkunur(); return; } kayitD.istek(); };
+  /** this browser's copy of the active slot (survives an offline refresh/close; slots.ts yerelYedekOku decides at login) */
+  const yedekYaz = (code: string) => { try { yerelYedekYaz(code, sim.state.playT || 0, platform.clock.wall()); } catch { /* */ } };
+  const bulutPush = () => {
+    if (!hesap() || !saveOn()) return;
+    if (save.readOnly) { kayitD.saltOkunur(); return; }
+    if (kayitKilidi()) { kilitGoster(); return; }
+    void save.exportCode().then(code => { yedekYaz(code); kayitD.istek(); }, () => kayitD.istek());
+  };
   /** sekme kapanırken: asenkron zincire güvenme, keepalive isteği hemen at (gövde 60 KB'ı aşarsa atılmaz, normal yazım dener) */
-  const bulutKapanis = () => { try { if (!hesap() || !saveOn() || save.readOnly) return; void save.exportCode().then(code => { bulutKapanisYaz(code, sim.state.playT || 0, esnafimSave(sim.state), sim.state.level || 1); }); } catch { /* */ } };
+  const bulutKapanis = () => { try { if (!hesap() || !saveOn() || save.readOnly || kayitKilidi()) return; void save.exportCode().then(code => { yedekYaz(code); bulutKapanisYaz(code, sim.state.playT || 0, esnafimSave(sim.state), sim.state.level || 1); }); } catch { /* */ } };
   addEventListener('pagehide', bulutKapanis);
+  // unsaved progress (offline / failing): the browser asks before closing (the local copy is kept anyway)
+  addEventListener('beforeunload', e => { try { if (hesap() && saveOn() && !kayitKilidi() && kayitD.bekleyenVar()) { bulutKapanis(); e.preventDefault(); e.returnValue = ''; } } catch { /* */ } });
   addEventListener('online', () => kayitD.baglandi());
   const kayitRozet = playMode && uiReal ? make('kayitRozet', () => createKayitRozet({ root: U.root, durum: kayitD, gorunur: () => !!hesap() && saveOn() })) : null;
   const yetenekBtn = playMode && uiReal ? make('yetenekBtn', () => createYetenekBtn({ root: U.root, rules: () => sim.rules, command: c => command(c as never) })) : null;
@@ -586,7 +657,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     // ses-1 place signature: Sabri'nin evi overlay, Çarşı Sokağı by position, else the pier
     // 16:52 user: music + ambience follow the place: every region has its own (orman, gece pazarı, sahil...), the halı saha match its stand
     zone: () => { if (evRoom?.isOpen()) return 'ev'; if (document.querySelector('.hs-game')) return 'halisaha'; return sesBolgesi(pos); },   // DNY-17: ses bölgesi (iç mekan, karşı yaka alt bölgeleri, şerit)
-    interior: () => icMekan?.icinde() ?? null,
+    interior: () => icMekan?.icinde() ?? (avmIcinde(pos, 2) ? 'avmHol' : null),
     crowd: () => Math.min(1, (sim.agents.count || 0) / 45),
     weather: () => havaApi(sim.rules)?.view().kind ?? 'acik',
     season: () => havaApi(sim.rules)?.view().season ?? 'sonbahar',
@@ -615,6 +686,8 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   if (audio && sim.state.settings.muted) { for (const b of Object.values(audio.buses)) b.muted = true; }
   if (audio) make('audio.saved', () => { const st = sim.state.settings; audio.buses.music.volume = st.music ?? 0.8; audio.buses.sfx.volume = st.sfx ?? 1; audio.buses.voice.volume = st.voice ?? 1; audio.ownMusicMode(!!st.ownMusic); return true; }); // ses-5 saved sliders + own music
   if (sim.state.settings.hand === 'left') extraSettings('hand', 'left');
+  if ((sim.state.settings.textScale || 1) !== 1) extraSettings('textScale', sim.state.settings.textScale);
+  if (sim.state.settings.colorBlindIcons) extraSettings('colorBlindIcons', true);
 
   // ── tier changes
   const applyTier = (t: TierDef) => {
@@ -680,6 +753,9 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (st.recenter) (cam as unknown as { recenter(): void }).recenter();
     if (st.moving) { camHold = null; acilis?.atla(); }
     lerpPose(walk, alpha, pose);
+    // Martı AVM kapısı / büyük ışınlanma: kamera kaymasın, ekran kısa bir an kararıp açılsın
+    if (Math.hypot(pose.x - lastPoseX, pose.z - lastPoseZ) > 15) { cam.snap(pos); camHold = null; perde(); }
+    lastPoseX = pose.x; lastPoseZ = pose.z;
     simT += fdt;
     if (zones) guard('zones', () => { P.begin('zones.build'); zones.update(pos, cam.frustum()); P.end('zones.build'); });
     // 2026-11-21 denetim: kapalı diyarda (stadyum / orman) komşu bölgenin tezgâhları zeminsiz, boşlukta havada görünüyordu: diyar dışı bölge çizilmez
@@ -689,7 +765,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (df && sim.state.playT > df.until) { delete sim.rules.rt.uiLast.decorFocus; if ((df as AnyRec).reopen) cmd('openPanel', { id: 'dekor' }); }
     const inBufe = pos.x > BUFE.x0 && pos.x < BUFE.x1 && pos.z > BUFE.z0 && pos.z < BUFE.z1;   // Faz 2 (38): inside the büfe the camera centres on it
     const bufeFocus = { x: (BUFE.x0 + BUFE.x1) / 2, z: (BUFE.z0 + BUFE.z1) / 2 };
-    guard('camera.follow', () => cam.follow((t => onUg(t.x, t.z) ? { x: t.x, z: t.z, y: ugY(t.x, t.z) } : t)(acilis?.kamera() ?? (df && sim.state.playT <= df.until ? df : camHold ?? (inBufe ? { x: pos.x + (bufeFocus.x - pos.x) * 0.25, z: pos.z + (bufeFocus.z - pos.z) * 0.25 } : pos))), fdt));
+    guard('camera.follow', () => cam.follow((t => onUg(t.x, t.z) ? { x: t.x, z: t.z, y: ugY(t.x, t.z) } : t === pos && pose.y ? { x: t.x, z: t.z, y: pose.y } : t)(acilis?.kamera() ?? (df && sim.state.playT <= df.until ? df : camHold ?? (inBufe ? { x: pos.x + (bufeFocus.x - pos.x) * 0.25, z: pos.z + (bufeFocus.z - pos.z) * 0.25 } : pos))), fdt));
     if (playMode) guard('sign', syncSign);
     guard('world', () => W.update(sim.state, fdt, alpha));
     if (ferryLook) guard('ferryLook', () => ferryLook.update(fdt));
@@ -702,7 +778,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (acilis) guard('acilis', () => acilis.update(fdt));
     if (karsiYasam) guard('karsiYasam', () => karsiYasam.update(fdt));
     if (icMekan) guard('icMekan', () => icMekan.update(fdt));
-    if (tipJar) guard('tipJar', () => tipJar.update(fdt));
+    if (avmIc) guard('avmIc', () => avmIc.update(fdt));
     if (stantLook) guard('stantLook', () => stantLook.update(fdt));
     if (faz2Hud) guard('faz2Hud', () => faz2Hud.update(fdt));
     if (gunSonu) guard('gunSonu', () => gunSonu.update());
@@ -721,7 +797,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (mulkPanel) guard('mulkPanel', () => mulkPanel.update(fdt));
     if (mulkView) guard('mulkView', () => mulkView.update(fdt));
     if (stadyumView) guard('stadyumView', () => stadyumView.update(fdt));
-    if ((bankaT -= fdt) <= 0) { bankaT = 2; const b = bankaRt(); if (b && b.saat !== undefined) b.saat = Date.now() / 1000; if (b?.dirty && hesap()) { b.dirty = false; void bankaYaz({ tl: b.tl, esya: b.esya, faizSaat: b.faizSaat }); } }   // the sim is pure: the wall clock for the account-level interest stamp comes from here
+    if ((bankaT -= fdt) <= 0) { bankaT = 2; const b = bankaRt(); if (b && b.saat !== undefined) b.saat = Date.now() / 1000; if (b?.dirty && hesap() && saveOn()) { b.dirty = false; void bankaYaz({ tl: b.tl, esya: b.esya, faizSaat: b.faizSaat }).then(ok => { if (!ok && !kayitKilidi()) b.dirty = true; }); } }   // the sim is pure: the wall clock for the account-level interest stamp comes from here
     if (otobusHud) guard('otobusHud', () => otobusHud.update(fdt));
     if (nightLights) guard('nightLights', () => nightLights.update(pos, gSaat.saat, fdt, roomLightsFor(icMekan?.icinde())));   // GRS-02: lamps follow the drawn hour (lit behind the gün sonu card, fade at dawn)
     if (playMode) guard('heroKind', syncHeroKind);
@@ -950,7 +1026,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   reg('izgara', (on?: boolean) => { if (on !== undefined) izgaraLook?.set(!!on); return izgaraLook?.get() ?? null; });
   reg('hucre', (name: string) => cellRect(name));
   reg('acilis', (to: number) => acilis?.baslat(Number(to)));   // dev: BUF-30 açılış anını yeniden oynat
-  reg('teleport', (x: number, z: number) => { sim.command({ kind: 'teleport', x, z }); camHold = null; cam.snap(walk.pos); });
+  reg('teleport', (x: number, z: number, kat?: number) => { sim.command({ kind: 'teleport', x, z, kat }); camHold = null; cam.snap(walk.pos); });
   reg('camera', (o: { x?: number; z?: number; zoom?: number; zoomRaw?: number; yaw?: number; tilt?: number } = {}) => {
     if (o.zoom !== undefined) cam.zoom = o.zoom;
     const cr = cam as unknown as { zoomRaw?: (z: number) => void; turn(d: number): void; tilt(d: number): void; yaw: number };

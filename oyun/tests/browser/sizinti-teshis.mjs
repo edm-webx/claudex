@@ -14,7 +14,7 @@ await p.addInitScript(gpuBellekKanca);
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengeli&seed=3&stage=10`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 120000 });
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(700); }
+const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const ad = await p.$('input[name="ad"]'); if (ad) await ad.fill('Olcum'); await go.click({ force: true }); await p.waitForTimeout(700); }
 const settle = (n = 10) => p.evaluate(n => { const M = window.__marti; for (let k = 0; k < n; k++) M.renderFrames(2, 0.1); }, n);
 const snap = () => p.evaluate(() => { const i = window.__marti.info(), g = window.__gpuBellek(100000); const sz = {}; g.enBuyuk.forEach(d => { const k = d.w + 'x' + d.h; sz[k] = (sz[k] || 0) + 1; }); return { tex: i.texs, geo: i.geos, gl: g.doku, sz }; });
 await p.evaluate(() => { const M = window.__marti; M.simCmd('money', 9e9); M.simCmd('level', 40); });

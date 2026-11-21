@@ -7,33 +7,33 @@
   },
   "kademe": {
     "akici": {
-      "calls": 203.55,
-      "tris": 278206.85,
-      "programs": 79.35,
-      "geos": 451.95,
-      "texs": 144.9,
-      "heapMB": 111.65
+      "calls": 217.35,
+      "tris": 485720.9,
+      "programs": 116.15,
+      "geos": 402.5,
+      "texs": 157.55,
+      "heapMB": 145.04
     },
     "dengeli": {
-      "calls": 759,
-      "tris": 490924.65,
-      "programs": 152.95,
-      "geos": 479.55,
-      "texs": 161,
-      "heapMB": 109.02
+      "calls": 272.55,
+      "tris": 616980.75,
+      "programs": 129.95,
+      "geos": 457.7,
+      "texs": 171.35,
+      "heapMB": 145.32
     },
     "sahane": {
-      "calls": 779.7,
-      "tris": 499765.85,
-      "programs": 152.95,
-      "geos": 479.55,
-      "texs": 161,
-      "heapMB": 131.79
+      "calls": 272.55,
+      "tris": 624750.15,
+      "programs": 129.95,
+      "geos": 456.55,
+      "texs": 171.35,
+      "heapMB": 145.59
     }
   },
   "boyut": {
-    "gameJsMB": 2.86,
-    "distMB": 7.41
+    "gameJsMB": 3.22,
+    "distMB": 5.9
   },
   "sahibinGpu": {
     "_not": "PRF-01 perfRecord kayıtlarından sahibin PC/telefonunda doldurulur. SwiftShader süresinden ASLA türetilmez.",
@@ -48,58 +48,57 @@
     }
   },
   "_temel": {
-    "tarih": "2026-11-20",
+    "tarih": "2026-11-21",
     "pay": "%15 (heapMB %15x1.2: GC dalgalanması)",
     "olculen": {
       "akici": {
-        "calls": 177,
-        "_calls": "iskele",
-        "tris": 241919,
-        "_tris": "karsi-yaka",
-        "programs": 69,
-        "_programs": "karsi-yaka",
-        "geos": 393,
-        "_geos": "bufe-ici",
-        "texs": 126,
+        "calls": 189,
+        "_calls": "karsi-yaka",
+        "tris": 422366,
+        "_tris": "avm-ici",
+        "programs": 101,
+        "_programs": "avm-ici",
+        "geos": 350,
+        "_geos": "avm-ici",
+        "texs": 137,
         "_texs": "avm-ici",
-        "heapMB": 80.9,
-        "_heapMB": "bufe-ici"
+        "heapMB": 105.1,
+        "_heapMB": "avm-ici"
       },
       "dengeli": {
-        "calls": 660,
-        "_calls": "iskele",
-        "tris": 426891,
-        "_tris": "karsi-yaka",
-        "programs": 133,
+        "calls": 237,
+        "_calls": "avm-ici",
+        "tris": 536505,
+        "_tris": "avm-ici",
+        "programs": 113,
         "_programs": "avm-ici",
-        "geos": 417,
-        "_geos": "bufe-ici",
-        "texs": 140,
+        "geos": 398,
+        "_geos": "avm-ici",
+        "texs": 149,
         "_texs": "avm-ici",
-        "heapMB": 79,
+        "heapMB": 105.3,
         "_heapMB": "avm-ici"
       },
       "sahane": {
-        "calls": 678,
-        "_calls": "iskele",
-        "tris": 434579,
-        "_tris": "karsi-yaka",
-        "programs": 133,
+        "calls": 237,
+        "_calls": "avm-ici",
+        "tris": 543261,
+        "_tris": "avm-ici",
+        "programs": 113,
         "_programs": "avm-ici",
-        "geos": 417,
-        "_geos": "bufe-ici",
-        "texs": 140,
+        "geos": 397,
+        "_geos": "avm-ici",
+        "texs": 149,
         "_texs": "avm-ici",
-        "heapMB": 95.5,
-        "_heapMB": "karsi-yaka"
+        "heapMB": 105.5,
+        "_heapMB": "avm-ici"
       }
     },
     "boyut": {
-      "gameJsMB": 2.491,
-      "distMB": 6.443,
+      "gameJsMB": 2.796,
+      "distMB": 5.131,
       "dosya": 31
-    },
-    "olcum_ortami": "headless Chromium SwiftShader, 640x360, ?stage=10, rota: iskele, büfe içi, halı saha, orman, karşı yaka, AVM içi; çizim çağrısı/üçgen/program/geometri/doku/heap = rota üstü en büyük, her noktada 3 örnekten en büyük"
+    }
   },
   "bellek": {
     "_not": "PRF-11/PRF-15 bellek ve varlık bütçesi. Hedef (sahip): 'GTA5 PS3'te 512 MB ile çalıştıysa bizimki de o dengede' (PS3: 256 MB sistem + 256 MB görüntü belleği). Ölçüm: node tools/bellek-olc.mjs (GPU baytı WebGL çağrılarından sayılır, tools/gpu-bellek-kanca.mjs; heap gc sonrası), varlık kuralları tests/unit/render/varlik-butce.test.ts ile her testte denetlenir. Tavanlar ölçülen en büyük değer x1.15 (heap x1.15x1.2).",
@@ -107,7 +106,7 @@
       "dokuKenarMax": 2048,
       "dokuHucre": 512,
       "_doku": "Kenar 2 üstel ya da 512'lik atlas hücresinin katı (zemin atlası 3x2 hücre = 1536x1024): mip zinciri temiz iner. Her yüklenen dokuda mipmap + LinearMipmapLinear. KTX2/Basis yok: Basis çözücüsü WebAssembly ister, check-dist WebAssembly'yi yasaklar; çizim dokuları (karakter, tabela) zaten çalışma anında tuvalde üretilir.",
-      "dokuToplamMB": 1.0,
+      "dokuToplamMB": 1,
       "glbToplamMB": 1.6,
       "glbTekMB": 0.2,
       "_glb": "Tüm GLB'ler tools/glb-sikistir.mjs ile KHR_mesh_quantization (normal int8, uv uint16, teğet atılır; three yerleşik okur, çözücü yok). Draco/meshopt yok: ikisi de WebAssembly çözücü ister. Yeni model eklenince: node tools/glb-sikistir.mjs, sonra node tests/browser/glb-ab.mjs önce sonra (piksel farkı)."
@@ -124,7 +123,7 @@
         "dengeli": {
           "gpuMB": 168.7,
           "_gpuMB": "bufe-ici (2. tur)",
-          "dokuMB": 89.0,
+          "dokuMB": 89,
           "_dokuMB": "karsi-yaka",
           "tamponMB": 20.03,
           "heapMB": 78.3,

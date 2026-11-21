@@ -44,6 +44,10 @@ function snapshotRng(sim: SimFull): void {
 
 /** v1 -> v2: ölü zones.zincir ve Plot.stok silinir (stok/zincir kırmızı çizgi); gerisini normalizeState onarır. Premigration yedeği engine/save'de. */
 export const MIGRATIONS = [{
+  /** v0 = a save without (or with a non-numeric) version field: same shape as v1, normalizeState repairs the rest (tarama KAYIT [2]) */
+  from: 0, to: 1,
+  up(old: Record<string, unknown>): Record<string, unknown> { return old; },
+}, {
   from: 1, to: 2,
   up(old: Record<string, unknown>): Record<string, unknown> {
     const z = isObj(old.zones) ? old.zones : (old.zones = {}) as Record<string, unknown>;

@@ -182,3 +182,22 @@ describe('save', () => {
     expect(calls).toEqual(['pause:hidden', 'resume']);
   });
 });
+
+describe('save: version alanı (tarama KAYIT [2])', async () => {
+  const { MIGRATIONS } = await import('../../../src/game/sim/save');
+  const kod = (data: unknown) => { const json = JSON.stringify(data); return 'MB1.' + btoa(JSON.stringify({ v: 1, sum: checksum(json), json })); };
+  it('string sürüm ("1") ve sürümsüz kayıt reddedilmez, göç edilip açılır', async () => {
+    for (const ver of ['1', undefined]) {
+      const t = mk({ migrations: MIGRATIONS as unknown as Migration[] });
+      const d = { ...defaultState(1), money: 98765 } as Record<string, unknown>;
+      if (ver === undefined) delete d.version; else d.version = ver;
+      expect(await t.save.importCode(kod(d))).toBe(true);
+      const r = await t.save.load();
+      expect(r.data.money).toBe(98765); expect(r.data.version).toBe(SAVE_VERSION);
+    }
+  });
+  it('daha yeni sürüm kodu içe alınmaz (mevcut kayıt durur)', async () => {
+    const t = mk({ migrations: MIGRATIONS as unknown as Migration[] });
+    expect(await t.save.importCode(kod({ ...defaultState(1), version: SAVE_VERSION + 1 }))).toBe(false);
+  });
+});

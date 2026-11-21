@@ -84,6 +84,7 @@ export function createHaliSaha(deps: HaliSahaDeps): HaliSahaView {
     // 2026-10-26 owner: a referee in every match, stepping in on taç / korner / aut.
     const ref = { x: L / 2, y: WD / 2 + 4, vx: 0, vy: 0, fx: 0, fy: -1, point: 0 };
     let shake = 0;
+    const reduceMotion = (() => { try { return !!matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; } })();
     sfx('whistle');
 
     // ---- input (hali-saha-girdi.ts): klavye, dokunmatik ve gamepad aynı eylem arayüzüne yazar
@@ -188,7 +189,7 @@ export function createHaliSaha(deps: HaliSahaDeps): HaliSahaView {
       layout();
       const pls = rp, ball = rb;   // çizim interpolasyonlu görünümü okur
       g.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const sh = shake > 0 ? (Math.random() - 0.5) * shake * 18 : 0;
+      const sh = shake > 0 && !reduceMotion ? (Math.random() - 0.5) * shake * 18 : 0;
       g.translate(sh, sh * 0.6);
       if (hs3) { g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height); hs3.render({ score: M.score, pls, ball, ctrl: iz ? -1 : M.ctrl, portrait, shake, dt: lastDt, ref }); }
       else {

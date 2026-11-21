@@ -112,8 +112,8 @@ position:fixed;inset:0;pointer-events:none;z-index:10;overflow:hidden;font-famil
 .sb-btn .sb-bl{display:flex;flex-direction:column;align-items:center;gap:2px}
 .sb-btn small{font:800 13px/1.1 var(--body);opacity:.92;letter-spacing:0}
 .sb-btn.red{background:var(--red);color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.18)}
-.sb-btn.blue{background:var(--blue2);color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.18)}
-.sb-btn.green{background:var(--money);color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.2)}
+.sb-btn.blue{background:var(--blue2);color:#10283a;text-shadow:0 1px 0 rgba(255,255,255,.25)}   /* beyaz/mavi 2.6:1 idi */
+.sb-btn.green{background:var(--money);color:#12331c;text-shadow:0 1px 0 rgba(255,255,255,.25)}   /* beyaz/yeşil ~2.5:1 idi */
 .sb-btn.cream{background:var(--cream)}
 .sb-btn.navy{background:var(--navy);color:#fff}
 .sb-btn.big{min-height:62px;font-size:27px;border-width:3px;border-radius:24px;padding:10px 34px 13px;box-shadow:0 6px 0 var(--ink)}
@@ -678,6 +678,11 @@ position:fixed;inset:0;pointer-events:none;z-index:10;overflow:hidden;font-famil
 .sb-nt:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
 .sb-sin{position:relative}
 .sb-sin .cnt{position:absolute;right:12px;top:50%;transform:translateY(-50%);font:800 13px/1 var(--body);color:var(--ink2);pointer-events:none}
+.sb-sheet,.sb-hud,.sb-toasts,.sb-dbar,.sb-bar{zoom:var(--ts,1)}   /* yazı boyutu ayarı (Ayarlar > Yazı boyutu) */
+.sb-cb .sb-toast.good>span::before,.sb-cb .sb-btn.green::before{content:'✔ '}
+.sb-cb .sb-toast.bad>span::before,.sb-cb .sb-toast.warn>span::before,.sb-cb .sb-btn.red::before{content:'✖ '}
+.sb-cb .hd-sm.done .ck::after{content:'✔'}
+.sb-sign input:focus{box-shadow:0 0 0 3px var(--blue2)}
 .sb-sign input{padding-right:58px!important}
 .sb-sign input{width:100%;min-height:50px;border:2.5px solid var(--ink);border-radius:14px;padding:8px 12px;font:800 17px/1.2 var(--body);color:var(--ink);background:#fff;user-select:text;-webkit-user-select:text;pointer-events:auto;touch-action:manipulation;outline:none}
 .sb-sign input:focus{box-shadow:0 0 0 4px rgba(90,169,214,.45)}

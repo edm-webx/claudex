@@ -8,9 +8,11 @@
  * - şef: kalıp ile saha arasında gezer, durup konuşur / telefonla konuşur
  * Yürüyüş düz çizgi (noktalar makinelerin ve yığınların dışında seçildi), nav'a girmez: çitin arkası oyuncuya kapalı.
  * Deterministik: kendi rng akışı ('belediye').
+ * Üst geçit inşaatı da burada: köprünün orta açıklığı kapalıyken (gecitAcik) yürüme ızgarasında kapalı ve çarpışmada duvar;
+ * seviye yetince açılır ve oyuncuya bir kez haber verilir.
  */
 import type { System, SimCtx } from '../../../engine/api';
-import { KILITLI_BOLGELER, bolgeKilitli, dunya, type KilitliBolge, type IsciPlan } from '../../../content/kilitli-bolge';
+import { KILITLI_BOLGELER, bolgeKilitli, dunya, gecitAcik, gecitEngeli, type KilitliBolge, type IsciPlan } from '../../../content/kilitli-bolge';
 import type { AgentEnv } from './env';
 import type { Actor } from './types';
 
@@ -20,11 +22,12 @@ const TEL_SOZ = ['Alo müdürüm, dolgu bitiyor...', 'Mıcır yarın gelecek ded
 
 interface Isci { a: Actor; p: IsciPlan; b: KilitliBolge; i: number; dir: 1 | -1; st: 'yuru' | 'is'; t: number; dur: number; soz: number }
 
-export interface BelediyeSystem extends System { isciler(): { bolge: string; is: string; st: string; x: number; z: number; act: string; fx: string }[] }
+export interface BelediyeSystem extends System { gecitAcik(): boolean; isciler(): { bolge: string; is: string; st: string; x: number; z: number; act: string; fx: string }[] }
 
 export function createBelediye(env: AgentEnv): BelediyeSystem {
   const rng = env.rng('belediye');
   const sahalar = new Map<string, Isci[]>();
+  let gecitDurum: boolean | null = null, haberT = 0;   // null: ilk adım (yüklemede açık kayıt için haber yok)
   const say = (a: Actor, t: string, s = 2.6) => { a.say = t; a.sayT = s; };
   const nokta = (w: Isci, i: number) => dunya(w.b, w.p.yol[i]);
 
@@ -110,6 +113,14 @@ export function createBelediye(env: AgentEnv): BelediyeSystem {
     id: 'belediye', order: 49, phase: 'sim',
     step(ctx: SimCtx) {
       const dt = Math.min(ctx.dt, 0.25), S = env.rules.state;
+      const gecit = gecitAcik(S);
+      if (gecit !== gecitDurum) {
+        const r = gecitEngeli();
+        env.nav.setBlocked(r, !gecit); env.nav.setSolids('ust-gecit', gecit ? [] : [r]);
+        if (gecit && gecitDurum === false) haberT = 4;   // seviye atlama haberinden sonra (aynı anda iki haber: ikincisi yutulur)
+        gecitDurum = gecit;
+      }
+      if (haberT > 0 && (haberT -= dt) <= 0) env.host.toast('Üst geçit tamamlandı! Artık karşı yakaya geçebilirsin: banka, halı saha, kafeler.', 'good');
       for (const b of KILITLI_BOLGELER) {
         const on = bolgeKilitli(b, S), l = sahalar.get(b.id);
         if (on && !l) sahalar.set(b.id, ac(b));
@@ -117,6 +128,7 @@ export function createBelediye(env: AgentEnv): BelediyeSystem {
         else if (l) for (const w of l) adim(w, dt);
       }
     },
+    gecitAcik: () => gecitDurum !== false,
     isciler: () => [...sahalar.values()].flat().map(w => ({ bolge: w.b.id, is: w.p.is, st: w.st, x: w.a.x, z: w.a.z, act: w.a.act, fx: w.a.fx })),
   };
 }

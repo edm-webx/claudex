@@ -26,7 +26,8 @@ await ctx.route('**/*supabase.co/**', route => {
   if (u.pathname.startsWith('/auth/v1/token')) return j({ access_token: 'tok-1', token_type: 'bearer', expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, refresh_token: 'r-1', user });
   if (u.pathname.startsWith('/auth/v1/')) return j({});
   if (u.pathname === '/rest/v1/kayitlar') {
-    if (m === 'POST') { if (kes) return route.abort('connectionfailed'); yazimlar++; return route.fulfill({ status: 201, body: '' }); }
+    // KAYIT-GUV: yazım artık rev kilitli PATCH (satır varsa) ya da POST (yoksa)
+    if (m === 'POST' || m === 'PATCH') { if (kes) return route.abort('connectionfailed'); yazimlar++; return m === 'PATCH' ? j([{ id: user.id }]) : route.fulfill({ status: 201, body: '' }); }
     return j({ veri: { slots: [null, null, null, null] } });
   }
   return j(/object/.test(r.headers()['accept'] || '') ? {} : []);
@@ -38,7 +39,7 @@ await page.evaluate(() => document.querySelector('.sb-title [data-play]').click(
 await page.waitForSelector('.gr-card', { timeout: 20000 });
 await page.fill('input[name="ad"]', 'deneme'); await page.fill('input[name="sifre"]', 'sifre123');
 await page.evaluate(() => document.querySelector('.gr-go').click());
-await page.waitForTimeout(1500);
+await page.waitForSelector('[data-slot="0"]', { timeout: 20000 });
 await page.evaluate(() => document.querySelector('[data-slot="0"]').click());
 const go = await page.waitForSelector('.kl-go', { timeout: 15000 }).catch(() => null);
 if (go) { await page.evaluate(() => document.querySelector('.kl-go').click()); await page.waitForTimeout(1200); }

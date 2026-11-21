@@ -1,19 +1,19 @@
 // DKN-05: every guest asks for an item of the business's own menu, the worker makes and carries exactly that
 import { it, expect } from 'vitest';
-import { played } from './m1-helpers';
+import { played, kareyeGit } from './m1-helpers';
 import { ISLETME, ARSA_ISLETME } from '../../src/content/esya';
 import { KALEM, ISTASYON_SIRA } from '../../src/content/isletme-istasyon';
 
 const mk = () => { const sim = played(1) as any; sim.step(1); const S = sim.state; S.level = 40; S.money = 5e7; return { sim, S, h: sim.rules.rt.kafeHost, c: (x: any) => sim.command({ kind: 'mulk', ...x }) }; };
 
-it('veri bütünlüğü: 72 kalemin (9 işletme x 8) hepsinin istasyonu/süresi var, stok/maliyet yok', () => {
-  const ids = Object.values(ISLETME).flatMap(i => i.menu.map(m => m.id)); expect(ids.length).toBe(72);
+it('veri bütünlüğü: 136 kalemin (17 işletme x 8) hepsinin istasyonu/süresi var, stok/maliyet yok', () => {
+  const ids = Object.values(ISLETME).flatMap(i => i.menu.map(m => m.id)); expect(ids.length).toBe(136);
   for (const id of ids) { const k = KALEM[id]; expect(k, id).toBeTruthy(); expect(ISTASYON_SIRA).toContain(k.ist); expect(k.sure).toBeGreaterThan(0); expect(k.renk).toMatch(/^#[0-9a-f]{6}$/i); }
   expect(JSON.stringify(KALEM) + JSON.stringify(ISLETME)).not.toMatch(/maliyet|stok|malzeme/i);
 });
 it('k1-k6: istek menüden, işçi tam o kalemi taşır, satış o kalemin fiyatı, gün sonu k: anahtarı', () => {
   for (const id of ['k1', 'k2', 'k3', 'k4', 'k5', 'k6']) {
-    const { sim, S, h, c } = mk(); c({ op: 'arsaAl', id }); c({ op: 'yukselt', id }); c({ op: 'adminTadilatBitir', id }); c({ op: 'yukselt', id }); c({ op: 'adminTadilatBitir', id }); c({ op: 'yukselt', id });
+    const { sim, S, h, c } = mk(); kareyeGit(sim, id); c({ op: 'arsaAl', id }); c({ op: 'yukselt', id }); c({ op: 'adminTadilatBitir', id }); c({ op: 'yukselt', id }); c({ op: 'adminTadilatBitir', id }); c({ op: 'yukselt', id });
     c({ op: 'adminIsci', id }); c({ op: 'adminIsci', id });
     const menu = ISLETME[ARSA_ISLETME[id]].menu.map(m => m.id), carried = new Set<string>();
     for (let i = 0; i < 1500; i++) {

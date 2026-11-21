@@ -10,7 +10,7 @@
  */
 import * as T from 'three';
 import { ORMAN } from '../../../content/disari/martikoy';
-import { REALMS } from '../../../content/realm';
+import { BUS_REALMS as REALMS } from '../../../content/realm';
 import type { BusView } from '../../sim/disari';
 
 interface HeroLike { object: T.Object3D; setPose(p: { x: number; z: number }, r: number): void; setInput(i: Record<string, unknown>): void; update(dt: number, a: number): void; dispose(): void }

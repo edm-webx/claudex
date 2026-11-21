@@ -540,6 +540,21 @@ export function createNav(deps: NavDeps = {}): Nav {
         return out;
       }
     },
+    rayHit(from, to, minSize = 2.5) {
+      // segment vs büyük solid dikdörtgenler (duvar/bina/tezgâh): ilk çarpışma oranı t (1 = engel yok). Başlangıcı içeren dikdörtgen sayılmaz.
+      let best = 1; const dx = to.x - from.x, dz = to.z - from.z;
+      for (const r of solidList) {
+        if (Math.max(r.x1 - r.x0, r.z1 - r.z0) < minSize) continue;
+        if (from.x > r.x0 && from.x < r.x1 && from.z > r.z0 && from.z < r.z1) continue;
+        let t0 = 0, t1 = best;
+        if (Math.abs(dx) < 1e-9) { if (from.x <= r.x0 || from.x >= r.x1) continue; }
+        else { let a = (r.x0 - from.x) / dx, b = (r.x1 - from.x) / dx; if (a > b) { const c = a; a = b; b = c; } t0 = Math.max(t0, a); t1 = Math.min(t1, b); }
+        if (Math.abs(dz) < 1e-9) { if (from.z <= r.z0 || from.z >= r.z1) continue; }
+        else { let a = (r.z0 - from.z) / dz, b = (r.z1 - from.z) / dz; if (a > b) { const c = a; a = b; b = c; } t0 = Math.max(t0, a); t1 = Math.min(t1, b); }
+        if (t0 <= t1 && t0 < best) best = t0;
+      }
+      return best;
+    },
     setSolids(key, rects) {
       if (rects.length) solids.set(key, rects.map((r) => ({ x0: Math.min(r.x0, r.x1), x1: Math.max(r.x0, r.x1), z0: Math.min(r.z0, r.z1), z1: Math.max(r.z0, r.z1) })));
       else solids.delete(key);

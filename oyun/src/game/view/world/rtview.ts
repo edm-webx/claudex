@@ -8,6 +8,7 @@
  * origin (hero hand for the counter, station tray for hands, ...) so transfers read like v2.
  * Never writes sim state. No Math.random (plates use a hash).
  */
+import { avmIcinde, katY } from '../../../content/avm-kat';
 import * as T from 'three';
 import type { Rules, Item, MoneyStack } from '../../sim/state';
 import type { AnchorDef } from '../../../engine/api';
@@ -16,7 +17,7 @@ import { MAT } from '../../../content/prefabs/common/v2kit';
 import { padDef, padCost } from '../../../content/pads';
 import { mutfakDunya, mutfakUst } from '../../../content/ic-mekan';
 import { BULASIK } from '../../../content/mutfak';
-import { STATION_KINDS } from '../../../content/prefabs/iskele/layout';
+import { STATION_KINDS, counterSlot } from '../../../content/prefabs/iskele/layout';
 import type { StageLayout } from '../../../content/prefabs/iskele/layout';
 
 export interface RtEnv {
@@ -92,7 +93,10 @@ export function createRtView(env: RtEnv): RtView {
     const lid = new T.Mesh(new T.CylinderGeometry(0.37, 0.37, 0.07, 14), new T.MeshLambertMaterial({ color: '#35493e' })); lid.position.y = 0.84; binG.add(lid);
     const band = new T.Mesh(new T.CylinderGeometry(0.335, 0.335, 0.06, 14), new T.MeshLambertMaterial({ color: '#e8e2d4' })); band.position.y = 0.55; binG.add(band); }
   group.add(binG);
-  function ensureAttached() { const r = env.root(); if (r && group.parent !== r) { group.parent?.remove(group); r.add(group); } return !!r; }
+  // Martı AVM diyarı: iskele kökü orada gizli; AVM kareleri ve halka sahnede ayrı bir grupta (katın yüksekliğinde)
+  const avmGrp = new T.Group(); avmGrp.name = 'rtviewAvm';
+  let sc0: T.Object3D | null = null;   // the scene, remembered: the iskele zone root unloads while the hero is inside the AVM realm
+  function ensureAttached() { const r = env.root(); if (r && group.parent !== r) { group.parent?.remove(group); r.add(group); } if (r?.parent) sc0 = r.parent; if (sc0 && avmGrp.parent !== sc0) sc0.add(avmGrp); return !!r || !!sc0; }
 
   function place(obj: object, key: string, to: Pt, rot: number, h: number, from: Pt | null, dur = 0.28, arc = 0.5) {
     let e = entries.get(obj);
@@ -159,7 +163,8 @@ export function createRtView(env: RtEnv): RtView {
       const arr = rt.counter[p]; if (!arr) return;
       arr.forEach((it, i) => {
         const col = Math.floor(i / 4); let y = 0; for (let n = col * 4; n < i; n++) y += itemH(arr[n]);
-        emit(it, itemKey(it), { x: d.x + (pi - 2.5) * 0.24, y: (d.y || 1) + y, z: d.z + (col ? -0.14 : 0.06) }, 0, itemH(it), hand(0, []), 0.28, 0.5);
+        const sl = counterSlot(L, pi, col);
+        emit(it, itemKey(it), { x: sl.x, y: (d.y || 1) + y, z: sl.z }, 0, itemH(it), hand(0, []), 0.28, 0.5);
       });
     });
     // kasa pile
@@ -244,9 +249,9 @@ export function createRtView(env: RtEnv): RtView {
       const shown = paid > 0.5 ? Math.max(0, Math.ceil((price - paid) / 10) * 10) : Math.round(price);
       if (!rec) {
         const g = makeMarker('pad', { label: def.label, sub: def.sub, price: shown }) as T.Object3D;
-        root.add(g); rec = { g, price: shown }; padMk.set(pd.key, rec);
+        (pd.kat !== undefined ? avmGrp : root).add(g); rec = { g, price: shown }; padMk.set(pd.key, rec);
       } else if (rec.price !== shown) { rec.price = shown; (rec.g.userData.setText as (a: unknown) => void)({ label: def.label, sub: def.sub, price: shown }); }
-      rec.g.position.set(pd.pos.x, 0, pd.pos.z);
+      rec.g.position.set(pd.pos.x, pd.y || 0, pd.pos.z); rec.g.visible = (pd.kat || 0) <= ((rules.playerPos as { kat?: number }).kat || 0);   // Martı AVM: on its floor, hidden above the hero's (cutaway)
       (rec.g.userData.setFill as (k: number) => void)(Math.min(1, paid / Math.max(1, price)));
     });
     padMk.forEach((rec, k) => { if (!keep.has(k)) { rec.g.parent?.remove(rec.g); padMk.delete(k); } });
@@ -275,7 +280,9 @@ export function createRtView(env: RtEnv): RtView {
     const it = ds ? rules.interactions.get(ds.id) : null;
     // ring only while filling, and green while a real (filled) dwell transfers; a primed resume (progress 0) shows none
     if (ds && it && it.dwell > 0 && (ds.transferring ? ds.progress >= 0.999 : ds.progress > 0.02)) {
-      dwell.g.visible = true; dwell.g.position.set(it.pos.x, 0, it.pos.z);
+      const pk = rules.playerPos as { x: number; z: number; kat?: number }, avm = avmIcinde(pk, 3);   // AVM diyarı
+      const dp = avm ? avmGrp : group; if (dwell.g.parent !== dp) dp.add(dwell.g);
+      dwell.g.visible = true; dwell.g.position.set(it.pos.x, avm ? katY(pk.kat || 0) : 0, it.pos.z);
       const step = ds.transferring ? 48 : Math.max(1, Math.round(ds.progress * 48));
       if (step !== dwell.last) {
         dwell.last = step;
