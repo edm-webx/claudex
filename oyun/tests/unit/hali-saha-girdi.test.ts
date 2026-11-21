@@ -19,8 +19,8 @@ describe('FUT-07 girdi: klavye şeması (B-050)', () => {
     o.calls.length = 0; g.tus(' ', true); o.t = 100 + ARA_PAS_SN * 1000 + 50; g.tus(' ', false);
     expect(o.calls).toEqual([['pas', 0.5, true]]);
   });
-  it('E uzun pas anında, topsuzken işe yaramaz', () => {
-    const { o, g } = kur(); g.tus('e', true); expect(o.calls).toEqual([['pas', 0.5, true]]);
+  it('E havadan uzun top anında, topsuzken işe yaramaz', () => {
+    const { o, g } = kur(); g.tus('e', true); expect(o.calls).toEqual([['uzun', undefined, undefined]]);
     const b = kur(false); b.g.tus('e', true); expect(b.o.calls).toEqual([]);
   });
   it('F şarj: süre -> güç eşlemesi, bırakınca vurur', () => {

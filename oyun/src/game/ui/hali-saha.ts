@@ -87,7 +87,7 @@ export function createHaliSaha(deps: HaliSahaDeps): HaliSahaView {
     sfx('whistle');
 
     // ---- input (hali-saha-girdi.ts): klavye, dokunmatik ve gamepad aynı eylem arayüzüne yazar
-    const syncInput = () => { const [ix, iy] = girdi.vektor(portrait, cw, ch); M.input.ix = ix; M.input.iy = iy; (M.input as { kos?: boolean }).kos = girdi.kos; };
+    const syncInput = () => { const [ix, iy] = girdi.vektor(portrait, cw, ch); M.input.ix = ix; M.input.iy = iy; M.input.kos = girdi.kos || (girdi.kaynak === 'dokunmatik' && Math.hypot(ix, iy) > 0.9); };   // dokunmatikte çubuğu sonuna kadar itmek koşturur
     const girdi = createGirdi({ act: (a, g, u) => M.act(a, g, u), sahip: () => M.ball.owner === M.ctrl && M.freeze <= 0, simdi: () => performance.now(), esitle: syncInput });
     const onKey = (e: KeyboardEvent, on: boolean) => {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
@@ -181,6 +181,7 @@ export function createHaliSaha(deps: HaliSahaDeps): HaliSahaView {
 
   // ---- drawing
     let resultBtn: { x: number; y: number; w: number; h: number } | null = null;
+    const kaba = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
     function rrect(x: number, y: number, w: number, h: number, r: number) { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); }
     function line(x0: number, y0: number, x1: number, y1: number) { const a = P(x0, y0), b = P(x1, y1); g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke(); }
     function draw() {
@@ -279,10 +280,11 @@ export function createHaliSaha(deps: HaliSahaDeps): HaliSahaView {
         chip(bt, cw / 2, 76, '#ffd23f');
       }
       if (!M.over && !iz) {
-        btn(B.sut, own ? 'ŞUT' : 'MÜDAHALE', own ? '#ffd23f' : '#f2a2b3'); btn(B.pas, own ? 'PAS' : 'DEĞİŞ', '#bfe6ff');
-        const cp = pls[M.ctrl]; btn(B.calim, own ? 'ÇALIM' : 'KOŞ', cp.cd2 > 0 ? '#c9c1b0' : '#a8e6a1');
+        // 2026-11-21: dokunmatik düğmeler yalnız dokunmatik ekranda / dokunmatikle oynarken çizilir; klavye-gamepad'de sahanın sağ altını kapatıyordu
+        const dokun = kaba || girdi.kaynak === 'dokunmatik', cp = pls[M.ctrl];
+        if (dokun) { btn(B.sut, own ? 'ŞUT' : 'MÜDAHALE', own ? '#ffd23f' : '#f2a2b3'); btn(B.pas, own ? 'PAS' : 'DEĞİŞ', '#bfe6ff'); btn(B.calim, own ? 'ÇALIM' : 'KOŞ', cp.cd2 > 0 ? '#c9c1b0' : '#a8e6a1'); }
         btn(B.yardim, '?', '#fdf3e1');
-        if (sj) {   // şarj halkası: yeşil -> kırmızı (şut), pas için beyaz -> turkuaz (ara pas)
+        if (sj && dokun) {   // şarj halkası: yeşil -> kırmızı (şut), pas için beyaz -> turkuaz (ara pas)
           const b = sj.a === 'sut' ? B.sut : B.pas;
           g.strokeStyle = sj.a === 'pas' ? (sj.ara ? '#3fb5b0' : '#fff') : `hsl(${120 - sj.oran * 120},85%,50%)`; g.lineWidth = 8; g.beginPath(); g.arc(b.x, b.y, b.r + 8, -Math.PI / 2, -Math.PI / 2 + sj.oran * Math.PI * 2); g.stroke();
         }
