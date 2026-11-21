@@ -144,7 +144,7 @@ export function disariPrefabs(): PrefabDef[] {
   defs.push({ id: 'mk.rocks', parts: [0, 1, 2, 3, 4, 5].map(i => sph(0.9 + (i % 3) * 0.2, -6 + i * 2.4, WATER_Y + 0.3, (i % 2) * 0.5, '#8a8478', 6)) });
   defs.push({ id: 'mk.wallZ', parts: [box(0.6, 1.4, 8, 0, 0.7, 0, '#cbbfa8')], colliders: [R(0.6, 8)] });
   // ───── 2026-10-24 açık dünya: new districts ─────
-  g('mk.ground.night', 48, 30, '#4a4560'); g('mk.ground.pitchzone', 60, 34, '#b9c4ae'); g('mk.ground.yard', 56, 30, '#b8b0a2');
+  g('mk.ground.night', 48, 30, '#4a4560'); g('mk.ground.pitchzone', 96, 64, '#b9c4ae');   // 2026-11-21 denetim: halı saha kafesleri zemin kenarında boşlukta kalıyordu g('mk.ground.yard', 56, 30, '#b8b0a2');
   g('mk.ground.tile', 40, 30, '#d9dde3'); g('mk.ground.forest', 52, 34, '#7fae63', 0.014); g('mk.ground.island', 60, 26, '#e3d3a8');
   defs.push({ id: 'mk.water60', parts: [plane(60, 16, WATER_Y, '#3f8fbf', 'water'), box(60, 1.0, 0.35, 0, -0.5, 8.0, '#b9ad99', 'seawall')] });
   // gece pazarı: stalls with lanterns and a string of bulbs
