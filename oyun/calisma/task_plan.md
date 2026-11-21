@@ -47,3 +47,8 @@ Aşamalar (oturum): [ ] 0 Karar ve ölçüm (12-14) [ ] 1 Temizlik ve temel (60-
 - Doku akışı merdiveni 1/2-1/4-1/8 (7dc1ace): dengeli 1280x720 en yüksek GPU 206.9 -> 168.7 MB, doku-akis-ab 4 karede 0 piksel. Izgara tuvali ilk açılışta. PMREM ara hedefi bırakılır (80e5400, -6 MB).
 - Sızıntı: büfe zemini kir dokuları ve fiş plakaları birikiyordu (87940cb). sizinti.mjs 8 turda doku 162->174 iken 162->170 (son iki tur düz); 20 tur yeşili henüz görülmedi.
 - Bütçe: tools/perf-budget.json "bellek" (varlık kuralı testi tests/unit/render/varlik-butce.test.ts, çalışma tavanı node tools/bellek-olc.mjs --kapi --tekrar 3).
+
+## 2026-11-21 bellek zinciri 2. adım (PRF-07 motor, PRF-12)
+- PRF-12 (a3fa614): bloom kademelerinde ölçek yalnız sahne hedefini küçültür (tuval sabit): setScale 994-16605 ms -> 0.1-0.9 ms (headless), geçiş karesi 4777/6057 -> 6.6/12.0 ms, program sabit. Bloom kesme basamağı (ölçek tabanda + hâlâ yavaş). Taban 0.7 (sahip kararı: 0.8/0.7/0.6).
+- PRF-07 motor (f6a8e9e): zones görüşe göre kurar (kesik + 14 m pay, sis önü en çok 200 m), sıçramada (otobüs/ışınlanma) varış bölgesi aynı karede. tests/browser/pop-in.mjs: ekranda pop 4 -> 0, varışta 5 -> 0. three compileAsync takılması (atılan malzeme) düzeltildi.
+- Açık (diğer kollar): orman ağacı LOD/impostor ve solma (view/orman), tribün seyircisi LOD (view/stadyum), karşı yaka sadeleştirme (karsi-*). Headless'ta orman/sahil varışının ilk karesi 2-56 sn (SwiftShader, bölge kurulumu değil: 4-9 ms).
