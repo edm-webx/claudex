@@ -169,9 +169,10 @@ export function createUi(deps: UiDeps): Ui {
   function paintNotes() {
     const dot = bellBtn.querySelector('.sb-bell-n') as HTMLElement;
     dot.hidden = unread === 0; dot.textContent = unread > 9 ? '9+' : String(unread);
+    if (notesEl.hidden) { if (notesEl.firstChild) notesEl.textContent = ''; return; }   // KAL-15: kapalı panel DOM tutmaz, açılınca çizilir
     notesEl.innerHTML = hist.length ? hist.map(h => `<div class="n ${h.kind}"><span>${esc(h.text)}</span><small>${new Date(h.at).toLocaleTimeString('tr', { hour: '2-digit', minute: '2-digit' })}</small></div>`).join('') : '<div class="n"><span>Henüz bildirim yok.</span></div>';
   }
-  bellBtn.addEventListener('click', () => { notesEl.hidden = !notesEl.hidden; if (!notesEl.hidden) { unread = 0; paintNotes(); } });
+  bellBtn.addEventListener('click', () => { notesEl.hidden = !notesEl.hidden; if (!notesEl.hidden) unread = 0; paintNotes(); });
   toasts.setAttribute('role', 'status'); toasts.setAttribute('aria-live', 'polite');
   function toast(text: string, kind: 'good' | 'bad' | 'info') {
     kind = kind || 'info';

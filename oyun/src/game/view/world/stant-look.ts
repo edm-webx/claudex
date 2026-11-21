@@ -28,7 +28,7 @@ function signTex(title: string, sub: string, bg: string): T.CanvasTexture {
 }
 const L = (c: string) => new T.MeshLambertMaterial({ color: c });
 
-interface StandObj { root: T.Group; food: T.Object3D[]; bitti: T.Mesh; sig: string; signMat: T.MeshLambertMaterial }
+interface StandObj { root: T.Group; food: T.Object3D[]; bitti: T.Mesh; sig: string; signSig: string; signMat: T.MeshLambertMaterial }
 
 export function createStantLook(d: StantLookDeps): StantLookView {
   const root = new T.Group(); root.name = 'stantlar'; d.scene.add(root);
@@ -149,7 +149,7 @@ export function createStantLook(d: StantLookDeps): StantLookView {
     const bitti = new T.Mesh(G(new T.PlaneGeometry(0.42, 0.16)), bittiMat); bitti.position.set(0, custom ? 1.25 : 1.12, 0.45); bitti.rotation.x = -0.25; bitti.visible = false; g.add(bitti);
     g.position.set(v.x, 0, v.z); g.rotation.y = v.ry; g.scale.setScalar(1.25);   // survey 2026-10-24: stands read clearly from the play camera
     root.add(g);
-    return { root: g, food, bitti, sig: '', signMat };
+    return { root: g, food, bitti, sig: '', signSig: '', signMat };
   }
 
   // buy plates (dashed ring + price tag)
@@ -209,7 +209,12 @@ export function createStantLook(d: StantLookDeps): StantLookView {
             const f = s.max ? s.stock / s.max : 0, n = Math.ceil(f * o.food.length);
             o.food.forEach((m, i) => { m.visible = i < n; });
             o.bitti.visible = s.stock <= 0;
-            const old = o.signMat.map; o.signMat.map = signTex(s.short, fmtTL(s.price), s.color); o.signMat.needsUpdate = true; texs.push(o.signMat.map); if (old) old.dispose();
+          }
+          // KAL-15: tabela yalnız yazısı değişince yeniden çizilir (eskiden her stok değişiminde yeni doku + texs dizisinde birikme)
+          const signSig = s.short + '|' + s.price + '|' + s.color;
+          if (signSig !== o.signSig) {
+            o.signSig = signSig;
+            const old = o.signMat.map; o.signMat.map = signTex(s.short, fmtTL(s.price), s.color); if (!old) o.signMat.needsUpdate = true; else old.dispose();
           }
         } else {   // buyable stands are yellow pads now (rtview); plate() kept for a later custom marker
           void plate; const pl = plates.get(s.id); if (pl) { root.remove(pl.g); plates.delete(s.id); } }
@@ -237,9 +242,10 @@ export function createStantLook(d: StantLookDeps): StantLookView {
       for (let i = v.tickets.length; i < tickets.length; i++) tickets[i].visible = false;
       // PRF-15: ticket numbers only grow, so plates of closed tickets are freed (the old cache kept up to 60 and then dropped all,
       // plates on screen included)
-      if (tTex.size > 16) { const use = new Set<T.Texture | null>(); tickets.forEach(s => { if (s.visible) use.add((s.material as T.SpriteMaterial).map); });
+      // KAL-15: kullanılmayan plaka hemen serbest (16'lık tampon sızıntı testinde tur başına doku eğimi gibi görünüyordu)
+      if (tTex.size > v.tickets.length) { const use = new Set<T.Texture | null>(); tickets.forEach(s => { if (s.visible) use.add((s.material as T.SpriteMaterial).map); });
         tTex.forEach((x, k) => { if (!use.has(x)) { x.dispose(); tTex.delete(k); } }); }
     },
-    dispose() { d.scene.remove(root); geos.forEach(g => g.dispose()); mats.forEach(m => m.dispose()); texs.forEach(t => t.dispose()); tTex.forEach(t => t.dispose()); },
+    dispose() { d.scene.remove(root); geos.forEach(g => g.dispose()); mats.forEach(m => m.dispose()); texs.forEach(t => t.dispose()); tTex.forEach(t => t.dispose()); stands.forEach(o => o.signMat.map?.dispose()); },
   };
 }
