@@ -61,7 +61,7 @@ for (const tier of tiers) {
     await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=${tier}&seed=3&time=${saat}&stage=${stage}`);
     await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 120000 });
     await p.evaluate(() => { const M = window.__marti; M.play('sabri'); M.renderFrames(2, 0.1); });
-    const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(700); }
+    const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const inp = await p.$('input[name="ad"]'); if (inp) await inp.fill('Deneme'); await go.click({ force: true }); await p.waitForTimeout(700); }
     for (const s of SAHNELER.filter(s => s.stage === stage)) {
       await p.evaluate(([x, z]) => { const M = window.__marti; M.teleport(x, z); for (let k = 0; k < 15; k++) M.renderFrames(2, 0.1); }, s.tp);
       await p.waitForTimeout(2500);

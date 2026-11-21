@@ -14,7 +14,7 @@ await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=${proc
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 180000 });
 log('hazır');
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(500); }
+const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const inp = await p.$('input[name="ad"]'); if (inp) await inp.fill('Deneme'); await go.click({ force: true }); await p.waitForTimeout(500); }
 const settle = (n = 6) => p.evaluate(n => { const M = window.__marti; for (let k = 0; k < n; k++) M.renderFrames(2, 0.1); }, n);
 // compileAsync bitene kadar bekle (KHR_parallel_shader_compile yoklaması rAF/setTimeout ile ilerler)
 const warmWait = async () => { for (let i = 0; i < 40; i++) { const busy = await p.evaluate(() => window.__marti.warmBusy?.() ?? false); if (!busy) return; await p.waitForTimeout(150); } };

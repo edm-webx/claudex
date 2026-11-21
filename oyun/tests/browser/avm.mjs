@@ -11,7 +11,7 @@ const p = await (await b.newContext({ viewport: { width: 1280, height: 720 }, de
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengeli&seed=3&stage=3`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 60000 });
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(700); }
+const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const inp = await p.$('input[name="ad"]'); if (inp) await inp.fill('Deneme'); await go.click({ force: true }); await p.waitForTimeout(700); }
 await p.evaluate((bos) => { const M = window.__marti; M.setTime(13); M.step(2); M.izgara(false); for (const id of ['sb-vig']) { const v = document.getElementById(id); if (v) v.style.display = 'none'; }
   M.simCmd('money', 9e9); M.simCmd('level', 40);
   if (bos) return;

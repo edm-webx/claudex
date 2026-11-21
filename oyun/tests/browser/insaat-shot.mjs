@@ -13,7 +13,7 @@ const errs = []; p.on('pageerror', e => errs.push(e.message)); p.on('console', m
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengeli&seed=3&stage=${STAGE}&saat=${process.env.SAAT||13}`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 90000 });
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(700); }
+const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const inp = await p.$('input[name="ad"]'); if (inp) await inp.fill('Deneme'); await go.click({ force: true }); await p.waitForTimeout(700); }
 await p.evaluate((STAGE) => { const M = window.__marti; M.setTime(Number(new URLSearchParams(location.search).get('saat')||13)); M.step(2); M.izgara(false); M.simCmd('money', 9e9); M.simCmd('level', 40); M.simCmd('unlock', 'isbul');
   try { M.simCmd('cmd', { kind: 'setStage', stage: STAGE }); } catch { /* */ }
   for (let i = 0; i < 12; i++) { M.simCmd('hire'); M.step(1); }

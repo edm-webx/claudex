@@ -94,7 +94,7 @@ for (const tier of tiers) {
   await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=${tier}&seed=3&stage=10`);
   await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 120000 });
   await p.evaluate(() => { const M = window.__marti; M.play('sabri'); M.renderFrames(2, 0.1); });
-  const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(700); }
+  const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const inp = await p.$('input[name="ad"]'); if (inp) await inp.fill('Deneme'); await go.click({ force: true }); await p.waitForTimeout(700); }
   await p.evaluate(() => { const M = window.__marti; M.izgara?.(false); M.simCmd('money', 9e9); M.simCmd('level', 40); });
   for (const k of konumlar) {
     const K = KONUM[k];

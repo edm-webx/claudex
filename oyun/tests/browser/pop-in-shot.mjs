@@ -10,7 +10,7 @@ const p = await (await b.newContext({ viewport: { width: 1280, height: 720 } }))
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengeli&seed=3&stage=10&time=12`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 180000 });
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(500); }
+const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const inp = await p.$('input[name="ad"]'); if (inp) await inp.fill('Deneme'); await go.click({ force: true }); await p.waitForTimeout(500); }
 for (const [view, ad] of [[false, 'once-eski-kural'], [true, 'sonra-prf07']]) {
   await p.evaluate(v => { const M = window.__marti; M.zonePop({ viewAware: v }); M.camera({ zoom: 1 }); M.teleport(40, 9); for (let i = 0; i < 30; i++) M.renderFrames(1, 1 / 30); M.camera({ zoom: 2.1 }); for (let x = 40; x <= 98; x += 1) { M.teleport(x, 9); M.renderFrames(1, 1 / 30); } for (let i = 0; i < 20; i++) M.renderFrames(1, 1 / 30); }, view);
   await p.waitForTimeout(300);

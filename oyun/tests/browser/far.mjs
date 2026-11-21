@@ -9,7 +9,7 @@ const p = await (await b.newContext({ viewport: { width: 1440, height: 810 } }))
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengeli&seed=3${process.env.STAGE ? "&stage=" + process.env.STAGE : ""}`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 60000 });
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(700); }
+const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const inp = await p.$('input[name="ad"]'); if (inp) await inp.fill('Deneme'); await go.click({ force: true }); await p.waitForTimeout(700); }
 await p.evaluate(([tm, grid]) => { const M = window.__marti; M.setTime(tm); M.step(2); M.izgara(grid); const u = document.getElementById('sbui'); if (u) u.style.display = 'none'; const v = document.getElementById('sb-vig'); if (v) v.style.display = 'none'; }, [+(process.env.TIME || 13), process.env.GRID !== '0']);
 if (process.env.TAD) await p.evaluate(() => { const M = window.__marti; M.simCmd('stars', 5); M.simCmd('money', 9e8); M.command({ kind: 'startTadilat' }); M.step(30); });
 if (process.env.TAKIM) await p.evaluate(() => { const M = window.__marti; M.simCmd('money', 9e8); M.teleport(-25.2, 45); M.step(0.3); M.command({ kind: 'mulk', op: 'takim', name: 'Martıköy Spor', renk: '#2f7fb3', renk2: '#ffd23f' }); });

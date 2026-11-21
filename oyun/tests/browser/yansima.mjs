@@ -15,7 +15,7 @@ for (const tier of tiers) {
   await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=${tier}&seed=3`);
   await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 120000 });
   await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-  const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(500); }
+  const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const inp = await p.$('input[name="ad"]'); if (inp) await inp.fill('Deneme'); await go.click({ force: true }); await p.waitForTimeout(500); }
   const row = await p.evaluate(() => {
     const M = window.__marti; M.command({ kind: 'esnafim', op: 'done' }); M.setTime(18.5); M.step(2);
     const cams = [{ x: 0, z: -12, zoomRaw: 1.4, yaw: 0, tilt: -0.9 }, { x: -8, z: -9, zoomRaw: 0.9, yaw: 0.5, tilt: -0.5 }, { x: 0, z: -3, zoomRaw: 1, yaw: 0, tilt: 0 }];

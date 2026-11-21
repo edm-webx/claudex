@@ -9,7 +9,7 @@ const p = await (await b.newContext({ viewport: { width: 1280, height: 720 } }))
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=${process.env.TIER || 'dengeli'}&seed=3&stage=10&time=12`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 180000 });
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(500); }
+const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const inp = await p.$('input[name="ad"]'); if (inp) await inp.fill('Deneme'); await go.click({ force: true }); await p.waitForTimeout(500); }
 await p.evaluate(() => { const M = window.__marti; for (let k = 0; k < 12; k++) M.renderFrames(2, 0.1); });
 const step = (v) => p.evaluate(v => {
   const M = window.__marti, gl = document.getElementById('c').getContext('webgl2'), fin = () => { gl.finish(); };   // finish: GPU (SwiftShader) work counted where it happens

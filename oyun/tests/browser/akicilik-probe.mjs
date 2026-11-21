@@ -15,7 +15,7 @@ await p.addInitScript(() => {   // canlı WebGL bağlamı sayacı
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=${process.env.TIER || 'dengeli'}&seed=3&stage=${process.env.STAGE || 10}`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 90000 });
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(700); }
+const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const inp = await p.$('input[name="ad"]'); if (inp) await inp.fill('Deneme'); await go.click({ force: true }); await p.waitForTimeout(700); }
 let prevNames = null;
 const snap = (tag) => p.evaluate(([tag, prev]) => { const M = window.__marti; const i = M.info(); window.__pn = i.programNames; const nw = prev ? i.programNames.filter(n => !prev.includes(n)).slice(0, 6).join(',') : ''; return `${tag.padEnd(28)} yeni=[${nw}] prog=${i.programs} geo=${i.geos} tex=${i.texs} ctx=${window.__ctxLive()} heapMB=${(performance.memory?.usedJSHeapSize / 1048576).toFixed(1)}`; }, [tag, prevNames]).then(async r => { prevNames = await p.evaluate(() => window.__pn); return r; });
 const settle = (n = 12) => p.evaluate((n) => { const M = window.__marti; for (let k = 0; k < n; k++) M.renderFrames(2, 0.1); }, n);

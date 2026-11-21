@@ -37,7 +37,7 @@ p.on('pageerror', e => console.log('  sayfa hatası:', String(e).slice(0, 160)))
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengeli&seed=3`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 120000 });
 await p.evaluate(() => { const M = window.__marti; M.play('sabri'); M.renderFrames(2, 0.1); });
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(700); }
+const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const inp = await p.$('input[name="ad"]'); if (inp) await inp.fill('Deneme'); await go.click({ force: true }); await p.waitForTimeout(700); }
 await p.evaluate(() => { const M = window.__marti; M.izgara?.(false); M.teleport(0, -3); for (let i = 0; i < 10; i++) M.renderFrames(3, 0.1); });
 const cam = () => p.evaluate(() => { const M = window.__marti; M.camera({ x: 0, z: -3, zoomRaw: 2.8, yaw: 0, tilt: 0.75 }); });
 const shot = async ad => {

@@ -9,7 +9,7 @@ const p = await (await b.newContext({ viewport: { width: 1280, height: 720 } }))
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengeli&seed=3&stage=${process.env.STAGE || 10}`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 60000 });
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(700); }
+const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const inp = await p.$('input[name="ad"]'); if (inp) await inp.fill('Deneme'); await go.click({ force: true }); await p.waitForTimeout(700); }
 await p.evaluate(() => { const M = window.__marti; M.setTime(13); M.step(2); M.izgara(false); M.simCmd('money', 9e9); M.simCmd('unlock', 'isbul'); M.simCmd('cmd', { kind: 'setStage', stage: 10 }); for (let i = 0; i < 30; i++) { M.simCmd('hire'); M.step(1); } M.step(1); });
 console.log(await p.evaluate(() => JSON.stringify(window.__marti.state().workers?.map?.(w => w.role) ?? 'n/a')));
 await p.evaluate(() => { window.__marti.closeJobBoard(); window.__marti.closePanel(); window.__marti.renderFrames(2, 0.1); const h = [...document.querySelectorAll('*')].find(e => e.children.length === 0 && /İş ve İşçi Bulma/.test(e.textContent || '')); let e = h; while (e && e.parentElement && e.parentElement.id !== 'sbui' && e.parentElement !== document.body) { if (getComputedStyle(e).position === 'absolute' || getComputedStyle(e).position === 'fixed') { if (e.getBoundingClientRect().width > 500) break; } e = e.parentElement; } if (e) e.style.display = 'none'; });

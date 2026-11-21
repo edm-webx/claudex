@@ -11,7 +11,7 @@ const cdp = await ctx.newCDPSession(p);
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=${process.env.TIER || 'dengeli'}&seed=3&stage=10`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 120000 });
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(700); }
+const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const inp = await p.$('input[name="ad"]'); if (inp) await inp.fill('Deneme'); await go.click({ force: true }); await p.waitForTimeout(700); }
 // ısınma: shader program sayısı 8 tur üst üste değişmeyene dek (program derlemesi ölçüme sızmasın; yoksa örnekleme WebGLProgram ayrıştırmasını ölçer)
 const prog = await p.evaluate(() => { const M = window.__marti; let last = -1, same = 0, k = 0; for (; k < 400 && same < 8; k++) { M.renderFrames(2, 0.1); const n = M.info().programs; same = n === last ? same + 1 : 0; last = n; } return { rounds: k, programs: last }; });
 console.log(`ısınma: ${prog.rounds} tur, ${prog.programs} program`);

@@ -42,7 +42,7 @@ const snap = async ad => { try { await p.screenshot({ path: join(OUT, ad + '.png
 await p.goto(`${url}?fresh=1&noloop&tier=dengeli&seed=3&qa=1&stage=10`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 90000 });
 await ev(() => window.__marti.play('sabri')); await ev(() => window.__marti.renderFrames(2, 0.1));
-const go = await p.waitForSelector('.kl-go', { timeout: 10000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(700); }
+const go = await p.waitForSelector('.kl-go', { timeout: 10000 }).catch(() => null); if (go) { const inp = await p.$('input[name="ad"]'); if (inp) await inp.fill('Deneme'); await go.click({ force: true }); await p.waitForTimeout(700); }
 if (await ev(() => { const M = window.__marti; if (M.state().pauseWhy === 'esnafim') { M.command({ kind: 'esnafim', op: 'done' }); M.step(1); } return M.state().paused; })) console.log('uyarı: sim duraklı: ' + await ev(() => window.__marti.state().pauseWhy));
 await ev(() => { const M = window.__marti; M.setTime(13); M.step(2); M.perfRecord?.(true); });
 // örnekleyiciyi sayfaya enjekte et (toString ile)

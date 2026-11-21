@@ -13,7 +13,7 @@ p.on('pageerror', e => console.log('[hata]', e.message.slice(0, 200)));
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=akici&seed=3`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 180000 });
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(500); }
+const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const inp = await p.$('input[name="ad"]'); if (inp) await inp.fill('Deneme'); await go.click({ force: true }); await p.waitForTimeout(500); }
 const lum = buf => { const png = PNG.sync.read(buf); let s = 0; const d = png.data; for (let i = 0; i < d.length; i += 4) s += 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]; return s / (d.length / 4); };
 await p.evaluate(() => { const M = window.__marti; M.command({ kind: 'esnafim', op: 'done' }); M.setStage(3); M.setTime(11); M.teleport(-2, -4); M.step(1);
   M.camera({ x: -2, z: -6, zoomRaw: 1.0, yaw: 0.4, tilt: -10 }); M.camera({ tilt: 0.5 }); for (let k = 0; k < 20; k++) M.renderFrames(1, 0.1); });
