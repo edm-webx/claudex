@@ -40,10 +40,8 @@ export const HEDEF_GIDER_ORAN: { asama: number; band: [number, number] }[] = [
  * ZAMAN ÖLÇÜSÜ: oyun dakikası (S.playT). Anahtar: dakika, değer: [min, max] toplam kazanç (₺).
  */
 export const MEVCUT_TOPLAM_KAZANC: Record<number, [number, number]> = {
-  30: [80_000, 176_000], 60: [230_000, 495_000], 90: [400_000, 855_000],
+  30: [50_000, 107_000], 60: [135_000, 290_000], 90: [230_000, 500_000],
 };
-// 2026-11-21 birleştirme sonrası (büfe mutfak/salon/garson + EKO-02, tohum 3): 30/60/90. dk 125k / 353k / 611k. Eski banttan ~%65 hızlı:
-// büfe kolunun salon ve kanat gelirinden. Bant ölçüme göre kaydırıldı, DENGE KARARI AÇIK: tasarım hedefi (HEDEF_ASAMA_DK) için EKO-05'te yavaşlatılacak.
 /** Bugünkü denge: 2. aşamaya varış penceresi (dk). */
 export const MEVCUT_ASAMA2_DK: [number, number] = [28, 62];
 

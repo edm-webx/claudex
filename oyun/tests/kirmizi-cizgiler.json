@@ -195,14 +195,6 @@
   ],
   "olu_bayrak": {
     "_aciklama": "Kod içindeki *_ON/*_KAPALI/*_OFF bayrakları (tools/baglilik.mjs). Her biri 'sil' (kod ve veri silinmeli) ya da 'bilincli-kapali' (sahibin kararıyla kapalı, geri açılması istenebilir) etiketli; etiketsiz yeni bayrak testi kırar.",
-    "src/game/sim/agents/regulars.ts:MUDAVIMLER_KAPALI": {
-      "etiket": "sil",
-      "neden": "müdavimler sahibin isteğiyle kaldırıldı (2026-11-02)"
-    },
-    "src/game/sim/customers.ts:TIPS_ON": {
-      "etiket": "bilincli-kapali",
-      "neden": "bahşiş: anketler çelişiyor, sahibe soruldu mu belirsiz"
-    },
     "src/game/sim/hikaye.ts:HIKAYE_ON": {
       "etiket": "sil",
       "neden": "hikâye, rakip ve komşu görevleri yok (2026-10-23)"
