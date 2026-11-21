@@ -24,12 +24,12 @@ const CSS = `
 .sb-lab .say{padding:4px 8px 5px;font-size:13px;max-width:150px;border-radius:11px;margin-bottom:10px}
 .sb-sheet.dk-low{max-height:38dvh!important;max-height:min(38dvh,340px)!important;bottom:calc(var(--sbm) + var(--barh) + 6px)!important}
 .sb-sheet.dk-low .sb-shb{padding-bottom:6px}
-.f2-rail{position:absolute;right:calc(var(--sr,0px) + 8px);top:calc(var(--hudb,100px) + 70px);width:132px;z-index:23;display:flex;flex-direction:column;gap:5px;pointer-events:none;
+.f2-rail{position:absolute;right:calc(var(--sr,0px) + 8px);top:calc(var(--hudb,100px) + 70px);width:156px;z-index:23;display:flex;flex-direction:column;gap:5px;pointer-events:none;
   font-family:var(--body,system-ui,sans-serif);color:var(--ink,#3b2a20);transition:opacity .25s}
 .f2-rail.off{opacity:0;pointer-events:none!important}
 .f2-rail>*{pointer-events:auto}
 .f2-ph{display:flex;justify-content:space-between;align-items:center;gap:6px;background:#ffd23f;border:2px solid var(--ink,#3b2a20);border-radius:10px;padding:3px 7px;font:900 13px/1.2 var(--disp,system-ui);cursor:pointer;box-shadow:0 2px 0 var(--ink,#3b2a20)}
-.f2-note{font:700 13px/1.25 var(--body,system-ui);opacity:.9;padding:0 2px}
+.f2-note{font:700 13px/1.25 var(--body,system-ui);color:#fff;background:rgba(11,19,38,.88);border-radius:10px;padding:5px 8px}
 .f2-top{background:var(--ink,#3b2a20);color:#fff8ec;border-radius:10px;padding:4px 7px;font:800 13px/1.25 var(--body,system-ui)}
 .f2-top b{color:#ffd23f}
 .f2-slip{background:#fffdf6;border:2px solid var(--ink,#3b2a20);border-radius:4px 4px 10px 10px;padding:3px 6px 4px;box-shadow:0 2px 0 var(--ink,#3b2a20);

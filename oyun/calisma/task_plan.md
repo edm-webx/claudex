@@ -47,3 +47,7 @@ Yapılmadı / karar bekliyor: Ayarlar'daki 'Büfeci: Sabri/Sabriye' (v2ui.ts ~82
 ### UX thread 3. tur 2026-11-21
 Yapıldı: Ayarlar'dan Büfeci Sabri/Sabriye kalktı (sahip onayı); ilk giriş ipuçları tutorial.ts 'ipucu' sistemi (bina: banka/kırtasiye/okul, bölge: stadyum/orman; kayıt st.tut['ip_*'], 10 sn aralık; toast ile; birim testi ipucu.test.ts); bildirim merkezi engine/ui/index.ts (zil, son 30, okunmamış sayacı, toast 14px/3,2 sn, aria-live); tools/kontrast.mjs (13px altı + kontrast taraması, node tools/kontrast.mjs).
 Açık: view/world/hava-look.ts:480 tarih rozeti 12.5px (ana thread alanı, bir sayı değişikliği); sipariş paneli (faz2-hud f2-rail) ekranda çıkmadığı için görsel doğrulanmadı (CSS konumu rozetin altında, sağ sütun); ilk 10 dk tutorial sırası olduğu gibi bırakıldı (17 adım), yeni dakika haritası sahip girdisi bekler.
+
+### UX thread 4. tur 2026-11-21
+Yapıldı: her iç mekan için özel ipucu (tests/unit/ipucu.test.ts hepsini kapsar); ilk 10 dk sırası: çay > ilk işçi (isbul) > ayran/simit/tabure (first-session testi yeşil); sipariş paneli stage=6'da ekrana getirildi, rozetin altında çakışmıyor, 'Bekleyen sipariş yok' satırı okunur yapıldı, panel 156px.
+Kalan: saç/sakal mesh'leri (7 sakal etiketi 4 mesh, chars-v2.ts, SANAT rolü), canlı yüz önizlemesi, hava-look tarih rozeti 12.5px (ana thread).

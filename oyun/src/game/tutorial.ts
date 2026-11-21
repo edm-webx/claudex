@@ -32,17 +32,30 @@ export const TUT: readonly TutStep[] = [
   { id: 'money', show: v => v.kasaPile > 0, done: v => !!v.tutFlags.firstCollect, at: v => v.anchors.kasa },
   padStep('cay'),
   { id: 'cay', show: v => v.owned.includes('cay'), done: v => !!v.tutFlags.cayUsed, at: v => v.anchors.stations.cay },
-  padStep('ayran'), padStep('simit'), padStep('tabure1'), padStep('isbul'),
+  // UX-06: ilk 10 dakika: çay (ilk satın alma) sonra hemen ilk işçi, ardından menü ve oturma genişlemesi
+  padStep('isbul'),
   { id: 'isbul', show: v => v.owned.includes('isbul'), done: v => v.workers.length > 0, at: v => v.anchors.job },
+  padStep('ayran'), padStep('simit'), padStep('tabure1'),
   padStep('pencere'),
 ];
 
 /** UX-06: tek seferlik sakin ipuçları (kayıt: st.tut['ip_<id>']). Bir yere ilk girişte tek satır; sahip: "binaya ilk girişte ipucu çipi olsun". */
 export const IPUCU_ARALIK_S = 10;
-const BINA_IPUCU: Partial<Record<IcMekan['tur'], string>> = {
+const KAFE_IPUCU = 'işletmenin aletleri Mülk düğmesinde, alınca içeride görünür.';
+const BINA_IPUCU: Record<string, string> = {
+  kafe1: 'Meydan Kafe: ' + KAFE_IPUCU,
+  kafe2: 'Sahil Bistro: ' + KAFE_IPUCU,
+  avm: 'Martı AVM: giyim ve bakım ürünleri karakter dolabına girer.',
+  tesis: 'Halı Saha Tesisleri: sahibi olduğun işletmeler Mülk düğmesinde.',
+  salonW: 'Kahvaltı salonu: ekipmanı Mülk düğmesinde, Salonlar sekmesinde.',
+  salonE: 'Balık lokantası: ekipmanı Mülk düğmesinde, Salonlar sekmesinde.',
+  mutfak: 'Sabri Mutfağı: istasyonlar büfe aşamasıyla açılır, ekibi işçi bulma panosundan alırsın.',
   banka: 'Banka içindesin. Para ve eşya işleri alttaki Mülk düğmesinde, Banka sekmesinde.',
   kirtasiye: 'Kırtasiye bir işletme. Sahibiysen tezgaha geçip kendin satabilirsin.',
-  okul: 'Okul binası. Dersler ve sınavlar burada.',
+  okul: 'Martıköy İlkokulu: dersler ve sınavlar burada.',
+  hastane: 'Devlet Hastanesi: gezilebilir bir şehir binası, işletme değil.',
+  acil: 'Acil: gezilebilir bir şehir binası, işletme değil.',
+  morg: 'Morg: gezilebilir bir şehir binası, işletme değil.',
 };
 const BOLGE_IPUCU: Record<string, string> = {
   stadyum: 'Stadyum Mahallesi: halı sahalar ve maçlar burada.',
@@ -52,7 +65,7 @@ const inside = (m: IcMekan, p: Vec2) => Math.abs(p.x - m.x) < m.wx / 2 && Math.a
 /** İlk karşılaşılan yeni yer için ipucu kimliği ve metni (yoksa null). Saf: test edilir. */
 export function ipucuFor(p: Vec2, seen: (id: string) => boolean): { id: string; text: string } | null {
   const ic = IC_MEKANLAR.find(m => inside(m, p));
-  if (ic && !seen('bina_' + ic.id)) return { id: 'bina_' + ic.id, text: BINA_IPUCU[ic.tur] ?? `${ic.ad}: içeri girdin, rahatça gez.` };
+  if (ic && !seen('bina_' + ic.id)) return { id: 'bina_' + ic.id, text: BINA_IPUCU[ic.id] ?? `${ic.ad}: içeri girdin.` };
   const r = regionAt(p.x);
   if (r && BOLGE_IPUCU[r.id] && !seen('bolge_' + r.id)) return { id: 'bolge_' + r.id, text: BOLGE_IPUCU[r.id] };
   return null;
