@@ -17,7 +17,7 @@ await p.addInitScript(() => {
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=${process.env.TIER || 'dengeli'}&seed=3&stage=10`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 90000 });
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(700); }
+const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const ad = await p.$('input[name="ad"]'); if (ad) await ad.fill('Olcum'); await go.click({ force: true }); await p.waitForTimeout(700); }
 const settle = (n = 10) => p.evaluate(n => { const M = window.__marti; for (let k = 0; k < n; k++) M.renderFrames(2, 0.1); }, n);
 const sample = () => p.evaluate(() => { try { gc(); } catch { /* */ } const M = window.__marti, i = M.info(); return { geo: i.geos, tex: i.texs, prog: i.programs, ctx: window.__ctxLive(), dom: document.getElementsByTagName('*').length, heap: (performance.memory?.usedJSHeapSize || 0) / 1048576, calls: i.calls }; });
 await p.evaluate(() => { const M = window.__marti; M.simCmd('money', 9e9); M.simCmd('level', 40); });

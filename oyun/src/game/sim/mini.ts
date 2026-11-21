@@ -170,7 +170,7 @@ export function installMini(K: Kernel): MiniApi {
     let extra = 0;
     if (m.bonusT > 0) extra += v * (BONUS_MULT - 1);
     if (m.buffN > 0) { m.buffN--; extra += v * MICRO_BUFF_PCT; }
-    if (extra > 0) { try { K.moneyApi.addToKasa(Math.round(extra)); } catch { /* kasa not ready */ } }
+    if (extra > 0) { try { K.moneyApi.addToKasa(Math.round(extra)); } catch (e) { console.warn('[mini] kasa yazılamadı', e); } }
   });
 
   // timers + station prompts (micro-moves, icecek-8/9)

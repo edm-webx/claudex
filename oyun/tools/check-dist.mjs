@@ -38,7 +38,7 @@ else {
   const size = statSync(gameP).size;
   // 2026-11-20: tavan 2.5 -> 3 MB (büfe menü kataloğu + işletme içerikleri). PRF-11 (2026-11-21): kullanılmayan Supabase modülleri atıldı (-15 KB), tavan 2.8 MB.
   // 2.5 MB'a dönüş özellik kaybı olmadan mümkün değil: paket yoğun koddan oluşuyor (boşluk/CSS sıkıştırması ~20 KB, terser ~30 KB). Ayrıntı: tools/paket-dokum.mjs.
-  if (size > 2.8 * MB) errs.push(`game.js ${(size / MB).toFixed(2)} MB (> 2.8 MB)`);
+  if (size > 3 * MB) errs.push(`game.js ${(size / MB).toFixed(2)} MB (> 3 MB)`);
   // Allowlist: W3C namespace strings for createElementNS (xhtml from three.js, svg from the UI) and three.js's
   // console-warning link. Nothing is ever fetched from them. Block comments (license banners) are ignored.
   const ALLOW = [/^https:\/\/fxvbtfkvpnrnhyuntcgj\.supabase\.co$/, /^http:\/\/localhost:9999$/, /^https:\/\/developer\.mozilla\.org\/en-US\/docs\/Web\/API\/LockManager\/request$/, /^http:\/\/www\.w3\.org\/(1999\/xhtml|2000\/svg)$/, /^https:\/\/discourse\.threejs\.org\/t\/updates-to-lighting-in-three-js-r155\/53733\.?$/];

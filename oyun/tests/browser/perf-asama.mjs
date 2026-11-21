@@ -24,7 +24,7 @@ for (const asama of ASAMALAR) {
   await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengeli&seed=3&stage=${asama}`, { timeout: 120000 });
   await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 120000 }); zaman('sayfa hazır, aşama ' + asama);
   await p.evaluate(() => { const M = window.__marti; M.play('sabri'); M.renderFrames(2, 0.1); });
-  const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(700); }
+  const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const ad = await p.$('input[name="ad"]'); if (ad) await ad.fill('Olcum'); await go.click({ force: true }); await p.waitForFunction(() => !document.querySelector('.kl-go'), null, { timeout: 5000 }).catch(() => console.log('UYARI: karakter paneli kapanmadı, ölçüm geçersiz olabilir')); await p.waitForTimeout(300); }   // ad boşsa panel kapanmaz (sim duraklı kalır)
   // tam kadro: açık her rolün bütün kadroları iş panosundan işe alınır (para yetsin diye kasa doldurulur)
   const kadro = await p.evaluate((ROLLER) => {
     const M = window.__marti, S = M.S; M.simCmd('money', 9e9); M.simCmd('level', 40);

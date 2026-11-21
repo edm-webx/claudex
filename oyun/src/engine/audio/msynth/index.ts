@@ -39,7 +39,7 @@ const idle = (fn: () => void) => {
   if (w.requestIdleCallback) w.requestIdleCallback(fn, { timeout: 400 }); else setTimeout(fn, 16);
 };
 
-/** Döngü + parça önbellek tavanı (mono float32 bayt). PS3 ruhu: toplam ses belleği < 20 MB (sfx ~3 MB + bu). */
+/** Döngü + parça önbellek tavanı (mono float32 bayt). Ölçülen: sfx (72 adet, 32 kHz) ~8,7 MB; masaüstü toplam ~21 MB, mobilde bütçe 7 MB (index.ts). */
 export const STREAM_BUDGET = 12 * 1024 * 1024;
 
 export function createBank(ac: BaseAudioContext, db: SesDb, budget = STREAM_BUDGET): Bank {
@@ -91,7 +91,7 @@ export function createBank(ac: BaseAudioContext, db: SesDb, budget = STREAM_BUDG
     const w = waiting.get(key); if (w) { w.push(cb); return; }
     waiting.set(key, [cb]);
     const job = { key, gen: make(), sr, cache };
-    if (front && queue.length) queue.splice(1, 0, job); else queue.push(job);
+    if (front && queue.length) queue.unshift(job); else queue.push(job);
     pump();
   }
   const bank: Bank = {

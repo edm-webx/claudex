@@ -131,7 +131,7 @@ export function createAnimApi(_deps: AnimDeps = {}): MotorAnimApi {
         Tg.breath = 1;
         if (inp.act !== act) { act = inp.act; actT = 0; } actT += dt;
         const run = gait.id === 'run' || inp.speed > 2.6;
-        const vn = clamp(inp.speed / 1.3, 0, 1);
+        const vn = clamp((inp.speed || 0) / 1.3, 0, 1);
         spd = damp(spd, vn, 10, dt);
         carryW = damp(carryW, inp.carry > 0 ? 1 : 0, 12, dt);
         const v = run ? Math.max(0.9, spd) : spd;

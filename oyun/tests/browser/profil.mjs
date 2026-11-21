@@ -18,7 +18,7 @@ async function open(opts) {
   await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=${opts.tier}&seed=3&stage=10`);
   await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 120000 });
   await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-  const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(700); }
+  const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const ad = await p.$('input[name="ad"]'); if (ad) await ad.fill('Olcum'); await go.click({ force: true }); await p.waitForTimeout(700); }
   await p.evaluate(() => { const M = window.__marti; for (let k = 0; k < 12; k++) M.renderFrames(2, 0.1); });
   return { p, ctx, cdp, errs };
 }
