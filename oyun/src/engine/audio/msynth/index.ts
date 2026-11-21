@@ -29,7 +29,9 @@ export interface Bank {
   /** Start pre-rendering every one-shot in idle slices. */
   prewarm(): void;
   /** Debug: how many buffers are cached. */
-  stats(): { sfx: number; loops: number; tracks: number; queued: number };
+  stats(): { sfx: number; loops: number; tracks: number; queued: number; bytes: number };
+  /** Önbellekten bırak (LRU dışında elle): çalan kaynak tamponu tuttuğu için güvenli. */
+  drop(kind: 'loop' | 'track', id: string): void;
 }
 
 const idle = (fn: () => void) => {
@@ -37,10 +39,27 @@ const idle = (fn: () => void) => {
   if (w.requestIdleCallback) w.requestIdleCallback(fn, { timeout: 400 }); else setTimeout(fn, 16);
 };
 
-export function createBank(ac: BaseAudioContext, db: SesDb): Bank {
+/** Döngü + parça önbellek tavanı (mono float32 bayt). PS3 ruhu: toplam ses belleği < 20 MB (sfx ~3 MB + bu). */
+export const STREAM_BUDGET = 12 * 1024 * 1024;
+
+export function createBank(ac: BaseAudioContext, db: SesDb, budget = STREAM_BUDGET): Bank {
   const rc = (sr: number): RenderCtx => ({ sr, patches: db.patches || {} });
   const sfxC = new Map<string, AudioBuffer>(), loopC = new Map<string, AudioBuffer>(), trackC = new Map<string, AudioBuffer>();
   const last = new Map<string, number>();
+  const use = new Map<AudioBuffer, number>();   // loop/track son kullanım (LRU)
+  let tick = 0;
+  const size = (b: AudioBuffer) => b.length * (b.numberOfChannels || 1) * 4;
+  const bytesOf = (m: Map<string, AudioBuffer>) => { let n = 0; for (const b of m.values()) n += size(b); return n; };
+  /** Bütçe aşılınca en az yakın kullanılan loop/track tamponlarını at (yeni eklenen hariç). */
+  function evict(keep: AudioBuffer | null) {
+    for (;;) {
+      let total = bytesOf(loopC) + bytesOf(trackC); if (total <= budget) return;
+      let victim: { m: Map<string, AudioBuffer>; k: string; t: number } | null = null;
+      for (const m of [loopC, trackC]) for (const [k, b] of m) { if (b === keep) continue; const t = use.get(b) ?? 0; if (!victim || t < victim.t) victim = { m, k, t }; }
+      if (!victim) return;
+      use.delete(victim.m.get(victim.k)!); victim.m.delete(victim.k);
+    }
+  }
   const waiting = new Map<string, ((b: AudioBuffer) => void)[]>();
   const queue: { key: string; gen: Generator<void, Float32Array>; sr: number; cache: Map<string, AudioBuffer> }[] = [];
   let busy = false;
@@ -60,7 +79,7 @@ export function createBank(ac: BaseAudioContext, db: SesDb): Bank {
       if (done || failed) {
         queue.shift();
         const b = done ? toBuf(done, job.sr) : null;
-        if (b) job.cache.set(job.key, b);
+        if (b) { job.cache.set(job.key, b); use.set(b, ++tick); evict(b); }
         const cbs = waiting.get(job.key) || []; waiting.delete(job.key);
         if (b) for (const cb of cbs) { try { cb(b); } catch { /* listener */ } }
       }
@@ -68,7 +87,7 @@ export function createBank(ac: BaseAudioContext, db: SesDb): Bank {
     });
   }
   function enqueue(key: string, cache: Map<string, AudioBuffer>, make: () => Generator<void, Float32Array>, sr: number, cb: (b: AudioBuffer) => void, front = false) {
-    const hit = cache.get(key); if (hit) { cb(hit); return; }
+    const hit = cache.get(key); if (hit) { use.set(hit, ++tick); cb(hit); return; }
     const w = waiting.get(key); if (w) { w.push(cb); return; }
     waiting.set(key, [cb]);
     const job = { key, gen: make(), sr, cache };
@@ -100,7 +119,8 @@ export function createBank(ac: BaseAudioContext, db: SesDb): Bank {
       const step = () => { const t0 = Date.now(); while (i < ids.length && Date.now() - t0 < 8) bank.sfx(ids[i++]); if (i < ids.length) idle(step); };
       idle(step);
     },
-    stats: () => ({ sfx: sfxC.size, loops: loopC.size, tracks: trackC.size, queued: queue.length }),
+    drop(kind, id) { const m = kind === 'loop' ? loopC : trackC, k = (kind === 'loop' ? 'L:' : 'M:') + id, b = m.get(k); if (b) { use.delete(b); m.delete(k); } },
+    stats: () => ({ sfx: sfxC.size, loops: loopC.size, tracks: trackC.size, queued: queue.length, bytes: bytesOf(sfxC) + bytesOf(loopC) + bytesOf(trackC) }),
   };
   return bank;
 }

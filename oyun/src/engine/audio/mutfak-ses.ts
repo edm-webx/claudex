@@ -24,3 +24,8 @@ export function heatLevel(listener: Vec2, kaynaklar: readonly IsiKaynagi[], R = 
   }
   return s <= 0 ? 0 : MAX * Math.tanh(s / MAX);
 }
+
+/** Bölge kapısı: mutfak cızırtısı/davlumbazı yalnız mutfağın içinde ya da dışarıdayken (açık ocak mesafesi) tam duyulur;
+ *  başka bir iç mekânda (salon, kafe, hastane...) duvardan çok kısık kalır. */
+export const ISI_DUVAR = 0.12;
+export const isiBolgeCarpani = (ic: string | null): number => (ic && ic !== 'mutfak' ? ISI_DUVAR : 1);

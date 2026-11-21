@@ -330,3 +330,12 @@ export function installHava(K: Kernel): HavaApi {
 /** Views, UI and the customers/ferry hooks read the installed module through the runtime. */
 export function havaApi(r: { rt: unknown } | null | undefined): HavaApi | null { return r ? ((r.rt as { hava?: HavaApi }).hava || null) : null; }
 export const havaOf = (rt: unknown): HavaMods | null => ((rt as { hava?: HavaMods }).hava || null);
+/** DNY-19: o saatin havası, kayıttan saf okuma (sokak vatandaşları için; installHava ile aynı segment ve rampa formülü).
+ *  Sağanak/kar/fırtına `wet` (rampa 0,3 üstü), kar ayrıca `kar`, sıcak `sicak`. Hava kurulmamışsa açık. */
+export function havaSokak(state: { zones?: unknown; day?: number }, hour: number): { kind: HavaKind; k: number; wet: boolean; kar: boolean; sicak: boolean } {
+  const h = (state.zones as Record<string, { segs?: Seg[]; wDay?: number }> | undefined)?.[HAVA_KEY];
+  const s = h && Array.isArray(h.segs) && (h.wDay === undefined || h.wDay === state.day) ? h.segs.find(g => hour >= g.a && hour < g.b) : undefined;
+  if (!s) return { kind: 'acik', k: 0, wet: false, kar: false, sicak: false };
+  const k = smooth(Math.min((hour - s.a) / 0.4, (s.b - hour) / 0.4));
+  return { kind: s.k, k, wet: !!HAVA_KINDS[s.k]?.wet && k >= 0.3, kar: s.k === 'kar' && k > 0.05, sicak: s.k === 'sicak' && k > 0.05 };
+}

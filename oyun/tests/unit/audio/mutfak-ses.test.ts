@@ -39,3 +39,11 @@ describe('tepe seviyeleri', () => {
     expect(tava.sort()).toEqual(['ocak', 'ocak2']);
   });
 });
+
+import { isiBolgeCarpani, ISI_DUVAR } from '../../../src/engine/audio/mutfak-ses';
+describe('mutfak sesi bölge kapısı', () => {
+  it('mutfakta ve dışarıda tam, başka iç mekânda duvardan kısık', () => {
+    expect(isiBolgeCarpani(null)).toBe(1); expect(isiBolgeCarpani('mutfak')).toBe(1);
+    expect(isiBolgeCarpani('salonE')).toBe(ISI_DUVAR); expect(ISI_DUVAR).toBeLessThan(0.2);
+  });
+});

@@ -29,19 +29,38 @@ import type { Audio, AudioDeps, AudioBus, Vec2, DayPhase } from '../api';
 import type { Lofi } from './lofi';
 import SES_DB from '../../content/ses/ses-db.json';
 import { createBank, type Bank, type SesDb } from './msynth';
-import { createMusicPlayer } from './msynth/player';
+import { createMusicPlayer, type MusicPlayer } from './msynth/player';
+import { createAmbiyans } from './ambiyans';
 import { babble, type VoiceProfile } from './msynth/voice';
-import { heatLevel, HEAT_MAX, type IsiKaynagi } from './mutfak-ses';
+import { createMoneyGate, isMoney } from './gate';
+import { createAtmosphere, createVoiceCap, DEFAULT_TABLE, type Atmosphere, type AmbienceTable, type AtmoHost } from './atmosphere';
+
+/** One sfx() call as seen by tests / window.__marti.audio: which path produced the sound. */
+export type PlayPath = 'sample' | 'bank' | 'recipe' | 'fallback-pop' | 'gated' | 'silent';
+export interface PlayRecord { t: number; id: string; yol: PlayPath; at: boolean; vol: number }
+import { heatLevel, isiBolgeCarpani, HEAT_MAX, type IsiKaynagi } from './mutfak-ses';
 
 /** Engine audio with the ses extras (procedural music controls, grill ambience, radio jingle). */
 export interface MotorAudio extends Audio {
   music: Audio['music'] & { setEvent(id: string | null): void; setWeather(kind: string): void; duck(sec: number): void; layers(): string[] };
   ambience: Audio['ambience'] & { setGrill(pos: Vec2 | null): void; setSeason(s: string): void; setHeat(list: IsiKaynagi[]): void };
   jingle(): void;
+  /** Bölgesel atmosfer: yalnız bulunulan bölge/iç mekân katmanları açık (atmosphere.ts). */
+  atmosphere: { setInterior(id: string | null): void; setTable(t: AmbienceTable): void; active(): string[]; live(): string[]; scope(): string };
+  /** SNT-14: sim 'canliMuzik' (müzisyen çalıyor): konumlu canlı müzik kaynağı (ambiyans.ts). */
+  canliMuzik(pos: Vec2): void;
+  /** Şimşek çaktı: gök gürültüsü 1-4 sn sonra gelir (ışık-ses gecikmesi); şimşek bildirilmezse rastgele seyrek gürültü. */
+  simsek(): void;
+  /** SNT-07 debug / test: bölge döngü ağırlıkları ve son ambiyans olayları. */
+  ambiyans(): { aktif: Record<string, number>; olaylar: { id: string; vol: number }[] };
   /** Arcade babble for a line of text in a character's voice (ses-db `voices`). */
   speak(text: string, who?: string, mood?: 'ok' | 'happy' | 'angry'): void;
   /** Martı Synth bank (debug / editor sound list). */
   bank(): Bank | null;
+  /** Debug: last 200 sfx() calls, per-path counters, bus levels, active ducks. */
+  debug(): { log: PlayRecord[]; counts: Record<PlayPath, number>; buses: Record<string, { volume: number; muted: boolean }>; ambOn: boolean; bank: ReturnType<Bank['stats']> | null; atmo: { scope: string; active: string[]; live: string[] } | null };
+  /** Generic ducking: lower the music (and optionally ambience) bus for `sec` seconds. */
+  duck(sec: number, depth?: number, ambience?: boolean): void;
 }
 
 type Ctx = AudioContext;
@@ -58,7 +77,7 @@ export function createAudio(deps: AudioDeps): MotorAudio {
   let intensity = 0.5;
   const listener: Vec2 = { x: 0, z: 0 };
   let lastVoice = -1e9;
-  let lofi: Lofi | null = null;
+  let lofi: MusicPlayer | null = null;
   let lofiPlace = 'iskele', lofiEvent: string | null = null, lofiWeather = 'acik';
   let hasSampleMusic = false;
   let grill: Vec2 | null = null;
@@ -66,25 +85,32 @@ export function createAudio(deps: AudioDeps): MotorAudio {
   let heat: IsiKaynagi[] = [], heatG: GainNode | null = null, humG: GainNode | null = null;
   let bank: Bank | null = null;
   let ambWeather = 'acik', ambSeason = 'sonbahar';
+  let duckM = 1, duckA = 1, atmoTable: AmbienceTable = DEFAULT_TABLE;
+  const duckTimers: Array<ReturnType<typeof setTimeout>> = [];
+  const moneyGate = createMoneyGate();
+  const LOG_MAX = 200;
+  const playLog: PlayRecord[] = [];
+  const counts: Record<PlayPath, number> = { sample: 0, bank: 0, recipe: 0, 'fallback-pop': 0, gated: 0, silent: 0 };
+  const note = (id: string, yol: PlayPath, at: boolean, vol: number) => { counts[yol]++; playLog.push({ t: deps.platform.clock.now(), id, yol, at, vol }); if (playLog.length > LOG_MAX) playLog.shift(); };
 
-  function mkBus(name: 'music' | 'sfx' | 'voice', vol: number): BusImpl {
+  function mkBus(name: 'music' | 'sfx' | 'voice' | 'ambience' | 'ui', vol: number): BusImpl {
     let volume = vol, muted = false;
     const b: BusImpl = {
       node: null,
       get volume() { return volume; },
-      set volume(v: number) { volume = Math.max(0, Math.min(1, +v || 0)); apply(); },
+      set volume(v: number) { const nv = Math.max(0, Math.min(1, +v || 0)); const wake = nv > 0 && volume <= 0; volume = nv; if (wake) { muted = false; for (const o of Object.values(buses)) if (o !== b && o.muted) o.muted = false; } apply(); },   // slider pulled up from 0 = unmute (no mute/slider mismatch)
       get muted() { return muted; },
       set muted(m: boolean) { muted = !!m; apply(); },
     };
     function apply() {
       if (!b.node || !ac) return;
-      const extra = name === 'music' ? (ownMusic ? 0 : 0.6 + 0.4 * intensity) : 1;
+      const extra = (name === 'music' ? (ownMusic ? 0 : 0.6 + 0.4 * intensity) : 1) * (name === 'music' ? duckM : name === 'ambience' ? duckA : 1);
       try { b.node.gain.setTargetAtTime(muted ? 0 : volume * extra, ac.currentTime, 0.05); } catch { /* closed ctx */ }
     }
     (b as unknown as { apply: () => void }).apply = () => { apply(); if (name === 'music') syncLofi(); };
     return b;
   }
-  const buses = { music: mkBus('music', 0.8), sfx: mkBus('sfx', 1), voice: mkBus('voice', 1) };
+  const buses = { music: mkBus('music', 0.8), sfx: mkBus('sfx', 1), voice: mkBus('voice', 1), ambience: mkBus('ambience', 1), ui: mkBus('ui', 1) };
   const applyAll = () => { for (const b of Object.values(buses)) (b as unknown as { apply: () => void }).apply(); };
 
   function ensure(): Ctx | null {
@@ -94,14 +120,21 @@ export function createAudio(deps: AudioDeps): MotorAudio {
       if (!ac) return null;
       try { const n = navigator as unknown as { audioSession?: { type: string } }; if (n.audioSession) n.audioSession.type = 'ambient'; } catch { /* not iOS */ }
       master = ac.createGain(); master.gain.value = 0.5;
-      // limiter: üst üste binen sert sesler (square/sawtooth, kalabalık) çıkışı patlatmasın
-      try { const lim = ac.createDynamicsCompressor(); lim.threshold.value = -8; lim.knee.value = 6; lim.ratio.value = 12; lim.attack.value = 0.003; lim.release.value = 0.2; master.connect(lim); lim.connect(ac.destination); } catch { master.connect(ac.destination); }
+      // mix chain: master -> compressor (-14 dB, 3:1) -> brickwall-ish limiter -> ~9 kHz lowpass -> destination
+      try {
+        const comp = ac.createDynamicsCompressor(); comp.threshold.value = -14; comp.knee.value = 12; comp.ratio.value = 3; comp.attack.value = 0.01; comp.release.value = 0.25;
+        const lim = ac.createDynamicsCompressor(); lim.threshold.value = -3; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = 0.002; lim.release.value = 0.12;
+        const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 9000; lp.Q.value = 0.5;
+        master.connect(comp); comp.connect(lim); lim.connect(lp); lp.connect(ac.destination);
+      } catch { master.connect(ac.destination); }
       for (const b of Object.values(buses)) { b.node = ac.createGain(); b.node.connect(master); }
       try { bank = createBank(ac, SES_DB as unknown as SesDb); } catch { bank = null; }
       applyAll();
     } catch { ac = null; }
     return ac;
   }
+  const UI_IDS = new Set(['tik', 'ok', 'error', 'panelAc', 'panelKapat', 'sekme', 'slider', 'toggle', 'bildirim']);
+  const isUi = (id: string) => UI_IDS.has(id);
   const live = () => !!ac && !suspended && ac.state !== 'closed';
   const busOut = (b: BusImpl) => b.node as GainNode;
   const sfxSilent = () => !live() || buses.sfx.muted || buses.sfx.volume <= 0;
@@ -110,7 +143,7 @@ export function createAudio(deps: AudioDeps): MotorAudio {
   function tone(f: number, d: number, type: OscillatorType = 'sine', v = 0.2, slide = 0, delay = 0, out?: AudioNode) {
     if (sfxSilent() || !ac) return;
     const t = ac.currentTime + delay, o = ac.createOscillator(), g = ac.createGain();
-    o.type = type; o.frequency.setValueAtTime(f, t);
+    o.type = type === 'sawtooth' || type === 'square' ? 'triangle' : type; o.frequency.setValueAtTime(f, t);   // soft mix: no raw saw/square edges
     if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, f + slide), t + d);
     g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.001, t + d);
     o.connect(g); g.connect(out || busOut(buses.sfx)); o.start(t); o.stop(t + d + 0.03);
@@ -139,7 +172,6 @@ export function createAudio(deps: AudioDeps): MotorAudio {
       t += d + 0.015 + Math.random() * 0.03;
     }
   }
-  let coinGate = 0, coinRecent = 0, coinLast = 0;
   const PENTA = [330, 371, 440, 495, 554, 660];
   type Recipe = (out?: AudioNode) => void;
   const SFX: Record<string, Recipe> = {
@@ -151,12 +183,7 @@ export function createAudio(deps: AudioDeps): MotorAudio {
     // 2026-11-09 user: the money sound became very irritating after a while. Now a soft sine in a calm pentatonic scale
     // (A major pentatonic, 330-660 Hz, no harsh square/1.2 kHz), and it habituates: the more coins in the last seconds,
     // the quieter and rarer it gets, so a busy day is a gentle shimmer instead of a ping storm.
-    coin: o => {
-      const n = deps.platform.clock.now(); coinRecent = Math.max(0, coinRecent - (n - coinLast) / 1000 * 1.2); coinLast = n;
-      const gate = 160 + Math.min(coinRecent, 8) * 60; if (n - coinGate < gate) return; coinGate = n; coinRecent += 1;
-      const calm = 1 / (1 + coinRecent * 0.35), f = PENTA[Math.floor(Math.random() * PENTA.length)];
-      tone(f, 0.32, 'sine', 0.05 * calm, 0, 0, o); tone(f * 2, 0.18, 'sine', 0.012 * calm, 0, 0, o);
-    },
+    coin: o => { const f = PENTA[Math.floor(Math.random() * PENTA.length)]; tone(f, 0.32, 'sine', 0.05, 0, 0, o); tone(f * 2, 0.18, 'sine', 0.012, 0, 0, o); },   // fallback only: ses-db is the source, the money gate (gate.ts) limits both
     cash: o => { tone(440, 0.22, 'sine', 0.06, 0, 0, o); tone(660, 0.3, 'sine', 0.05, 0, 0.09, o); },
     buy: o => [440, 554, 660, 880].forEach((f, i) => tone(f, 0.26, 'sine', 0.07, 0, i * 0.08, o)),
     bad: o => tone(180, 0.25, 'sawtooth', 0.08, -60, 0, o),
@@ -276,7 +303,7 @@ export function createAudio(deps: AudioDeps): MotorAudio {
   }
 
   // ---------- ambience (cached loops: sea, grill, weather; sparse one-shots) ----------
-  let ambOn = false, ambNodes: AudioScheduledSourceNode[] = [], ambTimer: ReturnType<typeof setTimeout> | null = null;
+  let ambOn = false, ambNodes: AudioScheduledSourceNode[] = [];
   let sizzleG: GainNode | null = null, weatherG: GainNode | null = null, weatherSrc: AudioBufferSourceNode | null = null, weatherKey = '';
   function loopTo(id: string, out: AudioNode, vol: number, onNode?: (s: AudioBufferSourceNode, g: GainNode) => void) {
     if (!bank || !ac) return;
@@ -298,64 +325,80 @@ export function createAudio(deps: AudioDeps): MotorAudio {
     weatherKey = key;
     if (weatherSrc && weatherG) { const s = weatherSrc, g = weatherG; try { g.gain.setTargetAtTime(0, ac.currentTime, 1.5); s.stop(ac.currentTime + 6); } catch { /* */ } }
     weatherSrc = null; weatherG = null;
-    if (key) loopTo(key, busOut(buses.sfx), ambWeather === 'firtina' ? 0.75 : key === 'ruzgar' ? 0.4 : 0.55, (s, g) => { if (weatherLoop() === key) { weatherSrc = s; weatherG = g; } else { try { s.stop(); } catch { /* */ } } });
+    if (key) loopTo(key, wxOut ?? busOut(buses.ambience), ambWeather === 'firtina' ? 0.75 : key === 'ruzgar' ? 0.4 : 0.55, (s, g) => { if (weatherLoop() === key) { weatherSrc = s; weatherG = g; } else { try { s.stop(); } catch { /* */ } } });
   }
+  // ---- bölgesel atmosfer: katmanlar atmosphere.ts tablosundan, yalnız oyuncunun bulunduğu bölge/iç mekân için kurulur ----
+  const voiceCap = createVoiceCap(deps.platform.device?.mobile ? 12 : 24);
+  let atmo: Atmosphere | null = null, atmoTimer: ReturnType<typeof setInterval> | null = null, wxOut: GainNode | null = null;
+  let atmoZone = '', atmoInterior: string | null = null;
+  const atmoHost: AtmoHost = {
+    start(def) {
+      if (!ac || !ambOn) return null;
+      const out = busOut(buses.ambience), fadeG = ac.createGain(); fadeG.gain.value = 0; fadeG.connect(amb.kazanc(def.id, out));
+      let stopped = false, src: AudioScheduledSourceNode | null = null, extra: AudioScheduledSourceNode | null = null;
+      if (def.loop === 'crowdBed') { const n = crowdBed(fadeG); src = n.a; extra = n.b; }
+      else if (def.loop) {
+        bank?.loop(def.loop, buf => {
+          if (stopped || !ac) return;
+          let dest: AudioNode = fadeG;
+          if (def.dyn === 'grill') { sizzleG = ac.createGain(); sizzleG.gain.value = 0; sizzleG.connect(fadeG); dest = sizzleG; updateSizzle(); }
+          const s = ac.createBufferSource(); s.buffer = buf; s.loop = true; s.connect(dest); s.start(ac.currentTime, Math.random() * buf.duration); src = s;
+        });
+      }
+      return {
+        setGain(g, tc) { try { fadeG.gain.setTargetAtTime(g, ac!.currentTime, tc); } catch { /* */ } },
+        stop() { stopped = true; for (const n of [src, extra]) { try { n?.stop(); } catch { /* */ } } try { fadeG.disconnect(); } catch { /* */ } if (def.dyn === 'grill') sizzleG = null; },
+      };
+    },
+    // bölge terk edildi: 60 sn içinde dönülmezse döngü tamponu önbellekten bırakılır (LRU bütçesine ek olarak)
+    release(def) {
+      if (!def.loop || def.loop === 'crowdBed') return;
+      const id = def.loop;
+      setTimeout(() => { try { if (!atmo || !atmo.live().some(l => l === def.id)) bank?.drop('loop', id); } catch { /* */ } }, 60000);
+    },
+    shoot(_def, s) {
+      if (!live() || !ac || !ambOn || !voiceCap.take(deps.platform.clock.now(), 2500, 0)) return;
+      const pan = ac.createStereoPanner(), g = ac.createGain(), pr = s.pan ?? 0.8;
+      pan.pan.value = Math.max(-1, Math.min(1, (Math.random() * 2 - 1) * pr)); g.gain.value = s.gain; g.connect(pan); pan.connect(busOut(buses.ambience));
+      const day = phase === 'morning' || phase === 'noon';
+      if (s.id === 'seasonCall') seasonCall(g, day); else if (s.id === 'simitci') SFX.simitci(g);
+      else if (!playId(s.id, g) && SFX[s.id]) SFX[s.id](g);
+    },
+  };
+  // SNT-07 / DNY-17: bölge tablosu, evre/uzaklık ağırlıkları, çanta olayları ve canlı müzik (ambiyans.ts); kapı yukarıdaki atmo
+  const amb = createAmbiyans({
+    ac: () => ac, out: () => busOut(buses.ambience), bank: () => bank,
+    olay: (id, g, day) => {
+      if (!live() || !ac || !ambOn || !voiceCap.take(deps.platform.clock.now(), 2500, 0)) return false;
+      if (id === 'seasonCall') seasonCall(g, day); else if (id === 'simitci') SFX.simitci(g); else if (!playId(id, g) && SFX[id]) SFX[id](g);
+      return true;
+    },
+    setTable: t => { atmoTable = t as AmbienceTable; atmo?.setTable(atmoTable); },
+    temel: () => DEFAULT_TABLE, disarida: () => !atmo || atmo.outdoor() === 1,
+    muzikKis: v => lofi?.kis(v), rnd: Math.random,
+  });
+  function syncAtmo() { updateHeat(); if (!atmo) return; atmo.setZone(atmoZone); atmo.setInterior(atmoInterior); if (wxOut && ac) try { wxOut.gain.setTargetAtTime(atmo.outdoor() ? 1 : 0.2, ac.currentTime, 0.6); } catch { /* */ } }
   function startAmbience() {
     if (ambOn || !ac || !live()) return;
     ambOn = true;
-    const out = busOut(buses.sfx);
-    const loop = sample(`amb.${zone || 'iskele'}`);
-    if (loop) { const s = playBuffer(loop, out, 0.5, 1, true); if (s) ambNodes.push(s); }
-    else if (zone === 'orman') loopTo('ruzgar', out, 0.16);        // leaves in the wind, no sea
-    else if (zone === 'halisaha' || zone === 'stadyum') crowdBed(out);
-    else if (zone !== 'ev') {
-      loopTo('deniz', out, 0.42);
-      // grill: level follows the listener's distance to the döner (setGrill)
-      if (ac) { sizzleG = ac.createGain(); sizzleG.gain.value = 0; sizzleG.connect(out); loopTo('izgara', sizzleG, 1); updateSizzle(); }
-    }
+    wxOut = ac.createGain(); wxOut.connect(busOut(buses.ambience));
+    atmo = createAtmosphere(atmoHost, { table: atmoTable });
+    amb.setZone(zone || 'iskele'); amb.setPhase(phase); amb.setWeather(ambWeather); amb.start();
+    syncAtmo();
     weatherKey = ''; syncWeather();
-    const tick = () => {
-      if (!ambOn) return;
-      if (live() && ac && (zone === 'orman' || zone === 'halisaha' || zone === 'stadyum')) {
-        const g = ac.createGain(); const pan = ac.createStereoPanner(); pan.pan.value = Math.random() * 1.6 - 0.8; g.connect(pan); pan.connect(out);
-        const r = Math.random(), day = phase === 'morning' || phase === 'noon';
-        if (zone === 'orman') {
-          g.gain.value = 0.5;
-          if (!day && phase === 'night') { g.gain.value = 1; seasonCall(g, false); }
-          else if (r < 0.45) SFX.birdTrill(g); else if (r < 0.75) SFX.birdCall(g); else if (r < 0.88) SFX.woodpecker(g); else { g.gain.value = 0.25; playId('sizzle', g); }
-          ambTimer = setTimeout(tick, 2500 + Math.random() * 4000); return;
-        }
-        g.gain.value = 0.55;
-        if (r < 0.35) SFX.clapChant(g); else if (r < 0.6) SFX.tribunDavul(g); else if (r < 0.8) SFX.crowdCheer(g); else SFX.crowdOoh(g);
-        ambTimer = setTimeout(tick, 2600 + Math.random() * 2600); return;
-      }
-      if (live() && ac && zone !== 'ev') {
-        const r = Math.random();
-        const pan = ac.createStereoPanner(); pan.pan.value = Math.max(-1, Math.min(1, (Math.random() * 24 - 12 - listener.x * 0.1) / 12));
-        const g = ac.createGain(); g.gain.value = 0.4; g.connect(pan); pan.connect(out);
-        const day = phase === 'morning' || phase === 'noon';
-        if (ambWeather === 'firtina' && r < 0.25) { g.gain.value = 0.7; playId('thunder', g); }
-        else if (r < 0.4) playId('gull', g);
-        else if (r < 0.55) playId('creak', g);
-        else if (r < 0.66) { g.gain.value = 0.3; playId('spoon', g); }
-        else if (r < 0.74) { g.gain.value = 0.22; playId('horn', g); }          // uzaktan vapur düdüğü
-        else if (r < 0.84 && day) { g.gain.value = 0.4; SFX.simitci(g); }        // uzaktan 'taze simiiit'
-        else seasonCall(g, day);
-      }
-      ambTimer = setTimeout(tick, 9000 + Math.random() * 9000);
-    };
-    ambTimer = setTimeout(tick, 4000);
+    const tickAtmo = () => { try { atmo?.tick(deps.platform.clock.now(), { phase, weather: ambWeather }); } catch { /* */ } };
+    tickAtmo(); atmoTimer = setInterval(tickAtmo, 250);
   }
   /** halı saha / stadium: a constant murmuring crowd (band-passed noise, slow swell), kept in ambNodes. */
-  function crowdBed(out: AudioNode) {
-    if (!ac) return;
+  function crowdBed(out: AudioNode): { a: AudioScheduledSourceNode; b: AudioScheduledSourceNode } {
+    if (!ac) throw new Error('no ctx');
     if (!noiseBuf) { noiseBuf = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
     const n = ac.createBufferSource(); n.buffer = noiseBuf; n.loop = true;
     const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 700; bp.Q.value = 0.7;
     const g = ac.createGain(); g.gain.value = 0.0; g.gain.setTargetAtTime(0.16, ac.currentTime, 1.5);
     const lfo = ac.createOscillator(); lfo.frequency.value = 0.13; const lg = ac.createGain(); lg.gain.value = 0.06; lfo.connect(lg); lg.connect(g.gain);
     n.connect(bp); bp.connect(g); g.connect(out); n.start(); lfo.start();
-    ambNodes.push(n, lfo);
+    return { a: n, b: lfo };
   }
   /** survey 2026-10-24 (mevsim sesleri): procedural season calls. Summer days: ağustos böceği; warm nights: cırcır
    *  böceği; autumn and winter: a wind gust through the pier; spring: a little bird trill. */
@@ -397,7 +440,7 @@ export function createAudio(deps: AudioDeps): MotorAudio {
       bp.type = 'bandpass'; bp.frequency.value = 140; bp.Q.value = 0.7;
       hs.connect(bp); bp.connect(humG); hs.start(ac.currentTime, Math.random() * 2); ambNodes.push(hs);
     }
-    const lv = heatLevel(listener, heat);
+    const lv = heatLevel(listener, heat) * isiBolgeCarpani(atmoInterior);
     try {
       heatG.gain.setTargetAtTime(lv, ac.currentTime, 0.4);
       humG.gain.setTargetAtTime(lv > 0 ? 0.03 * Math.min(1, (lv / HEAT_MAX) * 2) : 0, ac.currentTime, 0.6);
@@ -413,7 +456,8 @@ export function createAudio(deps: AudioDeps): MotorAudio {
     if (sizzleG) { try { sizzleG.disconnect(); } catch { /* */ } }
     heatG = null; humG = null;
     sizzleG = null; weatherG = null; weatherSrc = null; weatherKey = '';
-    ambOn = false; if (ambTimer) clearTimeout(ambTimer); ambTimer = null;
+    ambOn = false; if (atmoTimer) clearInterval(atmoTimer); atmoTimer = null; atmo?.dispose(); atmo = null; amb.stop();
+    if (wxOut) { try { wxOut.disconnect(); } catch { /* */ } wxOut = null; }
     for (const n of ambNodes) { try { n.stop(); } catch { /* already */ } }
     ambNodes = [];
   }
@@ -440,13 +484,29 @@ export function createAudio(deps: AudioDeps): MotorAudio {
       } catch { /* */ }
     },
     bank: () => bank,
+    canliMuzik(pos) { amb.canli(pos); },
+    simsek() { amb.simsek(); },
+    ambiyans: () => ({ aktif: amb.aktif(), olaylar: amb.olaylar() }),
+    atmosphere: {
+      setInterior(id) { atmoInterior = id; syncAtmo(); },
+      setTable(t) { atmoTable = t; atmo?.setTable(t); },
+      active: () => atmo?.active() ?? [],
+      live: () => atmo?.live() ?? [],
+      scope: () => atmo?.scope() ?? '',
+    },
     sfx(id, opts) {
       try {
-        if (sfxSilent() || !ac) return;
-        let out: AudioNode = busOut(buses.sfx);
-        if (opts && (opts.at || opts.vol != null)) {
-          const g = ac.createGain(); let vol = opts.vol ?? 1;
-          if (opts.at) {
+        if (sfxSilent() || !ac) { note(id, 'silent', !!opts?.at, 0); return; }
+        let out: AudioNode = busOut(isUi(id) ? buses.ui : buses.sfx);
+        let vol = opts?.vol ?? 1, pitch = opts?.pitch ?? 1;
+        if (isMoney(id)) {   // single money gate: same habituation on every path (sample, bank, recipe)
+          const g = moneyGate.pass(deps.platform.clock.now());
+          if (!g) { note(id, 'gated', !!opts?.at, 0); return; }
+          vol *= g.vol; pitch *= g.pitch;
+        }
+        if (opts?.at || vol !== 1) {
+          const g = ac.createGain();
+          if (opts?.at) {
             const dx = opts.at.x - listener.x, dz = opts.at.z - listener.z, d = Math.hypot(dx, dz);
             vol *= 1 / (1 + d / 10);
             const p = ac.createStereoPanner(); p.pan.value = Math.max(-1, Math.min(1, dx / 12)); g.connect(p); p.connect(out);
@@ -454,22 +514,34 @@ export function createAudio(deps: AudioDeps): MotorAudio {
           g.gain.value = vol; out = g;
         }
         const buf = sample('sfx.' + id);
-        if (buf) { playBuffer(buf, out, 1, opts?.pitch ?? 1); return; }
-        if (id !== 'coin' && id !== 'cash' && id !== 'buy' && playId(id, out, opts?.pitch ?? 1)) return;   // money sounds: always the soft habituating synth, never the bright bank patches
-        (SFX[id] || SFX.pop)(out);
+        if (buf) { playBuffer(buf, out, 1, pitch); note(id, 'sample', !!opts?.at, vol); return; }
+        if (playId(id, out, pitch)) { note(id, 'bank', !!opts?.at, vol); return; }
+        if (SFX[id]) { SFX[id](out); note(id, 'recipe', !!opts?.at, vol); return; }
+        if (typeof console !== 'undefined' && (import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV) console.warn('[audio] unknown sfx id, falling back to pop:', id);
+        SFX.pop(out); note(id, 'fallback-pop', !!opts?.at, vol);
       } catch { /* never throw from audio */ }
     },
+    duck(sec, depth = 0.35, ambience = false) {
+      try {
+        if (!ac) return;
+        duckM = depth; if (ambience) duckA = Math.max(depth, 0.6);
+        applyAll();
+        duckTimers.push(setTimeout(() => { duckM = 1; duckA = 1; applyAll(); }, Math.max(0.1, sec) * 1000));
+        if (duckTimers.length > 8) clearTimeout(duckTimers.shift());
+      } catch { /* */ }
+    },
+    debug: () => ({ log: playLog.slice(), counts: { ...counts }, buses: Object.fromEntries(Object.entries(buses).map(([k, b]) => [k, { volume: b.volume, muted: b.muted }])), ambOn, bank: bank ? bank.stats() : null, atmo: atmo ? { scope: atmo.scope(), active: atmo.active(), live: atmo.live() } : null }),
     music: {
-      setZone(id) { if (id === zone) return; zone = id; lofiPlace = id; try { lofi?.setPlace(id); refreshMusic(); if (ambOn && id !== 'ev') { stopAmbience(); startAmbience(); } } catch { /* ignore */ } },
-      setPhase(p) { if (p === phase) return; phase = p; try { lofi?.setPhase(p); refreshMusic(); } catch { /* ignore */ } },
+      setZone(id) { if (id === zone) return; zone = id; lofiPlace = id; atmoZone = id; try { amb.setZone(id); syncAtmo(); lofi?.setPlace(id); refreshMusic(); } catch { /* ignore */ } },
+      setPhase(p) { if (p === phase) return; phase = p; try { amb.setPhase(p); lofi?.setPhase(p); refreshMusic(); } catch { /* ignore */ } },
       setIntensity(v) { intensity = Math.max(0, Math.min(1, +v || 0)); lofi?.setIntensity(intensity); (buses.music as unknown as { apply: () => void }).apply(); },
       setEvent(id) { lofiEvent = id; lofi?.setEvent(id); },
-      setWeather(k) { lofiWeather = k; lofi?.setWeather(k); ambWeather = k; syncWeather(); },
+      setWeather(k) { lofiWeather = k; lofi?.setWeather(k); ambWeather = k; amb.setWeather(k); syncWeather(); },
       duck(sec) { lofi?.duck(sec); },
       layers() { return lofi && lofi.playing ? lofi.layers() : []; },
     },
     ambience: {
-      setListener(pos) { listener.x = pos.x; listener.z = pos.z; updateSizzle(); updateHeat(); },
+      setListener(pos) { listener.x = pos.x; listener.z = pos.z; amb.setListener(pos); updateSizzle(); updateHeat(); },
       setHeat(list) { heat = (list || []).map(k => ({ x: k.x, z: k.z, w: k.w })); updateHeat(); },
       setGrill(pos) { grill = pos ? { x: pos.x, z: pos.z } : null; updateSizzle(); },
       setSeason(v) { ambSeason = String(v || 'sonbahar'); },

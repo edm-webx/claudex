@@ -16,7 +16,7 @@
 import type { Kernel, Rules } from './state';
 import {
   REGIONS, REGION_BY_ID, regionAt, PLACES, SIDE_SHOPS, SHOP_MAX, SHOP_CAP_H, HIDDEN_CATS, COIN_SPOTS, COINS_PER_DAY, PHOTO_SPOTS,
-  LOST_ITEMS, VEHICLES, FARES, DOLMUS, TRAVEL_SEC, OTOBUS, ASK_LINES, GUIDE_CAT, AWAY_LINES, BACK_LINE, BAND, type Region, type RegionId,
+  LOST_ITEMS, VEHICLES, FARES, DOLMUS, TRAVEL_SEC, OTOBUS, NECMI_LINES, ASK_LINES, GUIDE_CAT, AWAY_LINES, BACK_LINE, BAND, type Region, type RegionId,
 } from '../../content/disari/martikoy';
 import { fmtMoney } from './util';
 import { REALMS, REALM_BY_ID, REALM_WALLS, realmAt, realmOfRegion, realmSpawn, type RealmId } from '../../content/realm';
@@ -33,7 +33,9 @@ interface DSave {
 }
 export type TravelMode = 'dolmus' | 'vapur' | 'yaya' | 'bisiklet' | 'motor' | 'kayik' | 'otobus';
 /** 42B city bus at a stop: coming (drives in), waiting (doors open), leaving */
-export interface BusView { phase: 'geliyor' | 'durakta' | 'gidiyor'; t: number; dur: number; x: number; z: number; to: string }
+export interface BusView { phase: 'geliyor' | 'durakta' | 'gidiyor'; t: number; dur: number; x: number; z: number; to: string;
+  /** DNY-11: the bus that just dropped Sabri at the destination stop and pulls away (cannot be boarded) */
+  drop?: boolean }
 export interface DisariView {
   region: RegionId | null;
   away: boolean;
@@ -75,7 +77,7 @@ function walkZ(id: RegionId | undefined, z: number): number {
     case 'stadyum': return clamp(z, -5, 27);
     case 'tersane': return clamp(z, 1.0, 23);
     case 'adalar': return clamp(z, 2.0, 23);
-    case 'orman': return clamp(z, -4, 20);
+    case 'orman': return clamp(z, -4, 20);   // DNY-10: sim/mantar.ts keeps mushrooms inside this band too
     default: return clamp(z, BAND.z0 + 0.5, BAND.z1 - 0.5);
   }
 }
@@ -84,7 +86,7 @@ export function installDisari(K: Kernel, teleport: (x: number, z: number) => voi
   const rng = K.rng('sim.disari');
   const rt = K.rt as unknown as Record<string, unknown>;
   let bus: BusView | null = null;
-  // 42B hattı büfe durağından hem kasabaya hem Belgrad Ormanına (REALMS.belgrad, durak 806,9) gider.
+  // 42B: one line linking the three realms' stops (content/realm REALMS: İskele büfe karşısı, Stadyum Kapısı, Orman Durağı).
   // Boarding happens on the road at the bus's front door, not from the shelter.
   const atBusStop = (): RealmId | null => { const p = K.playerPos; const r = REALMS.find(r => Math.hypot(p.x - r.stop.x, p.z - r.stop.z) < 4.2); return r ? r.id : null; };
   // J1 Belgrad dönüş fix: the door follows the bus (it was pinned to the büfe stop, so nobody could board in the forest)
@@ -131,12 +133,14 @@ export function installDisari(K: Kernel, teleport: (x: number, z: number) => voi
     if (!viaBus && toRealm.id !== here.id) {
       d.guide = { x: here.stop.x, z: here.stop.z, name: here.stop.name + ' (' + OTOBUS.line + ')' };
       rt.panel = null;
-      K.toast(toRealm.name + '\'a yürüyerek gidilmez. ' + here.stop.name + ' durağında ' + OTOBUS.line + '\'yi bekle!', 'info');
+      K.toast('🚌 ' + toRealm.name + ': ' + OTOBUS.line + ' ile. ' + GUIDE_CAT.name + ' seni ' + here.stop.name + ' durağına götürüyor.', 'info');
       return false;
     }
     if (viaBus) {
-      if (S.money >= OTOBUS.fare) { K.spend(OTOBUS.fare); K.toast(OTOBUS.driver + ': "Kartını bas, arkaya ilerle!" ' + fmtMoney(OTOBUS.fare), 'info'); }
+      // DNY-11: one calm line per ride (Necmi speaks, the fare is a small note, never a warning)
+      if (S.money >= OTOBUS.fare) { K.spend(OTOBUS.fare); K.toast(OTOBUS.driver + ': "' + rng.pick(NECMI_LINES) + '" · kart ' + fmtMoney(OTOBUS.fare), 'info'); }
       else K.toast(OTOBUS.driver + ': "Bin bin, bu seferlik benden."', 'good');
+      if (toRealm.id === 'belgrad') K.stat('otobusOrman'); else if (here.id === 'belgrad') K.stat('otobusDonus');
       travel = { t: 0, dur: OTOBUS.rideSec, mode: 'otobus', to: toRegion.short, from: fromR ? fromR.short : '' };
       const sp = realmSpawn(toRealm);
       travelTo = { x: sp.x, z: sp.z, guide, realm: toRealm.id };
@@ -242,14 +246,14 @@ export function installDisari(K: Kernel, teleport: (x: number, z: number) => voi
       case 'otobusBekle': {
         const at = atBusStop();
         if (!at) { K.toast('Önce otobüs durağına git.', 'info'); return true; }
-        if (bus || travel) return true;
+        if (travel || (bus && !bus.drop)) return true;
         const st = REALM_BY_ID[at].stop;
         bus = { phase: 'geliyor', t: 0, dur: OTOBUS.waitSec, x: st.x, z: st.z, to: '' };
         K.toast(OTOBUS.line + ' yolda, birazdan burada! Gelince ön kapısından bin.', 'info');
         return true;
       }
       case 'otobusBin': {
-        if (!bus || bus.phase !== 'durakta') return true;
+        if (!bus || bus.phase !== 'durakta' || bus.drop) return true;
         if (!atBusDoor()) { K.toast('Otobüsün ön kapısına yürü, oradan bin.', 'info'); return true; }
         const to = REGION_BY_ID[id];
         const toRealm = to ? realmOfRegion(to.id) : null;
@@ -282,13 +286,15 @@ export function installDisari(K: Kernel, teleport: (x: number, z: number) => voi
           if (travelTo.guide) d.guide = travelTo.guide;
         }
         if (travel.t >= travel.dur) {
-          const to = travel.to; travel = null; travelTo = null;
-          K.toast(to + ' durağı! ' + (save().guide ? GUIDE_CAT.name + ' seni bekliyor, peşinden git.' : 'İyi gezmeler.'), 'good');
+          const to = travel.to, bus42 = travel.mode === 'otobus', rid = travelTo?.realm; travel = null; travelTo = null;
+          // DNY-11: the 42B that brought you pulls away from the stop you are standing at; the toast names the way back
+          if (bus42 && rid) { const st = REALM_BY_ID[rid].stop; bus = { phase: 'gidiyor', t: 0, dur: 3.2, x: st.x, z: st.z, to: '', drop: true }; }
+          K.toast(to + ' durağı! ' + (save().guide ? GUIDE_CAT.name + ' seni bekliyor, peşinden git.' : bus42 ? 'Dönüş ' + OTOBUS.line + ' de bu duraktan kalkar.' : 'İyi gezmeler.'), 'good');
         }
       }
       if (bus) {
         bus.t += dt0;
-        if (bus.phase === 'geliyor' && bus.t >= bus.dur) { bus = { ...bus, phase: 'durakta', t: 0, dur: 16 }; K.toast('Kapılar açıldı. Bin!', 'good'); }
+        if (bus.phase === 'geliyor' && bus.t >= bus.dur) { bus = { ...bus, phase: 'durakta', t: 0, dur: 16 }; K.toast(OTOBUS.driver + ': "' + rng.pick(NECMI_LINES) + '" Ön kapıdan bin.', 'good'); }
         else if (bus.phase === 'durakta' && bus.t >= bus.dur) { bus = { ...bus, phase: 'gidiyor', t: 0, dur: 2.5 }; K.toast(OTOBUS.driver + ': "Bekleyemem abi, tarifem var!"', 'info'); }
         else if (bus.phase === 'gidiyor' && bus.t >= bus.dur) bus = null;
       }
@@ -316,7 +322,7 @@ export function installDisari(K: Kernel, teleport: (x: number, z: number) => voi
         if (!cur || cur.id !== home.id) {
           if (p.x > home.x0 - 6 && p.x < home.x1 + 6) {
             teleport(p.x < home.x0 ? home.x0 + 0.6 : home.x1 - 0.6, p.z);
-            if (lockToastT <= 0) { lockToastT = 4; K.toast('🚌 Yürüyerek geçilmez. Başka mahalleye ' + OTOBUS.line + ' ile git: ' + home.stop.name + '.', 'info'); }
+            if (lockToastT <= 0) { lockToastT = 4; K.toast('🚌 Buradan öteye ' + OTOBUS.line + ' ile: ' + home.stop.name + '.', 'info'); }
           } else if (cur) d.realm = cur.id;
           else { const sp = realmSpawn(home); teleport(sp.x, sp.z); }
         }

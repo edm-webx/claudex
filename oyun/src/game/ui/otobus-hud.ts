@@ -5,7 +5,7 @@
 import { disariApi } from '../sim/disari';
 import { OTOBUS } from '../../content/disari/martikoy';
 
-interface Deps { root: HTMLElement; rules: () => unknown; command(c: { kind: string; [k: string]: unknown }): void; sfx?(id: string): void; hour(): number }
+interface Deps { root: HTMLElement; rules: () => unknown; command(c: { kind: string; [k: string]: unknown }): void; sfx?(id: string, at?: { x: number; z: number }): void; hour(): number }
 export interface OtobusHud { update(dt: number): void; dispose(): void }
 
 const CSS = `
@@ -119,12 +119,12 @@ export function createOtobusHud(d: Deps): OtobusHud {
       // cutscene
       const tr = v.travel;
       if (tr && tr.mode === 'otobus') {
-        if (!cutOn) { cutOn = true; toForest = tr.to === 'Orman'; curTo = tr.to; cut.style.display = 'block'; cap.innerHTML = `${OTOBUS.line} · ${tr.from ? tr.from + ' → ' : ''}${tr.to}<small>${OTOBUS.driver}: "Arkaya ilerleyelim, kapı önünü boşaltalım!"</small>`; try { d.sfx?.('busStart'); } catch { /* */ } }
+        if (!cutOn) { cutOn = true; toForest = tr.to === 'Orman'; curTo = tr.to; cut.style.display = 'block'; cap.innerHTML = `${OTOBUS.line} · ${tr.from ? tr.from + ' → ' : ''}${tr.to}<small>${OTOBUS.driver}: "Arkaya ilerleyelim, kapı önünü boşaltalım!"</small>`; try { d.sfx?.('busStart', OTOBUS.stop); } catch { /* */ } }
         drawCut(Math.min(1, tr.t / tr.dur), performance.now());
       } else if (cutOn) { cutOn = false; cut.style.display = 'none'; }
       // stop button
       const b = v.bus; let m = '', label = '';
-      const ph = b ? b.phase : ''; if (ph !== lastPhase) { if (ph === 'durakta' || (ph === 'gidiyor' && lastPhase === 'durakta')) { try { d.sfx?.('busDoor'); } catch { /* */ } } if (ph === 'geliyor') { try { d.sfx?.('busStart'); } catch { /* */ } } lastPhase = ph; }
+      const ph = b ? b.phase : ''; if (ph !== lastPhase) { if (ph === 'durakta' || (ph === 'gidiyor' && lastPhase === 'durakta')) { try { d.sfx?.('busDoor', b && typeof b.x === 'number' ? { x: b.x, z: b.z } : OTOBUS.stop); } catch { /* */ } } if (ph === 'geliyor') { try { d.sfx?.('busStart', b && typeof b.x === 'number' ? { x: b.x, z: b.z } : OTOBUS.stop); } catch { /* */ } } lastPhase = ph; }
       if (!tr && v.atBusStop) {
         if (!b) { m = 'bekle'; label = `🚌 ${OTOBUS.line} otobüsünü bekle`; }
         else if (b.phase === 'geliyor') { m = 'wait'; label = `🚌 Otobüs geliyor... ${Math.max(1, Math.ceil(b.dur - b.t))}`; }
