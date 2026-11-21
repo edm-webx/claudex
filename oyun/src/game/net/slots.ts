@@ -7,7 +7,7 @@
  *   banka: { tl, esya }        shared by every character (rt.banka mirrors it, see sim/banka.ts)
  * Guests (no account) have no slots: they play the single local save.
  */
-import { hesap, veriOku, veriYaz } from './supa';
+import { hesap, veriOku, veriYaz, veriKapanisYaz } from './supa';
 
 export const SLOT_N = 4;
 export interface SlotOzet { ad: string; sinif: string; tip: string; level: number; playT: number; dukkan: string }
@@ -53,13 +53,25 @@ export async function bulutOku(): Promise<{ code: string; playT: number } | null
   return s && s.code ? { code: s.code, playT: s.playT } : null;
 }
 
-export async function bulutYaz(code: string, playT: number, esnaf: { ad?: string; sinif?: string; tip?: string; dukkan?: string } | null, level = 1): Promise<void> {
-  if (!hesap()) return;
-  if (!loaded) await slotlariYukle();
+function aktifYaz(code: string, playT: number, esnaf: { ad?: string; sinif?: string; tip?: string; dukkan?: string } | null, level: number): void {
   const i = aktifSlot(), e = esnaf || {};
   (v.slots ||= [null, null, null, null])[i] = { code, playT, ad: String(e.ad || hesap()!.ad), sinif: String(e.sinif || 'asci'), tip: String(e.tip || 'a'), level, dukkan: String(e.dukkan || '') };
   v.code = code; v.playT = playT; v.aktif = i; yeni = false;
-  await veriYaz(v as Record<string, unknown>, esnaf);
+}
+
+/** true = sunucu kaydı onayladı (KAL-01: eskiden void'di, hata sessizce kayboluyordu). Hesapsızken true döner (yazılacak bulut yok). */
+export async function bulutYaz(code: string, playT: number, esnaf: { ad?: string; sinif?: string; tip?: string; dukkan?: string } | null, level = 1): Promise<boolean> {
+  if (!hesap()) return true;
+  if (!loaded) await slotlariYukle();
+  aktifYaz(code, playT, esnaf, level);
+  return veriYaz(v as Record<string, unknown>, esnaf);
+}
+
+/** pagehide: await yok, keepalive fetch. Dönüş: istek atıldı mı (onay beklenmez). */
+export function bulutKapanisYaz(code: string, playT: number, esnaf: { ad?: string; sinif?: string; tip?: string; dukkan?: string } | null, level = 1): boolean {
+  if (!hesap() || !loaded) return false;
+  aktifYaz(code, playT, esnaf, level);
+  return veriKapanisYaz(v as Record<string, unknown>);
 }
 
 /** the bank moved: written on its own, without a game save */

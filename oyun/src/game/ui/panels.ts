@@ -27,6 +27,35 @@ export interface Panels { update(): void; v2: V2UiApi; open(id: string): void; d
 
 const PANEL_IDS = ['isciler', 'menu', 'dekor', 'gorevler', 'kedi', 'karne', 'tadilat', 'ayarlar'];
 
+// PRF-05: menuItems() + JSON.stringify used to run every frame (dozens of objects and a string per frame). The bar only depends on a few
+// small facts of the state; they are folded into one integer here (no allocation) and the list is rebuilt only when it changes.
+export function barSignature(s: any): number {
+  let hasAch = 0; if (s.ach) { for (const _k in s.ach) { hasAch = 1; break; } }
+  let badge = 0; const l = s.orders && s.orders.list; if (l) for (let i = 0; i < l.length; i++) if (l[i].done && !l[i].claimed) badge++;
+  const lv = Math.min(s.level | 0, 4);
+  return lv | (((s.workers && s.workers.length) ? 1 : 0) << 3) | ((s.day >= 2 ? 1 : 0) << 4) | (hasAch << 5) | (((s.cats && s.cats.length) ? 1 : 0) << 6)
+    | ((s.stars >= 1 ? 1 : 0) << 7) | ((s.stage > 1 ? 1 : 0) << 8) | ((s.tadilat ? 1 : 0) << 9) | (Math.min(badge, 255) << 10);
+}
+
+export function menuItems(s: any): any[] {
+  const items: any[] = [];
+  // 2026-10-24 açık dünya: the İstanbul map is always first on the bar (travel between districts)
+  items.push({ id: 'harita', label: 'Harita', icon: 'map' });
+  items.push({ id: 'karakter', label: 'Karakter', icon: 'smile' });
+  // karar paketi G: Envanter and Mülk (bank, plots, stadium) sit on the bar; ui/mulk-panel.ts opens them
+  items.push({ id: 'envanter', label: 'Envanter', icon: 'tray' });
+  items.push({ id: 'mulk', label: 'Mülk', icon: 'shop' });
+  if (s.level >= 2) items.push({ id: 'menu', label: 'Menü', icon: 'menu' });
+  if ((s.workers && s.workers.length) || s.level >= 3) items.push({ id: 'isciler', label: 'Ekip', icon: 'people' });
+  if (s.level >= 4) items.push({ id: 'karne', label: 'Karne', icon: 'karne' });
+  // 2026-10-25 user: decor is switched off for now (comes back later)
+  const orders = s.orders && s.orders.list ? s.orders.list : [];
+  if (s.day >= 2 || Object.keys(s.ach || {}).length) items.push({ id: 'gorevler', label: 'Görevler', icon: 'gorev', badge: orders.filter((o: any) => o.done && !o.claimed).length || 0 });
+  if (s.cats && s.cats.length) items.push({ id: 'kedi', label: 'Kediler', icon: 'cat' });
+  if (s.stars >= 1 || s.stage > 1 || s.tadilat) items.push({ id: 'tadilat', label: 'Tadilat', icon: 'hammer' });
+  return items;
+}
+
 export function createPanels(deps: PanelsDeps): Panels {
   const { ui, sim, models } = deps;
   const v2 = createV2Ui(ui, {
@@ -73,7 +102,7 @@ export function createPanels(deps: PanelsDeps): Panels {
     if (id === 'isciler') out.board = () => send({ kind: 'openJobBoard' });
     if (id === 'menu') out.yy = a => { send({ kind: 'yiyecek', arg: String(a ?? '') } as Cmd); setTimeout(() => { if (rt().panel === 'menu') renderPanel('menu'); }, 0); }; // yiyecek tabs (yiyecek-panel.ts)
     if (id === 'koleksiyon') for (const k of Object.keys(out)) { const f = out[k]; out[k] = a => { f(a); setTimeout(() => { if (rt().panel === 'koleksiyon') renderPanel('koleksiyon'); }, 0); }; } // instant re-render (koleksiyon-panel.ts)
-    if (id === 'isciler') for (const k of Object.keys(out)) if (k === 'train' || k === 'tasi' || /^c[A-Z]/.test(k)) { const f = out[k]; out[k] = a => { f(a); setTimeout(() => { if (rt().panel === 'isciler') renderPanel('isciler'); }, 0); }; } // instant re-render (calisan-panel.ts)
+    if (id === 'isciler') for (const k of Object.keys(out)) if (k === 'train' || /^c[A-Z]/.test(k)) { const f = out[k]; out[k] = a => { f(a); setTimeout(() => { if (rt().panel === 'isciler') renderPanel('isciler'); }, 0); }; } // instant re-render (calisan-panel.ts)
     if (id === 'hikaye' && out.hkTab) { const f = out.hkTab; out.hkTab = a => { f(a); setTimeout(() => { if (rt().panel === 'hikaye') renderPanel('hikaye'); }, 0); }; } // instant tab switch (hikaye-panel.ts)
     return out;
   }
@@ -93,37 +122,7 @@ export function createPanels(deps: PanelsDeps): Panels {
   const lastOverlay: Record<string, unknown> = {};
   let barKey = '';
   let barSig = -1;
-  // PRF-05: menuItems() + JSON.stringify used to run every frame (dozens of objects and a string per frame). The bar only depends on a few
-  // small facts of the state; they are folded into one integer here (no allocation) and the list is rebuilt only when it changes.
-  function barSignature(): number {
-    const s = S();
-    let hasAch = 0; if (s.ach) { for (const _k in s.ach) { hasAch = 1; break; } }
-    let badge = 0; const l = s.orders && s.orders.list; if (l) for (let i = 0; i < l.length; i++) if (l[i].done && !l[i].claimed) badge++;
-    const lv = Math.min(s.level | 0, 4);
-    return lv | (((s.workers && s.workers.length) ? 1 : 0) << 3) | ((s.day >= 2 ? 1 : 0) << 4) | (hasAch << 5) | (((s.cats && s.cats.length) ? 1 : 0) << 6)
-      | ((s.stars >= 1 ? 1 : 0) << 7) | ((s.stage > 1 ? 1 : 0) << 8) | ((s.tadilat ? 1 : 0) << 9) | (Math.min(badge, 255) << 10);
-  }
   let lastRender = 0;
-
-  function menuItems() {
-    const s = S();
-    const items: any[] = [];
-    // 2026-10-24 açık dünya: the İstanbul map is always first on the bar (travel between districts)
-    items.push({ id: 'harita', label: 'Harita', icon: 'map' });
-    items.push({ id: 'karakter', label: 'Karakter', icon: 'smile' });
-    // karar paketi G: Envanter and Mülk (bank, plots, stadium) sit on the bar; ui/mulk-panel.ts opens them
-    items.push({ id: 'envanter', label: 'Envanter', icon: 'tray' });
-    items.push({ id: 'mulk', label: 'Mülk', icon: 'shop' });
-    if (s.level >= 2) items.push({ id: 'menu', label: 'Menü', icon: 'menu' });
-    if ((s.workers && s.workers.length) || s.level >= 3) items.push({ id: 'isciler', label: 'Ekip', icon: 'people' });
-    if (s.level >= 4) items.push({ id: 'karne', label: 'Karne', icon: 'karne' });
-    // 2026-10-25 user: decor is switched off for now (comes back later)
-    const orders = s.orders && s.orders.list ? s.orders.list : [];
-    if (s.day >= 2 || Object.keys(s.ach || {}).length) items.push({ id: 'gorevler', label: 'Görevler', icon: 'gorev', badge: orders.filter((o: any) => o.done && !o.claimed).length || 0 });
-    if (s.cats && s.cats.length) items.push({ id: 'kedi', label: 'Kediler', icon: 'cat' });
-    if (s.stars >= 1 || s.stage > 1 || s.tadilat) items.push({ id: 'tadilat', label: 'Tadilat', icon: 'hammer' });
-    return items;
-  }
 
   function renderPanel(id: string) {
     let model = models.panelModel(id, rules());
@@ -170,10 +169,10 @@ export function createPanels(deps: PanelsDeps): Panels {
       const r = rt();
       if (!r) return;
       // menu bar
-      const sig = barSignature();
+      const sig = barSignature(S());
       if (sig !== barSig) {
         barSig = sig;
-        const items = menuItems();
+        const items = menuItems(S());
         const key = JSON.stringify(items);
         if (key !== barKey) { barKey = key; v2.menuBar(items); }
       }

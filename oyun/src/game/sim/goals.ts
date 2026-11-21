@@ -8,15 +8,14 @@
  *   counts the delta of one S.stats key since it was given; done -> small ₺ reward + toast; the UI sees `doneN` grow
  *   and plays the coin sound + flying coins.
  * - Tip jar: every 'tip' event (and a müdavim's 'regularOk') drops a coin in the jar; at JAR cap the jar is full:
- *   every worker gets +JAR_MORALE morale (morale drives worker speed via moraleFactor and decays on its own, so the
- *   boost fades naturally), the jar sparkles JAR_SPARKLE_S sim seconds. Empties at day end.
+ *   the jar sparkles JAR_SPARKLE_S sim seconds and a line is toast. Empties at day end.
  * - Commands: { kind: 'hedef', op: 'fold' | 'pin' | 'go' }.
  * - Views/UI read `hedefApi(rules)`: card(), jar().
  */
 import type { Rules } from './state';
 import type { ProductId } from './schema';
 import {
-  SMALL_GOALS, GOAL_NEXT_S, GOAL_DONE_LINES, JAR_BASE, JAR_PER_STAGE, JAR_MORALE, JAR_SPARKLE_S, JAR_FULL_LINES, JAR_FULL_ALONE,
+  SMALL_GOALS, GOAL_NEXT_S, GOAL_DONE_LINES, JAR_BASE, JAR_PER_STAGE, JAR_SPARKLE_S, JAR_FULL_LINES, JAR_FULL_ALONE,
   JAR_REGULAR_LINE, type SmallGoalDef,
 } from '../../content/goals';
 import { padDef } from '../../content/pads';
@@ -96,7 +95,7 @@ export function installHedef(r: Rules): HedefApi {
       if (stat(d.stat) - s.base >= d.n) {
         s.doneAt = t; g.doneN++;
         const rw = rewardOf(d);
-        const paid = r.earn(rw);   // günlük yan gelir tavanı kırpabilir: toast gerçek tutarı yazsın
+        const paid = r.credit!('hedef', rw);   // emek ödülü: tavana girmez, toast ödenen tutarı yazar
         r.toast(rng.pick(GOAL_DONE_LINES) + ': ' + d.text + '!' + (paid > 0 ? ' +' + fmtMoney(paid) : ''), 'good');
         r.stat('hedefDone');
       }
@@ -163,7 +162,6 @@ export function installHedef(r: Rules): HedefApi {
     if (g.jar >= jarCap()) {
       g.jar = jarCap(); g.jarFull = true; g.jarFullAt = S().playT;
       const ws = S().workers;
-      ws.forEach(w => { w.morale = Math.min(100, (Number(w.morale) || 70) + JAR_MORALE); });
       r.toast(ws.length ? rng.pick(JAR_FULL_LINES) : JAR_FULL_ALONE, 'good');
       r.stat('jarFull');
     }

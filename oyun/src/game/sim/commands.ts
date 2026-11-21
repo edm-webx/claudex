@@ -86,7 +86,7 @@ export type SimCmd =
   | { kind: 'koleksiyon'; op: string; id?: string; arg?: number }
   // ── hikaye, rakipler, öğreticiler (sim/hikaye.ts): op = open | tab | sceneDone | replay | rival | araDone | resultDone ──
   | { kind: 'hikaye'; op: string; id?: string; arg?: number }
-  // ── çalışanlar 2.0 (sim/calisan.ts): op = tab | sel | close | kurs | bank | call | pasta | hali | cay | piknik ──
+  // ── çalışanlar (sim/calisan.ts): op = tab | sel | close | kurs | call ──
   | { kind: 'calisan'; op: string; id?: string }
   // ── deniz, tekneler, güverte koşusu, iskele büyümesi (sim/deniz.ts): op = open | ext | seatBuy | seatSet | tez | pier | bufe | photo | boat | board | deck | serve | unboard ──
   | { kind: 'deniz'; op: string; id?: string }

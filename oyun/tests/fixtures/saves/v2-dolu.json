@@ -1,0 +1,290 @@
+{
+ "version": 2,
+ "seed": 7,
+ "hero": "sabri",
+ "money": 98765.5,
+ "gold": 12,
+ "xp": 340,
+ "level": 14,
+ "day": 30,
+ "dayT": 120,
+ "playT": 9000.5,
+ "totalEarned": 250000,
+ "stage": 5,
+ "stars": 40,
+ "tiers": {
+  "doner": 3,
+  "cay": 2,
+  "ayran": 2,
+  "simit": 1,
+  "tost": 2,
+  "gazoz": 1
+ },
+ "owned": {
+  "cay": 1,
+  "ayran": 1
+ },
+ "workers": [
+  {
+   "id": 1,
+   "name": "Rıza",
+   "role": "garson",
+   "xp": 10,
+   "morale": 70,
+   "traits": [
+    "hamarat"
+   ]
+  }
+ ],
+ "nextWid": 2,
+ "stats": {
+  "avm": 3,
+  "kirtasiyeSatis": 41
+ },
+ "zones": {
+  "arsa": {
+   "plots": {
+    "k1": {
+     "tur": "dukkan",
+     "tip": "kafe",
+     "lv": 3,
+     "till": 1234.5,
+     "sat": 77,
+     "fr": 0.4,
+     "isci": 2,
+     "esya": [
+      "kasa",
+      "isik"
+     ],
+     "tema": "sahil"
+    },
+    "k3": {
+     "tur": "dukkan",
+     "tip": "kirtasiye",
+     "lv": 2,
+     "till": 310,
+     "sat": 41,
+     "fr": 0,
+     "isci": 1
+    },
+    "e1": {
+     "tur": "ev",
+     "tip": "",
+     "lv": 1,
+     "till": 0,
+     "sat": 0,
+     "fr": 0
+    }
+   },
+   "yedek": {
+    "tl": 5000,
+    "esya": {
+     "tahta": 2
+    }
+   },
+   "takim": {
+    "ad": "Martı SK",
+    "renk": "#2a5db0",
+    "renk2": "#ffffff",
+    "arma": "yildiz",
+    "kurulus": 3
+   },
+   "kredi": {
+    "borc": 2500.75,
+    "gun": 12
+   },
+   "lastH": 8,
+   "stad": {
+    "fiyat": 4500,
+    "doluluk": 0.6,
+    "gelir": 1200,
+    "son": 3,
+    "maclar": 5,
+    "formasyon": "1-2-1"
+   }
+  },
+  "okul": {
+   "soru": 3,
+   "secenek": [
+    3,
+    1,
+    0,
+    2
+   ],
+   "cevap": 5,
+   "dogru": 4,
+   "sinavlar": [
+    80,
+    60,
+    100
+   ],
+   "son": "Doğru bildin"
+  },
+  "avm": {
+   "alinan": [
+    "gomlek1",
+    "ruj2"
+   ]
+  },
+  "salon": {
+   "esya": [
+    "koltuk",
+    "tv"
+   ]
+  },
+  "envanter": {
+   "esya": {
+    "tahta": 3
+   },
+   "sandik": {
+    "bronz": 1
+   },
+   "sayac": {
+    "kafe": 4
+   },
+   "sans": 2,
+   "acilan": 7,
+   "gunluk": {
+    "gun": 9,
+    "liste": [],
+    "sandikAlindi": false
+   },
+   "son": null
+  },
+  "gizem": {
+   "basla": true,
+   "oku": {
+    "ip1": 4,
+    "ip2": 6
+   }
+  },
+  "lig": {
+   "fin": 2,
+   "bolum": {
+    "martisk": 2,
+    "boga": 1
+   },
+   "maclar": [
+    {
+     "s": 1,
+     "k": 1,
+     "b": 1,
+     "ev": "martisk",
+     "dep": "boga",
+     "eg": 2,
+     "dg": 1
+    }
+   ],
+   "oynanan": {
+    "1": true
+   },
+   "gecmis": []
+  },
+  "halisaha": {
+   "offerDay": 6,
+   "played": 5,
+   "won": 3,
+   "drawn": 1,
+   "lost": 1,
+   "goals": 11,
+   "form": [
+    "G",
+    "B",
+    "M",
+    "G",
+    "G"
+   ]
+  },
+  "yatirim": {
+   "a": 2,
+   "b": 5
+  },
+  "kiyafet": {
+   "owned": [
+    "lc_gomlek_mavi"
+   ],
+   "worn": {
+    "ust": "lc_gomlek_mavi"
+   }
+  },
+  "tabela": {
+   "tier": 2,
+   "renk": "#ff8a00"
+  },
+  "mini": {
+   "day": 9,
+   "free": 2,
+   "ad": 1,
+   "adUsed": 0,
+   "gold": 3,
+   "best": {
+    "balik": 42
+   },
+   "stars": {
+    "balik": 2
+   },
+   "plays": 14,
+   "coll": [
+    "p1"
+   ],
+   "bonusT": 0,
+   "buffN": 0,
+   "micro": 1,
+   "seenLevel": 3
+  },
+  "hava": {
+   "anchorDay": 1,
+   "anchorDate": "2026-11-01",
+   "wDay": 9,
+   "segs": [],
+   "umb": 3,
+   "ev": {},
+   "mem": [],
+   "trophies": [],
+   "extras": [],
+   "lastEv": "",
+   "foodSold": 4,
+   "caught": 2,
+   "skipDay": -1
+  },
+  "mantar": {
+   "day": 9,
+   "taken": [
+    "m1"
+   ],
+   "toplam": 12
+  },
+  "hedef": {
+   "slots": [
+    null,
+    null
+   ],
+   "doneN": 6,
+   "lastIds": [
+    "a"
+   ],
+   "fold": false,
+   "pin": "",
+   "jar": 120.5,
+   "jarDay": 9,
+   "jarFull": false,
+   "jarFullAt": 0,
+   "prevEarned": 5000
+  },
+  "yetenek": {
+   "cdUntil": 0,
+   "until": 0
+  },
+  "pencere": {
+   "wid": 2
+  }
+ },
+ "calendar": "2026-11-20",
+ "player": {
+  "zone": "iskele",
+  "x": 0,
+  "z": 0,
+  "rot": 0
+ },
+ "citizens": []
+}

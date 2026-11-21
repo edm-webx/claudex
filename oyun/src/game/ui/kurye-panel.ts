@@ -64,7 +64,7 @@ const CSS = `<style>
 .ky-map{width:100%;max-width:360px;display:block;margin:0 auto;border:2.5px solid var(--ink);border-radius:14px}
 .ky-ord{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}.ky-ord h3{font:900 17px/1.15 var(--disp);margin:0}.ky-ord p{font:700 14px/1.3 var(--body);margin:2px 0}
 .ky-ord .bt{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.ky-ord .sb-btn{min-height:50px;font-size:16px}
-.ky-rate p{font:700 15px/1.35 var(--body);margin:3px 0}.ky-rate small{font:800 12px/1.2 var(--body);opacity:.7}
+
 .ky-sus{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
 .ky-sus .sb-btn{min-height:52px;font-size:14px;justify-content:flex-start}.ky-sus .sw{display:inline-block;width:16px;height:16px;border-radius:50%;border:2px solid var(--ink);margin-right:6px;vertical-align:-3px}
 .ky-sec-card{display:flex;gap:10px;align-items:center}.ky-sec-card h3{font:900 18px/1.1 var(--disp);margin:0}.ky-sec-card p{font:700 15px/1.3 var(--body);margin:2px 0}
@@ -117,11 +117,6 @@ export function renderKurye(m: any): string {
   // districts
   s += `<div class="sb-sec">${I('ferry')}Semtler</div>`;
   for (const t of m.semtler || []) s += `<div class="sb-card ky-row" style="${t.open ? '' : 'opacity:.55'}"><div style="font:900 15px/1.1 var(--disp);text-align:center">×${String(t.payX).replace('.', ',')}</div><div><h3>${esc(t.name)}</h3><p>${esc(t.blurb)}</p></div><span class="sb-chip">${t.open ? esc(t.terrain) : I('lock') + ' Menzil ' + t.range}</span></div>`;
-  // ratings
-  const rs = m.ratings || [];
-  s += `<div class="sb-sec">${I('star')}Müşteri yorumları</div>`;
-  if (!rs.length) s += `<div class="sb-card sb-muted">İlk yıldızlar ilk teslimattan sonra gelir.</div>`;
-  for (const r of rs) s += `<div class="sb-card ky-rate">${starRow(r.s)}<p>"${esc(r.text)}"</p><small>${esc(r.who)} · ${esc(r.semt)} · kurye ${esc(r.kurye)}</small></div>`;
   return s;
 }
 

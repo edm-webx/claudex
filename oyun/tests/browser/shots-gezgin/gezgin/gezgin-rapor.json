@@ -1,0 +1,678 @@
+{
+ "profil": "tam",
+ "tohum": 3,
+ "baslangic": "2026-11-21T11:19:23.524Z",
+ "kapsam": {
+  "binaGirildi": [
+   "kafe1",
+   "kafe2",
+   "kirtasiye",
+   "okul",
+   "avm",
+   "banka",
+   "hastane",
+   "salonW",
+   "mutfak",
+   "salonE"
+  ],
+  "binaGirilemedi": [
+   "tesis",
+   "acil",
+   "morg"
+  ],
+  "binaCikildi": [
+   "kafe1",
+   "kafe2",
+   "kirtasiye",
+   "okul",
+   "avm",
+   "banka",
+   "hastane",
+   "mutfak",
+   "salonE"
+  ],
+  "etkilesimDenenen": [
+   "cop.kutu",
+   "counter",
+   "kafeYap.avm",
+   "kafeYap.kafe1",
+   "kafeYap.kafe2",
+   "kafeYap.kirtasiye",
+   "kafeYap.okul",
+   "kasa",
+   "pad.masa3",
+   "servis.0",
+   "servis.1",
+   "servis.2",
+   "servis.3",
+   "servis.4",
+   "servis.5",
+   "servis.6",
+   "servis.7",
+   "station.doner",
+   "table.0",
+   "table.1",
+   "table.2",
+   "table.3",
+   "table.4",
+   "table.5",
+   "table.6",
+   "table.7",
+   "tip.0",
+   "tip.1",
+   "tip.2",
+   "tip.3",
+   "tip.4",
+   "tip.5",
+   "tip.6",
+   "tip.7",
+   "window"
+  ],
+  "etkilesimBilinen": [
+   "kafeYap.tesis"
+  ],
+  "etkilesimToplam": 36,
+  "noktaDenenen": 66,
+  "noktaToplam": 68,
+  "binaToplam": 13,
+  "ozet": [
+   {
+    "ad": "bina girildi",
+    "bol": 13,
+    "top": 13,
+    "oran": 1
+   },
+   {
+    "ad": "bina çıkıldı",
+    "bol": 13,
+    "top": 13,
+    "oran": 1
+   },
+   {
+    "ad": "iç nokta",
+    "bol": 66,
+    "top": 68,
+    "oran": 0.971
+   },
+   {
+    "ad": "etkileşim",
+    "bol": 36,
+    "top": 36,
+    "oran": 1
+   }
+  ],
+  "denenmeyen": {
+   "bina": [
+    "tesis",
+    "acil",
+    "morg"
+   ],
+   "etkilesim": [
+    "kafeYap.tesis"
+   ],
+   "bilinenEngelli": [
+    "kafeYap.tesis"
+   ]
+  }
+ },
+ "duraklar": [
+  {
+   "ad": "iskele-bufe",
+   "pos": {
+    "x": 0,
+    "z": 0
+   },
+   "calls": 536,
+   "tris": 276575,
+   "geos": 440,
+   "fps": 11.1,
+   "bellek": 87,
+   "money": 9000000000,
+   "xp": 10
+  },
+  {
+   "ad": "iskele-ferry",
+   "pos": {
+    "x": -6,
+    "z": 4
+   },
+   "calls": 198,
+   "tris": 253996,
+   "geos": 442,
+   "fps": 10.6,
+   "bellek": 87,
+   "money": 9000000000,
+   "xp": 10
+  },
+  {
+   "ad": "stadyum-kapi",
+   "pos": {
+    "x": 404,
+    "z": 13
+   },
+   "calls": 94,
+   "tris": 125134,
+   "geos": 142,
+   "fps": 10.5,
+   "bellek": 87,
+   "money": 9000000000,
+   "xp": 20
+  },
+  {
+   "ad": "stadyum-saha",
+   "pos": {
+    "x": 425,
+    "z": 20
+   },
+   "calls": 41,
+   "tris": 122112,
+   "geos": 143,
+   "fps": 10.4,
+   "bellek": 87,
+   "money": 9000000000,
+   "xp": 20
+  },
+  {
+   "ad": "belgrad-durak",
+   "pos": {
+    "x": 806,
+    "z": 10
+   },
+   "calls": 134,
+   "tris": 283805,
+   "geos": 223,
+   "fps": 10.3,
+   "bellek": 87,
+   "money": 9000000000,
+   "xp": 30
+  },
+  {
+   "ad": "belgrad-orman",
+   "pos": {
+    "x": 840,
+    "z": 20
+   },
+   "calls": 174,
+   "tris": 293681,
+   "geos": 252,
+   "fps": 10.3,
+   "bellek": 87,
+   "money": 9000000000,
+   "xp": 30
+  },
+  {
+   "ad": "belgrad-derin",
+   "pos": {
+    "x": 870,
+    "z": 40
+   },
+   "calls": 105,
+   "tris": 287095,
+   "geos": 252,
+   "fps": 10.2,
+   "bellek": 87,
+   "money": 9000000000,
+   "xp": 30
+  },
+  {
+   "ad": "bina-kafe1",
+   "pos": {
+    "x": -17.921,
+    "z": 35.885
+   },
+   "calls": 174,
+   "tris": 322299,
+   "geos": 327,
+   "fps": 10.2,
+   "bellek": 87,
+   "money": 9000000000,
+   "xp": 30
+  },
+  {
+   "ad": "bina-kafe2",
+   "pos": {
+    "x": -17.868,
+    "z": 50.063
+   },
+   "calls": 185,
+   "tris": 299495,
+   "geos": 382,
+   "fps": 10.2,
+   "bellek": 87,
+   "money": 9000000000,
+   "xp": 30
+  },
+  {
+   "ad": "bina-kirtasiye",
+   "pos": {
+    "x": 30.593,
+    "z": 35.94
+   },
+   "calls": 130,
+   "tris": 317801,
+   "geos": 399,
+   "fps": 10.2,
+   "bellek": 87,
+   "money": 9000000000,
+   "xp": 30
+  },
+  {
+   "ad": "bina-okul",
+   "pos": {
+    "x": 45.84,
+    "z": 39.14
+   },
+   "calls": 296,
+   "tris": 328237,
+   "geos": 429,
+   "fps": 10.1,
+   "bellek": 87,
+   "money": 9000000000,
+   "xp": 30
+  },
+  {
+   "ad": "bina-avm",
+   "pos": {
+    "x": 24.433,
+    "z": 49.635
+   },
+   "calls": 131,
+   "tris": 287141,
+   "geos": 445,
+   "fps": 10.1,
+   "bellek": 87,
+   "money": 9000000000,
+   "xp": 30
+  },
+  {
+   "ad": "bina-tesis-girilemedi",
+   "pos": {
+    "x": -51.74,
+    "z": 45.4
+   },
+   "calls": 115,
+   "tris": 302305,
+   "geos": 437,
+   "fps": 10.1,
+   "bellek": 87,
+   "money": 9000000000,
+   "xp": 30
+  },
+  {
+   "ad": "bina-banka",
+   "pos": {
+    "x": 11.7,
+    "z": 37.059
+   },
+   "calls": 178,
+   "tris": 314425,
+   "geos": 445,
+   "fps": 10.1,
+   "bellek": 87,
+   "money": 9000000000,
+   "xp": 30
+  },
+  {
+   "ad": "bina-hastane",
+   "pos": {
+    "x": 46.95,
+    "z": 53.068
+   },
+   "calls": 186,
+   "tris": 284237,
+   "geos": 453,
+   "fps": 10.1,
+   "bellek": 87,
+   "money": 9000000000,
+   "xp": 30
+  },
+  {
+   "ad": "bina-acil-girilemedi",
+   "pos": {
+    "x": 54.79,
+    "z": 52
+   },
+   "calls": 164,
+   "tris": 279097,
+   "geos": 453,
+   "fps": 10.1,
+   "bellek": 87,
+   "money": 9000000000,
+   "xp": 30
+  },
+  {
+   "ad": "bina-morg-girilemedi",
+   "pos": {
+    "x": 53.29,
+    "z": 55.5
+   },
+   "calls": 162,
+   "tris": 279383,
+   "geos": 453,
+   "fps": 10.1,
+   "bellek": 87,
+   "money": 9000000000,
+   "xp": 30
+  },
+  {
+   "ad": "bina-salonW",
+   "pos": {
+    "x": -12.81,
+    "z": -14.313
+   },
+   "calls": 171,
+   "tris": 165566,
+   "geos": 466,
+   "fps": 10.1,
+   "bellek": 87,
+   "money": 9000000000,
+   "xp": 30
+  },
+  {
+   "ad": "bina-mutfak",
+   "pos": {
+    "x": 0.441,
+    "z": -15.85
+   },
+   "calls": 83,
+   "tris": 196690,
+   "geos": 503,
+   "fps": 10.1,
+   "bellek": 87,
+   "money": 9000000000,
+   "xp": 30
+  },
+  {
+   "ad": "bina-salonE",
+   "pos": {
+    "x": 19.95,
+    "z": -14.347
+   },
+   "calls": 166,
+   "tris": 164232,
+   "geos": 512,
+   "fps": 10.1,
+   "bellek": 87,
+   "money": 9000000000,
+   "xp": 30
+  },
+  {
+   "ad": "son",
+   "pos": {
+    "x": 3.067,
+    "z": -7.002
+   },
+   "calls": 173,
+   "tris": 203264,
+   "geos": 534,
+   "fps": 10.1,
+   "bellek": 87,
+   "money": 9000000035,
+   "xp": 30
+  }
+ ],
+ "bulgular": [
+  {
+   "siddet": "uyari",
+   "nerede": "bina-kirtasiye",
+   "ne": "iç nokta \"fotokopi:fotokopi\" için yol takıldı"
+  },
+  {
+   "siddet": "bilinen",
+   "nerede": "bina-tesis",
+   "ne": "girilemedi: kapıdan içeri yürünemedi (takıldı)"
+  },
+  {
+   "siddet": "bilinen",
+   "nerede": "bina-acil",
+   "ne": "girilemedi: kapıdan içeri yürünemedi (takıldı)"
+  },
+  {
+   "siddet": "bilinen",
+   "nerede": "bina-morg",
+   "ne": "girilemedi: kapıdan içeri yürünemedi (takıldı)"
+  },
+  {
+   "siddet": "uyari",
+   "nerede": "bina-salonW",
+   "ne": "iç nokta \"masa4\" için yol takıldı"
+  },
+  {
+   "siddet": "bilinen",
+   "nerede": "bina-salonW",
+   "ne": "çıkılamadı: içeriden kapı önüne yürünemedi"
+  },
+  {
+   "siddet": "bilinen",
+   "nerede": "etkilesim:kafeYap.tesis",
+   "ne": "tesis kapısından girilemedi, içerideki etkileşime ulaşılamıyor"
+  }
+ ],
+ "hatalar": [],
+ "bekci": [],
+ "komutGunlugu": [
+  {
+   "k": "teleport",
+   "ad": "iskele-bufe",
+   "x": 0,
+   "z": 0
+  },
+  {
+   "k": "teleport",
+   "ad": "iskele-ferry",
+   "x": -6,
+   "z": 4
+  },
+  {
+   "k": "teleport",
+   "ad": "stadyum-kapi",
+   "x": 404,
+   "z": 13
+  },
+  {
+   "k": "teleport",
+   "ad": "stadyum-saha",
+   "x": 425,
+   "z": 20
+  },
+  {
+   "k": "teleport",
+   "ad": "belgrad-durak",
+   "x": 806,
+   "z": 10
+  },
+  {
+   "k": "teleport",
+   "ad": "belgrad-orman",
+   "x": 840,
+   "z": 20
+  },
+  {
+   "k": "teleport",
+   "ad": "belgrad-derin",
+   "x": 870,
+   "z": 40
+  },
+  {
+   "k": "teleport-kapi",
+   "id": "kafe1"
+  },
+  {
+   "k": "yuru-ic",
+   "id": "kafe1",
+   "ok": true,
+   "takildi": false,
+   "adim": 3
+  },
+  {
+   "k": "teleport-kapi",
+   "id": "kafe2"
+  },
+  {
+   "k": "yuru-ic",
+   "id": "kafe2",
+   "ok": true,
+   "takildi": false,
+   "adim": 3
+  },
+  {
+   "k": "teleport-kapi",
+   "id": "kirtasiye"
+  },
+  {
+   "k": "yuru-ic",
+   "id": "kirtasiye",
+   "ok": true,
+   "takildi": false,
+   "adim": 3
+  },
+  {
+   "k": "teleport-kapi",
+   "id": "okul"
+  },
+  {
+   "k": "yuru-ic",
+   "id": "okul",
+   "ok": true,
+   "takildi": false,
+   "adim": 3
+  },
+  {
+   "k": "teleport-kapi",
+   "id": "avm"
+  },
+  {
+   "k": "yuru-ic",
+   "id": "avm",
+   "ok": true,
+   "takildi": false,
+   "adim": 3
+  },
+  {
+   "k": "teleport-kapi",
+   "id": "tesis"
+  },
+  {
+   "k": "yuru-ic",
+   "id": "tesis",
+   "ok": false,
+   "takildi": true,
+   "adim": 9
+  },
+  {
+   "k": "teleport-kapi",
+   "id": "banka"
+  },
+  {
+   "k": "yuru-ic",
+   "id": "banka",
+   "ok": true,
+   "takildi": false,
+   "adim": 3
+  },
+  {
+   "k": "teleport-kapi",
+   "id": "hastane"
+  },
+  {
+   "k": "yuru-ic",
+   "id": "hastane",
+   "ok": true,
+   "takildi": false,
+   "adim": 3
+  },
+  {
+   "k": "teleport-kapi",
+   "id": "hastane"
+  },
+  {
+   "k": "teleport-kapi",
+   "id": "acil"
+  },
+  {
+   "k": "yuru-ic",
+   "id": "acil",
+   "ok": false,
+   "takildi": true,
+   "adim": 8
+  },
+  {
+   "k": "teleport-kapi",
+   "id": "hastane"
+  },
+  {
+   "k": "teleport-kapi",
+   "id": "morg"
+  },
+  {
+   "k": "yuru-ic",
+   "id": "morg",
+   "ok": false,
+   "takildi": true,
+   "adim": 8
+  },
+  {
+   "k": "teleport-kapi",
+   "id": "salonW"
+  },
+  {
+   "k": "yuru-ic",
+   "id": "salonW",
+   "ok": true,
+   "takildi": false,
+   "adim": 3
+  },
+  {
+   "k": "teleport-kapi",
+   "id": "mutfak"
+  },
+  {
+   "k": "yuru-ic",
+   "id": "mutfak",
+   "ok": true,
+   "takildi": false,
+   "adim": 3
+  },
+  {
+   "k": "teleport-kapi",
+   "id": "salonE"
+  },
+  {
+   "k": "yuru-ic",
+   "id": "salonE",
+   "ok": true,
+   "takildi": false,
+   "adim": 3
+  },
+  {
+   "k": "teleport-kapi",
+   "id": "avm"
+  },
+  {
+   "k": "teleport-kapi",
+   "id": "kafe1"
+  },
+  {
+   "k": "teleport-kapi",
+   "id": "kafe2"
+  },
+  {
+   "k": "teleport-kapi",
+   "id": "kirtasiye"
+  },
+  {
+   "k": "teleport-kapi",
+   "id": "okul"
+  },
+  {
+   "k": "teleport-kapi",
+   "id": "tesis"
+  }
+ ],
+ "fixture": {
+  "kapat": null,
+  "hataEnjekte": false
+ },
+ "kareSuresi": "{\"n\":84,\"fps\":10,\"p50\":100,\"p95\":100,\"p99\":100,\"max\":100,\"esik33\":84,\"esik50\":84,\"esik100\":0}",
+ "bitis": "2026-11-21T11:21:07.793Z"
+}

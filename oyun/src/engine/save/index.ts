@@ -77,6 +77,7 @@ export function createSave<S>(o: SaveOpts<S>): SaveStore<S> {
   const log: Logger | undefined = o.log;
   const K = o.key;
   let mode: 'idb' | 'ls' | 'memory' = 'memory';
+  let newerV = 0;   // depoda bu build'den yeni sürümde kayıt görüldü: yazma kilidi
   let primary: KV = memKV();
   let mirror: KV | null = null;
   let initP: Promise<void> | null = null;
@@ -158,34 +159,38 @@ export function createSave<S>(o: SaveOpts<S>): SaveStore<S> {
   void init(); // decide the mode right away (state()/perf show it even before the first load/save)
   const store: SaveStore<S> = {
     get mode() { return mode; },
+    get readOnly() { return newerV > 0; },
     async load(): Promise<SaveLoadResult<S>> {
       await init();
       const notes: string[] = [];
       try {
         const slots = await readSlots(notes);
         if (slots.length) { seq = Math.max(seq, slots[0].rec.seq); }
+        newerV = Math.max(0, ...slots.map(s => (s.rec.v > o.version ? s.rec.v : 0)));
+        if (newerV) notes.push(`newer: kayıt v${newerV}, bu build v${o.version}; salt-okunur`);
         // next slot = after the newest primary slot
         const ptr = await primary.get(`${K}:ptr`);
         try { if (ptr) nextSlot = ((JSON.parse(ptr).slot | 0) + 1) % SLOTS; } catch { /* ignore */ }
         for (const s of slots) {
           try {
             const data = await adopt(s.rec.json, notes);
-            return { data, from: s.src, repaired: notes };
+            return { data, from: s.src, repaired: notes, ...(newerV ? { newerVersion: newerV } : {}) };
           } catch (e) { notes.push(`slot unusable: ${(e as Error).message}`); }
         }
         const days = (await primary.keys(`${K}:daily:`)).sort().reverse();
         for (const dk of days) {
           const r = parseRec(await primary.get(dk));
           if (!r || r === 'bad') { notes.push(`backup ${dk} bozuk`); continue; }
-          try { const data = await adopt(r.json, notes); notes.push(`restored from ${dk.slice(K.length + 1)}`); return { data, from: 'backup', repaired: notes }; }
+          try { const data = await adopt(r.json, notes); notes.push(`restored from ${dk.slice(K.length + 1)}`); return { data, from: 'backup', repaired: notes, ...(newerV ? { newerVersion: newerV } : {}) }; }
           catch (e) { notes.push(`backup unusable: ${(e as Error).message}`); }
         }
       } catch (e) { notes.push(`load error: ${(e as Error).message}`); }
-      return { data: o.defaults(), from: 'fresh', repaired: notes };
+      return { data: o.defaults(), from: 'fresh', repaired: notes, ...(newerV ? { newerVersion: newerV } : {}) };
     },
     save(reason: SaveReason) {
       const run = async (): Promise<boolean> => {
         await init();
+        if (newerV) return false;   // yeni sürüm kaydı varken eski build yazmaz
         try {
           const data = o.get() as any;
           const json = JSON.stringify(data);
@@ -215,6 +220,7 @@ export function createSave<S>(o: SaveOpts<S>): SaveStore<S> {
         const env = JSON.parse(b64ToUtf8(body)) as { v: number; sum: string; json: string };
         if (typeof env.json !== 'string' || checksum(env.json) !== env.sum) return false;
         const data = await adopt(env.json, []);
+        newerV = 0;
         return await writeRec(JSON.stringify(data), o.version);
       } catch { return false; }
     },
@@ -235,7 +241,7 @@ export function createSave<S>(o: SaveOpts<S>): SaveStore<S> {
       await init();
       const r = parseRec(await primary.get(`${K}:${id}`));
       if (!r || r === 'bad') return false;
-      try { const data = await adopt(r.json, []); return await writeRec(JSON.stringify(data), o.version); }
+      try { const data = await adopt(r.json, []); newerV = 0; return await writeRec(JSON.stringify(data), o.version); }
       catch { return false; }
     },
     async wipe() {
@@ -244,7 +250,7 @@ export function createSave<S>(o: SaveOpts<S>): SaveStore<S> {
         if (!kv) continue;
         for (const k of await kv.keys(`${K}:`)) await kv.del(k);
       }
-      seq = 0; nextSlot = 0; dirty = false;
+      seq = 0; nextSlot = 0; dirty = false; newerV = 0;
     },
   };
   return store;

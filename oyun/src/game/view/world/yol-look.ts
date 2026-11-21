@@ -7,7 +7,8 @@
 import * as T from 'three';
 import { zeminDetay } from '../../../engine/render/zemin-detay';
 import { loadGlb, fitClone } from './glb';
-import { UG, ugY } from '../../../content/ustgecit';
+import { UG, UG_STEPS, ugY } from '../../../content/ustgecit';
+import { mergeStatic } from '../../../engine/render/merge-static';
 
 export interface YolLookDeps { root: () => T.Object3D | null }
 export interface YolLookView { update(dt: number): void; dispose(): void }
@@ -79,24 +80,26 @@ function buildOverpass(): T.Group {
   const g = new T.Group(); g.name = 'yolUstGecit';
   const { x, hw, zA, zB, zC, zD, h } = UG, W = hw * 2 + 0.3, steel = lam('#7b8189'), dark = lam('#5b6068'), rail = lam('#c9ced6');
   const zm = (zB + zC) / 2, len = zC - zB;
-  g.add(box(W, 0.3, len + 0.4, steel, x, h - 0.15, zm));
+  g.add(box(W, 0.3, len, steel, x, h - 0.15, zm));   // PRF-09: no overhang past the top step (it covered the last treads 15 cm above the ramp)
   g.add(box(W, 0.45, len, dark, x, h - 0.6, zm));
-  // two flights: a solid wedge whose slope IS the walking surface (ugY), so the hero never sinks into a tread (2026-11-09 user:
-  // "merdivenden çıkarken içine gömülüyoruz"); thin tread ribs ride 2 cm above the slope for the stair look
-  const N = 14;
+  // two flights of real steps (PRF-09). The walking ramp ugY runs through every nosing, so a foot is never inside a step:
+  // at most one rise (18 cm) above the tread behind it. The old wedge + loose tread ribs stuck 17 cm out of the ramp and the
+  // whole bridge sat 0.35 m up with the street group: that was "merdivenden çıkarken içine gömülüyoruz" (2026-11-09).
+  const N = UG_STEPS, rise = h / N, nose = lam('#5b6068');
   const flight = (z0: number, z1: number) => {
-    const sh = new T.Shape(); sh.moveTo(z0, 0); sh.lineTo(z1, h); sh.lineTo(z1, 0); sh.closePath();
-    const geo = new T.ExtrudeGeometry(sh, { depth: W, bevelEnabled: false }); geo.translate(0, 0, -W / 2); geo.rotateY(-Math.PI / 2);
-    const wedge = new T.Mesh(geo, lam('#8a9097')); wedge.position.x = x; g.add(wedge);
-    for (let i = 0; i < N; i++) {
-      const zz = z0 + (z1 - z0) * (i + 0.5) / N;
-      g.add(box(W + 0.02, 0.04, Math.abs(z1 - z0) / N - 0.06, i % 2 ? lam('#979da4') : lam('#a7adb4'), x, ugY(x, zz) + 0.015, zz));
-    }
+    const sh = new T.Shape(); sh.moveTo(z0, 0);
+    for (let i = 1; i <= N; i++) { const u = z0 + (z1 - z0) * i / N; sh.lineTo(u, (i - 1) * rise); sh.lineTo(u, i * rise); }
+    sh.lineTo(z1, 0); sh.closePath();
+    const geo = new T.ExtrudeGeometry(sh, { depth: W, bevelEnabled: false, curveSegments: 1 }); geo.translate(0, 0, -W / 2); geo.rotateY(-Math.PI / 2);
+    const stairs = new T.Mesh(geo, lam('#8a9097')); stairs.position.x = x; stairs.castShadow = true; stairs.receiveShadow = true; g.add(stairs);
+    // dark anti-slip strip just behind each nosing (1 cm, inside the 2 cm foot tolerance)
+    const s = Math.sign(z1 - z0);
+    for (let i = 1; i < N; i++) { const u = z0 + (z1 - z0) * i / N; g.add(box(W - 0.12, 0.01, 0.06, nose, x, i * rise + 0.005, u + s * 0.035)); }
   };
   flight(zA, zB); flight(zD, zC);
-  // landing blocks and pillars under the deck
-  // pillars only on the sidewalks and on the two metrobus medians (z = kerb + 2/4 lanes), never in a lane
-  for (const z of [zB + 0.2, Z_KERB + 2 * LANE, Z_KERB + 4 * LANE, zC - 0.2]) for (const sg of [-1, 1]) g.add(box(0.3, h - 0.75, 0.3, lam('#6f747c'), x + sg * (hw - 0.1), (h - 0.75) / 2, z));
+  // pillars only on the two pavements (deck span 11.8 m). The median pillars stood on the lane lines and the 1.7 m buses in
+  // 1.9 m lanes brushed them ("otobüsler hala değiyor", 2026-11-09); tests/unit/yol/arac-yol.test.ts keeps every lane clear.
+  for (const z of [zB + 0.2, zC - 0.2]) for (const sg of [-1, 1]) g.add(box(0.34, h - 0.75, 0.34, lam('#6f747c'), x + sg * (hw - 0.1), (h - 0.75) / 2, z));
   // girders under the deck edges + a light strip so it reads as a bridge from the street
   for (const sg of [-1, 1]) g.add(box(0.18, 0.5, len, dark, x + sg * (hw + 0.05), h - 0.55, zm));
   // railings: along the deck and following both flights
@@ -123,7 +126,8 @@ const GLASS = () => lam('#2a3a4c'), TYRE = () => lam('#17181b'), HUB = () => lam
 const glow = (c: string) => { const k = 'glow' + c; let m = mats.get(k); if (!m) { m = new T.MeshBasicMaterial({ color: c }); mats.set(k, m); } return m; };
 /** Wheels (axles at xs), headlights at the +x front, tail lights at the back; the model faces +x. */
 function wheels(g: T.Group, len: number, wid: number, r: number, xs: number[]) {
-  for (const x of xs) for (const sg of [-1, 1]) { g.add(cyl(r, r, 0.3, TYRE(), x, r, sg * (wid / 2 - 0.08))); g.add(cyl(r * 0.5, r * 0.5, 0.32, HUB(), x, r, sg * (wid / 2 - 0.08))); }
+  // PRF-09: tyres tucked 0.2 m under the body so nothing below the skirt pokes past the lane (kerb and medians are 14 cm high)
+  for (const x of xs) for (const sg of [-1, 1]) { g.add(cyl(r, r, 0.3, TYRE(), x, r, sg * (wid / 2 - 0.2))); g.add(cyl(r * 0.5, r * 0.5, 0.32, HUB(), x, r, sg * (wid / 2 - 0.2))); }
   for (const sg of [-1, 1]) { g.add(box(0.06, 0.2, 0.34, glow('#fff3c4'), len / 2 + 0.01, r + 0.5, sg * (wid / 2 - 0.35))); g.add(box(0.06, 0.2, 0.3, glow('#ff3b30'), -len / 2 - 0.01, r + 0.5, sg * (wid / 2 - 0.3))); }
 }
 /** City bus (and metrobus when len is long): body, window band with pillars, roof unit, doors, wheels, destination sign. */
@@ -166,9 +170,10 @@ function buildVehicles(): { group: T.Group; list: Vehicle[] } {
   const laneZ = (i: number) => Z_KERB + (i + 0.5) * LANE;
   // lanes: 0,1 east cars, 2 east metrobus, 3 west metrobus, 4,5 west cars. One constant speed per lane + fixed spacing: nothing overlaps or overtakes.
   const LS = [7, 9, 10, 10, 9, 7], SPACE = 36, COLORS = ['#2f9d59', '#ffd23f', '#3f7fd0', '#e0533c', '#f4f2ec', '#8a5fd0', '#2fb5b0'];
-  // Kenney car models replace the box cars once loaded (the box body stays when a file is missing)
+  // Kenney car models replace the box cars once loaded (the box body stays when a file is missing); PRF-15: the box body's merged
+  // geometry (its own buffer, already uploaded) is freed when the model takes over
   const CARS = ['taxi', 'sedan', 'suv', 'hatchback-sports', 'van', 'sedan-sports', 'suv-luxury', 'delivery', 'police'];
-  const skin = (g: T.Group, k: number) => { loadGlb('auto/' + CARS[k % CARS.length]).then(src => { if (!src) return; g.clear(); g.add(fitClone(src, 1.6, 4.0, undefined, CAR_YAW)); }); return g; };
+  const skin = (g: T.Group, k: number) => { loadGlb('auto/' + CARS[k % CARS.length]).then(src => { if (!src) return; g.traverse(o => { if (o.name.endsWith(':birlesik')) (o as T.Mesh).geometry.dispose(); }); g.clear(); g.add(fitClone(src, 1.6, 4.0, undefined, CAR_YAW)); }); return g; };
   const add = (mesh: T.Object3D, lane: number, off: number, kind: Vehicle['kind']) => { mesh.position.set(X0 - 200, 0, laneZ(lane)); if (lane >= 3) mesh.rotation.y = Math.PI; group.add(mesh); list.push({ mesh, lane, speed: LS[lane], off, dir: lane >= 3 ? -1 : 1, kind }); };
   let ci = 0;
   for (const lane of [0, 1, 4, 5]) for (let k = 0; k < SPAN_V / SPACE; k++) { const bus = (k + lane) % 3 === 0; add(bus ? busBody(COLORS[ci++ % 3], 8.2, '42B') : skin(carBody(COLORS[ci % COLORS.length]), ci++), lane, k * SPACE + lane * 7, bus ? 'bus' : 'car'); }
@@ -181,9 +186,14 @@ const CAR_YAW = Math.PI / 2;   // Kenney cars face +z, the lane vehicles face +x
 export function createYolLook(d: YolLookDeps): YolLookView {
   const road = buildRoad(), stop = buildBusStop(), bridge = buildOverpass();
   const { group: vehicles, list } = buildVehicles();
+  // PRF-06: the street parts never move relative to their group: one draw per material (vehicles move as whole groups)
+  const portals = buildPortals();
+  for (const g of [road, stop, bridge, portals]) mergeStatic(g);
+  for (const v of list) mergeStatic(v.mesh);
   const holder = new T.Group(); holder.name = 'yolKok';
   holder.position.y = STREET_Y;
-  holder.add(road, stop, bridge, vehicles, buildPortals());
+  bridge.position.y = -STREET_Y;   // PRF-09: UG is in world metres (promenade y 0); the rest of the street sits 0.35 m up
+  holder.add(road, stop, bridge, vehicles, portals);
   let t = 0;
   return {
     update(dt) {

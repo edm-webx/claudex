@@ -3,7 +3,7 @@
  * Two item layers (H3): world/drop items (chest, match, forest, board) and production items (crafted from materials).
  * Character inventory vs account bank is a hard split: inventory = S.zones.envanter, bank = rt.banka (cloud, shared).
  */
-export type EsyaTur = 'tuketim' | 'malzeme' | 'kozmetik' | 'anahtar' | 'uretim';
+export type EsyaTur = 'tuketim' | 'malzeme' | 'kozmetik' | 'anahtar';
 export interface Esya { id: string; ad: string; ikon: string; tur: EsyaTur; nadir: 0 | 1 | 2; blurb: string }
 export const ESYALAR: Esya[] = [
   { id: 'tahta', ad: 'Tahta Parçası', ikon: '🪵', tur: 'malzeme', nadir: 0, blurb: 'İskele tahtası. Raf ve tezgah işlerinde lazım.' },
@@ -18,16 +18,8 @@ export const ESYALAR: Esya[] = [
   { id: 'altin_kupon', ad: 'Altın Simit Kuponu', ikon: '🎟️', tur: 'kozmetik', nadir: 2, blurb: 'Bozdur: 5 Altın Simit.' },
   { id: 'kozmetik_tozu', ad: 'Kozmetik Tozu', ikon: '✨', tur: 'kozmetik', nadir: 1, blurb: 'Süs tozu: şimdilik yalnızca biriktirilir.' },
   { id: 'altin_anahtar', ad: 'Altın Anahtar', ikon: '🗝️', tur: 'anahtar', nadir: 2, blurb: 'Altın Sandık bununla açılır.' },
-  { id: 'raf_kiti', ad: 'Raf Kiti', ikon: '🗄️', tur: 'uretim', nadir: 0, blurb: 'Dükkân yükseltmesi için gerekir.' },
-  { id: 'tente_seti', ad: 'Tente Seti', ikon: '⛱️', tur: 'uretim', nadir: 1, blurb: 'Dükkân yükseltmesi (3. seviyeden sonra).' },
 ];
 export const ESYA_BY_ID: Record<string, Esya> = Object.fromEntries(ESYALAR.map(e => [e.id, e]));
-
-/** simple crafting (H3 layer 2): materials in, one product out */
-export const TARIFLER: { id: string; gir: Record<string, number>; cik: string }[] = [
-  { id: 'raf_kiti', gir: { tahta: 3, civi: 2 }, cik: 'raf_kiti' },
-  { id: 'tente_seti', gir: { kumas: 3, boya: 1, civi: 1 }, cik: 'tente_seti' },
-];
 
 /** chests: what falls from activities. 'altin' needs an Altın Anahtar. */
 export interface Sandik { id: string; ad: string; ikon: string; tl: [number, number]; adet: [number, number]; havuz: [string, number][]; anahtar?: string }
@@ -65,7 +57,7 @@ export const SANDIK_DUSER: { stat: string; her: number; sandik: string; ad: stri
 export const HALI_SAHA_KAPI = { x: -25.2, z: 45 };
 export const BANKA = { x: 11.7, z: 36.8, kapi: { x: 11.7, z: 41.8 }, w: 10, d: 8.4, ad: 'Martı Kasası Bankası' };
 /** sabit: a fixed building on the map (karşı yaka kafeler): buying the plot opens that shop at once; kapi = interaction point. */
-export interface Arsa { id: string; x: number; z: number; fiyat: number; seviye: number; rotY: number; sabit?: string; kapi?: { x: number; z: number }; ad?: string }
+export interface Arsa { id: string; x: number; z: number; fiyat: number; seviye: number; rotY: number; sabit?: string; kapi?: { x: number; z: number }; ad?: string; once?: string }
 export const ARSALAR: Arsa[] = [
   { id: 'a1', x: 259.5, z: 0.4, fiyat: 60000, seviye: 3, rotY: 0 },
   { id: 'a2', x: 266.2, z: 0.4, fiyat: 150000, seviye: 5, rotY: 0 },
@@ -78,8 +70,13 @@ export const ARSALAR: Arsa[] = [
   // 2026-11-09: every business building can be bought from a level and run (interiors: content/ic-mekan.ts)
   { id: 'k3', x: 28, z: 35.2, fiyat: 140000, seviye: 4, rotY: Math.PI, sabit: 'kafe', kapi: { x: 28, z: 32.6 }, ad: 'Martı Kırtasiye' },
   { id: 'k4', x: 48.85, z: 37.25, fiyat: 110000, seviye: 3, rotY: Math.PI, sabit: 'kafe', kapi: { x: 48.85, z: 32.6 }, ad: 'Okul Kantini' },
-  { id: 'k5', x: 20.15, z: 51.8, fiyat: 450000, seviye: 6, rotY: Math.PI, sabit: 'kafe', kapi: { x: 20.15, z: 45.6 }, ad: 'Martı Lokantası (AVM)' },
+  // 2026-11-20 owner: Martı AVM is split into separate businesses (lokanta + three shops), each bought and run on its own;
+  // x / z = the room centre of content/ic-mekan.ts (AVM strips), kapi = in front of that room's own door on the -z front
+  { id: 'k5', x: 26.0, z: 51.8, fiyat: 450000, seviye: 6, rotY: Math.PI, sabit: 'kafe', kapi: { x: 26.0, z: 45.6 }, ad: 'Martı Lokantası (AVM)' },
   { id: 'k6', x: -54.1, z: 45.4, fiyat: 260000, seviye: 5, rotY: Math.PI / 2, sabit: 'kafe', kapi: { x: -51.0, z: 45.4 }, ad: 'Tesis Kafeteryası' },
+  { id: 'k7', once: 'k5', x: 21.45, z: 51.8, fiyat: 300000, seviye: 7, rotY: Math.PI, sabit: 'kafe', kapi: { x: 21.45, z: 45.6 }, ad: 'Martı Moda (AVM)' },
+  { id: 'k8', once: 'k5', x: 17.55, z: 51.8, fiyat: 380000, seviye: 8, rotY: Math.PI, sabit: 'kafe', kapi: { x: 17.55, z: 45.6 }, ad: 'Tekno Martı (AVM)' },
+  { id: 'k9', once: 'k5', x: 13.65, z: 51.8, fiyat: 260000, seviye: 7, rotY: Math.PI, sabit: 'kafe', kapi: { x: 13.65, z: 45.6 }, ad: 'Oyuncak Dünyası (AVM)' },
 ];
 export const ARSA_HAK = 3;
 export const arsaKapi = (a: Arsa) => a.kapi ?? { x: a.x, z: a.z + (a.rotY ? -3.0 : 3.0) };
@@ -90,17 +87,17 @@ export const ISCI_MAX = 3;
  * o yerler belirli bir seviyeden sonra satın alınıp işletilebilmeli". Every fixed business has a type (Isletme) with its own
  * menu (a level unlocks dishes: lv1 2, lv2 4, lv3 5, lv4 6, lv5 8), its own equipment (bought once, shown inside the building,
  * view/world/ic-mekan-look.ts) and its own stage names. Workers: up to lv+1 (max 6). */
-export interface KafeYemek { id: string; ad: string; ikon: string; fiyat: number; maliyet: number }
+export interface KafeYemek { id: string; ad: string; ikon: string; fiyat: number }
 /** ic: shown inside (ic-mekan-look); teras: shown on the café terrace (karsi-yasam) */
 export interface KafeEsya { id: string; ad: string; ikon: string; fiyat: number; lv: number; musteri?: number; fiyatK?: number; desc: string; teras?: boolean }
-export type IsletmeId = 'kafe' | 'bistro' | 'kirtasiye' | 'kantin' | 'lokanta' | 'kafeterya';
+export type IsletmeId = 'kafe' | 'bistro' | 'kirtasiye' | 'kantin' | 'lokanta' | 'kafeterya' | 'giyim' | 'elektronik' | 'oyuncak';
 export interface Isletme { id: IsletmeId; ad: string; ikon: string; asama: string[]; mus: number; menu: KafeYemek[]; esya: KafeEsya[] }
-const Y = (id: string, ad: string, ikon: string, fiyat: number, maliyet: number): KafeYemek => ({ id, ad, ikon, fiyat, maliyet });
+const Y = (id: string, ad: string, ikon: string, fiyat: number): KafeYemek => ({ id, ad, ikon, fiyat });
 const A = (id: string, ad: string, ikon: string, fiyat: number, lv: number, o: Partial<KafeEsya>, desc: string): KafeEsya => ({ id, ad, ikon, fiyat, lv, ...o, desc });
 export const ISLETME: Record<IsletmeId, Isletme> = {
   kafe: { id: 'kafe', ad: 'Kafe', ikon: '☕', mus: 1, asama: ['Köşe kafe', 'Kafe', 'Kahve evi', 'Teraslı kafe', 'Gurme kafe'],
-    menu: [Y('turk_kahvesi', 'Türk kahvesi', '☕', 35, 9), Y('demlik_cay', 'Demlik çay', '🫖', 25, 5), Y('kasarli_tost', 'Kaşarlı tost', '🥪', 55, 18), Y('su_boregi', 'Su böreği', '🥧', 60, 20),
-      Y('filtre', 'Filtre kahve', '🥤', 50, 12), Y('cheesecake', 'Cheesecake', '🍰', 85, 28), Y('menemen', 'Menemen', '🍳', 95, 30), Y('serpme', 'Serpme kahvaltı', '🧺', 220, 80)],
+    menu: [Y('turk_kahvesi', 'Türk kahvesi', '☕', 26), Y('demlik_cay', 'Demlik çay', '🫖', 20), Y('kasarli_tost', 'Kaşarlı tost', '🥪', 37), Y('su_boregi', 'Su böreği', '🥧', 40),
+      Y('filtre', 'Filtre kahve', '🥤', 38), Y('cheesecake', 'Cheesecake', '🍰', 57), Y('menemen', 'Menemen', '🍳', 65), Y('serpme', 'Serpme kahvaltı', '🧺', 140)],
     esya: [A('espresso', 'Espresso makinesi', '☕', 30000, 1, { fiyatK: 0.12 }, 'Tezgahta parlak makine: fiyatlar +%12'),
       A('semsiye', 'Teras şemsiyeleri', '⛱️', 22000, 1, { musteri: 0.12, teras: true }, 'Müşteri +%12, terasta görünür'),
       A('vitrin', 'Pasta vitrini', '🧊', 45000, 2, { musteri: 0.18 }, 'Işıklı soğuk vitrin: müşteri +%18'),
@@ -112,8 +109,8 @@ export const ISLETME: Record<IsletmeId, Isletme> = {
       A('soba', 'Teras ısıtıcıları', '🔥', 55000, 4, { musteri: 0.15, teras: true }, 'Kışın da dolu: müşteri +%15'),
       A('barista', 'Barista istasyonu', '🏆', 90000, 5, { fiyatK: 0.2 }, 'Değirmen, demleme barı: fiyatlar +%20')] },
   bistro: { id: 'bistro', ad: 'Bistro', ikon: '🐟', mus: 0.9, asama: ['Sahil büfesi', 'Sahil bistro', 'Balık bistro', 'Teraslı bistro', 'Gurme bistro'],
-    menu: [Y('limonata', 'Ev limonatası', '🍋', 40, 9), Y('latte', 'Latte', '☕', 60, 14), Y('waffle', 'Waffle', '🧇', 110, 35), Y('frappe', 'Frappe', '🥤', 75, 18),
-      Y('balik_ekmek', 'Balık ekmek', '🐟', 120, 45), Y('deniz_makarna', 'Deniz mahsullü makarna', '🍝', 190, 70), Y('levrek', 'Levrek ızgara', '🐠', 320, 130), Y('sufle', 'Sufle', '🍫', 95, 30)],
+    menu: [Y('limonata', 'Ev limonatası', '🍋', 31), Y('latte', 'Latte', '☕', 46), Y('waffle', 'Waffle', '🧇', 75), Y('frappe', 'Frappe', '🥤', 57),
+      Y('balik_ekmek', 'Balık ekmek', '🐟', 75), Y('deniz_makarna', 'Deniz mahsullü makarna', '🍝', 120), Y('levrek', 'Levrek ızgara', '🐠', 190), Y('sufle', 'Sufle', '🍫', 65)],
     esya: [A('kahve_bar', 'Kahve barı', '☕', 32000, 1, { fiyatK: 0.1 }, 'Latte ve frappe istasyonu: fiyatlar +%10'),
       A('semsiye', 'Teras şemsiyeleri', '⛱️', 22000, 1, { musteri: 0.12, teras: true }, 'Müşteri +%12, terasta görünür'),
       A('waffle_mak', 'Waffle makinesi', '🧇', 26000, 2, { musteri: 0.12 }, 'Tatlı kokusu sokağa yayılır: müşteri +%12'),
@@ -125,8 +122,8 @@ export const ISLETME: Record<IsletmeId, Isletme> = {
       A('soba', 'Teras ısıtıcıları', '🔥', 55000, 4, { musteri: 0.15, teras: true }, 'Kışın da dolu: müşteri +%15'),
       A('sef_seti', 'Şef bıçak seti', '🔪', 95000, 5, { fiyatK: 0.2 }, 'Gurme tabaklar: fiyatlar +%20')] },
   kirtasiye: { id: 'kirtasiye', ad: 'Kırtasiye', ikon: '✏️', mus: 0.9, asama: ['Kırtasiye', 'Kırtasiye & fotokopi', 'Kitapçı', 'Kitap & hobi', 'Martı Kitabevi'],
-    menu: [Y('kalem', 'Kurşun kalem', '✏️', 15, 4), Y('defter', 'Spiralli defter', '📒', 45, 15), Y('silgi', 'Silgi seti', '🧽', 20, 5), Y('boya', 'Boya kalemi', '🖍️', 70, 25),
-      Y('fotokopi_s', 'Fotokopi', '📄', 10, 2), Y('canta', 'Okul çantası', '🎒', 380, 160), Y('roman', 'Roman', '📕', 150, 70), Y('maket', 'Maket seti', '🧩', 260, 110)],
+    menu: [Y('kalem', 'Kurşun kalem', '✏️', 11), Y('defter', 'Spiralli defter', '📒', 30), Y('silgi', 'Silgi seti', '🧽', 15), Y('boya', 'Boya kalemi', '🖍️', 45),
+      Y('fotokopi_s', 'Fotokopi', '📄', 8), Y('canta', 'Okul çantası', '🎒', 220), Y('roman', 'Roman', '📕', 80), Y('maket', 'Maket seti', '🧩', 150)],
     esya: [A('fotokopi', 'Fotokopi makinesi', '🖨️', 28000, 1, { musteri: 0.15 }, 'Öğrenciler kuyruğa girer: müşteri +%15'),
       A('pos', 'Kartlı ödeme', '💳', 12000, 1, { musteri: 0.08 }, 'Bozuk para derdi bitti: müşteri +%8'),
       A('laminasyon', 'Ciltleme ve laminasyon', '📎', 22000, 2, { fiyatK: 0.1 }, 'Ödev ciltleme: fiyatlar +%10'),
@@ -136,8 +133,8 @@ export const ISLETME: Record<IsletmeId, Isletme> = {
       A('yazici3d', '3D yazıcı', '🧊', 75000, 4, { fiyatK: 0.15 }, 'Martı figürü basar: fiyatlar +%15'),
       A('okuma', 'Okuma köşesi', '🛋️', 45000, 5, { musteri: 0.18 }, 'Puf ve lamba: müşteri +%18')] },
   kantin: { id: 'kantin', ad: 'Okul kantini', ikon: '🥪', mus: 1.5, asama: ['Kantin', 'Kantin+', 'Okul büfesi', 'Kantin kafe', 'Yıldızlı kantin'],
-    menu: [Y('ayran', 'Ayran', '🥛', 15, 4), Y('simit_k', 'Simit', '🥯', 15, 5), Y('tost_k', 'Karışık tost', '🥪', 45, 15), Y('kek', 'Kek', '🧁', 20, 6),
-      Y('cikolatali_sut', 'Çikolatalı süt', '🍫', 25, 8), Y('pizza', 'Pizza dilimi', '🍕', 55, 20), Y('salata_k', 'Meyve kabı', '🍎', 35, 12), Y('kofte_k', 'Köfte ekmek', '🍔', 75, 28)],
+    menu: [Y('ayran', 'Ayran', '🥛', 11), Y('simit_k', 'Simit', '🥯', 10), Y('tost_k', 'Karışık tost', '🥪', 30), Y('kek', 'Kek', '🧁', 14),
+      Y('cikolatali_sut', 'Çikolatalı süt', '🍫', 17), Y('pizza', 'Pizza dilimi', '🍕', 35), Y('salata_k', 'Meyve kabı', '🍎', 23), Y('kofte_k', 'Köfte ekmek', '🍔', 47)],
     esya: [A('tost_mak', 'Tost makinesi', '🥪', 9000, 1, { fiyatK: 0.1 }, 'Çıtır tost: fiyatlar +%10'),
       A('buzdolap', 'İçecek dolabı', '🧃', 14000, 1, { musteri: 0.12 }, 'Soğuk ayran: müşteri +%12'),
       A('semaver_k', 'Semaver', '🫖', 11000, 2, { musteri: 0.1 }, 'Öğretmenler çay içer: müşteri +%10'),
@@ -147,8 +144,8 @@ export const ISLETME: Record<IsletmeId, Isletme> = {
       A('ekran_k', 'Menü ekranı', '📺', 26000, 4, { fiyatK: 0.12 }, 'Dijital menü: fiyatlar +%12'),
       A('izgara_k', 'Köfte ızgarası', '🔥', 40000, 5, { fiyatK: 0.18 }, 'Köfte kokusu: fiyatlar +%18')] },
   lokanta: { id: 'lokanta', ad: 'Lokanta', ikon: '🍲', mus: 1.2, asama: ['Esnaf lokantası', 'Lokanta', 'Ocakbaşı', 'Kebapçı', 'Martı Sofrası'],
-    menu: [Y('mercimek', 'Mercimek çorbası', '🥣', 60, 15), Y('fasulye', 'Kuru fasulye pilav', '🍛', 110, 35), Y('karniyarik', 'Karnıyarık', '🍆', 130, 45), Y('lahmacun', 'Lahmacun', '🫓', 70, 22),
-      Y('pide', 'Kaşarlı pide', '🥙', 150, 50), Y('iskender', 'İskender', '🥩', 280, 110), Y('adana', 'Adana kebap', '🌶️', 260, 100), Y('kunefe', 'Künefe', '🍮', 120, 40)],
+    menu: [Y('mercimek', 'Mercimek çorbası', '🥣', 45), Y('fasulye', 'Kuru fasulye pilav', '🍛', 75), Y('karniyarik', 'Karnıyarık', '🍆', 85), Y('lahmacun', 'Lahmacun', '🫓', 48),
+      Y('pide', 'Kaşarlı pide', '🥙', 100), Y('iskender', 'İskender', '🥩', 170), Y('adana', 'Adana kebap', '🌶️', 160), Y('kunefe', 'Künefe', '🍮', 80)],
     esya: [A('benmari', 'Benmari tezgahı', '🍲', 40000, 1, { musteri: 0.15 }, 'Tencereler sıcak: müşteri +%15'),
       A('corba_kazan', 'Çorba kazanı', '🥣', 18000, 1, { fiyatK: 0.08 }, 'Sabah çorbası: fiyatlar +%8'),
       A('pide_firin', 'Taş fırın', '🔥', 75000, 2, { musteri: 0.18 }, 'Pide ve lahmacun fırından: müşteri +%18'),
@@ -159,8 +156,8 @@ export const ISLETME: Record<IsletmeId, Isletme> = {
       A('led_menu', 'Işıklı menü panosu', '📺', 30000, 4, { fiyatK: 0.1 }, 'Fotoğraflı menü: fiyatlar +%10'),
       A('sef_ocak', 'Usta ocağı', '👨‍🍳', 120000, 5, { fiyatK: 0.22 }, 'Usta işi: fiyatlar +%22')] },
   kafeterya: { id: 'kafeterya', ad: 'Tesis kafeteryası', ikon: '⚽', mus: 1.1, asama: ['Soyunma çay ocağı', 'Kafeterya', 'Spor kafe', 'Taraftar kafe', 'Kulüp lokali'],
-    menu: [Y('cay_t', 'Çay', '🍵', 15, 3), Y('gazoz_t', 'Boğaz Gazozu', '🥤', 30, 8), Y('tost_t', 'Sucuklu tost', '🥪', 60, 20), Y('enerji', 'Martı Enerji', '⚡', 45, 14),
-      Y('kofte_t', 'Köfte ekmek', '🍔', 90, 32), Y('protein', 'Protein bar', '🍫', 50, 18), Y('kumpir_t', 'Kumpir', '🥔', 110, 40), Y('mac_menu', 'Maç menüsü', '🍟', 160, 60)],
+    menu: [Y('cay_t', 'Çay', '🍵', 12), Y('gazoz_t', 'Boğaz Gazozu', '🥤', 22), Y('tost_t', 'Sucuklu tost', '🥪', 40), Y('enerji', 'Martı Enerji', '⚡', 31),
+      Y('kofte_t', 'Köfte ekmek', '🍔', 58), Y('protein', 'Protein bar', '🍫', 32), Y('kumpir_t', 'Kumpir', '🥔', 70), Y('mac_menu', 'Maç menüsü', '🍟', 100)],
     esya: [A('cay_mak', 'Çay makinesi', '🍵', 9000, 1, { musteri: 0.1 }, 'Soyunmadan çıkan çay içer: müşteri +%10'),
       A('icecek_dolap', 'İçecek dolabı', '🥤', 14000, 1, { fiyatK: 0.08 }, 'Soğuk gazoz: fiyatlar +%8'),
       A('mac_tv', 'Maç ekranı', '📺', 30000, 2, { musteri: 0.18 }, 'Dev ekranda lig: müşteri +%18'),
@@ -169,12 +166,47 @@ export const ISLETME: Record<IsletmeId, Isletme> = {
       A('izgara_t', 'Köfte ızgarası', '🔥', 45000, 3, { fiyatK: 0.14 }, 'Maç sonu köfte: fiyatlar +%14'),
       A('forma_duvar', 'Forma duvarı', '👕', 35000, 4, { musteri: 0.12 }, 'İmzalı formalar: müşteri +%12'),
       A('vip', 'VIP loca', '🎟️', 85000, 5, { fiyatK: 0.2 }, 'Saha manzaralı koltuklar: fiyatlar +%20')] },
+  // 2026-11-20 AVM shops (holding yolu, ilk adım giyim): goods are sold at a net price, NO stock; few customers, big tickets.
+  // mus is low on purpose: revenue per hour stays near the lokanta's per lira of plot price (see tests/sim/avm-magaza.test.ts).
+  giyim: { id: 'giyim', ad: 'Giyim mağazası', ikon: '👕', mus: 0.16, asama: ['Butik', 'Moda mağazası', 'Marka mağazası', 'Konsept mağaza', 'Martı Moda Evi'],
+    menu: [Y('tisort', 'Tişört', '👕', 180), Y('kot', 'Kot pantolon', '👖', 420), Y('gomlek', 'Gömlek', '👔', 320), Y('sweat', 'Kapüşonlu sweat', '🧥', 390),
+      Y('elbise', 'Elbise', '👗', 600), Y('spor_ayk', 'Spor ayakkabı', '👟', 850), Y('mont', 'Mont', '🧥', 950), Y('takim', 'Takım elbise', '🤵', 1600)],
+    esya: [A('askilik', 'Askılı reyon', '🧺', 30000, 1, { musteri: 0.15 }, 'Yeni sezon ortada döner: müşteri +%15'),
+      A('manken', 'Vitrin mankenleri', '🧍', 26000, 1, { musteri: 0.12 }, 'Kapıdan geçen içeri bakar: müşteri +%12'),
+      A('prova', 'Prova kabini', '🚪', 34000, 2, { fiyatK: 0.1 }, 'Deneyen alır: fiyatlar +%10'),
+      A('ayna', 'Boy aynası', '🪞', 18000, 2, { musteri: 0.1 }, 'Kendini beğenen tekrar gelir: müşteri +%10'),
+      A('ayakkabi', 'Ayakkabı reyonu', '👟', 45000, 3, { musteri: 0.14 }, 'Spor ve klasik ayakkabı duvarı: müşteri +%14'),
+      A('aksesuar', 'Aksesuar standı', '👜', 38000, 3, { fiyatK: 0.12 }, 'Çanta, şapka, kemer: fiyatlar +%12'),
+      A('led_vitrin', 'Işıklı vitrin panosu', '💡', 42000, 4, { musteri: 0.12 }, 'Kampanya ekranı: müşteri +%12'),
+      A('tasarim', 'Tasarımcı köşesi', '🧵', 110000, 5, { fiyatK: 0.2 }, 'Dikiş makinesi, özel dikim: fiyatlar +%20')] },
+  elektronik: { id: 'elektronik', ad: 'Elektronik mağazası', ikon: '📱', mus: 0.12, asama: ['Telefoncu', 'Elektronik', 'Teknoloji mağazası', 'Tekno market', 'Tekno Martı Plaza'],
+    menu: [Y('kulaklik', 'Kulaklık', '🎧', 400), Y('powerbank', 'Powerbank', '🔋', 550), Y('sarj_kablo', 'Şarj kablosu', '🔌', 140), Y('kilif', 'Telefon kılıfı', '📱', 170),
+      Y('hoparlor', 'Bluetooth hoparlör', '🔊', 950), Y('akilli_saat', 'Akıllı saat', '⌚', 1900), Y('tablet', 'Tablet', '💻', 2200), Y('telefon', 'Akıllı telefon', '📱', 3000)],
+    esya: [A('demo_masa', 'Deneme masası', '📱', 36000, 1, { musteri: 0.15 }, 'Telefonlar elde denenir: müşteri +%15'),
+      A('tamir', 'Tamir tezgâhı', '🛠️', 24000, 1, { musteri: 0.1 }, 'Ekran değişimi bekleyen alışveriş yapar: müşteri +%10'),
+      A('tv_duvar', 'TV duvarı', '📺', 60000, 2, { musteri: 0.14 }, 'Dev ekranlar sokaktan görünür: müşteri +%14'),
+      A('kulaklik_stand', 'Kulaklık standı', '🎧', 22000, 2, { fiyatK: 0.08 }, 'Dinleyen alır: fiyatlar +%8'),
+      A('konsol', 'Oyun konsolu köşesi', '🎮', 55000, 3, { musteri: 0.14 }, 'Gençler maç yapar: müşteri +%14'),
+      A('vr', 'VR deneme alanı', '🥽', 70000, 3, { fiyatK: 0.1 }, 'Gözlüğü takan cüzdanı açar: fiyatlar +%10'),
+      A('drone', 'Drone vitrini', '🚁', 48000, 4, { musteri: 0.1 }, 'Tavanda süzülen drone: müşteri +%10'),
+      A('led_e', 'Işıklı reklam panosu', '💡', 90000, 5, { fiyatK: 0.15 }, 'Lansman kampanyaları: fiyatlar +%15')] },
+  oyuncak: { id: 'oyuncak', ad: 'Oyuncakçı', ikon: '🧸', mus: 0.28, asama: ['Oyuncakçı', 'Oyuncak dükkânı', 'Oyuncak mağazası', 'Oyun dünyası', 'Oyuncak Dünyası Mega'],
+    menu: [Y('pelus', 'Peluş martı', '🧸', 140), Y('yapboz', 'Yapboz', '🧩', 160), Y('araba', 'Oyuncak araba', '🚗', 120), Y('bebek', 'Oyuncak bebek', '🪆', 280),
+      Y('kutu_oyun', 'Kutu oyunu', '🎲', 380), Y('yapi_seti', 'Yapı seti', '🧱', 450), Y('rc_araba', 'Uzaktan kumandalı araba', '🏎️', 650), Y('tren_seti', 'Tren seti', '🚂', 900)],
+    esya: [A('pelus_sepet', 'Peluş sepeti', '🧸', 18000, 1, { musteri: 0.12 }, 'Çocuklar kucaklar, anneler alır: müşteri +%12'),
+      A('balon', 'Balon köşesi', '🎈', 12000, 1, { musteri: 0.1 }, 'Kapıda renkli balonlar: müşteri +%10'),
+      A('tren_pist', 'Oyuncak tren pisti', '🚂', 40000, 2, { musteri: 0.15 }, 'Masada dönen tren: müşteri +%15'),
+      A('lego_duvar', 'Yapı seti duvarı', '🧱', 36000, 2, { fiyatK: 0.1 }, 'Kutu kutu setler: fiyatlar +%10'),
+      A('oyun_kale', 'Oyun kalesi', '🏰', 55000, 3, { musteri: 0.14 }, 'Kaydıraklı köşe: müşteri +%14'),
+      A('maskot', 'Dev martı maskotu', '🐦', 30000, 3, { musteri: 0.1 }, 'Fotoğraf çektiren çok: müşteri +%10'),
+      A('hediye_paket', 'Hediye paketi tezgâhı', '🎁', 26000, 4, { fiyatK: 0.12 }, 'Kurdeleli paket: fiyatlar +%12'),
+      A('led_o', 'Işıklı vitrin', '✨', 70000, 5, { fiyatK: 0.18 }, 'Yıldızlı tavan vitrini: fiyatlar +%18')] },
 };
 /** compatibility: menus by plot id (k1/k2 tests and older code) */
 export const KAFE_MENU: Record<string, KafeYemek[]> = { k1: ISLETME.kafe.menu, k2: ISLETME.bistro.menu };
 export const KAFE_MENU_LV = [0, 2, 4, 5, 6, 8];
 /** fixed plot id -> its business type */
-export const ARSA_ISLETME: Record<string, IsletmeId> = { k1: 'kafe', k2: 'bistro', k3: 'kirtasiye', k4: 'kantin', k5: 'lokanta', k6: 'kafeterya' };
+export const ARSA_ISLETME: Record<string, IsletmeId> = { k1: 'kafe', k2: 'bistro', k3: 'kirtasiye', k4: 'kantin', k5: 'lokanta', k6: 'kafeterya', k7: 'giyim', k8: 'elektronik', k9: 'oyuncak' };
 export const isletmeOf = (arsaId: string): Isletme => ISLETME[ARSA_ISLETME[arsaId] || 'kafe'];
 export const kafeMenu = (id: string, lv: number) => isletmeOf(id).menu.slice(0, KAFE_MENU_LV[Math.max(0, Math.min(5, lv))] || 2);
 export const KAFE_ESYA: KafeEsya[] = ISLETME.kafe.esya;
@@ -202,25 +234,23 @@ export const KAFE_ISCI_TAVAN = 3;
 export const kafeIsciMax = (lv: number) => Math.min(KAFE_ISCI_TAVAN, lv + 1);
 export const isciFiyat = (n: number) => 12000 * (n + 1), ISCI_SAAT_UCRET = 60, ISCI_MUSTERI = 0.4;
 
-/** shop types (D). One shared engine: stok -> müşteri -> satış -> upgrade. fiyat/maliyet per unit, musteri per game hour at level 1. */
-export interface DukkanTip { id: string; ad: string; ikon: string; renk: string; tabela: string; maliyet: number; fiyat: number; musteri: number; kurulum: number; seviye: number }
+/** shop types (D). One shared engine: müşteri -> satış -> upgrade. net fiyat per unit, musteri per game hour at level 1. */
+export interface DukkanTip { id: string; ad: string; ikon: string; renk: string; tabela: string; fiyat: number; musteri: number; kurulum: number; seviye: number }
 export const DUKKAN_TIPLERI: DukkanTip[] = [
-  { id: 'bufe', ad: 'Büfe (Simit & Çay)', ikon: '🥯', renk: '#e0533c', tabela: 'SİMİT ÇAY', maliyet: 6, fiyat: 14, musteri: 5, kurulum: 20000, seviye: 1 },
-  { id: 'manav', ad: 'Manav & Bakkal', ikon: '🍎', renk: '#6fae55', tabela: 'MANAV', maliyet: 8, fiyat: 17, musteri: 5, kurulum: 30000, seviye: 1 },
-  { id: 'berber', ad: 'Berber', ikon: '💈', renk: '#2f6f9a', tabela: 'BERBER', maliyet: 10, fiyat: 26, musteri: 3, kurulum: 45000, seviye: 4 },
-  { id: 'kiyafet', ad: 'Kıyafet', ikon: '👕', renk: '#c94f6d', tabela: 'KIYAFET', maliyet: 20, fiyat: 46, musteri: 3, kurulum: 70000, seviye: 6 },
-  { id: 'balikci', ad: 'Balıkçı', ikon: '🐟', renk: '#3fb5b0', tabela: 'BALIKÇI', maliyet: 12, fiyat: 27, musteri: 4, kurulum: 55000, seviye: 5 },
-  { id: 'cay_ocagi', ad: 'Çay Ocağı', ikon: '🍵', renk: '#b07a48', tabela: 'ÇAY OCAĞI', maliyet: 3, fiyat: 8, musteri: 8, kurulum: 25000, seviye: 2 },
-  { id: 'spor', ad: 'Spor Malzeme', ikon: '⚽', renk: '#3fa35a', tabela: 'SPOR', maliyet: 25, fiyat: 55, musteri: 2, kurulum: 90000, seviye: 8 },
-  { id: 'fan', ad: 'Fan Shop', ikon: '🧣', renk: '#ffd23f', tabela: 'FAN SHOP', maliyet: 18, fiyat: 42, musteri: 3, kurulum: 80000, seviye: 7 },
-  { id: 'kafe', ad: 'Kafe', ikon: '☕', renk: '#b07a48', tabela: 'KAFE', maliyet: 9, fiyat: 24, musteri: 6, kurulum: 45000, seviye: 2 },
+  { id: 'bufe', ad: 'Büfe (Simit & Çay)', ikon: '🥯', renk: '#e0533c', tabela: 'SİMİT ÇAY', fiyat: 8, musteri: 5, kurulum: 20000, seviye: 1 },
+  { id: 'manav', ad: 'Manav & Bakkal', ikon: '🍎', renk: '#6fae55', tabela: 'MANAV', fiyat: 9, musteri: 5, kurulum: 30000, seviye: 1 },
+  { id: 'berber', ad: 'Berber', ikon: '💈', renk: '#2f6f9a', tabela: 'BERBER', fiyat: 16, musteri: 3, kurulum: 45000, seviye: 4 },
+  { id: 'kiyafet', ad: 'Kıyafet', ikon: '👕', renk: '#c94f6d', tabela: 'KIYAFET', fiyat: 26, musteri: 3, kurulum: 70000, seviye: 6 },
+  { id: 'balikci', ad: 'Balıkçı', ikon: '🐟', renk: '#3fb5b0', tabela: 'BALIKÇI', fiyat: 15, musteri: 4, kurulum: 55000, seviye: 5 },
+  { id: 'cay_ocagi', ad: 'Çay Ocağı', ikon: '🍵', renk: '#b07a48', tabela: 'ÇAY OCAĞI', fiyat: 5, musteri: 8, kurulum: 25000, seviye: 2 },
+  { id: 'spor', ad: 'Spor Malzeme', ikon: '⚽', renk: '#3fa35a', tabela: 'SPOR', fiyat: 30, musteri: 2, kurulum: 90000, seviye: 8 },
+  { id: 'fan', ad: 'Fan Shop', ikon: '🧣', renk: '#ffd23f', tabela: 'FAN SHOP', fiyat: 24, musteri: 3, kurulum: 80000, seviye: 7 },
+  { id: 'kafe', ad: 'Kafe', ikon: '☕', renk: '#b07a48', tabela: 'KAFE', fiyat: 15, musteri: 6, kurulum: 45000, seviye: 2 },
 ];
 export const DUKKAN_BY_ID: Record<string, DukkanTip> = Object.fromEntries(DUKKAN_TIPLERI.map(t => [t.id, t]));
 export const DUKKAN_MAX_SEVIYE = 5;
-export const DUKKAN_STOK_MAX = [0, 60, 120, 200, 320, 500];
-/** upgrade level n -> n+1: TL cost multiplier of `kurulum`, plus item needs */
-export const dukkanYukselt = (tip: DukkanTip, lv: number): { tl: number; esya: Record<string, number> } =>
-  ({ tl: Math.round(tip.kurulum * lv * 0.9), esya: lv >= 3 ? { raf_kiti: 1, tente_seti: 1 } : { raf_kiti: 1 } });
+/** upgrade level n -> n+1: TL cost multiplier of `kurulum` (plain money, no materials) */
+export const dukkanYukselt = (tip: DukkanTip, lv: number): { tl: number } => ({ tl: Math.round(tip.kurulum * lv * 0.9) });
 /** customers per game hour at a level */
 export const dukkanMusteri = (tip: DukkanTip, lv: number) => tip.musteri * (1 + (lv - 1) * 0.45);
 

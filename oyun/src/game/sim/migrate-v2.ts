@@ -25,7 +25,7 @@ export function migrateV2(input: unknown, seed = 1): GameState {
   if (isObj(v.grades)) for (const k of Object.keys(s.grades)) s.grades[k as keyof typeof s.grades] = Math.min(5, Math.max(1, num(v.grades[k], 1)));
   if (Array.isArray(v.renewed)) s.renewed = v.renewed.map(String);
   if (isObj(v.tadilat)) s.tadilat = { part: 'stage' + num(v.tadilat.to), endsAt: s.playT + num(v.tadilat.left), to: num(v.tadilat.to), left: num(v.tadilat.left), total: num(v.tadilat.total) };
-  if (Array.isArray(v.workers)) s.workers = v.workers.filter(isObj).map(w => ({ ...w, id: num(w.id), name: String(w.name ?? 'İşçi'), role: String(w.role ?? 'garson'), xp: num(w.xp), morale: num(w.morale, 70), traits: Array.isArray(w.traits) ? w.traits : [String(w.trait ?? 'hamarat')] }) as WorkerSave);
+  if (Array.isArray(v.workers)) s.workers = v.workers.filter(isObj).map(w => ({ ...w, id: num(w.id), name: String(w.name ?? 'İşçi'), role: String(w.role ?? 'garson'), xp: num(w.xp), traits: Array.isArray(w.traits) ? w.traits : [String(w.trait ?? 'hamarat')] }) as WorkerSave);
   s.jobCards = Array.isArray(v.jobCards) ? v.jobCards : null;
   if (isObj(v.stats)) for (const k of Object.keys(v.stats)) s.stats[k] = num(v.stats[k]);
   if (isObj(v.ach)) for (const k of Object.keys(v.ach)) s.ach[k] = num(v.ach[k], 1);

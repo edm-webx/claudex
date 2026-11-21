@@ -14,14 +14,20 @@
  */
 import * as T from 'three';
 import type { RenderPipeline, RenderDeps, TierDef, Season, WeatherState, RenderInfo, Vec3, ScreenPt, Disposer, DayPhase } from '../api';
+import { DAY_START_H, DAY_END_H } from '../api';
 import { createCameraRig, type MotorCameraRig } from '../camera';
 import { makeSky } from './sky';
-import { todAt, phaseAt, type Tod } from './tod';
+import { createShadowCull } from './shadow-cull';
+import { createWarmGate } from './warm-gate';
+import { createLookRenderer, lookAt, LOOK_POZ, AKICI_POZ, installLookToneMap } from './look';
+import { todAt, phaseAt, DAWN_EXTRA, type Tod } from './tod';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+import { akisGuncelle } from './doku-akis';
+import { createReflector, reflectBudget, type Reflector } from './reflect';
 
 export { todAt, phaseAt, TOD } from './tod';
 export type { Tod } from './tod';
@@ -45,24 +51,55 @@ export interface MotorRender extends RenderPipeline {
   /** Sky-based environment map (PMREM, refreshed every half game hour); null before the renderer exists. */
   onEnv(cb: (tex: T.Texture | null) => void): Disposer;
   readonly bloomOn: boolean;
+  /** PRF-08: outdoor hemisphere multiplier (night-lights eases it to 0.85 inside a room); setTime and hava-look multiply it in. */
+  hemiMul: number;
+  /** GRS-01: light colour multiplier for the akıcı grade (golden hour / night tint without the GRADE pass); [1,1,1] when GRADE runs */
+  readonly lightTint: readonly [number, number, number];
+  /** GRS-02: weather saturation multiplier for the GRADE pass (hava-look: rain / fog / snow wash the colours a little); 1 = clear */
+  weatherSat: number;
+  /** PRF-06: leave out shadow casters whose shadow cannot reach the camera view (default on; off only for A/B measurement) */
+  shadowCull: boolean;
+  shadowStats(): { casters: number; culled: number };
+  /** GRS-05: planar water reflection. The sea view hands over its mesh (hidden during the mirrored pass) and reads texture/matrix/on each frame. */
+  readonly reflector: Reflector;
+  reflectSea: T.Object3D | null;
   /** PRF-12: dynamic resolution; multiplies the tier's pixel ratio (0.6..1). Resizes targets only, no shader relink. */
   setScale(s: number): void;
+  /** PRF-12: bloom pass on/off inside the existing composer (pass.enabled; no relink, no target rebuild). */
+  setPostCut(cut: boolean): void;
   /** PRF-03: parallel shader compile of everything visible, in both shadow states (so a later tier change links nothing). Never draws. */
   warm(sc: T.Scene, cam: T.Camera): Promise<void>;
+  /** PRF-03: programs born in warm() vs inside a frame (blocking), a warm still compiling, and the last frame-born program names */
+  warmStats(): { born: { draw: number; warm: number }; busy: boolean; lastDrawBorn: string[] };
 }
 
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
+const NO_TINT = [1, 1, 1] as const;
 
-/** Display-space colour grade after OutputPass: saturation, contrast around mid grey, tint, soft vignette. */
+/** PRF-03: OutputPass picks its defines inside its first render() (a define change = relink inside the frame). Same rule as
+ *  three 0.160 OutputPass.render, done ahead so warm() compiles the program the first frame really uses. */
+function primeOutputPass(op: OutputPass, r: T.WebGLRenderer): void {
+  const o = op as unknown as { _outputColorSpace: string | null; _toneMapping: T.ToneMapping | null; material: T.ShaderMaterial };
+  if (o._outputColorSpace === r.outputColorSpace && o._toneMapping === r.toneMapping) return;
+  o._outputColorSpace = r.outputColorSpace; o._toneMapping = r.toneMapping;
+  const d: Record<string, string> = {};
+  if (T.ColorManagement.getTransfer(r.outputColorSpace) === T.SRGBTransfer) d.SRGB_TRANSFER = '';
+  const tm: Partial<Record<T.ToneMapping, string>> = { [T.LinearToneMapping]: 'LINEAR', [T.ReinhardToneMapping]: 'REINHARD', [T.CineonToneMapping]: 'CINEON', [T.ACESFilmicToneMapping]: 'ACES_FILMIC', [T.AgXToneMapping]: 'AGX' };
+  const k = tm[r.toneMapping]; if (k) d[k + '_TONE_MAPPING'] = '';
+  o.material.defines = d; o.material.needsUpdate = true;
+}
+
+/** Display-space colour grade after OutputPass: saturation, contrast around a pivot, tint, soft vignette (values: look.ts lookAt). */
+const L0 = lookAt(11, 0);
 const GRADE = {
-  uniforms: { tDiffuse: { value: null }, uSat: { value: 1.1 }, uCon: { value: 1.06 }, uTint: { value: new T.Vector3(1, 1, 1) }, uVig: { value: 0.2 } },
+  uniforms: { tDiffuse: { value: null }, uSat: { value: L0.sat }, uCon: { value: L0.con }, uPiv: { value: L0.pivot }, uTint: { value: new T.Vector3(...L0.tint) }, uVig: { value: L0.vig } },
   vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
-  fragmentShader: `uniform sampler2D tDiffuse; uniform float uSat; uniform float uCon; uniform vec3 uTint; uniform float uVig; varying vec2 vUv;
+  fragmentShader: `uniform sampler2D tDiffuse; uniform float uSat; uniform float uCon; uniform float uPiv; uniform vec3 uTint; uniform float uVig; varying vec2 vUv;
 void main() {
   vec4 c = texture2D(tDiffuse, vUv); vec3 col = c.rgb;
   float l = dot(col, vec3(0.2126, 0.7152, 0.0722));
   col = mix(vec3(l), col, uSat);
-  col = (col - 0.5) * uCon + 0.5;
+  col = (col - uPiv) * uCon + uPiv;
   col *= uTint;
   vec2 d = vUv - 0.5; col *= 1.0 - uVig * smoothstep(0.35, 0.85, length(d * vec2(1.25, 1.0)));
   gl_FragColor = vec4(clamp(col, 0.0, 1.0), c.a);
@@ -98,7 +135,100 @@ export function createRender(deps: RenderDeps): MotorRender {
 
   let renderer: T.WebGLRenderer | null = null;
   // PRF-01: GPU frame time via EXT_disjoint_timer_query_webgl2 (only while the perf recorder is on; absent = not measured).
-  let progSeen = 0;
+  // PRF-03: every shader program three links is counted once, by where it was born: 'warm' (compileAsync, parallel, off the
+  // frame) or 'draw' (first sight inside a frame = the blocking compile that froze Chrome). Target in play: draw births = 0.
+  const seenProg = new WeakSet<object>(), born = { draw: 0, warm: 0 }, lastDrawBorn: string[] = [];
+  const keyHash = (s: string) => { let h = 2166136261; for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619); return (h >>> 0).toString(36); };
+  const progNames = new WeakMap<object, string>();
+  const progName = (pg: { name: string; cacheKey: string }) => { let s = progNames.get(pg); if (!s) { s = (pg.name || '') + '#' + keyHash(pg.cacheKey || ''); progNames.set(pg, s); } return s; };
+  const progList = () => ((renderer?.info as { programs?: { name: string; cacheKey: string }[] } | undefined)?.programs || []);
+  const scanProgs = (kind: 'draw' | 'warm', sc?: T.Object3D) => {
+    let n = 0; const fresh: object[] = [];
+    for (const pg of progList()) {
+      if (!pg || seenProg.has(pg)) continue;
+      seenProg.add(pg); n++; born[kind]++;
+      if (kind === 'draw') fresh.push(pg);
+    }
+    // a frame-born program is rare (that is the bug): name who owns it (object path + material) for the perf record
+    if (fresh.length && sc && renderer) {
+      const pr = renderer.properties, who = new Map<object, string>();
+      sc.traverse(o => { const mt = (o as T.Mesh).material; if (!mt) return; for (const m of Array.isArray(mt) ? mt : [mt]) { const cp = (pr.get(m) as { currentProgram?: object }).currentProgram; if (cp && fresh.includes(cp) && !who.has(cp)) { let path = o.name || o.type, q = o.parent; for (let k = 0; q && k < 3; k++, q = q.parent) path = (q.name || q.type) + '/' + path; who.set(cp, path + ':' + m.type + (m.name ? '(' + m.name + ')' : '')); } } });
+      for (const pg of fresh) { lastDrawBorn.push(progName(pg as { name: string; cacheKey: string }) + '@' + (who.get(pg) || 'geçiş/pmrem')); if (lastDrawBorn.length > 24) lastDrawBorn.shift(); }
+    }
+    return n;
+  };
+  let warmJobs = 0;
+  // compileAsync against the target the frame really draws into (see warm()); `objs` = compile only these objects' materials
+  // three 0.160 compileAsync polls properties.get(m).currentProgram.isReady() and throws (inside a setTimeout, so the promise never
+  // settles) when a material was disposed while linking: a streamed zone left again within the compile window (PRF-07 pop-in
+  // probe, 2026-11-21). The warm job then stayed busy forever and its meshes waited for the 3 s gate safety. Same steps, but a
+  // material without a program any more counts as done.
+  const compileSafe = (s: T.Object3D, c: T.Camera, target?: T.Scene | null): Promise<unknown> => {
+    const rr = renderer as unknown as { compile(s: T.Object3D, c: T.Camera, t?: T.Scene | null): Set<T.Material>; properties: { get(m: object): { currentProgram?: { isReady(): boolean } } }; extensions: { get(n: string): unknown } };
+    const mats = rr.compile(s, c, target ?? null);
+    return new Promise<void>(resolve => {
+      const check = () => {
+        mats.forEach(m => { const cp = rr.properties.get(m).currentProgram; if (!cp || cp.isReady()) mats.delete(m); });
+        if (!mats.size) { resolve(); return; }
+        setTimeout(check, 10);
+      };
+      if (rr.extensions.get('KHR_parallel_shader_compile') !== null) check(); else setTimeout(check, 10);
+    });
+  };
+  const compileFor = (sc: T.Scene, cam: T.Camera, objs: T.Object3D[] | null): Promise<unknown> => {
+    const r = renderer ? { compileAsync: compileSafe } : null;
+    if (!r || lost) return Promise.resolve();
+    const rt = composer && rpass ? (composer as unknown as { readBuffer: T.WebGLRenderTarget }).readBuffer : null, prevRt = renderer!.getRenderTarget();
+    let job: Promise<unknown> = Promise.resolve();
+    try {
+      if (rt) renderer!.setRenderTarget(rt);
+      // a list: duck-typed root whose traverse walks only the new objects (no lights in it, so the light state of `sc` stays exact)
+      job = objs ? r.compileAsync({ traverse: (cb: (o: T.Object3D) => void) => objs.forEach(cb), traverseVisible: () => { /* lights come from sc */ } } as unknown as T.Object3D, cam, sc) : r.compileAsync(sc, cam);
+      // full warm: the post passes too (bloom blur/composite, OutputPass, grade). Their full-screen quads are not in the scene,
+      // so they used to link inside the first frame. The pass that draws to the screen compiles against the screen.
+      if (!objs) pmrem ||= new T.PMREMGenerator(renderer!);   // its blur shader starts linking now, not inside the first env refresh
+      if (!objs && composer) {
+        const toScreen = new T.Scene(), toTarget = new T.Scene(), quad = new T.PlaneGeometry(2, 2);
+        const last = composer.passes.filter(ps => ps.enabled).pop();   // the composer sets renderToScreen only while rendering
+        for (const ps of composer.passes) {
+          if (ps instanceof OutputPass) primeOutputPass(ps, renderer!);
+          const mats = new Set<T.Material>();
+          for (const v of Object.values(ps as unknown as Record<string, unknown>)) {
+            const list = Array.isArray(v) ? v : [v, (v as { material?: unknown } | null)?.material];
+            for (const m of list) if (m && (m as T.Material).isMaterial) mats.add(m as T.Material);
+          }
+          mats.forEach(m => (ps === last ? toScreen : toTarget).add(new T.Mesh(quad, m)));
+        }
+        const jobs = [job];
+        if (toTarget.children.length) jobs.push(r.compileAsync(toTarget, cam));
+        if (toScreen.children.length) { renderer!.setRenderTarget(null); jobs.push(r.compileAsync(toScreen, cam)); }
+        job = Promise.all(jobs).finally(() => quad.dispose());
+      }
+    } catch (err) { deps.log?.warn('[render] warm', err); }
+    finally { if (rt || composer) renderer!.setRenderTarget(prevRt); }
+    scanProgs('warm');
+    warmJobs++;
+    return job.then(() => { warmJobs--; }, () => { warmJobs--; });
+  };
+  // PRF-03 gate: new meshes whose program is not linked yet wait off-camera until compileAsync is done (warm-gate.ts)
+  const gate = createWarmGate();
+  let gateUntil = 0, gateN = 0;
+  const gateStep = (sc: T.Scene, cam: T.Camera) => {
+    const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    if (gate.held() && now > gateUntil) gate.release();   // safety: never hide anything longer than 3 s
+    if (!gate.dirty() || !renderer) return;
+    const pr = renderer.properties;
+    type Prog = { isReady(): boolean };
+    const got = gate.collect(sc, m => !(pr.get(m) as { currentProgram?: Prog }).currentProgram);
+    if (!got.length) return;
+    gateUntil = now + 3000;
+    void compileFor(sc, cam, got).then(() => { gate.release(got); });
+    // a new material instance whose program already exists (cache hit) is ready right after the sync part: show it this frame,
+    // only objects whose program is really still linking wait (else a view that respawns meshes would blink for a frame)
+    const ready = got.filter(o => { const mt = (o as T.Mesh).material; return (Array.isArray(mt) ? mt : [mt]).every(m => { const cp = (pr.get(m) as { currentProgram?: Prog }).currentProgram; return !!cp && cp.isReady(); }); });
+    if (ready.length) gate.release(ready);
+    if (got.length > ready.length) { gateN += got.length - ready.length; deps.perf?.count('shaderBekletilen', gateN); }
+  };
   let gl2: WebGL2RenderingContext | null = null, gpuExt: { TIME_ELAPSED_EXT: number; GPU_DISJOINT_EXT: number } | null = null;
   let gpuQ: WebGLQuery | null = null; const gpuPending: WebGLQuery[] = [];
   const gpuBegin = () => { if (!gl2 || !gpuExt || gpuQ || gpuPending.length > 4) return; try { gpuQ = gl2.createQuery(); if (gpuQ) gl2.beginQuery(gpuExt.TIME_ELAPSED_EXT, gpuQ); } catch { gpuQ = null; } };
@@ -120,7 +250,15 @@ export function createRender(deps: RenderDeps): MotorRender {
   let tier: TierDef | null = null;
   let wantAA: boolean | null = null;
   let hour = 11, tod = todAt(11), night = 0;
-  let frameNo = 0, lost = false, resScale = 1;
+  let frameNo = 0, lost = false, resScale = 1, postCut = false;
+  // PRF-12: on a post-chain tier (bloom) the dynamic resolution scale shrinks only the composer's targets: the scene is drawn
+  // smaller and the last full-screen pass (GRADE) stretches it to the full canvas with linear filtering. Resizing the canvas
+  // itself is a synchronous drawing-buffer reallocation (1-16 s per step in headless SwiftShader, olcek-gecis.mjs) and it was
+  // done twice per step (setPixelRatio + resize). Akıcı has no post chain, so its canvas still follows the scale, once.
+  const basePR = (t: TierDef) => Math.min((typeof window !== 'undefined' && window.devicePixelRatio) || 1, t.pixelRatio);
+  const postTier = (t: TierDef) => !!(t.flags && t.flags.bloom);
+  const canvasPR = (t: TierDef) => postTier(t) ? basePR(t) : basePR(t) * resScale;
+  const _rs = new T.Vector2();
   const timeSubs = new Set<(t: Tod, h: number) => void>();
   const lostSubs = new Set<() => void>(), restoredSubs = new Set<() => void>();
   let loseExt: { loseContext(): void; restoreContext(): void } | null = null;
@@ -130,36 +268,56 @@ export function createRender(deps: RenderDeps): MotorRender {
   let composer: EffectComposer | null = null, rpass: RenderPass | null = null, bloom: UnrealBloomPass | null = null, grade: ShaderPass | null = null;
   function setupPost(t: TierDef) {
     const want = !!(renderer && t.flags && t.flags.bloom);
-    if (!want) { if (composer) { composer.dispose(); composer = null; rpass = null; bloom = null; grade = null; } return; }
+    // PRF-15: EffectComposer.dispose frees only its own two targets; the bloom pass keeps ~10 half-float mip targets and every
+    // pass its material, so each switch to a no-bloom tier leaked them on the GPU. Passes are disposed first now.
+    // GRS-01: without the post chain (akıcı) the grade runs inside tone mapping (look.ts CustomToneMapping); with it, ACES + GRADE pass
+    if (renderer) { renderer.toneMapping = want ? T.ACESFilmicToneMapping : T.CustomToneMapping; renderer.toneMappingExposure = want ? LOOK_POZ.ana : LOOK_POZ.ana * AKICI_POZ; }
+    if (!want) { if (composer) { composer.passes.forEach(ps => { try { ps.dispose(); } catch { /* */ } }); composer.dispose(); composer = null; rpass = null; bloom = null; grade = null; } return; }
     if (composer) return;
-    const { w, h } = size(), pr = renderer!.getPixelRatio();
+    const { w, h } = size(), pr = basePR(t) * resScale;
     const target = new T.WebGLRenderTarget(Math.round(w * pr), Math.round(h * pr), { type: T.HalfFloatType, samples: t.antialias ? 4 : 0 });
     composer = new EffectComposer(renderer!, target);
+    // PRF-15: the composer clones its target, so both ping-pong buffers were 4x MSAA half-float with a depth buffer (~69 MB of
+    // renderbuffers each at 1600x900). Only the scene pass needs that: it draws into readBuffer (rt2), the bloom pass blends back
+    // into rt2, OutputPass writes rt1 and the grade quad reads rt1 to the screen. rt1 keeps the same half-float format (same
+    // pixels) without MSAA and depth.
+    { const c = composer as unknown as { renderTarget1: T.WebGLRenderTarget; writeBuffer: T.WebGLRenderTarget };
+      const rt1 = new T.WebGLRenderTarget(target.width, target.height, { type: T.HalfFloatType, depthBuffer: false });
+      rt1.texture.name = 'EffectComposer.rt1'; target.dispose(); c.renderTarget1 = rt1; c.writeBuffer = rt1; }
     rpass = new RenderPass(scene, rig.camera); composer.addPass(rpass);
     bloom = new UnrealBloomPass(new T.Vector2(w, h), 0.22, 0.4, 0.92); composer.addPass(bloom);
     composer.addPass(new OutputPass());
     grade = new ShaderPass(GRADE); composer.addPass(grade);
     composer.setPixelRatio(pr); composer.setSize(w, h);
     tuneBloom();
+    bloom.enabled = !postCut;
   }
+  let look = lookAt(hour, night);
   function tuneBloom() {
-    if (grade) {   // colour grade follows the day: warm golden hour, cool blue night
-      const u = grade.uniforms, gold = clamp(1 - Math.abs(hour - 18.5) / 2.2, 0, 1) * (1 - night);
-      u.uSat.value = 1.06 - 0.1 * night; u.uCon.value = 1.03;
-      u.uTint.value.set(1 + 0.05 * gold - 0.04 * night, 1 + 0.01 * gold - 0.01 * night, 1 - 0.05 * gold + 0.06 * night);
-      u.uVig.value = 0.2 + 0.12 * night;
+    look = lookAt(hour, night);   // colour grade follows the day: warm golden hour, cool blue night (look.ts)
+    if (grade) {
+      const u = grade.uniforms;
+      u.uSat.value = look.sat; u.uCon.value = look.con; u.uPiv.value = look.pivot;
+      u.uTint.value.set(look.tint[0], look.tint[1], look.tint[2]); u.uVig.value = look.vig;
     }
-    if (!bloom) return; bloom.strength = 0.1 + 0.22 * night; bloom.threshold = 0.97 - 0.12 * night; bloom.radius = 0.3 + 0.08 * night; }   // 2026-11-08 user: glare made in-game text unreadable
+    // 2026-11-08 user: glare made in-game text unreadable (threshold floor 0.90 at night: a sign's glow does not swallow its text)
+    if (!bloom) return; bloom.strength = look.bloom.strength; bloom.threshold = look.bloom.threshold; bloom.radius = look.bloom.radius; }
 
   // sky environment map (PMREM from the sky dome): reflections on standard materials (Kenney models, metal props)
+  const sCull = createShadowCull();
   let pmrem: T.PMREMGenerator | null = null, envRT: T.WebGLRenderTarget | null = null, envKey = -1;
   const envSubs = new Set<(t: T.Texture | null) => void>();
   function refreshEnv() {
     if (!renderer) return;
-    const key = Math.round(hour * 2); if (key === envKey && envRT) return; envKey = key;
+    // PRF-08 (B-082): akıcı re-renders the PMREM sky every 2 game hours instead of every half hour (reflections still follow day/night)
+    const key = tier?.name === 'akici' ? 1000 + Math.round(hour / 2) : Math.round(hour * 2); if (key === envKey && envRT) return; envKey = key;
     pmrem ||= new T.PMREMGenerator(renderer);
     const s = new T.Scene(); s.add(new T.Mesh(sky.geometry, sky.material));
     const old = envRT; envRT = pmrem.fromScene(s, 0.02);
+    // PRF-15: the generator keeps its blur ping-pong target (768x1024 half float, 6 MB on the GPU) between regenerations, which
+    // come every half game hour. Free its GPU copy now; three re-creates the framebuffer on the next fromScene (target object,
+    // blur material and program stay, so no shader relink). three 0.160 private field.
+    (pmrem as unknown as { _pingPongRenderTarget: T.WebGLRenderTarget | null })._pingPongRenderTarget?.dispose();
     envSubs.forEach(cb => { try { cb(envRT!.texture); } catch (err) { deps.log?.warn('[render] env cb', err); } });
     if (old) old.dispose();
   }
@@ -167,6 +325,7 @@ export function createRender(deps: RenderDeps): MotorRender {
   // screen-space pick list (no mesh raycast)
   const picks = new Map<string, { p: T.Vector3; r: number }>();
   const _v = new T.Vector3(), _v2 = new T.Vector3();
+  const reflector = createReflector(-1.0);   // WATER_Y of the iskele sea
 
   function size(): { w: number; h: number } {
     const c = canvasEl;
@@ -200,24 +359,32 @@ export function createRender(deps: RenderDeps): MotorRender {
     get lost() { return lost; },
     sun, hemi, sky,
     get bloomOn() { return !!composer; },
+    get lightTint() { return composer ? NO_TINT : look.tint; },
+    hemiMul: 1,
+    weatherSat: 1,
+    reflector,
+    reflectSea: null,
+    shadowCull: true,
+    shadowStats: () => sCull.stats(),
     onEnv(cb) { envSubs.add(cb); try { cb(envRT ? envRT.texture : null); } catch { /* ignore */ } return () => { envSubs.delete(cb); }; },
     init(canvas: HTMLCanvasElement, t: TierDef) {
       if (renderer && canvasEl === canvas) { api.setTier(t); return; }
       canvasEl = canvas;
-      renderer = new T.WebGLRenderer({ canvas, antialias: !!t.antialias, powerPreference: 'high-performance' });
+      installLookToneMap();
+      renderer = createLookRenderer({ canvas, antialias: !!t.antialias && !t.flags?.bloom, exposure: LOOK_POZ.ana, powerPreference: 'high-performance' });   // sRGB + ACES (look.ts)
       // 2026-11-09 Chrome freeze root cause: with checkShaderErrors on, three calls getProgramInfoLog for every new
       // program right after linking, which blocks the main thread until the GPU process finishes compiling (no parallel
       // compile). On Windows/ANGLE that was seconds per new area. Errors are only checked in dev builds now.
       renderer.debug.checkShaderErrors = !!(import.meta as { env?: { DEV?: boolean } }).env?.DEV;
       try {
         const c = renderer.getContext();
+        // PRF-15: with the post chain (bloom tiers) the scene is antialiased in the composer's MSAA target and the canvas only gets
+        // the final full-screen quad, so a multisampled canvas back buffer (~46 MB at 1600x900) bought nothing; akıcı has no AA.
         if (typeof WebGL2RenderingContext !== 'undefined' && c instanceof WebGL2RenderingContext) { gl2 = c; gpuExt = c.getExtension('EXT_disjoint_timer_query_webgl2') as typeof gpuExt; }
         const dbg = c.getExtension('WEBGL_debug_renderer_info');
         deps.perf?.meta('gpu', dbg ? String(c.getParameter(dbg.UNMASKED_RENDERER_WEBGL)) : 'bilinmiyor');
         deps.perf?.meta('gpuZamanOlcer', gpuExt ? 'var' : 'yok');
       } catch { /* headless */ }
-      renderer.outputColorSpace = T.SRGBColorSpace;
-      renderer.toneMapping = T.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.98;
       renderer.shadowMap.type = T.PCFSoftShadowMap;
       renderer.shadowMap.enabled = true;
       wantAA = !!t.antialias;
@@ -230,21 +397,29 @@ export function createRender(deps: RenderDeps): MotorRender {
       tier = t;
       if (wantAA !== null && !!t.antialias !== wantAA) deps.log?.info('[render] antialias change applies on next load');
       applyShadows(t);
-      if (renderer) renderer.setPixelRatio(Math.min((typeof window !== 'undefined' && window.devicePixelRatio) || 1, t.pixelRatio) * resScale);
+      reflector.setBudget(reflectBudget(t.name));
+      if (renderer && renderer.getPixelRatio() !== canvasPR(t)) renderer.setPixelRatio(canvasPR(t));
       setupPost(t);
+      // GRS-02: akıcı skips the cloud noise in the sky shader (a uniform, no relink); the gradient, sun, stars and moon stay
+      (sky.material as T.ShaderMaterial).uniforms.uCloudQ.value = t.name === 'akici' ? 0 : 1;
       api.resize();
+      if (renderer) api.setTime(hour);   // GRS-01: the light tint follows the post chain (GRADE vs akıcı tone-map grade)
     },
     setTime(h: number, _season?: Season) {
-      hour = clamp(+h || 12, 8, 24);
+      // GRS-02: the game day runs to DAY_END_H (03:00 = 27); 27..32 is the visual dawn corridor after the gün sonu card (32 = 08:00)
+      hour = clamp(+h || 12, DAY_START_H, DAY_END_H + DAWN_EXTRA);
       tod = todAt(hour); night = tod.n;
       const su = (sky.material as T.ShaderMaterial).uniforms;
       su.uTop.value.copy(tod.top); su.uHor.value.copy(tod.hor); su.uLow.value.copy(tod.low); su.uSunCol.value.copy(tod.sun); su.uNight.value = night;
       sunDir.set(Math.sin(tod.az) * Math.cos(tod.el), Math.sin(tod.el), Math.cos(tod.az) * Math.cos(tod.el)).normalize();
       su.uSunDir.value.copy(sunDir); placeSun();
-      sun.color.copy(tod.sun); sun.intensity = tod.si;
-      hemi.color.copy(tod.hs); hemi.groundColor.copy(tod.hg); hemi.intensity = tod.hi;
-      (scene.fog as T.Fog).color.copy(tod.fog);
+      sky.userData.fogMul = tod.fd;   // GRS-02: light morning haze, clearer noon, slightly closer night (sky.ts fog rule)
       tuneBloom();
+      sun.color.copy(tod.sun); sun.intensity = tod.si;
+      hemi.color.copy(tod.hs); hemi.groundColor.copy(tod.hg); hemi.intensity = tod.hi * api.hemiMul;
+      // GRS-01: akıcı has no GRADE pass; its golden-hour / night tint goes into the light colours instead (never both)
+      const [tr, tg, tb] = api.lightTint; sun.color.r *= tr; sun.color.g *= tg; sun.color.b *= tb; hemi.color.r *= tr; hemi.color.g *= tg; hemi.color.b *= tb;
+      (scene.fog as T.Fog).color.copy(tod.fog);
       timeSubs.forEach(cb => { try { cb(tod, hour); } catch (err) { deps.log?.warn('[render] time cb', err); } });
     },
     setWeather(_w: WeatherState) { /* M5 */ },
@@ -261,17 +436,30 @@ export function createRender(deps: RenderDeps): MotorRender {
       frameNo++;
       if (frameNo % 10 === 1) { const f = rig.focus(); api.setFocus(f.x, f.z); }
       if (frameNo % 30 === 2 || !envRT) refreshEnv();
+      if ((cam as T.PerspectiveCamera).isPerspectiveCamera) akisGuncelle(sc, cam as T.PerspectiveCamera, Math.round((renderer.domElement.height || 720) / (composer ? 1 : resScale)));   // PRF-15 doku akışı; PRF-12: ölçeksiz yükseklik (dinamik çözünürlük adımı dokuları yeniden çizdirmez)
       renderer.info.autoReset = false; renderer.info.reset();   // info() = everything drawn for this frame (composer passes, shadow pass)
-      const draw = () => { if (composer && rpass) { rpass.scene = sc; rpass.camera = cam; composer.render(); } else renderer!.render(sc, cam); };
+      gateStep(sc, cam);
+      if (grade) { const ws = clamp(+api.weatherSat || 1, 0.6, 1); grade.uniforms.uSat.value = look.sat * ws; }   // GRS-02 rain/fog wash
+      // PRF-06: casters whose shadow cannot reach the view skip the shadow pass (same picture, fewer draws)
+      const draw = () => {
+        if (api.shadowCull) sCull.begin(sc, cam, sun);
+        try { if (composer && rpass) { rpass.scene = sc; rpass.camera = cam; composer.render(); } else renderer!.render(sc, cam); } finally { sCull.end(); }
+      };
       const pf = deps.perf;
       if (pf) {
         const rec = pf.recording;
         if (rec) gpuBegin();
         pf.time('render.draw', draw);
         if (rec) { gpuEnd(); gpuPoll(); }
-        const np = (renderer.info as { programs?: unknown[] }).programs?.length ?? 0;
-        if (np > progSeen) { if (progSeen > 0) pf.mark('compile', `${np - progSeen} shader, toplam ${np}`); progSeen = np; }
-      } else draw();
+        const nb = scanProgs('draw', sc);
+        if (nb > 0 && frameNo > 1) pf.mark('compile', `${nb} shader karede derlendi, toplam ${progList().length}: ${lastDrawBorn.slice(-nb).join(' ')}`);
+      } else { draw(); scanProgs('draw', sc); }
+      // GRS-05: mirrored water pass after the main draw (shadow map is fresh); the sea samples it next frame
+      if ((cam as T.PerspectiveCamera).isPerspectiveCamera && api.reflectSea && api.reflectSea.visible) {
+        reflector.resMul = composer ? resScale : 1;   // PRF-12: the mirror follows the scene's scaled size (canvas stays full on post tiers)
+        const rd = () => reflector.render(renderer!, sc, cam as T.PerspectiveCamera, api.reflectSea);
+        if (pf) pf.time('render.reflect', rd); else rd();
+      }
       const ri = renderer.info;
       lastInfo.calls = ri.render.calls; lastInfo.tris = ri.render.triangles;
       lastInfo.geos = ri.memory.geometries; lastInfo.texs = ri.memory.textures;
@@ -280,28 +468,31 @@ export function createRender(deps: RenderDeps): MotorRender {
       const nv = clamp(+v || 1, 0.5, 1);
       if (nv === resScale) return;
       resScale = nv;
-      if (renderer && tier) { renderer.setPixelRatio(Math.min((typeof window !== 'undefined' && window.devicePixelRatio) || 1, tier.pixelRatio) * resScale); api.resize(); }
+      if (renderer && tier) { const cp = canvasPR(tier); if (renderer.getPixelRatio() !== cp) renderer.setPixelRatio(cp); api.resize(); }
+    },
+    setPostCut(cut: boolean) {
+      postCut = !!cut;
+      if (bloom) bloom.enabled = !postCut;   // the composer skips a disabled pass (no swap); OutputPass + GRADE still run
     },
     warm(sc: T.Scene, cam: T.Camera) {
-      const r = renderer as unknown as { compileAsync?: (s: T.Scene, c: T.Camera) => Promise<unknown> } | null;
-      if (!r || !r.compileAsync || lost) return Promise.resolve();
-      const was = sun.castShadow, jobs: Promise<unknown>[] = [];
-      try {
-        jobs.push(r.compileAsync(sc, cam));
-        // the other shadow state too: three keys programs by the shadow-casting light count, and the sync part of compileAsync reads it right now
-        if (tier && tier.name !== 'akici') { sun.castShadow = !was; jobs.push(r.compileAsync(sc, cam)); }
-      } catch (err) { deps.log?.warn('[render] warm', err); }
-      sun.castShadow = was;
-      return Promise.all(jobs).then(() => undefined, () => undefined);
+      // Compiles the variant the frame really draws: with bloom the scene goes into the composer's half-float target, and three
+      // keys programs by the target (linear output, no tone mapping) - compiling against the screen made programs no frame ever
+      // used, and the real ones were then linked blocking on first sight. (The old "other shadow state" pass is gone: every tier
+      // change also changes the night-light pool size, so those programs never matched either; a tier change warms on its own.)
+      return compileFor(sc, cam, null).then(() => undefined);
     },
+    warmStats: () => ({ born: { ...born }, busy: warmJobs > 0, lastDrawBorn: [...lastDrawBorn] }),
     info() {
       if (renderer) { lastInfo.geos = renderer.info.memory.geometries; lastInfo.texs = renderer.info.memory.textures; }
-      return { ...lastInfo, programs: renderer ? ((renderer.info as { programs?: unknown[] }).programs?.length ?? 0) : 0, programNames: renderer ? ((renderer.info as { programs?: { name: string; cacheKey: string }[] }).programs || []).filter(Boolean).map(p => p.name + '|' + (p.cacheKey || '').length) : [] };
+      const sw = composer ? (composer as unknown as { readBuffer: T.WebGLRenderTarget }).readBuffer.width : renderer?.domElement.width ?? 0;
+      const sh = composer ? (composer as unknown as { readBuffer: T.WebGLRenderTarget }).readBuffer.height : renderer?.domElement.height ?? 0;
+      return { ...lastInfo, sceneW: sw, sceneH: sh, programs: renderer ? ((renderer.info as { programs?: unknown[] }).programs?.length ?? 0) : 0, programNames: progList().filter(Boolean).map(progName), born: { ...born }, frameNo };
     },
     resize() {
       const { w, h } = size();
-      if (renderer) renderer.setSize(w, h, false);
-      if (composer && renderer) { composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(w, h); }
+      // a canvas size write reallocates the drawing buffer even when the value is the same: only when something changed
+      if (renderer) { const pr = renderer.getPixelRatio(), cv = renderer.domElement; renderer.getSize(_rs); if (_rs.x !== w || _rs.y !== h || cv.width !== Math.floor(w * pr) || cv.height !== Math.floor(h * pr)) renderer.setSize(w, h, false); }
+      if (composer && renderer) { composer.setPixelRatio(tier ? basePR(tier) * resScale : renderer.getPixelRatio()); composer.setSize(w, h); }
       rig.setAspect(w / h);
     },
     registerPick(id: string, p: Vec3, radius: number) {
@@ -334,7 +525,9 @@ export function createRender(deps: RenderDeps): MotorRender {
     loseContext() { if (loseExt) loseExt.loseContext(); },
     restoreContext() { if (loseExt) loseExt.restoreContext(); },
     dispose() {
-      timeSubs.clear(); picks.clear();
+      timeSubs.clear(); picks.clear(); gate.dispose();
+      if (composer) { composer.passes.forEach(ps => { try { ps.dispose(); } catch { /* */ } }); composer.dispose(); composer = null; }
+      envRT?.dispose(); envRT = null; pmrem?.dispose(); pmrem = null; reflector.dispose();
       if (renderer) { renderer.dispose(); renderer = null; }
     },
   };

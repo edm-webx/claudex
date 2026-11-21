@@ -86,7 +86,7 @@ export function installKoleksiyon(K: Kernel): KolApi {
 
   function gainGold(n: number): void {
     if (n <= 0) return;
-    K.state.gold += n; K.state.money += 800 * K.state.stage * n; save().goldGot += n;
+    K.state.gold += n; K.credit!('diger', 800 * K.state.stage * n); save().goldGot += n;
   }
 
   // ── pages ──

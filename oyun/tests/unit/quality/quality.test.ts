@@ -62,6 +62,33 @@ describe('quality', () => {
   });
 });
 
+describe('quality: oyun sırasında otomatik kademe bekler (PRF-03)', () => {
+  it('oyun sürerken düşüş kaydedilir ama uygulanmaz; duraklama anında uygulanır', () => {
+    const ls = memLs(); ls.setItem('marti-quality', JSON.stringify({ setting: 'auto', autoTier: 'sahane' }));
+    const q = createQuality({ platform: plat('', ls) }); const tiers: string[] = [];
+    q.onChange(t => tiers.push(t.name));
+    let playing = true; q.deferAuto!(() => playing);
+    for (let i = 0; i < 90 * 60; i++) q.feed(40, 1 / 60);
+    expect(tiers).toEqual([]); expect(q.current().name).toBe('sahane');
+    expect(q.scale!()).toBe(SCALE_MIN);   // in play the resolution scale carries the load
+    expect(JSON.parse(ls.getItem('marti-quality')!).autoTier).toBe('dengeli');   // next load starts lower
+    playing = false;
+    expect(q.flushAuto!()).toBe(true);
+    expect(tiers).toEqual(['dengeli']); expect(q.flushAuto!()).toBe(false);
+  });
+  it('duraklamadaysa hemen uygulanır; elle seçilen kademede bekleyen atılır', () => {
+    const ls = memLs(); ls.setItem('marti-quality', JSON.stringify({ setting: 'auto', autoTier: 'sahane' }));
+    const q = createQuality({ platform: plat('', ls) }); const tiers: string[] = [];
+    q.onChange(t => tiers.push(t.name)); q.deferAuto!(() => false);
+    for (let i = 0; i < 90 * 60; i++) q.feed(40, 1 / 60);
+    expect(tiers[0]).toBe('dengeli');
+    const q2 = createQuality({ platform: plat('', ls) }); let pl = true; q2.deferAuto!(() => pl);
+    for (let i = 0; i < 90 * 60; i++) q2.feed(40, 1 / 60);
+    q2.set('sahane'); pl = false;
+    expect(q2.flushAuto!()).toBe(false); expect(q2.current().name).toBe('sahane');
+  });
+});
+
 describe('quality: dinamik çözünürlük (PRF-12)', () => {
   const mk = (tier: string) => { const ls = memLs(); ls.setItem('marti-quality', JSON.stringify({ setting: 'auto', autoTier: tier })); return createQuality({ platform: plat('', ls) }); };
   const run = (q: ReturnType<typeof mk>, sec: number, ms: number, work = ms) => { for (let i = 0; i < sec * 60; i++) q.feed(ms, 1 / 60, work); };
@@ -91,5 +118,21 @@ describe('quality: dinamik çözünürlük (PRF-12)', () => {
     const q = mk('sahane'); run(q, 14, 25); run(q, 30, 16.7, 14);
     expect(q.scale!()).toBe(SCALE_MIN);
     q.set('dengeli'); run(q, 3, 25); expect(q.scale!()).toBe(1);
+  });
+  it('tabandan sonra bloom kesilir, kademe ondan sonra düşer; toparlanınca önce bloom döner', () => {
+    const q = mk('sahane'); const cuts: boolean[] = []; q.onPostCut!(c => cuts.push(c)); const tiers: string[] = [];
+    q.onChange(t => tiers.push(t.name));
+    for (let i = 0; i < 20 * 60 && q.scale!() > SCALE_MIN; i++) q.feed(25, 1 / 60, 25);   // 6 steps -> floor, bloom still on
+    expect(q.scale!()).toBe(SCALE_MIN); expect(q.postCut!()).toBe(false);
+    run(q, 2.5, 25);
+    expect(q.postCut!()).toBe(true); expect(tiers).toEqual([]);
+    for (let i = 0; i < 20 * 60 && cuts.length < 2; i++) q.feed(16.7, 1 / 60, 6);   // calm: bloom back first, scale still at the floor
+    expect(cuts).toEqual([true, false]); expect(q.scale!()).toBe(SCALE_MIN);
+    run(q, 40, 16.7, 6); expect(q.scale!()).toBe(1); expect(q.postCut!()).toBe(false);
+  });
+  it('bloom olmayan kademede (akıcı) kesme basamağı yok; kademe değişimi kesmeyi kaldırır', () => {
+    const a = mk('akici'); run(a, 30, 50); expect(a.postCut!()).toBe(false);
+    const q = mk('sahane'); run(q, 15, 25); expect(q.postCut!()).toBe(true);
+    q.set('dengeli'); expect(q.postCut!()).toBe(false); expect(q.scale!()).toBe(1);
   });
 });

@@ -78,3 +78,22 @@ export function addWorker(sb: Sandbox, role: string, trait: string, extra: Recor
   sb.state.workers.push(w as never);
   return w;
 }
+/**
+ * BUF-05: a small stub of the kitchen line (sim/mutfak-hat.ts) on the sandbox host: `plan` is the queue of jobs handed to claims
+ * ({ ist, p }); cooking takes `sure` s; plates go cook -> station tray -> hand -> pass like the real line.
+ */
+export function stubHat(sb: Sandbox, plan: { ist: string; p: string }[], sure = 2) {
+  const cook = new Map<number, { ist: string; p: string }>(), tray: { ist: string; p: string; by: number; wid: number; t: number }[] = [], hand = new Map<number, CarryItem<string>>();
+  const passed: { p: string; wid: number; tick: number }[] = [], claims: { wid: number; ist: string; p: string }[] = [];
+  const h = sb.host;
+  h.kitchenClaim = (wid) => { if (cook.has(wid) || !plan.length) return null; const j = plan.shift()!; cook.set(wid, j); claims.push({ wid, ...j }); return j.p; };
+  h.kitchenIst = (wid) => cook.get(wid)?.ist ?? null;
+  h.kitchenSure = () => sure;
+  h.kitchenReady = (wid) => { const j = cook.get(wid); if (!j) return false; cook.delete(wid); tray.push({ ...j, by: wid, wid: 0, t: sb.state.playT }); return true; };
+  h.kitchenTasi = (wid, o = {}) => { const t = tray.find((k) => k.wid === wid) || tray.find((k) => !k.wid && (!o.kendi || k.by === wid) && sb.state.playT - k.t >= (o.yas || 0)); if (!t) return null; t.wid = wid; return { ist: t.ist, p: t.p }; };
+  h.kitchenTasiAl = (wid) => { const i = tray.findIndex((k) => k.wid === wid); if (i < 0) return null; const t = tray.splice(i, 1)[0], it = { type: t.p, tier: 1 }; hand.set(wid, it); return it; };
+  h.kitchenPass = (wid) => { const it = hand.get(wid); if (!it) return false; hand.delete(wid); passed.push({ p: it.type, wid, tick: sb.tick }); return true; };
+  h.kitchenBekleyen = (yas) => tray.some((k) => !k.wid && sb.state.playT - k.t >= yas);
+  h.kitchenDrop = (wid) => { cook.delete(wid); hand.delete(wid); for (const t of tray) if (t.wid === wid) t.wid = 0; };
+  return { cook, tray, hand, passed, claims };
+}

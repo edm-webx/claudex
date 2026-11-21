@@ -8,7 +8,7 @@
  */
 import type { Rng } from '../../../engine/api';
 import type { GameState, ProductId, WorkerSave } from '../schema';
-import { ROLES, ROLE_IDS, ROLE_SLOTS, RARITY, RARITY_ROLL, RANKS, JOB_REFRESH_COST, BOARD_REFRESH_S, MORALE_START, workerCost, rankOf } from '../../../content/ranks';
+import { ROLES, ROLE_IDS, ROLE_SLOTS, RARITY, RARITY_ROLL, RANKS, JOB_REFRESH_COST, BOARD_REFRESH_S, workerCost, rankOf } from '../../../content/ranks';
 import { TRAITS, TRAIT_IDS, TEAMS } from '../../../content/traits';
 import { LEGENDS, ABOUT, STORY_LEGENDS, type LegendDef } from '../../../content/workers';
 import { NAMES, MEMLEKET } from '../../../content/names';
@@ -143,7 +143,7 @@ export function hireCandidate(s: GameState, host: HiringHost, rng: Rng, id: stri
   if (!free && host.money() < c.price) { host.toast('Para yetmiyor abi: ' + fmtMoney(c.price), 'bad'); return null; }
   if (!free) host.spend(c.price);
   const w: WorkerSave & Record<string, unknown> = {
-    id: s.nextWid++, name: c.name, role: c.role, trait: c.traitId, traits: [c.traitId], rarity: c.rarity, xp: 0, rank: 0, morale: MORALE_START,
+    id: s.nextWid++, name: c.name, role: c.role, trait: c.traitId, traits: [c.traitId], rarity: c.rarity, xp: 0, rank: 0,
     legend: c.legend || null, look: c.look, about: c.about, hiredDay: s.day, team: null,
   };
   if (c.traitId === 'futbol') w.team = (c.legend ? legendDef(c.legend).team : undefined) || rng.pick(TEAMS).id;
@@ -166,7 +166,7 @@ export function trainWorker(s: GameState, host: HiringHost, id: number): boolean
   const w = s.workers.find((x) => x.id === id); if (!w) return false;
   const cost = trainCost(w);
   if (host.money() < cost) { host.toast('Kurs için ' + fmtMoney(cost) + ' lazım.', 'bad'); return false; }
-  host.spend(cost); w.xp = (w.xp || 0) + 150; w.morale = Math.min(100, (w.morale == null ? MORALE_START : w.morale) + 10);
+  host.spend(cost); w.xp = (w.xp || 0) + 150;
   host.toast(w.name + ' ustalık kursuna gitti! +150 tecrübe', 'good');
   return true;
 }

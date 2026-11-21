@@ -5,6 +5,7 @@ import { emptyContent } from '../../src/content/index';
 // @ts-expect-error plain ESM JS shared with the browser bot
 import { makeBot } from '../../src/game/ui/bot-ai.mjs';
 import { panelModel } from '../../src/game/sim/panels';
+import { MEVCUT_TOPLAM_KAZANC, MEVCUT_ASAMA2_DK } from '../../src/content/ekonomi-hedef';
 const log = { info() {}, warn() {}, error() {} };
 function adapter(sim: any) {
   const rules = () => sim.rules;
@@ -29,14 +30,16 @@ function runBot(seed: number, seconds: number, onSecond?: (t: number, sim: any) 
 
 describe('Faz 2 ekonomi', () => {
   it('45 dakikada para makul kalır', () => {
-    const marks: string[] = [];
-    const r = runBot(3, 5400, (t, sim) => { if (t % 300 === 299) { const S = sim.rules.state; marks.push(`${(t + 1) / 60}dk: cep ${Math.round(S.money)} toplam ${Math.round(S.totalEarned)} gün ${S.day} aşama ${S.stage}`); } });
+    const marks: string[] = [], toplam: Record<number, number> = {}; let asama2 = 0;
+    const r = runBot(3, 5400, (t, sim) => { const S0 = sim.rules.state; if (!asama2 && S0.stage >= 2) asama2 = (t + 1) / 60; if ((t + 1) % 60 === 0) toplam[(t + 1) / 60] = S0.totalEarned; if (t % 300 === 299) { const S = sim.rules.state; marks.push(`${(t + 1) / 60}dk: cep ${Math.round(S.money)} toplam ${Math.round(S.totalEarned)} gün ${S.day} aşama ${S.stage}`); } });
     const S = r.sim.rules.state;
     console.log(marks.join('\n'));
     const ev = r.sim.events(0); const agg: Record<string, [number, number]> = {};
     for (const e of ev) { const d: any = e.data || e; const v = Number(d.value ?? d.v ?? d.reward ?? d.bonus ?? d.amount ?? 0); const a = agg[e.name] || (agg[e.name] = [0, 0]); a[0]++; a[1] += v || 0; }
     console.log(Object.entries(agg).filter(([, a]) => a[1] > 0).map(([k, a]) => k + ' n=' + a[0] + ' sum=' + Math.round(a[1])).join('\n'));
+    // 3k-2M geniş bandı yerine aşama bazlı dar bant (content/ekonomi-hedef.ts, EKO-01): bugünkü dengenin gerileme bandı
+    for (const [dk, [lo, hi]] of Object.entries(MEVCUT_TOPLAM_KAZANC)) { expect(toplam[+dk], dk + '. dk toplam').toBeGreaterThanOrEqual(lo); expect(toplam[+dk], dk + '. dk toplam').toBeLessThanOrEqual(hi); }
+    expect(asama2).toBeGreaterThanOrEqual(MEVCUT_ASAMA2_DK[0]); expect(asama2).toBeLessThanOrEqual(MEVCUT_ASAMA2_DK[1]);
     expect(S.totalEarned).toBeLessThan(2_000_000);
-    expect(S.totalEarned).toBeGreaterThan(3_000);
   }, 600000);
 });
