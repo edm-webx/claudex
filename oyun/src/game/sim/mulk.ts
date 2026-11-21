@@ -10,7 +10,7 @@
  *   arsa: arsaAl id | arsaKur id tur tip | yukselt id | evAc id
  *   stadyum (near the gate): bilet | takim name
  */
-import { installAvmKareler } from './avm-kareler';
+import { installIsletmeKareler } from './isletme-kareler';
 import { stadSave, tahminDoluluk, fiyatAyarla, FORMASYONLAR, KAPASITE, FIYAT_MIN, FIYAT_MAX } from './stadyum';
 import { odulluMacKaldi, ODULLU_MAC_GUNLUK } from './halisaha';
 import type { Kernel } from './state';
@@ -448,8 +448,13 @@ export function installMulk(K: Kernel) {
     K.spend(STADYUM.takim); a.takim = { ad, renk: HEX.test(r1 || '') ? r1! : '#e0533c', renk2: HEX.test(r2 || '') ? r2! : '#f2c230', arma: ARMALAR.includes(arma || '') ? arma : '🦅', kurulus: S.day }; K.toast('⚽ ' + ad + ' kuruldu!', 'good'); K.addXP(60); K.saveNow();
   }
 
-  // Martı AVM: dükkân satın alma ve alet kurma büfedeki gibi sarı karelerle (avm-kareler.ts)
-  const avmKare = installAvmKareler(K, { arsaAl, kafeEsya, plot: id => arsa().plots[id] as never });
+  // Bütün satın alınabilir dükkânlar (AVM + sokak) ve büfe salonları: satın alma, alet, tadilat büfedeki gibi sarı karelerle (isletme-kareler.ts)
+  const avmKare = installIsletmeKareler(K, {
+    arsaAl, kafeEsya, yukselt, salonEsya, plot: id => arsa().plots[id] as never,
+    yukFiyat: id => { const q = plotOf(id)!; return yukPrice(q.a, DUKKAN_BY_ID[q.p!.tip], q.p!.lv).tl; },
+    asamaAd: (id, lv) => isletmeOf(id).asama[lv - 1] || lv + '. seviye',
+    salonVar: () => salonZ().esya,
+  });
   // ── tick: board roll, shops, level-up chests, collecting tills ──
   let acc = 0, lastLevel = S.level;
   K.addSystem({

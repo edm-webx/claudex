@@ -1025,6 +1025,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     sim.command({ kind: 'force', what, value } as never);
   });
   reg('dbg', () => { const rt = sim.rules.rt as unknown as { pencereAt?: boolean; winShelf?: string[]; counter: Record<string, unknown[]> }; return { pencere: sim.state.zones.pencere, at: !!rt.pencereAt, shelf: rt.winShelf ?? [], counter: Object.fromEntries(Object.entries(rt.counter).map(([k, v]) => [k, v.length])) }; });
+  reg('pads', () => sim.rules.rt.pads.map(q => ({ key: q.key, x: q.pos.x, z: q.pos.z, price: q.price, paid: q.paid })));   // sarı kareler (test / denetim)
   reg('izgara', (on?: boolean) => { if (on !== undefined) izgaraLook?.set(!!on); return izgaraLook?.get() ?? null; });
   reg('hucre', (name: string) => cellRect(name));
   reg('acilis', (to: number) => acilis?.baslat(Number(to)));   // dev: BUF-30 açılış anını yeniden oynat
