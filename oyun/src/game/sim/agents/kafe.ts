@@ -51,7 +51,7 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
     const yol = (from: Vec2, to: Vec2): Vec2[] => icYol(m, uv(from), uv(to), 0.2).map(q => w(q.u, q.v));
     const tables = lay.filter(i => i.k.startsWith('masa')).map(i => ({ u: i.u, v: i.v, k: i.k }));
     // a narrow room (the AVM lokanta strip) packs the line and the staff posts so they stay inside the walls
-    const narrow = W < 7, gap = vert ? 0.5 : Math.min(0.85, Math.max(0.5, (W / 2 - 0.55 - (cu + 0.7)) / 4)), post = vert ? 0.5 : narrow ? Math.min(1.4, (endU - 0.6 - (cu + 1.5)) / 2) : 1.4;
+    const narrow = W < 7, gap = vert ? 0.5 : Math.min(0.85, Math.max(0.5, (W / 2 - 0.55 - (cu + 0.7)) / 4)), post = vert ? Math.min(0.75, Math.max(0.3, (pg.hi + 0.1 - (cu + 0.6)) / 2)) : narrow ? Math.min(1.4, (endU - 0.6 - (cu + 1.5)) / 2) : 1.4;
     // shops: where a guest stands to look at the goods (in front of the racks and the display table, on the customer side)
     const gez = MAGAZA.has(m.tur) ? lay.filter(i => i.k === 'reyon' || i.k === 'teshir').flatMap(i => i.k === 'teshir' ? [{ u: i.u - i.w / 2 - 0.4, v: i.v, yaw: 1 }] : [-0.3, 0.3].map(f => ({ u: i.u + 0.6, v: i.v + f * i.w, yaw: -1 }))) : [];
     return { m, D, W, bv: tz.v, cu, endU, arka, yol, w, P, vert, door: w(0, D / 2 + 2.6), inside: w(0, D / 2 - 1.0), tables, sdv: D < 5 ? -0.6 : 0.7, wide: !vert && !(m.tur === 'kafe' || m.tur === 'bistro'), gap, post, maxQ: vert ? 3 : 5, gez };

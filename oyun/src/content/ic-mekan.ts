@@ -145,7 +145,8 @@ export const MAGAZA_RENK: Record<'giyim' | 'elektronik' | 'oyuncak', { c: string
   giyim: { c: '#c94f6d', txt: 'MARTI MODA' }, elektronik: { c: '#2b6fb8', txt: 'TEKNO MARTI' }, oyuncak: { c: '#e8892b', txt: 'OYUNCAK DÜNYASI' },
 };
 function magazaLayout(W: number, D: number, tur: 'giyim' | 'elektronik' | 'oyuncak'): IcItem[] {
-  const R = MAGAZA_RENK[tur], tv = -2.6, tu = 0.5, wl = -W / 2 + 0.5, wr = W / 2 - 0.4, fv = D / 2 - 0.55;
+  const R = MAGAZA_RENK[tur], tv = -2.6, tu = 0.25,   // 2026-11-21 denetim: kasiyerler depo rafına yapışıyordu, tezgâh 0.25 m batıya
+    wl = -W / 2 + 0.5, wr = W / 2 - 0.4, fv = D / 2 - 0.55;
   const o: IcItem[] = [
     it('lamba', 0, 0, W, D), it('zemin', 0, 0, W, D, { c: 'avm' }),
     it('tezgah', tu, tv, 3.0, 0.6, { solid: true, ry: 3, c: R.c }), it('kasa', tu, tv + 1.15, 0.4, 0.4, { y: 1.05, ry: 3 }),
