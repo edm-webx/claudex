@@ -24,6 +24,8 @@ await p.evaluate(([STAGE, HOUR]) => { const M = window.__marti; M.setTime(Number
   M.setTime(Number(HOUR)); for (let i = 0; i < 90; i++) M.step(1);
   if (!new URLSearchParams(location.search).get('ui')) { const st = document.createElement('style'); st.textContent = '#sbui{visibility:hidden!important}'; document.head.appendChild(st); } }, [STAGE, HOUR]);
 const SPOTS = {
+  kenarGenis: [786, 10, 786, 10, 2.5, 0, 0.3], kenarSagGenis: [894, 10, 894, 10, 2.5, 0, 0.3], kuzeyGenis: [830, 24, 830, 24, 2.5, 0, 0.3],
+  iskele: [-2, 4, -2, 4, -1, 0, 0],
   gir: [806, 10, 806, 10, -1, 0, 0], yol: [828, 10, 828, 10, -1, 0, 0], genis: [828, 10, 832, 8, 2.5, 0, 0.3], kamp: [822, 3, 822, 3, -1, 0, 0], golet: [868, 10, 868, 10, -1, 0, 0],
   mangal: [838, 17, 838, 17, -1, 0, 0], kenar: [785, 10, 785, 10, -1, 0, 0], kenarSag: [895, 10, 895, 10, -1, 0, 0], kuzey: [830, -6, 830, -6, -1, 0, 0], guney: [830, 26, 830, 26, -1, 0, 0],
 };

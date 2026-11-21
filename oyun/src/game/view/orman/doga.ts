@@ -210,6 +210,23 @@ export function createDoga(kit: Kit, root: T.Group): Doga {
   const sqTail = G(new T.SphereGeometry(0.1, 7, 5)); sqTail.scale(0.8, 2.0, 1.0); sqTail.translate(-0.16, 0.26, 0);
   const sqHead = G(new T.SphereGeometry(0.07, 7, 5)); sqHead.translate(0.16, 0.2, 0);
   const sqParts = [sqBody, sqTail, sqHead].map(g => { const m = new T.InstancedMesh(g, sqM, 3); m.frustumCulled = false; m.castShadow = true; root.add(m); return m; });
+  // fener direkleri: patika kavşaklarında, geceleri sıcak ışık havuzu (gerçek ışık yok: sıcak ampul + yere yumuşak eklemeli parıltı)
+  const FENER: [number, number][] = [[818, 11.5], [850, 11.5], [870, 11.5], [834, -0.2], [818, 20.4], [850, 20.4], [862, -1.0], [812, -3.4], [840, 6.9]];
+  const postM = M(new T.MeshStandardMaterial({ color: '#2b2f33', roughness: 0.6, metalness: 0.4 }));
+  const bulbM = M(new T.MeshBasicMaterial({ color: '#2a2a2a' }));
+  const lampPost = G(new T.CylinderGeometry(0.04, 0.06, 2.5, 6)); lampPost.translate(0, 1.25, 0);
+  const lampHead = G(new T.BoxGeometry(0.26, 0.34, 0.26)); lampHead.translate(0, 2.65, 0);
+  const lampBulb = G(new T.SphereGeometry(0.11, 8, 6)); lampBulb.translate(0, 2.62, 0);
+  const iPost = new T.InstancedMesh(lampPost, postM, FENER.length), iHead = new T.InstancedMesh(lampHead, postM, FENER.length), iBulb = new T.InstancedMesh(lampBulb, bulbM, FENER.length);
+  const poolTex = kit.paint(128, 128, (g) => { const gr = g.createRadialGradient(64, 64, 2, 64, 64, 62); gr.addColorStop(0, 'rgba(255,214,150,1)'); gr.addColorStop(0.35, 'rgba(255,190,110,.45)'); gr.addColorStop(1, 'rgba(255,170,90,0)'); g.fillStyle = gr; g.fillRect(0, 0, 128, 128); });
+  const poolM = M(new T.MeshBasicMaterial({ map: poolTex, color: '#ffffff', transparent: true, opacity: 0, depthWrite: false, blending: T.AdditiveBlending, fog: false }));
+  const poolG = G(new T.PlaneGeometry(1, 1)); poolG.rotateX(-Math.PI / 2);
+  const iPool = new T.InstancedMesh(poolG, poolM, FENER.length);
+  FENER.forEach(([x, z], i) => {
+    o.position.set(x, 0, z); o.rotation.set(0, 0, 0); o.scale.setScalar(1); o.updateMatrix(); iPost.setMatrixAt(i, o.matrix); iHead.setMatrixAt(i, o.matrix); iBulb.setMatrixAt(i, o.matrix);
+    o.position.set(x, 0.075, z); o.scale.set(6.6, 1, 6.6); o.updateMatrix(); iPool.setMatrixAt(i, o.matrix);
+  });
+  for (const im of [iPost, iHead, iBulb, iPool]) { im.castShadow = false; im.receiveShadow = false; im.frustumCulled = false; root.add(im); }
   const nearTrails = trees.filter(t => t.z > -5 && t.z < 23);
 
   let t = 0, shown = true;
@@ -226,6 +243,8 @@ export function createDoga(kit: Kit, root: T.Group): Doga {
       // mist: dawn, dusk, night (blue-grey at night)
       const mk = Math.max(B.morning * 0.9, B.golden * 0.3, B.night * 0.45); mistM.opacity = 0.3 * mk; mistM.color.setRGB(0.88 - B.night * 0.2, 0.92 - B.night * 0.15, 0.95);
       for (const m of mists) { m.visible = mk > 0.02; if (!m.visible) continue; m.position.x += dt * m.userData.v; if (m.position.x > 884) m.position.x = 796; }
+      // fener: akşam 18'den yanar, gece tam parlar; ampul hafif titrer
+      { const lk = Math.min(1, B.night + smooth(17.5, 19.5, h) * (1 - B.night)); poolM.opacity = lk * (0.42 + 0.04 * Math.sin(t * 3.1)); bulbM.color.setRGB(0.16 + 0.84 * lk, 0.16 + 0.7 * lk, 0.16 + 0.42 * lk); }
       // leaves (fewer and darker at night)
       leafM.opacity = 0.9 * (1 - B.night * 0.7);
       { leaves.position.set(p.x, 0, p.z); const a = leafGeo.getAttribute('position') as T.BufferAttribute;
