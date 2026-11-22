@@ -7,6 +7,7 @@
 import * as T from 'three';
 import { katY } from '../../../content/avm-kat';
 import { makeUrunModel } from '../chars/urun-model';
+import { IC_BY_ID, icHangi } from '../../../content/ic-mekan';
 
 export interface MakineVeri { room: string; kat: number; ist: string; ad: string; x: number; z: number; hx: number; hz: number; dx: number; dz: number; cook: string; p: number; kalan: number; ready: string[] }
 export interface MakineDeps { root: () => T.Object3D | null; hero: () => { x: number; z: number; kat?: number }; list: () => MakineVeri[] }
@@ -56,7 +57,9 @@ export function createMakineGorunum(d: MakineDeps): MakineView {
       const hp = d.hero(), kat = hp.kat || 0;
       let list: MakineVeri[] = [];
       try { list = d.list() || []; } catch { list = []; }
-      list = list.filter(m => m.kat === kat && Math.hypot(m.x - hp.x, m.z - hp.z) < MESAFE).sort((a, b) => Math.hypot(a.x - hp.x, a.z - hp.z) - Math.hypot(b.x - hp.x, b.z - hp.z));
+      // karşı yaka odaları çatılı binada: kahraman o odada değilse halka çatının üstünden görünmesin (depthTest kapalı). AVM odaları salona açık.
+      const oda = icHangi(hp, 0.3)?.id;
+      list = list.filter(m => m.kat === kat && (m.room === oda || IC_BY_ID[m.room]?.bina === 'avm') && Math.hypot(m.x - hp.x, m.z - hp.z) < MESAFE).sort((a, b) => Math.hypot(a.x - hp.x, a.z - hp.z) - Math.hypot(b.x - hp.x, b.z - hp.z));
       for (const o of kullan) o.visible = false; kullan.length = 0;
       const sayac = new Map<string, number>();
       let hi = 0, ui = 0; const dolu: { x: number; z: number }[] = [];
