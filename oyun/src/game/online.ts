@@ -102,6 +102,8 @@ const CSS = `
 .on-tag .d{display:block;font:800 11px/1.2 var(--body);color:#fff6e6;text-shadow:0 1px 2px #000}
 .on-tag .s{display:block;margin:0 auto 4px;max-width:220px;white-space:normal;background:#fff;border:2px solid #3b2a20;border-radius:12px;padding:3px 9px;font:800 14px/1.25 var(--body);color:#3b2a20}
 .on-oda{position:absolute;left:50%;top:44px;transform:translateX(-50%);z-index:41;min-width:230px;white-space:nowrap;min-height:40px;padding:2px 14px;border-radius:999px;border:3px solid #3b2a20;background:#ffd23f;box-shadow:0 3px 0 #3b2a20;font:900 14px var(--disp);color:#3b2a20;cursor:pointer;pointer-events:auto}
+/* AR-GE 2026-11-22: tek başınayken davet düğmesi küçük ve sade (ilk oturumda ekranın ortasını kaplıyordu); oda kurulunca büyük hâl döner */
+.on-oda.kucuk{top:10px;min-width:0;min-height:30px;padding:0 10px;font-size:12px;border-width:2px;background:rgba(255,246,230,.94);box-shadow:0 2px 0 #3b2a20}
 .on-bg{position:fixed;inset:0;pointer-events:auto;z-index:72;display:flex;align-items:center;justify-content:center;background:rgba(40,22,18,.6);padding:16px;font-family:var(--body)}
 .on-card{width:min(380px,100%);background:#fdf3e1;color:#3b2a20;border:4px solid #3b2a20;border-radius:22px;box-shadow:0 8px 0 #3b2a20;padding:16px}
 .on-card h3{font:900 24px/1.1 var(--disp);margin:0 0 4px;text-align:center}.on-card p{font:700 14px/1.35 var(--body);opacity:.78;margin:4px 0 10px;text-align:center}
@@ -314,8 +316,9 @@ ${code ? `<div class="on-big">${code}</div><p>Şu an bu odadasın.</p>` : ''}
   return {
     peers: () => [...remotes.values()].map(r => ({ peer: r.peer, uid: r.uid, hn: r.hn, ad: r.ad, x: r.x, z: r.z })),
     update(dt: number) {
+      if (odaBtn) { const solo = !code && remotes.size === 0; odaBtn.classList.toggle('kucuk', solo); if (pill && solo) pill.style.display = 'none'; if (solo && odaBtn.textContent !== '👥 Arkadaş çağır') odaBtn.textContent = '👥 Arkadaş çağır'; }
       // an open panel sheet takes the screen: chat and the server button step aside so nothing covers its text
-      if (chat && (sheetT -= dt) <= 0) { sheetT = 0.25; const open = !!document.querySelector('.sb-sheet, .kl-p, .gr-bg'); chat.style.display = open || !code ? 'none' : ''; if (odaBtn) odaBtn.style.display = open ? 'none' : ''; if (pill) pill.style.display = open ? 'none' : ''; }
+      if (chat && (sheetT -= dt) <= 0) { sheetT = 0.25; const open = !!document.querySelector('.sb-sheet, .kl-p, .gr-bg'); chat.style.display = open || !code ? 'none' : ''; if (odaBtn) odaBtn.style.display = open ? 'none' : ''; if (pill) pill.style.display = open || (!code && remotes.size === 0) ? 'none' : ''; }
       if (!link) { if (code && (retryT -= dt) <= 0) { retryT = 20; connect(code); } return; }
       const me = d.me();
       sendT -= dt;
