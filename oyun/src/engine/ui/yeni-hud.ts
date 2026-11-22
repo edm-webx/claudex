@@ -43,6 +43,7 @@ export const YENI_CSS = `
 /* açık panelin başlığını toast/başarım kartı örtmesin: geniş ekranda sağ boşluğa, başarım kartı varken aşağı kayar */
 @media (min-width:1100px){#sbui:has(.sb-sheet:not(.out)) .sb-toasts{left:auto;right:calc(var(--sr,0px) + 14px);transform:none;top:calc(var(--hudb,64px) + 100px);width:min(300px,calc(50vw - 360px))}}
 #sbui:has(.sb-ach) .sb-toasts{top:calc(var(--hudb,64px) + 150px)}
+#sbui:has(.sb-sheet:not(.out)) .tut-txt{opacity:0!important}
 #sbui .sb-bi{flex:1 0 auto!important;max-width:none!important;min-width:64px;padding:0 8px!important}
 #sbui .sb-bi span{overflow:visible!important;text-overflow:clip!important}
 #sbui .sb-bar.more-r{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}
