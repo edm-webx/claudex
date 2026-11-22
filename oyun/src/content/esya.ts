@@ -105,11 +105,13 @@ export interface KafeYemek { id: string; ad: string; ikon: string; fiyat: number
 export interface KafeEsya { id: string; ad: string; ikon: string; fiyat: number; lv: number; musteri?: number; fiyatK?: number; desc: string; teras?: boolean }
 export type IsletmeId = 'kafe' | 'bistro' | 'kirtasiye' | 'kantin' | 'lokanta' | 'kafeterya' | 'giyim' | 'elektronik' | 'oyuncak'
   | 'sekerci' | 'kahveci' | 'dondurma' | 'baklava' | 'kuruyemis' | 'donerci' | 'kumpir' | 'midye';
-export interface Isletme { id: IsletmeId; ad: string; ikon: string; asama: string[]; mus: number; menu: KafeYemek[]; esya: KafeEsya[] }
+/** dolap: büfedeki gibi soğuk içecek dolabı (2026-11-22 sahip: "dolaptan kola soda gazoz verebilsin, bütün restoran kafelerde büfe gibi").
+ *  1. seviyeden açık, seviye menüsüne eklenir; dolaptan beklemeden alınır (content/isletme-istasyon.ts 'dolap'), stok yok. */
+export interface Isletme { id: IsletmeId; ad: string; ikon: string; asama: string[]; mus: number; menu: KafeYemek[]; esya: KafeEsya[]; dolap?: KafeYemek[] }
 const Y = (id: string, ad: string, ikon: string, fiyat: number): KafeYemek => ({ id, ad, ikon, fiyat });
 const A = (id: string, ad: string, ikon: string, fiyat: number, lv: number, o: Partial<KafeEsya>, desc: string): KafeEsya => ({ id, ad, ikon, fiyat, lv, ...o, desc });
 export const ISLETME: Record<IsletmeId, Isletme> = {
-  kafe: { id: 'kafe', ad: 'Kafe', ikon: '☕', mus: 1, asama: ['Köşe kafe', 'Kafe', 'Kahve evi', 'Teraslı kafe', 'Gurme kafe'],
+  kafe: { dolap: [Y('d_su', 'Martı Su', '💧', 10), Y('d_soda', 'Maden suyu', '🫧', 15), Y('d_kolaz', 'Kolaz', '🥤', 28)], id: 'kafe', ad: 'Kafe', ikon: '☕', mus: 1, asama: ['Köşe kafe', 'Kafe', 'Kahve evi', 'Teraslı kafe', 'Gurme kafe'],
     menu: [Y('turk_kahvesi', 'Türk kahvesi', '☕', 26), Y('demlik_cay', 'Demlik çay', '🫖', 20), Y('kasarli_tost', 'Kaşarlı tost', '🥪', 37), Y('su_boregi', 'Su böreği', '🥧', 40),
       Y('filtre', 'Filtre kahve', '🥤', 38), Y('cheesecake', 'Cheesecake', '🍰', 57), Y('menemen', 'Menemen', '🍳', 65), Y('serpme', 'Serpme kahvaltı', '🧺', 140)],
     esya: [A('espresso', 'Espresso makinesi', '☕', 30000, 1, { fiyatK: 0.12 }, 'Tezgahta parlak makine: fiyatlar +%12'),
@@ -122,7 +124,7 @@ export const ISLETME: Record<IsletmeId, Isletme> = {
       A('saksi', 'Saksı ve çiçekler', '🪴', 18000, 3, { musteri: 0.08, teras: true }, 'İçeride ve terasta yeşillik: müşteri +%8'),
       A('soba', 'Teras ısıtıcıları', '🔥', 55000, 4, { musteri: 0.15, teras: true }, 'Kışın da dolu: müşteri +%15'),
       A('barista', 'Barista istasyonu', '🏆', 90000, 5, { fiyatK: 0.2 }, 'Değirmen, demleme barı: fiyatlar +%20')] },
-  bistro: { id: 'bistro', ad: 'Bistro', ikon: '🐟', mus: 0.9, asama: ['Sahil büfesi', 'Sahil bistro', 'Balık bistro', 'Teraslı bistro', 'Gurme bistro'],
+  bistro: { dolap: [Y('d_su', 'Martı Su', '💧', 10), Y('d_soda', 'Maden suyu', '🫧', 15), Y('d_kolaz', 'Kolaz', '🥤', 30)], id: 'bistro', ad: 'Bistro', ikon: '🐟', mus: 0.9, asama: ['Sahil büfesi', 'Sahil bistro', 'Balık bistro', 'Teraslı bistro', 'Gurme bistro'],
     menu: [Y('limonata', 'Ev limonatası', '🍋', 31), Y('latte', 'Latte', '☕', 46), Y('waffle', 'Waffle', '🧇', 75), Y('frappe', 'Frappe', '🥤', 57),
       Y('balik_ekmek', 'Balık ekmek', '🐟', 75), Y('deniz_makarna', 'Deniz mahsullü makarna', '🍝', 120), Y('levrek', 'Levrek ızgara', '🐠', 190), Y('sufle', 'Sufle', '🍫', 65)],
     esya: [A('kahve_bar', 'Kahve barı', '☕', 32000, 1, { fiyatK: 0.1 }, 'Latte ve frappe istasyonu: fiyatlar +%10'),
@@ -136,7 +138,7 @@ export const ISLETME: Record<IsletmeId, Isletme> = {
       A('soba', 'Teras ısıtıcıları', '🔥', 55000, 4, { musteri: 0.15, teras: true }, 'Kışın da dolu: müşteri +%15'),
       A('sef_seti', 'Şef bıçak seti', '🔪', 95000, 5, { fiyatK: 0.2 }, 'Gurme tabaklar: fiyatlar +%20')] },
   kirtasiye: { id: 'kirtasiye', ad: 'Kırtasiye', ikon: '✏️', mus: 0.9, asama: ['Kırtasiye', 'Kırtasiye & fotokopi', 'Kitapçı', 'Kitap & hobi', 'Martı Kitabevi'],
-    menu: [Y('kalem', 'Kurşun kalem', '✏️', 11), Y('defter', 'Spiralli defter', '📒', 30), Y('silgi', 'Silgi seti', '🧽', 15), Y('boya', 'Boya kalemi', '🖍️', 45),
+    menu: [Y('kalem', 'Kurşun kalem', '✏️', 15), Y('defter', 'Spiralli defter', '📒', 38), Y('silgi', 'Silgi seti', '🧽', 20), Y('boya', 'Boya kalemi', '🖍️', 52),
       Y('fotokopi_s', 'Fotokopi', '📄', 8), Y('canta', 'Okul çantası', '🎒', 220), Y('roman', 'Roman', '📕', 80), Y('maket', 'Maket seti', '🧩', 150)],
     esya: [A('fotokopi', 'Fotokopi makinesi', '🖨️', 28000, 1, { musteri: 0.15 }, 'Öğrenciler kuyruğa girer: müşteri +%15'),
       A('pos', 'Kartlı ödeme', '💳', 12000, 1, { musteri: 0.08 }, 'Bozuk para derdi bitti: müşteri +%8'),
@@ -146,9 +148,11 @@ export const ISLETME: Record<IsletmeId, Isletme> = {
       A('oyuncak', 'Oyuncak köşesi', '🧸', 36000, 3, { musteri: 0.14 }, 'Çocuklar annelerini çeker: müşteri +%14'),
       A('yazici3d', '3D yazıcı', '🧊', 75000, 4, { fiyatK: 0.15 }, 'Martı figürü basar: fiyatlar +%15'),
       A('okuma', 'Okuma köşesi', '🛋️', 45000, 5, { musteri: 0.18 }, 'Puf ve lamba: müşteri +%18')] },
-  kantin: { id: 'kantin', ad: 'Okul kantini', ikon: '🥪', mus: 1.5, asama: ['Kantin', 'Kantin+', 'Okul büfesi', 'Kantin kafe', 'Yıldızlı kantin'],
-    menu: [Y('ayran', 'Ayran', '🥛', 11), Y('simit_k', 'Simit', '🥯', 10), Y('tost_k', 'Karışık tost', '🥪', 30), Y('kek', 'Kek', '🧁', 14),
-      Y('cikolatali_sut', 'Çikolatalı süt', '🍫', 17), Y('pizza', 'Pizza dilimi', '🍕', 35), Y('salata_k', 'Meyve kabı', '🍎', 23), Y('kofte_k', 'Köfte ekmek', '🍔', 47)],
+  // 2026-11-22 karşı yaka denetimi: kantin/kırtasiye/kafeterya fiyatları ucuz kalemle sınırlı servis hızında dükkânı zarara sokuyordu
+  // (kantin 1-3. seviyede 2-3 işçinin maaşından sonra günde ~0 ₺). Kantin bugünkü okul kantini fiyatlarına çekildi, diğer ikisinin ilk kalemleri biraz arttı.
+  kantin: { dolap: [Y('d_su', 'Martı Su', '💧', 10), Y('d_gazoz', 'Boğaz Gazozu', '🍾', 22), Y('d_kolaz', 'Kolaz', '🥤', 28)], id: 'kantin', ad: 'Okul kantini', ikon: '🥪', mus: 1.5, asama: ['Kantin', 'Kantin+', 'Okul büfesi', 'Kantin kafe', 'Yıldızlı kantin'],
+    menu: [Y('ayran', 'Ayran', '🥛', 18), Y('simit_k', 'Simit', '🥯', 17), Y('tost_k', 'Karışık tost', '🥪', 50), Y('kek', 'Kek', '🧁', 24),
+      Y('cikolatali_sut', 'Çikolatalı süt', '🍫', 28), Y('pizza', 'Pizza dilimi', '🍕', 58), Y('salata_k', 'Meyve kabı', '🍎', 38), Y('kofte_k', 'Köfte ekmek', '🍔', 78)],
     esya: [A('tost_mak', 'Tost makinesi', '🥪', 9000, 1, { fiyatK: 0.1 }, 'Çıtır tost: fiyatlar +%10'),
       A('buzdolap', 'İçecek dolabı', '🧃', 14000, 1, { musteri: 0.12 }, 'Soğuk ayran: müşteri +%12'),
       A('semaver_k', 'Semaver', '🫖', 11000, 2, { musteri: 0.1 }, 'Öğretmenler çay içer: müşteri +%10'),
@@ -157,7 +161,7 @@ export const ISLETME: Record<IsletmeId, Isletme> = {
       A('masa_k', 'Kantin masaları', '🪑', 18000, 3, { musteri: 0.14 }, 'Teneffüste oturacak yer: müşteri +%14'),
       A('ekran_k', 'Menü ekranı', '📺', 26000, 4, { fiyatK: 0.12 }, 'Dijital menü: fiyatlar +%12'),
       A('izgara_k', 'Köfte ızgarası', '🔥', 40000, 5, { fiyatK: 0.18 }, 'Köfte kokusu: fiyatlar +%18')] },
-  lokanta: { id: 'lokanta', ad: 'Lokanta', ikon: '🍲', mus: 1.2, asama: ['Esnaf lokantası', 'Lokanta', 'Ocakbaşı', 'Kebapçı', 'Martı Sofrası'],
+  lokanta: { dolap: [Y('d_su', 'Martı Su', '💧', 10), Y('d_ayran', 'Ayranbey ayran', '🥛', 18), Y('d_kolaz', 'Kolaz', '🥤', 28)], id: 'lokanta', ad: 'Lokanta', ikon: '🍲', mus: 1.2, asama: ['Esnaf lokantası', 'Lokanta', 'Ocakbaşı', 'Kebapçı', 'Martı Sofrası'],
     menu: [Y('mercimek', 'Mercimek çorbası', '🥣', 45), Y('fasulye', 'Kuru fasulye pilav', '🍛', 75), Y('karniyarik', 'Karnıyarık', '🍆', 85), Y('lahmacun', 'Lahmacun', '🫓', 48),
       Y('pide', 'Kaşarlı pide', '🥙', 100), Y('iskender', 'İskender', '🥩', 170), Y('adana', 'Adana kebap', '🌶️', 160), Y('kunefe', 'Künefe', '🍮', 80)],
     esya: [A('benmari', 'Benmari tezgahı', '🍲', 40000, 1, { musteri: 0.15 }, 'Tencereler sıcak: müşteri +%15'),
@@ -169,8 +173,8 @@ export const ISLETME: Record<IsletmeId, Isletme> = {
       A('tatli_vitrin', 'Tatlı vitrini', '🍮', 38000, 4, { musteri: 0.12 }, 'Künefe ve sütlaç: müşteri +%12'),
       A('led_menu', 'Işıklı menü panosu', '📺', 30000, 4, { fiyatK: 0.1 }, 'Fotoğraflı menü: fiyatlar +%10'),
       A('sef_ocak', 'Usta ocağı', '👨‍🍳', 120000, 5, { fiyatK: 0.22 }, 'Usta işi: fiyatlar +%22')] },
-  kafeterya: { id: 'kafeterya', ad: 'Tesis kafeteryası', ikon: '⚽', mus: 1.1, asama: ['Soyunma çay ocağı', 'Kafeterya', 'Spor kafe', 'Taraftar kafe', 'Kulüp lokali'],
-    menu: [Y('cay_t', 'Çay', '🍵', 12), Y('gazoz_t', 'Boğaz Gazozu', '🥤', 22), Y('tost_t', 'Sucuklu tost', '🥪', 40), Y('enerji', 'Martı Enerji', '⚡', 31),
+  kafeterya: { dolap: [Y('d_su', 'Martı Su', '💧', 10), Y('d_soda', 'Maden suyu', '🫧', 15), Y('d_kolaz', 'Kolaz', '🥤', 28)], id: 'kafeterya', ad: 'Tesis kafeteryası', ikon: '⚽', mus: 1.1, asama: ['Soyunma çay ocağı', 'Kafeterya', 'Spor kafe', 'Taraftar kafe', 'Kulüp lokali'],
+    menu: [Y('cay_t', 'Çay', '🍵', 15), Y('gazoz_t', 'Boğaz Gazozu', '🥤', 26), Y('tost_t', 'Sucuklu tost', '🥪', 40), Y('enerji', 'Martı Enerji', '⚡', 31),
       Y('kofte_t', 'Köfte ekmek', '🍔', 58), Y('protein', 'Protein bar', '🍫', 32), Y('kumpir_t', 'Kumpir', '🥔', 70), Y('mac_menu', 'Maç menüsü', '🍟', 100)],
     esya: [A('cay_mak', 'Çay makinesi', '🍵', 9000, 1, { musteri: 0.1 }, 'Soyunmadan çıkan çay içer: müşteri +%10'),
       A('icecek_dolap', 'İçecek dolabı', '🥤', 14000, 1, { fiyatK: 0.08 }, 'Soğuk gazoz: fiyatlar +%8'),
@@ -314,6 +318,10 @@ export const ARSA_ISLETME: Record<string, IsletmeId> = { k1: 'kafe', k2: 'bistro
   k10: 'sekerci', k11: 'kahveci', k12: 'dondurma', k13: 'baklava', k14: 'kuruyemis', k15: 'donerci', k16: 'kumpir', k17: 'midye' };
 export const isletmeOf = (arsaId: string): Isletme => ISLETME[ARSA_ISLETME[arsaId] || 'kafe'];
 export const kafeMenu = (id: string, lv: number) => isletmeOf(id).menu.slice(0, KAFE_MENU_LV[Math.max(0, Math.min(5, lv))] || 2);
+/** içecek dolabı (seviyeden bağımsız, hep açık); fiyat ortalaması ve müşteri çarpanı yalnız kafeMenu'den hesaplanır */
+export const kafeDolap = (id: string): KafeYemek[] => isletmeOf(id).dolap || [];
+/** müşterinin isteyebileceği her şey: seviye menüsü + dolap */
+export const kafeSatis = (id: string, lv: number) => [...kafeMenu(id, lv), ...kafeDolap(id)];
 export const KAFE_ESYA: KafeEsya[] = ISLETME.kafe.esya;
 export const KAFE_ESYA_BY_ID: Record<string, KafeEsya> = Object.fromEntries(KAFE_ESYA.map(e => [e.id, e]));
 export const isletmeEsya = (arsaId: string, e: string) => isletmeOf(arsaId).esya.find(x => x.id === e);

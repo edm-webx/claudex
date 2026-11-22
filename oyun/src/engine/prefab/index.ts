@@ -17,6 +17,7 @@
  * - Placement ids are global keys for instance(id); zones keep them unique (content rule: prefix per zone).
  */
 import * as T from 'three';
+import { dejenereAt } from '../render/geo-temiz';
 import type { PrefabSystem, PrefabDeps, PrefabDef, PrefabPlacement, PrefabInstance, BuiltPrefab, PrefabKit, PartDef, Rect, AnchorDef, InteractDef } from '../api';
 import { Batch, mtx, roundBox, type UVRect } from './batch';
 
@@ -110,7 +111,7 @@ export function createPrefabs(deps: PrefabDeps): MotorPrefabSystem {
         const pts = part.points || [];
         if (pts.length >= 3) {
           const sh = new T.Shape(pts.map(p => new T.Vector2(p[0], p[1])));
-          const g = new T.ExtrudeGeometry(sh, { depth: s[2] || 0.1, bevelEnabled: false });
+          const g = dejenereAt(new T.ExtrudeGeometry(sh, { depth: s[2] || 0.1, bevelEnabled: false }));   // geo-temiz: sıfır alanlı kapak üçgeni = NaN normal
           b.add(g, c, null, { uv });
           g.dispose();
         }

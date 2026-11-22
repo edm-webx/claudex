@@ -10,6 +10,7 @@ import { loadGlb, fitClone } from './glb';
 import { UG, UG_STEPS, ugY } from '../../../content/ustgecit';
 import { UST_GECIT } from '../../../content/kilitli-bolge';
 import { mergeStatic } from '../../../engine/render/merge-static';
+import { dejenereAt } from '../../../engine/render/geo-temiz';
 /** deck starts this far in from each top riser (a stair tab fills it): no coplanar faces = no z-fighting */
 const UG_DECK_E = 0.02;
 const W_UG = UG.hw * 2 + 0.3;
@@ -109,6 +110,25 @@ function noticeTex(l1: string, l2: string, l3: string): T.CanvasTexture {
 }
 
 /**
+ * Üst geçit merdiven gövdesi (yan profil z-y, x boyunca W kalınlık). 2026-11-21: ilk basamak iskele zeminiyle aynı düzlemdeydi
+ * (z-fighting); gövde ilk rıhtta başlar, güverte altına 2 cm diller (güverte UG_DECK_E içeriden başlar).
+ * 2026-11-22 "iskele tarafındaki ayağı full siyah yanıp sönüyor": basamak burunları tek doğru üzerinde, earcut kapakta sıfır alanlı
+ * üçgenler üretiyordu (iskele kolunda 54 köşe, normal = 0). Gerçek GPU'da normalize(0) = NaN, bloom bu pikseli ekran hizalı siyah
+ * bloklara yayıyordu (SwiftShader NaN yaymadığından bulutta görünmüyordu). Sıfır alanlı üçgenler atılır (engine/render/geo-temiz).
+ */
+export function stairSolid(z0: number, z1: number, W: number): T.BufferGeometry {
+  const { h } = UG, N = UG_STEPS, rise = h / N, s0 = Math.sign(z1 - z0), u1 = z0 + (z1 - z0) / N, E = UG_DECK_E;
+  const sh = new T.Shape(); sh.moveTo(u1, -0.02);
+  sh.lineTo(u1, rise);
+  for (let i = 2; i <= N; i++) { const u = z0 + (z1 - z0) * i / N; sh.lineTo(u, (i - 1) * rise); sh.lineTo(u, i * rise); }
+  sh.lineTo(z1 + s0 * E, h); sh.lineTo(z1 + s0 * E, h - 0.3); sh.lineTo(z1, h - 0.3); sh.lineTo(z1, -0.02); sh.closePath();
+  const ex = new T.ExtrudeGeometry(sh, { depth: W, bevelEnabled: false, curveSegments: 1 });
+  const geo = dejenereAt(ex); ex.dispose();
+  geo.translate(0, 0, -W / 2); geo.rotateY(-Math.PI / 2);
+  return geo;
+}
+
+/**
  * 2026-11-21 üst geçit inşaatı (content/kilitli-bolge UST_GECIT): the middle span is its own group (shown once the bridge opens);
  * the construction group holds the cut-edge barriers, rebar stubs and the two stair-foot notices. No machines, nothing on the promenade
  * walkway: the notice boards hang 1.9 m up on two posts just outside the stair railings.
@@ -160,15 +180,7 @@ function buildOverpass(): T.Group {
   // whole bridge sat 0.35 m up with the street group: that was "merdivenden çıkarken içine gömülüyoruz" (2026-11-09).
   const N = UG_STEPS, rise = h / N, nose = lam('#5b6068');
   const flight = (z0: number, z1: number) => {
-    // 2026-11-21 "merdivenin orada siyah kare yanıp sönüyor": the first tread lay ON the promenade (both faces at y 0, up) and the
-    // deck's end face ON the top riser: coplanar = z-fighting on a real GPU. The solid now starts at the first riser (the first
-    // going is the promenade itself) and ends in a 2 cm tab under the deck, which starts 2 cm in.
-    const s0 = Math.sign(z1 - z0), u1 = z0 + (z1 - z0) / N, E = UG_DECK_E;
-    const sh = new T.Shape(); sh.moveTo(u1, -0.02);
-    sh.lineTo(u1, rise);
-    for (let i = 2; i <= N; i++) { const u = z0 + (z1 - z0) * i / N; sh.lineTo(u, (i - 1) * rise); sh.lineTo(u, i * rise); }
-    sh.lineTo(z1 + s0 * E, h); sh.lineTo(z1 + s0 * E, h - 0.3); sh.lineTo(z1, h - 0.3); sh.lineTo(z1, -0.02); sh.closePath();
-    const geo = new T.ExtrudeGeometry(sh, { depth: W, bevelEnabled: false, curveSegments: 1 }); geo.translate(0, 0, -W / 2); geo.rotateY(-Math.PI / 2);
+    const geo = stairSolid(z0, z1, W);
     const stairs = new T.Mesh(geo, lam('#8a9097')); stairs.position.x = x; stairs.castShadow = true; stairs.receiveShadow = true; g.add(stairs);
     // dark anti-slip strip just behind each nosing (1 cm, inside the 2 cm foot tolerance)
     const s = Math.sign(z1 - z0);

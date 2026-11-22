@@ -38,7 +38,9 @@ const adimlar = [
   sh('birim ve sim testleri', 'npx vitest run'),
 ];
 if (!hizli) {
-  adimlar.push(sh('derleme', 'npx vite build'), sh('paket sayfası', 'node tools/build-artifact.mjs'), sh('dist denetimi', 'node tools/check-dist.mjs'));
+  adimlar.push(sh('derleme', 'npx vite build'), sh('paket sayfası', 'node tools/build-artifact.mjs'), sh('dist denetimi', 'node tools/check-dist.mjs'),
+    // 2026-11-22: sıfır/NaN normal = gerçek GPU'da siyah blok (bloom). Geliştirme derlemesinde dört diyar taranır.
+    sh('bozuk normal taraması', 'npx vite build --mode development --outDir dist-dev && MARTI_DIST=dist-dev node tools/build-artifact.mjs && KATI=1 node tests/browser/es-duzlem.mjs calisma/es-duzlem'));
 }
 const sonuc = calistir(adimlar);
 const gec = sonuc.every(s => s.ok);

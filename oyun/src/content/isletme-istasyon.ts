@@ -3,7 +3,7 @@
  * (seconds at business level 1), what the worker carries (3D model family) and its colour. No stock, no ingredients.
  * 'raf' is only a pick-up point (endless, decorative). Menu ids are the ISLETME[...].menu ids of content/esya.ts.
  */
-export type IstasyonId = 'kahve' | 'cay' | 'bar' | 'ocak' | 'firin' | 'izgara' | 'vitrin' | 'tezgah' | 'kopya' | 'raf' | 'depo' | 'paket' | 'test' | 'dikis';
+export type IstasyonId = 'kahve' | 'cay' | 'bar' | 'ocak' | 'firin' | 'izgara' | 'vitrin' | 'tezgah' | 'kopya' | 'raf' | 'depo' | 'paket' | 'test' | 'dikis' | 'dolap';
 export type TasimaKind = 'fincan' | 'bardak' | 'sise' | 'tabak' | 'kase' | 'tepsi' | 'dilim' | 'kutu' | 'defter' | 'kagit' | 'torba';
 export interface Kalem { ist: IstasyonId; sure: number; tasima: TasimaKind; renk: string }
 const k = (ist: IstasyonId, sure: number, tasima: TasimaKind, renk: string): Kalem => ({ ist, sure, tasima, renk });
@@ -26,6 +26,8 @@ export const KALEM: Record<string, Kalem> = {
   // tesis kafeteryası
   cay_t: k('cay', 2, 'bardak', '#b5361c'), gazoz_t: k('bar', 1.5, 'sise', '#5aa9d6'), tost_t: k('firin', 4.5, 'dilim', '#e8c27a'), enerji: k('bar', 1.5, 'sise', '#f2d24a'),
   kofte_t: k('izgara', 6, 'dilim', '#a8602c'), protein: k('vitrin', 1.2, 'kutu', '#6a4a2e'), kumpir_t: k('firin', 5.5, 'kase', '#e9c46a'), mac_menu: k('izgara', 7, 'tepsi', '#e0533c'),
+  // içecek dolabı (2026-11-22, büfedeki gibi): kapağı aç, şişeyi al; makine değil, bekletmez
+  d_su: k('dolap', 0.8, 'sise', '#9fd3f0'), d_soda: k('dolap', 0.8, 'sise', '#cfe8d8'), d_kolaz: k('dolap', 0.8, 'sise', '#6b1f1a'), d_gazoz: k('dolap', 0.8, 'sise', '#5aa9d6'), d_ayran: k('dolap', 0.8, 'sise', '#fbfdff'),
   // AVM shops (2026-11-20): the worker fetches the item from the stock shelf (depo), wraps it (paket) or tests it (test); no stock
   tisort: k('depo', 2.5, 'torba', '#e0533c'), kot: k('depo', 3, 'torba', '#2f5f9a'), gomlek: k('dikis', 3, 'torba', '#f4f2ec'), sweat: k('depo', 3, 'torba', '#7d6bb0'),
   elbise: k('dikis', 3.5, 'torba', '#c94f6d'), spor_ayk: k('depo', 4, 'kutu', '#f4f2ec'), mont: k('depo', 4, 'torba', '#3a3d42'), takim: k('dikis', 5, 'torba', '#1d1d22'),
@@ -55,10 +57,10 @@ export const KALEM: Record<string, Kalem> = {
 export const ISTASYON_LAYOUT_K: Record<IstasyonId, string[]> = {
   kahve: ['espresso', 'barista', 'kumOcak'], cay: ['semaver', 'cayOcak'], bar: ['buzdolap', 'espresso', 'buzVitrin', 'yayik'], ocak: ['benmari', 'corba', 'ocakK', 'kazan', 'kavurucu'],
   firin: ['tostMak', 'firinK', 'tasFirin', 'waffle', 'kumpirFirin'], izgara: ['mangal', 'izgara', 'doner'], vitrin: ['vitrin', 'buzVitrin', 'tatliVitrin', 'dondurmaTezgah', 'kavanoz'], tezgah: ['tepsiTezgah', 'tezgah'], kopya: ['fotokopi'], raf: ['kavanoz', 'tezgah'],
-  depo: ['depoRaf'], paket: ['paketMasa', 'hediye'], test: ['testMasa'], dikis: ['dikis'],
+  depo: ['depoRaf'], paket: ['paketMasa', 'hediye'], test: ['testMasa'], dikis: ['dikis'], dolap: ['icecekDolap', 'buzdolap'],
 };
 /** deterministic order, used to spread stations along a counter when the room has no matching layout item */
-export const ISTASYON_SIRA: IstasyonId[] = ['kahve', 'cay', 'bar', 'ocak', 'firin', 'izgara', 'vitrin', 'tezgah', 'kopya', 'raf', 'depo', 'paket', 'test', 'dikis'];
+export const ISTASYON_SIRA: IstasyonId[] = ['kahve', 'cay', 'bar', 'ocak', 'firin', 'izgara', 'vitrin', 'tezgah', 'kopya', 'raf', 'depo', 'paket', 'test', 'dikis', 'dolap'];
 export const kalemOf = (id: string): Kalem => KALEM[id] || KALEM.turk_kahvesi;
 
 /**

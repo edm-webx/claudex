@@ -9,7 +9,7 @@
 import type { System, SimCtx, Vec2 } from '../../../engine/api';
 import { IC_BY_ID, IC_MEKANLAR, icWorld, icDim, icLayout, icUV, icYol, personelGeo, personelDuraklari, icMagaza } from '../../../content/ic-mekan';
 import { AVM_GIRIS, AVM_DIS, avmGelis, avmGidis } from '../../../content/avm-kat';
-import { KAFE_ISCI_TAVAN, ARSA_ISLETME, kafeMenu, ARSALAR, arsaKapi } from '../../../content/esya';
+import { KAFE_ISCI_TAVAN, ARSA_ISLETME, kafeSatis, ARSALAR, arsaKapi } from '../../../content/esya';
 import { kalemOf, ISTASYON_LAYOUT_K, ISTASYON_SIRA, MAKINE, MAKINE_TEPSI, MAKINE_ON, makineAdi, type IstasyonId } from '../../../content/isletme-istasyon';
 import { ISLETME_ROL } from '../../../content/isletme-kadro';
 import type { AgentEnv } from './env';
@@ -35,7 +35,7 @@ interface Guest { a: Actor; st: 'in' | 'gez' | 'queue' | 'served' | 'toSeat' | '
 interface Wk { a: Actor; cid: number; idx: number; st: 'post' | 'toSt' | 'brew' | 'hand' | 'pre'; t: number; guest: Guest | null; path: Pt[]; item: string }
 /** 2026-11-22 makine (content/isletme-istasyon.ts MAKINE): koyulan ürün kendi kendine pişer, bitince hazır tepsisinde bekler */
 interface Mak { ist: IstasyonId; cook: string; t: number; sure: number; ready: string[]; by: number }
-export interface MakineGorunum { room: string; kat: number; ist: IstasyonId; ad: string; x: number; z: number; hx: number; hz: number; dx: number; dz: number; cook: string; p: number; kalan: number; ready: string[] }
+export interface MakineGorunum { room: string; kat: number; ist: IstasyonId; ad: string; x: number; z: number; mx: number; mz: number; hx: number; hz: number; dx: number; dz: number; cook: string; p: number; kalan: number; ready: string[] }
 /** BUF-25: a hungry street citizen walking to the shop door; the guest appears when it arrives (or after VISIT_MAX seconds, so the flow count never drops) */
 interface Visitor { slot: number; t: number }
 interface Room { arsa: string; room: string; bistro: boolean; guests: Guest[]; wk: Wk[]; seatTaken: Set<number>; visitors: Visitor[]; mak: Map<IstasyonId, Mak>; preT: number }
@@ -81,11 +81,12 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
   };
   const follow = (a: Actor, path: Pt[], sp: number, dt: number) => { if (!path.length) return true; if (step1(a, path[0], sp, dt)) path.shift(); a.act = 'walk'; return !path.length; };
 
+  // dolap içeceği (0,35 ağırlık): siparişlerin aşağı yukarı dörtte biri, pahalı ana yemeği çok itmesin
   /** what the next guest asks for: an item of this business's own menu (the level decides how many are on it), cheap ones more often */
-  const menuOf = (r: Room) => { const info = host()?.info(r.arsa); return info ? kafeMenu(r.arsa, info.lv) : []; };
+  const menuOf = (r: Room) => { const info = host()?.info(r.arsa); return info ? kafeSatis(r.arsa, info.lv) : []; };
   function pickWant(r: Room): string {
     const menu = menuOf(r); if (!menu.length) return '';
-    const w = menu.map(m => (m.fiyat > 150 ? 0.5 : m.fiyat < 20 ? 1.5 : 1)); let x = rng.next() * w.reduce((a, b) => a + b, 0);
+    const w = menu.map(m => (kalemOf(m.id).ist === 'dolap' ? 0.35 : m.fiyat > 150 ? 0.5 : m.fiyat < 20 ? 1.5 : 1));   let x = rng.next() * w.reduce((a, b) => a + b, 0);
     for (let i = 0; i < menu.length; i++) { x -= w[i]; if (x <= 0) return menu[i].id; }
     return menu[0].id;
   }
@@ -325,7 +326,7 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
         if (!m.cook && !m.ready.length) continue;
         // ürünler tezgâhın müşteri yarısında, halka makinenin üstünde personel tarafında (yukarıdan bakınca ürünü örtmez); dx/dz tezgâh boyu yönü
         const g = geom(r), A = istasyonA(r, m.ist), Ai = A + (A + 0.5 < g.endU - 0.4 ? 0.48 : -0.48), at = g.P(Ai, 0.16), hl = g.P(A, -0.75), d1 = g.P(Ai + 1, 0.16);   // ürünler makinenin yanında (içinde kalmasın)
-        o.push({ room: r.room, kat: g.kat, ist: m.ist, ad: makAd(r, m.ist), x: at.x, z: at.z, hx: hl.x, hz: hl.z, dx: d1.x - at.x, dz: d1.z - at.z, cook: m.cook, p: m.cook ? Math.min(1, m.t / m.sure) : 1, kalan: m.cook ? Math.max(0, m.sure - m.t) : 0, ready: [...m.ready] });
+        const mp = g.P(A, 0.3); o.push({ room: r.room, kat: g.kat, ist: m.ist, ad: makAd(r, m.ist), x: at.x, z: at.z, mx: mp.x, mz: mp.z, hx: hl.x, hz: hl.z, dx: d1.x - at.x, dz: d1.z - at.z, cook: m.cook, p: m.cook ? Math.min(1, m.t / m.sure) : 1, kalan: m.cook ? Math.max(0, m.sure - m.t) : 0, ready: [...m.ready] });
       }
     }
     return o;
