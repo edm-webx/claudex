@@ -1,6 +1,7 @@
 // İşletme sarı kareleri (2026-11-21): sokak dükkânlarının satın alma / alet / tadilat kareleri ve büfe salonu kareleri, ekran görüntüsü.
 //   node tests/browser/isletme-kare.mjs <çıktı>
 import { createServer } from 'node:http'; import { readFileSync, existsSync, statSync, mkdirSync, writeFileSync } from 'node:fs'; import { join, resolve } from 'node:path'; import { createRequire } from 'node:module';
+import { kulisKapat } from './kulis-kapat.mjs';
 const require = createRequire(import.meta.url); const { chromium } = require('playwright'); const DIST = resolve('dist');
 const out = process.argv[2]; mkdirSync(out, { recursive: true });
 const TYPES = { png: 'image/png', jpg: 'image/jpeg', glb: 'model/gltf-binary', webp: 'image/webp', json: 'application/json', ktx2: 'image/ktx2', wasm: 'application/wasm' };
@@ -13,13 +14,13 @@ const errs = []; p.on('pageerror', e => errs.push(e.message)); p.on('console', m
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengeli&seed=3&stage=${STAGE}`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 90000 });
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const ad = await p.$('input[name="ad"]'); if (ad) await ad.fill('Olcum'); await go.click({ force: true }); await p.waitForFunction(() => !document.querySelector('.kl-go'), null, { timeout: 5000 }).catch(() => console.log('UYARI: karakter paneli kapanmadı, ölçüm geçersiz olabilir')); await p.waitForTimeout(300); }   // ad boşsa panel kapanmaz (sim duraklı kalır)
+await kulisKapat(p, 'Olcum');   // ad boşsa panel kapanmaz (sim duraklı kalır)
 
 const shot = async (name, [x, z, cx, cz, zr, yi, tilt]) => {
   await p.evaluate(([x, z, cx, cz, zr, yi, tilt]) => { const M = window.__marti; M.teleport(x, z); for (let k = 0; k < 6; k++) { M.step(0.5); M.renderFrames(3, 0.1); } M.camera({ x: cx, z: cz, zoomRaw: zr, yaw: yi * Math.PI / 2, tilt }); for (let k = 0; k < 16; k++) { M.step(0.1); M.renderFrames(2, 0.1); } }, [x, z, cx, cz, zr, yi, tilt]);
   await p.waitForTimeout(250); await p.screenshot({ path: join(out, name + '.png'), timeout: 600000 }); console.log('ok', name);
 };
-await p.evaluate(() => { const M = window.__marti; M.command({ kind: 'esnafim', op: 'set', data: { ad: 'Olcum' } }); M.command({ kind: 'esnafim', op: 'done' }); M.step(0.5); document.querySelector('.ka-go')?.click(); M.step(0.5); });   // kulis (karakter) paneli açık kalırsa sim duraklı kalır
+await p.evaluate(() => { const M = window.__marti; M.step(0.5); M.step(0.5); });   // kulis (karakter) paneli yukarıda kulisKapat ile kapandı
 await p.evaluate(() => { const M = window.__marti; M.setTime(11); M.step(2); M.izgara(false); M.simCmd('money', 9e9); M.simCmd('level', 2); M.closeJobBoard?.(); M.closePanel?.(); });
 // A) satılık: kilitli (seviye 2) ve açık (seviye 6) satın alma kareleri
 await p.evaluate(() => { const M = window.__marti; M.simCmd('level', 6); M.step(1); });

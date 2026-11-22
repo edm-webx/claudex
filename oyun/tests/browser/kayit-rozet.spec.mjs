@@ -4,6 +4,7 @@ import { createServer } from 'node:http';
 import { readFileSync, existsSync, statSync, mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { createRequire } from 'node:module';
+import { kulisKapat } from './kulis-kapat.mjs';
 const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
 const DIST = resolve(process.env.MARTI_DIST || 'dist');
@@ -41,8 +42,7 @@ await page.fill('input[name="ad"]', 'deneme'); await page.fill('input[name="sifr
 await page.evaluate(() => document.querySelector('.gr-go').click());
 await page.waitForSelector('[data-slot="0"]', { timeout: 20000 });
 await page.evaluate(() => document.querySelector('[data-slot="0"]').click());
-const go = await page.waitForSelector('.kl-go', { timeout: 15000 }).catch(() => null);
-if (go) { await page.evaluate(() => document.querySelector('.kl-go').click()); await page.waitForTimeout(1200); }
+await kulisKapat(page, 'Olcum', { bekle: 15000, ui: true }); await page.waitForTimeout(1200);
 let fail = 0;
 const ok = (c, m) => { console.log((c ? 'OK   ' : 'FAIL ') + m); if (!c) fail++; };
 const rozet = () => page.evaluate(() => { const e = document.getElementById('kayit-rozet'); return e ? { t: e.textContent, d: e.dataset.durum, gorunur: e.style.display !== 'none' } : null; });

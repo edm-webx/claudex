@@ -1,6 +1,7 @@
 // PRF-12: ölçek adımının maliyeti parça parça. node tests/browser/olcek-gecis.mjs   (DIST=klasör, TIER=dengeli)
 // setScale çağrısı (hedeflerin yeniden boyutlanması), geçişten sonraki ilk 3 kare ve sabit karede kare süresi; her adım 3 kez.
 import { createServer } from 'node:http'; import { readFileSync, existsSync, statSync } from 'node:fs'; import { join, resolve } from 'node:path'; import { createRequire } from 'node:module';
+import { kulisKapat } from './kulis-kapat.mjs';
 const require = createRequire(import.meta.url); const { chromium } = require('playwright'); const DIST = resolve(process.env.DIST || 'dist');
 const srv = createServer((req, res) => { const p = new URL(req.url, 'http://x').pathname; if (p === '/') { res.writeHead(200, { 'content-type': 'text/html' }); return res.end(`<!doctype html><html><head><meta charset="utf-8"></head><body>${readFileSync(join(DIST, 'index.html'), 'utf8')}</body></html>`); } const f = join(DIST, p); if (!existsSync(f) || statSync(f).isDirectory()) { res.writeHead(404); return res.end(); } res.writeHead(200, { 'content-type': f.endsWith('.png') ? 'image/png' : f.endsWith('.jpg') ? 'image/jpeg' : f.endsWith('.glb') ? 'model/gltf-binary' : 'text/javascript' }); res.end(readFileSync(f)); });
 await new Promise(r => srv.listen(0, '127.0.0.1', r));
@@ -9,7 +10,7 @@ const p = await (await b.newContext({ viewport: { width: 1280, height: 720 } }))
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=${process.env.TIER || 'dengeli'}&seed=3&stage=10&time=12`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 180000 });
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const ad = await p.$('input[name="ad"]'); if (ad) await ad.fill('Olcum'); await go.click({ force: true }); await p.waitForTimeout(500); }
+await kulisKapat(p, 'Olcum');
 await p.evaluate(() => { const M = window.__marti; for (let k = 0; k < 12; k++) M.renderFrames(2, 0.1); });
 const step = (v) => p.evaluate(v => {
   const M = window.__marti, gl = document.getElementById('c').getContext('webgl2'), fin = () => { gl.finish(); };   // finish: GPU (SwiftShader) work counted where it happens

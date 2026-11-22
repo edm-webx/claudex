@@ -6,6 +6,7 @@ import { readFileSync, existsSync, statSync, mkdirSync, writeFileSync } from 'no
 import { join, extname, resolve } from 'node:path';
 import { execSync } from 'node:child_process';
 import { createRequire } from 'node:module';
+import { kulisKapat } from './kulis-kapat.mjs';
 const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
 const DIST = resolve('dist');
@@ -31,10 +32,8 @@ await p.goto(`${url}?fresh=1&noloop&tier=dengeli&seed=3`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 60000 });
 await p.evaluate(() => window.__marti.play('sabri'));
 await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-const go = await p.waitForSelector('.kl-go', { timeout: 5000 }).catch(() => null);   // karakter kulisi: "Sahneye çık"
-if (go) { await go.click(); await p.waitForTimeout(800); }
+await kulisKapat(p, 'Olcum', { bekle: 5000, ui: true });   // karakter atölyesi: beden, ad, "Sahneye çık"
 await p.evaluate(() => window.__marti.step(2));
-if (await p.$('.kl-go')) console.log('uyarı: kulis hâlâ açık');
 const snap = async n => { try { await p.screenshot({ path: join(OUT, n + '.png'), timeout: 60000 }); } catch (e) { await p.waitForTimeout(1500); try { await p.screenshot({ path: join(OUT, n + '.png'), timeout: 60000 }); } catch { find('warn', n, 'ekran görüntüsü alınamadı'); } } };
 const stops = [['iskele-bufe', 0, 0], ['iskele-ferry', -6, 4], ['stadyum-kapi', 404, 13], ['stadyum-saha', 425, 20], ['belgrad-durak', 806, 10], ['belgrad-orman', 840, 20], ['belgrad-derin', 870, 40]];
 for (const [name, x, z] of stops) {

@@ -8,6 +8,7 @@ import { readFileSync, writeFileSync, existsSync, statSync, mkdirSync } from 'no
 import { join, resolve, extname } from 'node:path';
 import { execSync } from 'node:child_process';
 import { createRequire } from 'node:module';
+import { kulisKapat } from './kulis-kapat.mjs';
 
 const arg = (k, d = null) => { const i = process.argv.indexOf(k); return i < 0 ? d : (process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : true); };
 const DIST = resolve(arg('--dist', 'dist'));
@@ -37,7 +38,7 @@ p.on('pageerror', e => console.log('  sayfa hatası:', String(e).slice(0, 160)))
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengeli&seed=3`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 120000 });
 await p.evaluate(() => { const M = window.__marti; M.play('sabri'); M.renderFrames(2, 0.1); });
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const ad = await p.$('input[name="ad"]'); if (ad) await ad.fill('Olcum'); await go.click({ force: true }); await p.waitForTimeout(700); }
+await kulisKapat(p, 'Olcum');
 await p.evaluate(() => { const M = window.__marti; M.izgara?.(false); M.teleport(0, -3); for (let i = 0; i < 10; i++) M.renderFrames(3, 0.1); });
 const cam = () => p.evaluate(() => { const M = window.__marti; M.camera({ x: 0, z: -3, zoomRaw: 2.8, yaw: 0, tilt: 0.75 }); });
 const shot = async ad => {

@@ -1,6 +1,7 @@
 // UX-04: okunurluk taraması. dist'i açar, #sbui içindeki görünen metinleri ölçer: 13 px altı yazı ve düşük kontrast raporlanır.
 // Kullanım: npm run build:vite && node tools/build-artifact.mjs && node tools/kontrast.mjs [--w=1280 --h=720]
 import { createServer } from 'node:http'; import { readFileSync, existsSync, statSync } from 'node:fs'; import { join, resolve } from 'node:path'; import { createRequire } from 'node:module';
+import { kulisKapat } from '../tests/browser/kulis-kapat.mjs';
 const require = createRequire(import.meta.url); const { chromium } = require('playwright'); const DIST = resolve('dist');
 const flag = n => (process.argv.find(a => a.startsWith('--' + n + '=')) || '').split('=')[1];
 const srv = createServer((req, res) => { const p = new URL(req.url, 'http://x').pathname; if (p === '/') { res.writeHead(200, { 'content-type': 'text/html' }); return res.end(`<!doctype html><html><head><meta charset="utf-8"></head><body>${readFileSync(join(DIST, 'index.html'), 'utf8')}</body></html>`); } const f = join(DIST, p); if (!existsSync(f) || statSync(f).isDirectory()) { res.writeHead(404); return res.end(); } res.writeHead(200, { 'content-type': 'text/javascript' }); res.end(readFileSync(f)); });
@@ -10,7 +11,7 @@ const p = await (await b.newContext({ viewport: { width: +(flag('w') || 1280), h
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengeli&seed=3`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 60000 });
 await p.evaluate(() => { const M = window.__marti; M.play('sabri'); M.renderFrames(2, 0.1); });
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await p.fill('input[name=ad]', 'Deniz'); await go.click({ force: true }); await p.waitForTimeout(600); }
+await kulisKapat(p, 'Deniz');
 await p.evaluate(() => { const M = window.__marti; M.step(3); for (let i = 0; i < 6; i++) M.renderFrames(4, 0.1); });
 const rapor = await p.evaluate(() => {
   const lum = ([r, g, bl]) => { const f = c => { c /= 255; return c <= .03928 ? c / 12.92 : ((c + .055) / 1.055) ** 2.4; }; return .2126 * f(r) + .7152 * f(g) + .0722 * f(bl); };

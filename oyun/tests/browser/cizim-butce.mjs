@@ -10,6 +10,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve, extname } from 'node:path';
 import { execSync, spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
+import { kulisKapat } from './kulis-kapat.mjs';
 
 const arg = (k, d = null) => { const i = process.argv.indexOf(k); return i < 0 ? d : (process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : true); };
 let DIST = resolve(arg('--dist', 'dist'));
@@ -61,7 +62,7 @@ for (const tier of tiers) {
     await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=${tier}&seed=3&time=${saat}&stage=${stage}`);
     await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 120000 });
     await p.evaluate(() => { const M = window.__marti; M.play('sabri'); M.renderFrames(2, 0.1); });
-    const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const ad = await p.$('input[name="ad"]'); if (ad) await ad.fill('Olcum'); await go.click({ force: true }); await p.waitForTimeout(700); }
+    await kulisKapat(p, 'Olcum');
     for (const s of SAHNELER.filter(s => s.stage === stage)) {
       await p.evaluate(([x, z]) => { const M = window.__marti; M.teleport(x, z); for (let k = 0; k < 15; k++) M.renderFrames(2, 0.1); }, s.tp);
       await p.waitForTimeout(2500);

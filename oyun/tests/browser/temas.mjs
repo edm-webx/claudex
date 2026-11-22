@@ -1,6 +1,7 @@
 // PRF-09/10 temas çekimleri: üst geçit merdiveni (alçak ve yüksek kamera, yukarı yürürken), otobüs durağı, otoyol.
 // node tests/browser/temas.mjs <dist-klasörü> <çıktı-klasörü> [önek]
 import { createServer } from 'node:http'; import { readFileSync, existsSync, statSync, mkdirSync } from 'node:fs'; import { join, resolve, extname } from 'node:path'; import { createRequire } from 'node:module';
+import { kulisKapat } from './kulis-kapat.mjs';
 const require = createRequire(import.meta.url); const { chromium } = require('playwright');
 const DIST = resolve(process.argv[2] || 'dist'), out = resolve(process.argv[3] || 'temas-shots'), pre = process.argv[4] || ''; mkdirSync(out, { recursive: true });
 const types = { '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.glb': 'model/gltf-binary', '.json': 'application/json', '.webp': 'image/webp' };
@@ -12,7 +13,7 @@ const errs = []; p.on('pageerror', e => errs.push(e.message));
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengeli&seed=3`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 90000 });
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const ad = await p.$('input[name="ad"]'); if (ad) await ad.fill('Olcum'); await go.click({ force: true }); await p.waitForTimeout(700); }
+await kulisKapat(p, 'Olcum');
 await p.evaluate(() => { const M = window.__marti; M.command({ kind: 'esnafim', op: 'done' }); M.setTime(13); M.step(2); M.renderFrames(40, 0.1); });   // intro descent ends before the first shot
 await p.addStyleTag({ content: 'body > *:not(#app), #app > *:not(canvas){display:none!important}' });
 const shot = async (name) => { await p.screenshot({ path: join(out, pre + name + '.png'), timeout: 540000 }); console.log('çekildi', pre + name); };

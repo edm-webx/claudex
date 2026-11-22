@@ -5,6 +5,7 @@
 // Maç sahnesinin hata ayıklama kancası wrap.__hs3 (ui/hali-saha-3d.ts): cam(ad|null), setFill(f), info(). Kanca yoksa
 // (eski sürüm) yalnız kancasız kareler çekilir; böylece aynı betik önce/sonra karşılaştırması verir.
 import { createServer } from 'node:http'; import { readFileSync, existsSync, statSync, mkdirSync, writeFileSync } from 'node:fs'; import { join, resolve, extname } from 'node:path'; import { createRequire } from 'node:module';
+import { kulisKapat } from './kulis-kapat.mjs';
 const require = createRequire(import.meta.url); const { chromium } = require('playwright'); const DIST = resolve(process.env.MARTI_DIST || 'dist');
 const pos = process.argv.slice(2).filter(a => !a.startsWith('--')), yalniz = (process.argv.find(a => a.startsWith('--yalniz=')) || '').split('=')[1] || '';
 const out = pos[0] || 'shots-halisaha', pre = pos[1] || ''; mkdirSync(out, { recursive: true });
@@ -20,11 +21,7 @@ const shot = async name => { await p.waitForTimeout(400); const f = join(out, pr
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengeli&seed=3`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 90000 });
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-for (let k = 0; k < 4; k++) {   // kulis (karakter ekranı): ad yaz, sahneye çık
-  const go = await p.waitForSelector('.kl-go', { timeout: k ? 3000 : 15000 }).catch(() => null); if (!go) break;
-  const ad = await p.$('.kl-b input[type="text"], .kl-b input:not([type])'); if (ad) await ad.fill('Sabri').catch(() => {});
-  await go.click({ force: true }).catch(() => {}); await p.evaluate(() => window.__marti.renderFrames(3, 0.1)); await p.waitForTimeout(900);
-}
+await kulisKapat(p, 'Sabri');   // karakter atölyesi açık kalırsa sim duraklı kalır
 await p.evaluate(() => { const M = window.__marti; M.setTime(15); M.step(2); M.force.money(900000); });
 
 await p.evaluate(() => { const M = window.__marti; M.teleport(399.5, 12.4); M.step(2); M.command({ kind: 'mulk', op: 'takim', name: 'Boğaz Yıldızları', renk: '#2ec4c4', renk2: '#ff5a4e', arma: '🦅' }); M.step(2); });

@@ -3,6 +3,7 @@
 //   node tests/browser/gorsel2.mjs <dist> <çıktı-klasörü> [senaryo,senaryo,...]
 // Her çekimde ortalama parlaklık (pngjs) ve info()/gfx() özeti satır olarak yazılır; ölçüm sonuçları <çıktı>/olcum.json.
 import { createServer } from 'node:http'; import { readFileSync, existsSync, statSync, mkdirSync, writeFileSync } from 'node:fs'; import { join, resolve, extname } from 'node:path'; import { createRequire } from 'node:module';
+import { kulisKapat } from './kulis-kapat.mjs';
 const require = createRequire(import.meta.url); const { chromium } = require('playwright'); const { PNG } = require('pngjs');
 const DIST = resolve(process.argv[2] || 'dist'), OUT = resolve(process.argv[3] || 'shots-gorsel2'); mkdirSync(OUT, { recursive: true });
 const types = { '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.glb': 'model/gltf-binary', '.json': 'application/json', '.webp': 'image/webp' };
@@ -44,7 +45,7 @@ async function page(tier, extra) {
   await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=${tier}&seed=3${extra.noao ? '&noao=1' : ''}`);
   await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 180000 });
   await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-  const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const ad = await p.$('input[name="ad"]'); if (ad) await ad.fill('Olcum'); await go.click({ force: true }); await p.waitForTimeout(500); }
+  await kulisKapat(p, 'Olcum');
   await p.evaluate((st) => { const M = window.__marti; M.command({ kind: 'esnafim', op: 'done' }); M.setStage(st); M.step(1); }, extra.stage || 3);
   await p.waitForTimeout(4000);
   await p.evaluate(() => { const M = window.__marti; M.camera({ tilt: -10 }); for (let k = 0; k < 30; k++) M.renderFrames(1, 0.1); });   // let the intro camera finish

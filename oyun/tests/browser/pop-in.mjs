@@ -6,6 +6,7 @@
 // Not: SwiftShader yavaş olduğu için metre başına 1 kare çizilir (60 fps yürüyüşte ~15): bölge kurulumu daha az kareye sığmak
 // zorunda, yani sonuç kötümser.
 import { createServer } from 'node:http'; import { readFileSync, existsSync, statSync } from 'node:fs'; import { join, resolve } from 'node:path'; import { createRequire } from 'node:module';
+import { kulisKapat } from './kulis-kapat.mjs';
 const require = createRequire(import.meta.url); const { chromium } = require('playwright'); const DIST = resolve(process.env.DIST || 'dist');
 const srv = createServer((req, res) => { const p = new URL(req.url, 'http://x').pathname; if (p === '/') { res.writeHead(200, { 'content-type': 'text/html' }); return res.end(`<!doctype html><html><head><meta charset="utf-8"></head><body>${readFileSync(join(DIST, 'index.html'), 'utf8')}</body></html>`); } const f = join(DIST, p); if (!existsSync(f) || statSync(f).isDirectory()) { res.writeHead(404); return res.end(); } res.writeHead(200, { 'content-type': f.endsWith('.png') ? 'image/png' : f.endsWith('.jpg') ? 'image/jpeg' : f.endsWith('.glb') ? 'model/gltf-binary' : 'text/javascript' }); res.end(readFileSync(f)); });
 await new Promise(r => srv.listen(0, '127.0.0.1', r));
@@ -16,7 +17,7 @@ const t0 = Date.now(), log = s => console.log(`${String(((Date.now() - t0) / 100
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=${process.env.TIER || 'dengeli'}&seed=3&stage=10&time=12`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 180000 });
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const ad = await p.$('input[name="ad"]'); if (ad) await ad.fill('Olcum'); await go.click({ force: true }); await p.waitForTimeout(500); }
+await kulisKapat(p, 'Olcum');
 log('hazır');
 const ADIM = Number(process.env.ADIM || 1), KARE = Number(process.env.KARE || 1), Z = 9, X0 = Number(process.env.X0 || 20), X1 = Number(process.env.X1 || 110);
 const KAMERA = { varsayilan: { zoom: 1, tilt: 0 }, uzak: { zoom: 2.1, tilt: 0 }, yatik: { zoom: 1, tilt: -0.55 } };

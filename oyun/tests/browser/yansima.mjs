@@ -1,6 +1,7 @@
 // GRS-05: su yansıması maliyeti ve kademe kapısı. Kullanım: node tests/browser/yansima.mjs <dist-klasörü (--mode olcum)> [--kademe akici,dengeli,sahane] [--json çıktı.json]
 // Aynı karede yansıma kapalı/açık çizim çağrısı ve üçgen sayısı (SwiftShader: sayılar gerçek GPU ile aynı, süre değil); akıcıda hedefin hiç oluşmadığı doğrulanır.
 import { createServer } from 'node:http'; import { readFileSync, existsSync, statSync, writeFileSync } from 'node:fs'; import { join, resolve, extname } from 'node:path'; import { createRequire } from 'node:module';
+import { kulisKapat } from './kulis-kapat.mjs';
 const require = createRequire(import.meta.url); const { chromium } = require('playwright');
 const arg = (k, d = null) => { const i = process.argv.indexOf(k); return i < 0 ? d : (process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : true); };
 const DIST = resolve(process.argv[2] || 'dist'), tiers = String(arg('--kademe', 'akici,dengeli,sahane')).split(',');
@@ -15,7 +16,7 @@ for (const tier of tiers) {
   await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=${tier}&seed=3`);
   await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 120000 });
   await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-  const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const ad = await p.$('input[name="ad"]'); if (ad) await ad.fill('Olcum'); await go.click({ force: true }); await p.waitForTimeout(500); }
+  await kulisKapat(p, 'Olcum');
   const row = await p.evaluate(() => {
     const M = window.__marti; M.command({ kind: 'esnafim', op: 'done' }); M.setTime(18.5); M.step(2);
     const cams = [{ x: 0, z: -12, zoomRaw: 1.4, yaw: 0, tilt: -0.9 }, { x: -8, z: -9, zoomRaw: 0.9, yaw: 0.5, tilt: -0.5 }, { x: 0, z: -3, zoomRaw: 1, yaw: 0, tilt: 0 }];

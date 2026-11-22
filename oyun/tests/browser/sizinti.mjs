@@ -3,6 +3,7 @@
 // geometri / doku / shader programı / DOM düğümü / canlı WebGL bağlamı / yığın sayılır. Sayılar donanımdan bağımsızdır (SwiftShader'da da geçerli).
 // Kırmızı: son yarıda geometri/doku/program/bağlam/DOM artıyorsa; yığın yalnız bilgi (Chromium'da gürültülü, eğim MB/tur yazılır).
 import { createServer } from 'node:http'; import { readFileSync, existsSync, statSync } from 'node:fs'; import { join, resolve } from 'node:path'; import { createRequire } from 'node:module';
+import { kulisKapat } from './kulis-kapat.mjs';
 const require = createRequire(import.meta.url); const { chromium } = require('playwright'); const DIST = resolve(process.env.DIST || 'dist'); const TUR = +(process.env.TUR || 20);
 const srv = createServer((req, res) => { const p = new URL(req.url, 'http://x').pathname; if (p === '/') { res.writeHead(200, { 'content-type': 'text/html' }); return res.end(`<!doctype html><html><head><meta charset="utf-8"></head><body>${readFileSync(join(DIST, 'index.html'), 'utf8')}</body></html>`); } const f = join(DIST, p); if (!existsSync(f) || statSync(f).isDirectory()) { res.writeHead(404); return res.end(); } res.writeHead(200, { 'content-type': f.endsWith('.png') ? 'image/png' : f.endsWith('.jpg') ? 'image/jpeg' : f.endsWith('.glb') ? 'model/gltf-binary' : 'text/javascript' }); res.end(readFileSync(f)); });
 await new Promise(r => srv.listen(0, '127.0.0.1', r));
@@ -17,7 +18,7 @@ await p.addInitScript(() => {
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=${process.env.TIER || 'dengeli'}&seed=3&stage=10`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 90000 });
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const ad = await p.$('input[name="ad"]'); if (ad) await ad.fill('Olcum'); await go.click({ force: true }); await p.waitForTimeout(700); }
+await kulisKapat(p, 'Olcum');
 const settle = (n = 10) => p.evaluate(n => { const M = window.__marti; for (let k = 0; k < n; k++) M.renderFrames(2, 0.1); }, n);
 const sample = () => p.evaluate(() => { try { gc(); } catch { /* */ } const M = window.__marti, i = M.info(); return { geo: i.geos, tex: i.texs, prog: i.programs, ctx: window.__ctxLive(), dom: document.getElementsByTagName('*').length, heap: (performance.memory?.usedJSHeapSize || 0) / 1048576, calls: i.calls }; });
 await p.evaluate(() => { const M = window.__marti; M.simCmd('money', 9e9); M.simCmd('level', 40); });
@@ -32,7 +33,7 @@ for (let t = 0; t < TUR; t++) {
   if (t === 0) evCalls = await p.evaluate(() => { const M = window.__marti, f0 = M.info().frameNo; M.renderFrames(3, 0.1); return { cover: !!document.querySelector('.ev-ov'), anaKareCizildi: M.info().frameNo - f0 }; });   // PRF-04: örtülüyken ana sahne 0 kare çizer
   await p.evaluate(() => window.__marti.command({ kind: 'dekor2', arg: 'evClose' })); await settle(4);
   await p.evaluate(() => window.__marti.command({ kind: 'esnafim', op: 'open' })); await settle(2);   // kulis (karakter): üçüncü bağlam
-  { const kg = await p.$('.kl-go'); if (kg) { await kg.click({ force: true }); await settle(2); } }
+  { const kg = await p.$('.ka-go, .kl-go'); if (kg) { await kg.click({ force: true }); await settle(2); } }
   const s = await sample(); rows.push(s); if (process.env.SES || t % 5 === 4 || t === 0) console.log(`tur ${String(t + 1).padStart(2)}  geo=${s.geo} tex=${s.tex} prog=${s.prog} ctx=${s.ctx} dom=${s.dom} heapMB=${s.heap.toFixed(1)}`);
 }
 const half = rows.slice(Math.floor(rows.length / 2));

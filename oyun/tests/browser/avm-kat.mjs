@@ -1,6 +1,7 @@
 // AVM katları çekimi (2026-11-21): node tests/browser/avm-kat.mjs <çıktı> [id,id,...]   (önce: npx vite build && node tools/build-artifact.mjs)
 // Bütün AVM dükkânları 5. seviye, aletler tam, 3 işçi; canlı müşteri akar. Her nokta: [kahraman x, z, kat, kamera x, z, zoomRaw, yaw (×π/2), tilt]
 import { createServer } from 'node:http'; import { readFileSync, existsSync, statSync, mkdirSync, writeFileSync } from 'node:fs'; import { join, resolve } from 'node:path'; import { createRequire } from 'node:module';
+import { kulisKapat } from './kulis-kapat.mjs';
 const require = createRequire(import.meta.url); const { chromium } = require('playwright'); const DIST = resolve('dist');
 const out = process.argv[2]; mkdirSync(out, { recursive: true });
 const TYPES = { png: 'image/png', jpg: 'image/jpeg', glb: 'model/gltf-binary', webp: 'image/webp', json: 'application/json', ktx2: 'image/ktx2', wasm: 'application/wasm' };
@@ -12,7 +13,7 @@ const errs = []; p.on('pageerror', e => errs.push(e.message)); p.on('console', m
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengeli&seed=3&stage=6`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 90000 });
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await p.fill('.kl-in[name=ad]', 'Denetci').catch(() => {}); await go.click({ force: true }); await p.waitForTimeout(700); }
+await kulisKapat(p, 'Denetci');
 const bos = process.env.BOS === '1';
 await p.evaluate((bos) => { const M = window.__marti; M.setTime(13); M.step(2); M.izgara(false); M.simCmd('money', 9e9); M.simCmd('level', 40);
   M.closeJobBoard?.(); M.closePanel?.(); for (const id of ['sb-vig']) { const v = document.getElementById(id); if (v) v.style.display = 'none'; }

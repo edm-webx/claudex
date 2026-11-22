@@ -2,6 +2,7 @@
 // sonra doku/geometri sayısı ve canlı GL dokularının boyut farkı yazılır: hangi adımın ve hangi boyutta dokunun biriktiği görülür.
 //   node tests/browser/sizinti-teshis.mjs <DIST> [tur=4]   (ör. 2026-11-21: büfe zemini kir dokusu 512x512 ve fiş plakası 96x96 böyle bulundu)
 import { createServer } from 'node:http'; import { readFileSync, existsSync, statSync } from 'node:fs'; import { join } from 'node:path'; import { createRequire } from 'node:module';
+import { kulisKapat } from './kulis-kapat.mjs';
 const require = createRequire(import.meta.url); const { chromium } = require('playwright');
 const { gpuBellekKanca } = await import('../../tools/gpu-bellek-kanca.mjs');
 const DIST = process.argv[2], TUR = +(process.argv[3] || 4);
@@ -14,7 +15,7 @@ await p.addInitScript(gpuBellekKanca);
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengeli&seed=3&stage=10`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 120000 });
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const ad = await p.$('input[name="ad"]'); if (ad) await ad.fill('Olcum'); await go.click({ force: true }); await p.waitForTimeout(700); }
+await kulisKapat(p, 'Olcum');
 const settle = (n = 10) => p.evaluate(n => { const M = window.__marti; for (let k = 0; k < n; k++) M.renderFrames(2, 0.1); }, n);
 const snap = () => p.evaluate(() => { const i = window.__marti.info(), g = window.__gpuBellek(100000); const sz = {}; g.enBuyuk.forEach(d => { const k = d.w + 'x' + d.h; sz[k] = (sz[k] || 0) + 1; }); return { tex: i.texs, geo: i.geos, gl: g.doku, sz }; });
 await p.evaluate(() => { const M = window.__marti; M.simCmd('money', 9e9); M.simCmd('level', 40); });
@@ -25,7 +26,7 @@ const ADIM = {
   kademe: async () => { for (const k of ['akici', 'dengeli']) { await p.evaluate(k => window.__marti.setTier(k), k); await settle(2); } },
   saat: async () => { for (const h of [9, 20, 13]) { await p.evaluate(h => window.__marti.setTime(h), h); await settle(2); } },
   ev: async () => { await p.evaluate(() => window.__marti.command({ kind: 'dekor2', arg: 'evOpen' })); await settle(4); await p.evaluate(() => window.__marti.command({ kind: 'dekor2', arg: 'evClose' })); await settle(4); },
-  kulis: async () => { await p.evaluate(() => window.__marti.command({ kind: 'esnafim', op: 'open' })); await settle(2); const kg = await p.$('.kl-go'); if (kg) { await kg.click({ force: true }); await settle(2); } },
+  kulis: async () => { await p.evaluate(() => window.__marti.command({ kind: 'esnafim', op: 'open' })); await settle(2); const kg = await p.$('.ka-go, .kl-go'); if (kg) { await kg.click({ force: true }); await settle(2); } },
 };
 const top = {};
 let prev = await snap();

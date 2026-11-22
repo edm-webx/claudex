@@ -4,6 +4,7 @@
 // Kullanım: MARTI_DIST=/tmp/marti-dist node tests/browser/perf-asama.mjs [--asama 3,6,10] [--kare 240] [--json calisma/perf-asama-rapor.json] [--etiket onceki]
 // SwiftShader NOTU: render süresi yazılım rasterıdır, sahibin GPU'su değildir; güvenilir olanlar sim adımı ve JS tarafı (guard sistem zamanlayıcıları).
 import { createServer } from 'node:http'; import { readFileSync, writeFileSync, existsSync, statSync, mkdirSync } from 'node:fs'; import { join, resolve, dirname } from 'node:path'; import { createRequire } from 'node:module';
+import { kulisKapat } from './kulis-kapat.mjs';
 const require = createRequire(import.meta.url); const { chromium } = require('playwright'); const DIST = resolve(process.env.MARTI_DIST || 'dist');
 const arg = (k, d) => { const i = process.argv.indexOf(k); return i < 0 ? d : process.argv[i + 1]; };
 const NOKTA_SEC = String(arg('--nokta', 'bufe-onu,mutfak-vitrin,uzak-karsi-yaka')).split(',');
@@ -24,7 +25,7 @@ for (const asama of ASAMALAR) {
   await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengeli&seed=3&stage=${asama}`, { timeout: 120000 });
   await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 120000 }); zaman('sayfa hazır, aşama ' + asama);
   await p.evaluate(() => { const M = window.__marti; M.play('sabri'); M.renderFrames(2, 0.1); });
-  const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const ad = await p.$('input[name="ad"]'); if (ad) await ad.fill('Olcum'); await go.click({ force: true }); await p.waitForFunction(() => !document.querySelector('.kl-go'), null, { timeout: 5000 }).catch(() => console.log('UYARI: karakter paneli kapanmadı, ölçüm geçersiz olabilir')); await p.waitForTimeout(300); }   // ad boşsa panel kapanmaz (sim duraklı kalır)
+  await kulisKapat(p, 'Olcum');   // ad boşsa panel kapanmaz (sim duraklı kalır)
   // tam kadro: açık her rolün bütün kadroları iş panosundan işe alınır (para yetsin diye kasa doldurulur)
   const kadro = await p.evaluate((ROLLER) => {
     const M = window.__marti, S = M.S; M.simCmd('money', 9e9); M.simCmd('level', 40);

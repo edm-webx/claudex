@@ -1,6 +1,7 @@
 // DNY-01/02/03/15/19: yaşayan sokak çekimleri. node tests/browser/sokak.mjs <klasör> [--only=ad,ad]
 // Her çekim: saat kur, kahramanı yere ışınla, kalabalık yayılsın diye sim'i ilerlet, kamerayı noktaya tut, çek.
 import { createServer } from 'node:http'; import { readFileSync, existsSync, statSync, mkdirSync } from 'node:fs'; import { join, resolve } from 'node:path'; import { createRequire } from 'node:module';
+import { kulisKapat } from './kulis-kapat.mjs';
 const require = createRequire(import.meta.url); const { chromium } = require('playwright'); const DIST = resolve('dist');
 const out = process.argv[2] || 'calisma/sokak'; mkdirSync(out, { recursive: true });
 const only = (process.argv.find(a => a.startsWith('--only=')) || '').slice(7).split(',').filter(Boolean);
@@ -12,9 +13,7 @@ const errs = []; p.on('pageerror', e => errs.push(e.message));
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengeli&seed=3`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 90000 });
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null);
-if (go) { const ad = await p.$('input[name="ad"]'); if (ad) await ad.fill('Sabri'); await go.click({ force: true }); await p.waitForTimeout(900); await p.evaluate(() => window.__marti.renderFrames(2, 0.1)); }
-if (await p.$('.kl-go')) console.log('uyarı: kulis hâlâ açık');
+await kulisKapat(p, 'Sabri');
 const SHOTS = [
   { ad: 'kordon-09', saat: 9, hero: [14, 9], cam: [12, 8, 1.4] },
   { ad: 'ustgecit-13', saat: 13, hero: [22, 10], cam: [24, 20, 1.2] },

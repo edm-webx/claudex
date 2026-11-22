@@ -17,6 +17,7 @@ import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
+import { kulisKapat } from '../kulis-kapat.mjs';
 const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
 const KOK = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -63,7 +64,7 @@ const log = (k, d) => { if (rapor.komutGunlugu.length < 2000) rapor.komutGunlugu
 await p.goto(`${url}?fresh=1&noloop&tier=akici&seed=${TOHUM}&qa=1&stage=10`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 90000 });
 await ev(() => window.__marti.play('sabri')); await ev(() => window.__marti.renderFrames(2, 0.1));
-const go = await p.waitForSelector('.kl-go', { timeout: 6000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(600); }
+await kulisKapat(p, 'Olcum');
 await ev(() => { const M = window.__marti; M.setTime(13); M.step(2); M.simCmd('money', 9e9); M.simCmd('level', 40); M.perfRecord?.(true); });
 // canlı işletmeleri aç (kafeler, kırtasiye...): iç mekan işçi ve müşteriyle dolu görünsün
 await ev(m => { const M = window.__marti; for (const a of m.arsalar) if (a.sabit) { M.command({ kind: 'mulk', op: 'adminKafe', id: a.id, n: 3 }); M.command({ kind: 'mulk', op: 'adminIsci', id: a.id }); } M.step(2); }, M);

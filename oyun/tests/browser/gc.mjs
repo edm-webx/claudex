@@ -2,6 +2,7 @@
 // Sabit durumda (oyuncu yerinde, hareket yok) KARE kare çizilir; CDP HeapProfiler örnekleme ile kare başı ayırma (bayt) ve en büyük çağıranlar yazılır.
 // SwiftShader'da da geçerlidir: ayırma JS tarafıdır, donanımdan bağımsızdır. ?noloop: kareler renderFrames ile sürülür.
 import { createServer } from 'node:http'; import { readFileSync, existsSync, statSync } from 'node:fs'; import { join, resolve } from 'node:path'; import { createRequire } from 'node:module';
+import { kulisKapat } from './kulis-kapat.mjs';
 const require = createRequire(import.meta.url); const { chromium } = require('playwright'); const DIST = resolve(process.env.DIST || 'dist'); const KARE = +(process.env.KARE || 1800);
 const srv = createServer((req, res) => { const p = new URL(req.url, 'http://x').pathname; if (p === '/') { res.writeHead(200, { 'content-type': 'text/html' }); return res.end(`<!doctype html><html><head><meta charset="utf-8"></head><body>${readFileSync(join(DIST, 'index.html'), 'utf8')}</body></html>`); } const f = join(DIST, p); if (!existsSync(f) || statSync(f).isDirectory()) { res.writeHead(404); return res.end(); } res.writeHead(200, { 'content-type': f.endsWith('.png') ? 'image/png' : f.endsWith('.jpg') ? 'image/jpeg' : f.endsWith('.glb') ? 'model/gltf-binary' : 'text/javascript' }); res.end(readFileSync(f)); });
 await new Promise(r => srv.listen(0, '127.0.0.1', r));
@@ -11,7 +12,7 @@ const cdp = await ctx.newCDPSession(p);
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=${process.env.TIER || 'dengeli'}&seed=3&stage=10`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 120000 });
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const ad = await p.$('input[name="ad"]'); if (ad) await ad.fill('Olcum'); await go.click({ force: true }); await p.waitForTimeout(700); }
+await kulisKapat(p, 'Olcum');
 // ısınma: shader program sayısı 8 tur üst üste değişmeyene dek (program derlemesi ölçüme sızmasın; yoksa örnekleme WebGLProgram ayrıştırmasını ölçer)
 const prog = await p.evaluate(() => { const M = window.__marti; let last = -1, same = 0, k = 0; for (; k < 400 && same < 8; k++) { M.renderFrames(2, 0.1); const n = M.info().programs; same = n === last ? same + 1 : 0; last = n; } return { rounds: k, programs: last }; });
 console.log(`ısınma: ${prog.rounds} tur, ${prog.programs} program`);

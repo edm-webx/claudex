@@ -6,6 +6,7 @@ import { createServer } from 'node:http';
 import { readFileSync, existsSync, statSync, mkdirSync } from 'node:fs';
 import { join, resolve, extname } from 'node:path';
 import { createRequire } from 'node:module';
+import { kulisKapat } from '../tests/browser/kulis-kapat.mjs';
 
 const require = createRequire(import.meta.url); const { chromium } = require('playwright');
 const [distA, outA] = process.argv.slice(2).filter(a => !a.startsWith('--'));
@@ -26,7 +27,7 @@ p.on('pageerror', e => console.log('[pageerror]', String(e).slice(0, 200)));
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=${arg('--kademe', 'dengeli')}&seed=3&stage=10`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 120000 });
 await p.evaluate(() => { const M = window.__marti; M.play('sabri'); M.renderFrames(2, 0.1); });
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const ad = await p.$('input[name="ad"]'); if (ad) await ad.fill('Olcum'); await go.click({ force: true }); await p.waitForTimeout(700); } await p.evaluate(() => { const M = window.__marti; M.command({ kind: 'esnafim', op: 'set', data: { ad: 'Olcum' } }); M.command({ kind: 'esnafim', op: 'done' }); M.renderFrames(2, 0.1); });   // ad zorunlu (UX-15): boş adla kl-go kulisi kapatmaz, kulis bağlamı ölçüme karışır
+await kulisKapat(p, 'Olcum');   // ad zorunlu (UX-15): karakter atölyesi açık kalırsa sim duraklı kalır, atölye bağlamı ölçüme karışır
 await p.addStyleTag({ content: 'body > *:not(#app){visibility:hidden !important} #app *{visibility:visible}' });   // yalnız 3B sahne
 const settle = n => p.evaluate(n => { const M = window.__marti; for (let k = 0; k < n; k++) M.renderFrames(2, 0); }, n);
 const KARE = [

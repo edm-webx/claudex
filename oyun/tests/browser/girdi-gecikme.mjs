@@ -2,6 +2,7 @@
 // Gerçek ekran/kompozitör gecikmesi headless'ta ölçülemez; bu yalnız oyun içi zinciri (girdi -> 30 Hz sim -> ara değer -> çizim) ölçer.
 // node tests/browser/girdi-gecikme.mjs <dist>
 import { createServer } from 'node:http'; import { readFileSync, existsSync, statSync } from 'node:fs'; import { join, resolve, extname } from 'node:path'; import { createRequire } from 'node:module';
+import { kulisKapat } from './kulis-kapat.mjs';
 const require = createRequire(import.meta.url); const { chromium } = require('playwright');
 const DIST = resolve(process.argv[2] || 'dist');
 const srv = createServer((req, res) => { const p = decodeURIComponent(new URL(req.url, 'http://x').pathname); if (p === '/') { res.writeHead(200, { 'content-type': 'text/html' }); return res.end(`<!doctype html><html><head><meta charset="utf-8"></head><body>${readFileSync(join(DIST, 'index.html'), 'utf8')}</body></html>`); } const f = join(DIST, p); if (!f.startsWith(DIST) || !existsSync(f) || statSync(f).isDirectory()) { res.writeHead(404); return res.end(); } res.writeHead(200, { 'content-type': extname(f) === '.js' ? 'text/javascript' : 'application/octet-stream' }); res.end(readFileSync(f)); });
@@ -11,7 +12,7 @@ const p = await (await b.newContext({ viewport: { width: 640, height: 360 } })).
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=akici&seed=3`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 90000 });
 await p.evaluate(() => window.__marti.play('sabri'));
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const ad = await p.$('input[name="ad"]'); if (ad) await ad.fill('Olcum'); await go.click({ force: true }); await p.waitForTimeout(500); }
+await kulisKapat(p, 'Olcum');
 await p.evaluate(() => { const M = window.__marti; M.command({ kind: 'esnafim', op: 'done' }); M.setTime(13); M.step(2); });
 for (const hz of [60, 144, 30]) {
   const res = await p.evaluate(hz => {

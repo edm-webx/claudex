@@ -3,6 +3,7 @@
 // ürün tezgâha iner -> sıradaki müşteri alır -> öder ('sale'). Her aşamada ekran görüntüsü.
 // Kullanım: npm run build:vite && node tools/build-artifact.mjs && STAGES=3,5,10 node tests/browser/tezgah-servis.mjs <çıktı klasörü>
 import { createServer } from 'node:http'; import { readFileSync, existsSync, statSync, mkdirSync } from 'node:fs'; import { join, resolve } from 'node:path'; import { createRequire } from 'node:module';
+import { kulisKapat } from './kulis-kapat.mjs';
 const require = createRequire(import.meta.url); const { chromium } = require('playwright'); const DIST = resolve('dist');
 const out = process.argv[2] || 'tests/browser/shots-tezgah'; mkdirSync(out, { recursive: true });
 const srv = createServer((req, res) => { const p = new URL(req.url, 'http://x').pathname; if (p === '/') { res.writeHead(200, { 'content-type': 'text/html' }); return res.end(`<!doctype html><html><head><meta charset="utf-8"></head><body>${readFileSync(join(DIST, 'index.html'), 'utf8')}</body></html>`); } const f = join(DIST, p); if (!existsSync(f) || statSync(f).isDirectory()) { res.writeHead(404); return res.end(); } res.writeHead(200, { 'content-type': f.endsWith('.png') ? 'image/png' : f.endsWith('.jpg') ? 'image/jpeg' : f.endsWith('.glb') ? 'model/gltf-binary' : 'text/javascript' }); res.end(readFileSync(f)); });
@@ -14,7 +15,7 @@ for (const STAGE of (process.env.STAGES || '3,5,10').split(',').map(Number)) {
   await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengeli&seed=3`);
   await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 120000 });
   await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-  const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(400); }
+  await kulisKapat(p, 'Olcum');
   await p.evaluate((STAGE) => {
     const M = window.__marti; M.command({ kind: 'esnafim', op: 'done' }); M.step(1); M.skipCeremony?.(); M.collectWelcome?.(); M.closeJobBoard?.(); M.closePanel?.();
     M.simCmd('money', 9e6); M.setStage(STAGE); M.step(1); M.setTime(11.5); for (let i = 0; i < 120; i++) M.step(1);   // yoğun öğle: sıra + masalar dolar

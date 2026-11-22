@@ -14,6 +14,7 @@ import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { gpuBellekKanca } from './gpu-bellek-kanca.mjs';
+import { kulisKapat } from '../tests/browser/kulis-kapat.mjs';
 
 const arg = (k, d = null) => { const i = process.argv.indexOf(k); return i < 0 ? d : (process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : true); };
 let DIST = resolve(arg('--dist', 'dist'));
@@ -26,7 +27,7 @@ if (arg('--build')) {
 }
 const require = createRequire(import.meta.url); const { chromium } = require('playwright');
 const tier = String(arg('--kademe', 'dengeli')), TEKRAR = +arg('--tekrar', 2);
-const ROTA = [['iskele', 0, -8], ['bufe-ici', 0.2, -2.6], ['hali-saha', 399, 12.2], ['orman', 806, 9], ['karsi-yaka', -30, 45], ['avm-ici', 18.5, 49.2]];
+const ROTA = [['iskele', 0, -8], ['bufe-ici', 0.2, -2.6], ['hali-saha', 399, 12.2], ['orman', 806, 9], ['karsi-yaka', -30, 45], ['avm-ici', 1200.15, 46.0]];
 const mime = { '.js': 'text/javascript', '.html': 'text/html; charset=utf-8', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.json': 'application/json', '.glb': 'model/gltf-binary', '.ktx2': 'image/ktx2' };
 const indirilen = new Map();
 const srv = createServer((req, res) => {
@@ -49,7 +50,7 @@ await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=${tier
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 120000 });
 const hazirMs = Date.now() - t0;
 await p.evaluate(() => { const M = window.__marti; M.play('sabri'); M.renderFrames(2, 0.1); });
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const ad = await p.$('input[name="ad"]'); if (ad) await ad.fill('Olcum'); await go.click({ force: true }); await p.waitForTimeout(700); } await p.evaluate(() => { const M = window.__marti; M.command({ kind: 'esnafim', op: 'set', data: { ad: 'Olcum' } }); M.command({ kind: 'esnafim', op: 'done' }); M.renderFrames(2, 0.1); });   // ad zorunlu (UX-15): boş adla kl-go kulisi kapatmaz, kulis bağlamı ölçüme karışır
+await kulisKapat(p, 'Olcum');   // ad zorunlu (UX-15): karakter atölyesi açık kalırsa sim duraklı kalır, atölye bağlamı ölçüme karışır
 await p.evaluate(() => { const M = window.__marti; M.simCmd('money', 9e9); M.simCmd('level', 40); });
 const settle = n => p.evaluate(n => { for (let k = 0; k < n; k++) window.__marti.renderFrames(2, 0.1); }, n);
 const sample = () => p.evaluate(() => { try { gc(); } catch { /* */ } const M = window.__marti, i = M.info(), g = window.__gpuBellek(6); return { gpuMB: g.toplamMB, dokuMB: g.dokuMB, rbMB: g.rbMB, tamponMB: g.tamponMB, glDoku: g.doku, glTampon: g.tampon, geos: i.geos, texs: i.texs, programs: i.programs, calls: i.calls, heapMB: +(performance.memory.usedJSHeapSize / 1048576).toFixed(1), dom: document.getElementsByTagName('*').length, enBuyuk: g.enBuyuk }; });

@@ -1,6 +1,7 @@
 // Görsel mantık denetçisi (2026-11-21): oyunu headless açar, bir aşamada canlı sim'i ilerletir, her bölge/iç mekânda
 // birkaç açıdan ekran görüntüsü alır.  STAGE=10 node tests/browser/denetci.mjs <çıktı> [id,id,...]
 import { createServer } from 'node:http'; import { readFileSync, existsSync, statSync, mkdirSync, writeFileSync } from 'node:fs'; import { join, resolve } from 'node:path'; import { createRequire } from 'node:module';
+import { kulisKapat } from './kulis-kapat.mjs';
 const require = createRequire(import.meta.url); const { chromium } = require('playwright'); const DIST = resolve(process.env.DIST || 'dist');
 const out = process.argv[2]; mkdirSync(out, { recursive: true });
 const TYPES = { png: 'image/png', jpg: 'image/jpeg', glb: 'model/gltf-binary', webp: 'image/webp', json: 'application/json', ktx2: 'image/ktx2', wasm: 'application/wasm' };
@@ -13,7 +14,7 @@ const errs = []; p.on('pageerror', e => errs.push(e.message)); p.on('console', m
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengeli&seed=3&stage=${STAGE}&saat=${process.env.SAAT||13}&lvl=${process.env.LEVEL||40}${process.env.UI?'&ui=1':''}`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 90000 });
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await go.click({ force: true }); await p.waitForTimeout(700); }
+await kulisKapat(p, 'Olcum');
 await p.evaluate((STAGE) => { const M = window.__marti; M.setTime(Number(new URLSearchParams(location.search).get('saat')||13)); M.step(2); M.izgara(false); M.simCmd('money', 9e9); M.simCmd('level', Number(new URLSearchParams(location.search).get('lvl') || 40)); M.simCmd('unlock', 'isbul');
   try { M.simCmd('cmd', { kind: 'setStage', stage: STAGE }); } catch { /* */ }
   for (let i = 0; i < 12; i++) { M.simCmd('hire'); M.step(1); }

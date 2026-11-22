@@ -5,6 +5,7 @@ import { createServer } from 'node:http';
 import { readFileSync, existsSync, statSync, mkdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { createRequire } from 'node:module';
+import { kulisKapat } from './kulis-kapat.mjs';
 const require = createRequire(import.meta.url);
 const { chromium } = require('playwright');
 const DIST = resolve(process.env.MARTI_DIST || 'dist');
@@ -62,8 +63,7 @@ async function yeniSayfa(ctx) {
 }
 async function slotGir(page, i) {
   await page.evaluate(n => document.querySelector(`[data-slot="${n}"]`).click(), i);
-  const go = await page.waitForSelector('.kl-go', { timeout: 6000 }).catch(() => null);
-  if (go) { await page.evaluate(() => document.querySelector('.kl-go').click()); }
+  await kulisKapat(page, 'Olcum', { bekle: 6000, ui: true });
   await page.waitForTimeout(1500);
 }
 const rozet = page => page.evaluate(() => { const e = document.getElementById('kayit-rozet'); return e ? { t: e.textContent, d: e.dataset.durum } : null; });

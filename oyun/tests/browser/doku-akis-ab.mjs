@@ -9,6 +9,7 @@ import { spawnSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { PNG } from 'pngjs';
 import pixelmatch from 'pixelmatch';
+import { kulisKapat } from './kulis-kapat.mjs';
 
 const arg = (k, d = null) => { const i = process.argv.indexOf(k); return i < 0 ? d : (process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : true); };
 let DIST = resolve(process.env.DIST || 'dist');
@@ -34,7 +35,7 @@ let hata = 0; p.on('pageerror', e => { hata++; console.log('[pageerror]', String
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengeli&seed=3&stage=10`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 120000 });
 await p.evaluate(() => { const M = window.__marti; M.play('sabri'); M.renderFrames(2, 0.1); });
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const ad = await p.$('input[name="ad"]'); if (ad) await ad.fill('Olcum'); await go.click({ force: true }); await p.waitForTimeout(700); }
+await kulisKapat(p, 'Olcum');
 await p.addStyleTag({ content: 'body *{visibility:hidden !important} canvas#c{visibility:visible !important}' });   // yalnız 3B sahne (CSS animasyonlu ipucu eli farkı karıştırmasın)
 const kare = n => p.evaluate(n => { const M = window.__marti; for (let k = 0; k < n; k++) M.renderFrames(1, 1e-9); }, n);   // dt 0 = 1/30 sayılır: 1e-9 ile zaman gerçekten durur
 const KARE = [['orman', 806, 9, 1.0], ['orman-yakin', 806, 9, 0.45], ['karsi-isci', 20, 40, 0.6], ['bufe-musteri', 0, -4, 0.5]];
