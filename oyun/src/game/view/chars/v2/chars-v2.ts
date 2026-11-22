@@ -33,6 +33,7 @@ import { crowdWeather } from '../weather-pose';
 import * as C from './kit';
 import { vrand } from './kit';
 import { akisKaydet } from '../../../../engine/render/doku-akis';
+import { normalOnar } from '../../../../engine/render/geo-temiz';
 import { hairKit, beardKit, mustacheKit } from './sac-kit';
 
 export const CH: any = {};
@@ -116,7 +117,8 @@ GB.prototype.tris = function (this: any) { return this.idx.length / 3; };
 
 /* cached primitive geometries (local, unmerged; only used as merge sources) */
 const PG: any = {};
-const prim = (k?: any, f?: any) => PG[k] || (PG[k] = f());
+// 2026-11-22: kapsül/torna kutup köşelerinde normal = 0 (GPU'da NaN, bloom siyah blok): her ilkel normalOnar'dan geçer (geo-temiz)
+const prim = (k?: any, f?: any) => PG[k] || (PG[k] = normalOnar(f()));
 /* SEGK: global tessellation factor, set per builder (hero/crowd/animals) to stay inside the GDD triangle budgets */
 let SEGK = 1;
 const SEG: any = { hero: 0.6, crowd: 0.55, crowdS: 0.5, animal: 0.5, gull: 1, flock: 0.45 };
@@ -129,7 +131,7 @@ const rbox = (w?: any, h?: any, d?: any, r = 0.02, s = 1) => C.roundBox(w, h, d,
 const box = (w?: any, h?: any, d?: any) => prim(`b${w}|${h}|${d}`, () => new T.BoxGeometry(w, h, d));
 const tor = (r?: any, t?: any, rs = 6, ts = 12, arc = TAU) => { rs = sgN(rs, 3); ts = sgN(ts, 4); return prim(`t${r}|${t}|${rs}|${ts}|${arc}`, () => new T.TorusGeometry(r, t, rs, ts, arc)); };
 const cone = (r?: any, h?: any, s = 8) => { s = sgN(s, 4); return prim(`o${r}|${h}|${s}`, () => new T.ConeGeometry(r, h, s)); };
-const lathe = (pts?: any, seg = 12, p0 = 0, pl = TAU) => new T.LatheGeometry(pts.map((p?: any) => new T.Vector2(p[0], p[1])), sgN(seg, 6), p0, pl);
+const lathe = (pts?: any, seg = 12, p0 = 0, pl = TAU) => normalOnar(new T.LatheGeometry(pts.map((p?: any) => new T.Vector2(p[0], p[1])), sgN(seg, 6), p0, pl));
 
 /* ---------- soft blob shadow (shared) ---------- */
 let blobTex: any = null;
@@ -776,7 +778,7 @@ function buildHeroMesh(L?: any) {
       b.add(tg, on(n, { m, color: L.faceSpec.browCol || L.faceSpec.ink || '#2a1c16' }));
     });
   }
-  const geo = b.build({ skinIndex: 'u16' });
+  const geo = normalOnar(b.build({ skinIndex: 'u16' }));   // ilkel dışı parçalarda (saç kiti) kalan sıfır normaller
   return { geo, B, list, faceStart, faceEnd, armOut, browRest, tris: b.tris(), dims: { hipY, kneeY, ankY, L1: hipY - kneeY, L2: kneeY - ankY, headTop: headY + R * 1.12 + (L.hat === 'chef' ? 0.25 : 0) } };
 }
 
