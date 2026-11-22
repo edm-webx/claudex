@@ -27,7 +27,7 @@ if (arg('--build')) {
 }
 const require = createRequire(import.meta.url); const { chromium } = require('playwright');
 const tier = String(arg('--kademe', 'dengeli')), TEKRAR = +arg('--tekrar', 2);
-const ROTA = [['iskele', 0, -8], ['bufe-ici', 0.2, -2.6], ['hali-saha', 399, 12.2], ['orman', 806, 9], ['karsi-yaka', -30, 45], ['avm-ici', 1200.15, 46.0], ['avm-diyar', 1200.15, 46.6], ['avm-kat1', 1196, 50.9]];
+const ROTA = [['iskele', 0, -8], ['bufe-ici', 0.2, -2.6], ['hali-saha', 399, 12.2], ['orman', 806, 9], ['karsi-yaka', -30, 45], ['avm-ici', 1200.15, 46.0], ['avm-diyar', 1200.15, 46.6], ['avm-kat1', 1196, 50.9], ['park', 0, 8], ['avm-kat1b', 1196.95, 61.4, 1], ['avm-kat2', 1196.95, 61.4, 2], ['avm-sinema', 1200.15, 50, 3], ['avm-salon', 1189.65, 49.5, 3]];
 const mime = { '.js': 'text/javascript', '.html': 'text/html; charset=utf-8', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.json': 'application/json', '.glb': 'model/gltf-binary', '.ktx2': 'image/ktx2' };
 const indirilen = new Map();
 const srv = createServer((req, res) => {
@@ -57,8 +57,8 @@ const sample = () => p.evaluate(() => { try { gc(); } catch { /* */ } const M = 
 await settle(6); await p.waitForTimeout(1500); await settle(4);
 const ilk = await sample();
 const satir = [];
-for (let t = 0; t < TEKRAR; t++) for (const [ad, x, z] of ROTA) {
-  await p.evaluate(([x, z]) => window.__marti.teleport(x, z), [x, z]);
+for (let t = 0; t < TEKRAR; t++) for (const [ad, x, z, kat] of ROTA) {
+  await p.evaluate(([x, z, kat]) => window.__marti.teleport(x, z, kat), [x, z, kat]);
   await settle(10); await p.waitForTimeout(900); await settle(4);
   satir.push({ tur: t + 1, ad, ...(await sample()) });
   if (arg('--dokum')) { const d = await p.evaluate(() => window.__marti.kaynakDokum?.(3, 12)); if (d) { console.log(`\n[${t + 1} ${ad}] sahne doku ${d.dokuMB} MB, geometri ${d.geoMB} MB, aynı resmi paylaşan doku ${d.ayniResim}`); d.doku.forEach(r => console.log(`  doku ${String(r.kb).padStart(6)} KB x${r.adet} ${r.ad}`)); d.geo.slice(0, 6).forEach(r => console.log(`  geo  ${String(r.kb).padStart(6)} KB x${r.adet} ${r.ad}`)); } }

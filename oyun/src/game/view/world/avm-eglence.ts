@@ -131,12 +131,24 @@ function afisCiz(tv: ReturnType<typeof tuval>, film: { ad: string; tur: string; 
 }
 
 export function createAvmEglence(d: AvmEglenceDeps): AvmEglenceView {
-  let v: Yapi | null = null, t = 0;
+  let v: Yapi | null = null, t = 0, kapaliS = 0;
+  /** Sinema katı kahraman 12 sn kat dışında kalırsa boşaltılır (geometri + tuval dokuları); girişte yeniden kurulur. */
+  const bosalt = () => {
+    if (!v) return;
+    v.g.parent?.remove(v.g);
+    v.g.traverse(o => {
+      const m = o as T.Mesh; if (!m.isMesh) return;
+      m.geometry.dispose();
+      for (const mt of ([] as T.Material[]).concat(m.material)) { const mm = mt as T.MeshBasicMaterial; mm.map?.dispose(); mm.dispose(); }
+    });
+    v = null;
+  };
   return {
     update(dt) {
       const sahne = d.root(); if (!sahne) return;
       const hp = d.hero(), on = avmIcinde(hp, 2) && (hp.kat || 0) === EGLENCE_KAT;
-      if (!on) { if (v) v.g.visible = false; return; }
+      if (!on) { if (v) { v.g.visible = false; kapaliS += dt; if (kapaliS > 12) bosalt(); } return; }
+      kapaliS = 0;
       if (!v) v = insa();
       if (v.g.parent !== sahne) sahne.add(v.g);
       v.g.visible = true; t += dt;
