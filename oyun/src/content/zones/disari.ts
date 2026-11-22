@@ -277,7 +277,8 @@ function base(id: RegionId, z0: number, z1: number, props: PrefabPlacement[], pa
   const mid = (r.x0 + r.x1) / 2;
   for (const s of SIDE_SHOPS) if (s.region === id) props.push(P('shop-' + s.id, 'mk.shop.' + s.id, s.kx, s.kz, s.rot));
   for (const sg of SIGNS) if (sg.x >= r.x0 && sg.x < r.x1) props.push(P('sign-' + sg.x, 'mk.sign', sg.x, sg.z));
-  props.push(P('stop-' + id, 'mk.stop', r.stop.x, r.stop.z + 1.0));
+  // 2026-11-21 mantık denetimi: orman durağının kendi adlı sundurması var (view/orman/index.ts stop()); ikinci bir mk.stop aynı yere biniyordu
+  if (id !== 'orman') props.push(P('stop-' + id, 'mk.stop', r.stop.x, r.stop.z + 1.0));
   return {
     id: r.zone, name: r.name,
     bounds: { x0: r.x0, z0, x1: r.x1, z1 },

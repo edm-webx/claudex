@@ -32,7 +32,7 @@ export function createGulls(env: AgentEnv): GullsSystem {
     built = true;
     const perches = env.book.gullPerches();
     for (let i = 0; i < GULL_COUNT; i++) {
-      const air = i >= perches.length;
+      const air = i >= perches.length || perches.slice(0, i).some((q) => Math.hypot(q.x - perches[i].x, q.z - perches[i].z) < 0.6);   // aynı yere iki tünek: ikinci martı havada
       const kind = i === 0 ? 'reis' : rng.chance(0.25) ? 'young' : 'adult';
       const p = perches[i % perches.length];
       const a = env.reg.add('gull', 'gull-' + i, { kind }, air ? { x: 0, z: -6 } : p, { kind });
@@ -45,6 +45,12 @@ export function createGulls(env: AgentEnv): GullsSystem {
     for (const p of perches) { const d = Math.hypot(p.x - drop.x, p.z - drop.z); if (d < bd) { bd = d; best = p; } }
     counterPerch = best && bd < 3 ? best : { x: drop.x + 0.9, z: drop.z + 0.05, y: drop.y + 0.02, rotY: 0.4 };
     next = S.tut.gullFirst ? S.playT + rng.range(60, 120) : 600;
+  }
+  /** bir tünekte (ya da gidilen tünekte) başka martı var mı / tezgâh tüneği mi: 0.6 m içinde */
+  const yakin = (p: V3 | P3 | null, q: V3 | P3 | null) => !!p && !!q && Math.hypot(p.x - q.x, p.z - q.z) < 0.6;
+  function tunekDolu(p: P3, self: Gull | null): boolean {
+    if (yakin(p, counterPerch)) return true;
+    return gulls.some((o) => o !== self && (yakin(o.perch, p) || yakin(o.fly?.to ?? null, p) || (o.mode !== 'glide' && !o.fly && yakin(o.a, p))));
   }
   function fly(g: Gull, to: V3, dur: number, mode = 'fly', onLand?: (g: Gull) => void) {
     g.fly = { from: { x: g.a.x, y: g.a.y, z: g.a.z }, to: { ...to }, t: 0, dur, onLand }; g.mode = mode;
@@ -78,9 +84,18 @@ export function createGulls(env: AgentEnv): GullsSystem {
           continue;
         }
         a.speed = 0;
+        // üst üste kalmış martı (eski kayıt / aşama değişimi): büyük indeksli olan boş tüneğe uçar, yoksa havalanıp süzülür
+        if ((g.mode === 'stand' || g.mode === 'scream') && g !== stare && gulls.some((o) => o !== g && o.i < g.i && !o.fly && o.mode !== 'glide' && Math.hypot(o.a.x - a.x, o.a.z - a.z) < 0.5 && Math.abs(o.a.y - a.y) < 0.5)) {
+          const bos = env.book.gullPerches().find((q) => !tunekDolu(q, g));
+          if (bos) { g.perch = bos; fly(g, bos, 2.5); }
+          else { g.perch = null; fly(g, { x: a.x + 4, y: 7, z: a.z - 6 }, 2.5, 'fly', (gg) => { gg.mode = 'glide'; gg.blend = 0; }); }
+          continue;
+        }
         if (g.mode === 'stand' && g !== stare && g.perch && rng.chance(dt * 0.02)) {
           const ps = env.book.gullPerches(), p = ps[rng.int(0, ps.length - 1)];
-          if (p !== counterPerch && !gulls.some((o) => o.perch === p)) { g.perch = p; fly(g, p, 2.5); }
+          // 2026-11-21 (kullanıcı: "martılar niye üst üste?"): tünek dolu mu konuma göre bakılır; nesne kimliği aşama değişince
+          // (anchor'lar yeniden kurulunca) tutmuyordu ve iki martı aynı tüneğe iniyordu
+          if (!tunekDolu(p, g)) { g.perch = p; fly(g, p, 2.5); }
         }
         if (g.mode === 'stand' && rng.chance(dt * 0.01)) { g.mode = 'scream'; g.t = 0; }
         if (g.mode === 'scream' && g.t > 1.2) g.mode = 'stand';

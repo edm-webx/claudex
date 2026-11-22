@@ -39,10 +39,10 @@ export function createDog(env: AgentEnv): System & { actor(): Actor | null } {
         } else if (tripT <= 0) tripT = 6;
       } else if (wk) {
         if (trip === 'out' || trip === 'back') {
-          d.act = 'walk'; d.fx = 'bag';
+          d.act = 'walk'; d.fx = '';   // 2026-11-21: torba yok, kısa gezinti
           if (!wk.walk(dt, 1.1)) { if (trip === 'out') { trip = 'wait'; tripT = 2 + rng.next() * 3; d.speed = 0; } else { trip = 'home'; tripT = 14 + rng.next() * 20; d.speed = 0; d.fx = ''; } }
-        } else { // wait: sits proudly next to the bag
-          d.speed = 0; d.act = 'sit'; d.fx = 'bag'; tripT -= dt;
+        } else { // wait: sits a moment, then trots home
+          d.speed = 0; d.act = 'sit'; d.fx = ''; tripT -= dt;
           if (tripT <= 0) { trip = 'back'; wk.goTo(home); }
         }
         if (env.shared.dogBark > 0) { d.act = 'bark'; d.fx = 'bark'; }

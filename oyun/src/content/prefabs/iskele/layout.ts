@@ -56,7 +56,8 @@ export const PAD_KEYS_FALLBACK = ['cay', 'ayran', 'simit', 'tabure1', 'tabure2',
 const V3 = (x = 0, y = 0, z = 0): P3v => ({ x, y, z });
 const P3 = (x: number, z: number, y = 0): P3v => V3(x, y, z);
 export const BENCHES: { pos: P3v; rotY: number }[] = [
-  { pos: V3(-7.2, 0, -12.5), rotY: PI }, { pos: V3(1.2, 0, -12.55), rotY: PI }, { pos: V3(-9.85, 0, 3.0), rotY: -HP },
+  { pos: V3(-7.2, 0, -12.5), rotY: PI }, { pos: V3(1.2, 0, -12.55), rotY: PI }, { pos: V3(-9.85, 0, 2.4), rotY: -HP },   // 2026-11-21: z 3.0 iken iskele adı tabelasının ayağına giriyordu
+ 
   { pos: V3(-30, 0, 5.95), rotY: PI }, { pos: V3(-12, 0, 5.95), rotY: PI }, { pos: V3(21, 0, 5.95), rotY: PI }, { pos: V3(41, 0, 5.95), rotY: PI }
 ];
 export function benchSeats(bn: { pos: P3v; rotY: number }): P3v[] { const c = Math.cos(bn.rotY), s = Math.sin(bn.rotY); return [-0.55, 0, 0.55].map(lx => V3(bn.pos.x + lx * c + 0.05 * s, 0, bn.pos.z - lx * s + 0.05 * c)); }
@@ -114,11 +115,12 @@ function kioskLayout(stage: number): StageLayout {   // stages 6-10 grow around 
     L.door = { outside: P3(-3.3, -3.7), inside: P3(-3.3, -5.2) };
   }
   L.perch.push([7.75, 0.58, -8.55, -HP], [7.75, 0.58, -5.65, -HP], [-10.4, 1.06, -6.0, HP], [-5.0, 1.06, -13.3, 0.3], [-10.4, 1.06, 1.0, HP]);
+  // 2026-11-21 mantık denetimi: yuva 4 iskele adı tabelasının altındaydı (-8.1, 3.6), aşama 3+ yuva 2 lambanın içindeydi (-9.75, -4.45)
   const slots: [number, number, number, string][] = [
-    [-9.6, -11.6, 0.6, 'm'], [-9.75, -8.0, HP, 'm'], [-9.75, -5.4, HP, 's'], [-9.75, -0.6, HP, 'm'], [-8.1, 3.6, 0.3, 's'], [-5.6, -6.2, 0, 's'],
+    [-9.6, -11.6, 0.6, 'm'], [-9.75, -8.0, HP, 'm'], [-9.75, -5.4, HP, 's'], [-9.75, -0.6, HP, 'm'], [-4.9, 3.7, 0.3, 's'], [-5.6, -6.2, 0, 's'],
     [6.4, -9.8, 0, 'm'], [7.75, -2.4, -HP, 's'], [7.75, 0.9, -HP, 'm'], [5.9, 3.8, -0.3, 's'], [-4.2, 3.7, 0, 's'], [-4.6, -12.2, 0, 'l']
   ];
-  if (s3) { slots[1] = [-9.75, -7.35, HP, 's']; slots[2] = [-9.75, -4.45, HP, 's']; slots[3] = [-9.75, -1.4, HP, 'm']; slots[5] = [-5.2, -1.2, 0, 's']; }
+  if (s3) { slots[1] = [-9.75, -7.35, HP, 's']; slots[2] = [-9.85, -4.8, HP, 's']; slots[3] = [-9.75, -1.4, HP, 'm']; slots[5] = [-5.2, -1.2, 0, 's']; }
   L.slots = slots.map(([x, z, r, s]) => ({ pos: P3(x as number, z as number), rotY: r as number, size: s as string }));
   L.walkways = [
     [P3(-49.5, 7.6), P3(49.5, 7.6)], [P3(49.5, 10.0), P3(-49.5, 10.0)],   // the ends are the locked construction sites (kilitli-bolge.ts)
@@ -144,10 +146,11 @@ export function staticObstacles(): Obstacle[] {
   for (let x = -48; x <= 48; x += 10) if (x < PIER.x0 - 1 || x > PIER.x1 + 1) add(x - 0.22, x + 0.22, 4.83, 5.27, 'lamp');
   [[22.05, -8.55], [22.05, -5.65], [21.9, -12.85], [-23.45, -17.5]].forEach(([x, z]) => add(x - 0.25, x + 0.25, z - 0.25, z + 0.25, 'bollard'));
   BENCHES.forEach(b => { const c = Math.cos(b.rotY), s = Math.sin(b.rotY), bx = b.pos.x - 0.28 * s, bz = b.pos.z - 0.28 * c, hx = Math.abs(c) * 0.95 + Math.abs(s) * 0.12, hz = Math.abs(s) * 0.95 + Math.abs(c) * 0.12; add(bx - hx, bx + hx, bz - hz, bz + hz, 'bench'); });
-  [[-9.75, 3.75], [22.0, 3.75]].forEach(([x, z]) => add(x - 0.58, x + 0.58, z - 0.3, z + 0.3, 'prop'));
+  [[-12.4, 3.75], [20.4, 3.75]].forEach(([x, z]) => add(x - 0.58, x + 0.58, z - 0.3, z + 0.3, 'prop'));
   [[-14, 9.6], [12.5, 9.6]].forEach(([x, z]) => add(x - 1.12, x + 1.12, z - 0.52, z + 0.52, 'prop'));
-  add(-10.0, -7.7, 3.6, 3.95, 'prop'); add(21.9, 22.2, -4.55, -4.25, 'prop');
-  { const c = Math.cos(NEXT_SIGN.ry), s = Math.sin(NEXT_SIGN.ry), hx = c * 1.0 + s * 0.12, hz = s * 1.0 + c * 0.12; add(NEXT_SIGN.x - hx, NEXT_SIGN.x + hx, NEXT_SIGN.z - hz, NEXT_SIGN.z + hz, 'prop'); }
+  add(-10.0, -7.7, 3.6, 3.95, 'prop');
+  // bilet gişesi + iki turnike (view/disari PIER_PROPS.gise = 18.9, -13.3): eskiden çarpışması yoktu, insanlar içinden geçiyordu
+  add(18.2, 19.6, -13.85, -12.75, 'prop'); add(19.85, 21.0, -13.35, -12.95, 'prop');
   add(-1.85, -1.35, -13.15, -12.65, 'prop');
   return o;
 }

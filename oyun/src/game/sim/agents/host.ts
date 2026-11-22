@@ -47,6 +47,7 @@ export function hostFromRules(r: Rules): AgentHost {
     isBirak: (w) => restoranApi(r)?.isBirak?.(w),
     passDurak: (w) => restoranApi(r)?.passDurak?.(w) ?? null,
     garsonPost: (w) => restoranApi(r)?.garsonPost?.(w) ?? null,
+    garsonDevriye: (w) => restoranApi(r)?.garsonDevriye?.(w) ?? [],
     kitchenClaim: (w, o) => restoranApi(r)?.kitchenClaim?.(w, o) ?? null,
     kitchenDone: (w, ok) => restoranApi(r)?.kitchenDone?.(w, ok),
     kitchenIst: (w) => restoranApi(r)?.kitchenIst?.(w) ?? null,

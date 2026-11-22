@@ -39,7 +39,7 @@ export interface AgentsView extends GameView {
   stats(): { rigs: number };
 }
 
-interface Row { a: Actor; h: HeroHandle; animal: boolean; carryKey: string; gull: number; bag?: T.Object3D; props?: Record<string, T.Object3D> }
+interface Row { a: Actor; h: HeroHandle; animal: boolean; carryKey: string; gull: number; props?: Record<string, T.Object3D> }
 
 /** BUF-14/15: hafif rol aksesuarları (a.fx): kurye bisikleti, müzisyen sazı, vale arabası (sürerken), müfettiş klipsi; tek kutu/silindir, gölge yok */
 function rolProps(): Record<string, T.Object3D> {
@@ -93,17 +93,10 @@ export function createAgentsView(deps: AgentsViewDeps): AgentsView {
       }
     } catch (e) { return null; }
     h.object.position.set(a.x, a.y, a.z);
-    let bag: T.Object3D | undefined;
-    if (a.kind === 'dog') {   // Torbacı's garbage bag, dragged behind him on errands
-      const g = new T.Group();
-      const sack = new T.Mesh(new T.SphereGeometry(0.2, 10, 8), new T.MeshLambertMaterial({ color: '#23262b' })); sack.scale.set(1, 0.8, 1.15); sack.position.y = 0.16; sack.castShadow = true;
-      const knot = new T.Mesh(new T.ConeGeometry(0.06, 0.14, 6), new T.MeshLambertMaterial({ color: '#23262b' })); knot.position.set(0, 0.38, 0);
-      const rope = new T.Mesh(new T.CylinderGeometry(0.014, 0.014, 1.9, 4), new T.MeshLambertMaterial({ color: '#d8d0c0' })); rope.rotation.x = Math.PI / 2; rope.position.set(0, 0.22, 0.95);
-      g.add(sack, knot, rope); g.position.set(0, 0, -1.55); g.visible = false; h.object.add(g); bag = g;
-    }
+    // 2026-11-21 kullanıcı: "torbacının torbasını kaldır": Torbacı'nın yerde sürüklenen çöp torbası (ip + çuval) artık çizilmiyor
     let props: Record<string, T.Object3D> | undefined;
     if (!animal && (a.kind === 'worker' || a.key === 'mufettis' || a.key.startsWith('usta-'))) { props = rolProps(); for (const o of Object.values(props)) h.object.add(o); }
-    return { a, h, animal, bag, props, carryKey: '', gull: a.kind === 'gull' ? Number(a.key.split('-')[1]) : -1 };
+    return { a, h, animal, props, carryKey: '', gull: a.kind === 'gull' ? Number(a.key.split('-')[1]) : -1 };
   }
   function ensure(agents: AgentsHandle | null) {
     if (!agents) return;
@@ -142,7 +135,6 @@ export function createAgentsView(deps: AgentsViewDeps): AgentsView {
         h.setPose({ x, z }, rot);
         h.object.position.y = y;
         if (r.props) for (const k in r.props) r.props[k].visible = a.fx === k;
-        if (r.bag) { r.bag.visible = a.fx === 'bag'; r.bag.rotation.y = Math.sin(performance.now() / 260) * 0.12; }
         if (r.gull >= 0) {
           h.object.visible = r.gull < gullsNear || a.act === 'stare' || a.act === 'snatch' || a.carry.length > 0;
           const cp = y > 1.5 ? deps.camera?.()?.position : undefined;

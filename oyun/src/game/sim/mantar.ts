@@ -9,7 +9,7 @@
  */
 import type { Kernel } from './state';
 import { MANTARLAR, MANTAR_PER_DAY, ORMAN, REGION_BY_ID } from '../../content/disari/martikoy';
-import { ormanEngeller } from '../../content/zones/disari';
+import { ormanEngeller, ormanZone } from '../../content/zones/disari';
 import { fmtMoney } from './util';
 
 interface MSave { day: number; taken: number[]; toplam: number; /** DNY-10: day the fountain / pond was last visited (bölge hedefleri) */ cesme?: number; gol?: number }
@@ -24,9 +24,14 @@ export function mantarYeriUygun(x: number, z: number): boolean {
   if (ORMAN.cross.some(([cx, za, zb]) => Math.abs(x - cx) < 1.5 && z > za - 0.3 && z < zb + 0.3)) return false;
   if (x < ORMAN.yol.x + ORMAN.yol.w / 2 + 1 && Math.abs(z - ORMAN.yol.z) < 2.4) return false;
   const st = REGION_BY_ID.orman.stop; if (Math.hypot(x - st.x, z - st.z) < 5) return false;
+  // 2026-11-21 mantık denetimi: piknik örtüsü / mangal / masanın çarpışması yok, mantar örtünün üstünde çıkıyordu
+  if (yumusak().some(([px, pz, r]) => Math.hypot(x - px, z - pz) < r)) return false;
   const m = 0.55;
   return !ormanEngeller().some(r => x > r.x0 - m && x < r.x1 + m && z > r.z0 - m && z < r.z1 + m);
 }
+let _yum: [number, number, number][] | null = null;
+const YUMUSAK: Record<string, number> = { 'mk.ortu': 2.0, 'mk.mangal': 1.4, 'mk.piknik': 1.9 };
+function yumusak() { return _yum || (_yum = ormanZone().props.filter(p => YUMUSAK[p.prefab]).map(p => [p.pos.x, p.pos.z, YUMUSAK[p.prefab]] as [number, number, number])); }
 const nearTree = (x: number, z: number) => ormanEngeller().some(r => r.x1 - r.x0 < 1.3 && Math.hypot(x - (r.x0 + r.x1) / 2, z - (r.z0 + r.z1) / 2) < 3.2);
 export function mantarlarOf(day: number): MantarItem[] {
   const tot = MANTARLAR.reduce((a, m) => a + m.w, 0), out: MantarItem[] = [];

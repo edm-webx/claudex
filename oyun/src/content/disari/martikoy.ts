@@ -231,7 +231,7 @@ export const SIGNS: { x: number; z: number; west: string; east: string }[] = [
 export const PIER_PROPS = {
   babalar: [[-10.25, -8.6], [-10.25, -1.2], [8.2, -9.2], [8.2, 0.8]] as [number, number][],
   canSimidi: [[8.35, -5.6], [-10.4, -6.2]] as [number, number][],
-  gise: { x: 5.6, z: -12.4 },
+  gise: { x: 18.9, z: -13.3 },   // 2026-11-21: büfe yanındaki "Yakında" tabelasının üstünden canlı tarife tahtasının (21, -10.6) yanına, vapur tarafına
   oltaci: { x: 18.5, z: 4.6 },
   tarti: { x: 15.2, z: 13.9 },
   bayii: { x: 31.0, z: 14.1 },

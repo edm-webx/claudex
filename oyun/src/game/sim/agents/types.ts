@@ -110,6 +110,8 @@ export interface AgentHost {
   passDurak?(wid: number): Vec2 | null;
   /** BUF-19: boştaki garsonun bölge postu (kanat / salon bölgesi; yoksa null: tezgâh yanı) */
   garsonPost?(wid: number): Vec2 | null;
+  /** boştaki garsonun bölge devriye noktaları (restoran.ts garsonDevriye) */
+  garsonDevriye?(wid: number): Vec2[];
   /** kitchen line (sim/mutfak-hat.ts): claim the oldest ticket item + a free station for it (nearest to `from`) */
   kitchenClaim?(wid: number, opt?: { from?: Vec2 }): FoodId | null;
   /** legacy one-step finish (ok) / give the job up (!ok) */

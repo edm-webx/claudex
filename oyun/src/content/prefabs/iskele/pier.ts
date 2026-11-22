@@ -75,17 +75,13 @@ export function buildPier() {
   [-1.0, 1.0].forEach(lx => A.box(0.1, 2.6, 0.1, K.lamp, lx, 1.3, 0, { r: 0.03 }));
   A.box(2.3, 0.62, 0.08, '#1d5fa8', 0, 2.3, 0, { r: 0.03 }); A.label(2.2, 0.55, R.pierName, 0, 2.3, 0.045);
   A.pop();
-  A.push(mtx(22.05, 0, -4.4, 0, -0.25, 0)); A.box(0.08, 1.5, 0.08, K.lamp, 0, 0.75, 0, { r: 0.02 }); A.box(0.7, 0.55, 0.05, '#1d5fa8', 0, 1.65, 0, { r: 0.02 }); A.label(0.66, 0.5, R.timetable, 0, 1.65, 0.03); A.pop();
+  // 2026-11-21: eski sabit "VAPUR SAATLERİ" levhası (uydurma sabit saatler) kaldırıldı; canlı tarife tahtası ferry-look.ts'te
   // life rings on the railing, a fisherman's bucket, planters
   [[-23.8, -1.0, HP], [-1.0, -17.8, 0], [22.52, -10.2, -HP]].forEach(([x, z, ry]) => { A.push(mtx(x, 0.62, z, 0, ry, 0)); for (let k = 0; k < 8; k++) A.tor(0.26, 0.07, k % 2 ? '#fbfaf6' : '#e0533c', 0, 0, 0.05, { arc: TAU / 8, rz: k * TAU / 8, rs: 6, ts: 3 }); A.pop(); });
   A.cyl(0.18, 0.15, 0.3, '#2f6fdb', -1.6, 0.15, -12.9, { seg: 10 }); A.cyl(0.015, 0.015, 2.2, '#7d5638', -1.4, 1.0, -13.0, { rx: -0.45, seg: 4 }); A.cyl(0.015, 0.015, 2.2, '#5a3d28', -1.8, 1.0, -13.0, { rx: -0.5, rz: 0.2, seg: 4 });
-  // "Yakında: Vapur Büfesi" sign at the pier end (next venue teaser)
-  A.push(mtx(NEXT_SIGN.x, 0, NEXT_SIGN.z, 0, NEXT_SIGN.ry, 0));
-  [-0.9, 0.9].forEach(lx => A.box(0.1, 2.2, 0.1, '#7d5638', lx, 1.1, 0, { r: 0.03, uv: R.grain }));
-  A.box(2.2, 1.14, 0.08, '#7d5638', 0, 1.62, 0, { r: 0.03 }); A.label(2.08, 1.02, R.soon, 0, 1.62, 0.045);
-  A.box(2.3, 0.08, 0.2, '#e0533c', 0, 2.24, 0, { r: 0.03 });
-  A.pop();
-  [[-9.75, 3.75], [22.0, 3.75]].forEach(([x, z]) => { A.box(1.1, 0.5, 0.55, '#a8774f', x, 0.25, z, { r: 0.04 }); for (let k = 0; k < 5; k++) A.ico(0.22, k % 2 ? '#6f9e4f' : '#7fae5e', x - 0.4 + k * 0.2, 0.6, z, { d: 0 }); [-0.3, 0, 0.3].forEach((dx, k) => A.sph(0.09, ['#e0533c', '#f2a2b3', '#ffd23f'][k], x + dx, 0.78, z + 0.05, { ws: 6, hs: 4 })); });
+  // 2026-11-21: "YAKINDA: Vapur Büfesi" tabelası kaldırıldı (öyle bir mekân yok; bilet gişesi de üstüne binmişti)
+  // 2026-11-21: saksılar bankın / lambanın içinden çıkıyordu (-9.75 / 22.0): yanlara alındı (layout.ts çarpışmaları aynı yerde)
+  [[-12.4, 3.75], [20.4, 3.75]].forEach(([x, z]) => { A.box(1.1, 0.5, 0.55, '#a8774f', x, 0.25, z, { r: 0.04 }); for (let k = 0; k < 5; k++) A.ico(0.22, k % 2 ? '#6f9e4f' : '#7fae5e', x - 0.4 + k * 0.2, 0.6, z, { d: 0 }); [-0.3, 0, 0.3].forEach((dx, k) => A.sph(0.09, ['#e0533c', '#f2a2b3', '#ffd23f'][k], x + dx, 0.78, z + 0.05, { ws: 6, hs: 4 })); });
   // promenade: stone pavement, sea wall, railing, lamps, benches, trees, grass beyond
   S.span(-80, 80, -0.32, 0, PIER.z1, 13.5, '#ffffff', { r: 0, world: 4 });
   A.span(-80, PIER.x0, -1.6, -0.3, PIER.z1, PIER.z1 + 0.5, '#a9a094', { r: 0 }); A.span(PIER.x1, 80, -1.6, -0.3, PIER.z1, PIER.z1 + 0.5, '#a9a094', { r: 0 });

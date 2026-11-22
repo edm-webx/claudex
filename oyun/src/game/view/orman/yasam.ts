@@ -81,7 +81,7 @@ export function createYasam(chars: CharsLike | null, parent: T.Group): Yasam {
   const make = (sp: { seed: number; dog?: boolean }): HeroLike | null => {
     if (!chars) return null;
     try {
-      const h = (sp.dog && chars.makeDog ? chars.makeDog({ coat: 'tan' }) : chars.makeHero({ kind: 'regular', seed: sp.seed } as never)) as HeroLike;
+      const h = (sp.dog && chars.makeDog ? chars.makeDog({ coat: 'tan', name: 'Orman köpeği' }) : chars.makeHero({ kind: 'regular', seed: sp.seed } as never)) as HeroLike;
       group.add(h.object); return h;
     } catch { return null; }
   };
