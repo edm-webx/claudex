@@ -27,7 +27,7 @@ if (arg('--build')) {
 }
 const require = createRequire(import.meta.url); const { chromium } = require('playwright');
 const tier = String(arg('--kademe', 'dengeli')), TEKRAR = +arg('--tekrar', 2);
-const ROTA = [['iskele', 0, -8], ['bufe-ici', 0.2, -2.6], ['hali-saha', 399, 12.2], ['orman', 806, 9], ['karsi-yaka', -30, 45], ['avm-ici', 1200.15, 46.0]];
+const ROTA = [['iskele', 0, -8], ['bufe-ici', 0.2, -2.6], ['hali-saha', 399, 12.2], ['orman', 806, 9], ['karsi-yaka', -30, 45], ['avm-ici', 1200.15, 46.0], ['avm-diyar', 1200.15, 46.6], ['avm-kat1', 1196, 50.9]];
 const mime = { '.js': 'text/javascript', '.html': 'text/html; charset=utf-8', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.json': 'application/json', '.glb': 'model/gltf-binary', '.ktx2': 'image/ktx2' };
 const indirilen = new Map();
 const srv = createServer((req, res) => {

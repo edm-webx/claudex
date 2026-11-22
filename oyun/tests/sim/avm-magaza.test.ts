@@ -55,7 +55,7 @@ it('AVM: iskelede kapalı kabuk + giriş kapısı; içeride zemin kapıları aç
 
 it('müşteri / işçi yolu: girişten merdivenlerle her kata çıkar, aynı yoldan iner, yükseklik kat kat artar', () => {
   for (let k = 0; k < AVM.KAT; k++) {
-    const hedef = { x: HOL.x0 + 0.7, z: 49.15 }, up = avmGelis(k, hedef), down = avmGidis(k, hedef);
+    const hedef = { x: HOL.x0 + 0.7, z: 50.9 }, up = avmGelis(k, hedef), down = avmGidis(k, hedef);
     expect(up[up.length - 1]).toMatchObject({ ...hedef, y: katY(k) }); expect(down[down.length - 1].y).toBe(0);
     for (const p of [...up, ...down]) expect(avmIcinde(p, 1.2), JSON.stringify(p)).toBe(true);
     for (let i = 1; i < up.length; i++) expect(up[i].y).toBeGreaterThanOrEqual(up[i - 1].y);

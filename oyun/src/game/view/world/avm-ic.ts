@@ -8,7 +8,7 @@
  */
 import * as T from 'three';
 import { Batch } from '../../../engine/prefab/batch';
-import { AVM, HOL, SERIT, MERD, GIRIS_KAPI, LOBI_Z1, LOBI_DEKOR, KAT_ADI, katY, avmIcinde, type SeritId } from '../../../content/avm-kat';
+import { AVM, HOL, SERIT, MERD, GIRIS_KAPI, LOBI_Z1, LOBI_DEKOR, KAT_ADI, ADA, CESME, HOL_SAKSI, YOL, katY, avmIcinde, type SeritId } from '../../../content/avm-kat';
 import { icBina, icDim, icWorld, AVM_TABELA } from '../../../content/ic-mekan';
 
 export interface AvmIcDeps { /** the scene (the iskele zone root may be unloaded while inside) */ root: () => T.Object3D | null; hero: () => { x: number; z: number; kat?: number }; night: () => number }
@@ -65,7 +65,7 @@ function insa(): { g: T.Group; katlar: T.Group[]; basamak: { m: T.InstancedMesh;
     for (let z = LOBI_Z1 + 1; z < AVM.z1; z += 1) b.box(HOL.x1 - HOL.x0, 0.004, 0.02, '#d4cdbf', cx, top + 0.002, z);
     for (const sx of [-1, 1]) b.box(0.18, 0.006, AVM.z1 - LOBI_Z1, '#7a6e60', cx + sx * (HOL.x1 - HOL.x0) / 2 - sx * 0.12, top + 0.003, (LOBI_Z1 + AVM.z1) / 2);
     b.box(AVM.x1 - AVM.x0, 0.004, LOBI_Z1 - AVM.z0, '#efe9df', cx, top + 0.002, (AVM.z0 + LOBI_Z1) / 2);
-    if (k === 0) { b.cyl(1.1, 1.1, 0.008, '#c9a23a', cx, top + 0.004, 45.3, { seg: 32 }); b.cyl(0.95, 0.95, 0.01, '#1d4f86', cx, top + 0.006, 45.3, { seg: 32 }); for (let i = 0; i < 4; i++) b.box(0.12, 0.012, 1.6, '#fbfaf6', cx, top + 0.008, 45.3, { ry: i * Math.PI / 4 }); }
+    if (k === 0) { const lz = (AVM.z0 + LOBI_Z1) / 2 + 0.3; b.cyl(1.1, 1.1, 0.008, '#c9a23a', cx, top + 0.004, lz, { seg: 32 }); b.cyl(0.95, 0.95, 0.01, '#1d4f86', cx, top + 0.006, lz, { seg: 32 }); for (let i = 0; i < 4; i++) b.box(0.12, 0.012, 1.6, '#fbfaf6', cx, top + 0.008, lz, { ry: i * Math.PI / 4 }); }
     // cam cephe (ön): dikmeler, kat kirişi; zeminde ortada otomatik kapı
     const fz = AVM.z0 + 0.05, fh = 3.48;
     for (let x = AVM.x0; x <= AVM.x1 + 0.01; x += 1.5) if (k > 0 || x < GIRIS_KAPI.x0 - 0.05 || x > GIRIS_KAPI.x1 + 0.05) b.box(0.08, fh, 0.12, '#3f4a6b', x, top + fh / 2, fz);
@@ -102,7 +102,30 @@ function insa(): { g: T.Group; katlar: T.Group[]; basamak: { m: T.InstancedMesh;
       if (d.k === 'bank') { b.box(d.w, 0.08, d.d, '#b8875a', d.x, top + 0.45, d.z); b.box(d.w, 0.4, 0.06, '#b8875a', d.x, top + 0.7, d.z + d.d / 2 - 0.03); for (const sx of [-1, 1]) b.box(0.06, 0.45, d.d, '#2b2f36', d.x + sx * (d.w / 2 - 0.1), top + 0.22, d.z); }
     }
     // saksılar holde (duvar diplerinde, kapılara denk gelmeyen yerler)
-    for (const sx of [-1, 1]) for (const z of [47.0, 56.6]) { const x = cx + sx * ((HOL.x1 - HOL.x0) / 2 - 0.45); b.cyl(0.28, 0.22, 0.55, '#d9d2c4', x, top + 0.28, z, { seg: 12 }); b.ico(0.38, '#4f8a4a', x, top + 0.85, z, { d: 1 }); }
+    // 2026-11-22 güzelleştirme. Hol saksıları: iki dükkân sırasının arasında, duvar dibinde ince gövdeli ağaç
+    for (const p of HOL_SAKSI) { b.cyl(p.r, p.r - 0.07, 0.62, '#d9d2c4', p.x, top + 0.31, p.z, { seg: 14 }); b.cyl(p.r - 0.04, p.r - 0.04, 0.02, '#5a4632', p.x, top + 0.62, p.z, { seg: 14 }); b.cyl(0.04, 0.05, 1.3, '#6b4a2a', p.x, top + 1.25, p.z, { seg: 6 }); b.ico(0.5, '#4f8a4a', p.x, top + 2.0, p.z, { d: 1 }); b.ico(0.36, '#5f9a52', p.x + 0.18, top + 2.35, p.z - 0.12, { d: 1 }); }
+    // yürüyüş yollarında sıcak taş halı (bordürlü) ve lobide kat haritası
+    for (const y of [YOL.W, YOL.E]) { const xm = (y.x0 + y.x1) / 2, w = y.x1 - y.x0 - 0.3; b.box(w, 0.005, AVM.z1 - LOBI_Z1 - 0.8, '#e2d4bb', xm, top + 0.004, (LOBI_Z1 + AVM.z1) / 2); for (const sx of [-1, 1]) b.box(0.07, 0.006, AVM.z1 - LOBI_Z1 - 0.8, '#b08a5a', xm + sx * w / 2, top + 0.005, (LOBI_Z1 + AVM.z1) / 2); }
+    // merdiven adası: iki yanda uzun saksı (çiçekli çit) ve dışa, dükkânlara bakan ahşap banklar
+    for (const sx of [-1, 1]) {
+      const kx = sx < 0 ? MERD.kx0 : MERD.kx1, pz = (ADA.z0 + ADA.z1) / 2, L = ADA.z1 - ADA.z0, px = kx + sx * 0.3, bx = kx + sx * 0.72;
+      b.box(0.42, 0.5, L, '#9aa5b0', px, top + 0.25, pz, { r: 0.04, s: 2 }); b.box(0.36, 0.02, L - 0.06, '#5a4632', px, top + 0.5, pz);
+      for (let i = 0; i < Math.floor(L / 0.55); i++) { const z = ADA.z0 + 0.3 + i * 0.55; b.ico(0.24, i % 2 ? '#4f8a4a' : '#5f9a52', px, top + 0.66, z, { d: 1 }); if (i % 3 === 1) b.sph(0.07, i % 2 ? '#e0533c' : '#ffcf5a', px + sx * 0.08, top + 0.86, z + 0.1, { ws: 6, hs: 4 }); }
+      for (const z of [ADA.z0 + L * 0.27, ADA.z0 + L * 0.73]) { b.box(0.42, 0.07, 1.6, '#b8875a', bx, top + 0.44, z); b.box(0.06, 0.32, 1.6, '#b8875a', bx - sx * 0.19, top + 0.66, z); for (const dz of [-0.65, 0.65]) b.box(0.38, 0.42, 0.06, '#2b2f36', bx, top + 0.21, z + dz); }
+    }
+    // yürüyüş yollarının üstünde asılı sarkıt lambalar (ışık eklemez, parlayan küre)
+    for (const y of [YOL.W, YOL.E]) for (let z = LOBI_Z1 + 1.2; z < AVM.z1 - 0.6; z += 2.4) { const x = (y.x0 + y.x1) / 2; b.box(0.012, 0.42, 0.012, '#8a7a5a', x, top + 3.2, z); b.cyl(0.05, 0.05, 0.05, '#c9a23a', x, top + 2.98, z, { seg: 8 }); l.sph(0.15, '#fff4d6', x, top + 2.82, z, { ws: 10, hs: 8 }); }
+    // zemin: merdivenin arkasında çeşme, arkasındaki duvarda dikey bahçe
+    if (k === 0) {
+      const { x, z, r } = CESME;
+      b.cyl(r, r + 0.05, 0.42, '#d9d2c4', x, top + 0.21, z, { seg: 28 }); b.tor(r - 0.03, 0.06, '#efe9df', x, top + 0.42, z, { rx: HP, ts: 28 });
+      l.cyl(r - 0.1, r - 0.1, 0.02, '#7fc7e6', x, top + 0.36, z, { seg: 28 });
+      b.cyl(0.12, 0.16, 0.9, '#d9d2c4', x, top + 0.75, z, { seg: 10 }); b.cyl(0.42, 0.12, 0.16, '#efe9df', x, top + 1.22, z, { seg: 18 }); l.cyl(0.36, 0.36, 0.015, '#9fe0f5', x, top + 1.3, z, { seg: 18 });
+      b.cyl(0.07, 0.09, 0.3, '#d9d2c4', x, top + 1.45, z, { seg: 8 }); l.sph(0.09, '#c9efff', x, top + 1.64, z, { ws: 8, hs: 6 });
+      const bw = 4.2, bz = AVM.z1 - 0.27; b.box(bw, 2.0, 0.06, '#3f6b3a', x, top + 1.45, bz);
+      for (let i = 0; i < 26; i++) b.ico(0.22 + (i % 3) * 0.05, ['#4f8a4a', '#5f9a52', '#3f7a3a'][i % 3], x - bw / 2 + 0.25 + (i * 0.73) % (bw - 0.5), top + 0.75 + ((i * 5) % 9) * 0.21, bz - 0.08, { d: 1 });
+      for (let i = 0; i < 7; i++) b.sph(0.06, i % 2 ? '#f2a2b3' : '#ffcf5a', x - bw / 2 + 0.5 + i * 0.52, top + 1.0 + (i % 3) * 0.5, bz - 0.2, { ws: 6, hs: 4 });
+    }
     kg.add(b.mesh(solid, true, true)); if (!gl.empty) { const gm = gl.mesh(glass, false, false); gm.renderOrder = 2; kg.add(gm); } if (!l.empty) kg.add(l.mesh(glow, false, false));
   }
 

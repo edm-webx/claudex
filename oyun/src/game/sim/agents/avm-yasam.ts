@@ -10,7 +10,7 @@
 import type { System, SimCtx, Vec2 } from '../../../engine/api';
 import type { AgentEnv } from './env';
 import type { Actor } from './types';
-import { AVM, HOL, ODA_X, ODA_Z, AVM_GIRIS, LOBI_DEKOR, katY, yolculuk, avmYol, avmGidis, avmGelis } from '../../../content/avm-kat';
+import { AVM, HOL, ODA_X, ODA_Z, AVM_GIRIS, LOBI_DEKOR, LOBI_Z1, YOL, katY, yolculuk, avmYol, avmGidis, avmGelis } from '../../../content/avm-kat';
 import { EGLENCE_KAT, SALONLAR, SEYIRCI, KULIS, BASAMAK, MUZISYEN, SAHNE, BANKLAR, seans, konser, type Salon } from '../../../content/avm-eglence';
 import { realmAt } from '../../../content/realm';
 
@@ -37,7 +37,8 @@ export function createAvmYasam(env: AgentEnv): AvmYasamSystem {
   let n = 0, spawnT = 0, icerde = false, muzikT = 0, etkT = 0;
   const say = (a: Actor, t: string, s = 2.4) => { a.say = t; a.sayT = s; };
   const pick = <T>(xs: readonly T[]): T => xs[Math.floor(rng.next() * xs.length)];
-  const holNokta = (): Vec2 => ({ x: HOL.x0 + 0.6 + rng.next() * (HOL.x1 - HOL.x0 - 1.2) * (rng.next() < 0.5 ? 0.25 : 1), z: 47.2 + rng.next() * 9 });
+  // 2026-11-22: hol büyüdü, ortada merdiven adası var: gezenler yalnız iki yürüyüş yolunda durur (adanın / çeşmenin içinde değil)
+  const holNokta = (): Vec2 => { const y = rng.next() < 0.5 ? YOL.W : YOL.E; return { x: y.x0 + rng.next() * (y.x1 - y.x0), z: LOBI_Z1 + 0.3 + rng.next() * (AVM.z1 - LOBI_Z1 - 1.6) }; };
   const yolNokta = (): Vec2 => { const p = holNokta(); return { x: rng.next() < 0.5 ? HOL.x0 + 0.5 + rng.next() * 1.0 : HOL.x1 - 1.5 + rng.next() * 1.0, z: p.z }; };
 
   function yeni(at: Pt, kat: number): Z {
@@ -151,7 +152,7 @@ export function createAvmYasam(env: AgentEnv): AvmYasamSystem {
 
   function doldur() {   // oyuncu içeri girince AVM boş görünmesin: ziyaretçilerin çoğu zaten katlarda
     for (let i = 0; i < ZIYARETCI_HEDEF - 3; i++) {
-      const kat = Math.floor(rng.next() * AVM.KAT), p = kat === EGLENCE_KAT && rng.next() < 0.5 ? { x: SEYIRCI.x0 + rng.next() * 2, z: 48.5 + rng.next() * 6 } : yolNokta();
+      const kat = Math.floor(rng.next() * AVM.KAT), p = kat === EGLENCE_KAT && rng.next() < 0.5 ? { x: SEYIRCI.x0 + rng.next() * 2, z: SEYIRCI.z0 + 0.3 + rng.next() * (SEYIRCI.z1 - SEYIRCI.z0 - 0.6) } : yolNokta();
       const z = yeni({ ...p, y: katY(kat) }, kat); sonraki(z);
     }
     const h = env.host.hour(), y3 = katY(EGLENCE_KAT);
