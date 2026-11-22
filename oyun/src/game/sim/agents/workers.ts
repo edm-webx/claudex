@@ -22,6 +22,7 @@ import { BULASIK, MUTFAK_MIN_STAGE, mutfakEsya, pisirIstasyonu } from '../../../
 import { createRoller, type ValeCar } from './roller';
 import { kasaDurus } from '../../../content/musteri';
 import { kanatOf, masaCati, catiAyak, catiYukari, catiAsagi, catiIc, catiTaraf, katY } from '../../../content/kanat';
+import { BUFE, PARK, HEYKEL } from '../../../content/prefabs/iskele/layout';
 /** BUF-05: masa biletindeki yiyecek (FoodId) mutfakta kendi tabağıyla pişer ve garsonla taşınır (taşıyıcı ürün köprüsü yok). */
 export type { DishId, FoodId } from '../../../content/yemek-menu';
 
@@ -79,10 +80,12 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
       return kasaDurus({ pos: k, pile: kp }, Math.max(0, i));
     }
     if (ROLES[rt.w.role]?.on) {   // front-of-house posts around the counter
-      const c = book.get('counter.standAt'), i = rows.filter((x) => x.w.role === rt.w.role).indexOf(rt);
-      const o: Record<string, [number, number]> = { guvenlik: [4.2, 3.2], muzisyen: [-5.5, 4.2], hostes: [2.6, 4.4], mudur: [1.2, 1.8], vale: [7.5, 6.5] };
-      const [dx, dz] = o[rt.w.role] || [0, 3];
-      return { x: c.x + dx + i * 1.1, z: c.z + dz };
+      // 2026-11-22: the büfe front is the promenade edge now: security by the queue, the musician and the hostess in the park
+      // behind (by the monument / the büfe tables), the manager at the east corner, the valet at the podium on the promenade
+      const i = rows.filter((x) => x.w.role === rt.w.role).indexOf(rt);
+      const o: Record<string, [number, number]> = { guvenlik: [BUFE.x1 + 0.6, BUFE.z1 + 0.6], muzisyen: [HEYKEL.x - 1.5, HEYKEL.z + 2.6], hostes: [HEYKEL.x + 1.2, PARK.z1 - 0.4], mudur: [BUFE.x1 + 1.2, BUFE.z0 + 1.6], vale: [5.0, 6.2] };
+      const [x, z] = o[rt.w.role] || [BUFE.x1 + 1.0, BUFE.z1 + 1.0];
+      return { x: x + i * 1.1, z };
     }
     return book.get('jobCorner');
   }
@@ -203,6 +206,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
     }
     rt.job = null; rt.state = 'toGeri'; goVia(rt, { x: tp[0].gx, z: tp[0].gz });
   }
+  const SABIT = new Set(['masaAct', 'serve', 'wipe']);
   const GARSON_IS = new Set(['toPass', 'pickJob', 'toTable', 'serve', 'toGeri', 'toMasa', 'masaAct', 'toClean', 'wipe']);
   function garsonWork(rt: WRt, S: GameState, dt: number) {
     const fx = traitFx(rt.w), a = rt.a, wid = rt.w.id;
@@ -331,7 +335,8 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
       // 2026-10-24 user: "dükkanın içi kirli duruyor, temizlikçi paspas atsın": with tables clean, mop the kiosk floor
       if (zeminSave(S as unknown as { zones: Record<string, Record<string, unknown>> }).kir > 0.2) { rt.state = 'mop'; rt.t = 0; rt.loadT = 0; rt.jobKey = '0'; say(rt, rng.pick(['Paspas zamanı!', 'Basmayın, ıslak!', 'Pırıl pırıl olacak.']), 2.2); return; }
       // BUF-13: kiosk is clean: the kitchen floor (dirt from cooks and dishwashers, zemin.ts mutfakKir) is mopped next
-      if (S.stage >= MUTFAK_MIN_STAGE && (zeminSave(S as unknown as { zones: Record<string, Record<string, unknown>> }).mutfakKir || 0) > 0.25) { rt.state = 'mopK'; rt.t = 0; rt.loadT = 0; rt.jobKey = '0'; say(rt, 'Mutfak kayganmış, paspas!', 2.2); return; }
+      // 2026-11-22: mutfağı tek temizlikçi siler: iki temizlikçi aynı koridor noktasına yürüyüp birbirini sonsuza dek itiyordu (masalar 180 sn kirli kaldı)
+      if (S.stage >= MUTFAK_MIN_STAGE && (zeminSave(S as unknown as { zones: Record<string, Record<string, unknown>> }).mutfakKir || 0) > 0.25 && !rows.some((o) => o !== rt && o.state === 'mopK')) { rt.state = 'mopK'; rt.t = 0; rt.loadT = 0; rt.jobKey = '0'; say(rt, 'Mutfak kayganmış, paspas!', 2.2); return; }
       const h = home(rt, S); if (!near2(a, h, 0.5)) goVia(rt, h);   // çatıdaysa önce iner
       return;
     }
@@ -696,7 +701,12 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
         // BUF-05: the kitchen aisles are one body wide: two people meeting head-on there squeeze past (no push, no aisle deadlock)
         if ((rows[i].wk.moving || rows[j].wk.moving) && mutfakAlan(p) && mutfakAlan(q)) continue;   // 2026-11-21: servis koridoru da tek kişilik
         const nx = d > 0.001 ? dx / d : 1, nz = d > 0.001 ? dz / d : 0, push = (R - d) * Math.min(1, dt * 6) * 0.5;
-        p.x -= nx * push; p.z -= nz * push; q.x += nx * push; q.z += nz * push;
+        // 2026-11-22: masada iş yapan (sipariş/servis/silme) yerinde kalır; yanından geçen (hostes, öbür garson) iki payı da alır.
+        // Eskiden aynı noktaya yürüyen biri masadaki garsonu 1.7 m öteye itiyordu: garson masadan uzakta sipariş alıyordu (aşama botu ışınlanma).
+        const ka = SABIT.has(rows[i].state) && !rows[i].wk.moving, kb = SABIT.has(rows[j].state) && !rows[j].wk.moving;
+        if (ka && kb) continue;
+        const pa = ka ? 0 : kb ? 2 : 1, pb = kb ? 0 : ka ? 2 : 1;
+        p.x -= nx * push * pa; p.z -= nz * push * pa; q.x += nx * push * pb; q.z += nz * push * pb;
       }
     },
     rows: () => rows.map((r) => ({ id: r.w.id, name: r.w.name, role: r.w.role, state: r.state, x: r.a.x, z: r.a.z, rank: Number(r.w.rank || 0), ist: r.state === 'kGoCook' || r.state === 'kCook' || r.state === 'kTasiAl' ? r.jobKey : undefined })),

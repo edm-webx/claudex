@@ -35,7 +35,7 @@ import { restoranApi } from '../../sim/restoran';
 import { createRtView, type RtView } from './rtview';
 import type { Rules } from '../../sim/state';
 import { partPos } from '../../../content/prefabs/iskele/kiosk';
-import { BUFE } from '../../../content/prefabs/iskele/layout';
+import { BUFE, BUFE_DZ } from '../../../content/prefabs/iskele/layout';
 import { useSkyEnv } from './glb';
 import { setZeminSky } from '../../../engine/render/zemin-islak';
 import { ensureKit, MAT, radialTex } from '../../../content/prefabs/common/v2kit';
@@ -232,7 +232,7 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
     layout = stageLayout(stage);
     STATION_KINDS.forEach(kind => {
       const L = layout.stations[kind], S1 = stationBuilt(kind, 1, stage);
-      poses[kind] = { x: L.x, z: L.z != null ? L.z : -2.75 - 0.42 - S1.d / 2, ry: L.rotY };
+      poses[kind] = { x: L.x, z: L.z != null ? L.z : -2.75 - 0.42 - S1.d / 2 + BUFE_DZ, ry: L.rotY };
     });
   }
   function anchorsNow(): Record<string, AnchorDef> {
@@ -556,7 +556,7 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
     setWindow(open) { winTarget = open ? 1 : 0; },
     playerStart(s?: number) { const L = s == null || s === stage ? layout : stageLayout(clamp(Math.round(+s) || 1, 1, 5)); return { x: L.playerStart.x, z: L.playerStart.z }; },
     layout: () => layout,
-    obstacles: () => staticObstacles().concat(prefab.colliders('iskele.kiosk', kioskOverrides()).map(r => ({ ...r, tag: 'kiosk' })), dynObstacles()),
+    obstacles: () => staticObstacles().concat(prefab.colliders('iskele.kiosk', kioskOverrides()).map(r => ({ ...r, z0: r.z0 + BUFE_DZ, z1: r.z1 + BUFE_DZ, tag: 'kiosk' })), dynObstacles()),
     makeItem(product, tierN = 1) {
       const HT = ITEM_HT as Record<string, number[]>;
       const p = HT[product] ? product : 'cay', t = clamp(Math.round(+tierN) || 1, 1, 4);

@@ -6,7 +6,7 @@
 import * as T from 'three';
 import { Batch, mtx, geoc, col, mixc, shade, clamp, lerp, easeInOut, PI, TAU, HP, roundBox } from '../../../engine/prefab/batch';
 import { K, R, MAT, rnd, v2rng, rrect, fitText, txt, canvasTex, atlasTex, radialTex } from '../common/v2kit';
-import { WATER_Y, SEAT_H, PIER, BUFE, GANG, WIN_Z, NEXT_SIGN, BENCHES, local2world as l2w, rectAABB, COUNTER_BOARD, type Obstacle } from './layout';
+import { WATER_Y, SEAT_H, PIER, BUFE_YEREL as BUFE, GANG, WIN_Z_YEREL as WIN_Z, NEXT_SIGN, BENCHES, local2world as l2w, rectAABB, COUNTER_BOARD_YEREL as COUNTER_BOARD, BUFE_DZ, type Obstacle } from './layout';   // kiosk builds in its own (v2) frame, placed at z = BUFE_DZ
 const V3 = (x = 0, y = 0, z = 0): T.Vector3 => new T.Vector3(x, y, z);
 void [mtx, geoc, col, mixc, shade, clamp, lerp, easeInOut, PI, TAU, HP, roundBox, K, R, MAT, rnd, v2rng, rrect, fitText, txt, canvasTex, atlasTex, radialTex, WATER_Y, SEAT_H, PIER, BUFE, GANG, WIN_Z, NEXT_SIGN, BENCHES, l2w, rectAABB, V3];
 export type { Obstacle };
@@ -244,6 +244,11 @@ export function buildKiosk(stage?: any, rn?: any) {
     }
   }
 
+  /* 2026-11-22: the tea garden and the bust belong to the pier, not to the büfe: they stay where they were (world frame) while the
+     kiosk is placed BUFE_DZ towards the promenade, so they are built shifted back by -BUFE_DZ. */
+  const sabit = [A, GL, ST, BU]; sabit.forEach(bb => bb.push(mtx(0, 0, -BUFE_DZ, 0, 0, 0)));
+  const obW = (x0: number, x1: number, z0: number, z1: number, tag?: string) => ob(x0, x1, z0 - BUFE_DZ, z1 - BUFE_DZ, tag);
+  const lampW = (l: { x: number; y: number; z: number; s: number }) => K2.lamps.push({ ...l, z: l.z - BUFE_DZ });
   /* ---- stage 3+: tea garden on the west side ---- */
   if (stage >= 3) {
     const lat = stage >= 5 ? '#c9a24a' : '#a8774f';
@@ -264,20 +269,21 @@ export function buildKiosk(stage?: any, rn?: any) {
     for (let z = -10.2; z <= 1.6; z += 1.3) A.box(5.6, 0.07, 0.09, '#9c6c46', -7.3, 2.92, z, { r: 0.015 });
     const vr = v2rng(55);
     for (let i = 0; i < 26; i++) { const x = vr.pick([-9.95, -4.6]), z = vr.range(-10.2, 1.4); A.ico(vr.range(0.22, 0.38), vr.pick(['#6f9e4f', '#7fae5e', '#5d8f45']), x + vr.range(-0.15, 0.15), 2.85 + vr.range(-0.1, 0.12), z, { d: 0 }); if (vr.chance(0.4)) A.sph(0.07, vr.pick([K.pink, '#d86bb0', '#fff6e6']), x + 0.15, 2.75, z + 0.1, { ws: 5, hs: 4 }); }
-    for (let i = 0; i < 16; i++) { const t = i / 15, x = lerp(-9.9, -4.65, t), y = 2.72 - Math.sin(t * PI) * 0.35; BU.sph(0.065, '#ffffff', x, y, -7.4, { ws: 6, hs: 4 }); BU.sph(0.065, '#ffffff', x, y, -1.6, { ws: 6, hs: 4 }); K2.lamps.push({ x, y, z: -7.4, s: 0.5 }, { x, y, z: -1.6, s: 0.5 }); }
-    for (let i = 0; i < 12; i++) { const t = i / 11, z = lerp(-10.3, 1.5, t), y = 2.7 - Math.sin(t * PI * 2) * 0.12; BU.sph(0.065, '#ffffff', -9.9, y, z, { ws: 6, hs: 4 }); K2.lamps.push({ x: -9.9, y, z, s: 0.5 }); }
+    for (let i = 0; i < 16; i++) { const t = i / 15, x = lerp(-9.9, -4.65, t), y = 2.72 - Math.sin(t * PI) * 0.35; BU.sph(0.065, '#ffffff', x, y, -7.4, { ws: 6, hs: 4 }); BU.sph(0.065, '#ffffff', x, y, -1.6, { ws: 6, hs: 4 }); lampW({ x, y, z: -7.4, s: 0.5 }); lampW({ x, y, z: -1.6, s: 0.5 }); }
+    for (let i = 0; i < 12; i++) { const t = i / 11, z = lerp(-10.3, 1.5, t), y = 2.7 - Math.sin(t * PI * 2) * 0.12; BU.sph(0.065, '#ffffff', -9.9, y, z, { ws: 6, hs: 4 }); lampW({ x: -9.9, y, z, s: 0.5 }); }
     // pots along the lattice, a "Çay Bahçesi" sign
     [[-9.8, -10.2], [-9.8, 1.4], [-4.9, -10.35], [-7.4, 1.45]].forEach(([x, z]) => { A.cyl(0.26, 0.2, 0.42, K.terracotta, x, 0.21, z, { seg: 10 }); A.ico(0.32, '#6f9e4f', x, 0.62, z, { d: 1 }); A.sph(0.07, K.red, x + 0.12, 0.8, z + 0.15, { ws: 6, hs: 4 }); A.sph(0.07, K.red, x - 0.1, 0.84, z + 0.1, { ws: 6, hs: 4 }); });
     A.box(1.9, 0.5, 0.06, '#8a5d3b', -8.6, 2.15, 1.86, { r: 0.02 }); A.label(1.8, 0.42, R.bahce, -8.6, 2.15, 1.895);
-    ob(-10.35, -10.05, -10.5, 1.9, 'garden'); ob(-10.35, -6.9, 1.7, 1.9, 'garden'); ob(-10.3, -4.35, -10.85, -10.65, 'garden');
+    obW(-10.35, -10.05, -10.5, 1.9, 'garden'); obW(-10.35, -6.9, 1.7, 1.9, 'garden'); obW(-10.3, -4.35, -10.85, -10.65, 'garden');
   }
   if (stage >= 5) {
     // Martıköy Genel Merkez placeholder: a mustached bust of Sabri at the pier entrance
     A.box(0.9, 1.1, 0.9, '#e8e2d8', -6.6, 0.55, 3.35, { r: 0.05 }); A.box(1.0, 0.12, 1.0, K.gold, -6.6, 1.12, 3.35, { r: 0.03 });
     A.sph(0.42, K.gold, -6.6, 1.65, 3.35, { sy: 0.85 }); A.sph(0.3, K.gold, -6.6, 2.15, 3.4, {}); A.cap(0.05, 0.22, '#b07a1e', -6.6, 2.06, 3.68, { rz: HP });
     A.box(0.62, 0.2, 0.55, K.gold, -6.6, 2.42, 3.4, { r: 0.08 });
-    ob(-7.1, -6.1, 2.9, 3.8, 'prop');
+    obW(-7.1, -6.1, 2.9, 3.8, 'prop');
   }
+  sabit.forEach(bb => bb.pop());
   return { A, RF, TL, FL, BU, GL, ST, K2 };
 }
 
@@ -377,7 +383,8 @@ export function jobBoardInto(A?: any, x?: any, z?: any, ry?: any) {
   A.box(0.5, 0.04, 0.26, '#c9955c', 0, 0.9, 0.14, { r: 0.01 }); A.box(0.3, 0.02, 0.2, '#fffaf0', 0, 0.93, 0.14, { r: 0.004, ry: 0.2 });
   A.pop();
 }
-export function partPos(part?: any, stage?: any, K2?: any) {
+export function partPos(part?: any, stage?: any, K2?: any) { const p = partPos0(part, stage, K2); return V3(p.x, p.y, p.z + BUFE_DZ); }
+function partPos0(part?: any, stage?: any, K2?: any) {
   const s1 = stage === 1, z1 = BUFE.z1;
   switch (part) {
     case 'kepenk': return s1 ? V3(0, 1.2, z1 + 0.2) : V3(-0.2, 2.4, z1 + 0.1);

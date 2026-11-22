@@ -16,7 +16,7 @@ import { Batch, col, geoc, HP } from '../../../engine/prefab/batch';
 import type { Rect } from '../../../engine/api';
 import { ensureKit, MAT, R, K, radialTex, tileNewTex, tileWornTex } from '../common/v2kit';
 import { UG } from '../../ustgecit';
-import { PIER, WALKABLE, staticObstacles, stageLayout, PARTS, type Obstacle } from './layout';
+import { PIER, WALKABLE, staticObstacles, stageLayout, PARTS, BUFE_DZ, type Obstacle } from './layout';
 import { makeSea, makeSeaMask, makeSkyline, makeBoats } from './scenery';
 import { buildPier, LAMPS } from './pier';
 import { buildKiosk, jobBoardInto, drawSign } from './kiosk';
@@ -77,7 +77,7 @@ export function kioskObstacles(stage: number, renewed: string): Obstacle[] {
   let o = kioskObCache.get(key);
   if (!o) {
     const kb = buildKiosk(stage, renewedMap(renewed));
-    const jb = stageLayout(stage).job.board;
+    const jb0 = stageLayout(stage).job.board, jb = [jb0[0], jb0[1] - BUFE_DZ, jb0[2]];   // kiosk frame (placed at z = BUFE_DZ)
     // colliders are the drawn wall boxes as they are: the zone bake blocks the cell row under any wall thinner than a
     // cell, and the player collides with these exact rects (nav solids), so no padding is needed
     o = kb.K2.obstacles.map((r: Obstacle) => ({ ...r })).concat([rectAABB(jb[0], jb[1], 1.75, 0.3, jb[2], 'job')]);
@@ -94,7 +94,7 @@ function buildKioskObject(params: Params): T.Group {
   const kb = buildKiosk(stage, renewed);
   const K2 = kb.K2;
   const layout = stageLayout(stage);
-  const jb = layout.job.board; jobBoardInto(kb.A, jb[0], jb[1], jb[2]);
+  const jb = layout.job.board; jobBoardInto(kb.A, jb[0], jb[1] - BUFE_DZ, jb[2]);
   const f = K2.flo;
   if (f.hang) [-0.42, 0.42].forEach(k => kb.A.cyl(0.006, 0.006, f.hang + 0.08, '#4a4a4a', f.x + k * f.len, f.y + (f.hang + 0.08) / 2, f.z, { seg: 3 }));
   const add = (b: Batch, mat: T.Material, cast: boolean, recv: boolean, name: string) => { if (b.empty) return null; const m = own(b.mesh(mat, cast, recv)); m.name = name; root.add(m); return m; };
