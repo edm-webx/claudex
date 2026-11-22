@@ -87,7 +87,7 @@ const salonMasalar = (): IcItem[] => SALON_V.flatMap(v => SALON_U.map(u => it('s
 function kafeLayout(W: number, D: number, bistro: boolean): IcItem[] {
   // 2026-11-21 denetim: tezgâh arkasında 0.9 m personel koridoru (raf duvara yaslı, tezgâh öne alındı; eskiden 0.33 m kalıyordu)
   const bv = -D / 2 + 1.95, o: IcItem[] = [
-    it('rafArka', -1.2, -D / 2 + IC_DUVAR + 0.18, 5.6, 0.36), it('tezgah', -1.2, bv, 5.0, 0.75, { solid: true, c: bistro ? '#1d4f86' : '#7a3b1c' }), it('kasa', 0.9, bv, 0.4, 0.4, { y: 1.05 }),
+    it('rafArka', -1.7, -D / 2 + IC_DUVAR + 0.18, 4.6, 0.36), it('icecekDolap', 1.15, -D / 2 + IC_DUVAR + 0.3, 0.8, 0.55), it('tezgah', -1.2, bv, 5.0, 0.75, { solid: true, c: bistro ? '#1d4f86' : '#7a3b1c' }), it('kasa', 0.9, bv, 0.4, 0.4, { y: 1.05 }),
     it('menuPano', -1.2, -D / 2 + 0.27, 3.0, 0.05, { y: 2.3, txt: bistro ? 'SAHİL BİSTRO' : 'MEYDAN KAFE' }),
     masa(-3.1, 0.5, bistro ? 'masa4' : 'masa2'), masa(-3.1, 2.4), masa(-1.6, 1.45), masa(1.9, 0.85, bistro ? 'masa4' : 'masa2'), masa(1.9, 2.55),
     it('saksiB', W / 2 - 0.45, D / 2 - 0.45, 0.6, 0.6), it('lamba', 0, 0, W, D),
@@ -120,7 +120,7 @@ function okulLayout(W: number, D: number): IcItem[] {
   for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++) o.push(it('sira', -7.6 + c * 1.55, -1.3 + r * 1.4, 1.1, 0.55, { solid: true }));
   // the school canteen (business k4) in the east half
   const bv = -D / 2 + 1.95;   // 2026-11-21 denetim: kantin tezgâhı öne, arkada 0.9 m personel koridoru
-  o.push(it('tezgah', 5.2, bv, 4.6, 0.7, { solid: true, c: '#e0533c' }), it('rafArka', 5.2, -D / 2 + IC_DUVAR + 0.18, 4.8, 0.36), it('kasa', 6.9, bv, 0.4, 0.4, { y: 1.05 }),
+  o.push(it('tezgah', 5.2, bv, 4.6, 0.7, { solid: true, c: '#e0533c' }), it('rafArka', 4.35, -D / 2 + IC_DUVAR + 0.18, 2.9, 0.36), it('icecekDolap', 6.3, -D / 2 + IC_DUVAR + 0.3, 0.8, 0.55), it('kasa', 6.9, bv, 0.4, 0.4, { y: 1.05 }),
     it('menuPano', 5.2, -D / 2 + 0.27, 2.6, 0.05, { y: 2.2, txt: 'KANTİN' }),
     it('tostMak', 4.0, bv, 0.5, 0.4, { esya: 'tost_mak', y: 1.05 }), it('buzdolap', 8.5, -D / 2 + 0.5, 0.9, 0.7, { esya: 'buzdolap' }),
     it('semaver', 5.4, bv, 0.4, 0.4, { esya: 'semaver_k', y: 1.05 }), it('firinK', 2.4, -D / 2 + 0.5, 0.9, 0.7, { esya: 'mikrodalga' }),
@@ -228,7 +228,7 @@ function avmOdaLayout(W: number, D: number, tur: IcTur): IcItem[] {
 function kafeteryaLayout(W: number, D: number): IcItem[] {
   const bv = -D / 2 + 1.45;   // 2026-11-21 denetim: tezgâh arkasında 0.9 m koridor; masalar kuyruğun önünden doğuya alındı
   return [
-    it('lamba', 0, 0, W, D), it('tezgah', -4.8, bv, 4.6, 0.6, { solid: true, c: '#2f9e5a' }), it('kasa', -2.9, bv, 0.4, 0.4, { y: 1.05 }), it('menuPano', -4.8, -D / 2 + 0.27, 2.8, 0.05, { y: 2.0, txt: 'KAFETERYA' }),
+    it('lamba', 0, 0, W, D), it('tezgah', -4.8, bv, 4.6, 0.6, { solid: true, c: '#2f9e5a' }), it('kasa', -2.9, bv, 0.4, 0.4, { y: 1.05 }), it('menuPano', -4.8, -D / 2 + 0.27, 2.8, 0.05, { y: 2.0, txt: 'KAFETERYA' }), it('icecekDolap', -4.0, -D / 2 + IC_DUVAR + 0.14, 0.8, 0.26),
     masa(1.1, 0.7), masa(2.8, 0.7), it('dolap', 5.6, -D / 2 + 0.3, 5.0, 0.45, { solid: true }), it('bank', 5.6, 0.2, 3.6, 0.4, { solid: true }),
     it('pano', 2.2, -D / 2 + 0.17, 1.6, 0.06, { y: 1.5, txt: 'SOYUNMA' }), it('dus', 8.2, 0.9, 1.0, 1.2),
     it('semaver', -5.8, bv, 0.4, 0.4, { esya: 'cay_mak', y: 1.05 }), it('buzdolap', -7.9, -D / 2 + 0.45, 0.9, 0.7, { esya: 'icecek_dolap' }),
