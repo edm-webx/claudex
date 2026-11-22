@@ -618,7 +618,7 @@ export function createIcMekan(d: IcDeps): IcView {
           if (!exists || dist > R + 30) { kill(m.id); continue; }
           if (dist > R + 18) continue;
           const o = m.arsa ? own[m.arsa] || null : null, fine = (!!m.salon || !!m.mutfak) && sl.stage >= 10, mk = m.mutfak ? d.mutfak() : null;
-          const key = (o ? o.lv + ':' + o.isci + ':' + (o.tema || '') + ':' + [...o.esya].sort().join(',') : '-') + '|' + (m.salon ? sl.esya.filter(e => e).sort().join(',') + (fine ? 'F' : '') : '') + (mk ? 'M' + sl.stage + ':' + mk.ekip.map(e => e.rol + e.rank).join(',') : '');
+          const key = (o ? o.lv + ':' + o.isci + ':' + (o.tema || '') + ':' + [...o.esya].sort().join(',') : '-') + '|' + (m.salon ? sl.esya.filter(e => e).sort().join(',') + (fine ? 'F' : '') : '') + (mk ? 'M' + sl.stage + ':' + mutfakEsya(sl.stage).join(',') + ':' + mk.ekip.map(e => e.rol + e.rank).join(',') : '');
           const r = rooms.get(m.id); if (r && r.key === key) continue;
           kill(m.id); const nb = buildRoom(m, o, sl.esya, fine, sl.stage, mk ? mk.ekip : []); (m.bina === 'avm' ? avmHolder : holder).add(nb.g); rooms.set(m.id, { key, g: nb.g, an: nb.an });
         }

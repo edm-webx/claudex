@@ -7,6 +7,7 @@
  * Items with `esya` show only when that equipment is bought (never solid, so the static walk grid stays valid).
  */
 import { ODA_X, ODA_Z, ODA_OLCU, SINEMA_BUFE } from './avm-kat';
+import { mutfakEsya, MUTFAK_IST_BY_ID } from './mutfak';
 export type Yon = '+x' | '-x' | '+z' | '-z';
 export type IcTur = 'kafe' | 'bistro' | 'kirtasiye' | 'okul' | 'lokanta' | 'kafeterya' | 'banka' | 'hastane' | 'acil' | 'morg' | 'kahvalti' | 'balik' | 'mutfak' | 'giyim' | 'elektronik' | 'oyuncak'
   | AvmYemekTur;
@@ -440,7 +441,18 @@ function duvaraOturt(i: IcItem, W: number, D: number): IcItem {
 }
 
 /** World-space colliders: walls with the door gap plus solid furniture (`stage`: büfe salonunda o aşamada kurulmamış masa yok). */
-export function icColliders(m: IcMekan, stage = 99): Rect[] {
+/** 2026-11-22 (sahibi: "her yerinde hayaletlenme, içinden geçiliyor"): restoranın salon ve mutfak eşyaları gövdeleriyle katı.
+ *  Yerde duran (tavana / duvara asılı olmayan) her eşya; satın alınan eşya yalnız alınmışsa (salon: sahip listesi, mutfak: mutfakEsya). */
+const RESTORAN_KATI = new Set(['sogukOda', 'ocakK', 'izgaraK', 'fritoz', 'bulasik', 'tasFirin', 'doner', 'pass', 'cayBar', 'buzdolap', 'salata', 'mezeDolap', 'tatliVitrin', 'sefMasa',
+  'semaverDev', 'gozleme', 'balKaymak', 'sarkuteri', 'buzTezgah', 'mangal', 'akvaryum', 'piyano']);
+function restoranKati(m: IcMekan, i: IcItem, stage: number, sahip?: readonly string[]): boolean {
+  if (!(m.mutfak || m.salon) || !RESTORAN_KATI.has(i.k)) return false;
+  if (!i.esya) return true;
+  if (m.mutfak) return MUTFAK_IST_BY_ID[i.esya] ? mutfakEsya(stage).includes(i.esya) : true;
+  return !sahip || sahip.includes(i.esya);
+}
+export function icColliders(m: IcMekan, stage = 99, sahip?: readonly string[]): Rect[] {
+  const oda = m;
   if (m.mutfak) m = mutfakOda(stage);   // BUF-22: kitchen walls follow the stage room
   const { W, D } = icDim(m), t = IC_DUVAR, g = IC_KAPI / 2, o: Rect[] = [];
   o.push(rectW(m, -W / 2, W / 2, -D / 2, -D / 2 + t));
@@ -450,7 +462,7 @@ export function icColliders(m: IcMekan, stage = 99): Rect[] {
     else o.push(rectW(m, u0, u1, -D / 2, D / 2));
   }
   if (!m.acik) o.push(rectW(m, -W / 2, -g, D / 2 - t, D / 2), rectW(m, g, W / 2, D / 2 - t, D / 2));
-  for (const i of icLayout(m, Math.min(10, stage))) if (i.solid && (i.asama ?? 0) <= stage) { const sw = (i.ry || 0) % 2 ? i.d : i.w, sd = (i.ry || 0) % 2 ? i.w : i.d; o.push(rectW(m, i.u - sw / 2, i.u + sw / 2, i.v - sd / 2, i.v + sd / 2)); }
+  for (const i of icLayout(m, Math.min(10, stage))) if ((i.solid || restoranKati(oda, i, stage, sahip)) && (i.asama ?? 0) <= stage) { const sw = (i.ry || 0) % 2 ? i.d : i.w, sd = (i.ry || 0) % 2 ? i.w : i.d; o.push(rectW(m, i.u - sw / 2, i.u + sw / 2, i.v - sd / 2, i.v + sd / 2)); }
   return o;
 }
 /** Same, relative to the building centre (prefab-local colliders for an unrotated placement). */

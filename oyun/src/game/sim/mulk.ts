@@ -38,6 +38,7 @@ import { fmtMoney } from './util';
 import { acilisEksik, acilisGorunur, tadilatEksik, durumOf, DUKKAN_GOREV, dukkanGorevOdul, satinSandik, type AcilisDurum } from '../../content/acilis';
 import { salonOf, salonKat } from './salon';
 import { kanatKurulu } from '../../content/kanat';
+import { mutfakAcik, istasyonFiyat, MUTFAK_IST_BY_ID, setMutfakAlinan } from '../../content/mutfak';
 
 export interface Hedef { id: string; ad: string; stat: string; hedef: number; sayi: number; odul: number; alindi: boolean }
 export interface Env {
@@ -443,6 +444,16 @@ export function installMulk(K: Kernel) {
     if (S.money < d.fiyat) { K.toast(d.ad + ' ' + fmtMoney(d.fiyat) + '.', 'bad'); return; }
     K.spend(d.fiyat); z.esya.push(e); K.toast(d.ikon + ' ' + d.ad + ' salona kuruldu: ' + d.desc, 'good'); K.addXP(20); K.saveNow();
   }
+  /** 2026-11-22 restoran mutfağı: S.zones.mutfak.alinan (sarı kareyle alınan istasyonlar). Eski kayıt (v yok): o aşamaya kadarki bütün
+   *  istasyonlar alınmış sayılır; yeni oyun (aşama < 3) boş başlar, pass ve ocak her zaman hazır (content/mutfak.ts MUTFAK_HAZIR) */
+  const mutfakZ = () => { const z = (S.zones.mutfak ||= {}) as unknown as { v?: number; alinan?: string[] }; if (!z.v) { z.v = 1; z.alinan = (S.stage || 1) >= 3 ? mutfakAcik(S.stage || 1) : []; } z.alinan ||= []; return z as { v: number; alinan: string[] }; };
+  function mutfakAl(id: string) {
+    const d = MUTFAK_IST_BY_ID[id], z = mutfakZ(); if (!d) return;
+    if (z.alinan.includes(id)) { K.toast('Mutfakta zaten var.', 'info'); return; }
+    if ((S.stage || 1) < d.stage) { K.toast(d.ad + ' için büfe ' + d.stage + '. aşamada olmalı.', 'info'); return; }
+    const f = istasyonFiyat(id); if (S.money < f) { K.toast(d.ad + ' ' + fmtMoney(f) + '.', 'bad'); return; }
+    K.spend(f); z.alinan.push(id); setMutfakAlinan(z.alinan); K.toast('🍳 ' + d.ad + ' mutfağa kuruldu: bu istasyonun yemekleri artık burada pişer.', 'good'); K.addXP(20); K.logEv('mutfakIstasyon', { id }); K.saveNow();
+  }
   const salonYakin = () => icIcinde(IC_BY_ID.salonW, K.playerPos, 0.3) && (S.stage || 1) >= 6 ? 'W' : icIcinde(IC_BY_ID.salonE, K.playerPos, 0.3) && (S.stage || 1) >= 7 ? 'E' : null;
   function evAc(id: string) {
     const q = plotOf(id); if (!q || !q.p || q.p.tur !== 'ev') return;
@@ -470,7 +481,7 @@ export function installMulk(K: Kernel) {
 
   // Bütün satın alınabilir dükkânlar (AVM + sokak) ve büfe salonları: satın alma, alet, tadilat büfedeki gibi sarı karelerle (isletme-kareler.ts)
   const avmKare = installIsletmeKareler(K, {
-    arsaAl, kafeEsya, yukselt, salonEsya, plot: id => arsa().plots[id] as never,
+    arsaAl, kafeEsya, yukselt, salonEsya, mutfakAl, mutfakVar: () => mutfakZ().alinan, plot: id => arsa().plots[id] as never,
     yukFiyat: id => { const q = plotOf(id)!; return yukPrice(q.a, DUKKAN_BY_ID[q.p!.tip], q.p!.lv).tl; },
     asamaAd: (id, lv) => isletmeOf(id).asama[lv - 1] || lv + '. seviye',
     salonVar: () => salonZ().esya,
@@ -488,6 +499,7 @@ export function installMulk(K: Kernel) {
   K.addSystem({
     id: 'mulk', order: 50, phase: 'sim',
     step(ctx) {
+      setMutfakAlinan(mutfakZ().alinan);
       if (!K.rt.started) return;
       kafeHost.fp = kt.on; ktStep(ctx.dt);
       acc += ctx.dt; if (acc < 0.25) return;
@@ -531,7 +543,7 @@ export function installMulk(K: Kernel) {
       case 'krediAl': case 'krediOde': case 'tlYatir': case 'tlCek': case 'esyaYatir': case 'esyaCek': bankaOp(op, id, n); break;
       case 'gunlukAl': gunlukAl(id); break;
       case 'arsaAl': if (avmKaresiDisinda(id)) break; arsaAl(id); break; case 'arsaKur': arsaKur(id, String(c.tur ?? ''), String(c.tip ?? '')); break;
-      case 'yukselt': yukselt(id); break; case 'tadilatAtla': tadilatAtla(id); break; case 'adminTadilatBitir': tadilatAtla(id, true); break; case 'evAc': evAc(id); break; case 'isciAl': isciAl(id); break; case 'ilanAl': ilanAl(id, String(c.e ?? '')); break; case 'ilanYenile': ilanYenile(id); break; case 'kov': kov(id, flo(c.n)); break; case 'kafeEsya': kafeEsya(id, String(c.e ?? '')); break; case 'tema': tema(id, String(c.e ?? '')); break; case 'salonEsya': salonEsya(String(c.e ?? id)); break;
+      case 'yukselt': yukselt(id); break; case 'tadilatAtla': tadilatAtla(id); break; case 'adminTadilatBitir': tadilatAtla(id, true); break; case 'evAc': evAc(id); break; case 'isciAl': isciAl(id); break; case 'ilanAl': ilanAl(id, String(c.e ?? '')); break; case 'ilanYenile': ilanYenile(id); break; case 'kov': kov(id, flo(c.n)); break; case 'kafeEsya': kafeEsya(id, String(c.e ?? '')); break; case 'tema': tema(id, String(c.e ?? '')); break; case 'salonEsya': salonEsya(String(c.e ?? id)); break; case 'mutfakAl': mutfakAl(String(c.e ?? id)); break;
       case 'bilet': bilet(); break;
       case 'izle': if (!nearGate()) { K.toast('Maçı izlemek için halı saha girişine git.', 'info'); break; } K.command({ kind: 'halisaha', op: 'izle', bahis: c.bahis, n: Number(c.n) || 0 } as never); break;
       // yönetici paneli (2026-11-08): kafe seviyesi / işçi / kulüp, kapı ve para şartı yok

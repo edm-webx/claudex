@@ -52,7 +52,7 @@ export function gecitDuvar(): { x0: number; x1: number; z0: number; z1: number }
   return [{ x0: G.x0, x1: G.x0 + t, z0: G.z0, z1: G.kz0 }, { x0: G.x0, x1: G.x0 + t, z0: G.kz1, z1: G.z1 }, { x0: G.x1 - t, x1: G.x1, z0: G.z0, z1: G.z1 }];
 }
 /** Solid parts of the growth for the walk grid (halls, counters, kitchen, tables). */
-export function buyumeEngel(stage: number): { x0: number; x1: number; z0: number; z1: number; tag: string }[] {
+export function buyumeEngel(stage: number, salonSahip?: readonly string[]): { x0: number; x1: number; z0: number; z1: number; tag: string }[] {
   const o: { x0: number; x1: number; z0: number; z1: number; tag: string }[] = [];
   const add = (x0: number, x1: number, z0: number, z1: number, tag = 'buyume') => o.push({ x0, x1, z0, z1, tag });
   // table top only (as the kiosk tables, view/world/index.ts): the seats (±0.78 on the seat axis) and the garson spot stay walkable
@@ -60,8 +60,8 @@ export function buyumeEngel(stage: number): { x0: number; x1: number; z0: number
   if (stage >= 3) add(WT.x0 + 0.2, WT.x0 + 1.4, -9.0, -6.4, 'buyume-ocak');
   if (stage >= 4) add(ET.x1 - 1.3, ET.x1 - 0.1, ET.z0 + 0.3, ET.z0 + 2.0, 'buyume-dolap');
   // 2026-11-09 "her yere girilebilmeli": the halls are rooms with a door on the promenade side (content/ic-mekan.ts)
-  if (stage >= 6) icColliders(IC_BY_ID.salonW, stage).forEach(r => add(r.x0, r.x1, r.z0, r.z1, 'buyume-salon'));
-  if (stage >= 7) icColliders(IC_BY_ID.salonE, stage).forEach(r => add(r.x0, r.x1, r.z0, r.z1, 'buyume-salon'));
+  if (stage >= 6) icColliders(IC_BY_ID.salonW, stage, salonSahip).forEach(r => add(r.x0, r.x1, r.z0, r.z1, 'buyume-salon'));
+  if (stage >= 7) icColliders(IC_BY_ID.salonE, stage, salonSahip).forEach(r => add(r.x0, r.x1, r.z0, r.z1, 'buyume-salon'));
   // roof terrace stairs (stage 8): closed on the ground grid, only the scripted roof route (sim content/kanat.ts) uses them
   if (stage >= 8) for (const sd of ['W', 'E'] as const) { const k = merdivenKutu(sd); add(k.x0, k.x1, k.z0, k.z1, 'buyume-merdiven'); }
   if (stage >= 3) icColliders(IC_BY_ID.mutfak, stage).forEach(r => add(r.x0, r.x1, r.z0, r.z1, 'buyume-bufemutfak'));   // 2026-11-09 büfe mutfağı (BUF-22: walls follow the stage room)

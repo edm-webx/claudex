@@ -10,7 +10,7 @@ import { dirname, resolve } from 'node:path';
 import { played } from './m1-helpers';
 import { restoranApi } from '../../src/game/sim/restoran';
 import { teslimatApi } from '../../src/game/sim/kurye';
-import { MUTFAK_ROL, mutfakSlot, mutfakEsya, pisirIstasyonu, PASS_KAP } from '../../src/content/mutfak';
+import { MUTFAK_ROL, mutfakSlot, mutfakEsya, mutfakAcik, pisirIstasyonu, PASS_KAP } from '../../src/content/mutfak';
 import { masaCati } from '../../src/content/kanat';
 import { acikYemekler, yeniYemekler, isProduct } from '../../src/content/yemek-menu';
 import { GAME_DAY_S } from '../../src/engine/api';
@@ -212,6 +212,8 @@ function kos(o: Opts = {}) {
     }
     ast.push(cur);
     kadro(); yeniCalisanlar();
+    // 2026-11-22: mutfak istasyonları sarı kareyle alınır (sim/isletme-kareler.ts 'mutfak.<id>'): bot aşamanın açtığı her istasyonu alır
+    for (const id of mutfakAcik(S.stage)) { S.money += 1e8; sim.command({ kind: 'mulk', op: 'mutfakAl', e: id } as never); }
     const gelir0 = S.totalEarned, t0 = S.playT, d0 = S.day, hedef = d0 + gunler(a);
     for (let n = 0; S.day < hedef && n < 400 * gunler(a); n++) {
       ilerle(5); yeniCalisanlar();

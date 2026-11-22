@@ -23,6 +23,8 @@ export const MUTFAK_ISTASYON: IstasyonDef[] = [
   { id: 'sef_masa', ad: 'Şef pasosu', stage: 10, islev: 'sef' },
 ];
 export const MUTFAK_IST_BY_ID: Record<string, IstasyonDef> = Object.fromEntries(MUTFAK_ISTASYON.map(i => [i.id, i]));
+/** satın alma sırası (aynı aşamada): listedeki sıra */
+export const MUTFAK_YER_SIRA = MUTFAK_ISTASYON.map(i => i.id);
 /** bir aşçının başında tabak hazırlayabildiği istasyon mu (bulaşık ve soğuk oda asla) */
 export const pisirIstasyonu = (id: string): boolean => { const i = MUTFAK_IST_BY_ID[id]; return !!i && (i.islev === 'pisir' || i.islev === 'pass' || i.islev === 'sef'); };
 /** aynı işi yapan hatlar: birincisi ana hat, ikincisi yoğun saatte (iki ve fazla aşçı varken) devreye girer */
@@ -57,7 +59,22 @@ export const MUTFAK_KIR_HIZ = 0.0012;
 export const PASS_KAP = 8;
 export const MUTFAK_MIN_STAGE = 3;
 /** stations standing at a büfe stage */
-export const mutfakEsya = (stage: number): string[] => (stage < MUTFAK_MIN_STAGE ? [] : MUTFAK_ISTASYON.filter(i => i.stage <= stage).map(i => i.id));
+/** o aşamada açılmış (alınabilir) istasyonlar, satın alınmış olsun olmasın */
+export const mutfakAcik = (stage: number): string[] => (stage < MUTFAK_MIN_STAGE ? [] : MUTFAK_ISTASYON.filter(i => i.stage <= stage).map(i => i.id));
+/**
+ * 2026-11-22 (sahibi: "mutfak işlevsiz, karelerle tek tek açılan istasyonlar yok"): istasyonlar mutfağın içinde, kendi yerlerindeki
+ * sarı kareyle tek tek alınır (sim/isletme-kareler.ts 'mutfak.<id>'); pass ve ocak mutfak açılınca hazır gelir. Sim her tick
+ * S.zones.mutfak.alinan'ı buraya yazar (sim/mutfak-alinan.ts): görünüm, çarpışma ve saf yardımcılar aynı listeyi okur.
+ * null = kısıt yok (araçlar, eski saf testler: aşamanın bütün istasyonları).
+ */
+let ALINAN: ReadonlySet<string> | null = null;
+export const setMutfakAlinan = (a: readonly string[] | null): void => { ALINAN = a ? new Set(a) : null; };
+export const MUTFAK_HAZIR = ['pass', 'ocak'];
+/** istasyon fiyatı: açıldığı aşamanın gelirine göre (aşama gelirinin yarım-üç günlüğü) */
+const IST_FIYAT: Record<number, number> = { 3: 12000, 4: 40000, 5: 150000, 6: 450000, 7: 1200000, 8: 2500000, 9: 5000000, 10: 10000000 };
+export const istasyonFiyat = (id: string): number => (MUTFAK_HAZIR.includes(id) ? 0 : IST_FIYAT[MUTFAK_IST_BY_ID[id]?.stage ?? 3] ?? 12000);
+/** stations standing (bought) at a büfe stage */
+export const mutfakEsya = (stage: number): string[] => mutfakAcik(stage).filter(id => !ALINAN || ALINAN.has(id) || MUTFAK_HAZIR.includes(id));
 /** "esnaf" look until stage 6, stainless steel from 7 */
 export const mutfakCelik = (stage: number) => stage >= 7;
 

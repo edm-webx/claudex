@@ -95,6 +95,8 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
 
   /* ---- state ---- */
   let winOwned = false;
+  /** 2026-11-22: alınmış salon aletleri ve mutfak istasyonları katı (ic-mekan.ts restoranKati): değişince ızgara yeniden kurulur */
+  let salonSahip: string[] = [], restoranKey = '';
   let standPoll = 0;
   let standsOwned: { x: number; z: number; ry: number }[] = [], standsKey = '';
   let stage = 1, renewed: Record<string, boolean> = {}, layout = stageLayout(1);
@@ -293,7 +295,7 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
     // owned stands (midye, ıslak hamburger...) are solid too: the 1.1 x 0.65 m table, turned with the stand
     for (const sv of standsOwned) { const side = Math.abs(Math.sin(sv.ry)) > 0.5; const hx = side ? 0.4 : 0.6, hz = side ? 0.6 : 0.4; out.push({ x0: sv.x - hx, x1: sv.x + hx, z0: sv.z - hz, z1: sv.z + hz, tag: 'stant' }); }
     if (stage >= 2 && winOwned) out.push({ x0: W.x - 0.62, x1: W.x - 0.36, z0: W.z - 0.78, z1: W.z + 0.78, tag: 'window' });
-    out.push(...buyumeEngel(stage));   // 2026-11-08: the business grows over the pier wings (bufe-buyume.ts)
+    out.push(...buyumeEngel(stage, salonSahip));   // 2026-11-08: the business grows over the pier wings (bufe-buyume.ts)
     return out;
   }
 
@@ -625,6 +627,7 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
         const so = api ? api.view().stands.filter(s => s.owned).map(s => ({ x: s.x, z: s.z, ry: s.ry })) : [];
         const key = so.map(s => s.x + ',' + s.z).join('|'); if (key !== standsKey) { standsKey = key; standsOwned = so; dynDirty = true; } }
       { const rr = getRules?.(); if (rr && !!(rr.state.owned as Record<string, number>).pencere !== winOwned) { winOwned = !winOwned; dynDirty = true; } }
+      { const rr = getRules?.(); if (rr) { const zs = rr.state.zones as Record<string, { esya?: string[]; alinan?: string[] } | undefined>, se = zs.salon?.esya || [], k = se.join(',') + '|' + (zs.mutfak?.alinan || []).join(','); if (k !== restoranKey) { restoranKey = k; salonSahip = [...se]; dynDirty = true; } } }
       if (dynDirty) syncDyn();
       const rl = getRules?.();
       if (rl) {
