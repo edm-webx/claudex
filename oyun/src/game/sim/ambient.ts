@@ -25,7 +25,7 @@
 import type { AmbientSystem, AnchorDef, Nav, Rect, Rng, SimCtx, SoAStore, Vec2, ZoneManager } from '../../engine/api';
 import { AGENTS, AGENT_CAP, AGENT_SCHEMA, AGENT_FLAG, AGENT_LOD, ACT_ORDER, GAIT_ORDER, MOOD_ORDER, ZONE_ORDER } from './schema';
 import { CITIZENS, CROWD_BUDGET } from '../../content/citizens';
-import { BUFE as BUFE_BOX } from '../../content/prefabs/iskele/layout';
+import { BUFE as BUFE_BOX, BUFE_YEREL as BUFE_ON } from '../../content/prefabs/iskele/layout';
 import {
   SOKAK_HAVUZ, SOKAK_LOD, SOKAK_YOGUNLUK, SOKAK_PROGRAM, SOKAK_YURU, SOKAK_KAPI, SOKAK_BEKLE, SOKAK_KORKULUK, SOKAK_SIGINAK, SOKAK_GOLGE,
   SOKAK_BANK, SOKAK_ROLLER, SOKAK_HAVA, SEMSIYE_ORAN, KOPEK, DINLE, UG_AYAK, bankOturak, bankOnu,
@@ -153,7 +153,8 @@ export function createAmbient(deps: AmbientDeps): AmbientSystem {
 
   // Citizens never walk into the büfe: its interior is staff only (owner: only workers and the player go in and out).
   // Ambient targets are filtered here; the kiosk walls and the single door are solid in the walk grid.
-  const insideBufe = (p: Vec2): boolean => p.x > BUFE_BOX.x0 - 0.5 && p.x < BUFE_BOX.x1 + 0.5 && p.z > BUFE_BOX.z0 - 0.5 && p.z < BUFE_BOX.z1 + 0.5;
+  const icK = (B: { x0: number; x1: number; z0: number; z1: number }, p: Vec2) => p.x > B.x0 - 0.5 && p.x < B.x1 + 0.5 && p.z > B.z0 - 0.5 && p.z < B.z1 + 0.5;
+  const insideBufe = (p: Vec2): boolean => icK(BUFE_BOX, p) || icK(BUFE_ON, p);   // 2026-11-22: from stage 6 the büfe (restaurant front hall) is at the v2 spot
   const randomPoint = (zone: string, rng: Rng, out: Vec2, spawn: boolean): Vec2 => {
     const list = anchorsOf(zone).filter(({ id, a }) => id !== 'playerStart' && !insideBufe(a.pos) && (spawn ? isKind(a, 'spawn', 'walkway', 'door') : isKind(a, 'walkway', 'decor', 'marker', 'perch')));
     if (list.length && rng.chance(spawn ? 0.85 : 0.5)) {

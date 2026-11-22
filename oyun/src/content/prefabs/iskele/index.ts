@@ -72,12 +72,12 @@ export function renewedMap(v: unknown): Record<string, boolean> {
 
 const kioskObCache = new Map<string, Obstacle[]>();
 /** Kiosk obstacles for a stage (computed with the geometry builder; geometry discarded, result cached). */
-export function kioskObstacles(stage: number, renewed: string): Obstacle[] {
-  const key = stage + '|' + renewed;
+export function kioskObstacles(stage: number, renewed: string, restoran = 0): Obstacle[] {
+  const key = stage + '|' + renewed + '|' + restoran;
   let o = kioskObCache.get(key);
   if (!o) {
-    const kb = buildKiosk(stage, renewedMap(renewed));
-    const jb0 = stageLayout(stage).job.board, jb = [jb0[0], jb0[1] - BUFE_DZ, jb0[2]];   // kiosk frame (placed at z = BUFE_DZ)
+    const kb = buildKiosk(stage, renewedMap(renewed), restoran);
+    const jb0 = stageLayout(stage).job.board, jb = [jb0[0], jb0[1] - (restoran ? 0 : BUFE_DZ), jb0[2]];   // kiosk frame (placed at z = BUFE_DZ; stage 6+ at 0)
     // colliders are the drawn wall boxes as they are: the zone bake blocks the cell row under any wall thinner than a
     // cell, and the player collides with these exact rects (nav solids), so no padding is needed
     o = kb.K2.obstacles.map((r: Obstacle) => ({ ...r })).concat([rectAABB(jb[0], jb[1], 1.75, 0.3, jb[2], 'job')]);
@@ -91,10 +91,10 @@ function buildKioskObject(params: Params): T.Group {
   const stage = Math.max(1, Math.min(5, Math.round(+params.stage || 1)));
   const renewed = renewedMap(params.renewed);
   const root = new T.Group(); root.name = 'kiosk'; root.userData.parity = 'kiosk';
-  const kb = buildKiosk(stage, renewed);
+  const restoran = Math.round(+params.restoran || 0), kb = buildKiosk(stage, renewed, restoran);
   const K2 = kb.K2;
   const layout = stageLayout(stage);
-  const jb = layout.job.board; jobBoardInto(kb.A, jb[0], jb[1] - BUFE_DZ, jb[2]);
+  const jb = layout.job.board; jobBoardInto(kb.A, jb[0], jb[1] - (restoran ? 0 : BUFE_DZ), jb[2]);
   const f = K2.flo;
   if (f.hang) [-0.42, 0.42].forEach(k => kb.A.cyl(0.006, 0.006, f.hang + 0.08, '#4a4a4a', f.x + k * f.len, f.y + (f.hang + 0.08) / 2, f.z, { seg: 3 }));
   const add = (b: Batch, mat: T.Material, cast: boolean, recv: boolean, name: string) => { if (b.empty) return null; const m = own(b.mesh(mat, cast, recv)); m.name = name; root.add(m); return m; };
@@ -108,9 +108,11 @@ function buildKioskObject(params: Params): T.Group {
   const signMat = new T.MeshLambertMaterial({ color: '#ffffff', emissive: '#ffffff', emissiveIntensity: 0 });
   signMat.map = drawSign(text, font, worn, stage, false); signMat.emissiveMap = drawSign(text, font, worn, stage, true);
   const sp = K2.sign;
-  const signMesh = new T.Mesh(new T.PlaneGeometry(1, 1), signMat); signMesh.name = 'sign';
-  signMesh.position.set(sp.x, sp.y, sp.z); signMesh.rotation.set(0, sp.ry, 0); signMesh.scale.set(sp.w, sp.h, 1);
-  root.add(signMesh);
+  if (sp) {   // the restaurant front hall (stage 6+) has no büfe sign
+    const signMesh = new T.Mesh(new T.PlaneGeometry(1, 1), signMat); signMesh.name = 'sign';
+    signMesh.position.set(sp.x, sp.y, sp.z); signMesh.rotation.set(0, sp.ry, 0); signMesh.scale.set(sp.w, sp.h, 1);
+    root.add(signMesh);
+  }
   // floresan + its pool
   const floMesh = new T.Mesh(geoc('floTube', () => new T.CapsuleGeometry(0.035, 1, 3, 8).rotateZ(HP)), new T.MeshBasicMaterial({ color: '#c8cdd2' })); floMesh.name = 'floresan';
   floMesh.position.set(f.x, f.y, f.z); floMesh.scale.set(f.len, 1, 1); root.add(floMesh);
@@ -185,8 +187,8 @@ export const ISKELE_PREFABS: MotorPrefabDef[] = [
       const glow = glowSet(LAMPS.map((l: { x: number; y: number; z: number }) => ({ x: l.x, y: l.y, z: l.z, r: 2.6 })), 'lampGlow'); glow.visible = false; glow.userData.night = true; g.add(glow);
       return g;
     } },
-  { id: 'iskele.kiosk', params: { stage: 1, renewed: '', sign: 'Sabri\'nin Büfesi', font: 'vapur' }, parts: [],
-    collidersFor: p => kioskObstacles(Math.round(+p.stage || 1), String(p.renewed || '')).map(o => ({ x0: o.x0, x1: o.x1, z0: o.z0, z1: o.z1 })),
+  { id: 'iskele.kiosk', params: { stage: 1, renewed: '', sign: 'Sabri\'nin Büfesi', font: 'vapur', restoran: 0 }, parts: [],
+    collidersFor: p => kioskObstacles(Math.round(+p.stage || 1), String(p.renewed || ''), Math.round(+p.restoran || 0)).map(o => ({ x0: o.x0, x1: o.x1, z0: o.z0, z1: o.z1 })),
     build: p => buildKioskObject(p) },
   { id: 'iskele.station', params: { kind: 'doner', tier: 1, stage: 1 }, parts: [],
     collidersFor: p => { const S = stationBuilt(String(p.kind), +p.tier || 1, +p.stage || 1); return [{ x0: -S.w / 2, x1: S.w / 2, z0: -S.d / 2, z1: S.d / 2 }]; },

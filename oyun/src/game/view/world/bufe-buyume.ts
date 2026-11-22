@@ -21,7 +21,7 @@ import { IC_BY_ID, icColliders, icIcinde, mutfakOda, MUTFAK_YER, passAcik, servi
 import { KIOSK_STAGES } from '../../../content/stages';
 import { WB, WT, EB, ET, insaatAlani } from '../../../content/insaat';
 import { Batch } from '../../../engine/prefab/batch';
-import { PIER, BUFE } from '../../../content/prefabs/iskele/layout';
+import { PIER, BUFE_YEREL as BUFE } from '../../../content/prefabs/iskele/layout';   // every büfe part here is stage 6+: the büfe is then the restaurant's front hall at the v2 spot (layout.ts bufeDz)
 import { KANAT_MASALAR, merdivenKutu, type KanatMasa } from '../../../content/kanat';
 import { useSkyEnv } from './glb';
 import { radialTex, ensureKit } from '../../../content/prefabs/common/v2kit';
@@ -300,9 +300,9 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
   if (stage >= 6) {
     const sb = { g: new T.Group(), b: new Batch(), gl: new Batch(), lit: new Batch(), wm: new Batch() }; sb.g.name = 'susle-B'; catis.push(sb);
     const mb = b, ml = lit, mg = grp; b = sb.b; lit = sb.lit; grp = sb.g;
-    const Z1 = BUFE.z1, n = 12, w = (BUFE.x1 - BUFE.x0 + 0.2) / n, c1 = fine ? '#1f2a44' : stage >= 8 ? '#2f7fb3' : '#e0533c', c2 = fine ? '#c9a24a' : '#fbfaf6';
-    for (let i = 0; i < n; i++) b.box(w, 0.04, 1.0, i % 2 ? c2 : c1, BUFE.x0 - 0.1 + (i + 0.5) * w, 3.05, Z1 + 0.42, { rx: 0.42 });   // sloped tente
-    for (let i = 0; i < n; i++) b.box(w, 0.2, 0.03, i % 2 ? c2 : c1, BUFE.x0 - 0.1 + (i + 0.5) * w, 2.78, Z1 + 0.88);                 // valance
+    const Z1 = BUFE.z1, n = 12, w = (BUFE.x1 - BUFE.x0 + 0.2) / n, c1 = fine ? '#1f2a44' : '#2f7fb3', c2 = fine ? '#c9a24a' : '#fbfaf6';
+    // 2026-11-22: the striped tente is gone (it hid the bar of the restaurant's front hall from the camera): a thin painted fascia
+    for (let i = 0; i < n; i++) b.box(w, 0.16, 0.04, i % 2 ? c2 : c1, BUFE.x0 - 0.1 + (i + 0.5) * w, 3.38, Z1 + 0.04);
     for (const x of [-2.6, 0, 2.6]) { b.box(0.08, 0.1, 0.3, '#33373b', x, 3.12, Z1 + 0.12); lit.sph(0.07, '#fff3d6', x, 3.05, Z1 + 0.25, { ws: 6, hs: 4 }); }
     if (stage >= 7) lit.box(BUFE.x1 - BUFE.x0, 0.04, 0.03, fine ? '#e8c76a' : '#5ff0e0', 0, 3.33, Z1 + 0.03);   // neon line on the front beam
     if (stage >= 8) for (const x of [-1.4, 0.0, 1.4]) { b.cyl(0.01, 0.01, 0.9, '#3a3d42', x, 2.75, Z1 - 0.6, { seg: 4 }); b.cone(0.16, 0.18, fine ? '#c9a24a' : '#b8862f', x, 2.25, Z1 - 0.6, { seg: 10 }); lit.sph(0.06, '#ffe6b0', x, 2.17, Z1 - 0.6, { ws: 6, hs: 4 }); }
@@ -313,17 +313,7 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
     }
     if (stage >= 8) for (const xo of [BUFE.x0 - 0.03, BUFE.x1 + 0.03]) for (let k = 0; k < 9; k++) b.box(0.03, 2.5, 0.12, fine ? '#3a2a20' : '#9a6b45', xo, 1.25, BUFE.z0 + 0.2 + k * 0.17);   // slatted cladding on the tall side walls
   }
-  /* 9: rooftop sign on the büfe (the büfe keeps its own name: it is NOT the restaurant), restaurant crest on the kitchen roof.
-     2026-11-21: the old stage-9 "Şef Mutfağı · Izgara" counter on the east terrace is gone (an orphan grill cut off from the real
-     kitchen, owner: "iskelenin sağında şef mutfağı ızgara diye bir yer var neden?"); stage 9 is the two-line kitchen (ocak2 / izgara2). */
-  if (stage >= 9) {
-    // rooftop sign over the kiosk
-    { const tb = { g: new T.Group(), b: new Batch(), gl: new Batch(), lit: new Batch(), wm: new Batch() }; tb.g.name = 'tabela-B'; catis.push(tb);   // 2026-11-21: hides with the büfe cutaway (it floated over the open büfe and hid its inside)
-      const mb = b, mg = grp; b = tb.b; grp = tb.g;
-      sign('SABRİ\'NİN BÜFESİ · 1987', 0, 3.75, BUFE.z0 + 0.35, 7.0, 0, '#e0533c', '#fff6e6');   // büfe hep büfe: kırmızı tabela, Sofrası değil   // 2026-11-21 görsel: direkler kalktı, tabela arka duvarın üstüne monte
-      for (const x of [-3.0, 3.0]) b.box(0.12, 0.7, 0.12, '#9aa2ab', x, 3.3, BUFE.z0 + 0.3);   // kısa çelik konsollar
-      b = mb; grp = mg; }
-  }
+  /* 2026-11-22: no büfe sign any more from stage 6 (the büfe is the restaurant's front hall); the crest on the kitchen roof names it. */
   /* 6+: restaurant crest on the kitchen roof, facing the promenade over the büfe: the back row (salon + kitchen + salon) is one
      restaurant, "Sabri Restoran", at stage 10 "Sabri'nin Sofrası". Hidden from inside the büfe / kitchen (cutaway). */
   if (stage >= 6) {

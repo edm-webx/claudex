@@ -17,6 +17,7 @@
  * BUF-10: masalar konuma göre bölgelere ayrılır (sim/garson-bolge.ts), garson başına bölge, boştaki garson komşu bölgeye yardım eder;
  * bahşiş ortak kumbarada birikir (oyuncuya gelir değil), gün sonunda (karne.ts) garsonlara eşit paylaşılır.
  */
+import { RESTORAN_ASAMA } from '../../content/prefabs/iskele/layout';
 import { mutfakEtki, sefHizi, mutfakEsya, MUTFAK_IST_BY_ID, PASS_KAP } from '../../content/mutfak';
 import { ADISYON, ADISYON_LINES, SERVIS, FAZ2_UI, type GarsonTur } from '../../content/restoran';
 import { bolgeleriKur, bolgeAtamasi, devriyeNoktalari, type Bolge } from './garson-bolge';
@@ -510,7 +511,8 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     if (!FAZ2_UI || !active() || tickets.length >= ADISYON.maxOpen + Math.max(0, Math.floor((st - 4) / 2)) + Math.min(Math.floor(kn / 4), garsonlar().length)) return false;
     const mk = Math.max(salonKatYan(salonEsya(), st, 'W').mis, salonKatYan(salonEsya(), st, 'E').mis);
     const sh = Math.min(0.94, ((ADISYON.share[st - 1] ?? 0) + (kn ? 0.1 : 0)) * mk + Math.max(0, G().servis - 3) * SERVIS.sharePerStar);
-    if (rng.next() >= sh) return false;
+    // 2026-11-22: from stage 6 the büfe is the restaurant itself: every guest sits at a table (no counter queue any more, customers.ts)
+    if (st < RESTORAN_ASAMA && rng.next() >= sh) return false;
     return freeTable() >= 0;
   }
 

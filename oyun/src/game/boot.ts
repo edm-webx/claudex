@@ -155,7 +155,7 @@ import { yukleAdim, yukleBitti } from '../engine/render/yukle-ekran';
 import { createHedefCard, type HedefCard } from './ui/hedef-card';
 import { createFaz2Hud, type Faz2Hud } from './ui/faz2-hud';
 import { createStantLook, type StantLookView } from './view/world/stant-look';
-import { BUFE } from '../content/prefabs/iskele/layout';
+import { bufeKutu } from '../content/prefabs/iskele/layout';
 
 type AnyRec = Record<string, unknown>;
 type Cmd = { kind: string; [k: string]: unknown };
@@ -352,7 +352,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const isletmeInsaat: InsaatView | null = playMode && zones ? make('isletmeInsaat', () => createIsletmeInsaat({ root: () => zones.root('iskele') ?? null, night: () => nightK, tadilat: () => { const m = mulkApi(sim.rules); return m ? m.view().plots.flatMap(p => { const t = (p as { tadilat?: { left: number; total: number } | null }).tadilat; return p.sabit && p.owned && t ? [{ id: p.id, p: 1 - t.left / t.total }] : []; }) : []; } })) : null;
   // 2026-11-21: promenadın iki ucunda kilitli belediye inşaat sahaları (content/kilitli-bolge.ts); çit oyuncuyu durdurur
   const insaatSahasi: InsaatSahasiView | null = playMode && zones ? make('insaatSahasi', () => createInsaatSahasi({ root: () => zones.root('iskele') ?? null, night: () => nightK, hero: () => walk.pos, state: () => sim.state, setSolid: r => nav.setSolids('kilitli-bolge', r) })) : null;
-  const parkLook: ParkView | null = playMode && zones ? make('parkLook', () => createParkLook({ root: () => zones.root('iskele') ?? null, hero: () => walk.pos })) : null;   // 2026-11-22 büfe parkı
+  const parkLook: ParkView | null = playMode && zones ? make('parkLook', () => createParkLook({ root: () => zones.root('iskele') ?? null, hero: () => walk.pos, stage: () => sim.state.stage || 1 })) : null;   // 2026-11-22 büfe parkı
   const bufeBuyume: BuyumeView | null = playMode && zones ? make('bufeBuyume', () => createBufeBuyume({ root: () => zones.root('iskele') ?? null, night: () => nightK, stage: () => sim.state.stage, tadilat: () => { const t = sim.state.tadilat as unknown as { to: number; left: number; total: number } | null; return t ? { to: t.to, p: 1 - t.left / Math.max(1, t.total) } : null; }, takim: () => (sim.state.zones as { arsa?: { takim?: { ad: string; renk: string; renk2?: string } | null } }).arsa?.takim ?? null, hero: () => walk.pos })) : null;
   // BUF-30: aşama açılış anı (kamera gezintisi, kurdele, ışık, dünya içi etiketler)
   const acilis: AcilisView | null = playMode && zones ? make('acilis', () => createAcilis({ root: () => zones.root('iskele') ?? null, hero: () => walk.pos, ses: (id) => { try { audio?.sfx(id); } catch { /* */ } } })) : null;
@@ -774,6 +774,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     const df = sim.rules.rt.uiLast.decorFocus as { x: number; z: number; until: number } | undefined;   // Faz 2: show a bought decor item
     if (df && !(df as AnyRec).sparked) { (df as AnyRec).sparked = true; try { (W as unknown as { sparkle?(p: unknown, n?: number, c?: string): void }).sparkle?.({ x: df.x, y: 1.0, z: df.z }, 40, '#ffd23f'); } catch { /* */ } }
     if (df && sim.state.playT > df.until) { delete sim.rules.rt.uiLast.decorFocus; if ((df as AnyRec).reopen) cmd('openPanel', { id: 'dekor' }); }
+    const BUFE = bufeKutu(sim.state.stage || 1);   // 2026-11-22: the büfe sits against the kitchen from stage 6
     const inBufe = pos.x > BUFE.x0 && pos.x < BUFE.x1 && pos.z > BUFE.z0 && pos.z < BUFE.z1;   // Faz 2 (38): inside the büfe the camera centres on it
     const bufeFocus = { x: (BUFE.x0 + BUFE.x1) / 2, z: (BUFE.z0 + BUFE.z1) / 2 };
     guard('camera.follow', () => cam.follow((t => onUg(t.x, t.z) ? { x: t.x, z: t.z, y: ugY(t.x, t.z) } : t === pos && pose.y ? { x: t.x, z: t.z, y: pose.y } : t)(acilis?.kamera() ?? (df && sim.state.playT <= df.until ? df : camHold ?? (inBufe ? { x: pos.x + (bufeFocus.x - pos.x) * 0.25, z: pos.z + (bufeFocus.z - pos.z) * 0.25 } : pos))), fdt));

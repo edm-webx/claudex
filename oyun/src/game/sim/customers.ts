@@ -4,6 +4,7 @@
  * never depends on how many bodies exist). Owner: Builder A. Pure; randomness only from ctx.rng streams.
  * queue.ts holds the counter-buying step, window.ts the ferry-window customers.
  */
+import { RESTORAN_ASAMA } from '../../content/prefabs/iskele/layout';
 import type { Vec2 } from '../../engine/api';
 import { angLerp } from '../../engine/core';
 import { CITIZENS } from '../../content/citizens';
@@ -389,14 +390,17 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
     if (spawnT > 0) return;
     spawnT = 60 / arrivalPerMin() * rng.range(0.75, 1.25);
     if (rt.queue.length >= Math.min(P.QUEUE_MAX, rt.layout.queue.length)) { spawnT = 1.5; return; }
+    // 2026-11-22: from stage 6 there is no counter queue: a guest comes only when a table is free (restoran.wantMasa)
+    const hepMasa = (S.stage || 1) >= RESTORAN_ASAMA && !!restoranHook();
+    if (hepMasa && !restoranHook()!.wantMasa()) { spawnT = 2; return; }
     // BUF-25: a hungry street citizen walks over by own will (same arrival count: it replaces one formula spawn)
     const amb = K.ambient, hb = amb?.recruitHungry ? amb.recruitHungry(queueSpot(0), HUNGRY_M) : -1;
     if (hb >= 0) {
       const a = K.agents, ty = CITIZENS[a.u8('typeId')[hb]];
-      if (ty && !ty.scenery) { spawnCustomer({ type: ty, n: 1, from: { x: a.f32('x')[hb], z: a.f32('z')[hb] }, body: hb, say: 'Acıktım ya...', ...(restoranHook()?.wantMasa() ? { kind: 'masa' as const } : {}) }); return; }
+      if (ty && !ty.scenery) { spawnCustomer({ type: ty, n: 1, from: { x: a.f32('x')[hb], z: a.f32('z')[hb] }, body: hb, say: 'Acıktım ya...', ...(hepMasa || restoranHook()?.wantMasa() ? { kind: 'masa' as const } : {}) }); return; }
       amb!.release(hb);
     }
-    spawnCustomer(restoranHook()?.wantMasa() ? { kind: 'masa' } : {});
+    spawnCustomer(hepMasa || restoranHook()?.wantMasa() ? { kind: 'masa' } : {});
   }
 
   function update(dt: number) {

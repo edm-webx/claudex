@@ -6,7 +6,7 @@
 import * as T from 'three';
 import { Batch, mtx, geoc, col, mixc, shade, clamp, lerp, easeInOut, PI, TAU, HP, roundBox } from '../../../engine/prefab/batch';
 import { K, R, MAT, rnd, v2rng, rrect, fitText, txt, canvasTex, atlasTex, radialTex } from '../common/v2kit';
-import { WATER_Y, SEAT_H, PIER, BUFE_YEREL as BUFE, GANG, WIN_Z_YEREL as WIN_Z, NEXT_SIGN, BENCHES, local2world as l2w, rectAABB, COUNTER_BOARD_YEREL as COUNTER_BOARD, BUFE_DZ, type Obstacle } from './layout';   // kiosk builds in its own (v2) frame, placed at z = BUFE_DZ
+import { WATER_Y, SEAT_H, PIER, BUFE_YEREL as BUFE, GANG, WIN_Z_YEREL as WIN_Z, NEXT_SIGN, BENCHES, local2world as l2w, rectAABB, COUNTER_BOARD_YEREL as COUNTER_BOARD, BUFE_DZ, bufeDz, type Obstacle } from './layout';   // kiosk builds in its own (v2) frame, placed at z = BUFE_DZ
 const V3 = (x = 0, y = 0, z = 0): T.Vector3 => new T.Vector3(x, y, z);
 void [mtx, geoc, col, mixc, shade, clamp, lerp, easeInOut, PI, TAU, HP, roundBox, K, R, MAT, rnd, v2rng, rrect, fitText, txt, canvasTex, atlasTex, radialTex, WATER_Y, SEAT_H, PIER, BUFE, GANG, WIN_Z, NEXT_SIGN, BENCHES, l2w, rectAABB, V3];
 export type { Obstacle };
@@ -38,15 +38,17 @@ export function lattice(A?: any, x0?: any, z0?: any, x1?: any, z1?: any, h?: any
 /** Büfe giriş kapısı (stage 2+): the gap between the west stub and the counter's west end. Walls facing it are not padded. */
 export const DOOR = { x0: -3.9, x1: -2.1 };
 
-export function buildKiosk(stage?: any, rn?: any) {
+/** RS (2026-11-22): the real stage when the büfe is the restaurant's front hall (stage 6+, layout.ts RESTORAN_ASAMA), else 0: same
+ *  floor plan, counter, stations and ferry window, restaurant colours, no kepenk, no büfe sign, no menu board / bunting outside. */
+export function buildKiosk(stage?: any, rn?: any, RS = 0) {
   const A = new Batch(), RF = new Batch(), TL = new Batch(), FL = new Batch(), BU = new Batch(), GL = new Batch(), ST = new Batch();
   const K2: any = { obstacles: [], sign: null, flo: null, shutter: null, bunting: null, lamps: [] };
   const ob = (x0?: any, x1?: any, z0?: any, z1?: any, tag?: any) => K2.obstacles.push({ x0: Math.min(x0, x1), x1: Math.max(x0, x1), z0: Math.min(z0, z1), z1: Math.max(z0, z1), tag: tag || 'kiosk' });
   const worn = (p: any) => !rn[p];
   const s1 = stage === 1, gold = stage >= 5;
-  const paintC = worn('boya') ? (s1 ? '#a9bba8' : '#e2d6bf') : '#f6ecd6';
+  const paintC = RS ? (RS >= 10 ? '#f3e6c8' : '#f4f2ec') : worn('boya') ? (s1 ? '#a9bba8' : '#e2d6bf') : '#f6ecd6';
   const paintO = {};   // 2026-10-24: unpainted walls no longer show peeling stains ("dükkanın içi kirli")
-  const trim = gold ? K.gold : worn('boya') ? (s1 ? '#7f8f84' : '#b9ad98') : K.red;
+  const trim = RS ? (RS >= 10 ? K.gold : '#2f7fb3') : gold ? K.gold : worn('boya') ? (s1 ? '#7f8f84' : '#b9ad98') : K.red;
   const wall = (x0?: any, x1?: any, y0?: any, y1?: any, z0?: any, z1?: any) => {
     const lx = Math.abs(x1 - x0), lz = Math.abs(z1 - z0), along = lx > lz, L = Math.max(lx, lz), n = Math.max(1, Math.round(L / 1.7));
     for (let i = 0; i < n; i++) {
@@ -215,23 +217,27 @@ export function buildKiosk(stage?: any, rn?: any) {
     // (kept high: the game camera looks down steeply, anything low in front of the counter would hide Sabri)
     [-4.1, 4.1].forEach(x => A.box(0.16, 3.3, 0.16, trim, x, 1.65, BUFE.z1 - 0.08, { r: 0.03 }));
     A.span(BUFE.x0, BUFE.x1, 3.12, 3.3, BUFE.z1 - 0.16, BUFE.z1 + 0.02, trim, { r: 0.03 });
-    A.span(-2.72, 2.24, 2.86, 3.12, BUFE.z1 - 0.3, BUFE.z1 - 0.04, worn('kepenk') ? '#8d7466' : shade(K.red, -0.08), { r: 0.05, uv: undefined });
-    A.label(4.9, 0.22, worn('kepenk') ? R.kepenkWorn : R.kepenkNew, -0.24, 2.98, BUFE.z1 - 0.035, { tint: worn('kepenk') ? '#ffffff' : '#f08070' });
+    if (!RS) {
+      A.span(-2.72, 2.24, 2.86, 3.12, BUFE.z1 - 0.3, BUFE.z1 - 0.04, worn('kepenk') ? '#8d7466' : shade(K.red, -0.08), { r: 0.05, uv: undefined });
+      A.label(4.9, 0.22, worn('kepenk') ? R.kepenkWorn : R.kepenkNew, -0.24, 2.98, BUFE.z1 - 0.035, { tint: worn('kepenk') ? '#ffffff' : '#f08070' });
+    }
     // sign on top of the back wall
-    [-3.2, 3.2].forEach(x => A.box(0.12, 0.5, 0.12, '#4a4a4a', x, H + 0.25, BUFE.z0 + 0.1, { r: 0.02 }));
-    A.span(-3.75, 3.75, H + 0.12, H + 1.42, BUFE.z0 + 0.0, BUFE.z0 + 0.08, gold ? K.gold : '#1d3d6b', { r: 0.03 });
-    signPose(0, H + 0.77, BUFE.z0 + 0.12, 7.2, 1.18, 0);
-    if (!worn('tabela')) for (let i = 0; i < 26; i++) { const t = i / 25; BU.sph(0.05, '#ffffff', -3.65 + t * 7.3, H + 1.38, BUFE.z0 + 0.12, { ws: 6, hs: 4 }); BU.sph(0.05, '#ffffff', -3.65 + t * 7.3, H + 0.16, BUFE.z0 + 0.12, { ws: 6, hs: 4 }); }
+    if (!RS) [-3.2, 3.2].forEach(x => A.box(0.12, 0.5, 0.12, '#4a4a4a', x, H + 0.25, BUFE.z0 + 0.1, { r: 0.02 }));
+    if (!RS) A.span(-3.75, 3.75, H + 0.12, H + 1.42, BUFE.z0 + 0.0, BUFE.z0 + 0.08, gold ? K.gold : '#1d3d6b', { r: 0.03 });
+    if (!RS) signPose(0, H + 0.77, BUFE.z0 + 0.12, 7.2, 1.18, 0);
+    if (!RS && !worn('tabela')) for (let i = 0; i < 26; i++) { const t = i / 25; BU.sph(0.05, '#ffffff', -3.65 + t * 7.3, H + 1.38, BUFE.z0 + 0.12, { ws: 6, hs: 4 }); BU.sph(0.05, '#ffffff', -3.65 + t * 7.3, H + 0.16, BUFE.z0 + 0.12, { ws: 6, hs: 4 }); }
     // floresan on the back wall
     A.box(1.4, 0.1, 0.12, '#d8dde2', 0, 2.38, BUFE.z0 + 0.27, { r: 0.03 });
     K2.flo = { x: 0, y: 2.31, z: BUFE.z0 + 0.3, len: 1.25, hang: 0 };
     K2.pool = { x: 0, z: -7.4, r: 6.5 };
     // A-frame menu board outside
+    if (!RS) {
     A.push(mtx(4.75, 0, -3.75, 0, -0.3, 0)); A.box(0.75, 0.95, 0.05, '#7d5638', 0, 0.5, 0.12, { rx: -0.2, r: 0.02 }); A.label(0.66, 0.6, R.menu, 0, 0.56, 0.155, { rx: -0.2 }); A.box(0.75, 0.95, 0.05, '#7d5638', 0, 0.5, -0.12, { rx: 0.2, r: 0.02 }); A.pop();
     ob(4.4, 5.1, -4.0, -3.5, 'prop');
+    }
     // fresh paint brings bunting and flower boxes
-    if (!worn('boya')) {
-      K2.bunting = { x0: -4.1, x1: 4.1, y: 3.08, z: BUFE.z1 + 0.06 };
+    if (!worn('boya') || RS) {
+      if (!RS) K2.bunting = { x0: -4.1, x1: 4.1, y: 3.08, z: BUFE.z1 + 0.06 };
       [[-4.05, 0.3], [3.85, 0.6]].forEach(([x, w]) => { A.box(w, 0.2, 0.22, '#c8693e', x, LOW + 0.1, BUFE.z1 - 0.1, { r: 0.03 }); for (let k = 0; k < Math.round(w / 0.15); k++) A.ico(0.11, k % 2 ? '#6f9e4f' : '#7fae5e', x - w / 2 + 0.08 + k * 0.15, LOW + 0.28, BUFE.z1 - 0.1, { d: 0 }); A.sph(0.06, K.red, x - 0.05, LOW + 0.4, BUFE.z1 - 0.03, { ws: 6, hs: 4 }); A.sph(0.06, K.pink, x + 0.1, LOW + 0.38, BUFE.z1 - 0.06, { ws: 6, hs: 4 }); });
     }
     // cat basket outside the west wall, a stool by the door
@@ -246,9 +252,10 @@ export function buildKiosk(stage?: any, rn?: any) {
 
   /* 2026-11-22: the tea garden and the bust belong to the pier, not to the büfe: they stay where they were (world frame) while the
      kiosk is placed BUFE_DZ towards the promenade, so they are built shifted back by -BUFE_DZ. */
-  const sabit = [A, GL, ST, BU]; sabit.forEach(bb => bb.push(mtx(0, 0, -BUFE_DZ, 0, 0, 0)));
-  const obW = (x0: number, x1: number, z0: number, z1: number, tag?: string) => ob(x0, x1, z0 - BUFE_DZ, z1 - BUFE_DZ, tag);
-  const lampW = (l: { x: number; y: number; z: number; s: number }) => K2.lamps.push({ ...l, z: l.z - BUFE_DZ });
+  const DZ = RS ? 0 : BUFE_DZ;   // where the kiosk is placed (zones/iskele.ts, view applyKiosk)
+  const sabit = [A, GL, ST, BU]; sabit.forEach(bb => bb.push(mtx(0, 0, -DZ, 0, 0, 0)));
+  const obW = (x0: number, x1: number, z0: number, z1: number, tag?: string) => ob(x0, x1, z0 - DZ, z1 - DZ, tag);
+  const lampW = (l: { x: number; y: number; z: number; s: number }) => K2.lamps.push({ ...l, z: l.z - DZ });
   /* ---- stage 3+: tea garden on the west side ---- */
   if (stage >= 3) {
     const lat = stage >= 5 ? '#c9a24a' : '#a8774f';
@@ -383,7 +390,7 @@ export function jobBoardInto(A?: any, x?: any, z?: any, ry?: any) {
   A.box(0.5, 0.04, 0.26, '#c9955c', 0, 0.9, 0.14, { r: 0.01 }); A.box(0.3, 0.02, 0.2, '#fffaf0', 0, 0.93, 0.14, { r: 0.004, ry: 0.2 });
   A.pop();
 }
-export function partPos(part?: any, stage?: any, K2?: any) { const p = partPos0(part, stage, K2); return V3(p.x, p.y, p.z + BUFE_DZ); }
+export function partPos(part?: any, stage?: any, K2?: any) { const p = partPos0(part, Math.min(5, stage || 1), K2); return V3(p.x, p.y, p.z + bufeDz(stage || 1)); }
 function partPos0(part?: any, stage?: any, K2?: any) {
   const s1 = stage === 1, z1 = BUFE.z1;
   switch (part) {
