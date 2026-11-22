@@ -354,7 +354,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const acilis: AcilisView | null = playMode && zones ? make('acilis', () => createAcilis({ root: () => zones.root('iskele') ?? null, hero: () => walk.pos, ses: (id) => { try { audio?.sfx(id); } catch { /* */ } } })) : null;
   if (acilis) sim.bus.on('tadilatDone', (e) => acilis.baslat(Number((e as { stage?: number } | undefined)?.stage) || sim.state.stage));
   // 2026-11-09 "her binaya girilebilmeli": interiors of every far-side building and the büfe halls
-  const makineView = playMode && zones ? make('makineView', () => createMakineGorunum({ root: () => scene, hero: () => walk.pos, list: () => ((sim.rules.rt as unknown as { kafeMakineler?: () => MakineVeri[] }).kafeMakineler?.() || []) })) : null;   // dükkân makineleri: ilerleme halkası + hazır ürün
+  const makineView = playMode && zones ? make('makineView', () => createMakineGorunum({ root: () => scene, hero: () => walk.pos, list: () => ((sim.rules.rt as unknown as { kafeMakineler?: () => MakineVeri[] }).kafeMakineler?.() || []) })) : null;   // dükkân makineleri: pişen ürün + hazır ürün (büfedeki gibi)
   const avmEglence = playMode && zones ? make('avmEglence', () => createAvmEglence({ root: () => scene, hero: () => walk.pos, saat: () => sim.rules.hour() })) : null;   // AVM eğlence katı: sinema + sahne
   const avmIc: AvmIcView | null = playMode && zones ? make('avmIc', () => createAvmIc({ root: () => scene, hero: () => walk.pos, night: () => nightK })) : null;   // Martı AVM içi (ayrı diyar)
   const icMekan: IcView | null = playMode && zones ? make('icMekan', () => createIcMekan({ root: () => zones.root('iskele') ?? null, sahne: () => scene, hero: () => walk.pos, night: () => nightK,
