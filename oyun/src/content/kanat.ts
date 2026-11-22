@@ -65,7 +65,9 @@ export const kanatYanı = (b: KanatBolge): 'W' | 'E' => (b === 'cay' || b === 's
  * (servis ücreti, serpme/balık porsiyonu, manzara, fine dining). Ölçülen gerçek salon geliri / eski pasif: aşama 3-10 sırasıyla
  * 0.89 0.88 0.90 0.88 0.95 0.83 0.95 0.98 (eski seviyenin biraz altında: salon aletleri ve servis yıldızı üstüne biner). Index = aşama.
  */
-export const KANAT_FIYAT_X = [1, 1, 1, 16, 20, 20, 42, 73, 100, 220, 290];
+// 2026-11-21 (restoran ayrımı: masa payı 6-10 %60-%90, salon pass'ları): 3 tohum x 12 dk tam kadro ölçümüyle aşama başına toplam gelir
+// eskisiyle ±%5 içinde kalsın diye 6 / 8 / 9 yeniden ayarlandı (6: -%18 -> 50, 8: +%21 -> 85, 9: +%26 -> 185; 5, 7, 10 değişmedi).
+export const KANAT_FIYAT_X = [1, 1, 1, 16, 20, 20, 50, 73, 85, 185, 290];
 export const kanatFiyatX = (stage: number) => KANAT_FIYAT_X[Math.max(0, Math.min(10, Math.round(stage) || 0))];
 
 /* ---------- çatı terası rotası ve yüksekliği ---------- */
@@ -117,5 +119,3 @@ export const KANAT_POST: Record<KanatBolge, Vec2> = {
   cay: { x: -20.9, z: -7.9 }, dondurma: { x: 19.6, z: -0.2 }, salonW: { x: -17.6, z: -14.9 }, salonE: { x: 15.6, z: -14.9 },
   catiW: { x: -11.65, z: -10.0 }, catiE: { x: 9.05, z: -9.9 },
 };
-/** aşama 9 açık ızgara mutfağı (doğu terası): şefin durduğu yer ve baktığı yön */
-export const ACIK_MUTFAK = { x: 19.9, z: -2.2, rot: Math.PI };
