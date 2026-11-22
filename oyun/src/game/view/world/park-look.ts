@@ -6,6 +6,7 @@
  * before landing again. View only: colliders (pedestal, trees) and benches live in layout.ts (staticObstacles / BENCHES).
  */
 import * as T from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { PARK, HEYKEL, PARK_AGAC } from '../../../content/prefabs/iskele/layout';
 
 export interface ParkDeps { root: () => T.Object3D | null; hero?: () => { x: number; z: number } }
@@ -23,9 +24,16 @@ function plaqueTex(): T.CanvasTexture {
 }
 
 function buildPark(): { g: T.Group; mats: T.Material[]; geos: T.BufferGeometry[] } {
+  // PRF: every static piece is baked into one merged mesh per (material, casts shadow) pair: ~70 meshes -> ~17 draw calls,
+  // same look (same materials, same world placement; geometry transformed into park space before merging).
   const g = new T.Group(); g.name = 'park'; const mats: T.Material[] = [], geos: T.BufferGeometry[] = [];
   const M = (c: string, o?: Partial<T.MeshStandardMaterialParameters>) => { const m = mat(c, o); mats.push(m); return m; };
-  const add = (geo: T.BufferGeometry, m: T.Material, x: number, y: number, z: number, cast = true) => { geos.push(geo); const me = new T.Mesh(geo, m); me.position.set(x, y, z); me.castShadow = cast; me.receiveShadow = true; g.add(me); return me; };
+  const parts = new Map<string, { m: T.Material; cast: boolean; list: T.BufferGeometry[] }>();
+  const tmp = new T.Object3D();
+  const add = (geo: T.BufferGeometry, m: T.Material, x: number, y: number, z: number, cast = true, rx = 0, rz = 0) => {
+    tmp.position.set(x, y, z); tmp.rotation.set(rx, 0, rz); tmp.updateMatrix(); geo.applyMatrix4(tmp.matrix);
+    const k = `${m.uuid}|${cast ? 1 : 0}`; let e = parts.get(k); if (!e) { e = { m, cast, list: [] }; parts.set(k, e); } e.list.push(geo);
+  };
   const W = PARK.x1 - PARK.x0, D = PARK.z1 - PARK.z0, cx = (PARK.x0 + PARK.x1) / 2, cz = (PARK.z0 + PARK.z1) / 2, hx = HEYKEL.x, hz = HEYKEL.z;
   const grass = M('#5c9a44', { roughness: 1 }), grass2 = M('#6aa94f', { roughness: 1 }), path = M('#d8ccb2', { roughness: 0.95 }), curb = M('#bfb5a2'), stone = M('#d9d3c7', { roughness: 0.7 });
   // paving under everything, then the four lawns (paths are the gaps between them)
@@ -52,36 +60,52 @@ function buildPark(): { g: T.Group; mats: T.Material[]; geos: T.BufferGeometry[]
   add(new T.CylinderGeometry(0.24, 0.36, 0.85, 12), br, hx, y + 0.95, hz);           // coat skirt
   add(new T.CylinderGeometry(0.21, 0.24, 0.55, 12), br, hx, y + 1.55, hz);           // torso
   add(new T.BoxGeometry(0.62, 0.14, 0.26), br, hx, y + 1.8, hz);                     // shoulders
-  const armR = add(new T.CylinderGeometry(0.06, 0.055, 0.6, 8), br, hx + 0.3, y + 1.52, hz); armR.rotation.z = 0.12;
-  const armL = add(new T.CylinderGeometry(0.06, 0.055, 0.58, 8), br, hx - 0.33, y + 1.6, hz + 0.18); armL.rotation.x = -1.0; armL.rotation.z = -0.15;
+  add(new T.CylinderGeometry(0.06, 0.055, 0.6, 8), br, hx + 0.3, y + 1.52, hz, true, 0, 0.12);            // right arm
+  add(new T.CylinderGeometry(0.06, 0.055, 0.58, 8), br, hx - 0.33, y + 1.6, hz + 0.18, true, -1.0, -0.15); // left arm
   add(new T.CylinderGeometry(0.13, 0.11, 0.05, 12), br, hx - 0.38, y + 1.5, hz + 0.42);   // hat in hand
   add(new T.CylinderGeometry(0.06, 0.07, 0.1, 8), br, hx, y + 1.92, hz);             // neck
   add(new T.SphereGeometry(0.13, 12, 10), br, hx, y + 2.07, hz);                     // head
   // plane trees in the four outer corners
   const trunk = M('#7a5a3e'), leaf = [M('#3f7a34'), M('#4f8f3a')];
   for (const [x, z] of PARK_AGAC) { add(new T.CylinderGeometry(0.12, 0.17, 2.4, 8), trunk, x, Y0 + 1.2, z); add(new T.SphereGeometry(1.0, 10, 8), leaf[0], x, Y0 + 2.9, z); add(new T.SphereGeometry(0.72, 10, 8), leaf[1], x + 0.35, Y0 + 3.45, z - 0.2); }
+  for (const { m, cast, list } of parts.values()) {
+    const geo = list.length === 1 ? list[0] : mergeGeometries(list, false);
+    if (list.length > 1) list.forEach(x => x.dispose());
+    geos.push(geo); const me = new T.Mesh(geo, m); me.castShadow = cast; me.receiveShadow = true; g.add(me);
+  }
   return { g, mats, geos };
 }
 
-interface Kus { o: T.Group; wl: T.Object3D; wr: T.Object3D; head: T.Object3D; s: 'yer' | 'uc' | 'in'; x: number; z: number; y: number; a: number; r: number; t: number; tx: number; tz: number; hop: number }
+/** One pigeon as plain transform nodes (never added to the scene): the bird's pose drives five InstancedMeshes. */
+interface KusIskelet { o: T.Object3D; wl: T.Object3D; wr: T.Object3D; head: T.Object3D; body: T.Object3D; hm: T.Object3D; beak: T.Object3D; tail: T.Object3D; wa: T.Object3D; wb: T.Object3D }
+interface Kus extends KusIskelet { s: 'yer' | 'uc' | 'in'; x: number; z: number; y: number; a: number; r: number; t: number; tx: number; tz: number; hop: number }
 
-function buildKus(m: { body: T.Material; wing: T.Material; neck: T.Material }, geos: T.BufferGeometry[]): Pick<Kus, 'o' | 'wl' | 'wr' | 'head'> {
-  const o = new T.Group(), G = <G extends T.BufferGeometry>(x: G) => { geos.push(x); return x; };
-  const body = new T.Mesh(G(new T.SphereGeometry(0.1, 8, 6)), m.body); body.scale.set(0.8, 0.75, 1.3); body.position.y = 0.11; o.add(body);
-  const head = new T.Group(); head.position.set(0, 0.2, 0.11); o.add(head);
-  const hm = new T.Mesh(G(new T.SphereGeometry(0.05, 8, 6)), m.neck); head.add(hm);
-  const beak = new T.Mesh(G(new T.ConeGeometry(0.015, 0.04, 4).rotateX(Math.PI / 2)), m.wing); beak.position.z = 0.055; head.add(beak);
-  const tail = new T.Mesh(G(new T.BoxGeometry(0.08, 0.015, 0.1)), m.wing); tail.position.set(0, 0.12, -0.15); o.add(tail);
-  const wg = G(new T.BoxGeometry(0.2, 0.012, 0.11).translate(0.1, 0, 0));
-  const wl = new T.Group(), wr = new T.Group(); wl.position.set(-0.05, 0.15, 0); wr.position.set(0.05, 0.15, 0);
-  const a = new T.Mesh(wg, m.wing); a.rotation.y = Math.PI; wl.add(a); wr.add(new T.Mesh(wg, m.wing)); o.add(wl, wr);
-  o.traverse(c => { (c as T.Mesh).castShadow = true; });
-  return { o, wl, wr, head };
+function buildKus(): KusIskelet {
+  const N = () => new T.Object3D(), o = N();
+  const body = N(); body.scale.set(0.8, 0.75, 1.3); body.position.y = 0.11; o.add(body);
+  const head = N(); head.position.set(0, 0.2, 0.11); o.add(head);
+  const hm = N(); head.add(hm);
+  const beak = N(); beak.position.z = 0.055; head.add(beak);
+  const tail = N(); tail.position.set(0, 0.12, -0.15); o.add(tail);
+  const wl = N(), wr = N(); wl.position.set(-0.05, 0.15, 0); wr.position.set(0.05, 0.15, 0);
+  const wa = N(); wa.rotation.y = Math.PI; wl.add(wa); const wb = N(); wr.add(wb); o.add(wl, wr);
+  return { o, wl, wr, head, body, hm, beak, tail, wa, wb };
+}
+
+const KUS_N = 16;
+/** PRF: 16 pigeons x 6 parts used to be 96 meshes (192 draws with shadows, 96 geometries); now 5 shared geometries drawn instanced. */
+function buildFlock(m: { body: T.Material; wing: T.Material; neck: T.Material }) {
+  const geos = [new T.SphereGeometry(0.1, 8, 6), new T.SphereGeometry(0.05, 8, 6), new T.ConeGeometry(0.015, 0.04, 4).rotateX(Math.PI / 2),
+    new T.BoxGeometry(0.08, 0.015, 0.1), new T.BoxGeometry(0.2, 0.012, 0.11).translate(0.1, 0, 0)];
+  const im = (geo: T.BufferGeometry, mt: T.Material, n: number) => { const x = new T.InstancedMesh(geo, mt, n); x.castShadow = true; x.frustumCulled = false; x.instanceMatrix.setUsage(T.DynamicDrawUsage); return x; };
+  const parts = { body: im(geos[0], m.body, KUS_N), hm: im(geos[1], m.neck, KUS_N), beak: im(geos[2], m.wing, KUS_N), tail: im(geos[3], m.wing, KUS_N), wing: im(geos[4], m.wing, KUS_N * 2) };
+  const g = new T.Group(); g.name = 'guvercinler'; g.add(parts.body, parts.hm, parts.beak, parts.tail, parts.wing);
+  return { g, geos, parts };
 }
 
 export function createParkLook(deps: ParkDeps): ParkView {
-  let built: ReturnType<typeof buildPark> | null = null, flock: T.Group | null = null, t = 0;
-  const kuslar: Kus[] = [], geos: T.BufferGeometry[] = [];
+  let built: ReturnType<typeof buildPark> | null = null, flock: ReturnType<typeof buildFlock> | null = null, t = 0;
+  const kuslar: Kus[] = [];
   const km = { body: mat('#8b9099'), wing: mat('#6b6f78'), neck: mat('#4f6f6a', { metalness: 0.3, roughness: 0.5 }) };
   let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   const yerNokta = (): [number, number] => {   // a spot on a lawn (not on the plaza or under a tree)
@@ -90,17 +114,17 @@ export function createParkLook(deps: ParkDeps): ParkView {
   };
   const kur = (root: T.Object3D) => {
     built = buildPark(); root.add(built.g);
-    flock = new T.Group(); flock.name = 'guvercinler'; root.add(flock);
-    for (let i = 0; i < 16; i++) {
-      const b = buildKus(km, geos), [x, z] = yerNokta();
+    flock = buildFlock(km); root.add(flock.g);
+    for (let i = 0; i < KUS_N; i++) {
+      const b = buildKus(), [x, z] = yerNokta();
       const k: Kus = { ...b, s: i < 5 ? 'uc' : 'yer', x, z, y: 0, a: rnd() * 6.28, r: 2.6 + rnd() * 2.2, t: rnd() * 6, tx: x, tz: z, hop: 0 };
       if (k.s === 'uc') k.y = 3 + rnd() * 2;
-      flock.add(k.o); kuslar.push(k);
+      kuslar.push(k);
     }
   };
   const sil = () => {
     if (built) { built.g.parent?.remove(built.g); built.geos.forEach(g => g.dispose()); built.mats.forEach(m => { (m as T.MeshStandardMaterial).map?.dispose(); m.dispose(); }); built = null; }
-    if (flock) { flock.parent?.remove(flock); flock = null; } kuslar.length = 0; geos.forEach(g => g.dispose()); geos.length = 0;
+    if (flock) { flock.g.parent?.remove(flock.g); Object.values(flock.parts).forEach(x => x.dispose()); flock.geos.forEach(g => g.dispose()); flock = null; } kuslar.length = 0;
   };
   return {
     update(dt) {
@@ -133,6 +157,15 @@ export function createParkLook(deps: ParkDeps): ParkView {
           if (L <= 0.05 && k.y < 0.05) { k.s = 'yer'; k.y = 0; k.t = 2 + rnd() * 4; }
         }
         k.o.position.set(k.x, Y0 + k.y + (k.s === 'yer' ? Math.abs(Math.sin(k.hop)) * 0.03 : 0), k.z);
+      }
+      if (flock) {
+        const P = flock.parts;
+        kuslar.forEach((k, i) => {
+          k.o.updateMatrixWorld(true);
+          P.body.setMatrixAt(i, k.body.matrixWorld); P.hm.setMatrixAt(i, k.hm.matrixWorld); P.beak.setMatrixAt(i, k.beak.matrixWorld);
+          P.tail.setMatrixAt(i, k.tail.matrixWorld); P.wing.setMatrixAt(i * 2, k.wa.matrixWorld); P.wing.setMatrixAt(i * 2 + 1, k.wb.matrixWorld);
+        });
+        for (const x of Object.values(P)) x.instanceMatrix.needsUpdate = true;
       }
     },
     dispose() { sil(); Object.values(km).forEach(m => m.dispose()); },
