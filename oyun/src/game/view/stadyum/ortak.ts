@@ -9,6 +9,7 @@
  * - Panolar: yalnız parodi markalar (gerçek marka yok).
  */
 import * as T from 'three';
+import { dejenereAt } from '../../../engine/render/geo-temiz';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 export const REKLAM = ['KOLAZ', 'BOĞAZ GAZOZU', 'AYRANBEY', 'MARTI SU', 'MARTIKART', "SABRİ'NİN BÜFESİ", 'NARÇİÇEK'];
@@ -106,7 +107,7 @@ export function buildStand(kit: Kit, parent: T.Object3D, s: StandSpec, place: { 
   for (let r = 0; r < s.rows; r++) { const v = base + r * rise; sh.lineTo(r * depth, v); sh.lineTo((r + 1) * depth, v); if (r < s.rows - 1) sh.lineTo((r + 1) * depth, v + rise); }
   const top = base + (s.rows - 1) * rise, back = s.rows * depth;
   sh.lineTo(back, 0); sh.lineTo(0, 0);
-  const ex = kit.geo(new T.ExtrudeGeometry(sh, { depth: s.len, bevelEnabled: false }));
+  const ex = kit.geo(dejenereAt(new T.ExtrudeGeometry(sh, { depth: s.len, bevelEnabled: false })));   // basamak burunları tek doğruda: earcut sıfır alanlı üçgen = NaN normal (geo-temiz)
   ex.rotateY(Math.PI / 2); ex.translate(-s.len / 2, 0, 0);   // extrude axis -> local x, profile u -> local -z
   const tier = new T.Mesh(ex, conc); tier.receiveShadow = true; tier.castShadow = true; g.add(tier);
   // painted step nosing (yellow safety line) and stair aisles as lighter strips
@@ -120,7 +121,7 @@ export function buildStand(kit: Kit, parent: T.Object3D, s: StandSpec, place: { 
   if (parts.length) { const m = new T.Mesh(kit.geo(mergeGeometries(parts)), kit.mat('#c9b45a', { roughness: 0.7 })); m.receiveShadow = true; g.add(m); parts.forEach(p => p.dispose()); }
   // side walls (profile with a sloped top) and the back wall
   const sw = new T.Shape(); sw.moveTo(0, 0); sw.lineTo(0, base + 0.95); sw.lineTo(back, top + 1.25); sw.lineTo(back, 0); sw.lineTo(0, 0);
-  const swg = kit.geo(new T.ExtrudeGeometry(sw, { depth: 0.25, bevelEnabled: false })); swg.rotateY(Math.PI / 2);
+  const swg = kit.geo(dejenereAt(new T.ExtrudeGeometry(sw, { depth: 0.25, bevelEnabled: false }))); swg.rotateY(Math.PI / 2);
   const wallM = kit.mat(s.concrete ? s.concrete : '#9aa0a8', { roughness: 0.9 });
   for (const sx of [-1, 1]) { const w = new T.Mesh(swg, wallM); w.position.x = sx > 0 ? s.len / 2 : -s.len / 2 - 0.25; w.castShadow = true; w.receiveShadow = true; g.add(w); }
   const bw = s.backWall ?? 1.4;

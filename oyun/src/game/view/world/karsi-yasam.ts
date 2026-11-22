@@ -5,6 +5,7 @@
  * ışığı/gölgesi/sesleri. Tamamen görsel: sim'e dokunmaz. Oyuncu uzaktayken hiçbir şey güncellenmez.
  */
 import * as T from 'three';
+import { normalOnar } from '../../../engine/render/geo-temiz';
 import type { Chars } from '../../../engine/api';
 import * as K from '../chars/v2/kit';
 import { createMatch, L as ML, WD as MW } from '../../sim/macmotor';
@@ -204,7 +205,7 @@ export function createKarsiYasam(d: YasamDeps): YasamView {
     const spots: [number, number][] = []; const P = KARSI_PITCH;
     for (let r = 0; r < 4; r++) for (let i = 0; i < 12; i++) { const x = P.x - 12 + i * 2.1 + (r % 2) * 0.5; spots.push([x, P.z - P.d / 2 - 0.9 - r * 0.7], [x, P.z + P.d / 2 + 0.9 + r * 0.7]); }
     cb.push(...spots.map(([x, z], i) => ({ x, y: 0.7 + Math.floor(i / 24) * 0.5 + 0.5, z, ph: Math.random() * 6 })));
-    crowd = new T.InstancedMesh(new T.CapsuleGeometry(0.2, 0.45, 3, 7), new T.MeshLambertMaterial({ color: '#ffffff' }), cb.length); crowd.frustumCulled = false;
+    crowd = new T.InstancedMesh(normalOnar(new T.CapsuleGeometry(0.2, 0.45, 3, 7)), new T.MeshLambertMaterial({ color: '#ffffff' }), cb.length); crowd.frustumCulled = false;
     const cols = ['#e0533c', '#2f6fdb', '#f2c230', '#fbfaf6', '#2fb56a']; cb.forEach((_, i) => crowd!.setColorAt(i, new T.Color(cols[(i * 7) % cols.length])));
     holder.add(crowd);
   }
