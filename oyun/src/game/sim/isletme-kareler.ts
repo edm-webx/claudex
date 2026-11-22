@@ -86,7 +86,7 @@ export function installIsletmeKareler(K: Kernel, api: IsletmeKareApi): { sync():
       const yer = avm ? null : yerler(m), y = avm ? undefined : SOKAK_Y;
       if (!p) {
         // sıralı açılma (content/acilis.ts): büfe o aşamaya gelmeden / sıradaki önceki dükkân alınmadan kare hiç çıkmaz; çıkınca eksik koşulu yazar
-        const d = api.durum?.(); if (d && !acilisGorunur(a, d)) continue;
+        const d = api.durum?.(); if (d && !acilisGorunur(a, d)) { const yarim = Number(S.padPaid[pre]) || 0; if (yarim > 0) { S.money = Math.round((S.money + yarim) * 100) / 100; delete S.padPaid[pre]; } continue; }   // AR-GE: sıralı açılmadan önce yarım ödenmiş, şimdi gizli kare: para iade (eski kayıt)
         const kilit = d ? kilitYazi(acilisEksik(a, d)) : '';
         out.push({ key: pre, pos: avm ? satisKaresi(a) : yer![0], kat, label: (avm ? '' : ISLETME[ARSA_ISLETME[a.id]].ikon + ' ') + ad, sub: kilit || 'Dükkânı satın al', price: a.fiyat, kilit, y, done: () => api.arsaAl(a.id) });
         continue;

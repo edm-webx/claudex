@@ -181,7 +181,8 @@ export function createAvmYasam(env: AgentEnv): AvmYasamSystem {
   // oyuncu: gişede bilet alır, salon kapısındaki görevli bileti kontrol eder
   const siradaki = (): Salon => { const h = env.host.hour(); return SALONLAR.map(s => ({ s, x: seans(s, h) })).sort((a, b) => (a.x.durum === 'giris' ? -2 : a.x.durum === 'film' ? -1 : (a.x.sonraki - h + 24) % 24) - (b.x.durum === 'giris' ? -2 : b.x.durum === 'film' ? -1 : (b.x.sonraki - h + 24) % 24))[0].s; };
   for (const k of GISELER) env.interactions.register({
-    id: 'sinemaGise.' + k.id, pos: k.musteri, radius: 0.9, kind: 'station', dwell: 0.5, interval: 0.2,
+    id: 'sinemaGise.' + k.id, pos: k.musteri, radius: 0.9, kind: 'station', dwell: 1.2,   // AR-GE: gişenin önünden geçerken yanlışlıkla 40 ₺ kesilmesin (0.5 sn çok kısaydı)
+    interval: 0.2,
     canAct: () => kat3() && !bilet,
     act: () => {
       const S = env.rules.state as { money: number }, s = siradaki(), x = seans(s, env.host.hour()), d = diziOf(s.id), bo = bolumOf(d, x.durum === 'kapali' || x.durum === 'cikis' ? x.bolum + 1 : x.bolum);

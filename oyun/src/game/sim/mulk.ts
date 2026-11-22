@@ -366,6 +366,10 @@ export function installMulk(K: Kernel) {
     if (serbest()) return;
     for (const a of ARSALAR) {
       const p = arsa().plots[a.id]; if (!a.sabit || !p || p.tur !== 'dukkan') continue;
+      if (!(('dg_' + a.id) in S.tut)) {   // AR-GE: görevlerden önce alınmış dükkân (eski kayıt): tamamlanmış görevler ödülsüz atlanır, bir anda ödül yağmuru olmaz
+        let j = 0; while (DUKKAN_GOREV[j] && DUKKAN_GOREV[j].v(p) >= DUKKAN_GOREV[j].n) j++;
+        S.tut['dg_' + a.id] = j; continue;
+      }
       const i = dgSira(a.id), g = DUKKAN_GOREV[i]; if (!g || g.v(p) < g.n) continue;
       S.tut['dg_' + a.id] = i + 1; const odul = dukkanGorevOdul(a, g), paid = K.credit!('gorev', odul); K.addXP(20);
       K.toast('🏆 ' + (a.ad || '').replace(' (AVM)', '') + ' görevi: ' + g.ad + ' ✓ +' + fmtMoney(paid), 'good'); K.logEv('dukkanGorev', { id: a.id, i });
@@ -379,7 +383,7 @@ export function installMulk(K: Kernel) {
     if (!q.a.sabit && ownedN() >= ARSA_HAK) { K.toast('Karakter başına en fazla ' + ARSA_HAK + ' arsa hakkın var.', 'info'); return; }
     if (S.money < q.a.fiyat) { K.toast((q.a.sabit ? (q.a.ad || 'İşletme') : 'Arsa') + ' için ' + fmtMoney(q.a.fiyat) + ' lazım.', 'bad'); return; }
     if (q.a.sabit) {
-      K.spend(q.a.fiyat); arsa().plots[id] = { tur: 'dukkan', tip: q.a.sabit, lv: 1, till: 0, sat: 0, fr: 0, isci: 0 };
+      K.spend(q.a.fiyat); arsa().plots[id] = { tur: 'dukkan', tip: q.a.sabit, lv: 1, till: 0, sat: 0, fr: 0, isci: 0 }; S.tut['dg_' + id] = 0;   // yeni alınan dükkân: görev zinciri baştan, ödüllü
       K.toast(isletmeOf(id).ikon + ' ' + (q.a.ad || 'İşletme') + ' senin! İçeri gir: alet al, işçi tut. İşçiler sen yokken de müşteriye bakar.', 'good'); K.stat('mulkKuruldu'); K.addXP(60);
       if (!serbest()) giveChest(satinSandik(id), (q.a.ad || 'dükkân').replace(' (AVM)', '') + ' açılış hediyesi');   // holding yolu ödülü (content/acilis.ts)
       K.saveNow(); return;
