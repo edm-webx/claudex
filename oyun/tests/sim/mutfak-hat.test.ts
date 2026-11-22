@@ -44,8 +44,8 @@ describe('istasyon seçimi (içerik)', () => {
     }
     expect(MUTFAK_ISTASYON.find(i => i.id === 'soguk_oda')!.islev).toBe('gorsel');
     expect(MUTFAK_ISTASYON.find(i => i.id === 'soguk_oda')!.ad).not.toMatch(/depo/i);
-    // 15 istasyondan 13'ü iş alır (hepsine en az bir yiyecek bağlı), soğuk oda ve bulaşık hattın parçası değil
-    expect(mutfakEsya(10).length).toBe(15); expect(PISIR10.length).toBe(13);
+    // 16 istasyondan 14'ü iş alır (hepsine en az bir yiyecek bağlı), soğuk oda ve bulaşık hattın parçası değil (2026-11-22: + içecek dolabı)
+    expect(mutfakEsya(10).length).toBe(16); expect(PISIR10.length).toBe(14);
     for (const ist of PISIR10) expect([...PRODUCT_IDS, ...DISHES.map(d => d.id)].some(f => calismaIstasyonu(f, 10) === ist || (ist.endsWith('2') && calismaIstasyonu(f, 10) === ist.slice(0, -1))), ist).toBe(true);
   });
   it('hazırlık süresi DishDef.hazirlik', () => { for (const d of DISHES) expect(hazirlikOf(d.id)).toBe(d.hazirlik); });
@@ -175,7 +175,7 @@ describe('aşçı ve komi gerçek yürüyen ajan (agents harness)', () => {
 });
 
 describe('aşama 10 tam mutfak (gerçek sim, 30 dk)', () => {
-  it('15 istasyon: 13 pişirme istasyonunun hepsine iş gider, takılı iş ve ölü kilit yok, garson pass\'tan servis eder', () => {
+  it('16 istasyon: 14 pişirme istasyonunun hepsine iş gider, takılı iş ve ölü kilit yok, garson pass\'tan servis eder', () => {
     const sim = played(7) as any;
     for (let i = 0; i < 60; i++) sim.step(0.1);
     sim.command({ kind: 'force', what: 'money', value: 2_000_000_000 });
@@ -183,7 +183,7 @@ describe('aşama 10 tam mutfak (gerçek sim, 30 dk)', () => {
     sim.command({ kind: 'force', what: 'stage', value: 10 });
     let id = 600; const ise = (role: string, n: number) => { for (let i = 0; i < n; i++) sim.state.workers.push({ id: id++, name: role + i, role, xp: 0, morale: 70, traits: ['hamarat'] }); };
     ise('garson', 4); ise('asci', 5); ise('komi', 4); ise('sef', 2); ise('bulasikci', 2);   // BUF-13: bulaşıkçı yoksa yığın masa silmeyi yavaşlatır
-    expect(mutfakEsya(sim.state.stage).length).toBe(15);
+    expect(mutfakEsya(sim.state.stage).length).toBe(16);
     const api = restoranApi(sim.rules)!, hat = api.hat!;
     const pg = mutfakDunya(MUTFAK_NOKTA.passGarson); let garsonPass = false;
     const is = new Map<string, number>(); let maxPass = 0, cift = 0, maxFrac = 0, sonZil = 0, sonIlerleme = 0, enUzunSessiz = 0;

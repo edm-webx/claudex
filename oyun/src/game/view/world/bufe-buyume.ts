@@ -42,9 +42,9 @@ export const BUYUME_AD = ['', '', ...KIOSK_STAGES.slice(1).map(s => s.short)];
  * 2026-11-21 service passage between the büfe back wall (z -10.6) and the kitchen front (z -13.0), as wide as the büfe: roofed, side
  * walls, one staff door in the west wall (kz0..kz1). The pass window and the kitchen door open into it.
  */
-export const GECIT = { x0: BUFE.x0 - 0.05, x1: BUFE.x1 + 0.05, z0: -13.0, z1: BUFE.z0, kz0: -12.55, kz1: -11.05 };
+export const GECIT = { x0: BUFE.x0 - 0.05, x1: BUFE.x1 + 0.05, z0: -13.0, z1: -12.0, kz0: -12.55, kz1: -11.05 };   // 2026-11-22: only the strip in front of the kitchen (the rest is the park)
 /** 2026-11-21 büfe interior: bread / dessert cabinet against the east wall (stage 6+), clear of the tost station and the window post */
-export const BUFE_VITRIN = { x0: BUFE.x1 - 0.62, x1: BUFE.x1 - 0.14, z0: -9.55, z1: -8.15 };
+export const BUFE_VITRIN = { x0: BUFE.x1 - 0.62, x1: BUFE.x1 - 0.14, z0: BUFE.z0 + 1.05, z1: BUFE.z0 + 2.45 };
 export const gecitIcinde = (p: { x: number; z: number }) => p.x > GECIT.x0 && p.x < GECIT.x1 && p.z > GECIT.z0 && p.z < GECIT.z1;
 /** passage side walls (walk grid): west wall split by the staff door, east wall closed */
 export function gecitDuvar(): { x0: number; x1: number; z0: number; z1: number }[] {
@@ -164,9 +164,9 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
 
   /* 2: flower boxes, menu easel, bistro sets at the pier mouth */
   if (stage >= 2) {
-    for (const x of [-9.0, -6.6, 4.4, 6.8]) planter(x, 3.95, 1.8, 0.5);
-    b.box(0.9, 1.25, 0.06, '#2b2b2b', 2.4, 0.75, 3.7, { rx: -0.18 }); b.box(0.8, 1.1, 0.02, '#3a4a3a', 2.4, 0.77, 3.74, { rx: -0.18 });   // menu easel (chalk board)
-    for (let i = 0; i < 5; i++) lit.box(0.5 - i * 0.06, 0.02, 0.01, '#f4f2ec', 2.4, 1.1 - i * 0.16, 3.78, { rx: -0.18 });
+    for (const x of [-9.0, -6.6, 8.6]) planter(x, 3.95, 1.8, 0.5);   // 2026-11-22: the büfe front now stands on the pier mouth (x ±4.2)
+    b.box(0.9, 1.25, 0.06, '#2b2b2b', -5.1, 0.75, 3.7, { rx: -0.18 }); b.box(0.8, 1.1, 0.02, '#3a4a3a', -5.1, 0.77, 3.74, { rx: -0.18 });   // menu easel (chalk board)
+    for (let i = 0; i < 5; i++) lit.box(0.5 - i * 0.06, 0.02, 0.01, '#f4f2ec', -5.1, 1.1 - i * 0.16, 3.78, { rx: -0.18 });
   }
   /* 3: west Çay bahçesi */
   if (stage >= 3) {
@@ -198,7 +198,7 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
     for (const [x, z] of [[px0, pz0], [px1, pz0], [px0, pz1], [px1, pz1], [(px0 + px1) / 2, pz0], [(px0 + px1) / 2, pz1]]) b.box(0.16, 2.9, 0.16, frame, x, 1.57, z);
     for (let i = 0; i < 10; i++) b.box(px1 - px0 + 0.3, 0.08, 0.1, '#8a6a4a', (px0 + px1) / 2, 3.0, pz0 + i * (pz1 - pz0) / 9);
     for (let i = 0; i < 40; i++) { const x = px0 + ((i * 37) % 97) / 97 * (px1 - px0), z = pz0 + ((i * 53) % 89) / 89 * (pz1 - pz0); b.box(0.9 + (i % 3) * 0.25, 0.07, 0.6 + (i % 2) * 0.3, ['#4f8f3a', '#5f9f45', '#3f7a34'][i % 3], x, 3.07 + (i % 4) * 0.015, z, { ry: i * 0.7 }); if (i % 5 === 0) b.sph(0.07, i % 10 ? '#c94f6d' : '#f2a2b3', x + 0.2, 3.12, z, { ws: 5, hs: 3 }); }
-    lights([[-10.3, 3.7], [-5.0, 3.9], [0.0, 4.0], [4.6, 3.9], [7.9, 3.7]], 3.4);
+    lights([[-10.3, 3.7], [-5.4, 3.9]], 3.4); lights([[5.2, 4.1], [8.6, 3.8]], 3.4);   // 2026-11-22: not across the büfe front
   }
   /* 3+: büfe mutfağı shell behind the roofed service passage (interior: view/world/ic-mekan-look.ts, door on the walkway side).
      BUF-22: the shell grows with the stage room (content/ic-mekan.ts mutfakOda: esnaf 9.2 m, lokanta 13.8 m, iki hatlı 18 m). The
@@ -284,10 +284,10 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
     for (let i = 0; i < 8; i++) b.cyl(0.1, 0.1, 0.08, P[i % 6], vx + (i % 2 ? 0.1 : -0.1), 0.9 + Math.floor(i / 4) * 0.22, V.z0 + 0.25 + (i % 4) * (vd - 0.5) / 3, { seg: 10 });
     sign(fine ? 'TATLI · FIRIN' : 'TAZE SİMİT · TATLI', V.x1 - 0.06, 1.75, vz, 1.3, -HP);
     const wx = BUFE.x0 + 0.12;   // west wall shelf above the free strip behind the ayran station
-    for (const y of [1.55, 2.0]) { b.box(0.26, 0.04, 1.0, fine ? '#c9a24a' : '#a8794e', wx + 0.1, y, -9.05); for (let i = 0; i < 6; i++) b.cyl(0.035, 0.03, 0.1, y < 1.8 ? '#b0281e' : '#e9c88a', wx + 0.12, y + 0.07, -9.45 + i * 0.16, { seg: 6 }); }
-    b.box(0.04, 0.5, 0.65, fine ? '#c9a24a' : '#5a3b2a', wx, 2.55, -9.05); b.box(0.02, 0.4, 0.55, '#c9b48a', wx + 0.03, 2.55, -9.05);   // framed 1987 photo
-    b.cyl(0.62, 0.62, 0.006, fine ? '#c9a24a' : '#c8693e', 0.15, 0.003, -8.55, { seg: 24 }); b.cyl(0.52, 0.52, 0.008, fine ? '#1f2a44' : '#efe3c8', 0.15, 0.005, -8.55, { seg: 24 });   // floor inlay
-    b.box(0.5, 0.009, 0.08, fine ? '#c9a24a' : '#c8693e', 0.15, 0.007, -8.55); b.box(0.08, 0.009, 0.5, fine ? '#c9a24a' : '#c8693e', 0.15, 0.007, -8.55);
+    for (const y of [1.55, 2.0]) { b.box(0.26, 0.04, 1.0, fine ? '#c9a24a' : '#a8794e', wx + 0.1, y, BUFE.z0 + 1.55); for (let i = 0; i < 6; i++) b.cyl(0.035, 0.03, 0.1, y < 1.8 ? '#b0281e' : '#e9c88a', wx + 0.12, y + 0.07, BUFE.z0 + 1.15 + i * 0.16, { seg: 6 }); }
+    b.box(0.04, 0.5, 0.65, fine ? '#c9a24a' : '#5a3b2a', wx, 2.55, BUFE.z0 + 1.55); b.box(0.02, 0.4, 0.55, '#c9b48a', wx + 0.03, 2.55, BUFE.z0 + 1.55);   // framed 1987 photo
+    b.cyl(0.62, 0.62, 0.006, fine ? '#c9a24a' : '#c8693e', 0.15, 0.003, BUFE.z0 + 2.05, { seg: 24 }); b.cyl(0.52, 0.52, 0.008, fine ? '#1f2a44' : '#efe3c8', 0.15, 0.005, BUFE.z0 + 2.05, { seg: 24 });   // floor inlay
+    b.box(0.5, 0.009, 0.08, fine ? '#c9a24a' : '#c8693e', 0.15, 0.007, BUFE.z0 + 2.05); b.box(0.08, 0.009, 0.5, fine ? '#c9a24a' : '#c8693e', 0.15, 0.007, BUFE.z0 + 2.05);
   }
   /* 6: west hall: Kahvaltı salonu */
   if (stage >= 6) { hall(WB, 1, fine ? 'SABRİ\'NİN SOFRASI · KAHVALTI' : stage >= 8 ? 'SABRİ KAHVALTI & MEZE' : 'SABRİ KAHVALTI SALONU', stage >= 8, '#ffcf8a', { floor: fine ? '#c9a77c' : '#e9e0c8', back: fine ? '#f3e6c8' : '#efe6d2' }); }
@@ -305,7 +305,7 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
     for (let i = 0; i < n; i++) b.box(w, 0.2, 0.03, i % 2 ? c2 : c1, BUFE.x0 - 0.1 + (i + 0.5) * w, 2.78, Z1 + 0.88);                 // valance
     for (const x of [-2.6, 0, 2.6]) { b.box(0.08, 0.1, 0.3, '#33373b', x, 3.12, Z1 + 0.12); lit.sph(0.07, '#fff3d6', x, 3.05, Z1 + 0.25, { ws: 6, hs: 4 }); }
     if (stage >= 7) lit.box(BUFE.x1 - BUFE.x0, 0.04, 0.03, fine ? '#e8c76a' : '#5ff0e0', 0, 3.33, Z1 + 0.03);   // neon line on the front beam
-    if (stage >= 8) for (const x of [-1.4, 0.0, 1.4]) { b.cyl(0.01, 0.01, 0.9, '#3a3d42', x, 2.75, -5.0, { seg: 4 }); b.cone(0.16, 0.18, fine ? '#c9a24a' : '#b8862f', x, 2.25, -5.0, { seg: 10 }); lit.sph(0.06, '#ffe6b0', x, 2.17, -5.0, { ws: 6, hs: 4 }); }
+    if (stage >= 8) for (const x of [-1.4, 0.0, 1.4]) { b.cyl(0.01, 0.01, 0.9, '#3a3d42', x, 2.75, Z1 - 0.6, { seg: 4 }); b.cone(0.16, 0.18, fine ? '#c9a24a' : '#b8862f', x, 2.25, Z1 - 0.6, { seg: 10 }); lit.sph(0.06, '#ffe6b0', x, 2.17, Z1 - 0.6, { ws: 6, hs: 4 }); }
     if (fine) for (const x of [-4.1, 4.1]) b.box(0.19, 3.3, 0.04, '#c9a24a', x, 1.65, Z1 + 0.01);   // gold faced corner posts
     b = mb; lit = ml; grp = mg;
     if (stage >= 7) {   // digital menu boards on the inside of the back wall (above the tiles), seen through the open top

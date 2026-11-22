@@ -95,7 +95,7 @@ interface Anim { spin: T.Object3D[]; fire: T.Object3D[]; fish: T.Object3D[]; scr
 interface Ctx { b: Batch; g: Batch; l: Batch; grp: T.Group; m: IcMekan; an: Anim; seed: number; fine: boolean; lv: number; owned: boolean; stage: number; /** BUF-22: büfe mutfağı esnaf dönemi (aşama < 7): emaye ocak, ahşap tezgâh, karo */ esnaf?: boolean }
 /** BUF-22: mutfak istasyonu renkleri: esnaf (emaye, döküm, ahşap) ya da paslanmaz çelik; her istasyonun kendi renk şeridi (ayırt edilsin) */
 const ISTASYON_RENK: Record<string, string> = { ocak: '#e0533c', ocak2: '#e0533c', izgara: '#ff8a1f', izgara2: '#ff8a1f', fritoz: '#ffd23f', doner: '#a0522d', tas_firin: '#b5651d', tatli: '#f2a2b3',
-  salata: '#6f9e4f', meze: '#2f9e8f', cay_bar: '#c0392b', bulasik: '#3f8fc9', pass: '#c9a24a', soguk_oda: '#7fd0ff', sef_masa: '#c9a24a' };
+  salata: '#6f9e4f', meze: '#2f9e8f', cay_bar: '#c0392b', icecek_dolap: '#e0533c', bulasik: '#3f8fc9', pass: '#c9a24a', soguk_oda: '#7fd0ff', sef_masa: '#c9a24a' };
 const celik = (c: Ctx, esnafRenk: string, celikRenk: string) => (c.esnaf ? esnafRenk : celikRenk);
 
 /* ---------- furniture & equipment builders (local frame: item faces +z, base at y=0) ---------- */

@@ -12,6 +12,8 @@ export type IstasyonIslev = 'pisir' | 'pass' | 'sef' | 'bulasik' | 'gorsel';
 export interface IstasyonDef { id: string; ad: string; stage: number; islev: IstasyonIslev }
 export const MUTFAK_ISTASYON: IstasyonDef[] = [
   { id: 'pass', ad: 'Pass (servis tezgahı)', stage: 3, islev: 'pass' }, { id: 'ocak', ad: 'Ocak (tencere yemekleri)', stage: 3, islev: 'pisir' }, { id: 'cay_bar', ad: 'Çay ve kahve barı', stage: 3, islev: 'pisir' },
+  // 2026-11-22 (sahibi: "bütün restoran kafelerde büfe gibi dolaptan kola, soda, gazoz verilsin"): soğuk içecek dolabı, şişe dolaptan çıkar
+  { id: 'icecek_dolap', ad: 'İçecek dolabı (Kolaz, soda, gazoz)', stage: 3, islev: 'pisir' },
   { id: 'izgara', ad: 'Izgara', stage: 4, islev: 'pisir' }, { id: 'fritoz', ad: 'Fritöz', stage: 4, islev: 'pisir' },
   { id: 'bulasik', ad: 'Bulaşık', stage: 5, islev: 'bulasik' }, { id: 'soguk_oda', ad: 'Soğuk oda', stage: 5, islev: 'gorsel' },
   { id: 'doner', ad: 'Döner', stage: 6, islev: 'pisir' }, { id: 'salata', ad: 'Salata', stage: 6, islev: 'pisir' },
@@ -27,9 +29,9 @@ export const pisirIstasyonu = (id: string): boolean => { const i = MUTFAK_IST_BY
 export const HAT: Record<string, string[]> = { ocak: ['ocak', 'ocak2'], izgara: ['izgara', 'izgara2'] };
 const HAT_OF: Record<string, string> = Object.fromEntries(Object.entries(HAT).flatMap(([h, l]) => l.map(i => [i, h])));
 /** tezgâh ürünleri masa biletinde mutfakta pişerse hangi istasyonda (yemekler kendi DishDef.istasyon'unu kullanır) */
-export const URUN_ISTASYON: Record<string, string> = { doner: 'doner', cay: 'cay_bar', ayran: 'cay_bar', gazoz: 'cay_bar', simit: 'tas_firin', tost: 'izgara' };
+export const URUN_ISTASYON: Record<string, string> = { doner: 'doner', cay: 'cay_bar', ayran: 'cay_bar', gazoz: 'icecek_dolap', simit: 'tas_firin', tost: 'izgara' };
 /** tezgâh ürününün mutfakta hazırlanma süresi (sn); yemekler DishDef.hazirlik */
-export const PISIRME_S: Record<string, number> = { doner: 5, tost: 5, simit: 3.5, cay: 3.5, ayran: 3, gazoz: 3 };
+export const PISIRME_S: Record<string, number> = { doner: 5, tost: 5, simit: 3.5, cay: 3.5, ayran: 3, gazoz: 1.5 };
 /** istenen istasyon o aşamada yoksa ocak (aşama 3'te her şey ocakta pişer, mutfak büyüdükçe kendi istasyonuna taşınır) */
 export function calismaIstasyonuOf(ist: string, stage: number): string {
   const esya = mutfakEsya(stage);
@@ -72,7 +74,7 @@ export const MUTFAK_ROL: MutfakRol[] = [
   { id: 'guvenlik', label: 'Güvenlik', base: 2400, stage: 4, slots: S(0, 0, 0, 1, 1, 1, 1, 2, 2, 2), etki: 'Kapıda kuyruğu düzenler: maç günü ve büyük grupta sabır daha yavaş tükenir', on: true },
   { id: 'muzisyen', label: 'Müzisyen', base: 2000, stage: 4, slots: S(0, 0, 0, 1, 1, 1, 1, 1, 2, 2), etki: 'Canlı müzik çalar: yakın masada yemek uzar, sabır az düşer', on: true },
   { id: 'hostes', label: 'Hostes', base: 2200, stage: 5, slots: S(0, 0, 0, 0, 1, 1, 1, 2, 2, 2), etki: 'Kapıda karşılar, kalabalık günde masa gösterir', on: true },
-  { id: 'barista', label: 'Barista', base: 2500, stage: 5, slots: S(0, 0, 0, 0, 1, 1, 1, 1, 2, 2), etki: 'Çay ve içecek siparişlerini çay barında kendisi yapar, aşçılar içeceğe bakmaz' },
+  { id: 'barista', label: 'Barista', base: 2500, stage: 5, slots: S(0, 0, 0, 0, 1, 1, 1, 1, 2, 2), etki: 'Çay ve içecek siparişlerini çay barında ve içecek dolabında kendisi yapar, aşçılar içeceğe bakmaz' },
   { id: 'mudur', label: 'Müdür', base: 9000, stage: 6, slots: S(0, 0, 0, 0, 0, 1, 1, 1, 1, 1), etki: 'Sen büfeden uzaktayken boş istasyonları işletir, kasayı toplar (yavaş)', on: true },
   { id: 'vale', label: 'Vale', base: 1800, stage: 8, slots: S(0, 0, 0, 0, 0, 0, 0, 1, 1, 2), etki: 'Arabalı müşterinin anahtarını alır, arabayı park eder', on: true },
   // BUF-15 paket servis (aşama 5+): kurye pass'tan paketi alıp bisikletle adrese götürür, dönüşte geliri kasaya getirir

@@ -57,7 +57,7 @@ describe('ferry', () => {
     for (let i = 0; i < 4; i++) r.rt.carry.push({ type: 'cay', tier: 1 }, { type: 'simit', tier: 1 }, { type: 'ayran', tier: 1 });
     sim.command({ kind: 'teleport', x: r.rt.layout.window.standAt.x, z: r.rt.layout.window.standAt.z });
     const m0 = sim.state.money;
-    sim.step(4);
+    sim.step(12);   // 2026-11-22: the büfe (and its ferry window) moved to the pier mouth: a longer walk from the gangway
     expect(events(sim, 'firstWindowSale').length).toBe(1);
     expect(sim.state.money).toBeGreaterThan(m0);
   });

@@ -87,8 +87,10 @@ export function installWindow(K: Kernel, cu: ReturnType<typeof installCustomers>
           if (si >= 0) {
             const [p] = sh.splice(si, 1); c.got[p] = (c.got[p] || 0) + 1;
             if (!Object.keys(cu.orderLeft(c)).length) {
-              settle(c, gotItems(c), { direct: true, at: rt.layout.window.standAt });
-              rt.window.sales++; K.stat('windowSales'); cu.say(c, K.R.main.pick(['Sağ ol abi!', 'Yetiştim!', 'Eline sağlık!']), 1.5); cu.leave(c, false);
+              const v = settle(c, gotItems(c), { direct: true, at: rt.layout.window.standAt });
+              rt.window.sales++; K.stat('windowSales'); cu.say(c, K.R.main.pick(['Sağ ol abi!', 'Yetiştim!', 'Eline sağlık!']), 1.5);
+              if (!S.tut.windowSale) { S.tut.windowSale = 1; K.logEv('firstWindowSale', { v }); }
+              cu.leave(c, false);
             }
             return 'continue';
           } }

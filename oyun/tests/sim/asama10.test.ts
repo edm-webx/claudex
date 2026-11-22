@@ -1,3 +1,4 @@
+import { WIN_Z } from '../../src/content/prefabs/iskele/layout';
 // 2026-11-08: büfe grows to 10 stages (6-10 around the kiosk), each tadilat costs more and brings more customers.
 import { it, expect } from 'vitest';
 import { played } from './m1-helpers';
@@ -24,7 +25,7 @@ it('pier wings: salon income and staff grow every stage from 3; growth stays on 
     expect(r.x0).toBeGreaterThan(-24); expect(r.x1).toBeLessThan(22.7); expect(r.z0).toBeGreaterThan(-18); expect(r.z1).toBeLessThan(4.4);
     const ferry = r.x1 > 8.6 && r.z1 > -9.2 && r.z0 < -4.8; expect(ferry).toBe(false);
     if (r.tag === 'buyume-bufemutfak') expect(r.z1).toBeLessThanOrEqual(-12.9);   // 2026-11-09 büfe mutfağı sits behind the covered walkway
-    else if (r.tag === 'buyume-bufe-ic') { expect(r.x0).toBeGreaterThan(3.4); expect(r.x1).toBeLessThan(4.2); expect(r.z1).toBeLessThan(-7.8); }   // 2026-11-21 büfe vitrini on the east wall, clear of the window post
+    else if (r.tag === 'buyume-bufe-ic') { expect(r.x0).toBeGreaterThan(3.4); expect(r.x1).toBeLessThan(4.2); expect(r.z1).toBeLessThan(WIN_Z - 0.7); }   // 2026-11-21 büfe vitrini on the east wall, clear of the window post
     else if (r.tag === 'buyume-servis') { expect(r.z1).toBeLessThanOrEqual(-15.4); expect(Math.abs(r.x0) > 6.8 && Math.abs(r.x1) > 6.8).toBe(true); }   // 2026-11-21 kitchen-salon service corridors: behind, on the kitchen's sides
     else if (r.tag === 'buyume-gecit') throw new Error('büfe-mutfak geçidi geri geldi');
     else { const inner = r.x1 > -10.3 && r.x0 < 8.3; expect(inner).toBe(false); }   // the kiosk area and walkways stay free

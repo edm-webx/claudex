@@ -20,7 +20,7 @@ export const PADS: PadDef2[] = [
   { key: 'tost', label: 'TOST MAKİNESİ', sub: 'Kaşarlı-sucuklu', price: 4000, kind: 'station', station: 'tost', after: ['masa2'] },
   { key: 'tepsi2', label: 'DEV TEPSİ', sub: '+2 taşıma', price: 3000, kind: 'tray', after: ['tost'] },
   { key: 'tadilat', label: 'TADİLAT', sub: 'Büfeye geçiş', price: 0, kind: 'tadilat', after: ['tost'], when: 'tadilatReady' },
-  { key: 'masa3', label: 'MASA', sub: 'Büfenin önüne', price: 6000, kind: 'table', table: 4, after: ['tadilat'], stage: 2 },
+  { key: 'masa3', label: 'MASA', sub: 'Büfenin yanına', price: 6000, kind: 'table', table: 4, after: ['tadilat'], stage: 2 },
   { key: 'masa4', label: 'MASA', sub: 'Denize nazır', price: 9000, kind: 'table', table: 5, after: ['masa3'], stage: 2 }
 ] as PadDef2[];
 export const PAD_KEYS = PADS.map(p => p.key);

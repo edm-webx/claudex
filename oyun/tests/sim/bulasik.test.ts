@@ -36,8 +36,8 @@ describe('içerik: ceza ve roller', () => {
     expect(MUTFAK_ROL_BY_ID.bulasikci.etki).toMatch(/yıkar/); expect(MUTFAK_ROL_BY_ID.bulasikci.etki).not.toMatch(/hızına/);
     expect(MUTFAK_ROL_BY_ID.barista.etki).toMatch(/çay barında/); expect(MUTFAK_ROL_BY_ID.barista.etki).not.toMatch(/hızlandırır/);
   });
-  it('içecek: çay barında hazırlananlar (tezgâh içecekleri ve menü içecekleri)', () => {
-    for (const f of ['cay', 'ayran', 'gazoz', 'demlik_cay', 'limonata']) expect(icecekMi(f), f).toBe(true);
+  it('içecek: çay barında ve içecek dolabında hazırlananlar (tezgâh içecekleri ve menü içecekleri)', () => {
+    for (const f of ['cay', 'ayran', 'gazoz', 'demlik_cay', 'limonata', 'kola', 'soda', 'gazoz_cesit']) expect(icecekMi(f), f).toBe(true);
     for (const f of ['tost', 'doner', 'menemen']) expect(icecekMi(f), f).toBe(false);
   });
 });

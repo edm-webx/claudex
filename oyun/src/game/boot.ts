@@ -119,6 +119,7 @@ import { createIsletmeInsaat, type InsaatView } from './view/world/isletme-insaa
 import { createInsaatSahasi, type InsaatSahasiView } from './view/world/insaat-sahasi';
 import { gecitAcik } from '../content/kilitli-bolge';
 import { createBufeBuyume, mevsimZorla, type BuyumeView } from './view/world/bufe-buyume';
+import { createParkLook, type ParkView } from './view/world/park-look';
 import { createAcilis, type AcilisView } from './view/world/acilis';
 import { ARSALAR, ISLETME, ARSA_ISLETME } from '../content/esya';
 import { createKarsiYasam, type YasamView } from './view/world/karsi-yasam';
@@ -351,6 +352,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const isletmeInsaat: InsaatView | null = playMode && zones ? make('isletmeInsaat', () => createIsletmeInsaat({ root: () => zones.root('iskele') ?? null, night: () => nightK, tadilat: () => { const m = mulkApi(sim.rules); return m ? m.view().plots.flatMap(p => { const t = (p as { tadilat?: { left: number; total: number } | null }).tadilat; return p.sabit && p.owned && t ? [{ id: p.id, p: 1 - t.left / t.total }] : []; }) : []; } })) : null;
   // 2026-11-21: promenadın iki ucunda kilitli belediye inşaat sahaları (content/kilitli-bolge.ts); çit oyuncuyu durdurur
   const insaatSahasi: InsaatSahasiView | null = playMode && zones ? make('insaatSahasi', () => createInsaatSahasi({ root: () => zones.root('iskele') ?? null, night: () => nightK, hero: () => walk.pos, state: () => sim.state, setSolid: r => nav.setSolids('kilitli-bolge', r) })) : null;
+  const parkLook: ParkView | null = playMode && zones ? make('parkLook', () => createParkLook({ root: () => zones.root('iskele') ?? null, hero: () => walk.pos })) : null;   // 2026-11-22 büfe parkı
   const bufeBuyume: BuyumeView | null = playMode && zones ? make('bufeBuyume', () => createBufeBuyume({ root: () => zones.root('iskele') ?? null, night: () => nightK, stage: () => sim.state.stage, tadilat: () => { const t = sim.state.tadilat as unknown as { to: number; left: number; total: number } | null; return t ? { to: t.to, p: 1 - t.left / Math.max(1, t.total) } : null; }, takim: () => (sim.state.zones as { arsa?: { takim?: { ad: string; renk: string; renk2?: string } | null } }).arsa?.takim ?? null, hero: () => walk.pos })) : null;
   // BUF-30: aşama açılış anı (kamera gezintisi, kurdele, ışık, dünya içi etiketler)
   const acilis: AcilisView | null = playMode && zones ? make('acilis', () => createAcilis({ root: () => zones.root('iskele') ?? null, hero: () => walk.pos, ses: (id) => { try { audio?.sfx(id); } catch { /* */ } } })) : null;
@@ -782,6 +784,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (karsiLook) guard('karsiLook', () => karsiLook.update(fdt));
     if (karsiBina) guard('karsiBina', () => karsiBina.update(fdt));
     if (bufeBuyume) guard('bufeBuyume', () => bufeBuyume.update(fdt));
+    if (parkLook) guard('parkLook', () => parkLook.update(fdt));
     if (isletmeInsaat) guard('isletmeInsaat', () => isletmeInsaat.update(fdt));
     if (insaatSahasi) guard('insaatSahasi', () => insaatSahasi.update(fdt));
     if (acilis) guard('acilis', () => acilis.update(fdt));
