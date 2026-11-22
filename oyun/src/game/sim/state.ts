@@ -56,7 +56,7 @@ export interface Customer {
 
 export interface StationRt { built: boolean; out: Item[]; grabT: number; /** sim time of the last worker operate() */ opT: number; /** worker id -> progress 0..1 */ prog: Record<number, number>; }
 export interface TableRt { built: boolean; seats: { occ: number }[]; pile: MoneyStack[]; dirty: number; dirtyT: number; }
-export interface PadRt { key: string; price: number; paid: number; pos: Vec2; kind: string; warned: boolean; label?: string; sub?: string; y?: number; kat?: number; }   // y / kat: Martı AVM floors (sim/avm-kareler.ts)   // label/sub: pads outside content/pads.ts (Faz 2 stands)
+export interface PadRt { key: string; price: number; paid: number; pos: Vec2; kind: string; warned: boolean; label?: string; sub?: string; y?: number; kat?: number; }   // y / kat: Martı AVM floors (sim/isletme-kareler.ts)   // label/sub: pads outside content/pads.ts (Faz 2 stands)
 export type FerryPhase = 'away' | 'arriving' | 'docked' | 'leaving';
 export interface SlowSpot { link: 'transport' | 'production' | 'queue' | 'kasa' | 'seats'; station?: string; at: Vec2; t: number; }
 

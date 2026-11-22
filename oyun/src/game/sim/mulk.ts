@@ -448,14 +448,6 @@ export function installMulk(K: Kernel) {
     K.spend(STADYUM.takim); a.takim = { ad, renk: HEX.test(r1 || '') ? r1! : '#e0533c', renk2: HEX.test(r2 || '') ? r2! : '#f2c230', arma: ARMALAR.includes(arma || '') ? arma : '🦅', kurulus: S.day }; K.toast('⚽ ' + ad + ' kuruldu!', 'good'); K.addXP(60); K.saveNow();
   }
 
-  // Martı AVM: dükkân satın alma ve alet kurma büfedeki gibi sarı karelerle (avm-kareler.ts)
-  /** sahip 18:46: AVM dükkânı yalnız kapısının önündeki sarı kareden alınır (ilk büfe gibi); panelden / uzaktan alınmaz */
-  function avmKaresiDisinda(id: string): boolean {
-    const m = icOfArsa(id), a = ARSALAR.find(x => x.id === id); if (!m || m.bina !== 'avm' || !a) return false;
-    const pp = K.playerPos as { x: number; z: number; kat?: number }, k = satisKaresi(a);
-    if ((pp.kat || 0) === (m.kat || 0) && Math.hypot(pp.x - k.x, pp.z - k.z) < 1.2) return false;
-    K.toast((a.ad || 'Dükkân').replace(' (AVM)', '') + ': Martı AVM\'de dükkânın önündeki sarı karede durarak alınır.', 'info'); return true;
-  }
   // Bütün satın alınabilir dükkânlar (AVM + sokak) ve büfe salonları: satın alma, alet, tadilat büfedeki gibi sarı karelerle (isletme-kareler.ts)
   const avmKare = installIsletmeKareler(K, {
     arsaAl, kafeEsya, yukselt, salonEsya, plot: id => arsa().plots[id] as never,
@@ -463,6 +455,13 @@ export function installMulk(K: Kernel) {
     asamaAd: (id, lv) => isletmeOf(id).asama[lv - 1] || lv + '. seviye',
     salonVar: () => salonZ().esya,
   });
+  /** sahip 18:46: AVM dükkânı yalnız kapısının önündeki sarı kareden alınır (ilk büfe gibi); panelden / uzaktan alınmaz */
+  function avmKaresiDisinda(id: string): boolean {
+    const m = icOfArsa(id), a = ARSALAR.find(x => x.id === id); if (!m || m.bina !== 'avm' || !a) return false;
+    const pp = K.playerPos as { x: number; z: number; kat?: number }, k = satisKaresi(a);
+    if ((pp.kat || 0) === (m.kat || 0) && Math.hypot(pp.x - k.x, pp.z - k.z) < 1.2) return false;
+    K.toast((a.ad || 'Dükkân').replace(' (AVM)', '') + ': Martı AVM\'de dükkânın önündeki sarı karede durarak alınır.', 'info'); return true;
+  }
   // ── tick: board roll, shops, level-up chests, collecting tills ──
   let acc = 0, lastLevel = S.level;
   K.addSystem({
