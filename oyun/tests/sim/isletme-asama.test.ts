@@ -4,7 +4,7 @@ import { played } from './m1-helpers';
 import { mulkApi } from '../../src/game/sim/mulk';
 import { ARSALAR } from '../../src/content/esya';
 
-const mk = () => { const sim = played(1) as any; sim.step(1); const S = sim.state; S.level = 40; S.money = 1e8; return { sim, S, m: mulkApi(sim.rules)!, h: sim.rules.rt.kafeHost, c: (x: any) => sim.command({ kind: 'mulk', ...x }) }; };
+const mk = () => { const sim = played(1) as any; sim.rules.rt.acilisSerbest = true; sim.step(1); /* kurulum: sıralı açılma şartı yok (content/acilis.ts, kendi testi acilis.test.ts) */ const S = sim.state; S.level = 40; S.money = 1e8; return { sim, S, m: mulkApi(sim.rules)!, h: sim.rules.rt.kafeHost, c: (x: any) => sim.command({ kind: 'mulk', ...x }) }; };
 const plot = (S: any, id: string) => S.zones.arsa.plots[id];
 
 it('tadilat süreli: yükseltme anında lv artırmaz, süre dolunca artırır; ikinci yükseltme ve alet reddedilir', () => {

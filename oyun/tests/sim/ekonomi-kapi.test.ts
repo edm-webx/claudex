@@ -11,7 +11,7 @@ import { OKUL_KELIME, OKUL_GUNLUK_SINAV } from '../../src/content/okul';
 import { KT_DK_TAVAN_TABAN, KT_DK_TAVAN_SEVIYE } from '../../src/content/kirtasiye';
 import { P } from '../../src/content/economy';
 
-const mk = () => { const sim = played(1) as any; sim.step(1); const m = mulkApi(sim.rules)!; return { sim, m, S: sim.state, rt: sim.rules.rt, K: sim.rules, c: (x: any) => sim.command({ kind: 'mulk', ...x }) }; };
+const mk = () => { const sim = played(1) as any; sim.rules.rt.acilisSerbest = true; sim.step(1); /* kurulum: sıralı açılma şartı yok (content/acilis.ts, kendi testi acilis.test.ts) */ const m = mulkApi(sim.rules)!; return { sim, m, S: sim.state, rt: sim.rules.rt, K: sim.rules, c: (x: any) => sim.command({ kind: 'mulk', ...x }) }; };
 const toasts = (sim: any) => sim.events(0).filter((e: any) => e.name === 'toast').map((e: any) => String((e.data as any)?.text ?? ''));
 const dinle = (sim: any): string[] => { const l: string[] = []; sim.bus.onAny((r: any) => { if (r.name === 'toast') l.push(String((r.data as any)?.text ?? '')); }); return l; };
 

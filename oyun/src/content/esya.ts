@@ -59,7 +59,7 @@ export const HALI_SAHA_KAPI = { x: -25.2, z: 45 };
 export const BANKA = { x: 11.7, z: 36.8, kapi: { x: 11.7, z: 41.8 }, w: 10, d: 8.4, ad: 'Martı Kasası Bankası' };
 /** sabit: a fixed building on the map (karşı yaka kafeler): buying the plot opens that shop at once; kapi = interaction point. */
 /** kat: Martı AVM katı (content/avm-kat.ts); kapı o katın holünde, oyuncu aynı katta olmalı */
-export interface Arsa { id: string; x: number; z: number; fiyat: number; seviye: number; rotY: number; sabit?: string; kapi?: { x: number; z: number }; ad?: string; once?: string; kat?: number }
+export interface Arsa { id: string; x: number; z: number; fiyat: number; seviye: number; rotY: number; sabit?: string; kapi?: { x: number; z: number }; ad?: string; kat?: number }
 export const ARSALAR: Arsa[] = [
   { id: 'a1', x: 259.5, z: 0.4, fiyat: 60000, seviye: 3, rotY: 0 },
   { id: 'a2', x: 266.2, z: 0.4, fiyat: 150000, seviye: 5, rotY: 0 },
@@ -75,22 +75,21 @@ export const ARSALAR: Arsa[] = [
   { id: 'k6', x: -54.1, z: 45.4, fiyat: 260000, seviye: 5, rotY: Math.PI / 2, sabit: 'kafe', kapi: { x: -51.0, z: 45.4 }, ad: 'Tesis Kafeteryası' },
   // 2026-11-20 owner: Martı AVM is split into separate businesses. 2026-11-21 owner: "her katında mağaza olsun, satın alıp işletelim, zamanla her
   // yere hâkim olalım": 3 floors x 4 shops (content/ic-mekan.ts avmOdalar, content/avm-kat.ts). x / z = room centre, kapi = in front of the room's
-  // door in the central hall of that floor. Order of the holding path: the first AVM shop needs nothing else, the rest need one shop already
-  // in the mall (once: k7), the food court needs the lokanta first. Prices / levels climb with the floor; incomes: tests/sim/avm-magaza.test.ts.
+  // door in the central hall of that floor. Order of the holding path (which shop opens after which, at which büfe stage): content/acilis.ts. Prices / levels climb with the floor; incomes: tests/sim/avm-magaza.test.ts.
   ...avmArsalar(),
 ];
 export const ARSA_HAK = 3;
 function avmArsalar(): Arsa[] {   // (ARSALAR'dan önce çağrılır: sabitler içeride)
   const W = HOL.x0 + 0.7, E = HOL.x1 - 0.7, F = ODA_Z.F, B = ODA_Z.B, xw = ODA_X.W, xe = ODA_X.E;   // inside the AVM realm (content/avm-kat.ts)
-  const a = (id: string, ad: string, kat: number, w: boolean, f: boolean, fiyat: number, seviye: number, once?: string): Arsa =>
-    ({ id, x: w ? xw : xe, z: f ? F : B, fiyat, seviye, rotY: w ? Math.PI / 2 : -Math.PI / 2, sabit: 'kafe', kapi: { x: w ? W : E, z: f ? F : B }, ad: ad + ' (AVM)', ...(once ? { once } : {}), ...(kat ? { kat } : {}) });
+  const a = (id: string, ad: string, kat: number, w: boolean, f: boolean, fiyat: number, seviye: number): Arsa =>
+    ({ id, x: w ? xw : xe, z: f ? F : B, fiyat, seviye, rotY: w ? Math.PI / 2 : -Math.PI / 2, sabit: 'kafe', kapi: { x: w ? W : E, z: f ? F : B }, ad: ad + ' (AVM)', ...(kat ? { kat } : {}) });
   return [
-    a('k7', 'Martı Moda', 0, true, true, 300000, 7), a('k8', 'Tekno Martı', 0, true, false, 380000, 8, 'k7'),
-    a('k9', 'Oyuncak Dünyası', 0, false, true, 260000, 7, 'k7'), a('k10', 'Hacı Martı Şekerleme', 0, false, false, 220000, 6),
-    a('k11', 'Telve Kahve Laboratuvarı', 1, true, true, 340000, 7, 'k10'), a('k13', 'Şerbetçi Baklava Sarayı', 1, true, false, 360000, 8, 'k10'),
-    a('k12', 'Maraşlı Martı Dondurma', 1, false, true, 320000, 7, 'k10'), a('k14', 'Çıtırcı Kuruyemiş', 1, false, false, 300000, 7, 'k10'),
-    a('k5', 'Martı Lokantası', 2, true, true, 450000, 6), a('k15', 'Dürümcü Dayı', 2, true, false, 420000, 8, 'k5'),
-    a('k16', 'Kumpir Kulesi', 2, false, true, 400000, 8, 'k5'), a('k17', 'Midyeci Mido', 2, false, false, 440000, 9, 'k5'),
+    a('k7', 'Martı Moda', 0, true, true, 300000, 7), a('k8', 'Tekno Martı', 0, true, false, 380000, 8),
+    a('k9', 'Oyuncak Dünyası', 0, false, true, 260000, 7), a('k10', 'Hacı Martı Şekerleme', 0, false, false, 220000, 6),
+    a('k11', 'Telve Kahve Laboratuvarı', 1, true, true, 340000, 7), a('k13', 'Şerbetçi Baklava Sarayı', 1, true, false, 360000, 8),
+    a('k12', 'Maraşlı Martı Dondurma', 1, false, true, 320000, 7), a('k14', 'Çıtırcı Kuruyemiş', 1, false, false, 300000, 7),
+    a('k5', 'Martı Lokantası', 2, true, true, 450000, 6), a('k15', 'Dürümcü Dayı', 2, true, false, 420000, 8),
+    a('k16', 'Kumpir Kulesi', 2, false, true, 400000, 8), a('k17', 'Midyeci Mido', 2, false, false, 440000, 9),
   ];
 }
 export const arsaKapi = (a: Arsa) => a.kapi ?? { x: a.x, z: a.z + (a.rotY ? -3.0 : 3.0) };

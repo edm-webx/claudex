@@ -16,7 +16,7 @@ import { AVM, HOL, SERIT, MERD, GIRIS_KAPI, AVM_BINA, AVM_DIS, holEngel, katY, a
 
 const ROOMS = icBina('avm'), IDS = ROOMS.map(m => m.arsa!).sort();
 const RETAIL = ['k7', 'k8', 'k9'], NEW = IDS.filter(id => id !== 'k5');
-const mk = () => { const sim = played(1) as any; sim.step(1); const S = sim.state; return { sim, S, m: mulkApi(sim.rules)!, h: sim.rules.rt.kafeHost, c: Object.assign((x: any) => sim.command({ kind: 'mulk', ...x }), { sim }) }; };
+const mk = () => { const sim = played(1) as any; sim.rules.rt.acilisSerbest = true; sim.step(1); /* kurulum: sıralı açılma şartı yok (content/acilis.ts, kendi testi acilis.test.ts) */ const S = sim.state; return { sim, S, m: mulkApi(sim.rules)!, h: sim.rules.rt.kafeHost, c: Object.assign((x: any) => sim.command({ kind: 'mulk', ...x }), { sim }) }; };
 const roomOf = (id: string) => ROOMS.find(m => m.arsa === id)!;
 const plot = (id: string) => ARSALAR.find(a => a.id === id)!;
 const kafeActors = (sim: any, room: string, kind: string) => sim.rules.rt.agents.registry.list.filter((a: any) => !a.dead && a.key.startsWith('kafe-' + room + '-') && a.kind === kind);
@@ -101,6 +101,7 @@ it('satın al: seviye kilidi + katın öncü dükkânı şartı; kapıda doğru 
   sim.command({ kind: 'teleport', x: ic.x, z: ic.z, kat: 1 }); sim.step(0.3); expect(m.view().arsaYakin).toBe('k11');
   sim.command({ kind: 'teleport', x: ic.x, z: ic.z, kat: 0 }); sim.step(0.3); expect(m.view().arsaYakin).toBe('k7');   // the shop under it
   S.money = 1e8; S.level = 40;
+  sim.rules.rt.acilisSerbest = false; S.stage = 10; S.stars = 5; S.stats.served = 1e6; for (const id of ['k1', 'k2', 'k4', 'k3', 'k6']) c({ op: 'adminKafe', id, n: 1 });   // gerçek sıra: karşı yaka bitti (content/acilis.ts)
   c({ op: 'arsaAl', id: 'k10' }); expect(S.zones.arsa.plots.k10).toBeUndefined();   // panelden / uzaktan alınmaz: yalnız kapısındaki sarı kare
   buyAll(c, 'k11'); expect(S.zones.arsa.plots.k11).toBeUndefined();   // the floor's anchor (şekerci k10) first
   buyAll(c, 'k10'); const m0 = S.money; buyAll(c, 'k11');

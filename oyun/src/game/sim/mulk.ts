@@ -35,6 +35,7 @@ export const KREDI_FAIZ = 0.03, MEVDUAT_FAIZ = 0.002, MEVDUAT_TAVAN = 200_000, K
 export const KREDI_TABAN = 10_000, KREDI_KAZANC_PAYI = 0.1;
 export const KAFE_TEMA: Record<string, string> = { retro: 'Retro', modern: 'Modern', bohem: 'Bohem', deniz: 'Deniz' };
 import { fmtMoney } from './util';
+import { acilisEksik, acilisGorunur, tadilatEksik, type AcilisDurum } from '../../content/acilis';
 import { salonOf, salonKat } from './salon';
 import { kanatKurulu } from '../../content/kanat';
 
@@ -355,10 +356,14 @@ export function installMulk(K: Kernel) {
     for (const a of ARSALAR) { if (!ok(a) || !yakin(a, extra)) continue; const d = dist(K.playerPos, arsaKapi(a)); if (d < bd) { bd = d; best = a; } }
     return best;
   };
+  /** açılış sırası için durum (content/acilis.ts): büfe aşaması, yıldız, esnaf seviyesi, görev sayaçları, alınmış dükkânlar */
+  //  rt.acilisSerbest (yalnız çalışma anı, kaydedilmez): yönetici / test kurulumunda sıra şartı yok, esnaf seviyesi yine sayılır
+  const acDurum = (): AcilisDurum => ((rt as { acilisSerbest?: boolean }).acilisSerbest
+    ? { stage: 99, stars: 99, level: S.level, stats: new Proxy({}, { get: () => Infinity }), sahip: () => true }
+    : { stage: S.stage || 1, stars: S.stars || 0, level: S.level, stats: S.stats, sahip: id => !!arsa().plots[id] });
   function arsaAl(id: string) {
     const q = plotOf(id); if (!q || q.p) return;
-    if (S.level < q.a.seviye) { K.toast('Bu arsa ' + q.a.seviye + '. seviyede açılır.', 'info'); return; }
-    if (q.a.once && !arsa().plots[q.a.once]) { const o = ARSALAR.find(x => x.id === q.a.once); K.toast((q.a.ad || 'İşletme') + ' için önce ' + (o?.ad || 'bir işletme') + ' satın alınmalı.', 'info'); return; }
+    { const e = acilisEksik(q.a, acDurum()); if (e.length) { K.toast((q.a.ad || 'Bu arsa') + ' için önce: ' + e.join(', ') + '.', 'info'); return; } }   // content/acilis.ts: sıralı açılma
     if (!q.a.sabit && ownedN() >= ARSA_HAK) { K.toast('Karakter başına en fazla ' + ARSA_HAK + ' arsa hakkın var.', 'info'); return; }
     if (S.money < q.a.fiyat) { K.toast((q.a.sabit ? (q.a.ad || 'İşletme') : 'Arsa') + ' için ' + fmtMoney(q.a.fiyat) + ' lazım.', 'bad'); return; }
     if (q.a.sabit) {
@@ -392,6 +397,7 @@ export function installMulk(K: Kernel) {
     const q = plotOf(id); if (!q || !q.p || q.p.tur !== 'dukkan') return;
     if (q.p.lv >= DUKKAN_MAX_SEVIYE) { K.toast('En üst seviyedesin.', 'info'); return; }
     if (q.p.tadilat) { K.toast('Tadilat sürüyor.', 'info'); return; }
+    { const e = tadilatEksik(id, q.p.lv + 1, acDurum()); if (e.length) { K.toast((q.a.ad || 'İşletme') + ' tadilatı için önce: ' + e.join(', ') + '.', 'info'); return; } }
     const t = DUKKAN_BY_ID[q.p.tip], y = yukPrice(q.a, t, q.p.lv);
     if (S.money < y.tl) { K.toast('Yükseltme ' + fmtMoney(y.tl), 'bad'); return; }
     K.spend(y.tl);
@@ -454,6 +460,7 @@ export function installMulk(K: Kernel) {
     yukFiyat: id => { const q = plotOf(id)!; return yukPrice(q.a, DUKKAN_BY_ID[q.p!.tip], q.p!.lv).tl; },
     asamaAd: (id, lv) => isletmeOf(id).asama[lv - 1] || lv + '. seviye',
     salonVar: () => salonZ().esya,
+    durum: acDurum,
   });
   /** sahip 18:46: AVM dükkânı yalnız kapısının önündeki sarı kareden alınır (ilk büfe gibi); panelden / uzaktan alınmaz */
   function avmKaresiDisinda(id: string): boolean {
@@ -542,7 +549,7 @@ export function installMulk(K: Kernel) {
       money: S.money, gold: S.gold, level: S.level, esya: { ...e.esya }, sandik: { ...e.sandik }, sans: e.sans, acilan: e.acilan, son: e.son,
       banka: { tl: b.tl, esya: { ...b.esya }, yakin: nearBank(), borc: Math.floor(arsa().kredi?.borc || 0), limit: KREDI_LIMIT(S.level, flo(S.totalEarned)), faiz: KREDI_FAIZ, mevduat: MEVDUAT_FAIZ },
       gunluk: e.gunluk.liste.map(h => ({ ...h })), gunlukSandik: e.gunluk.sandikAlindi,
-      arsa: ARSALAR.map(x => { const p = a.plots[x.id]; return { id: x.id, ad: x.ad || '', sabit: x.sabit || '', fiyat: x.fiyat, seviye: x.seviye, once: x.once || '', onceAd: x.once ? (ARSALAR.find(o => o.id === x.once)?.ad || '') : '', onceOk: !x.once || !!a.plots[x.once], owned: !!p, tur: p?.tur ?? null, tip: p?.tip || '', lv: p?.lv || 0, till: Math.floor(p?.till || 0), sat: Math.floor(p?.sat || 0), isci: flo(p?.isci), kadro: p && x.sabit && p.tur === 'dukkan' ? kadroOf(x, p).map(c => ({ ...c, rolAd: ISLETME_ROL[ARSA_ISLETME[x.id]].find(r => r.rol === c.rol)?.ad || c.rol, huyAd: TRAITS[c.huy]?.name || '' })) : [], ilan: p && x.sabit && p.tur === 'dukkan' ? ilanOf(x, p) : [], maasGun: p && p.tur === 'dukkan' && x.sabit ? flo(p.isci) * ISCI_GUN_UCRET : 0, isciMax: isciMaxOf(x, p), isciFiyat: isciFiyat(flo(p?.isci)), menu: p && x.sabit ? ekon(x, p).menu : [], menuSonraki: p && x.sabit ? kafeMenu(x.id, Math.min(5, p.lv + 1)).slice(kafeMenu(x.id, p.lv).length) : [], kesya: p && x.sabit ? (p.esya || []) : [], tema: p?.tema || '', musteriSaat: p && p.tur === 'dukkan' ? Math.round(dukkanMusteri(DUKKAN_BY_ID[p.tip], p.lv) * ekon(x, p).musK * (1 + ISCI_MUSTERI * flo(p.isci))) : 0,
+      arsa: ARSALAR.map(x => { const p = a.plots[x.id]; return { id: x.id, ad: x.ad || '', sabit: x.sabit || '', fiyat: x.fiyat, seviye: x.seviye, kilit: p ? '' : acilisEksik(x, acDurum()).join(' + '), gorunur: !!p || acilisGorunur(x, acDurum()), owned: !!p, tur: p?.tur ?? null, tip: p?.tip || '', lv: p?.lv || 0, till: Math.floor(p?.till || 0), sat: Math.floor(p?.sat || 0), isci: flo(p?.isci), kadro: p && x.sabit && p.tur === 'dukkan' ? kadroOf(x, p).map(c => ({ ...c, rolAd: ISLETME_ROL[ARSA_ISLETME[x.id]].find(r => r.rol === c.rol)?.ad || c.rol, huyAd: TRAITS[c.huy]?.name || '' })) : [], ilan: p && x.sabit && p.tur === 'dukkan' ? ilanOf(x, p) : [], maasGun: p && p.tur === 'dukkan' && x.sabit ? flo(p.isci) * ISCI_GUN_UCRET : 0, isciMax: isciMaxOf(x, p), isciFiyat: isciFiyat(flo(p?.isci)), menu: p && x.sabit ? ekon(x, p).menu : [], menuSonraki: p && x.sabit ? kafeMenu(x.id, Math.min(5, p.lv + 1)).slice(kafeMenu(x.id, p.lv).length) : [], kesya: p && x.sabit ? (p.esya || []) : [], tema: p?.tema || '', musteriSaat: p && p.tur === 'dukkan' ? Math.round(dukkanMusteri(DUKKAN_BY_ID[p.tip], p.lv) * ekon(x, p).musK * (1 + ISCI_MUSTERI * flo(p.isci))) : 0,
         yakin: yakin(x, 1.5), ikon: x.sabit ? isletmeOf(x.id).ikon : '', asamaAd: x.sabit && p ? isletmeOf(x.id).asama[p.lv - 1] || '' : '', aletler: x.sabit ? isletmeOf(x.id).esya : [], tadilat: p?.tadilat ? { ...p.tadilat, skipGold: skipGold(p.tadilat.left) } : null, sonraki: p && x.sabit && p.tur === 'dukkan' && p.lv < DUKKAN_MAX_SEVIYE ? { ad: isletmeOf(x.id).asama[p.lv] || '', sureS: tadilatSure(p.lv), aciklar: aciklar(x.id, p.lv) } : null, yukselt: p && p.tur === 'dukkan' && p.lv < DUKKAN_MAX_SEVIYE ? yukPrice(x, DUKKAN_BY_ID[p.tip], p.lv) : null }; }),
       avm: { yakin: avmYakin(), alinan: [...avmZ().alinan], urun: AVM_URUN },
       okul: (() => { const o = okulZ(), w = o.soru >= 0 ? OKUL_KELIME[o.soru] : null; return { soru: w ? w[0] : '', secenek: o.secenek.map(i => OKUL_KELIME[i][1]), cevap: o.cevap, dogru: o.dogru, sinav: OKUL_SINAV, bugun: o.gunSinav === S.day ? (o.gunN || 0) : 0, gunluk: OKUL_GUNLUK_SINAV, son: o.son, sinavlar: [...o.sinavlar], genel: o.sinavlar.length ? Math.round(o.sinavlar.reduce((a, b) => a + b, 0) / o.sinavlar.length) : 0, yakin: okulYakin() }; })(),

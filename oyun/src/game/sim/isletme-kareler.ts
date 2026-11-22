@@ -6,7 +6,8 @@
  * "avm dışında diğer satın alınabilen tüm dükkanlarda parayla açacağımız kareler olsun, dükkanın içeriğine göre". Bu modül hepsini
  * tek yerden kurar (eski adı avm-kareler.ts):
  *  - satın alma karesi: AVM'de dükkân kapısının önünde (holde), sokaktaki dükkânlarda kapının yanında kaldırımda. Dolunca dükkân
- *    senin (mulk arsaAl). Kilitliyse kare görünür ama para almaz, nedenini yazar (seviye / önce başka dükkân).
+ *    senin (mulk arsaAl). Sıra content/acilis.ts: büfe aşaması / önceki dükkân gelmeden kare yok; gelince kilitli görünür, eksiği yazar
+ *    (yıldız, esnaf seviyesi, görev sayacı), koşullar tamamlanınca para alır. Tadilat karesi de büfe aşamasına bağlı.
  *  - alet kareleri: sahip olunan dükkânın sıradaki iki aleti (seviyesi yeten, en ucuzdan; her işletmenin kendi listesi: kafede
  *    espresso makinesi, bistroda kömür ızgara, kırtasiyede fotokopi...). AVM'de dükkânın içinde, sokakta kapının iki yanında.
  *  - tadilat karesi: o seviyenin bütün aletleri alınınca bir sonraki aşamaya tadilat (mulk yukselt, süreli; dükkân çalışmaya devam).
@@ -19,12 +20,15 @@ import { ARSALAR, ISLETME, ARSA_ISLETME, SALON_ESYA, DUKKAN_MAX_SEVIYE, type Ars
 import { icOfArsa, icWorld, icDim, IC_BY_ID, type IcMekan } from '../../content/ic-mekan';
 import { HOL, katY } from '../../content/avm-kat';
 import type { Kernel, PadRt } from './state';
+import { acilisEksik, acilisGorunur, tadilatEksik, kilitYazi, type AcilisDurum } from '../../content/acilis';
 
 interface Plot { lv: number; esya?: string[]; tadilat?: unknown }
 export interface IsletmeKareApi {
   arsaAl(id: string): void; kafeEsya(id: string, e: string): void; plot(id: string): Plot | undefined;
   yukselt?(id: string): void; yukFiyat?(id: string): number; asamaAd?(id: string, lv: number): string;
   salonEsya?(e: string): void; salonVar?(): string[];
+  /** açılış sırası durumu (content/acilis.ts); yoksa her şey açık sayılır (eski testler / araçlar) */
+  durum?(): AcilisDurum;
 }
 interface Kare { key: string; pos: Vec2; kat?: number; y?: number; label: string; sub: string; price: number; kilit: string; done: () => void }
 
@@ -81,8 +85,9 @@ export function installIsletmeKareler(K: Kernel, api: IsletmeKareApi): { sync():
       const avm = avmMi(m), kat = avm ? m.kat || 0 : undefined, p = api.plot(a.id), ad = adOf(a), pre = (avm ? 'avm.' : 'isl.') + a.id;
       const yer = avm ? null : yerler(m), y = avm ? undefined : SOKAK_Y;
       if (!p) {
-        const once = a.once ? ARSALAR.find(x => x.id === a.once) : undefined;
-        const kilit = S.level < a.seviye ? '🔒 ' + a.seviye + '. seviye' : once && !api.plot(once.id) ? '🔒 önce ' + adOf(once) : '';
+        // sıralı açılma (content/acilis.ts): büfe o aşamaya gelmeden / sıradaki önceki dükkân alınmadan kare hiç çıkmaz; çıkınca eksik koşulu yazar
+        const d = api.durum?.(); if (d && !acilisGorunur(a, d)) continue;
+        const kilit = d ? kilitYazi(acilisEksik(a, d)) : '';
         out.push({ key: pre, pos: avm ? satisKaresi(a) : yer![0], kat, label: (avm ? '' : ISLETME[ARSA_ISLETME[a.id]].ikon + ' ') + ad, sub: kilit || 'Dükkânı satın al', price: a.fiyat, kilit, y, done: () => api.arsaAl(a.id) });
         continue;
       }
@@ -93,7 +98,8 @@ export function installIsletmeKareler(K: Kernel, api: IsletmeKareApi): { sync():
       // o seviyenin aletleri bitti: sıradaki aşamaya tadilat (sokak dükkânları; AVM'de yer kapının önündeki satış karesinin yeri)
       if (!sira.length && p.lv < DUKKAN_MAX_SEVIYE && api.yukselt && api.yukFiyat) {
         const sonraki = api.asamaAd?.(a.id, p.lv + 1) || (p.lv + 1) + '. seviye';
-        out.push({ key: pre + '.tadilat', pos: avm ? satisKaresi(a) : yer![0], kat, label: '🔨 Tadilat: ' + sonraki, sub: ad + ' büyür, yeni aletler açılır', price: api.yukFiyat(a.id), kilit: '', y, done: () => api.yukselt!(a.id) });
+        const d = api.durum?.(), kilit = d ? kilitYazi(tadilatEksik(a.id, p.lv + 1, d)) : '';
+        out.push({ key: pre + '.tadilat', pos: avm ? satisKaresi(a) : yer![0], kat, label: '🔨 Tadilat: ' + sonraki, sub: kilit || ad + ' büyür, yeni aletler açılır', price: api.yukFiyat(a.id), kilit, y, done: () => api.yukselt!(a.id) });
       }
     }
     // büfe salonları (iskele): kurulu salonun sıradaki iki aleti, salon kapısının önünde
@@ -115,7 +121,7 @@ export function installIsletmeKareler(K: Kernel, api: IsletmeKareApi): { sync():
       id: 'pad.' + k.key, pos: k.pos, radius: 0.8, kind: 'pad', dwell: 0, interval: 0.05,
       canAct: () => rt.pads.includes(pr) && katim() === (k.kat || 0),
       act: () => {
-        if (k.kilit) { if (!uyari.has(k.key)) { uyari.add(k.key); K.toast(k.label + ': ' + k.kilit.replace('🔒 ', '') + ' gerekli.', 'info'); } return 'done'; }
+        if (k.kilit) { if (!uyari.has(k.key)) { uyari.add(k.key); K.toast(k.label + ': önce ' + k.kilit.replace('🔒 ', '') + '.', 'info'); } return 'done'; }
         const paid = S.padPaid[k.key] || 0, left = pr.price - paid;
         if (S.money < 1) { if (!pr.warned) { pr.warned = true; K.toast('Para lazım: satış yap, kasayı topla.', 'info'); } return 'continue'; }
         const amt = Math.min(Math.max(pr.price / 1.2, 250) * 0.05, S.money, left);

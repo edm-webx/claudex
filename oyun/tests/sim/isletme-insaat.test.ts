@@ -2,7 +2,7 @@
 import { it, expect } from 'vitest';
 import { played } from './m1-helpers';
 
-const mk = () => { const sim = played(1) as any; sim.step(1); const S = sim.state; S.level = 40; S.money = 1e8; return { sim, S, c: (x: any) => sim.command({ kind: 'mulk', ...x }) }; };
+const mk = () => { const sim = played(1) as any; sim.rules.rt.acilisSerbest = true; sim.step(1); /* kurulum: sıralı açılma şartı yok (content/acilis.ts, kendi testi acilis.test.ts) */ const S = sim.state; S.level = 40; S.money = 1e8; return { sim, S, c: (x: any) => sim.command({ kind: 'mulk', ...x }) }; };
 const ustalar = (sim: any) => sim.rules.rt.agents.registry.list.filter((a: any) => a.kind === 'worker' && !a.dead && a.info.role === 'usta');
 
 it('tadilat başlayınca işletme başına tam 2 usta, bitince 0', () => {

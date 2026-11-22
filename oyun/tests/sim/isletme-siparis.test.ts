@@ -4,7 +4,7 @@ import { played, kareyeGit } from './m1-helpers';
 import { ISLETME, ARSA_ISLETME, kafeDolap } from '../../src/content/esya';
 import { KALEM, ISTASYON_SIRA, MAKINE } from '../../src/content/isletme-istasyon';
 
-const mk = () => { const sim = played(1) as any; sim.step(1); const S = sim.state; S.level = 40; S.money = 5e7; return { sim, S, h: sim.rules.rt.kafeHost, c: (x: any) => sim.command({ kind: 'mulk', ...x }) }; };
+const mk = () => { const sim = played(1) as any; sim.rules.rt.acilisSerbest = true; sim.step(1); /* kurulum: sıralı açılma şartı yok (content/acilis.ts, kendi testi acilis.test.ts) */ const S = sim.state; S.level = 40; S.money = 5e7; return { sim, S, h: sim.rules.rt.kafeHost, c: (x: any) => sim.command({ kind: 'mulk', ...x }) }; };
 
 it('veri bütünlüğü: 136 kalemin (17 işletme x 8) hepsinin istasyonu/süresi var, stok/maliyet yok', () => {
   const ids = Object.values(ISLETME).flatMap(i => i.menu.map(m => m.id)); expect(ids.length).toBe(136);

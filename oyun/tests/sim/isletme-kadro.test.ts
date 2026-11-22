@@ -4,7 +4,7 @@ import { played, kareyeGit } from './m1-helpers';
 import { mulkApi } from '../../src/game/sim/mulk';
 import { ISLETME_ROL, ISCI_GUN_UCRET } from '../../src/content/isletme-kadro';
 
-const mk = () => { const sim = played(1) as any; sim.step(1); const m = mulkApi(sim.rules)!; const S = sim.state; S.level = 40; S.money = 5e7; return { sim, m, S, rt: sim.rules.rt, c: (x: any) => sim.command({ kind: 'mulk', ...x }) }; };
+const mk = () => { const sim = played(1) as any; sim.rules.rt.acilisSerbest = true; sim.step(1); /* kurulum: sıralı açılma şartı yok (content/acilis.ts, kendi testi acilis.test.ts) */ const m = mulkApi(sim.rules)!; const S = sim.state; S.level = 40; S.money = 5e7; return { sim, m, S, rt: sim.rules.rt, c: (x: any) => sim.command({ kind: 'mulk', ...x }) }; };
 const plot = (S: any, id: string) => S.zones.arsa.plots[id];
 
 it('ilan 3 aday üretir: adlı, yüzlü, rolü işletmeden, fiyat 12000', () => {

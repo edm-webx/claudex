@@ -122,7 +122,7 @@ export function createMulkView(d: MulkViewDeps): MulkView {
         const p = plots.get(pv.id)!, a = ARSALAR.find(x => x.id === pv.id)!, mp = md.arsa.find(x => x.id === pv.id)!;
         if (Math.hypot(d.hero().x - a.x, d.hero().z - a.z) > 20) { p.label.hide(); continue; }
         const t = pv.tur === 'dukkan' ? DUKKAN_BY_ID[pv.tip] : null;
-        const ik = (mp as { ikon?: string }).ikon || '☕', txt = !pv.owned ? (a.sabit ? ik + ' ' + (a.ad || 'Kafe') + ' · SATILIK · ' : '🏗️ SATILIK · ') + Math.round(mp.fiyat / 1000) + 'K ₺' + (md.level < mp.seviye ? ' · 🔒 ' + mp.seviye + '. sv' : '') : !pv.tur ? 'Boş arsa' : pv.tur === 'ev' ? '🏠 Evin' : (a.sabit ? ik + ' ' + (a.ad || '') : (t ? t.ikon + ' ' + t.tabela : '')) + (pv.isci ? ' · 👷 ' + pv.isci : '') + (pv.till > 0 ? ' · 💰 ' + pv.till : '');
+        const ik = (mp as { ikon?: string }).ikon || '☕', txt = !pv.owned ? (a.sabit ? ik + ' ' + (a.ad || 'Kafe') + ' · SATILIK · ' : '🏗️ SATILIK · ') + Math.round(mp.fiyat / 1000) + 'K ₺' + ((mp as { kilit?: string }).kilit ? ' · 🔒' : '') : !pv.tur ? 'Boş arsa' : pv.tur === 'ev' ? '🏠 Evin' : (a.sabit ? ik + ' ' + (a.ad || '') : (t ? t.ikon + ' ' + t.tabela : '')) + (pv.isci ? ' · 👷 ' + pv.isci : '') + (pv.till > 0 ? ' · 💰 ' + pv.till : '');
         const avm = AVM_ARSA.indexOf(a.id);   // 2026-11-20: four AVM doors 3.9 m apart: labels right over each door, staggered in height
         if (a.kapi && avm >= 0) put(p.label, a.kapi.x, 4.4 + (avm % 2) * 0.75, a.kapi.z, esc(txt)); else if (a.kapi) put(p.label, a.kapi.x - 1.2, 4.6, a.kapi.z, esc(txt)); else put(p.label, a.x, 4.2 + (pv.tur ? 0.6 : -1.2), a.z + (a.rotY ? -1.8 : 1.8), esc(txt));
       }

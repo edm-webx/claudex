@@ -63,7 +63,7 @@ export function createRtView(env: RtEnv): RtView {
   const used = new Map<string, number>();
 
   // ---- ground markers
-  const padMk = new Map<string, { g: T.Object3D; price: number }>();
+  const padMk = new Map<string, { g: T.Object3D; price: number; sub?: string }>();
   let slowMk: T.Object3D | null = null;
   let focusMk: T.Object3D | null = null, focusBeam: T.Mesh | null = null;
   const dwell = { g: new T.Group(), ring: null as T.Mesh | null, base: null as T.Mesh | null, last: -1 };
@@ -249,8 +249,8 @@ export function createRtView(env: RtEnv): RtView {
       const shown = paid > 0.5 ? Math.max(0, Math.ceil((price - paid) / 10) * 10) : Math.round(price);
       if (!rec) {
         const g = makeMarker('pad', { label: def.label, sub: def.sub, price: shown }) as T.Object3D;
-        (pd.kat !== undefined ? avmGrp : root).add(g); rec = { g, price: shown }; padMk.set(pd.key, rec);
-      } else if (rec.price !== shown) { rec.price = shown; (rec.g.userData.setText as (a: unknown) => void)({ label: def.label, sub: def.sub, price: shown }); }
+        (pd.kat !== undefined ? avmGrp : root).add(g); rec = { g, price: shown, sub: def.sub }; padMk.set(pd.key, rec);
+      } else if (rec.price !== shown || rec.sub !== def.sub) {   /* kilit satırı (content/acilis.ts görev sayacı) değişince de yenilenir */ rec.price = shown; rec.sub = def.sub; (rec.g.userData.setText as (a: unknown) => void)({ label: def.label, sub: def.sub, price: shown }); }
       rec.g.position.set(pd.pos.x, pd.y || 0, pd.pos.z); rec.g.visible = (pd.kat || 0) <= ((rules.playerPos as { kat?: number }).kat || 0);   // Martı AVM: on its floor, hidden above the hero's (cutaway)
       (rec.g.userData.setFill as (k: number) => void)(Math.min(1, paid / Math.max(1, price)));
     });

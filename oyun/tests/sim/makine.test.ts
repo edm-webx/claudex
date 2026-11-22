@@ -8,7 +8,7 @@ import { ARSA_ISLETME, ISLETME } from '../../src/content/esya';
 import { KALEM, MAKINE, MAKINE_TEPSI } from '../../src/content/isletme-istasyon';
 
 const ROOMS = icBina('avm');
-const mk = () => { const sim = played(1) as any; sim.step(1); const S = sim.state; return { sim, S, h: sim.rules.rt.kafeHost, c: Object.assign((x: any) => sim.command({ kind: 'mulk', ...x }), { sim }) }; };
+const mk = () => { const sim = played(1) as any; sim.rules.rt.acilisSerbest = true; sim.step(1); /* kurulum: sıralı açılma şartı yok (content/acilis.ts, kendi testi acilis.test.ts) */ const S = sim.state; return { sim, S, h: sim.rules.rt.kafeHost, c: Object.assign((x: any) => sim.command({ kind: 'mulk', ...x }), { sim }) }; };
 const roomOf = (id: string) => ROOMS.find(m => m.arsa === id)!;
 const buyAll = (c: any, ...ids: string[]) => { for (const id of ids) { kareyeGit(c.sim, id); c({ op: 'arsaAl', id }); } };
 const kafe = (sim: any) => sim.rules.rt.agents.kafe;
