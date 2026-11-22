@@ -444,13 +444,16 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
     if (rt.w.role === 'barista') { const [u, v] = mutfakStand('cay_bar'); return [u - i * 1.2, v]; }   // BUF-13: çay barı postu
     if (rt.w.role === 'kasiyer') return [2.0 - i * 1.2, ROW];
     if (rt.w.role === 'sef') { const d = MUTFAK_NOKTA.sefDurak; return i < d.length ? d[i] : [d[0][0] - 1.3 * i, d[0][1]]; }
-    if (rt.w.role === 'komi') { const d = MUTFAK_NOKTA.komiDurak; return i < d.length ? d[i] : [d[d.length - 1][0] - 1.7 * (i - d.length + 1), d[0][1]]; }
+    if (rt.w.role === 'komi') {   // 2026-11-22: boştaki komi ön hattın hazırlık tezgâhlarında (salata/meze/tatlı) siler, koridorda dizilmez
+      const P = mutfakEsya(env.rules.state.stage || 1).filter((id) => MUTFAK_YER[id]?.sira === 'on' && ['salata', 'meze', 'tatli'].includes(id));
+      if (P.length) { const [u, v] = mutfakStand(P[i % P.length]); return [u + (i >= P.length ? 0.7 : 0), v]; }
+      const d = MUTFAK_NOKTA.komiDurak; return i < d.length ? d[i] : [d[d.length - 1][0] - 1.7 * (i - d.length + 1), d[0][1]]; }
     if (rt.w.role === 'asci') {
       const d = host.kitchenDevir?.(rt.w.id); if (d) return mutfakStand(d);   // BUF-06: devralınan istasyonda durur
       // 2026-11-21 (sahibi: "işçiler boş boş duruyor, istasyonlar sadece görüntü"): boştaki aşçı ön koridorda dizilmez, arka hattın
       // pişirme istasyonlarından birinin önünde durup tezgâhını siler; sipariş gelince en yakın boş istasyona geçer
       const L = mutfakEsya(env.rules.state.stage || 1).filter((id) => MUTFAK_YER[id]?.sira === 'arka' && pisirIstasyonu(id));
-      if (L.length) return mutfakStand(L[(i * 2 + 1) % L.length]);
+      if (L.length) { const [u, v] = mutfakStand(L[i % L.length]); return [u + (i >= L.length ? 0.7 : 0), v]; }   // her aşçıya ayrı istasyon
     }
     return [-3.4 + i * 1.7, ROW];
   };
@@ -512,9 +515,9 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
       case 'kBack': rt.state = 'kIdle'; rt.t = 0; rt.loadT = 0; a.rot = Math.PI; a.act = 'idle'; return;
       case 'kIdle': {
         a.act = 'idle';
-        if (role === 'asci') {   // 2026-11-21: postunda boşken istasyonunu siler (4.5 sn sil, 2.5 sn bekle), sırtı odaya dönük
+        if (role === 'asci' || role === 'komi') {   // 2026-11-21: postunda boşken istasyonunu siler (4.5 sn sil, 2.5 sn bekle), yüzü tezgâha
           rt.silT = ((rt.silT || 0) + dt) % 7; const [pu, pv] = kIdlePost(rt);
-          if (near2(a, kw(pu, pv), 0.45)) { a.rot = Math.PI; if (rt.silT < 4.5) a.act = 'wipe'; }
+          if (near2(a, kw(pu, pv), 0.45)) { a.rot = pv > 0 ? 0 : Math.PI; if (rt.silT < 4.5) a.act = 'wipe'; }
         }
         if (role === 'bulasikci') {   // BUF-13: dirty plates at the dishwashing station are washed one by one (no player work); idle when the pile is empty
           if ((host.dishCount?.() || 0) > 0) { rt.state = 'kWash'; rt.loadT = 0; rt.pauseT = 1.5; }

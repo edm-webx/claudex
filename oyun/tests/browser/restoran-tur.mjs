@@ -16,7 +16,7 @@ await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengel
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 120000 });
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
 await kulisKapat(p, 'Gozlem');
-await p.evaluate(() => { const M = window.__marti; M.setTime(13); M.step(2); M.izgara(false); M.simCmd('money', 9e9); M.simCmd('level', 40); M.simCmd('unlock', 'isbul'); M.closeJobBoard?.(); M.closePanel?.();
+await p.evaluate(() => { const M = window.__marti; try { M.command({ kind: 'esnafim', op: 'done' }); } catch {} M.step(1); M.skipCeremony?.(); M.collectWelcome?.(); M.setTime(13); M.step(2); M.izgara(false); M.simCmd('money', 9e9); M.simCmd('level', 40); M.simCmd('unlock', 'isbul'); M.closeJobBoard?.(); M.closePanel?.();
   const st = document.createElement('style'); st.textContent = '#sbui{visibility:hidden!important}'; document.head.appendChild(st); });
 // [hero x, z, cam x, z, zoomRaw, yaw (×π/2), tilt]
 const SPOTS = {
@@ -33,7 +33,7 @@ for (const STAGE of STAGES) {
     M.setTime(12.5); M.teleport(30, 8);
     if (!M.restoranGozlem) { M.step(150); return { gozlemYok: 1 }; } // eski dist (öncesi)
     // gözlem: 150 oyun saniyesi, saniyede bir örnek
-    const s = { ornek: 0, masaMusteri: 0, siraMusteri: 0, oturan: 0, kuyrukOrt: 0, biletMax: 0, mutfakIs: 0, mutfakBos: 0, asciDizi: 0, garsonSalonPass: 0, passTabak: { on: 0, W: 0, E: 0 }, musteriPersonelAlaninda: 0, roller: {} };
+    const s = { ornek: 0, masaMusteri: 0, siraMusteri: 0, oturan: 0, kuyrukOrt: 0, biletMax: 0, mutfakIs: 0, mutfakBos: 0, asciDizi: 0, garsonSalonPass: 0, passTabak: { on: 0, W: 0, E: 0 }, musteriPersonelAlaninda: 0, ihlalYer: [], roller: {} };
     const K = { x0: -8.55, x1: 8.55, z0: -17.4, z1: -13.0 }, KOR = [{ x0: -12.2, x1: -6.9, z0: -16.95, z1: -15.45 }, { x0: 6.9, x1: 9.6, z0: -16.95, z1: -15.45 }];
     const inR = (q, r) => q.x > r.x0 && q.x < r.x1 && q.z > r.z0 && q.z < r.z1;
     const WP = { x: -12.9, z: -16.4 }, EP = { x: 10.3, z: -16.4 };
@@ -41,7 +41,7 @@ for (const STAGE of STAGES) {
       M.step(1); const o = M.restoranGozlem(); s.ornek++;
       const yeni = o.cust.filter(c => c.s !== 'leave'); s.masaMusteri += yeni.filter(c => c.k === 'masa').length; s.siraMusteri += yeni.filter(c => c.k !== 'masa' && c.k !== 'win').length;
       s.oturan += yeni.filter(c => c.t >= 0).length; s.kuyrukOrt += o.q; s.biletMax = Math.max(s.biletMax, o.bilet);
-      for (const c of yeni) if (inR(c, K) || KOR.some(r => inR(c, r))) s.musteriPersonelAlaninda++;
+      for (const c of yeni) if (Math.abs(c.x + 11.65) > 0.5 && Math.abs(c.x - 9.05) > 0.5 && (inR(c, K) || KOR.some(r => inR(c, r)))) { s.musteriPersonelAlaninda++; if (s.ihlalYer.length < 8) s.ihlalYer.push([c.x, c.z, c.k, c.s]); }
       for (const w of o.w) { s.roller[w.r] = (s.roller[w.r] || 0) + 1;
         if (['asci', 'komi', 'sef', 'barista'].includes(w.r)) { if (/kIdle|kBack|kArrive/.test(w.s)) s.mutfakBos++; else s.mutfakIs++; }
         if (w.r === 'garson' && (Math.hypot(w.x - WP.x, w.z - WP.z) < 0.6 || Math.hypot(w.x - EP.x, w.z - EP.z) < 0.6)) s.garsonSalonPass++; }
@@ -52,9 +52,9 @@ for (const STAGE of STAGES) {
     for (const k of Object.keys(s.roller)) s.roller[k] = Math.round(s.roller[k] / s.ornek);
     return s;
   }, STAGE);
-  for (const id of ids) {
+  for (const id of ids.filter(i => SPOTS[i])) {
     const s = SPOTS[id]; const [x, z, cx, cz, zr, yi, tilt] = s;
-    await p.evaluate(([x, z, cx, cz, zr, yi, tilt]) => { const M = window.__marti; M.teleport(x, z); for (let k = 0; k < 6; k++) { M.step(0.4); M.renderFrames(3, 0.1); } M.camera({ x: cx, z: cz, zoomRaw: zr, yaw: yi * Math.PI / 2, tilt }); for (let k = 0; k < 4; k++) M.renderFrames(3, 0.1); }, [x, z, cx, cz, zr, yi, tilt]);
+    await p.evaluate(([x, z, cx, cz, zr, yi, tilt]) => { const M = window.__marti; M.setTime(13); M.closePanel?.(); M.teleport(x, z); for (let k = 0; k < 6; k++) { M.step(0.4); M.renderFrames(3, 0.1); } M.camera({ x: cx, z: cz, zoomRaw: zr, yaw: yi * Math.PI / 2, tilt }); for (let k = 0; k < 4; k++) M.renderFrames(3, 0.1); }, [x, z, cx, cz, zr, yi, tilt]);
     await p.waitForTimeout(200); await p.screenshot({ path: join(out, `${String(STAGE).padStart(2, '0')}-${id}.png`), timeout: 300000 });
   }
   rapor.push({ STAGE, ...g }); console.log('ok', STAGE, JSON.stringify(g));
