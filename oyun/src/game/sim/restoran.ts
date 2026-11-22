@@ -356,7 +356,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
         }
         const el = ctx.t - pStat.last < 0.5 ? ctx.t - pStat.last : DWELL_DEFAULTS.station + 0.1;   // dwell süresi yapılmış iş sayılır
         pStat.last = ctx.t;
-        rt.act = ist === 'cay_bar' ? 'pour' : 'cut'; rt.actT = 0.4;
+        rt.act = ist === 'cay_bar' || ist === 'icecek_dolap' ? 'pour' : 'cut'; rt.actT = 0.4;
         const pl = hat.pTik(el);
         if (pl) {
           rt.carry.push(pl as Item); K.stat('oyuncuTabak');

@@ -8,7 +8,7 @@ import { makeSandbox, addWorker, stubHat } from './agents-harness';
 import { IC_BY_ID, icColliders, icIcinde } from '../../src/content/ic-mekan';
 
 it('stations unlock by stage and fill the room (15 at stage 10)', () => {
-  expect(mutfakEsya(2)).toEqual([]); expect(mutfakEsya(3).sort()).toEqual(['cay_bar', 'ocak', 'pass']);
+  expect(mutfakEsya(2)).toEqual([]); expect(mutfakEsya(3).sort()).toEqual(['cay_bar', 'icecek_dolap', 'ocak', 'pass']);
   expect(MUTFAK_ISTASYON.every(i => ['pisir', 'pass', 'sef', 'bulasik', 'gorsel'].includes(i.islev))).toBe(true);   // BUF-05: işlev alanı
   expect(MUTFAK_ISTASYON.find(i => i.id === 'soguk_oda')!.islev).toBe('gorsel');
   expect(mutfakEsya(10).length).toBe(MUTFAK_ISTASYON.length); expect(MUTFAK_ISTASYON.length).toBeGreaterThanOrEqual(15);
