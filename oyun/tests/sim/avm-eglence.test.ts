@@ -68,9 +68,17 @@ it('sinema: seyirci önce gişeden bilet alır, salona girip koltuğa oturur ve 
 it('oyuncu: gişede durunca bilet alır (para düşer), salon kapısındaki görevli bileti alır', () => {
   const { sim, S, y } = mk(); sim.command({ kind: 'setTime', hour: 9.05 }); gir(sim, EGLENCE_KAT);
   S.money = 1000; const g = GISELER[0];
-  sim.command({ kind: 'teleport', x: g.musteri.x, z: g.musteri.z, kat: EGLENCE_KAT }); for (let i = 0; i < 12 && !y.bilet(); i++) sim.step(0.1);
+  sim.command({ kind: 'teleport', x: g.musteri.x, z: g.musteri.z, kat: EGLENCE_KAT }); for (let i = 0; i < 25 && !y.bilet(); i++) sim.step(0.1);
   expect(y.bilet()).toBeTruthy(); expect(S.money).toBe(1000 - BILET_FIYAT);
   const s = SALONLAR.find(x => x.id === y.bilet().salon)!;
   sim.command({ kind: 'teleport', x: s.kapi.x, z: s.kapi.z, kat: EGLENCE_KAT }); for (let i = 0; i < 12 && y.bilet(); i++) sim.step(0.1);
   expect(y.bilet()).toBeNull();
+});
+
+it('oyuncu: gişenin önünden geçerken (kısa durak) bilet kesilmez', () => {
+  const { sim, S, y } = mk(); sim.command({ kind: 'setTime', hour: 9.05 }); gir(sim, EGLENCE_KAT);
+  S.money = 1000; const g = GISELER[0];
+  sim.command({ kind: 'teleport', x: g.musteri.x, z: g.musteri.z, kat: EGLENCE_KAT }); for (let i = 0; i < 6; i++) sim.step(0.1);
+  sim.command({ kind: 'teleport', x: g.musteri.x + 4, z: g.musteri.z, kat: EGLENCE_KAT }); for (let i = 0; i < 20; i++) sim.step(0.1);
+  expect(y.bilet()).toBeNull(); expect(S.money).toBe(1000);
 });

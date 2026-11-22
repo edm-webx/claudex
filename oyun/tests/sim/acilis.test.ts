@@ -78,3 +78,20 @@ it('dükkân alınınca açılış sandığı düşer; dükkânın kendi görev 
   const row = (mulkApi(sim.rules) as any).model().arsa.find((x: any) => x.id === 'k1');
   expect(row.dgorev).toMatchObject({ ad: '2. seviyeye çıkar', v: 1, n: 2, no: 4 });
 });
+
+it('AR-GE: görevlerden önce alınmış dükkân (eski kayıt) bir anda ödül yağdırmaz; tamamlanmış görevler ödülsüz atlanır, sonrakiler ödüllü', () => {
+  const { sim, S } = mk(); S.money = 100; S.level = 20; S.stage = 6;
+  S.zones.arsa ||= {}; S.zones.arsa.plots ||= {};
+  S.zones.arsa.plots.k1 = { tur: 'dukkan', tip: 'kafe', lv: 3, till: 0, sat: 400, fr: 0, isci: 2, esya: ['a', 'b'] };   // eski kayıt: dg_k1 yok
+  delete S.tut.dg_k1; const m0 = S.money;
+  for (let i = 0; i < 12; i++) sim.step(0.26);
+  expect(S.tut.dg_k1).toBe(6);   // 6 görev zaten tamam (alet, işçi, 50, lv2, 300, lv3): ödülsüz atlandı
+  expect(S.money).toBeLessThan(m0 + 1000);
+  S.zones.arsa.plots.k1.sat = 1200; sim.step(0.26); expect(S.tut.dg_k1).toBe(7); expect(S.money).toBeGreaterThan(m0 + 1000);   // sıradaki gerçekten ödüllü
+});
+
+it('AR-GE: sıralı açılmadan önce yarım ödenmiş ama artık gizli dükkân karesinin parası iade edilir', () => {
+  const { sim, S } = mk(); S.money = 1000; S.padPaid['avm.k8'] = 25000;
+  sim.step(0.6);
+  expect(S.padPaid['avm.k8']).toBeUndefined(); expect(S.money).toBe(26000);
+});
