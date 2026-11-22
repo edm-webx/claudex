@@ -231,7 +231,7 @@ export function createAvmYasam(env: AgentEnv): AvmYasamSystem {
     const x = seans(s, env.host.hour()), bolum = t.sinBolum || 0;
     const gecti = x.bolum > bolum || (x.bolum === bolum && (x.durum === 'cikis' || x.durum === 'kapali') && x.t > 0) || (x.durum === 'kapali' && bolum > 0 && x.bolum === 0 && env.host.hour() < 9);
     if (gecti) {
-      if (!t.sinGir) { const S = env.rules.state as { money: number }; S.money = Math.round((S.money + BILET_FIYAT) * 100) / 100;   // iade gelir değildir (gelir kapısından geçmez; pad iadesiyle aynı yol) env.host.toast('🎟️ Seans kaçtı: bilet iade (+' + BILET_FIYAT + ' ₺)', 'info'); }
+      if (!t.sinGir) { /* iade gelir değildir: gelir kapısından geçmez, pad iadesiyle aynı yol */ const S = env.rules.state as { money: number }; S.money = Math.round((S.money + BILET_FIYAT) * 100) / 100; env.host.toast('🎟️ Seans kaçtı: bilet iade (+' + BILET_FIYAT + ' ₺)', 'info'); }
       else if (izleT >= IZLE_S * 0.5) odul(s);   // filmin sonuna yetişen: yarısını izlediyse sayılır
       biletSil(); return;
     }
