@@ -2,7 +2,15 @@
 // ocak/ızgara hattı iki ve fazla aşçıyla devreye girer, tabak tepsiden (komi ya da aşçı taşır) pass rafına düşer, garson pass'tan alır,
 // şef hızı tek yerden sayılır. Deterministik: sabit tohum, rastgelelik yok.
 import { CITIZENS } from '../../src/content/citizens';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+// Aşama 10 testinin kapsam sürücüsü: 'pass' istasyonunun tek yemeği Maraş dondurması (38 yemekte satır başına ~%5). Test her 30 sn
+// "tatlı sever balayı çifti" çağırır; yoğunlukta çiftlerin çoğu sipariş veremeden kalkıyor ve dondurma çıkması rastgele sıraya kalıyordu
+// (menü büyüyüp tohum kayınca 30 dk'da hiç sipariş edilmedi). Bu dosyada balayı çifti dondurmayı gerçekten sever: seçim yine gerçek
+// restoran.ts openTicket akışından geçer, yalnız balayı tipinin dondurma ağırlığı artar. Diğer tipler ve eşikler aynı.
+vi.mock('../../src/content/yemek-menu', async (orj) => {
+  const m = await orj<typeof import('../../src/content/yemek-menu')>();
+  return { ...m, yemekAgirlik: (d: { id: string }, tip: string, b: never) => m.yemekAgirlik(d as never, tip, b) * (tip === 'balayi' && d.id === 'maras_dondurma' ? 20 : 1) };
+});
 import { played, events } from './m1-helpers';
 import { makeSandbox, addWorker, stubHat } from './agents-harness';
 import { restoranApi } from '../../src/game/sim/restoran';
