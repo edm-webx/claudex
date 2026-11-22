@@ -8,7 +8,7 @@ import { icOfArsa, icIcinde, IC_MEKANLAR } from '../../src/content/ic-mekan';
 import { disKareYerleri } from '../../src/game/sim/isletme-kareler';
 
 const SOKAK = ARSALAR.filter(a => a.sabit && icOfArsa(a.id) && icOfArsa(a.id)!.bina !== 'avm');
-const mk = () => { const sim = played(1) as any; sim.step(1); return { sim, S: sim.state }; };
+const mk = (serbest = true) => { const sim = played(1) as any; sim.rules.rt.acilisSerbest = serbest; sim.step(1); return { sim, S: sim.state }; };   // serbest: sıralı açılma şartı yok (acilis.test.ts)
 const stand = (sim: any, key: string, sec: number) => {
   sim.step(0.3); const it = sim.interactions.get('pad.' + key); expect(it, key).toBeTruthy();
   sim.command({ kind: 'teleport', x: it.pos.x, z: it.pos.z }); for (let i = 0; i < sec * 10; i++) sim.step(0.1);
@@ -29,7 +29,7 @@ it('sokaktaki her dükkânın kapısının yanında bir satın alma karesi var; 
 });
 
 it('Meydan Kafe: kilitliyken kare para almaz; seviye gelince basınca para akar, dolunca dükkân senin; sonra kafenin kendi aletleri kareyle kurulur; aletler bitince tadilat', () => {
-  const { sim, S } = mk(); S.money = 5e6; S.level = 1;
+  const { sim, S } = mk(false); S.money = 5e6; S.level = 1; S.stage = 2; S.stats.served = 600;   // sıradaki ilk dükkân: büfe 2. aşama + görev tamam, esnaf seviyesi eksik
   const m0 = S.money; stand(sim, 'isl.k1', 2); expect(S.money).toBe(m0); expect(S.zones.arsa?.plots?.k1).toBeUndefined();
   S.level = 5; sim.step(0.5);
   stand(sim, 'isl.k1', 0.3); expect(S.padPaid['isl.k1']).toBeGreaterThan(0);   // yarım kalan para kaydedilir

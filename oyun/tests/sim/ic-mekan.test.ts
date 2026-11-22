@@ -34,7 +34,7 @@ it('every business type has its own menu and at least 8 tools; every tool of a p
 });
 
 it('school canteen: locked below level 3, bought inside the school, own menu, a toaster raises prices, panel works inside', () => {
-  const sim = played(1) as any; sim.step(1); const m = mulkApi(sim.rules)!, S = sim.state, c = (x: any) => sim.command({ kind: 'mulk', ...x });
+  const sim = played(1) as any; sim.rules.rt.acilisSerbest = true; sim.step(1); /* kurulum: sıralı açılma şartı yok (content/acilis.ts, kendi testi acilis.test.ts) */ const m = mulkApi(sim.rules)!, S = sim.state, c = (x: any) => sim.command({ kind: 'mulk', ...x });
   const room = IC_BY_ID.okul, p = icWorld(room, 4, 0);
   sim.command({ kind: 'teleport', x: p.x, z: p.z }); sim.step(0.3);
   expect(m.view().arsaYakin).toBe('k4');
@@ -49,7 +49,7 @@ it('school canteen: locked below level 3, bought inside the school, own menu, a 
 });
 
 it('büfe halls: tools need the hall stage, raise the real table bill on their side; the bank opens at the teller window', () => {
-  const sim = played(1) as any; sim.step(1); const m = mulkApi(sim.rules)!, S = sim.state, c = (x: any) => sim.command({ kind: 'mulk', ...x });
+  const sim = played(1) as any; sim.rules.rt.acilisSerbest = true; sim.step(1); /* kurulum: sıralı açılma şartı yok (content/acilis.ts, kendi testi acilis.test.ts) */ const m = mulkApi(sim.rules)!, S = sim.state, c = (x: any) => sim.command({ kind: 'mulk', ...x });
   S.money = 1e7; S.stage = 5; c({ op: 'salonEsya', e: 'tas_firin' }); expect(S.zones.salon?.esya || []).toEqual([]);
   S.stage = 6; c({ op: 'salonEsya', e: 'tas_firin' }); c({ op: 'salonEsya', e: 'buz_tezgah' });   // east hall tool needs stage 7
   expect(S.zones.salon.esya).toEqual(['tas_firin']);

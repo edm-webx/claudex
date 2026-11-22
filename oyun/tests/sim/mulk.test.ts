@@ -5,7 +5,7 @@ import { mulkApi } from '../../src/game/sim/mulk';
 import { IC_BY_ID } from '../../src/content/ic-mekan';
 import { BANKA, ARSALAR, arsaKapi, STADYUM } from '../../src/content/esya';
 
-const mk = () => { const sim = played(1) as any; sim.step(1); const m = mulkApi(sim.rules)!; return { sim, m, S: sim.state, rt: sim.rules.rt, c: (x: any) => sim.command({ kind: 'mulk', ...x }) }; };
+const mk = () => { const sim = played(1) as any; sim.rules.rt.acilisSerbest = true; sim.step(1); /* kurulum: sıralı açılma şartı yok (content/acilis.ts, kendi testi acilis.test.ts) */ const m = mulkApi(sim.rules)!; return { sim, m, S: sim.state, rt: sim.rules.rt, c: (x: any) => sim.command({ kind: 'mulk', ...x }) }; };
 
 it('bank: only at the door, deposits and withdraws money and items, never negative', () => {
   const { sim, m, S, rt, c } = mk();

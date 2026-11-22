@@ -11,6 +11,7 @@ import { makeBot } from '../../src/game/ui/bot-ai.mjs';
 import { panelModel } from '../../src/game/sim/panels';
 import { ARSALAR, BANKA, isciFiyat, kafeIsciMax } from '../../src/content/esya';
 import { IC_BY_ID } from '../../src/content/ic-mekan';
+import { acilisEksik } from '../../src/content/acilis';
 import { GAME_DAY_S } from '../../src/engine/api';
 
 const log = { info() {}, warn() {}, error() {} };
@@ -58,7 +59,8 @@ function holdingHamle(sim: any, S: any, rt: any): void {
   const sahip = plots(S);
   // sahip olunan işletmeye işçi tut: oda sim'inde müşteriyi yalnız işçi (veya oyuncu) karşılar, işçisiz işletme gelir getirmez (oyuncu içeride durmuyor varsayımı)
   for (const id of Object.keys(sahip)) { const p = sahip[id], n = Number(p.isci) || 0; if (p.tur === 'dukkan' && n < Math.min(2, kafeIsciMax(p.lv)) && S.money >= isciFiyat(n) * 2) { sim.command({ kind: 'mulk', op: 'isciAl', id }); return; } }
-  const aday = ARSALAR.filter(a => a.sabit && !sahip[a.id] && S.level >= a.seviye).sort((a, b) => a.fiyat - b.fiyat)[0];
+  const dur = { stage: S.stage, stars: S.stars, level: S.level, stats: S.stats, sahip: (id: string) => !!sahip[id] };   // sıralı açılma (content/acilis.ts)
+  const aday = ARSALAR.filter(a => a.sabit && !sahip[a.id] && !acilisEksik(a, dur).length).sort((a, b) => a.fiyat - b.fiyat)[0];
   if (!aday) return;
   const tampon = 3000;
   if (S.money < aday.fiyat + tampon) return;
