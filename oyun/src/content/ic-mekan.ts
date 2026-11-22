@@ -297,6 +297,7 @@ export const MUTFAK_YER: Record<string, { u: number; w: number; sira: 'arka' | '
   ocak2: { u: -7.45, w: 1.6, sira: 'arka', k: 'ocakK' }, izgara2: { u: 7.45, w: 1.6, sira: 'arka', k: 'izgaraK' },
   // ön hat: pass (pencerede), çay barı; 6-7: salata, soğuk meze, tatlı
   pass: { u: -2.9, w: 2.0, sira: 'on', k: 'pass' }, cay_bar: { u: 2.6, w: 1.6, sira: 'on', k: 'cayBar' },
+  icecek_dolap: { u: 1.4, w: 0.8, sira: 'on', k: 'buzdolap' },   // 2026-11-22: kapının sağında soğuk içecek dolabı (Kolaz, soda, gazoz)
   salata: { u: -5.4, w: 1.6, sira: 'on', k: 'salata' }, meze: { u: 4.6, w: 1.4, sira: 'on', k: 'mezeDolap' }, tatli: { u: 5.95, w: 1.2, sira: 'on', k: 'tatliVitrin' },
   // 10: şef pasosu ortada (hazırlık tezgâhlarının sağında)
   sef_masa: { u: 6.0, w: 2.4, sira: 'orta', k: 'sefMasa' },

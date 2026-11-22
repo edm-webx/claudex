@@ -534,7 +534,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
       }
       case 'kCook': {   // wait-and-take: no burning, no quality; rank + chef shorten it (one formula, host.kitchenSure)
         if (!host.kitchenIst?.(rt.w.id)) { rt.state = 'kIdle'; rt.t = 0; return; }
-        a.act = rt.jobKey === 'cay_bar' ? 'pour' : 'cut'; rt.loadT += dt;
+        a.act = rt.jobKey === 'cay_bar' || rt.jobKey === 'icecek_dolap' ? 'pour' : 'cut'; rt.loadT += dt;
         if (rt.loadT < (host.kitchenSure?.(rt.w.id) || 4.5)) return;
         host.kitchenReady?.(rt.w.id); rt.w.xp = (rt.w.xp || 0) + 1; checkRank(rt);
         if (komiVar()) { rt.state = 'kIdle'; rt.t = 0.3; rt.loadT = 0; return; }   // the komi carries it, the cook takes the next job

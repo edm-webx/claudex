@@ -37,9 +37,12 @@ export const DISHES: DishDef[] = [
   // 3 çay bahçesi
   D('demlik_cay', 'Demlik çay', 'cay_bar', 6, 35, 3, 'icecek'),
   D('gozleme', 'Gözleme', 'ocak', 14, 80, 3, 'hamur'),
+  // 2026-11-22: içecek dolabından şişe (büfedeki gazoz dolabı gibi): Kolaz ve soda, aşama 4'te gazoz çeşitleri
+  D('kola', 'Kolaz (buz gibi şişe)', 'icecek_dolap', 2, 45, 3, 'icecek'),
+  D('soda', 'Martı Soda', 'icecek_dolap', 2, 30, 3, 'icecek'),
   // 4
   D('maras_dondurma', 'Maraş dondurma', 'pass', 5, 60, 4, 'tatli'),
-  D('gazoz_cesit', 'Gazoz çeşitleri', 'cay_bar', 3, 55, 4, 'icecek'),
+  D('gazoz_cesit', 'Gazoz çeşitleri', 'icecek_dolap', 2, 55, 4, 'icecek'),
   D('tavuk_sis', 'Tavuk şiş', 'izgara', 22, 150, 4, 'izgara'),
   D('patates_kizartma', 'Patates kızartması', 'fritoz', 12, 70, 4, 'hamur'),
   // 5
@@ -95,7 +98,7 @@ export const isProduct = (id: string): id is ProductId => id in PRODUCTS;
 /** yiyeceğin istenen istasyonu (yemek: DishDef.istasyon, tezgâh ürünü: URUN_ISTASYON) */
 export const yemekIstasyon = (f: FoodId): string => DISH_BY_ID[f]?.istasyon ?? URUN_ISTASYON[f] ?? 'ocak';
 /** BUF-13: içecek mi (çay barında hazırlanır: tezgâh içecekleri ve menüdeki içecek yemekleri); barista varsa yalnız o yapar */
-export const icecekMi = (f: FoodId): boolean => yemekIstasyon(f) === 'cay_bar';
+export const icecekMi = (f: FoodId): boolean => { const i = yemekIstasyon(f); return i === 'cay_bar' || i === 'icecek_dolap'; };
 /** o aşamada gerçekten pişeceği istasyon (yoksa ocak yedeği; soğuk oda ve bulaşık asla) */
 export const calismaIstasyonu = (f: FoodId, stage: number): string => calismaIstasyonuOf(yemekIstasyon(f), stage);
 /** yiyeceğin temel hazırlık süresi (sn): DishDef.hazirlik ya da PISIRME_S */
