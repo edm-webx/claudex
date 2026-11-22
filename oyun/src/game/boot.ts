@@ -60,6 +60,8 @@ import { createAgentsView, type AgentsView } from './view/chars/agents-view';
 import { avmYukleme } from './ui/avm-yukleme';
 import { createAvmEglence } from './view/world/avm-eglence';
 import { createMakineGorunum, type MakineVeri } from './view/world/makine-gorunum';
+import { createMisirKoku } from './view/world/misir-koku';
+import { icBina as icBinaK, icLayout as icLayoutK, icWorld as icWorldK } from '../content/ic-mekan';
 import { createWorldView } from './view/world';
 import { createHud } from './ui/hud';
 import { createPanels, type Panels } from './ui/panels';
@@ -355,6 +357,8 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   if (acilis) sim.bus.on('tadilatDone', (e) => acilis.baslat(Number((e as { stage?: number } | undefined)?.stage) || sim.state.stage));
   // 2026-11-09 "her binaya girilebilmeli": interiors of every far-side building and the büfe halls
   const makineView = playMode && zones ? make('makineView', () => createMakineGorunum({ root: () => scene, hero: () => walk.pos, list: () => ((sim.rules.rt as unknown as { kafeMakineler?: () => MakineVeri[] }).kafeMakineler?.() || []) })) : null;   // dükkân makineleri: ilerleme halkası + hazır ürün
+  const misirKoku = playMode && zones ? make('misirKoku', () => { const m = icBinaK('avm').find(r => r.arsa === 'k18'), it = m && icLayoutK(m).find(i => i.k === 'misirMak'), p = m && it ? icWorldK(m, it.u, it.v) : null;
+    return createMisirKoku({ root: () => scene, hero: () => walk.pos, kaynak: () => { const pl = (sim.state.zones as { arsa?: { plots?: Record<string, { esya?: string[] }> } }).arsa?.plots?.k18; return p && m && pl?.esya?.includes('misir_mak') ? { ...p, kat: m.kat || 0 } : null; } }); }) : null;   // Sinema Büfesi mısır kokusu
   const avmEglence = playMode && zones ? make('avmEglence', () => createAvmEglence({ root: () => scene, hero: () => walk.pos, saat: () => sim.rules.hour() })) : null;   // AVM eğlence katı: sinema + sahne
   const avmIc: AvmIcView | null = playMode && zones ? make('avmIc', () => createAvmIc({ root: () => scene, hero: () => walk.pos, night: () => nightK })) : null;   // Martı AVM içi (ayrı diyar)
   const icMekan: IcView | null = playMode && zones ? make('icMekan', () => createIcMekan({ root: () => zones.root('iskele') ?? null, sahne: () => scene, hero: () => walk.pos, night: () => nightK,
@@ -786,6 +790,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (avmIc) guard('avmIc', () => avmIc.update(fdt));
     if (avmEglence) guard('avmEglence', () => avmEglence.update(fdt));
     if (makineView) guard('makineView', () => makineView.update(fdt));
+    if (misirKoku) guard('misirKoku', () => misirKoku.update(fdt));
     if (stantLook) guard('stantLook', () => stantLook.update(fdt));
     if (faz2Hud) guard('faz2Hud', () => faz2Hud.update(fdt));
     if (gunSonu) guard('gunSonu', () => gunSonu.update());

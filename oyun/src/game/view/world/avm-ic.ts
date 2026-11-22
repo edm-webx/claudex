@@ -75,14 +75,13 @@ function insa(): { g: T.Group; katlar: T.Group[]; basamak: { m: T.InstancedMesh;
     else camParca(AVM.x0, AVM.x1);
     // arka duvar (hol) ve lobinin yan duvarları
     b.span(HOL.x0, HOL.x1, top, top + fh, AVM.z1 - 0.25, AVM.z1, '#f1ece3'); b.box(HOL.x1 - HOL.x0, 0.12, 0.04, '#e0533c', cx, top + 0.06, AVM.z1 - 0.27);
-    for (const x of [AVM.x0, AVM.x1 - 0.25]) if (!(k === 3 && x > AVM.cx)) b.span(x, x + 0.25, top, top + fh, AVM.z0, LOBI_Z1, '#f1ece3');   // 3. kat doğu lobi: Sinema Büfesi odasının kendi duvarı
+    for (const x of [AVM.x0, AVM.x1 - 0.25]) b.span(x, x + 0.25, top, top + fh, AVM.z0, LOBI_Z1, '#f1ece3');
     kg.add(levha(KAT_ADI[k].toLocaleUpperCase('tr'), '#3f4a6b', '#ffffff', 4.2, 0.55, cx, top + 2.75, AVM.z1 - 0.26, Math.PI));
     // dükkân cepheleri (holde): kapı üstü bant ve tabela, kapı çerçevesi
     for (const m of icBina('avm').filter(r => (r.kat || 0) === k)) {
       const r = AVM_TABELA[m.tur] || AVM_TABELA.avmLokanta, D = icDim(m).D, p = icWorld(m, 0, D / 2 + 0.03), sg = m.kapi === '+x' ? 1 : -1;
       b.box(0.06, 0.32, icDim(m).W, '#3f4a6b', p.x + sg * 0.02, top + 3.3, m.z);
-      for (const dz of [-0.62, 0.62]) b.box(0.08, 2.3, 0.08, r.c, p.x + sg * 0.03, top + 1.15, m.z + dz);
-      b.box(0.08, 0.1, 1.32, r.c, p.x + sg * 0.03, top + 2.35, m.z);
+      if (!m.acik) { for (const dz of [-0.62, 0.62]) b.box(0.08, 2.3, 0.08, r.c, p.x + sg * 0.03, top + 1.15, m.z + dz); b.box(0.08, 0.1, 1.32, r.c, p.x + sg * 0.03, top + 2.35, m.z); }   // açık standın kapı çerçevesi yok
       kg.add(levha(r.txt, r.c, '#ffffff', 2.6, 0.46, p.x + sg * 0.07, top + 2.78, m.z, sg * HP));
       l.box(0.02, 0.03, 2.5, '#fff3d6', p.x + sg * 0.06, top + 2.52, m.z);
     }

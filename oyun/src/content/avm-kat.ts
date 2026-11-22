@@ -42,12 +42,13 @@ export const ADA = { x0: MERD.kx0 - 0.95, x1: MERD.kx1 + 0.95, z0: MERD.on + 0.3
 export const CESME = { x: CX, z: AVM.z1 - 2.5, r: 1.4 } as const;
 /** dükkân odalarının merkezleri (batı / doğu blok, ön / arka sıra) */
 export const ODA_X = { W: CX - HW - OD / 2, E: CX + HW + OD / 2 } as const, ODA_Z = { F: LOBI_Z1 + ODA_OLCU.W / 2, B: AVM.z1 - ODA_OLCU.W / 2 } as const;
-/** 3. kat (sinema katı) doğu lobisindeki Sinema Büfesi odası (2026-11-22): blok genişliğinde (D), lobi derinliğinde (W), kapısı hola */
-export const SINEMA_BUFE = { x: ODA_X.E, z: (AVM.z0 + 0.1 + LOBI_Z1) / 2, W: LOBI_Z1 - AVM.z0 - 0.1, D: OD } as const;
+/** 3. kat (sinema katı) doğu bloğunun önündeki açık Sinema Büfesi standı (2026-11-22 sahip: "mısır kapalı yerde olmaz"): dükkân
+ *  ölçüsünde, duvarsız (yalnız arka duvar), hol ve bekleme salonu tarafı açık */
+export const SINEMA_BUFE = { x: ODA_X.E, z: ODA_Z.F, W: ODA_OLCU.W, D: OD } as const;
 /** iskeledeki AVM binası (kabuk) ve giriş kapısının önü: buraya yürüyen AVM'ye geçer */
 export const AVM_BINA = { x: 20.15, z: 51.8, wx: 16.9, wz: 10.6 } as const;
 export const AVM_DIS = { x: 20.15, z: 45.75 } as const, AVM_DIS_CIKIS = { x: 20.15, z: 44.5 } as const;
-export const KAT_ADI = ['Giriş Katı', '1. Kat · Kahve & Tatlı', '2. Kat · Yemek Katı', '3. Kat · Sinema & Sahne'];
+export const KAT_ADI = ['Giriş Katı', '1. Kat · Kahve & Tatlı', '2. Kat · Yemek Katı', '3. Kat · Sinema & Büfe'];
 export const KAT_KISA = ['Zemin', '1. Kat', '2. Kat', '3. Kat'];
 export type SeritId = 'U' | 'D';
 const sc = (s: SeritId) => (SERIT[s].x0 + SERIT[s].x1) / 2;

@@ -245,8 +245,10 @@ const F: Record<string, Fn> = {
     for (const [sx, col] of [[-1, '#e0436b'], [1, '#3f8fe0']] as [number, string][]) { const x = sx * w / 4; b.cyl(0.11, 0.11, 0.3, col, x, 1.25, 0, { seg: 12 }); g.cyl(0.13, 0.13, 0.42, '#eef7fb', x, 1.31, 0, { seg: 12 }); b.cyl(0.13, 0.13, 0.04, '#2a2d33', x, 1.54, 0, { seg: 12 }); b.box(0.04, 0.06, 0.06, '#2a2d33', x, 1.02, d / 2 - 0.02); }
     l.plane(w - 0.1, 0.06, '#9fe8ff', 0, 0.75, d / 2 + 0.005);
   },
-  afisVitrin: (c, it) => {   // two lit film poster frames on the wall (parody posters)
-    const { b, l } = c, y = it.y || 1.5, fw = it.w / 2 - 0.08;
+  afisVitrin: (c, it) => {   // two lit film poster frames: on the wall (y > 0) or a freestanding double-sided lightbox stand (y 0, open stand)
+    const { b, l } = c, ayakta = !it.y, y = it.y || 1.35, fw = it.w / 2 - 0.08;
+    if (ayakta) { b.box(it.w + 0.1, 0.05, it.d, '#1d1d22', 0, 0.025, 0); for (const sx of [-1, 1]) b.box(0.05, y + 0.55, 0.05, '#2a2d33', sx * (it.w / 2 + 0.02), (y + 0.55) / 2, 0); b.box(it.w + 0.1, 0.12, 0.08, '#b3122e', 0, y + 0.62, 0); l.box(it.w, 0.04, 0.09, '#fff3d6', 0, y + 0.62, 0); }
+    if (ayakta) { l.push(mtx(0, 0, 0, 0, Math.PI, 0)); [['#4b6fb5', '#ffd23f'], ['#e07bb0', '#ffffff']].forEach(([bg, fg], i) => { const x = (i - 0.5) * (fw + 0.12); l.plane(fw, 1.0, bg, x, y, 0.025); l.box(fw * 0.6, 0.08, 0.01, fg, x, y - 0.32, 0.03); }); l.pop(); }
     [['#d64545', '#ffd23f'], ['#7a55c7', '#9fe8ff']].forEach(([bg, fg], i) => { const x = (i - 0.5) * (fw + 0.12); b.box(fw + 0.06, 1.1, 0.04, '#1d1d22', x, y, 0); l.plane(fw, 1.0, bg, x, y, 0.025); b.box(fw * 0.7, 0.08, 0.01, fg, x, y - 0.32, 0.03); b.box(fw * 0.5, 0.05, 0.01, '#ffffff', x, y - 0.42, 0.03); b.sph(0.12, fg, x, y + 0.15, 0.03, { ws: 8, hs: 6, sz: 0.2 }); });
   },
   kordon: (c, it) => {   // VIP queue: brass posts with a red velvet rope and a small "VIP" stand
@@ -522,13 +524,12 @@ function buildRoom(m: IcMekan, own: { lv: number; isci: number; esya: string[]; 
     };
     // 2026-11-21: mutfağın yan duvarlarında servis koridoru kapısı (batı aşama 6, doğu aşama 7; v = KAPI_V)
     const kg = (y: 'W' | 'E'): number | [number, number] => (m.mutfak && passAcik(y, stage) ? (y === 'W' ? [-SERVIS_KAPI_V[1], -SERVIS_KAPI_V[0]] : [SERVIS_KAPI_V[0], SERVIS_KAPI_V[1]]) : 0);
-    wall(W, 0, -D / 2 + 0.25, 0); wall(D, -W / 2 + 0.25, 0, HP, kg('W')); wall(D, W / 2 - 0.25, 0, -HP, kg('E')); wall(W, 0, D / 2 - 0.25, Math.PI, 1.7);
+    wall(W, 0, -D / 2 + 0.25, 0); if (!m.acik) { wall(D, -W / 2 + 0.25, 0, HP, kg('W')); wall(D, W / 2 - 0.25, 0, -HP, kg('E')); wall(W, 0, D / 2 - 0.25, Math.PI, 1.7); }   // açık stand: yalnız arka duvar
     if (!m.mutfak) for (const [x, z, ry, len] of (m.bina === 'avm' ? [] : [[-W / 2 + 0.26, 0, HP, D], [W / 2 - 0.26, 0, -HP, D]]) as [number, number, number, number][]) {   // side-wall windows (none inside the mall: shared walls; BUF-22: none in the kitchen, the menu board hangs there)
       const n = Math.max(1, Math.floor((len - 1) / 2.4));
       for (let i = 0; i < n; i++) { const u = -len / 2 + (i + 0.5) * len / n; wb.push(mtx(x, 0, z, 0, ry, 0)); wb.box(1.1, 1.2, 0.04, '#fbfaf6', u, 1.75, 0.02); l.push(mtx(x, 0, z, 0, ry, 0)); l.plane(0.95, 1.05, '#bfe3f5', u, 1.75, 0.045); l.pop(); wb.pop(); }
     }
-    for (const s of [-1, 1]) b.box(0.12, 2.4, 0.3, w2, s * 0.92, 1.2, D / 2 - 0.15); b.box(1.96, 0.16, 0.3, w2, 0, 2.45, D / 2 - 0.15);   // door frame
-    b.box(1.2, 0.02, 0.8, '#9a1f2a', 0, 0.003, D / 2 - 0.8);   // door mat
+    if (!m.acik) { for (const s of [-1, 1]) b.box(0.12, 2.4, 0.3, w2, s * 0.92, 1.2, D / 2 - 0.15); b.box(1.96, 0.16, 0.3, w2, 0, 2.45, D / 2 - 0.15); b.box(1.2, 0.02, 0.8, '#9a1f2a', 0, 0.003, D / 2 - 0.8); }   // door frame, door mat
   } else {
     // rug (2026-11-21: own identity per hall, chairs must read on it): kahvaltı warm wood / cream, balık sea blue / white; fine adds a gold edge
     const [r1, r2, r3] = m.tur === 'balik' ? [fine ? '#c9a24a' : '#1d4f86', '#f4f7fa', '#9cc7dd'] : [fine ? '#c9a24a' : '#b08860', '#f3e3c8', '#e2c99c'];
