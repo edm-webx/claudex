@@ -4,7 +4,7 @@ import { emptyContent } from '../../src/content/index';
 import type { GameState } from '../../src/game/sim/schema';
 import { ARSALAR } from '../../src/content/esya';
 import { icOfArsa } from '../../src/content/ic-mekan';
-import { satisKaresi } from '../../src/game/sim/avm-kareler';
+import { satisKaresi } from '../../src/game/sim/isletme-kareler';
 
 export const log = { info() {}, warn() {}, error() {} };
 export function mkSim(seed = 1, save?: GameState): SimFull {

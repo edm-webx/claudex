@@ -1036,6 +1036,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     return { stage: sim.state.stage, cust: r.customers.map(c => ({ k: c.kind || 'q', s: c.state, t: c.seat ? c.seat.table : -1, x: +c.x.toFixed(2), z: +c.z.toFixed(2) })), q: r.queue.length,
       w: (r.agents?.workers?.rows() || []).map(w => ({ r: w.role, s: w.state, x: +w.x.toFixed(2), z: +w.z.toFixed(2) })), passYer: rv?.passYer ?? null, bilet: rv?.tickets.length ?? 0 };
   });
+  reg('pads', () => sim.rules.rt.pads.map(q => ({ key: q.key, x: q.pos.x, z: q.pos.z, price: q.price, paid: q.paid })));   // sarı kareler (test / denetim)
   reg('izgara', (on?: boolean) => { if (on !== undefined) izgaraLook?.set(!!on); return izgaraLook?.get() ?? null; });
   reg('hucre', (name: string) => cellRect(name));
   reg('acilis', (to: number) => acilis?.baslat(Number(to)));   // dev: BUF-30 açılış anını yeniden oynat
