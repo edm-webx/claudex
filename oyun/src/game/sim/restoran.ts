@@ -530,6 +530,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     if (g.tur === 'sil') { const y = masaYan(g.table); return { id: g.id, tur: 'sil', table: g.table, x: y.x, z: y.z }; }   // BUF-28: masanın yanına (merkez katı: garson 2.4 m+ uzakta durup 'ışınlanma' sayılıyordu)
     const y = masaYan(g.table); return { id: g.id, tur: g.tur, table: g.table, x: y.x, z: y.z };
   }
+  const MENU_ACIL_S = 25;
   function isAl(wid: number, o: { cap: number; at?: Vec2 }): IsAlSonuc | null {
     const mine = gorevler.find(g => g.wid === wid); if (mine) return sonuc(mine);
     if (!garsonlar().some(w => w.id === wid)) return null;
@@ -537,7 +538,12 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     // 2026-11-22: iki tur. Önce kendi / sahipsiz / komşu bölgenin işleri (öncelik sırasıyla), uzak bölge yardımı yalnız bunlar boşsa.
     // Tek turda uzak bölgenin 15 sn'lik tabağı kendi bölgesinin menüsünü geçiyordu (tabak > menü): garson haritanın öbür ucuna tabak
     // taşırken kendi masaları 30 sn+ menü bekliyordu (aşama botu aşama 7, masa 11/13).
-    for (const uzak of [false, true]) for (const tur of ADISYON.oncelik) {
+    for (const uzak of [false, true]) {
+      // AR-GE 2026-11-22: yaşlanma. Katı öncelik (tabak > sipariş > menü) yoğun aşamalarda (7-10, 40+ masa) menüyü aç bırakıyordu: masa
+      // 100 sn+ menü bekledi (aşama botu). MENU_ACIL_S'yi aşan menü / sipariş işi tabaktan önce alınır (en yaşlısı); kısa iş, servis akışı bozulmaz.
+      const acil = gorevler.filter(g => (g.tur === 'menu' || g.tur === 'siparis') && !g.wid && g.yas >= MENU_ACIL_S).map(g => ({ g, r: bolgeKurali(wid, g.table, g.yas, uzak) })).filter(x => x.r.ok);
+      if (acil.length) { acil.sort((a, b) => (a.r.ic === b.r.ic ? 0 : a.r.ic ? -1 : 1) || b.g.yas - a.g.yas || a.g.id - b.g.id); const g = acil[0].g; g.wid = wid; g.claimT = saat; return sonuc(g); }
+    for (const tur of ADISYON.oncelik) {
       if (tur === 'tabak') {
         // birim adaylar: bilet sırası (KDS FIFO), pass önce; bölge içi önce. Tek seferde tek kaynak (tek durak).
         type Aday = { t: Ticket; p: FoodId; src: 'pass' | 'counter'; yer?: PassYer; ic: boolean; o: number };
@@ -583,6 +589,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
       cand.sort((a, b) => (a.r.ic === b.r.ic ? 0 : a.r.ic ? -1 : 1) || b.g.yas - a.g.yas || a.g.id - b.g.id);
       const g = cand[0].g; g.wid = wid; g.claimT = saat;   // zaman aşımı garsonun işi aldığı andan sayılır
       return sonuc(g);
+    }
     }
     return null;
   }

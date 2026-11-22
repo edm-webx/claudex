@@ -27,9 +27,11 @@ export const KURS_DONUS = [
   'Özledim burayı. Martılar beni tanıdı mı?',
 ];
 
-/** Extra garson / temizlik slots per stage (index = stage-1): total roster per venue grows 6 -> 10. */
+/** Extra garson / temizlik slots per stage (index = stage-1): total roster per venue grows with all 10 stages. */
 export const STAGE_EXTRA_SLOTS: { garson: number; temizlik: number }[] = [
   { garson: 2, temizlik: 1 }, { garson: 3, temizlik: 1 }, { garson: 3, temizlik: 2 }, { garson: 4, temizlik: 2 }, { garson: 5, temizlik: 2 }, { garson: 5, temizlik: 2 },
+  // AR-GE 2026-11-22: tablo 6. aşamada bitiyordu, 7-10'da kadro 5 garsonda donuyordu (masa ve menü büyürken menü bekleme 114 sn, aşama botu)
+  { garson: 6, temizlik: 2 }, { garson: 7, temizlik: 3 }, { garson: 7, temizlik: 3 }, { garson: 8, temizlik: 3 },
 ];
 
 // ── huy hareketleri (animasyon-8): speech lines the view may pop with the motion ──
