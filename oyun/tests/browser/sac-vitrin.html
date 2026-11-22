@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8"><title>Saç Vitrini</title>
+<style>html,body{margin:0;height:100%;background:#2a2230;overflow:hidden}canvas{display:block;width:100%;height:100%}.l{position:fixed;font:700 12px system-ui;color:#ffe9c4;transform:translateX(-50%)}</style></head>
+<body><canvas id="c"></canvas>
+<script type="module">
+// Karakter Atölyesi saç/sakal/bıyık vitrini: ?v=hair|beard|mus&yaw=0.6&body=a|b&hat=cap
+import * as T from 'three';
+import { CH } from '/src/game/view/chars/v2/chars-v2.ts';
+import { KIT_HAIR, KIT_BEARD, KIT_MUSTACHE, hairKit, beardKit, mustacheKit, kitTris } from '/src/game/view/chars/v2/sac-kit.ts';
+import { createLookRenderer } from '/src/engine/render/look.ts';
+const q = new URLSearchParams(location.search), v = q.get('v') || 'hair', yaw = +(q.get('yaw') || 0), body = q.get('body') || 'b', hat = q.get('hat') || null;
+const only = q.get('only'); const list = only ? only.split(',') : v === 'hair' ? KIT_HAIR : v === 'beard' ? ['yok', ...KIT_BEARD] : ['yok', ...KIT_MUSTACHE];
+const canvas = document.getElementById('c');
+const R = createLookRenderer({ canvas, antialias: true, exposure: 1.0, pixelRatioMax: 1 });
+const scene = new T.Scene(); scene.background = new T.Color('#2a2230');
+scene.add(new T.HemisphereLight('#ffe9cc', '#3a2430', 1.0)); const key = new T.DirectionalLight('#fff1dc', 1.6); key.position.set(2, 4, 5); scene.add(key);
+const HC = ['#3b281c', '#1f1813', '#7a4a2a', '#d6b06c', '#8c3f22'];
+const heroes = list.map((st, i) => {
+  const look = { hairKit: q.get('lod') !== '1', skin: [2, 4, 7, 9][i % 4], hair: v === 'hair' ? st : 'short', hairColor: HC[i % HC.length], hat, top: '#3fb5b0', topStyle: 'tee' };
+  if (v === 'beard') { look.beard = st === 'yok' ? false : st; look.mustache = false; }
+  if (v === 'mus') { look.mustache = st === 'yok' ? false : st; look.beard = false; }
+  const h = CH.makeHero({ kind: body === 'a' ? 'sabri' : 'sabriye', seed: 3, look: { ...look, apron: null, faceSpec: { eye: 'round', brow: 'mid', mouthW: 14 } } });
+  h.group.position.set(i * 4, 0, 0); h.group.rotation.y = yaw; scene.add(h.group);
+  try { h.update?.(0.016, 1); } catch (e) { console.warn(e); }
+  return h;
+});
+const cam = new T.PerspectiveCamera(30, 1, 0.05, 30);
+const cols = Math.ceil(Math.sqrt(list.length * 1.6)), rows = Math.ceil(list.length / cols);
+const W = innerWidth, H = innerHeight; R.setSize(W, H, false);
+const cw = Math.floor(W / cols), ch = Math.floor(H / rows);
+R.setScissorTest(true); cam.aspect = cw / ch; cam.updateProjectionMatrix();
+const tall = v === 'hair' && /long|braid|curlylong|ponytail|locs|pigtails/.test('');
+list.forEach((st, i) => {
+  const c = i % cols, r = Math.floor(i / cols), x = c * cw, y = H - (r + 1) * ch;
+  R.setViewport(x, y, cw, ch); R.setScissor(x, y, cw, ch);
+  const far = +(q.get('far') || (v === 'hair' ? 1.3 : 0.9)), ty = +(q.get('ty') || (v === 'hair' ? 1.5 : 1.53));
+  cam.position.set(i * 4, ty + 0.12, far); cam.lookAt(i * 4, ty, 0);
+  R.render(scene, cam);
+  const pieces = v === 'hair' ? hairKit(st, 0.195, { hat: !!hat }) : v === 'beard' ? beardKit(st, 0.195) : mustacheKit(st, 0.195);
+  const l = document.createElement('div'); l.className = 'l'; l.style.left = (x + cw / 2) + 'px'; l.style.top = (r * ch + 4) + 'px'; l.textContent = st + (pieces ? ' · ' + Math.round(kitTris(pieces)) + ' üçgen' : ''); document.body.appendChild(l);
+});
+window.__ok = true;
+</script></body></html>

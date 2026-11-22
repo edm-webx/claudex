@@ -22,9 +22,9 @@ const plot = (id: string) => ARSALAR.find(a => a.id === id)!;
 const kafeActors = (sim: any, room: string, kind: string) => sim.rules.rt.agents.registry.list.filter((a: any) => !a.dead && a.key.startsWith('kafe-' + room + '-') && a.kind === kind);
 const buyAll = (c: any, ...ids: string[]) => { for (const id of ids) { kareyeGit(c.sim, id); c({ op: 'arsaAl', id }); } };
 
-it('AVM: 3 kat x 4 dükkân, aynı kattakiler kesişmez, hepsi binada; her birinin kendi kapısı (kendi katının holünde) ve arsası var', () => {
+it('AVM: 3 dükkân katı x 4 dükkân (en üst kat eğlence katı), aynı kattakiler kesişmez, hepsi binada; her birinin kendi kapısı (kendi katının holünde) ve arsası var', () => {
   expect(ROOMS).toHaveLength(12); expect(IC_CANLI).toEqual(expect.arrayContaining(IDS));
-  for (let k = 0; k < AVM.KAT; k++) expect(ROOMS.filter(m => (m.kat || 0) === k)).toHaveLength(4);
+  for (let k = 0; k < AVM.KAT; k++) expect(ROOMS.filter(m => (m.kat || 0) === k)).toHaveLength(k === AVM.KAT - 1 ? 0 : 4);
   for (const m of ROOMS) {
     const kat = m.kat || 0, a = plot(m.arsa!), d = arsaKapi(a);
     expect(m.x - m.wx / 2).toBeGreaterThanOrEqual(AVM.x0 - 1e-6); expect(m.x + m.wx / 2).toBeLessThanOrEqual(AVM.x1 + 1e-6);

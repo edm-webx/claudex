@@ -12,7 +12,7 @@ function kur(scene: T.Object3D, x: number) {
 
 describe('doku akışı', () => {
   const cam = new T.PerspectiveCamera(35, 16 / 9, 0.1, 400);
-  cam.position.set(0, 1.2, 0); cam.updateMatrixWorld();
+  cam.position.set(0, 1.2, 0); cam.lookAt(10, 1.2, 0); cam.updateMatrixWorld();   // +x yönüne bakar (nesneler kadrajda)
 
   it('yarımla başlar, yakında tama çıkar, uzakta yarıma iner; kare başına tek çizim', () => {
     const scene = new T.Scene();
@@ -37,6 +37,10 @@ describe('doku akışı', () => {
     scene.updateMatrixWorld(true); baska.updateMatrixWorld(true);
     akisGuncelle(scene, cam, 900); akisGuncelle(scene, cam, 900);
     expect(yakin.takili()?.userData.k).toBe(1); expect(onizleme.takili()?.userData.k).toBe(1);
+    const arkada = kur(scene, -3); scene.updateMatrixWorld(true);   // kameranın arkasında, çok yakın: kadraj dışı tam çözünürlük tutmaz
+    akisGuncelle(scene, cam, 900); expect(arkada.takili()).toBe(null); expect(arkada.olcekler).toEqual([0.5]); arkada.h.birak();
+    const sokuk = new T.Group(), bekleyen = kur(sokuk, 1.5); sokuk.updateMatrixWorld(true);   // bölge önbelleğinde (sahneden sökülmüş) yakın işçi
+    akisGuncelle(scene, cam, 900); akisGuncelle(scene, cam, 900); expect(bekleyen.olcekler).toEqual([0.5]); bekleyen.h.birak();
     yakin.obj.visible = false;
     akisGuncelle(scene, cam, 900);
     expect(yakin.takili()?.userData.k).toBe(0.5);
