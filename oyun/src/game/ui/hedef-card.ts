@@ -31,8 +31,8 @@ const CSS = `
 .hd-card.fold .hd-bd{display:none}
 .hd-main{display:flex;gap:6px;align-items:flex-start;padding:7px 8px 6px;border-bottom:2px dashed rgba(59,42,32,.25);cursor:pointer}
 .hd-main .tx{flex:1;min-width:0}
-.hd-main .lb{font:900 15px/1.25 var(--disp,system-ui);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.hd-main .sb{font:700 13px/1.2 var(--body,system-ui);color:var(--ink2,#6b5444);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hd-main .lb{font:900 15px/1.25 var(--disp,system-ui);overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;white-space:normal}
+.hd-main .sb{font:700 13px/1.2 var(--body,system-ui);color:var(--ink2,#6b5444);margin-top:4px;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;white-space:normal}
 .hd-bar{position:relative;height:12px;border:2px solid var(--ink,#3b2a20);border-radius:8px;background:#efe3cf;margin-top:5px;overflow:hidden}
 .hd-bar u{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(180deg,#5fc36f,#2f9a47);border-radius:6px;transition:width .4s}
 .hd-main.rdy .hd-bar u{background:linear-gradient(180deg,#ffe066,#f4a922);animation:hd-glow 1s ease-in-out infinite alternate}

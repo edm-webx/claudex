@@ -1,6 +1,6 @@
 /** Decor, Şıklık and the sign (v2 decorAct / saveSign). decorSlots = placed items [{slot: "<index>", item}]. Owner: Builder A. Pure. */
 import { DECOR_IDS, decorById, siklik as siklikOf, P } from '../../content/economy';
-import { cleanSign, SIGN_FONTS } from '../../content/sign-fonts';
+import { cleanSign, defaultSign, SIGN_FONTS } from '../../content/sign-fonts';
 import type { Kernel } from './state';
 import { fmtMoney } from './util';
 
@@ -47,6 +47,8 @@ export function installDecor(K: Kernel) {
       const r = cleanSign(text, S.hero);
       if (!r.ok) { K.toast(r.reason || 'Olmadı.', 'bad'); return false; }
       const f = SIGN_FONTS.some(x => x.id === font) ? (font as string) : 'vapur';
+      const once = S.sign ? S.sign.text : defaultSign(S.hero);
+      if (r.text === once && (!S.sign || S.sign.font === f)) { S.sign = { text: r.text, font: f, renamed: !!S.sign?.renamed }; return true; }   // AR-GE: atölye çıkışında varsayılan ad = değişiklik yok (açılışta bedava 'Tabela Benim' başarımı + toast yığını)
       S.sign = { text: r.text, font: f, renamed: true };
       K.stat('signRenamed'); K.toast('Tabela yenilendi: ' + r.text, 'good'); K.logEv('sign', { text: r.text }); K.saveNow();
       return true;

@@ -216,7 +216,7 @@ export function createPlayView(d: PlayViewDeps): PlayView {
 
   // Öğretici yazılı yönerge: ok/halka tek başına "ne yapmalıyım" sorusunu yanıtsız bırakıyordu (tarama ARAYÜZ).
   const TUT_METIN: Record<string, string> = {
-    walk: 'Parmağınla sürükle: Sabri yürüsün',
+    walk: (typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches) ? 'Parmağınla sürükle: yürü' : 'Sürükle ya da WASD / ok tuşları: yürü',   // AR-GE: masaüstünde parmak yok; sabit ana karakter yok
     doner: 'Döner makinesine yaklaş ve kes',
     counter: 'Dilimi halkadaki tezgâha götür',
     money: 'Kasadaki parayı topla',

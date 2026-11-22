@@ -38,6 +38,11 @@ export const YENI_CSS = `
 #sbui .sb-badge{background:#ff5a4e!important;border:2px solid var(--glass2)!important;font-family:var(--disp)}
 #sbui .sb-bar{overflow-x:auto;overflow-y:hidden;justify-content:flex-start!important;scrollbar-width:none;overscroll-behavior-x:contain}
 #sbui .sb-bar::-webkit-scrollbar{display:none}
+/* AR-GE 2026-11-22: geniş ekranda 8-10 düğme sığsın (1280 px'te GÖREVLER kesiliyordu); dar ekranda kaydırma kalır */
+@media (min-width:1180px) and (min-height:600px){#sbui .sb-bar{max-width:min(900px,calc(100vw - 340px))!important}}
+/* açık panelin başlığını toast/başarım kartı örtmesin: geniş ekranda sağ boşluğa, başarım kartı varken aşağı kayar */
+@media (min-width:1100px){#sbui:has(.sb-sheet:not(.out)) .sb-toasts{left:auto;right:calc(var(--sr,0px) + 14px);transform:none;top:calc(var(--hudb,64px) + 100px);width:min(300px,calc(50vw - 360px))}}
+#sbui:has(.sb-ach) .sb-toasts{top:calc(var(--hudb,64px) + 150px)}
 #sbui .sb-bi{flex:1 0 auto!important;max-width:none!important;min-width:64px;padding:0 8px!important}
 #sbui .sb-bi span{overflow:visible!important;text-overflow:clip!important}
 #sbui .sb-bar.more-r{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 28px),transparent)}
