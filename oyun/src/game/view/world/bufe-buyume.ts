@@ -293,6 +293,26 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
   if (stage >= 6) { hall(WB, 1, fine ? 'SABRİ\'NİN SOFRASI · KAHVALTI' : stage >= 8 ? 'SABRİ KAHVALTI & MEZE' : 'SABRİ KAHVALTI SALONU', stage >= 8, '#ffcf8a', { floor: fine ? '#c9a77c' : '#e9e0c8', back: fine ? '#f3e6c8' : '#efe6d2' }); }
   /* 7: east hall: Balık lokantası */
   if (stage >= 7) { hall(EB, stage >= 8 ? 2 : 1, fine ? 'SABRİ\'NİN SOFRASI · BALIK' : stage >= 8 ? 'SABRİ BOĞAZ LOKANTASI' : 'SABRİ BALIK LOKANTASI', stage >= 8, '#ffd9a0', { floor: fine ? '#dfe8ec' : '#e3ebee', back: fine ? '#1d4f86' : '#d8e6ee' }); }
+  /* 6-10: the büfe kiosk itself keeps growing (2026-11-22, owner: "büfe her seviyede değişim görmeli"). The kiosk prefab stops at
+     stage 5 (index.ts kioskOverrides), so the later looks are dressed on here, all above head height or flat on the walls: nothing
+     here needs a collider and the counter / queue stay as they are. 6 striped awning + spots, 7 digital menu boards + neon beam,
+     8 brass pendants + slatted side cladding, 10 navy/gold awning and gold trim. High parts hide with the büfe cutaway ('susle-B'). */
+  if (stage >= 6) {
+    const sb = { g: new T.Group(), b: new Batch(), gl: new Batch(), lit: new Batch(), wm: new Batch() }; sb.g.name = 'susle-B'; catis.push(sb);
+    const mb = b, ml = lit, mg = grp; b = sb.b; lit = sb.lit; grp = sb.g;
+    const Z1 = BUFE.z1, n = 12, w = (BUFE.x1 - BUFE.x0 + 0.2) / n, c1 = fine ? '#1f2a44' : stage >= 8 ? '#2f7fb3' : '#e0533c', c2 = fine ? '#c9a24a' : '#fbfaf6';
+    for (let i = 0; i < n; i++) b.box(w, 0.04, 1.0, i % 2 ? c2 : c1, BUFE.x0 - 0.1 + (i + 0.5) * w, 3.05, Z1 + 0.42, { rx: 0.42 });   // sloped tente
+    for (let i = 0; i < n; i++) b.box(w, 0.2, 0.03, i % 2 ? c2 : c1, BUFE.x0 - 0.1 + (i + 0.5) * w, 2.78, Z1 + 0.88);                 // valance
+    for (const x of [-2.6, 0, 2.6]) { b.box(0.08, 0.1, 0.3, '#33373b', x, 3.12, Z1 + 0.12); lit.sph(0.07, '#fff3d6', x, 3.05, Z1 + 0.25, { ws: 6, hs: 4 }); }
+    if (stage >= 7) lit.box(BUFE.x1 - BUFE.x0, 0.04, 0.03, fine ? '#e8c76a' : '#5ff0e0', 0, 3.33, Z1 + 0.03);   // neon line on the front beam
+    if (stage >= 8) for (const x of [-1.4, 0.0, 1.4]) { b.cyl(0.01, 0.01, 0.9, '#3a3d42', x, 2.75, -5.0, { seg: 4 }); b.cone(0.16, 0.18, fine ? '#c9a24a' : '#b8862f', x, 2.25, -5.0, { seg: 10 }); lit.sph(0.06, '#ffe6b0', x, 2.17, -5.0, { ws: 6, hs: 4 }); }
+    if (fine) for (const x of [-4.1, 4.1]) b.box(0.19, 3.3, 0.04, '#c9a24a', x, 1.65, Z1 + 0.01);   // gold faced corner posts
+    b = mb; lit = ml; grp = mg;
+    if (stage >= 7) {   // digital menu boards on the inside of the back wall (above the tiles), seen through the open top
+      for (const [i, x] of [-2.4, 0, 2.4].entries()) { b.box(1.5, 0.62, 0.05, '#1b1e22', x, 2.08, BUFE.z0 + 0.25); lit.box(1.38, 0.5, 0.01, ['#ffcf6a', '#ffe6b0', '#9fe3ff'][i], x, 2.08, BUFE.z0 + 0.28); for (let k = 0; k < 4; k++) b.box(0.9, 0.035, 0.01, '#2a2f36', x - 0.12, 2.24 - k * 0.1, BUFE.z0 + 0.29); }
+    }
+    if (stage >= 8) for (const xo of [BUFE.x0 - 0.03, BUFE.x1 + 0.03]) for (let k = 0; k < 9; k++) b.box(0.03, 2.5, 0.12, fine ? '#3a2a20' : '#9a6b45', xo, 1.25, BUFE.z0 + 0.2 + k * 0.17);   // slatted cladding on the tall side walls
+  }
   /* 9: rooftop sign on the büfe (the büfe keeps its own name: it is NOT the restaurant), restaurant crest on the kitchen roof.
      2026-11-21: the old stage-9 "Şef Mutfağı · Izgara" counter on the east terrace is gone (an orphan grill cut off from the real
      kitchen, owner: "iskelenin sağında şef mutfağı ızgara diye bir yer var neden?"); stage 9 is the two-line kitchen (ocak2 / izgara2). */
@@ -466,6 +486,7 @@ export function createBufeBuyume(deps: BuyumeDeps): BuyumeView {
         for (const [nm, m] of [['cati-W', IC_BY_ID.salonW], ['cati-E', IC_BY_ID.salonE], ['duvar-K', mutfakOda(st)]] as const) { const o = grp.getObjectByName(nm); if (o) o.visible = !icIcinde(m, hp, 0.2); }
         const ck = grp.getObjectByName('cati-K'), inK = icIcinde(mutfakOda(st), hp, 0.2); if (ck) ck.visible = !inK;   // 2026-11-21: the kitchen roof lifts only while the player is inside the kitchen
         const inB = hp.x > BUFE.x0 - 0.2 && hp.x < BUFE.x1 + 0.2 && hp.z > BUFE.z0 - 0.2 && hp.z < BUFE.z1, tbB = grp.getObjectByName('tabela-B'); if (tbB) tbB.visible = !inB && !gecitIcinde(hp);
+        const sB = grp.getObjectByName('susle-B'); if (sB) sB.visible = !inB;
         const tbR = grp.getObjectByName('tabela-R'); if (tbR) tbR.visible = !inB && !inK && !gecitIcinde(hp);
       }
       const n = deps.night();
