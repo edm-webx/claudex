@@ -82,3 +82,26 @@ it('oyuncu: gişenin önünden geçerken (kısa durak) bilet kesilmez', () => {
   sim.command({ kind: 'teleport', x: g.musteri.x + 4, z: g.musteri.z, kat: EGLENCE_KAT }); for (let i = 0; i < 20; i++) sim.step(0.1);
   expect(y.bilet()).toBeNull(); expect(S.money).toBe(1000);
 });
+
+it('AR-GE: bilet karşılık verir: kapıdan geçen oyuncu boş koltukta oturup bölümü izler (XP + sayaç); kaçan seansın bileti iade', () => {
+  const { sim, S, y } = mk(); sim.command({ kind: 'setTime', hour: 9.05 }); gir(sim, EGLENCE_KAT);
+  S.money = 1000; const g = GISELER[0];
+  sim.command({ kind: 'teleport', x: g.musteri.x, z: g.musteri.z, kat: EGLENCE_KAT }); for (let i = 0; i < 25 && !y.bilet(); i++) sim.step(0.1);
+  const s = SALONLAR.find(x => x.id === y.bilet().salon)!;
+  expect(S.tut.sinBilet).toBe(s.id);   // kayıtta
+  sim.command({ kind: 'teleport', x: s.kapi.x, z: s.kapi.z, kat: EGLENCE_KAT }); for (let i = 0; i < 12 && y.bilet(); i++) sim.step(0.1);
+  expect(y.izin()).toBeTruthy();
+  const rows = y.rows(); const dolu = new Set(rows.filter((r: any) => Math.abs(r.y - rows[0]?.y) < 1).map((r: any) => Math.round(r.x * 10) + ':' + Math.round(r.z * 10)));
+  const k = s.koltuk.find(q => !dolu.has(Math.round(q.x * 10) + ':' + Math.round(q.z * 10)))!;
+  sim.command({ kind: 'teleport', x: k.x, z: k.z, kat: EGLENCE_KAT });
+  const xp0 = S.xp, n0 = S.stats.sinemaIzle || 0;
+  const h0 = s.id === 2 ? 10.5 : 9; sim.command({ kind: 'setTime', hour: h0 + 0.5 });   // film oynuyor
+  for (let i = 0; i < 300 && y.izin(); i++) sim.step(0.1);
+  expect(y.izin()).toBeNull(); expect(S.stats.sinemaIzle).toBe(n0 + 1); expect(S.xp).toBeGreaterThan(xp0);
+  // kaçan seans: bilet al, kapıya gitme, bölüm geçsin -> iade
+  sim.command({ kind: 'setTime', hour: 12.05 }); sim.step(0.2);
+  sim.command({ kind: 'teleport', x: g.musteri.x, z: g.musteri.z, kat: EGLENCE_KAT }); for (let i = 0; i < 25 && !y.bilet(); i++) sim.step(0.1);
+  const m1 = S.money; expect(y.bilet()).toBeTruthy();
+  sim.command({ kind: 'teleport', x: AVM.cx, z: 47, kat: EGLENCE_KAT }); sim.command({ kind: 'setTime', hour: 17.9 }); sim.step(0.5);
+  expect(y.bilet()).toBeNull(); expect(S.money).toBe(m1 + BILET_FIYAT);
+});

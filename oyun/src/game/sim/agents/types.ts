@@ -171,6 +171,8 @@ export interface AgentHost {
   statMax(key: string, v: number): void;
   heroSay(text: string, t?: number): void;
   heroAct(act: string, t: number): void;
+  /** Esnaf XP (sinema bölümü izleme gibi küçük keyif ödülleri) */
+  addXP?(n: number): void;
   tipBoost(seconds: number): void;
   addFollowers(n: number): void;
   laughNearby(): void;

@@ -741,7 +741,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const gSaat = createGorselSaat(sim.clock.hour, sim.state.day);   // GRS-02: night held behind the gün sonu card, then a soft dawn
   cam.snap(walk.pos);
 
-  const heroAct = (a: string) => (a === 'cut' || a === 'pour' ? a : (sim.rules.rt as unknown as { yetenek?: { dans?: boolean } }).yetenek?.dans ? 'dance' : 'idle');
+  const heroAct = (a: string) => (a === 'cut' || a === 'pour' || a === 'sit' ? a : (sim.rules.rt as unknown as { yetenek?: { dans?: boolean } }).yetenek?.dans ? 'dance' : 'idle');
   let signKey = '';
   const syncSign = () => {
     if (sim.state.sign) { signKey = ''; return; }

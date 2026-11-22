@@ -35,12 +35,21 @@ export interface AvmYasamSystem extends System {
   rows(): { key: string; st: string; kat: number; x: number; z: number; y: number; act: string }[];
   giseci(): { key: string; x: number; z: number; y: number; act: string }[];
   bilet(): { salon: number; bolum: number } | null;
+  /** kapıda kontrol edilmiş bilet (izleme hakkı) */
+  izin(): { salon: number; bolum: number } | null;
 }
 
 export function createAvmYasam(env: AgentEnv): AvmYasamSystem {
   const rng = env.rng('avm-yasam');
   const zs: Z[] = [], gis: Giseci[] = [];
-  let n = 0, spawnT = 0, icerde = false, etkT = 0, bilet: { salon: number; bolum: number } | null = null;
+  let n = 0, spawnT = 0, icerde = false, etkT = 0, izleT = 0;
+  // 2026-11-22 AR-GE kararı: bilet kayıtta (S.tut) durur, AVM'den çıkınca / yeniden açınca kaybolmaz. sinBilet: gişede alınan (salon id),
+  // sinGir: kapıda kontrol edildi (izleme hakkı), sinBolum: hangi bölüm. Bölüm geçerse kontrol edilmemiş bilet iade edilir.
+  const T = () => (env.rules.state as unknown as { tut: Record<string, number> }).tut;
+  const biletOku = (): { salon: number; bolum: number } | null => { const t = T(); return t.sinBilet && !t.sinGir ? { salon: t.sinBilet, bolum: t.sinBolum || 0 } : null; };
+  const izinOku = (): { salon: number; bolum: number } | null => { const t = T(); return t.sinBilet && t.sinGir ? { salon: t.sinBilet, bolum: t.sinBolum || 0 } : null; };
+  const biletSil = () => { const t = T(); delete t.sinBilet; delete t.sinBolum; delete t.sinGir; izleT = 0; };
+  const kapicilar: { a: Actor; s: Salon; is: number }[] = [];
   const kat3 = () => ((env.player() as { kat?: number }).kat || 0) === EGLENCE_KAT && realmAt(env.player().x)?.id === 'avm';
   /** büfe standının hol tarafı (koku: burada durup bakarlar) */
   const BUFE_ON = { x: SINEMA_BUFE.x - SINEMA_BUFE.D / 2 - 0.9, z: SINEMA_BUFE.z };
@@ -107,7 +116,7 @@ export function createAvmYasam(env: AgentEnv): AvmYasamSystem {
         if (z.hedef === 'sinema' && z.salon) {
           const s = z.salon, x = seans(s, h), i = x.durum === 'giris' || (x.durum === 'film' && x.t < 1.1) ? bosKoltuk(s) : -1;   // geç kalan da girer (ilk yarım saat)
           if (i < 0) { z.salon = undefined; sonraki(z); return; }
-          z.koltuk = i; z.path = koltukYolu(s, i); z.st = 'sinema'; return;
+          z.koltuk = i; z.path = koltukYolu(s, i); z.st = 'sinema'; { const kc = kapicilar.find(k => k.s === s); if (kc) kc.is = 1.2; } return;
         }
         if (z.hedef === 'gise') { z.st = 'gise'; z.dur = 2.2 + rng.next() * 1.6; a.rot = Math.PI / 2; if (rng.next() < 0.45) say(a, pick(SOZ_GISE), 2.0); const gc = gis[z.gi ?? 0]; if (gc) gc.is = 2.2; return; }
         if (z.hedef === 'koku') { z.st = 'vitrin'; z.dur = 3 + rng.next() * 3; a.rot = z.face; if (rng.next() < 0.6) say(a, pick(SOZ_KOKU), 2.2); return; }
@@ -152,6 +161,13 @@ export function createAvmYasam(env: AgentEnv): AvmYasamSystem {
       a.y = a.py = katY(EGLENCE_KAT); gis.push({ a, i, is: 0 });
     });
     for (const g of gis) { const a = g.a; a.rot = -Math.PI / 2; a.speed = 0; g.is -= dt; a.act = g.is > 0 ? 'pour' : 'idle'; }
+    // salon kapısında gerçek yer gösterici (AR-GE: "Görevli" konuşuyordu ama orada kimse yoktu): kapının yanında durur, bilet bakarken konuşur
+    if (!kapicilar.length) SALONLAR.forEach((s, i) => {
+      const seed = 61600 + i, at = { x: s.kapi.x + 0.55, z: s.kapi.z + 0.95 };
+      const a = env.reg.add('worker', 'avm-kapi-' + i, { kind: 'worker', role: 'hostes', seed, look: { lookSeed: seed } }, at, { name: 'Yer gösterici', role: 'hostes' });
+      a.y = a.py = katY(EGLENCE_KAT); kapicilar.push({ a, s, is: 0 });
+    });
+    for (const k of kapicilar) { const a = k.a; a.speed = 0; a.rot = Math.atan2(k.s.kapi.x - a.x, k.s.kapi.z - a.z); k.is -= dt; a.act = k.is > 0 ? 'talk' : 'idle'; }
   }
   function doldur() {   // oyuncu içeri girince AVM boş görünmesin: ziyaretçilerin çoğu zaten katlarda
     for (let i = 0; i < ZIYARETCI_HEDEF - 3; i++) {
@@ -176,18 +192,18 @@ export function createAvmYasam(env: AgentEnv): AvmYasamSystem {
       z.durak = 1; etkT = 1.3; return;
     }
   }
-  function temizle() { for (const z of zs) env.reg.remove(z.a); for (const g of gis) env.reg.remove(g.a); zs.length = 0; gis.length = 0; }
+  function temizle() { for (const z of zs) env.reg.remove(z.a); for (const g of gis) env.reg.remove(g.a); for (const k of kapicilar) env.reg.remove(k.a); zs.length = 0; gis.length = 0; kapicilar.length = 0; izleT = 0; }
 
   // oyuncu: gişede bilet alır, salon kapısındaki görevli bileti kontrol eder
   const siradaki = (): Salon => { const h = env.host.hour(); return SALONLAR.map(s => ({ s, x: seans(s, h) })).sort((a, b) => (a.x.durum === 'giris' ? -2 : a.x.durum === 'film' ? -1 : (a.x.sonraki - h + 24) % 24) - (b.x.durum === 'giris' ? -2 : b.x.durum === 'film' ? -1 : (b.x.sonraki - h + 24) % 24))[0].s; };
   for (const k of GISELER) env.interactions.register({
     id: 'sinemaGise.' + k.id, pos: k.musteri, radius: 0.9, kind: 'station', dwell: 1.2,   // AR-GE: gişenin önünden geçerken yanlışlıkla 40 ₺ kesilmesin (0.5 sn çok kısaydı)
     interval: 0.2,
-    canAct: () => kat3() && !bilet,
+    canAct: () => kat3() && !T().sinBilet,
     act: () => {
       const S = env.rules.state as { money: number }, s = siradaki(), x = seans(s, env.host.hour()), d = diziOf(s.id), bo = bolumOf(d, x.durum === 'kapali' || x.durum === 'cikis' ? x.bolum + 1 : x.bolum);
       if (S.money < BILET_FIYAT) { env.host.heroSay('Gişeci: Bilet ' + BILET_FIYAT + ' ₺, paran yetmiyor.', 2.2); return 'done'; }
-      S.money -= BILET_FIYAT; bilet = { salon: s.id, bolum: bo.no };
+      S.money -= BILET_FIYAT; { const t = T(); t.sinBilet = s.id; t.sinBolum = x.durum === 'kapali' || x.durum === 'cikis' ? x.bolum + 1 : x.bolum; delete t.sinGir; } izleT = 0;
       const gc = gis[k.id - 1]; if (gc) gc.is = 2.2;
       env.host.heroSay('Gişeci: ' + s.ad + ', ' + d.ad + ' ' + bo.no + '. Bölüm. İyi seyirler! (-' + BILET_FIYAT + ' ₺)', 2.8);
       return 'done';
@@ -197,12 +213,42 @@ export function createAvmYasam(env: AgentEnv): AvmYasamSystem {
     id: 'sinemaKapi.' + s.id, pos: s.kapi, radius: 0.8, kind: 'door', dwell: 0.3, interval: 0.2,
     canAct: () => kat3(),
     act: () => {
-      if (bilet && bilet.salon === s.id) { env.host.heroSay('Görevli: Biletiniz tamam, ' + bilet.bolum + '. bölüm. Koltuklar ileride, iyi seyirler!', 2.6); bilet = null; }
+      const bilet = biletOku(), izin = izinOku(), kc = kapicilar.find(k => k.s === s); if (kc) kc.is = 2.2;
+      if (bilet && bilet.salon === s.id) { T().sinGir = 1; env.host.heroSay('Görevli: Biletiniz tamam. Boş bir koltuğa oturun, film başlayınca izleyin. İyi seyirler!', 3.0); }
       else if (bilet) env.host.heroSay('Görevli: Biletiniz Salon ' + bilet.salon + ' için, yan kapı.', 2.2);
+      else if (izin) { if (izin.salon !== s.id) env.host.heroSay('Görevli: Sizin salonunuz Salon ' + izin.salon + '.', 2.0); }
       else env.host.heroSay('Görevli: Önce gişeden bilet almalısınız (' + BILET_FIYAT + ' ₺).', 2.2);
       return 'done';
     },
   });
+
+  /** oyuncu izler (AR-GE kararı 2026-11-22: bilet karşılık versin): kapıda kontrol edilen biletle kendi salonunda boş bir koltuğa gidip
+   *  durunca oturur; film oynarken IZLE_S sn oturan bölümü izlemiş olur: küçük XP + sayaç. Bölüm geçerse kontrol edilmemiş bilet iade. */
+  const IZLE_S = 20, IZLE_XP = 25;
+  function oyuncuIzle(dt: number) {
+    const t = T(); if (!t.sinBilet) return;
+    const s = SALONLAR.find(q => q.id === t.sinBilet); if (!s) { biletSil(); return; }
+    const x = seans(s, env.host.hour()), bolum = t.sinBolum || 0;
+    const gecti = x.bolum > bolum || (x.bolum === bolum && (x.durum === 'cikis' || x.durum === 'kapali') && x.t > 0) || (x.durum === 'kapali' && bolum > 0 && x.bolum === 0 && env.host.hour() < 9);
+    if (gecti) {
+      if (!t.sinGir) { const S = env.rules.state as { money: number }; S.money += BILET_FIYAT; env.host.toast('🎟️ Seans kaçtı: bilet iade (+' + BILET_FIYAT + ' ₺)', 'info'); }
+      else if (izleT >= IZLE_S * 0.5) odul(s);   // filmin sonuna yetişen: yarısını izlediyse sayılır
+      biletSil(); return;
+    }
+    if (!t.sinGir || !kat3()) return;
+    const p = env.host.player(); if (p.moving) return;
+    const dolu = doluKoltuk(s), k = s.koltuk.findIndex((q, i) => !dolu.has(i) && Math.hypot(q.x - p.x, q.z - p.z) < 0.5);
+    if (k < 0) return;
+    env.host.heroAct('sit', 0.35);
+    if (x.durum !== 'film' || x.bolum !== bolum) return;
+    izleT += dt;
+    if (izleT >= IZLE_S) { odul(s); biletSil(); }
+  }
+  function odul(s: Salon) {
+    const d = diziOf(s.id), bo = bolumOf(d, T().sinBolum || 0);
+    env.host.addXP?.(IZLE_XP); env.host.stat('sinemaIzle');
+    env.host.toast('🎬 ' + d.ad + ' ' + bo.no + '. bölümü izledin! +' + IZLE_XP + ' XP', 'good');
+  }
 
   return {
     id: 'avm-yasam', order: 49, phase: 'sim',
@@ -217,9 +263,11 @@ export function createAvmYasam(env: AgentEnv): AvmYasamSystem {
       etkinlikGelen(dt);
       for (let i = zs.length - 1; i >= 0; i--) adim(zs[i], dt);
       giseciler(dt);
+      oyuncuIzle(dt);
     },
     rows: () => zs.map(z => ({ key: z.a.key, st: z.st, kat: z.kat, x: z.a.x, z: z.a.z, y: z.a.y, act: z.a.act })),
     giseci: () => gis.map(g => ({ key: g.a.key, x: g.a.x, z: g.a.z, y: g.a.y, act: g.a.act })),
-    bilet: () => bilet,
+    bilet: () => biletOku(),
+    izin: () => izinOku(),
   };
 }

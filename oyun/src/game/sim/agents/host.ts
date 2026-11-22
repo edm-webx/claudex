@@ -89,6 +89,7 @@ export function hostFromRules(r: Rules): AgentHost {
     statMax: (k, v) => r.statMax(k, v),
     heroSay: (t, s) => { rt.say = t; rt.sayT = s ?? 1.8; },
     heroAct: (a, t) => { rt.act = a; rt.actT = t; },
+    addXP: (n) => { (r as unknown as { addXP?(n: number): void }).addXP?.(n); },
     tipBoost: (s) => { rt.tipBoostT = s;
     },
     addFollowers: (n) => { rt.followers += n; },
