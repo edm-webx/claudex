@@ -13,7 +13,7 @@ export interface MakineVeri { room: string; kat: number; ist: string; ad: string
 export interface MakineDeps { root: () => T.Object3D | null; hero: () => { x: number; z: number; kat?: number }; list: () => MakineVeri[] }
 export interface MakineView { update(dt: number): void }
 
-const HALKA_N = 8, URUN_N = 24, MESAFE = 14, TEZGAH_Y = 0.14 + 1.05, HALKA_Y = 2.05;   // oda tabanı katY + 0.14 (ic-mekan-look), tezgâh üstü 1.05
+const YAKIN = 2.4, HALKA_N = 8, URUN_N = 24, MESAFE = 14, TEZGAH_Y = 0.14 + 1.05, HALKA_Y = 2.05;   // oda tabanı katY + 0.14 (ic-mekan-look), tezgâh üstü 1.05
 interface Halka { s: T.Sprite; c: HTMLCanvasElement; g: CanvasRenderingContext2D; t: T.CanvasTexture; key: string }
 
 function halkaYap(): Halka {
@@ -65,7 +65,9 @@ export function createMakineGorunum(d: MakineDeps): MakineView {
       let hi = 0, ui = 0; const dolu: { x: number; z: number }[] = [];
       for (const m of list) {
         const y0 = katY(m.kat);
-        if (hi < HALKA_N && (m.cook || m.ready.length)) {
+        // 2026-11-22 sahip: tikler sürekli görünmesin. Halka yalnız makine çalışırken (geri sayım) ya da oyuncu makinenin dibindeyken; hazır ürün tezgâhta zaten görünür
+        const dipte = Math.hypot(m.hx - hp.x, m.hz - hp.z) < YAKIN;
+        if (hi < HALKA_N && (m.cook || (m.ready.length && dipte))) {
           const h = halkalar[hi++], key = (m.cook ? Math.round(m.p * 40) + ':' + Math.ceil(m.kalan) : 'h') + ':' + m.ready.length + m.ad;
           if (key !== h.key) { h.key = key; halkaCiz(h, m.cook ? m.p : 1, m.kalan, m.ad, m.ready.length); }
           // aynı alette iki istasyon (ör. espresso hem kahve hem soğuk içecek): halkalar yan yana
