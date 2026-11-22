@@ -187,7 +187,7 @@ export const IC_ODA: Record<string, { loop: string; vol: number }> = {
   // Martı AVM (2026-11-21): hol + yemek / tatlı dükkânları
   avmHol: { loop: 'ic_avm', vol: 0.5 }, avm_seker: { loop: 'ic_kafe', vol: 0.4 }, avm_kahve: { loop: 'ic_kafe', vol: 0.45 }, avm_baklava: { loop: 'ic_kafe', vol: 0.4 },
   avm_dondurma: { loop: 'ic_kafe', vol: 0.4 }, avm_kuruyemis: { loop: 'ic_avm', vol: 0.4 }, avm_doner: { loop: 'ic_lokanta', vol: 0.45 }, avm_kumpir: { loop: 'ic_lokanta', vol: 0.4 },
-  avm_midye: { loop: 'ic_lokanta', vol: 0.4 },
+  avm_midye: { loop: 'ic_lokanta', vol: 0.4 }, avm_sinema: { loop: 'ic_avm', vol: 0.45 },
 };
 /** tablo imzası: değişmediyse kapıya yeniden verilmez */
 export const tabloImza = (t: Record<string, readonly KapiKatman[]>): string => Object.keys(t).sort().map(k => k + ':' + t[k].map(l => l.id).join(',')).join('|');

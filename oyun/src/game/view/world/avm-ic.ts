@@ -75,7 +75,7 @@ function insa(): { g: T.Group; katlar: T.Group[]; basamak: { m: T.InstancedMesh;
     else camParca(AVM.x0, AVM.x1);
     // arka duvar (hol) ve lobinin yan duvarları
     b.span(HOL.x0, HOL.x1, top, top + fh, AVM.z1 - 0.25, AVM.z1, '#f1ece3'); b.box(HOL.x1 - HOL.x0, 0.12, 0.04, '#e0533c', cx, top + 0.06, AVM.z1 - 0.27);
-    for (const x of [AVM.x0, AVM.x1 - 0.25]) b.span(x, x + 0.25, top, top + fh, AVM.z0, LOBI_Z1, '#f1ece3');
+    for (const x of [AVM.x0, AVM.x1 - 0.25]) if (!(k === 3 && x > AVM.cx)) b.span(x, x + 0.25, top, top + fh, AVM.z0, LOBI_Z1, '#f1ece3');   // 3. kat doğu lobi: Sinema Büfesi odasının kendi duvarı
     kg.add(levha(KAT_ADI[k].toLocaleUpperCase('tr'), '#3f4a6b', '#ffffff', 4.2, 0.55, cx, top + 2.75, AVM.z1 - 0.26, Math.PI));
     // dükkân cepheleri (holde): kapı üstü bant ve tabela, kapı çerçevesi
     for (const m of icBina('avm').filter(r => (r.kat || 0) === k)) {

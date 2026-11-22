@@ -35,12 +35,12 @@ const FLOOR: Record<string, [string, string]> = { kafe: ['#9a6b45', '#7d5434'], 
   kafeterya: ['#8fb3a0', '#7aa08c'], banka: ['#efe9df', '#e2d9c4'], hastane: ['#e3eef2', '#cfdde3'], acil: ['#e3eef2', '#cfdde3'], morg: ['#9aa3a8', '#878f94'], kahvalti: ['#c8a27a', '#b08860'], balik: ['#d8e2e6', '#2f6f8f'], mutfak: ['#b9a78c', '#a59377'],
   giyim: ['#e9e4da', '#d6cec0'], elektronik: ['#dfe4ea', '#c9d0d8'], oyuncak: ['#f3e7c9', '#e6d4a8'],
   sekerci: ['#f3e3e6', '#e6c9cf'], kahveci: ['#8a5f3e', '#74492c'], dondurma: ['#f4f1ea', '#e8ddd0'], baklava: ['#e9dfc8', '#c9a23a'], kuruyemis: ['#c8a27a', '#b08860'],
-  donerci: ['#d9cfc0', '#a2472f'], kumpir: ['#efe3c4', '#d8c39a'], midye: ['#dfe9ec', '#2f6f8f'], avmLokanta: ['#e9e6e0', '#d4cfc6'] };
+  donerci: ['#d9cfc0', '#a2472f'], kumpir: ['#efe3c4', '#d8c39a'], midye: ['#dfe9ec', '#2f6f8f'], avmLokanta: ['#e9e6e0', '#d4cfc6'], sinema: ['#2a1a22', '#3a2430'] };
 const WALL: Record<string, [string, string]> = { kafe: ['#f3e3c8', '#7a4a2a'], bistro: ['#e9f1f4', '#1d4f86'], kirtasiye: ['#f6f6ee', '#2b6fb8'], okul: ['#f4ead2', '#5f8f6a'], lokanta: ['#f2efe9', '#a2472f'],
   kafeterya: ['#eef2f4', '#2f9e5a'], banka: ['#f4efe2', '#1f3a5f'], hastane: ['#f2f6f8', '#7fb4d8'], acil: ['#f2f6f8', '#d93a3a'], morg: ['#b9c0c4', '#5b6068'], kahvalti: ['#f3e3c8', '#7a4a2a'], balik: ['#e9f1f4', '#1d4f86'], mutfak: ['#f3ead6', '#3f7f64'],
   giyim: ['#f6f0ea', '#c94f6d'], elektronik: ['#eef2f6', '#2b6fb8'], oyuncak: ['#fff6e0', '#e8892b'],
   sekerci: ['#fff3f5', '#c94f6d'], kahveci: ['#efe2cf', '#5a3a22'], dondurma: ['#fbf7f0', '#e0533c'], baklava: ['#f6edd8', '#2f6b3a'], kuruyemis: ['#f3e6cf', '#8a5a3c'],
-  donerci: ['#f4ece0', '#a2472f'], kumpir: ['#fff4dc', '#e8892b'], midye: ['#eef5f7', '#1d4f86'], avmLokanta: ['#f2efe9', '#a2472f'] };
+  donerci: ['#f4ece0', '#a2472f'], kumpir: ['#fff4dc', '#e8892b'], midye: ['#eef5f7', '#1d4f86'], avmLokanta: ['#f2efe9', '#a2472f'], sinema: ['#f6ece6', '#b3122e'] };
 
 let solid: T.MeshStandardMaterial | null = null, glass: T.MeshStandardMaterial | null = null, glow: T.MeshBasicMaterial | null = null, wallM: T.MeshStandardMaterial | null = null;
 function mats() {
@@ -135,6 +135,7 @@ const F: Record<string, Fn> = {
   // ---- 2026-11-21 Martı AVM yemek / tatlı dükkânları (content/ic-mekan.ts avmOdaLayout) ----
   kavanoz: (c, it) => {   // floor shelf (y 0) of glass jars, or a small row of jars on a counter (y > 0)
     const { b, g } = c, flo = !(it.y || 0), P: Record<string, string[]> = { seker: ['#f2a2b3', '#ffd23f', '#7fd1c7', '#c94f6d'], akide: ['#e0533c', '#ffd23f', '#2f9e5a', '#f4f2ec'], kahve: ['#5a3a22', '#7a4a2a', '#3a2416', '#9a6b45'], demleme: ['#3a2416', '#d9c4a0', '#5a3a22', '#e8e2d4'], cerez: ['#c99a5b', '#e9d27a', '#8a5a3c', '#6f9e4f'], tursu: ['#9bbf3a', '#c0392b', '#e9d27a', '#6f9e4f'] };
+    if (it.c === 'misir') P.misir = ['#ffe08a', '#b3122e', '#fff4c2', '#3f8fe0'];
     const pal = P[it.c || 'seker'] || P.seker, rows = flo ? 3 : 1, n = Math.max(2, Math.round(it.w / 0.26));
     if (flo) { b.box(it.w, 1.5, 0.05, '#e8dcc6', 0, 0.75, -it.d / 2 + 0.03); for (let r = 0; r <= rows; r++) b.box(it.w, 0.03, it.d, '#a87a52', 0, 0.06 + r * 0.46, 0); for (const sx of [-1, 1]) b.box(0.04, 1.5, it.d, '#8a6040', sx * (it.w / 2 - 0.02), 0.75, 0); }
     for (let r = 0; r < rows; r++) for (let i = 0; i < n; i++) {
@@ -164,7 +165,7 @@ const F: Record<string, Fn> = {
     const { b, l } = c, k = it.c || '', top = it.y ? 0 : 0.42, r = Math.min(it.w, it.d) * 0.42;
     if (!it.y) { b.box(it.w, top, it.d, '#2a2d33', 0, top / 2, 0, { r: 0.03, s: 2 }); l.plane(0.1, 0.04, '#ff7a3a', 0, 0.2, it.d / 2 + 0.005); }
     b.cyl(r, r * 0.85, 0.32, k === 'dovme' ? '#c9ced6' : '#b87333', 0, top + 0.16, 0, { seg: 16 });
-    b.cyl(r * 0.92, r * 0.92, 0.02, k === 'kestane' ? '#6b3a20' : k === 'dovme' ? '#fbfaf6' : '#f2ead8', 0, top + 0.3, 0, { seg: 16 });
+    b.cyl(r * 0.92, r * 0.92, 0.02, k === 'kestane' ? '#6b3a20' : k === 'dovme' ? '#fbfaf6' : k === 'karamel' ? '#c8862e' : '#f2ead8', 0, top + 0.3, 0, { seg: 16 });
     if (k === 'kestane') for (let i = 0; i < 7; i++) b.sph(0.035, '#5a2e16', Math.cos(i) * r * 0.5, top + 0.33, Math.sin(i) * r * 0.5, { ws: 6, hs: 4 });
     if (k === 'dovme') b.cyl(0.015, 0.015, 0.7, '#c8a27a', r * 0.3, top + 0.55, 0, { rz: 0.5, seg: 5 });
   },
@@ -214,6 +215,45 @@ const F: Record<string, Fn> = {
     const { b } = c; b.cyl(0.18, 0.2, 0.8, '#b87333', 0, 0.4, 0, { seg: 14 }); b.tor(0.19, 0.015, '#c9a23a', 0, 0.62, 0, { rx: HP, ts: 18 }); b.cyl(0.1, 0.16, 0.12, '#b87333', 0, 0.86, 0, { seg: 12 });
     b.cyl(0.015, 0.015, 0.12, '#c9a23a', 0, 0.2, 0.2, { rx: HP, seg: 5 }); b.sph(0.03, '#f6f6f2', 0, 0.86, 0, { ws: 6, hs: 4 });
     for (let i = 0; i < 4; i++) b.cyl(0.04, 0.035, 0.07, '#b87333', it.w / 2 - 0.08, 0.035 + i * 0.075, -0.12, { seg: 8 });
+  },
+  // 2026-11-22 Sinema Büfesi aletleri
+  misirMak: (c, it) => {   // popcorn machine: red cart base, glass cabinet full of popcorn, warm kettle light, yellow roof sign
+    const { b, g, l } = c, w = it.w, d = it.d;
+    b.box(w, 0.08, d, '#b3122e', 0, 0.04, 0); g.box(w - 0.04, 0.62, d - 0.04, '#eef7fb', 0, 0.39, 0);
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.box(0.03, 0.66, 0.03, '#b3122e', sx * (w / 2 - 0.015), 0.39, sz * (d / 2 - 0.015));
+    for (let i = 0; i < 26; i++) b.sph(0.035, i % 5 ? '#fff4c2' : '#ffe08a', -w / 2 + 0.06 + ((i * 37) % 100) / 100 * (w - 0.12), 0.11 + (i % 3) * 0.035, -d / 2 + 0.06 + ((i * 53) % 100) / 100 * (d - 0.12), { ws: 5, hs: 4 });
+    b.cyl(0.1, 0.08, 0.1, '#c9ced6', 0, 0.56, 0, { seg: 12 }); b.cyl(0.006, 0.006, 0.16, '#9aa5b0', 0, 0.66, 0, { seg: 4 }); l.sph(0.03, '#ffcf5a', 0, 0.62, 0, { ws: 6, hs: 4 });
+    b.box(w + 0.04, 0.05, d + 0.04, '#b3122e', 0, 0.73, 0); b.box(w * 0.8, 0.16, 0.03, '#ffd23f', 0, 0.84, d / 2 - 0.02); l.box(w * 0.7, 0.03, 0.01, '#fff3d6', 0, 0.84, d / 2);
+  },
+  nachoIsitici: (c, it) => {   // nachos warmer: steel box with a glass hood, chips and a pot of melted cheese
+    const { b, g, l } = c, w = it.w, d = it.d;
+    b.box(w, 0.12, d, '#c9ced6', 0, 0.06, 0, { r: 0.02, s: 2 }); g.box(w - 0.06, 0.2, d - 0.08, '#eef7fb', 0, 0.23, -0.02); l.plane(w - 0.12, 0.02, '#ffb35a', 0, 0.32, d / 2 - 0.05);
+    for (let i = 0; i < 9; i++) b.box(0.05, 0.008, 0.05, '#f2c230', -w / 2 + 0.08 + (i % 5) * (w - 0.16) / 4, 0.14 + Math.floor(i / 5) * 0.012, -0.05 + (i % 2) * 0.05, { ry: i * 0.7 });
+    b.cyl(0.05, 0.045, 0.06, '#2a2d33', w / 2 - 0.08, 0.15, d / 2 - 0.08, { seg: 10 }); b.cyl(0.045, 0.045, 0.005, '#f2b134', w / 2 - 0.08, 0.181, d / 2 - 0.08, { seg: 10 });
+  },
+  icecekDolap: (c, it) => {   // double glass-door drinks fridge: Kolaz (dark), soda (clear), Boğaz Gazozu (blue), glowing header
+    const { b, g, l } = c, w = it.w, d = it.d;
+    b.box(w, 1.95, d, '#1d1d22', 0, 0.975, 0); g.box(w / 2 - 0.08, 1.5, 0.02, '#d8eef6', -w / 4, 0.98, d / 2 + 0.01); g.box(w / 2 - 0.08, 1.5, 0.02, '#d8eef6', w / 4, 0.98, d / 2 + 0.01);
+    b.box(0.03, 1.5, 0.03, '#9aa5b0', 0, 0.98, d / 2 + 0.02); for (const sx of [-1, 1]) b.box(0.02, 0.5, 0.03, '#c9ced6', sx * 0.06, 1.0, d / 2 + 0.04);
+    const P = ['#5a2a1a', '#dff3f7', '#5aa9d6', '#5a2a1a', '#f2e050'];
+    for (let r = 0; r < 4; r++) { b.box(w - 0.1, 0.015, d - 0.12, '#c9ced6', 0, 0.3 + r * 0.36, 0); for (let i = 0; i < 8; i++) { const x = -w / 2 + 0.12 + i * (w - 0.24) / 7, col = P[(r + (i >> 1)) % P.length]; b.cyl(0.035, 0.035, 0.2, col, x, 0.41 + r * 0.36, d / 2 - 0.14, { seg: 6 }); b.cyl(0.012, 0.03, 0.06, col, x, 0.54 + r * 0.36, d / 2 - 0.14, { seg: 5 }); } }
+    b.box(w, 0.26, d + 0.02, '#b3122e', 0, 1.82, 0); l.box(w - 0.1, 0.12, 0.01, '#ffe6e6', 0, 1.82, d / 2 + 0.015);
+  },
+  slushMak: (c, it) => {   // slush machine: two clear tanks with red and blue ice, steel base, taps
+    const { b, g, l } = c, w = it.w, d = it.d;
+    b.box(w, 0.9, d, celik(c, '#b3122e', '#aab3bb'), 0, 0.45, 0, { r: 0.02, s: 2 }); b.box(w, 0.2, d * 0.8, '#d9dde2', 0, 1.0, 0);
+    for (const [sx, col] of [[-1, '#e0436b'], [1, '#3f8fe0']] as [number, string][]) { const x = sx * w / 4; b.cyl(0.11, 0.11, 0.3, col, x, 1.25, 0, { seg: 12 }); g.cyl(0.13, 0.13, 0.42, '#eef7fb', x, 1.31, 0, { seg: 12 }); b.cyl(0.13, 0.13, 0.04, '#2a2d33', x, 1.54, 0, { seg: 12 }); b.box(0.04, 0.06, 0.06, '#2a2d33', x, 1.02, d / 2 - 0.02); }
+    l.plane(w - 0.1, 0.06, '#9fe8ff', 0, 0.75, d / 2 + 0.005);
+  },
+  afisVitrin: (c, it) => {   // two lit film poster frames on the wall (parody posters)
+    const { b, l } = c, y = it.y || 1.5, fw = it.w / 2 - 0.08;
+    [['#d64545', '#ffd23f'], ['#7a55c7', '#9fe8ff']].forEach(([bg, fg], i) => { const x = (i - 0.5) * (fw + 0.12); b.box(fw + 0.06, 1.1, 0.04, '#1d1d22', x, y, 0); l.plane(fw, 1.0, bg, x, y, 0.025); b.box(fw * 0.7, 0.08, 0.01, fg, x, y - 0.32, 0.03); b.box(fw * 0.5, 0.05, 0.01, '#ffffff', x, y - 0.42, 0.03); b.sph(0.12, fg, x, y + 0.15, 0.03, { ws: 8, hs: 6, sz: 0.2 }); });
+  },
+  kordon: (c, it) => {   // VIP queue: brass posts with a red velvet rope and a small "VIP" stand
+    const { b } = c, n = 3;
+    for (let i = 0; i < n; i++) { const z = -it.d / 2 + 0.1 + i * (it.d - 0.2) / (n - 1); b.cyl(0.12, 0.13, 0.03, '#c9a23a', 0, 0.015, z, { seg: 12 }); b.cyl(0.025, 0.025, 0.9, '#c9a23a', 0, 0.45, z, { seg: 8 }); b.sph(0.04, '#e9c46a', 0, 0.92, z, { ws: 8, hs: 6 }); }
+    for (let i = 0; i < n - 1; i++) { const z = -it.d / 2 + 0.1 + (i + 0.5) * (it.d - 0.2) / (n - 1); b.cyl(0.02, 0.02, (it.d - 0.2) / (n - 1), '#9e1b2f', 0, 0.78, z, { rx: HP, seg: 6 }); }
+    b.box(0.3, 0.2, 0.03, '#1d1d22', 0, 1.0, it.d / 2 - 0.1); b.box(0.24, 0.07, 0.01, '#e9c46a', 0, 1.0, it.d / 2 - 0.08);
   },
   kumpirFirin: (c, it) => {   // potato oven: black steel box, glass door, potatoes on racks, warm glow
     const { b, g, l } = c; b.box(it.w, 0.9, it.d, '#2a2d33', 0, 0.45, 0, { r: 0.03, s: 2 }); b.box(it.w, 0.04, it.d, '#c9ced6', 0, 0.92, 0);
@@ -286,8 +326,6 @@ const F: Record<string, Fn> = {
   bolme: (c, it) => { c.b.box(it.w, 1.4, it.d, '#e9dfc8', 0, 0.7, 0); c.b.box(it.w + 0.04, 0.06, it.d, '#8a6a4a', 0, 1.42, 0); },
   tostMak: (c) => { c.b.box(0.42, 0.12, 0.36, '#c9ced6', 0, 0.06, 0, { r: 0.03, s: 2 }); c.b.box(0.42, 0.1, 0.36, '#9aa5b0', 0, 0.2, -0.05, { rx: -0.25 }); c.b.box(0.03, 0.03, 0.2, '#111', 0, 0.26, 0.2); c.l.sph(0.012, '#ff4a3a', 0.18, 0.1, 0.18, { ws: 4, hs: 3 }); },
   buzdolap: (c, it) => { const { b, g, l } = c; b.box(it.w, 1.9, it.d, '#e0533c', 0, 0.95, 0); g.box(it.w - 0.12, 1.5, 0.02, '#d8eef6', 0, 1.0, it.d / 2 + 0.01); l.box(it.w - 0.14, 0.02, 0.02, '#fff8e8', 0, 1.72, it.d / 2 - 0.02); for (let r = 0; r < 4; r++) for (let i = 0; i < 5; i++) b.cyl(0.04, 0.04, 0.22, ['#fbfaf6', '#ffd23f', '#2f6fdb', '#49b96a'][(i + r) % 4], -it.w / 2 + 0.15 + i * (it.w - 0.3) / 4, 0.4 + r * 0.36, it.d / 2 - 0.15, { seg: 6 }); b.box(it.w, 0.3, it.d + 0.02, '#ffffff', 0, 1.85, 0); },
-  // 2026-11-22 içecek dolabı (büfedeki gibi, her kafe/lokantada 1. seviyeden): cam kapaklı, Kolaz kırmızısı tepe, raflarda su / soda / kola / gazoz şişeleri
-  icecekDolap: (c, it) => { const { b, g, l } = c; b.box(it.w, 1.75, it.d, '#2f6fdb', 0, 0.875, 0); g.box(it.w - 0.1, 1.35, 0.02, '#d8eef6', 0, 0.92, it.d / 2 + 0.01); l.box(it.w - 0.12, 0.02, 0.02, '#f2fbff', 0, 1.56, it.d / 2 - 0.02); b.box(it.w + 0.02, 0.22, it.d + 0.02, '#c0392b', 0, 1.72, 0); b.box(it.w * 0.6, 0.08, 0.01, '#fbfaf6', 0, 1.72, it.d / 2 + 0.02); for (let r = 0; r < 4; r++) for (let i = 0; i < 4; i++) b.cyl(0.035, 0.035, 0.2, ['#9fd3f0', '#6b1f1a', '#cfe8d8', '#5aa9d6'][(i + r) % 4], -it.w / 2 + 0.15 + i * (it.w - 0.3) / 3, 0.36 + r * 0.33, it.d / 2 - 0.14, { seg: 6 }); },
   semaver: (c) => { c.b.cyl(0.13, 0.16, 0.42, '#c9a23a', 0, 0.21, 0, { seg: 12 }); c.b.cyl(0.06, 0.1, 0.12, '#c9a23a', 0, 0.48, 0, { seg: 10 }); c.b.cyl(0.07, 0.06, 0.1, '#7a2a1d', 0, 0.6, 0, { seg: 10 }); c.b.cyl(0.015, 0.015, 0.1, '#c9a23a', 0.12, 0.12, 0.08, { rz: HP, seg: 4 }); for (let i = 0; i < 4; i++) c.b.cyl(0.025, 0.02, 0.07, '#b0281e', 0.25, 0.035, -0.12 + i * 0.08, { seg: 6 }); },
   semaverDev: (c) => { c.b.box(0.8, 0.8, 0.8, '#5a3b2a', 0, 0.4, 0); c.b.cyl(0.28, 0.34, 0.9, '#b87333', 0, 1.25, 0, { seg: 16 }); c.b.cyl(0.12, 0.22, 0.25, '#b87333', 0, 1.82, 0, { seg: 14 }); c.b.cyl(0.14, 0.12, 0.2, '#7a2a1d', 0, 2.04, 0, { seg: 12 }); c.b.cyl(0.03, 0.03, 0.2, '#c9a23a', 0, 1.0, 0.35, { rx: HP, seg: 6 }); for (let i = 0; i < 8; i++) c.b.cyl(0.025, 0.02, 0.07, '#b0281e', -0.3 + (i % 4) * 0.2, 0.84, 0.25 + Math.floor(i / 4) * 0.08, { seg: 6 }); },
   firinK: (c, it) => { const { b, l } = c; b.box(it.w, 0.9, it.d, '#5b6068', 0, 0.45, 0); b.box(it.w * 0.8, 0.45, it.d * 0.75, '#c9ced6', 0, 1.15, 0); c.g.box(it.w * 0.5, 0.25, 0.02, '#ffcf8a', -0.05, 1.15, it.d * 0.38); l.box(it.w * 0.46, 0.2, 0.01, '#ffb866', -0.05, 1.15, it.d * 0.37); },
@@ -421,7 +459,7 @@ const F: Record<string, Fn> = {
   aksesuar: (c) => { const { b } = c; b.cyl(0.22, 0.22, 0.04, '#3a3d42', 0, 0.02, 0, { seg: 12 }); b.cyl(0.025, 0.025, 1.7, '#c9a24a', 0, 0.87, 0, { seg: 6 });
     for (let t = 0; t < 3; t++) for (let i = 0; i < 4; i++) { const a = i * HP + t * 0.6, x = Math.cos(a) * 0.2, z = Math.sin(a) * 0.2, y = 0.7 + t * 0.4, col = ['#e0533c', '#2f5f9a', '#e9c46a', '#a8794e'][(i + t) % 4];
       if (t === 2) { b.cyl(0.1, 0.12, 0.08, col, x, y, z, { seg: 10 }); b.cyl(0.16, 0.16, 0.01, col, x, y - 0.04, z, { seg: 12 }); } else { b.box(0.18, 0.16, 0.07, col, x, y - 0.1, z, { ry: -a }); b.tor(0.06, 0.008, col, x, y, z, { ry: -a, ts: 10, arc: Math.PI }); } } },
-  ledPano: (c, it) => { const y = it.y || 1.5; c.b.box(it.w + 0.08, 0.68, 0.05, '#1d1d22', 0, y, 0); const tx = signTex(it.esya === 'led_vitrin' ? 'YENİ SEZON %30' : it.esya === 'led_e' ? 'YENİ MODEL ÇIKTI' : 'OYUN ZAMANI!', it.c || '#e0533c', '#ffffff', it.w / 0.6); const p = new T.Mesh(new T.PlaneGeometry(it.w, 0.6), new T.MeshBasicMaterial({ map: tx })); p.position.set(0, y, 0.03); c.grp.userData.curItem.add(p); },
+  ledPano: (c, it) => { const y = it.y || 1.5; c.b.box(it.w + 0.08, 0.68, 0.05, '#1d1d22', 0, y, 0); const tx = signTex(it.esya === 'led_vitrin' ? 'YENİ SEZON %30' : it.esya === 'led_e' ? 'YENİ MODEL ÇIKTI' : it.esya === 'led_menu_s' ? 'MISIR + KOLAZ = FİLM KEYFİ' : 'OYUN ZAMANI!', it.c || '#e0533c', '#ffffff', it.w / 0.6); const p = new T.Mesh(new T.PlaneGeometry(it.w, 0.6), new T.MeshBasicMaterial({ map: tx })); p.position.set(0, y, 0.03); c.grp.userData.curItem.add(p); },
   dikis: (c) => { const { b } = c; b.box(0.4, 0.06, 0.2, '#f4f2ec', 0, 0.03, 0); b.box(0.08, 0.22, 0.14, '#f4f2ec', 0.14, 0.15, 0); b.box(0.34, 0.07, 0.14, '#f4f2ec', 0.0, 0.27, 0); b.box(0.03, 0.08, 0.03, '#c0392b', -0.14, 0.2, 0); b.cyl(0.04, 0.04, 0.03, '#2a2d33', 0.17, 0.2, 0.08, { rx: HP, seg: 10 });
     b.cyl(0.05, 0.05, 0.35, '#c94f6d', -0.05, 0.05, -0.18, { rz: HP, seg: 10 }); },
   demoMasa: (c, it) => { const { b, l } = c; b.box(it.w, 0.8, it.d, '#f4f6f8', 0, 0.4, 0); b.box(it.w + 0.04, 0.03, it.d + 0.04, '#2b6fb8', 0, 0.815, 0);

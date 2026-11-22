@@ -292,7 +292,7 @@ function mallExtras(k: Kit, L: Dim) {
   for (const sg of [-1, 1]) b.cyl(0.05, 0.05, 2.7, '#2b2f36', sg * 1.95, L.y0 + 1.35, fz + 1.62, { seg: 8 });
   b.box(2.9, 0.02, 1.4, '#7a2b2b', 0, L.y0 + 0.01, fz + 0.75, O);   // entrance mat
   g.plane(2.4, 0.5, '#e8f1f6', 0, L.y0 + 2.45, fz + 0.14);
-  for (const m of icBina('avm')) {
+  for (const m of icBina('avm').filter(r => (r.kat || 0) < 3)) {   // 3. kat (sinema) cephe tabelası yok: kabuğun üst kenarı
     const r = AVM_TABELA[m.tur] || AVM_TABELA.avmLokanta, kat = m.kat || 0, sg = Math.sign(AVM.cx - m.x), front = m.z < (AVM.z0 + AVM.z1) / 2;
     const u = sg * (front ? 7.0 : 5.0), w = front ? 1.75 : 1.85;
     k.sign(r.txt, r.c, '#ffffff', w, 0.42, u, L.y0 + kat * 3.6 + (kat === 1 ? 2.2 : 3.05), fz + 0.2);

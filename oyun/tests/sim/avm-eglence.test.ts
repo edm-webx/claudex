@@ -8,8 +8,8 @@ import { icBina } from '../../src/content/ic-mekan';
 const mk = () => { const sim = played(1) as any; sim.step(1); return { sim, S: sim.state, y: sim.rules.rt.agents.avmYasam }; };
 const gir = (sim: any, kat = 0) => { sim.command({ kind: 'teleport', x: AVM.cx, z: 47, kat }); sim.step(0.25); };
 
-it('eğlence katı: en üst kat, dükkân yok; iki sinema salonu (15 koltuk) ve sahne binanın içinde, kapılar holde', () => {
-  expect(EGLENCE_KAT).toBe(AVM.KAT - 1); expect(icBina('avm').filter(m => (m.kat || 0) === EGLENCE_KAT)).toHaveLength(0);
+it('eğlence katı: en üst kat, tek dükkân Sinema Büfesi (doğu lobi); iki sinema salonu (15 koltuk) ve sahne binanın içinde, kapılar holde', () => {
+  expect(EGLENCE_KAT).toBe(AVM.KAT - 1); expect(icBina('avm').filter(m => (m.kat || 0) === EGLENCE_KAT).map(m => m.arsa)).toEqual(['k18']);
   for (const s of SALONLAR) { expect(s.koltuk.length).toBeGreaterThanOrEqual(15); for (const k of s.koltuk) { expect(avmIcinde(k)).toBe(true); expect(k.x).toBeLessThan(HOL.x0); expect(k.z).toBeGreaterThan(s.z0); expect(k.z).toBeLessThan(s.z1); } }
   expect(SAHNE.x0).toBeGreaterThan(HOL.x1); expect(SAHNE.x1).toBeLessThan(AVM.x1);
   const r = eglenceEngel(), ic = (p: { x: number; z: number }) => r.some(q => p.x > q.x0 && p.x < q.x1 && p.z > q.z0 && p.z < q.z1);

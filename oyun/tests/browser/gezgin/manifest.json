@@ -1138,6 +1138,77 @@
    "ebeveyn": null
   },
   {
+   "id": "avm_sinema",
+   "ad": "Martı Sinema Büfesi",
+   "tur": "sinema",
+   "canli": true,
+   "arsa": "k18",
+   "bina": "avm",
+   "merkez": {
+    "x": 1211.45,
+    "z": 46.55
+   },
+   "boy": {
+    "wx": 8.6,
+    "wz": 4.9
+   },
+   "kapiDis": {
+    "x": 1205.55,
+    "z": 46.55
+   },
+   "kapi": {
+    "x": 1207.15,
+    "z": 46.55
+   },
+   "kapiIc": {
+    "x": 1208.45,
+    "z": 46.55
+   },
+   "noktalar": [
+    {
+     "ad": "kapı içi",
+     "x": 1208.45,
+     "z": 46.55
+    },
+    {
+     "ad": "orta",
+     "x": 1211.45,
+     "z": 46.55
+    },
+    {
+     "ad": "tezgah",
+     "x": 1212.7,
+     "z": 46.05
+    },
+    {
+     "ad": "kasa",
+     "x": 1212.7,
+     "z": 47.29
+    },
+    {
+     "ad": "kazan:karamel_kazan",
+     "x": 1212.7,
+     "z": 44.71
+    },
+    {
+     "ad": "misirMak:misir_mak",
+     "x": 1212.7,
+     "z": 45.64
+    },
+    {
+     "ad": "nachoIsitici:nacho_isitici",
+     "x": 1212.7,
+     "z": 46.56
+    },
+    {
+     "ad": "icecekDolap:icecek_dolap_s",
+     "x": 1214.23,
+     "z": 45.15
+    }
+   ],
+   "ebeveyn": null
+  },
+  {
    "id": "tesis",
    "ad": "Halı Saha Tesisleri",
    "tur": "kafeterya",
@@ -1803,6 +1874,17 @@
     "x": 1206.45,
     "z": 61.9
    }
+  },
+  {
+   "id": "k18",
+   "ad": "Martı Sinema Büfesi (AVM)",
+   "sabit": "kafe",
+   "x": 1211.45,
+   "z": 46.55,
+   "kapi": {
+    "x": 1206.45,
+    "z": 46.55
+   }
   }
  ],
  "duraklar": [
@@ -1843,10 +1925,10 @@
   }
  ],
  "ozet": {
-  "bina": 24,
+  "bina": 25,
   "ic_ice": 2,
-  "canli": 17,
-  "arsa": 22,
-  "icNokta": 166
+  "canli": 18,
+  "arsa": 23,
+  "icNokta": 174
  }
 }

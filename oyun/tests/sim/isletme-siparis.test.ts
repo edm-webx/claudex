@@ -6,8 +6,8 @@ import { KALEM, ISTASYON_SIRA, MAKINE } from '../../src/content/isletme-istasyon
 
 const mk = () => { const sim = played(1) as any; sim.rules.rt.acilisSerbest = true; sim.step(1); /* kurulum: sıralı açılma şartı yok (content/acilis.ts, kendi testi acilis.test.ts) */ const S = sim.state; S.level = 40; S.money = 5e7; return { sim, S, h: sim.rules.rt.kafeHost, c: (x: any) => sim.command({ kind: 'mulk', ...x }) }; };
 
-it('veri bütünlüğü: 136 kalemin (17 işletme x 8) hepsinin istasyonu/süresi var, stok/maliyet yok', () => {
-  const ids = Object.values(ISLETME).flatMap(i => i.menu.map(m => m.id)); expect(ids.length).toBe(136);
+it('veri bütünlüğü: 144 kalemin (18 işletme x 8) hepsinin istasyonu/süresi var, stok/maliyet yok', () => {
+  const ids = Object.values(ISLETME).flatMap(i => i.menu.map(m => m.id)); expect(ids.length).toBe(144);
   for (const id of ids) { const k = KALEM[id]; expect(k, id).toBeTruthy(); expect(ISTASYON_SIRA).toContain(k.ist); expect(k.sure).toBeGreaterThan(0); expect(k.renk).toMatch(/^#[0-9a-f]{6}$/i); }
   expect(JSON.stringify(KALEM) + JSON.stringify(ISLETME)).not.toMatch(/maliyet|stok|malzeme/i);
 });

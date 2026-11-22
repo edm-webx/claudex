@@ -8,7 +8,7 @@
 import * as T from 'three';
 import { Batch } from '../../../engine/prefab/batch';
 import { AVM, HOL, LOBI_Z1, katY, avmIcinde } from '../../../content/avm-kat';
-import { EGLENCE_KAT, KORIDOR_X, SALONLAR, SAHNE, MUZISYEN, BASAMAK, GISE, MISIR, BANKLAR, seans, konser, type Salon } from '../../../content/avm-eglence';
+import { EGLENCE_KAT, KORIDOR_X, SALONLAR, SAHNE, MUZISYEN, BASAMAK, GISE, BANKLAR, seans, konser, type Salon } from '../../../content/avm-eglence';
 
 export interface AvmEglenceDeps { root: () => T.Object3D | null; hero: () => { x: number; z: number; kat?: number }; saat: () => number }
 export interface AvmEglenceView { update(dt: number): void }
@@ -88,17 +88,14 @@ function insa(): Yapi {
   for (let z = SAHNE.z0 + 1.2; z < SAHNE.z1 - 1.2; z += 0.6) b.box(0.06, 0.9, 0.06, '#8a8f96', SAHNE.x0 - 0.45, F + 0.45, z);
   b.span(SAHNE.x0 - 0.48, SAHNE.x0 - 0.42, F + 0.85, F + 0.92, SAHNE.z0 + 1.2, SAHNE.z1 - 1.2, '#8a8f96');
 
-  /* ---- lobi: gişe, mısırcı, banklar ---- */
+  /* ---- lobi: gişe, banklar (mısır: doğu lobideki Sinema Büfesi dükkânı) ---- */
   b.box(GISE.w, 1.05, GISE.d, '#7d2b3a', GISE.x, F + 0.52, GISE.z); b.box(GISE.w + 0.1, 0.06, GISE.d + 0.1, '#e9d7b0', GISE.x, F + 1.07, GISE.z);
   b.box(GISE.w, 1.4, 0.08, '#2c2742', GISE.x, F + 1.8, GISE.z - GISE.d / 2 + 0.04);
-  b.box(MISIR.w, 0.95, MISIR.d, '#f4f1ea', MISIR.x, F + 0.48, MISIR.z); for (let i = 0; i < 4; i++) b.box(0.14, 0.95, MISIR.d + 0.01, '#d63c3c', MISIR.x - MISIR.w / 2 + 0.14 + i * 0.27, F + 0.48, MISIR.z);
-  b.box(MISIR.w - 0.1, 0.5, MISIR.d - 0.1, '#fff4c2', MISIR.x, F + 1.2, MISIR.z, {}); for (let i = 0; i < 9; i++) b.sph(0.06, '#ffe08a', MISIR.x - 0.35 + (i % 5) * 0.17, F + 1.0 + Math.floor(i / 5) * 0.08, MISIR.z - 0.1 + (i % 3) * 0.1, { ws: 6, hs: 4 });
   for (const k of BANKLAR) { b.box(2.0, 0.08, 0.5, '#b98a5e', k.x, F + 0.45, k.z); b.box(2.0, 0.4, 0.06, '#b98a5e', k.x, F + 0.7, k.z - 0.24); for (const sx of [-0.85, 0.85]) b.box(0.08, 0.45, 0.45, '#3a3a40', k.x + sx, F + 0.22, k.z); }
 
   g.add(b.mesh(solid, false, true), l.mesh(glow, false, false));
   g.add(levha('MARTI SİNEMALARI', '#2c2742', '#ffcf5a', 5.2, 0.6, (AVM.x0 + HOL.x0) / 2, F + WH - 0.42, LOBI_Z1 - 0.11, Math.PI));
   g.add(levha('GİŞE', '#7d2b3a', '#ffffff', 1.2, 0.36, GISE.x, F + 2.3, GISE.z - GISE.d / 2 - 0.01, Math.PI));
-  g.add(levha('MISIR', '#d63c3c', '#ffffff', 0.9, 0.3, MISIR.x, F + 1.62, MISIR.z - MISIR.d / 2 - 0.01, Math.PI));
   for (const s of SALONLAR) g.add(levha(s.ad.toLocaleUpperCase('tr'), '#1d1a2c', '#ffcf5a', 1.2, 0.3, HOL.x0 + 0.115, F + 2.45, s.zc, HP));
 
   // perdeler, afişler, gişe tablosu, sahne panosu: tuvaller (update çizer)

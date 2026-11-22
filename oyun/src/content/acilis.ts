@@ -42,6 +42,7 @@ export const ACILIS: Record<string, AcilisKosul> = {
   k15: { asama: 8, once: 'k5' },
   k16: { asama: 8, once: 'k15' },
   k17: { asama: 9, once: 'k16' },
+  k18: { asama: 8, once: 'k5' },   // Martı Sinema Büfesi (AVM sinema katı)
   // boş arsalar (panelden alınır)
   a1: { asama: 2 }, a2: { asama: 3 }, a3: { asama: 4 }, a4: { asama: 5 }, a5: { asama: 6 },
 };
