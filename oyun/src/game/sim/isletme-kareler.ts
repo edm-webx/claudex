@@ -139,8 +139,24 @@ export function installIsletmeKareler(K: Kernel, api: IsletmeKareApi): { sync():
     const i = rt.pads.indexOf(pr); if (i >= 0) rt.pads.splice(i, 1);
     K.interactions.unregister('pad.' + key);
   }
+  /** sıralı açılma anları (content/acilis.ts): sıradaki dükkânın karesi ilk kez çıkınca ve kilidi açılınca bir kez söyle, ışık sütunu yak, ses çal (S.tut, kayıtta kalır) */
+  function an(k: Kare) {
+    if (!/^(isl|avm)\.k\d+$/.test(k.key) || (rt as { acilisSerbest?: boolean }).acilisSerbest) return;   // yönetici / test kurulumunda kutlama yok
+    const ad = k.label.replace(/^\S+ /, ''), yer = k.kat !== undefined ? ' (Martı AVM)' : '';
+    const yak = () => { if (k.kat === undefined) (rt.uiLast as Record<string, unknown>).decorFocus = { x: k.pos.x, z: k.pos.z, until: S.playT + 3.5 }; };
+    if (!S.tut['acGor_' + k.key]) {
+      S.tut['acGor_' + k.key] = 1; if (!k.kilit) S.tut['acAc_' + k.key] = 1;
+      K.toast(k.kilit ? '🆕 Holding yolunda sıradaki dükkân: ' + ad + yer + '. Kapısındaki karede ne lazım yazıyor.' : '🆕 ' + ad + yer + ' satılık! Kapısındaki sarı kareye yürü.', 'good');
+      K.logEv('dukkanKare', { key: k.key, x: k.pos.x, z: k.pos.z }); yak();
+    } else if (!k.kilit && !S.tut['acAc_' + k.key]) {
+      S.tut['acAc_' + k.key] = 1;
+      K.toast('🔓 ' + ad + yer + ' artık satılık! Bütün koşulları tamamladın.', 'good');
+      K.logEv('dukkanSatilik', { key: k.key, x: k.pos.x, z: k.pos.z }); yak();
+    }
+  }
   function sync() {
     const want = istenen(), keys = new Set(want.map(k => k.key));
+    for (const k of want) an(k);
     for (const key of [...ids.keys()]) if (!keys.has(key)) sil(key);
     for (const k of want) { const have = ids.get(k.key); if (!have) ekle(k); else if (have.sub !== k.sub || have.price !== k.price || have.pos.x !== k.pos.x || have.pos.z !== k.pos.z) { sil(k.key); ekle(k); } }
   }

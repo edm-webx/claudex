@@ -3,6 +3,7 @@
 // door or the stadium gate; at the gate it only opens the coordinator card.
 import { createKoordinator } from './koordinator';
 import { icOfArsa } from '../../content/ic-mekan';
+import { SIRA } from '../../content/acilis';
 import { mulkApi } from '../sim/mulk';
 import { ESYALAR, ESYA_BY_ID, SANDIKLAR, DUKKAN_TIPLERI, DUKKAN_BY_ID, dukkanMusteri, BANKA } from '../../content/esya';
 
@@ -25,6 +26,7 @@ const CSS = `
 .mp-t{flex:none;min-height:42px;padding:6px 12px;line-height:1.2;white-space:nowrap;border:3px solid #3b2a20;border-radius:12px;background:#fff6e6;font:900 15px var(--disp);color:#3b2a20;cursor:pointer}.mp-t.on{background:#ffd23f}
 .mp-body{overflow-y:auto;padding:4px 14px 14px;flex:1}
 .mp-sec{font:900 15px var(--disp);margin:12px 0 6px}
+.mp-yol{display:flex;flex-direction:column;gap:5px;margin-bottom:6px}.mp-yd{display:grid;grid-template-columns:30px 1fr auto;align-items:center;column-gap:8px;border:3px solid #3b2a20;border-radius:12px;background:#efe6d6;padding:5px 9px;opacity:.6}.mp-yd span{grid-row:span 2;font-size:20px;text-align:center}.mp-yd b{font:900 14px var(--disp)}.mp-yd i{font:800 11px var(--disp);font-style:normal;background:#3b2a20;color:#fff;border-radius:6px;padding:0 5px;margin-left:6px;vertical-align:2px}.mp-yd small{grid-column:2 / 4;opacity:.85}.mp-yd.ok{background:#dff3d2;opacity:.85}.mp-yd.nx{background:#fff3c4;opacity:1;border-color:#e0a400;box-shadow:0 3px 0 #3b2a20}.mp-yd.nx .mp-b{grid-column:3;grid-row:1}
 .mp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
 .mp-it{border:3px solid #3b2a20;border-radius:14px;background:#fff;padding:8px 10px;display:flex;flex-direction:column;gap:3px;min-width:0}
 .mp-it.r1{background:#eaf6ff}.mp-it.r2{background:#fff3c4}
@@ -61,8 +63,15 @@ export function createMulkPanel(d: Deps): MulkPanel {
     s += `<div class="mp-row"><span class="mp-ic">🌭</span><div><b>Sabri'nin Büfesi</b><small>${m.salon ? m.salon.stage + '. aşama' : 'İskelede'} · ana işletmen</small></div></div>`;
     if (m.takim) s += `<div class="mp-row"><span class="mp-ic" style="background:${m.takim.renk};border-radius:12px">${m.takim.arma || '🛡️'}</span><div><b>${esc(m.takim.ad)}</b><small>Futbol kulübün · Maç Koordinatöründe</small></div></div>`;
     s += `<div class="mp-sec">İşletmelerin <small>(büfedeki gibi: seviye, işçi, kasa)</small></div>` + (own.length ? own.map(a => { const t = a.sabit ? null : DUKKAN_BY_ID[a.tip]; return `<div class="mp-row"><span class="mp-ic">${a.sabit ? esc(a.ikon || '🏪') : t ? t.ikon : '🏠'}</span><div><b>${esc(a.ad || (t ? t.ad : (a.tur === 'ev' ? 'Ev ' : 'Boş arsa ') + String(a.id).toUpperCase()))}</b><small>${a.lv}. seviye${a.isci ? ' · 👷 ' + a.isci + '/' + a.isciMax + ' işçi' + ((a.kadro || []).length ? ' (' + (a.kadro as { ad: string }[]).map(c => esc(c.ad)).join(', ') + ')' : '') : ''}${a.tadilat ? ' · 🔨 tadilatta' : ''} · kasada ${tl(a.till)}${a.sat ? ' · ' + a.sat + ' satış' : ''}${a.asamaAd ? ' · ' + esc(a.asamaAd) : ''}${a.kesya && a.kesya.length ? ' · ' + a.kesya.length + ' alet' : ''}</small></div><button class="mp-b y" data-a="yonet" data-id="${a.id}">Yönet</button></div>`; }).join('') : '<div class="mp-note">Henüz işletmen yok: dükkânın kapısının yanındaki sarı kareye basıp satın al' + ' (sırayla açılırlar: ilki büfe 2. aşamaya gelince).' + '</div>');
-    const sat = ((m.arsa || []) as M[]).filter(a => a.sabit && !a.owned && a.gorunur !== false);   // sıradaki dükkânlar (content/acilis.ts)
-    if (sat.length) s += `<div class="mp-sec">Alınabilecek işletmeler <small>(haritada kapılarında da yazar)</small></div>` + sat.map(a => { const lock = !!a.kilit; return `<div class="mp-row" style="opacity:${lock ? 0.7 : 1}"><span class="mp-ic">${esc(a.ikon || '🏪')}</span><div><b>${esc(a.ad)}</b><small>${lock ? '🔒 Önce: ' + esc(a.kilit) : 'Satılık: ' + tl(a.fiyat)}</small></div><button class="mp-b" data-a="yonet" data-id="${a.id}">Göster</button></div>`; }).join('');
+    // holding yolu (content/acilis.ts SIRA): alınanlar ✓, sıradaki öne çıkar (koşulu ya da fiyatı), ötekiler sırasını bekler
+    const byId = new Map(((m.arsa || []) as M[]).map(a => [a.id, a])), yol = SIRA.map(id => byId.get(id)).filter(Boolean) as M[];
+    const sahipN = yol.filter(a => a.owned).length, sira = yol.find(a => !a.owned && a.gorunur !== false);
+    if (yol.length) s += `<div class="mp-sec">Holding yolu <small>(${sahipN}/${yol.length} dükkân · sırayla açılır)</small></div><div class="mp-yol">` + yol.map((a, i) => {
+      const ad = esc(String(a.ad || '').replace(' (AVM)', '')), avm = icOfArsa(a.id)?.bina === 'avm' ? '<i>AVM</i>' : '';
+      if (a.owned) return `<div class="mp-yd ok" title="${ad}"><span>${esc(a.ikon || '🏪')}</span><b>${ad}${avm}</b><small>✓ senin</small></div>`;
+      if (a === sira) return `<div class="mp-yd nx"><span>${esc(a.ikon || '🏪')}</span><b>${i + 1}. ${ad}${avm}</b><small>${a.kilit ? '🔒 ' + esc(a.kilit) : '🟨 Satılık: ' + tl(a.fiyat) + ' · kapısındaki kareye yürü'}</small><button class="mp-b y" data-a="yonet" data-id="${a.id}">Göster</button></div>`;
+      return `<div class="mp-yd" title="${ad}"><span>🔒</span><b>${i + 1}. ${ad}${avm}</b><small>${esc(String(a.kilit || '').split(' + ')[0])}</small></div>`;
+    }).join('') + '</div>';
     s += `<div class="mp-sec">Sandıklar <small>(maç, orman, mülk geliri, günlük tahta ve seviye atlayınca düşer)</small></div>`;
     const ch = SANDIKLAR.filter(x => (m.sandik[x.id] || 0) > 0);
     s += ch.length ? ch.map(x => { const key = x.anahtar ? (m.esya[x.anahtar] || 0) > 0 : true; return `<div class="mp-row"><span class="mp-ic" style="font-size:30px">${x.ikon}</span><div><b>${esc(x.ad)} ×${m.sandik[x.id]}</b><small>${tl(x.tl[0])} - ${tl(x.tl[1])} ve ${x.adet[0]}-${x.adet[1]} eşya${x.anahtar ? ' · 🗝️ Altın Anahtar ister' : ''}</small></div><button class="mp-b g" data-a="sandikAc" data-id="${x.id}"${key ? '' : ' disabled'}>Aç</button></div>`; }).join('') : '<div class="mp-note">Sandığın yok. Maç oyna, ormanda mantar topla, günlük tahtayı bitir.</div>';

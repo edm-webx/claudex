@@ -101,7 +101,7 @@ it('satın al: seviye kilidi + katın öncü dükkânı şartı; kapıda doğru 
   sim.command({ kind: 'teleport', x: ic.x, z: ic.z, kat: 1 }); sim.step(0.3); expect(m.view().arsaYakin).toBe('k11');
   sim.command({ kind: 'teleport', x: ic.x, z: ic.z, kat: 0 }); sim.step(0.3); expect(m.view().arsaYakin).toBe('k7');   // the shop under it
   S.money = 1e8; S.level = 40;
-  sim.rules.rt.acilisSerbest = false; S.stage = 10; S.stars = 5; S.stats.served = 1e6; for (const id of ['k1', 'k2', 'k4', 'k3', 'k6']) c({ op: 'adminKafe', id, n: 1 });   // gerçek sıra: karşı yaka bitti (content/acilis.ts)
+  sim.rules.rt.acilisSerbest = false; S.stage = 10; S.stars = 5; S.stats.served = 1e6; S.stats.miniPlay = 99; for (const id of ['k1', 'k2', 'k4', 'k3', 'k6']) c({ op: 'adminKafe', id, n: 1 });   // gerçek sıra: karşı yaka bitti (content/acilis.ts)
   c({ op: 'arsaAl', id: 'k10' }); expect(S.zones.arsa.plots.k10).toBeUndefined();   // panelden / uzaktan alınmaz: yalnız kapısındaki sarı kare
   buyAll(c, 'k11'); expect(S.zones.arsa.plots.k11).toBeUndefined();   // the floor's anchor (şekerci k10) first
   buyAll(c, 'k10'); const m0 = S.money; buyAll(c, 'k11');

@@ -35,7 +35,7 @@ export const KREDI_FAIZ = 0.03, MEVDUAT_FAIZ = 0.002, MEVDUAT_TAVAN = 200_000, K
 export const KREDI_TABAN = 10_000, KREDI_KAZANC_PAYI = 0.1;
 export const KAFE_TEMA: Record<string, string> = { retro: 'Retro', modern: 'Modern', bohem: 'Bohem', deniz: 'Deniz' };
 import { fmtMoney } from './util';
-import { acilisEksik, acilisGorunur, tadilatEksik, type AcilisDurum } from '../../content/acilis';
+import { acilisEksik, acilisGorunur, tadilatEksik, durumOf, type AcilisDurum } from '../../content/acilis';
 import { salonOf, salonKat } from './salon';
 import { kanatKurulu } from '../../content/kanat';
 
@@ -358,9 +358,7 @@ export function installMulk(K: Kernel) {
   };
   /** açılış sırası için durum (content/acilis.ts): büfe aşaması, yıldız, esnaf seviyesi, görev sayaçları, alınmış dükkânlar */
   //  rt.acilisSerbest (yalnız çalışma anı, kaydedilmez): yönetici / test kurulumunda sıra şartı yok, esnaf seviyesi yine sayılır
-  const acDurum = (): AcilisDurum => ((rt as { acilisSerbest?: boolean }).acilisSerbest
-    ? { stage: 99, stars: 99, level: S.level, stats: new Proxy({}, { get: () => Infinity }), sahip: () => true }
-    : { stage: S.stage || 1, stars: S.stars || 0, level: S.level, stats: S.stats, sahip: id => !!arsa().plots[id] });
+  const acDurum = (): AcilisDurum => durumOf(S as never, !!(rt as { acilisSerbest?: boolean }).acilisSerbest);
   function arsaAl(id: string) {
     const q = plotOf(id); if (!q || q.p) return;
     { const e = acilisEksik(q.a, acDurum()); if (e.length) { K.toast((q.a.ad || 'Bu arsa') + ' için önce: ' + e.join(', ') + '.', 'info'); return; } }   // content/acilis.ts: sıralı açılma

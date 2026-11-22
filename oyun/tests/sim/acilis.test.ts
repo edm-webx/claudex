@@ -4,6 +4,7 @@ import { it, expect } from 'vitest';
 import { played } from './m1-helpers';
 import { ARSALAR, ISLETME, ARSA_ISLETME } from '../../src/content/esya';
 import { ACILIS, acilisEksik, tadilatAsama } from '../../src/content/acilis';
+import { hedefApi } from '../../src/game/sim/goals';
 
 const mk = () => { const sim = played(1) as any; sim.step(1); return { sim, S: sim.state }; };
 const keys = (sim: any) => [...sim.rules.rt.pads].map((p: any) => p.key).filter((k: string) => /^(isl|avm)\.k\d+$/.test(k)).sort();
@@ -24,7 +25,7 @@ it('oyun başında hiçbir dükkân karesi yok; büfe 2. aşamada yalnız Meydan
   sim.step(0.6); expect(keys(sim)).toEqual([]);
   S.stage = 2; S.stars = 2; S.stats.served = 120; sim.step(0.6);
   expect(keys(sim)).toEqual(['isl.k1']);
-  expect(pad(sim, 'isl.k1').sub).toMatch(/müşteri \(120\/500\)/);
+  expect(pad(sim, 'isl.k1').sub).toBe('🔒 500 müşteriye servis (120/500)');
   sim.command({ kind: 'mulk', op: 'arsaAl', id: 'k1' }); expect(S.zones.arsa?.plots?.k1).toBeUndefined();   // panelden de alınmaz
   S.stats.served = 500; sim.step(0.6); expect(pad(sim, 'isl.k1').sub).toBe('Dükkânı satın al');
   sim.command({ kind: 'mulk', op: 'arsaAl', id: 'k1' }); expect(S.zones.arsa.plots.k1).toMatchObject({ tur: 'dukkan', lv: 1 });
@@ -39,7 +40,7 @@ it('kırtasiye ve kantin büfe 3. aşamadan önce görünmez; AVM dükkânları 
   sim.step(0.6); expect(keys(sim)).toEqual([]);   // k4 (kantin) 3. aşamayı bekliyor
   S.stage = 3; sim.step(0.6); expect(keys(sim)).toEqual(['isl.k4']);
   const dur = { stage: 3, stars: 5, level: 40, stats: S.stats, sahip: (id: string) => !!S.zones.arsa.plots[id] };
-  expect(acilisEksik(ARSALAR.find(a => a.id === 'k3')!, dur)).toEqual(['önce Okul Kantini']);
+  expect(acilisEksik(ARSALAR.find(a => a.id === 'k3')!, dur)).toEqual(['önce Okul Kantini', 'okulda 8 sınav ver (0/8)']);
   expect(acilisEksik(ARSALAR.find(a => a.id === 'k10')!, dur)[0]).toMatch(/^5\. aşama büfe/);
 });
 
@@ -50,4 +51,17 @@ it('dükkân tadilatı büfe aşamasını bekler: kare kilitli görünür, para 
   sim.step(0.6); expect(pad(sim, 'isl.k1.tadilat').sub).toMatch(/^🔒 3\. aşama büfe/);
   const m0 = S.money; sim.command({ kind: 'mulk', op: 'yukselt', id: 'k1' }); expect(S.money).toBe(m0); expect(p.tadilat).toBeFalsy();
   S.stage = 3; sim.step(0.6); expect(pad(sim, 'isl.k1.tadilat').sub).not.toMatch(/🔒/);
+});
+
+it('keyif: sıradaki dükkân hedef kartında çubukla; kare ilk çıkınca ve kilidi açılınca bir kez kutlanır (ses olayı + ışık)', () => {
+  const { sim, S } = mk(); S.money = 0; S.level = 20; S.stage = 2; S.stats.served = 100;
+  const ev: string[] = []; sim.bus.onAny((r: any) => { if (r.name === 'dukkanKare' || r.name === 'dukkanSatilik') ev.push(r.name); });
+  for (const k of Object.keys(S.padPaid || {})) delete S.padPaid[k];
+  sim.step(0.6); expect(ev).toEqual(['dukkanKare']);
+  const goal = () => (hedefApi(sim.rules) as any).card().main;
+  sim.command({ kind: 'hedef', op: 'pin' }); for (let i = 0; i < 12 && goal()?.key !== 'dukkan.k1'; i++) sim.command({ kind: 'hedef', op: 'pin' });
+  expect(goal().key).toBe('dukkan.k1'); expect(goal().label).toBe('Sıradaki dükkân: Meydan Kafe'); expect(goal().sub).toBe('500 müşteriye servis (100/500)');
+  const f0 = goal().frac; S.stats.served = 400; sim.step(0.6); expect(goal().frac).toBeGreaterThan(f0);
+  S.stats.served = 500; sim.step(0.6); expect(ev).toEqual(['dukkanKare', 'dukkanSatilik']); expect(goal().label).toBe('Meydan Kafe satılık!');
+  sim.step(2); expect(ev).toHaveLength(2);   // bir kez
 });

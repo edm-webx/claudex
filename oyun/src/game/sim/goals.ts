@@ -22,6 +22,9 @@ import { KIOSK_STAGES } from '../../content/stages';
 import { PRODUCTS, PRODUCT_IDS } from '../../content/products';
 import { clamp, fmtMoney } from './util';
 import { realmAt } from '../../content/realm';
+import { durumOf, siradaki, acilisEksik, acilisOran } from '../../content/acilis';
+import { icOfArsa } from '../../content/ic-mekan';
+const icBinaAvm = (id: string) => icOfArsa(id)?.bina === 'avm';
 
 export const HEDEF_KEY = 'hedef';
 
@@ -122,6 +125,16 @@ export function installHedef(r: Rules): HedefApi {
       const label = d.kind === 'tadilat' ? 'Tadilat: ' + ((KIOSK_STAGES[st.stage] && KIOSK_STAGES[st.stage].short) || 'yeni büfe') : d.label.charAt(0) + d.label.slice(1).toLocaleLowerCase('tr');
       out.push({ key: 'pad.' + p.key, label, sub: have >= p.price ? 'Hazır! Sarı kareye yürü' : d.sub, cost: p.price, have, frac: clamp(have / p.price, 0, 1), ready: have >= p.price, pinned: false, canPin: true, go: '' });
     }
+    // holding yolu (content/acilis.ts): sıradaki dükkânın koşulları, çubuk = koşulların tamamlanan payı; hepsi tamamsa para
+    {
+      const d = durumOf(st as never, !!(rt as unknown as { acilisSerbest?: boolean }).acilisSerbest), a = siradaki(d);
+      if (a && a.sabit) {
+        const eksik = acilisEksik(a, d), ad = (a.ad || '').replace(' (AVM)', ''), have = money + (Number(st.padPaid[(a.kat !== undefined || icBinaAvm(a.id) ? 'avm.' : 'isl.') + a.id]) || 0);
+        out.push(eksik.length
+          ? { key: 'dukkan.' + a.id, label: 'Sıradaki dükkân: ' + ad, sub: eksik[0].charAt(0).toLocaleUpperCase('tr') + eksik[0].slice(1), cost: 0, have: 0, frac: acilisOran(a, d), ready: false, pinned: false, canPin: true, go: '' }
+          : { key: 'dukkan.' + a.id, label: ad + ' satılık!', sub: have >= a.fiyat ? 'Hazır! Kapısındaki sarı kareye yürü' : 'Koşullar tamam, para biriktir', cost: a.fiyat, have, frac: clamp(have / a.fiyat, 0, 1), ready: have >= a.fiyat, pinned: false, canPin: true, go: '' });
+      }
+    }
     const tiers: MainGoalModel[] = [];
     for (const p of PRODUCT_IDS as readonly ProductId[]) {
       if (!rt.stations[p] || !rt.stations[p].built || (st.tiers[p] || 1) >= 4) continue;
@@ -201,6 +214,7 @@ export function installHedef(r: Rules): HedefApi {
         case 'go': {
           const m = mainGoal(); if (!m) return true;
           if (m.go) r.command({ kind: 'openPanel', id: m.go });
+          else if (m.key.startsWith('dukkan.')) r.toast(m.ready ? m.label.replace(' satılık!', '') + ': kapısının yanındaki sarı kareye yürü.' : m.label + ' · ' + m.sub + '. Mülk panelinde holding yolunu gör.', 'info');
           else if (m.key.startsWith('pad.')) r.toast(m.ready ? 'İskeledeki sarı "' + m.label + '" karesine yürü, para akınca açılır.' : 'Biriktir: ' + fmtMoney(m.cost) + '. İskeledeki sarı karede bekliyor.', 'info');
           return true;
         }
