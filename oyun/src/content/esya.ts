@@ -300,10 +300,11 @@ export const ISLETME: Record<IsletmeId, Isletme> = {
       A('neon', 'Neon tabela', '💡', 22000, 3, { musteri: 0.12 }, 'Pembe neon "KUMPİR": müşteri +%12'),
       A('kule_vitrin', 'Kule vitrini', '🗼', 40000, 4, { musteri: 0.12 }, 'Üç katlı kumpir camda döner: müşteri +%12'),
       A('usta_k', 'Ortaköylü usta', '👨‍🍳', 75000, 5, { fiyatK: 0.2 }, 'Kırk yıllık usta: fiyatlar +%20')] },
-  sinema: { id: 'sinema', ad: 'Sinema Büfesi', ikon: '🍿', mus: 1.4, asama: ['Mısır tezgâhı', 'Sinema büfesi', 'Mısır & slush', 'Fuaye büfesi', 'Martı Sinema Büfesi'],
+  sinema: { id: 'sinema', ad: 'Sinema Büfesi', ikon: '🍿', mus: 1.6,   // açık stand, mısır kokusu katı sarar: seans kalabalığı uğrar
+    asama: ['Mısır tezgâhı', 'Sinema büfesi', 'Mısır & slush', 'Fuaye büfesi', 'Martı Sinema Büfesi'],
     menu: [Y('misir_kucuk', 'Küçük mısır', '🍿', 35), Y('kolaz', 'Kolaz (dolaptan)', '🥤', 30), Y('gazoz', 'Boğaz Gazozu', '🍾', 25), Y('soda', 'Martı Soda', '🫧', 20),
       Y('misir_kova', 'Kova mısır', '🍿', 95), Y('slush', 'Buzlu slush', '🧊', 45), Y('nachos', 'Peynirli nachos', '🧀', 70), Y('film_menu', 'Film menüsü (kova + 2 Kolaz)', '🎬', 165)],
-    esya: [A('misir_mak', 'Mısır makinesi', '🍿', 30000, 1, { musteri: 0.14 }, 'Camlı kazanda patlayan mısır, koku bütün kata yayılır: müşteri +%14'),
+    esya: [A('misir_mak', 'Mısır makinesi', '🍿', 30000, 1, { musteri: 0.14 }, 'Camlı kazanda patlayan mısır, koku bütün kata yayılır, gelen geçenin canı çeker: müşteri +%14'),
       A('icecek_dolap_s', 'İçecek dolabı', '🧊', 16000, 1, { musteri: 0.1 }, 'Buz gibi Kolaz, soda, Boğaz Gazozu: müşteri +%10'),
       A('karamel_kazan', 'Karamel kazanı', '🍯', 18000, 2, { fiyatK: 0.1 }, 'Karamelli mısır: fiyatlar +%10'),
       A('slush_mak', 'Slush makinesi', '🧊', 22000, 2, { musteri: 0.1 }, 'Dönen renkli buz: müşteri +%10'),

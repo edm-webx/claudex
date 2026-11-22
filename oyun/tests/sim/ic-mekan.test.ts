@@ -15,7 +15,7 @@ it('every room: the door is open, the wall beside it blocks, the walk from the d
   for (const m of IC_MEKANLAR) {
     const { W, D } = icDim(m);
     for (const v of [D / 2 + 0.3, D / 2 - 0.1, D / 2 - 0.6, D / 2 - 1.0]) expect(blocked(m, icWorld(m, 0, v)), m.id + ' door v=' + v).toBe(false);
-    expect(blocked(m, icWorld(m, Math.min(W / 2 - 0.3, 1.4), D / 2 - 0.1)), m.id + ' wall').toBe(true);
+    if (!m.acik) expect(blocked(m, icWorld(m, Math.min(W / 2 - 0.3, 1.4), D / 2 - 0.1)), m.id + ' wall').toBe(true);   // açık stant (sinema büfesi) ön duvarsız
     expect(blocked(m, icWorld(m, 0, -D / 2 + 0.1)), m.id + ' back wall').toBe(true);
     // equipment never collides (the walk grid is static), furniture does
     for (const i of icLayout(m)) if (i.esya) expect(i.solid, m.id + ' ' + i.k).toBeFalsy();

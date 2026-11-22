@@ -13,7 +13,7 @@ export type IcTur = 'kafe' | 'bistro' | 'kirtasiye' | 'okul' | 'lokanta' | 'kafe
 /** AVM'nin yemek / yemeğe yakın dükkânları (2026-11-21): tezgâhlı, kapısı hola bakan oda (avmYemekLayout) */
 export type AvmYemekTur = 'sekerci' | 'kahveci' | 'dondurma' | 'baklava' | 'kuruyemis' | 'donerci' | 'kumpir' | 'midye' | 'avmLokanta' | 'sinema';
 /** kat: AVM katı (content/avm-kat.ts), yok = 0. Kat > 0 odalar zemin çarpışmasına girmez, oyuncunun katı tutunca görünür. */
-export interface IcMekan { id: string; ad: string; tur: IcTur; x: number; z: number; wx: number; wz: number; kapi: Yon; arsa?: string; bina?: string; salon?: 'W' | 'E'; mutfak?: boolean; h: number; kat?: number }
+export interface IcMekan { id: string; ad: string; tur: IcTur; x: number; z: number; wx: number; wz: number; kapi: Yon; arsa?: string; bina?: string; salon?: 'W' | 'E'; mutfak?: boolean; h: number; kat?: number; /** açık stand: yalnız arka duvar var (yan ve ön duvar, kapı yok) */ acik?: boolean }
 export interface IcItem { k: string; u: number; v: number; w: number; d: number; ry?: number; solid?: boolean; esya?: string; y?: number; txt?: string; c?: string; /** büfe salonu: o aşamada kurulur (BUF-20 aşama 10 masaları) */ asama?: number }
 export interface Rect { x0: number; x1: number; z0: number; z1: number }
 
@@ -148,8 +148,9 @@ function avmOdalar(): IcMekan[] {   // (IC_MEKANLAR'dan önce çağrılır: sabi
     // 2. kat: yemek katı (Martı Lokantası buraya taşındı; oda kimliği 'avm' aynı kaldı)
     o('avm', 'Martı Lokantası', 'avmLokanta', 'k5', 2, 'WF'), o('avm_doner', 'Dürümcü Dayı', 'donerci', 'k15', 2, 'WB'),
     o('avm_kumpir', 'Kumpir Kulesi', 'kumpir', 'k16', 2, 'EF'), o('avm_midye', 'Midyeci Mido', 'midye', 'k17', 2, 'EB'),
-    // 3. kat: sinema katının doğu lobisinde Sinema Büfesi (2026-11-22 sahip: "patlamış mısırcı olsun, dolaptan kola soda gazoz versin")
-    { id: 'avm_sinema', ad: 'Martı Sinema Büfesi', tur: 'sinema', x: SINEMA_BUFE.x, z: SINEMA_BUFE.z, wx: SINEMA_BUFE.D, wz: SINEMA_BUFE.W, kapi: '-x', arsa: 'k18', bina: 'avm', h: 3.6, kat: 3 },
+    // 3. kat: sinema katının doğu bloğunda açık Sinema Büfesi standı (2026-11-22 sahip: "patlamış mısırcı olsun, dolaptan kola soda
+    // gazoz versin"; 22:55: "mısır kapalı yerde olmaz, etraf mısır kokacak")
+    { id: 'avm_sinema', ad: 'Martı Sinema Büfesi', tur: 'sinema', x: SINEMA_BUFE.x, z: SINEMA_BUFE.z, wx: SINEMA_BUFE.D, wz: SINEMA_BUFE.W, kapi: '-x', arsa: 'k18', bina: 'avm', h: 3.6, kat: 3, acik: true },
   ];
 }
 /** dükkân rengi ve tabela yazısı (iç pano, cephe / galeri tabelası) */
@@ -187,7 +188,7 @@ function avmOdaLayout(W: number, D: number, tur: IcTur): IcItem[] {
   // büyüyen odanın ortası boş kalmasın: yemek dükkânına iki masa daha (yanlarda), mağazaya ikinci teşhir masası
   if (dW > 0.8 && dD > 0.8) {
     if (MAGAZA_TUR.has(tur)) o.push(it('teshir', W / 2 - 2.1, 0.35, 1.0, 0.7, { solid: true, c: tur }));
-    else for (const sx of [-1, 1]) { const mu = sx * (W / 2 - 1.35); if (!o.some(i => i.k !== 'zemin' && i.k !== 'lamba' && (i.y ?? 0) < 1 && Math.abs(i.u - mu) < 1.0 + i.w / 2 && Math.abs(i.v - 0.75) < 0.9 + i.d / 2)) o.push(masa(mu, 0.75)); }   // yan duvarda dolap / akvaryum varsa o tarafa koymaz
+    else if (tur !== 'sinema') for (const sx of [-1, 1]) { const mu = sx * (W / 2 - 1.35); if (!o.some(i => i.k !== 'zemin' && i.k !== 'lamba' && (i.y ?? 0) < 1 && Math.abs(i.u - mu) < 1.0 + i.w / 2 && Math.abs(i.v - 0.75) < 0.9 + i.d / 2)) o.push(masa(mu, 0.75)); }   // yan duvarda dolap / akvaryum varsa o tarafa koymaz
   }
   return o;
 }
@@ -248,11 +249,11 @@ function avmOdaLayout0(W: number, D: number, tur: IcTur): IcItem[] {
   else if (tur === 'midye') o.push(ct('tepsiTezgah', -1.9, 0.8, 0.5, 'midye_tabla', { c: 'midye' }), ct('tepsiTezgah', -1.0, 0.5, 0.4, 'limon_sepet', { c: 'limon' }), ct('tepsiTezgah', -0.3, 0.6, 0.45, 'mido_tezgah', { c: 'altin' }),
     arka('ocakK', -1.85, 0.8, 0.5, 'tava_ocak'), arka('buzVitrin', -0.75, 1.1, 0.5, 'buz_tezgah_m'), arka('tasFirin', 0.45, 0.9, 0.5, 'guvec_firin'),
     yan('agSus', 1, 'ag_sus'), it('akvaryum', -W / 2 + IC_DUVAR + 0.22, 0.45, 1.5, 0.4, { esya: 'akvaryum_m', ry: 1 }));
-  else if (tur === 'sinema') o.push(   // Sinema Büfesi: tezgâhta camlı mısır makinesi, arkada içecek dolabı ve slush; masa yok (al, filme git)
-    ct('kazan', -1.95, 0.45, 0.4, 'karamel_kazan', { c: 'karamel' }), ct('misirMak', -0.95, 0.75, 0.5, 'misir_mak'), ct('nachoIsitici', 0.05, 0.45, 0.42, 'nacho_isitici'),   // makineler personel hattında (lo..hi) ~1 m arayla: halkalar üst üste binmez
-    arka('icecekDolap', -1.55, 1.4, 0.5, 'icecek_dolap_s'), arka('kavanoz', -0.2, 0.8, 0.4, undefined, { c: 'misir' }), arka('slushMak', 0.95, 0.6, 0.45, 'slush_mak'),
-    yan('ledPano', -1, 'led_menu_s', { c: R.c, y: 1.8 }), it('afisVitrin', W / 2 - IC_DUVAR - 0.03, 0.7, 1.7, 0.06, { esya: 'afis_vitrin', ry: 3, y: 1.55 }),
-    it('kordon', 1.15, 1.25, 0.5, 1.6, { esya: 'vip_bar' }));
+  else if (tur === 'sinema') o.push(   // Sinema Büfesi (açık stand, avmOdaLayout tezgâhı uzatır): makineler tezgâh boyunca ~1.5 m arayla, arkada dolap; masa yok
+    ct('kazan', -2.05, 0.4, 0.38, 'karamel_kazan', { c: 'karamel' }), ct('misirMak', -1.35, 0.75, 0.5, 'misir_mak'), ct('nachoIsitici', 0.0, 0.45, 0.42, 'nacho_isitici'),
+    arka('icecekDolap', -1.75, 1.2, 0.5, 'icecek_dolap_s'), arka('kavanoz', -0.45, 0.8, 0.4, undefined, { c: 'misir' }), arka('slushMak', 1.0, 0.6, 0.45, 'slush_mak'),
+    it('ledPano', 0.4, bv - 0.15, 1.6, 0.05, { esya: 'led_menu_s', y: 2.75, c: R.c }),   // tezgâhın üstünde asılı
+    it('afisVitrin', -2.0, 1.55, 1.3, 0.35, { esya: 'afis_vitrin' }), it('kordon', 1.6, 1.4, 0.5, 1.6, { esya: 'vip_bar' }));
   else o.push(   // Martı Lokantası (k5): esnaf lokantası aletleri bu odaya sığacak şekilde
     ct('benmari', -1.7, 1.2, 0.55, 'benmari'), ct('corba', -0.75, 0.45, 0.45, 'corba_kazan'), ct('semaver', -0.2, 0.35, 0.35, 'cay_ocak'),
     arka('tasFirin', -1.75, 0.9, 0.5, 'pide_firin'), arka('mangal', -0.8, 0.8, 0.5, 'ocakbasi'), arka('doner', 0.0, 0.5, 0.5, 'doner'), arka('ustaOcak', 0.75, 0.7, 0.5, 'sef_ocak'),
@@ -443,11 +444,11 @@ export function icColliders(m: IcMekan, stage = 99): Rect[] {
   const { W, D } = icDim(m), t = IC_DUVAR, g = IC_KAPI / 2, o: Rect[] = [];
   o.push(rectW(m, -W / 2, W / 2, -D / 2, -D / 2 + t));
   // 2026-11-21: mutfağın yan duvarında servis koridoru kapısı (koridorun kendisi yürüme ızgarasında kapalı: bufe-buyume buyumeEngel)
-  for (const [y, u0, u1] of [['W', -W / 2, -W / 2 + t], ['E', W / 2 - t, W / 2]] as ['W' | 'E', number, number][]) {
+  for (const [y, u0, u1] of (m.acik ? [] : [['W', -W / 2, -W / 2 + t], ['E', W / 2 - t, W / 2]]) as ['W' | 'E', number, number][]) {
     if (m.mutfak && passAcik(y, stage)) o.push(rectW(m, u0, u1, -D / 2, SERVIS_KAPI_V[0]), rectW(m, u0, u1, SERVIS_KAPI_V[1], D / 2));
     else o.push(rectW(m, u0, u1, -D / 2, D / 2));
   }
-  o.push(rectW(m, -W / 2, -g, D / 2 - t, D / 2), rectW(m, g, W / 2, D / 2 - t, D / 2));
+  if (!m.acik) o.push(rectW(m, -W / 2, -g, D / 2 - t, D / 2), rectW(m, g, W / 2, D / 2 - t, D / 2));
   for (const i of icLayout(m, Math.min(10, stage))) if (i.solid && (i.asama ?? 0) <= stage) { const sw = (i.ry || 0) % 2 ? i.d : i.w, sd = (i.ry || 0) % 2 ? i.w : i.d; o.push(rectW(m, i.u - sw / 2, i.u + sw / 2, i.v - sd / 2, i.v + sd / 2)); }
   return o;
 }
