@@ -32,6 +32,21 @@ export const PIER = { x0: -24, x1: 22.7, z0: -18, z1: 4.4 };
 export const BUFE = { x0: -4.2, x1: 4.2, z0: -10.6, z1: -4.4 };
 export const GANG = { z0: -8.0, z1: -6.2 };
 export const WIN_Z = -7.1;
+/** Stage 2+ büfe counter: the walnut serving board on the top (kiosk.ts) and the six product stack slots on it (rtview.ts). */
+export const COUNTER_BOARD = { x0: -1.62, x1: 0.5, z0: -4.98, z1: -4.5 };
+/** product stack slot on the counter (index = product order): one even row on the board, a 2nd column behind it */
+export function counterSlot(L: StageLayout, pi: number, col: number): { x: number; z: number } {
+  const d = L.counter.drop;
+  if (L.counter.span[0] === L.counter.span[1]) return { x: d.x + (pi - 2.5) * 0.24, z: d.z + (col ? -0.14 : 0.06) };   // stage 1 crate counter
+  const w = (COUNTER_BOARD.x1 - COUNTER_BOARD.x0) / 6;
+  return { x: COUNTER_BOARD.x0 + w * (pi + 0.5), z: col ? -4.86 : -4.62 };
+}
+/** where the brand plaque / medal case stand: stage 2+ off the serving area (glass case lid / east low wall), stage 1 on the crates */
+export function counterExtra(L: StageLayout, which: 'plaque' | 'vitrin'): { x: number; y: number; z: number } {
+  const c = L.counter;
+  if (c.span[0] === c.span[1]) return { x: c.pos.x + 0.62, y: c.drop.y, z: c.pos.z + (which === 'plaque' ? 0.1 : 0.08) };
+  return which === 'plaque' ? { x: 1.9, y: 1.375, z: -4.72 } : { x: 2.5, y: 1.1, z: -4.52 };   // plaque: standing card on the glass case's lid (east end); medals: low wall west of the register
+}
 export const NEXT_SIGN = { x: 6.3, z: -12.3, ry: 0.4 };
 export const STATION_KINDS = ['doner', 'cay', 'ayran', 'simit', 'tost', 'gazoz'] as const;
 export type StationKind = typeof STATION_KINDS[number];

@@ -508,25 +508,19 @@ export function createMatch(o: MatchOpts = {}) {
   }
 
   /**
-   * Top sürme (FUT-03 dokun-kovala): top ayağa yapışık değil. Taşıyıcı topa 0.8 m'den yakınken dokunur, top istenen yöne koşu
-   * hızından biraz hızlı çıkar ve yavaşlar; aradaki mesafe ~0.6-1.4 m salınır. Yavaş/duran taşıyıcı topu ayağında tutar (korur).
-   * Top 2.4 m'den fazla açılırsa sahiplik biter (serbest top).
+   * Top sürme (2026-11-21, kullanıcı isteği): top taşıyıcının ayağına YAPIŞIK. Top her karede taşıyıcının önünde ~0.5 m'de durur
+   * (koşuyorsa koşu yönünde, duruyorsa gövde yönünde), hızı taşıyıcının hızıdır; yön değişince yumuşakça yeni noktaya kayar.
+   * Sahiplik yalnız vuruş/pas (kick), müdahale (tackle) ya da şut ile biter; arada topu kendiliğinden kaybetmez.
+   * İnsan ve yapay zekâ aynı yolu kullanır. (Eski dokun-kovala modeli kontrolü çok zorlaştırıyordu.)
    */
   function carryBall(o: Pl, oi: number, dt: number) {
-    const rx = ball.x - o.x, ry = ball.y - o.y, d = Math.hypot(rx, ry), sp = Math.hypot(o.vx, o.vy);
     o.touch = Math.max(0, o.touch - dt);
-    const taker = m.restart && m.restart.taker === oi;
-    if ((taker || sp < 1.2) && d < 1.2) {
-      const k = Math.min(1, dt * 10); ball.x += (o.x + o.fx * 0.55 - ball.x) * k; ball.y += (o.y + o.fy * 0.55 - ball.y) * k; ball.vx = o.vx; ball.vy = o.vy; return;
-    }
-    if (o.touch <= 0 && d < 0.8) {
-      let dx: number, dy: number;
-      if (isHuman(oi)) { const { ix, iy } = m.input; if (Math.hypot(ix, iy) > 0.25) { dx = ix; dy = iy; } else { dx = o.fx; dy = o.fy; } } else { dx = o.tx - o.x; dy = o.ty - o.y; }
-      const dl = len(dx, dy), u = 2.6 + (o.boost > 0 ? 0.6 : 0); ball.vx = dx / dl * (sp + u); ball.vy = dy / dl * (sp + u); o.touch = 0.26; o.st.touches++; ball.lastKicker = oi; ball.lastTouch = o.team;
-    }
-    const bs = Math.hypot(ball.vx, ball.vy); if (bs > 0) { const nb = Math.max(0, bs - 5.5 * dt) / bs; ball.vx *= nb; ball.vy *= nb; }
-    ball.x += ball.vx * dt; ball.y += ball.vy * dt;
-    if (d > 2.4) { ball.owner = -1; m.pass = null; }
+    const sp = Math.hypot(o.vx, o.vy), taker = m.restart && m.restart.taker === oi;
+    const ux = sp > 0.8 && !taker ? o.vx / sp : o.fx, uy = sp > 0.8 && !taker ? o.vy / sp : o.fy;
+    const off = taker ? 0.55 : 0.42 + Math.min(sp, 7) * 0.025;   // koştukça top biraz öne açılır
+    const k = Math.min(1, dt * 16);
+    ball.x += (o.x + ux * off - ball.x) * k; ball.y += (o.y + uy * off - ball.y) * k;
+    ball.vx = o.vx; ball.vy = o.vy; ball.z = 0; ball.vz = 0; ball.lastTouch = o.team;
   }
 
   /** Top kale çizgisini / taç çizgisini geçti mi: gol, direk, üst direk, aut, korner, taç. true = oyun durdu ya da yön değişti. */
@@ -657,7 +651,7 @@ export function createMatch(o: MatchOpts = {}) {
         else if (carrier && carrier.team !== p.team && !p.gk && !m.restart && p.kickCd <= 0 && Math.hypot(ball.x - p.x, ball.y - p.y) < 1.1) {
           // müdahale kararı: önden/yandan istekli; arkadan (faul riski) nadiren, becerisiz oyuncu daha sık dener
           const dc = len(p.x - carrier.x, p.y - carrier.y), bh = ((p.x - carrier.x) * carrier.fx + (p.y - carrier.y) * carrier.fy) / dc < -0.35;
-          if (R() < dt * (1.6 + p.sk.tackle * 2.4) * (bh ? 0.9 + (1 - p.sk.tackle) * 1.2 : 1)) tackle(i);
+          if (R() < dt * 1.6 * (1.6 + p.sk.tackle * 2.4) * (bh ? 0.9 + (1 - p.sk.tackle) * 1.2 : 1)) tackle(i);
         }
         let tx = p.tx, ty = p.ty;
         if (ball.owner === i && Math.hypot(ball.x - p.x, ball.y - p.y) > 0.6) { tx = ball.x + ball.vx * 0.15; ty = ball.y + ball.vy * 0.15; }   // topu kovala

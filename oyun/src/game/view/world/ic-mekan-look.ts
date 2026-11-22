@@ -32,7 +32,7 @@ const HP = Math.PI / 2, O = { r: 0 };
 /** BUF-07: zemin kiri bu eşiği aşınca mutfağa sarı "kaygan zemin" tabelası çıkar, paspaslanınca (kir düşünce) kalkar */
 const ZEMIN_ISLAK = 0.55;
 const FLOOR: Record<string, [string, string]> = { kafe: ['#9a6b45', '#7d5434'], bistro: ['#e6e0d4', '#2c3e57'], kirtasiye: ['#cfd8dc', '#b8c4c9'], okul: ['#c9b48a', '#b39e74'], lokanta: ['#e9e6e0', '#d4cfc6'],
-  kafeterya: ['#8fb3a0', '#7aa08c'], banka: ['#efe9df', '#c9a23a'], hastane: ['#e3eef2', '#cfdde3'], acil: ['#e3eef2', '#cfdde3'], morg: ['#9aa3a8', '#878f94'], kahvalti: ['#c8a27a', '#b08860'], balik: ['#d8e2e6', '#2f6f8f'], mutfak: ['#b9a78c', '#a59377'],
+  kafeterya: ['#8fb3a0', '#7aa08c'], banka: ['#efe9df', '#e2d9c4'], hastane: ['#e3eef2', '#cfdde3'], acil: ['#e3eef2', '#cfdde3'], morg: ['#9aa3a8', '#878f94'], kahvalti: ['#c8a27a', '#b08860'], balik: ['#d8e2e6', '#2f6f8f'], mutfak: ['#b9a78c', '#a59377'],
   giyim: ['#e9e4da', '#d6cec0'], elektronik: ['#dfe4ea', '#c9d0d8'], oyuncak: ['#f3e7c9', '#e6d4a8'],
   sekerci: ['#f3e3e6', '#e6c9cf'], kahveci: ['#8a5f3e', '#74492c'], dondurma: ['#f4f1ea', '#e8ddd0'], baklava: ['#e9dfc8', '#c9a23a'], kuruyemis: ['#c8a27a', '#b08860'],
   donerci: ['#d9cfc0', '#a2472f'], kumpir: ['#efe3c4', '#d8c39a'], midye: ['#dfe9ec', '#2f6f8f'], avmLokanta: ['#e9e6e0', '#d4cfc6'] };
@@ -112,7 +112,7 @@ function masa(c: Ctx, it: IcItem, n: number) {
   if (fine) { b.cyl(0.03, 0.04, 0.12, '#c9a24a', 0, 0.83, 0, { seg: 6 }); c.l.sph(0.035, '#ffcf6a', 0, 0.92, 0, { ws: 6, hs: 4 }); }
   const seats = cloth && !sm ? 4 : 2;
   for (let k = 0; k < seats; k++) {
-    const a = cloth && !sm ? k * HP + Math.PI / 4 : k * Math.PI + HP, r = sm ? 0.78 : 0.68, x = Math.sin(a) * r, z = Math.cos(a) * r;
+    const a = cloth && !sm ? k * HP : k * Math.PI + HP, r = sm ? 0.78 : 0.68, x = Math.sin(a) * r, z = Math.cos(a) * r;
     chair(b, x, z, a, chc);
     if (k < n) { const p = person('guest', c.seed + k * 7, true); p.position.set(x, 0, z); p.rotation.y = a + Math.PI; c.grp.userData.cur.add(p); if (k === 0) c.an.bob.push(p); }
   }
@@ -243,7 +243,7 @@ const F: Record<string, Fn> = {
     const h = Math.min(3.2, c.m.h), nx = Math.max(1, Math.round(it.w / 3.6)), nz = Math.max(1, Math.round(it.d / 3.6)), shade = c.m.tur === 'hastane' || c.m.tur === 'acil' || c.m.tur === 'morg' || c.m.tur === 'okul' || c.m.tur === 'banka';
     for (let i = 0; i < nx; i++) for (let j = 0; j < nz; j++) {
       const x = -it.w / 2 + (i + 0.5) * it.w / nx, z = -it.d / 2 + (j + 0.5) * it.d / nz;
-      if (shade) { c.b.box(0.9, 0.04, 0.22, '#c9ced6', x, h - 0.15, z); c.l.box(0.8, 0.02, 0.15, '#fffaf0', x, h - 0.18, z); }
+      if (shade) continue;   // 2026-11-21 görsel: tavan kesikken düz levha zeminde yüzüyor gibi duruyordu; oda ışığı sahne ışığından geliyor
       else { c.b.cyl(0.01, 0.01, 0.7, '#2a2d33', x, h - 0.35, z, { seg: 4 }); c.b.cone(0.18, 0.18, c.fine ? '#c9a24a' : '#b87333', x, h - 0.75, z, { seg: 12 }); c.l.sph(0.08, '#ffe6b0', x, h - 0.86, z, { ws: 8, hs: 6 }); }
     }
   },

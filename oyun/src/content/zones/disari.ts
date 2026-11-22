@@ -144,7 +144,8 @@ export function disariPrefabs(): PrefabDef[] {
   defs.push({ id: 'mk.rocks', parts: [0, 1, 2, 3, 4, 5].map(i => sph(0.9 + (i % 3) * 0.2, -6 + i * 2.4, WATER_Y + 0.3, (i % 2) * 0.5, '#8a8478', 6)) });
   defs.push({ id: 'mk.wallZ', parts: [box(0.6, 1.4, 8, 0, 0.7, 0, '#cbbfa8')], colliders: [R(0.6, 8)] });
   // ───── 2026-10-24 açık dünya: new districts ─────
-  g('mk.ground.night', 48, 30, '#4a4560'); g('mk.ground.pitchzone', 96, 64, '#7fa463');   // 2026-11-21: was khaki dirt; reads as grass round the stadium   // 2026-11-21 denetim: halı saha kafesleri zemin kenarında boşlukta kalıyordu g('mk.ground.yard', 56, 30, '#b8b0a2');
+  g('mk.ground.night', 48, 30, '#4a4560'); g('mk.ground.pitchzone', 96, 64, '#7fa463');   // 2026-11-21: was khaki dirt; reads as grass round the stadium   // 2026-11-21 denetim: halı saha kafesleri zemin kenarında boşlukta kalıyordu
+  g('mk.ground.yard', 56, 30, '#b8b0a2');
   g('mk.ground.tile', 40, 30, '#d9dde3'); g('mk.ground.forest', 52, 34, '#7fae63', 0.014); g('mk.ground.island', 60, 26, '#e3d3a8');
   defs.push({ id: 'mk.water60', parts: [plane(60, 16, WATER_Y, '#3f8fbf', 'water'), box(60, 1.0, 0.35, 0, -0.5, 8.0, '#b9ad99', 'seawall')] });
   // gece pazarı: stalls with lanterns and a string of bulbs
@@ -185,7 +186,7 @@ export function disariPrefabs(): PrefabDef[] {
   // tersane: cranes, containers, a ferry on the slipway
   defs.push({ id: 'mk.crane', parts: [box(0.5, 12, 0.5, -2, 6, -1.2, '#e0a030'), box(0.5, 12, 0.5, 2, 6, -1.2, '#e0a030'), box(0.5, 12, 0.5, -2, 6, 1.2, '#e0a030'), box(0.5, 12, 0.5, 2, 6, 1.2, '#e0a030'),
     box(4.8, 1.2, 3, 0, 12.4, 0, '#e0a030'), box(1.0, 1.0, 16, 0, 13.4, -5, '#e0a030'), box(1.6, 1.4, 1.6, 0, 12.0, 0.6, '#3b3b3b', 'cab'), cyl(0.04, 5, 0.04, 0, 10.6, -10, '#3b3b3b', 4), box(1.6, 0.4, 1.0, 0, 8.0, -10, '#3b3b3b')], colliders: [R(5, 3)] });
-  const cont = (c: string): PartDef[] => [box(6, 2.5, 2.4, 0, 1.25, 0, c), ...[-2, -1, 0, 1, 2].map(i => box(0.06, 2.3, 2.42, i * 1.1, 1.25, 0, '#00000022'))];
+  const cont = (c: string): PartDef[] => [box(6, 2.5, 2.4, 0, 1.25, 0, c), ...[-2, -1, 0, 1, 2].map(i => box(0.06, 2.3, 2.42, i * 1.1, 1.25, 0, '#1a1a1a'))];
   defs.push({ id: 'mk.cont.a', parts: [...cont('#c0392b'), ...cont('#2f6f9a').map(p => ({ ...p, pos: [p.pos![0], p.pos![1] + 2.5, p.pos![2]] as [number, number, number] }))], colliders: [R(6, 2.4)] });
   defs.push({ id: 'mk.cont.b', parts: cont('#3a9a5a'), colliders: [R(6, 2.4)] });
   defs.push({ id: 'mk.cont.c', parts: [...cont('#f2c230'), ...cont('#8c5a9a').map(p => ({ ...p, pos: [p.pos![0], p.pos![1] + 2.5, p.pos![2]] as [number, number, number] }))], colliders: [R(6, 2.4)] });

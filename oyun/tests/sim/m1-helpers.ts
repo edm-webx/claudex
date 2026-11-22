@@ -2,6 +2,9 @@
 import { createSim, type SimFull } from '../../src/game/headless';
 import { emptyContent } from '../../src/content/index';
 import type { GameState } from '../../src/game/sim/schema';
+import { ARSALAR } from '../../src/content/esya';
+import { icOfArsa } from '../../src/content/ic-mekan';
+import { satisKaresi } from '../../src/game/sim/isletme-kareler';
 
 export const log = { info() {}, warn() {}, error() {} };
 export function mkSim(seed = 1, save?: GameState): SimFull {
@@ -20,4 +23,10 @@ export function fakePlatform() {
       clock: { now: () => 0, wall: () => wall },
     } as never,
   };
+}
+
+/** AVM dükkânı yalnız kapısının önündeki sarı karede durunca alınır (sim/mulk.ts): testlerde oyuncuyu o kareye götürür, AVM dışı arsada bir şey yapmaz */
+export function kareyeGit(sim: { command(c: unknown): void }, id: string): void {
+  const m = icOfArsa(id), a = ARSALAR.find(x => x.id === id); if (!m || m.bina !== 'avm' || !a) return;
+  const k = satisKaresi(a); sim.command({ kind: 'teleport', x: k.x, z: k.z, kat: m.kat || 0 });
 }

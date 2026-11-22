@@ -2,6 +2,7 @@
 // Senaryo: büfe aşama 10, altı kafe/kantin/lokanta satın alınmış ve tam kadro, 40 kiralık çalışan, 200 yürüyen vatandaş
 // (ajan tavanı 256'ya yakın), gerçek A* (engelli sentetik ızgara). Stok/malzeme çağrısı yok (yasak mekanik).
 // Ölçüm sim DIŞINDA: performance.now yalnız bu test dosyasında ve scheduler'a enjekte edilen `now` kancasında (lint:sim kuralı korunur).
+import { kareyeGit } from './m1-helpers';
 import { it, expect } from 'vitest';
 import { createSim } from '../../src/game/headless';
 import { emptyContent } from '../../src/content/index';
@@ -39,7 +40,7 @@ function worstCase(seed: number) {
   const S = sim.state; S.level = 40; S.money = 5e8; S.stars = 5;
   sim.command({ kind: 'setStage', stage: 10 });
   const mulk = (x: any) => sim.command({ kind: 'mulk', ...x });
-  for (const id of ['k1', 'k2', 'k3', 'k4', 'k5', 'k6']) { mulk({ op: 'arsaAl', id }); const p = S.zones.arsa?.plots?.[id]; if (p) { p.lv = 5; for (let i = 0; i < 8; i++) mulk({ op: 'isciAl', id }); } }
+  for (const id of ['k1', 'k2', 'k3', 'k4', 'k5', 'k6']) { kareyeGit(sim, id); mulk({ op: 'arsaAl', id }); const p = S.zones.arsa?.plots?.[id]; if (p) { p.lv = 5; for (let i = 0; i < 8; i++) mulk({ op: 'isciAl', id }); } }
   const roles = ['doner', 'garson', 'temizlik', 'cay', 'simit', 'ayran', 'tost', 'gazoz'];
   for (let i = 0; i < 40; i++) S.workers.push({ id: S.nextWid++, name: 'D' + i, role: roles[i % 8], trait: 'hamarat', traits: ['hamarat'], rarity: 'gri', xp: 0, rank: 0, morale: 70, legend: null, look: {}, about: '', hiredDay: 1, team: null });
   sim.step(20);

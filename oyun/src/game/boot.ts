@@ -57,6 +57,8 @@ import { createUi } from '../engine/ui';
 import { createAudio } from '../engine/audio';
 import { createChars, type MotorChars, type MotorCrowd } from './view/chars';
 import { createAgentsView, type AgentsView } from './view/chars/agents-view';
+import { avmYukleme } from './ui/avm-yukleme';
+import { createAvmEglence } from './view/world/avm-eglence';
 import { createWorldView } from './view/world';
 import { createHud } from './ui/hud';
 import { createPanels, type Panels } from './ui/panels';
@@ -128,7 +130,6 @@ import { createIzgaraLook, type IzgaraLookView } from './view/world/izgara-look'
 import { cellRect } from '../content/izgara';
 import { createDekorLook, type DekorLookView } from './view/world/dekor-look';
 import { createEvRoom, type EvRoomView } from './view/ev/ev-room';
-import { createTipJar, type TipJarView } from './view/world/tip-jar';
 import { createReklam, type ReklamView } from './view/world/reklam';
 import { createHavaLook, HAVA_ZORLA, type HavaLookView } from './view/world/hava-look';
 import { Batch } from '../engine/prefab/batch';
@@ -352,6 +353,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const acilis: AcilisView | null = playMode && zones ? make('acilis', () => createAcilis({ root: () => zones.root('iskele') ?? null, hero: () => walk.pos, ses: (id) => { try { audio?.sfx(id); } catch { /* */ } } })) : null;
   if (acilis) sim.bus.on('tadilatDone', (e) => acilis.baslat(Number((e as { stage?: number } | undefined)?.stage) || sim.state.stage));
   // 2026-11-09 "her binaya girilebilmeli": interiors of every far-side building and the büfe halls
+  const avmEglence = playMode && zones ? make('avmEglence', () => createAvmEglence({ root: () => scene, hero: () => walk.pos, saat: () => sim.rules.hour() })) : null;   // AVM eğlence katı: sinema + sahne
   const avmIc: AvmIcView | null = playMode && zones ? make('avmIc', () => createAvmIc({ root: () => scene, hero: () => walk.pos, night: () => nightK })) : null;   // Martı AVM içi (ayrı diyar)
   const icMekan: IcView | null = playMode && zones ? make('icMekan', () => createIcMekan({ root: () => zones.root('iskele') ?? null, sahne: () => scene, hero: () => walk.pos, night: () => nightK,
     isletme: () => { const m = mulkApi(sim.rules), o: Record<string, { lv: number; isci: number; esya: string[]; tema?: string }> = {}; if (m) for (const p of m.view().plots) if (p.sabit && p.owned) o[p.id] = { lv: p.lv, isci: p.isci, esya: (p as { esya?: string[] }).esya || [], tema: (p as { tema?: string }).tema || '' }; return o; },
@@ -494,7 +496,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const hikayeScene: HikayeSceneView | null = panels ? make('hikayeScene', () => createHikayeScene({ root: U.root, rules: () => sim.rules as never, command, sfx: (id, o) => { try { audio?.sfx(id, o); } catch { /* */ } } })) : null;
   // Hedefler kartı (DOM) and the bahşiş kavanozu on the counter (goals.ts)
   const hedefCard: HedefCard | null = panels && labels ? make('hedefCard', () => createHedefCard({ root: U.root, v2: panels.v2 as never, rules: () => sim.rules, command, sfx: id => { try { audio?.sfx(id); } catch { /* */ } } })) : null;
-  const tipJar: TipJarView | null = playMode ? make('tipJar', () => createTipJar({ scene, rules: () => sim.rules })) : null;
+  // 2026-11-21 owner: "bağış kutusunu kaldır": the BAHŞİŞ jar on the counter is gone (view deleted; the sim counter stays silent)
   const stantLook: StantLookView | null = playMode ? make('stantLook', () => createStantLook({ scene, rules: () => sim.rules })) : null;
   if (playMode && uiReal) (sim.rules.rt as unknown as { gunSonuCard?: boolean }).gunSonuCard = true;   // headless sims/tests roll days over without the card
   // 2026-10-24 açık dünya: online ilk deneme over the claude.ai room (online.ts); offline anywhere else
@@ -755,7 +757,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (st.moving) { camHold = null; acilis?.atla(); }
     lerpPose(walk, alpha, pose);
     // Martı AVM kapısı / büyük ışınlanma: kamera kaymasın, ekran kısa bir an kararıp açılsın
-    if (Math.hypot(pose.x - lastPoseX, pose.z - lastPoseZ) > 15) { cam.snap(pos); camHold = null; perde(); }
+    if (Math.hypot(pose.x - lastPoseX, pose.z - lastPoseZ) > 15) { cam.snap(pos); camHold = null; if (playMode && realmAt(pose.x)?.id === 'avm' && realmAt(lastPoseX)?.id !== 'avm') avmYukleme(sim.rules.hour()); else perde(); }
     lastPoseX = pose.x; lastPoseZ = pose.z;
     simT += fdt;
     if (zones) guard('zones', () => { P.begin('zones.build'); zones.update(pos, cam.frustum()); P.end('zones.build'); });
@@ -780,7 +782,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (karsiYasam) guard('karsiYasam', () => karsiYasam.update(fdt));
     if (icMekan) guard('icMekan', () => icMekan.update(fdt));
     if (avmIc) guard('avmIc', () => avmIc.update(fdt));
-    if (tipJar) guard('tipJar', () => tipJar.update(fdt));
+    if (avmEglence) guard('avmEglence', () => avmEglence.update(fdt));
     if (stantLook) guard('stantLook', () => stantLook.update(fdt));
     if (faz2Hud) guard('faz2Hud', () => faz2Hud.update(fdt));
     if (gunSonu) guard('gunSonu', () => gunSonu.update());
@@ -799,7 +801,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (mulkPanel) guard('mulkPanel', () => mulkPanel.update(fdt));
     if (mulkView) guard('mulkView', () => mulkView.update(fdt));
     if (stadyumView) guard('stadyumView', () => stadyumView.update(fdt));
-    if ((bankaT -= fdt) <= 0) { bankaT = 2; const b = bankaRt(); if (b && b.saat !== undefined) b.saat = Date.now() / 1000; if (b?.dirty && hesap() && saveOn()) { b.dirty = false; void bankaYaz({ tl: b.tl, esya: b.esya, faizSaat: b.faizSaat }).then(ok => { if (!ok && !kayitKilidi()) b.dirty = true; }); } }
+    if ((bankaT -= fdt) <= 0) { bankaT = 2; const b = bankaRt(); if (b && b.saat !== undefined) b.saat = Date.now() / 1000; if (b?.dirty && hesap() && saveOn()) { b.dirty = false; void bankaYaz({ tl: b.tl, esya: b.esya, faizSaat: b.faizSaat }).then(ok => { if (!ok && !kayitKilidi()) b.dirty = true; }); } }   // the sim is pure: the wall clock for the account-level interest stamp comes from here
     if (otobusHud) guard('otobusHud', () => otobusHud.update(fdt));
     if (nightLights) guard('nightLights', () => nightLights.update(pos, gSaat.saat, fdt, roomLightsFor(icMekan?.icinde())));   // GRS-02: lamps follow the drawn hour (lit behind the gün sonu card, fade at dawn)
     if (playMode) guard('heroKind', syncHeroKind);
