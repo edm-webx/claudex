@@ -9,7 +9,7 @@
  */
 import { karsiProps } from './karsi';
 import type { ZoneDef, AnchorDef } from '../../engine/api';
-import { BENCHES, benchSeats, NEXT_SIGN, SEAT_H } from '../prefabs/iskele/layout';
+import { BENCHES, benchSeats, NEXT_SIGN, SEAT_H, BUFE_DZ } from '../prefabs/iskele/layout';
 
 export const ISKELE_PLAYER_START = { x: 0.2, z: -2.6 };
 
@@ -38,15 +38,15 @@ export function iskeleZone(): ZoneDef {
       { id: 'skyline', prefab: 'iskele.skyline', pos: { x: 0, z: 0 } },
       { id: 'boats', prefab: 'iskele.boats', pos: { x: 0, z: 0 } },
       { id: 'pier', prefab: 'iskele.pier', pos: { x: 0, z: 0 } },
-      { id: 'kiosk', prefab: 'iskele.kiosk', pos: { x: 0, z: 0 }, overrides: { stage: 1, renewed: '' } },
+      { id: 'kiosk', prefab: 'iskele.kiosk', pos: { x: 0, z: BUFE_DZ }, overrides: { stage: 1, renewed: '' } },
       { id: 'ferry', prefab: 'iskele.ferry', pos: { x: 0, z: 0 } },
       { id: 'ferryFar', prefab: 'iskele.ferryFar', pos: { x: 0, z: 0 } },
       // 2026-11-21: the pier-end apartments are gone; both promenade ends are locked municipal construction sites
       // (content/kilitli-bolge.ts, view/world/insaat-sahasi.ts) that will open as new neighbourhoods when the iskele grows
       ...karsiProps(),
       // stools that were inside the v2 kiosk batch (stage 1 counter stool, stage 2 door stool); the view hides the other stage's one
-      { id: 'tabure-s1', prefab: 'iskele.tabure-kucuk', pos: { x: 2.95, z: -0.95 } },
-      { id: 'tabure-s2', prefab: 'iskele.tabure', pos: { x: -5.0, z: -3.55 } },
+      { id: 'tabure-s1', prefab: 'iskele.tabure-kucuk', pos: { x: 2.95, z: -0.95 + BUFE_DZ } },
+      { id: 'tabure-s2', prefab: 'iskele.tabure', pos: { x: -5.0, z: -3.55 + BUFE_DZ } },
     ],
     anchors: staticAnchors(),
     portals: [],

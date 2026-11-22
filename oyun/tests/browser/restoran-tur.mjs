@@ -22,6 +22,7 @@ await p.evaluate(() => { const M = window.__marti; try { M.command({ kind: 'esna
 const SPOTS = {
   genel: [0, 2, 0, -8, 4.2, 0, 0.95], arka: [0, -9, 0, -14, 3.0, 0, 1.15], bufeOn: [0, -2, 0, -7, 1.6, 0, 0.8],
   mutfak: [0, -14.6, 0, -15, 1.25, 0, 1.05], salonW: [-17.6, -12.0, -16.4, -14.4, 1.35, 0, 1.0], salonE: [15.6, -12.0, 14.4, -14.4, 1.35, 0, 1.0],
+  onCephe: [3.0, 9.0, 0, 3.5, 1.9, 0, 0.75], park: [5.6, -6.0, 0, -7.4, 1.0, 0, 0.6],
 };
 const ids = (process.argv[3] || Object.keys(SPOTS).join(',')).split(',');
 const rapor = [];

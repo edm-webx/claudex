@@ -43,6 +43,8 @@ export const ADISYON = {
   oncelik: ['tabak', 'siparis', 'menu', 'hesap', 'sil'] as const,
   /** BUF-10: an idle waiter takes a neighbouring zone's task only after it waited this long unclaimed */
   yardimBekleS: 3,
+  /** komşu olmayan bölgenin işi bu kadar sahipsiz bekleyince boştaki her garson yardım eder */
+  yardimUzakS: 15,
   /** test sentinel: a table action farther than this from the table counts as a teleport (stats.isinlanma) */
   isinlanmaM: 2.4,
 };

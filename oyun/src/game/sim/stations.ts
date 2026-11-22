@@ -9,7 +9,7 @@ import type { Vec2, Interactable } from '../../engine/api';
 import { yetenekFxOf } from './yetenek';
 import { DWELL_DEFAULTS } from '../../engine/api';
 import type { StageLayout } from '../../content/prefabs/iskele/layout';
-import { local2world } from '../../content/prefabs/iskele/layout';
+import { local2world, BUFE_DZ } from '../../content/prefabs/iskele/layout';
 import { PRODUCT_IDS, PRODUCTS, STATIONS } from '../../content/products';
 import type { ProductId } from './schema';
 import type { Kernel, Item, StationApi } from './state';
@@ -17,7 +17,7 @@ import type { Kernel, Item, StationApi } from './state';
 const D_ST = 0.8;
 export function stationPose(L: StageLayout, k: ProductId): { x: number; z: number; ry: number } {
   const s = L.stations[k];
-  return { x: s.x, z: s.z != null ? s.z : -2.75 - 0.42 - D_ST / 2, ry: s.rotY };
+  return { x: s.x, z: s.z != null ? s.z : -2.75 - 0.42 - D_ST / 2 + BUFE_DZ, ry: s.rotY };
 }
 export function standAt(L: StageLayout, k: ProductId): Vec2 {
   const p = stationPose(L, k);

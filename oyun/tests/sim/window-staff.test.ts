@@ -21,7 +21,7 @@ describe('ferry window staffing', () => {
     rt.pencereAt = true;
     const q0 = r.rt.winq.length;
     let laid = 0;
-    for (let i = 0; i < 16; i++) { sim.step(0.5); laid = Math.max(laid, (rt.winShelf ?? []).length); }
+    for (let i = 0; i < 40; i++) { sim.step(0.5); laid = Math.max(laid, (rt.winShelf ?? []).length); }
     expect(laid).toBeGreaterThan(0);                                  // the staffer laid items out on the counter
     expect(r.rt.winq.length).toBeLessThan(q0);                        // ...and handed them to the window queue
   });

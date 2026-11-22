@@ -29,23 +29,36 @@ export interface StageLayout {
 const PI = Math.PI, HP = PI / 2;
 export const WATER_Y = -1.0, SEAT_H = 0.45;
 export const PIER = { x0: -24, x1: 22.7, z0: -18, z1: 4.4 };
-export const BUFE = { x0: -4.2, x1: 4.2, z0: -10.6, z1: -4.4 };
+/** 2026-11-22 (sahibi: "büfe mutfağa çok yakın, yürüme yoluna yakın olsun"): the whole büfe (kiosk, counter, queue, stations, ferry
+ *  window, front tables) sits BUFE_DZ m closer to the promenade than the v2 numbers. The kiosk prefab keeps its v2 local coordinates
+ *  (BUFE_YEREL, WIN_Z_YEREL, COUNTER_BOARD_YEREL) and is placed at z = BUFE_DZ (zones/iskele.ts); everything else uses the world values. */
+export const BUFE_DZ = 8.4;   // front at z 4.0, right on the promenade edge (owner 2026-11-22: "yürüme yoluna paralel, yolun üstü")
+export const BUFE_YEREL = { x0: -4.2, x1: 4.2, z0: -10.6, z1: -4.4 };
+export const BUFE = { x0: -4.2, x1: 4.2, z0: -10.6 + BUFE_DZ, z1: -4.4 + BUFE_DZ };
 export const GANG = { z0: -8.0, z1: -6.2 };
-export const WIN_Z = -7.1;
+/** 2026-11-22 the pier between the büfe back and the kitchen front is a little park: lawns, a cross of paths, the Atatürk monument in
+ *  the middle with pigeons (view/world/park-look.ts). The büfe's own tables sit at its corners. */
+export const PARK = { x0: -4.4, x1: 4.4, z0: -12.4, z1: BUFE.z0 - 0.3 };
+export const HEYKEL = { x: 0, z: (PARK.z0 + PARK.z1) / 2, r: 0.85 };
+const PARK_MASA: [number, number][] = [[-2.7, PARK.z1 - 1.4], [2.7, PARK.z1 - 1.4], [-2.7, PARK.z0 + 1.2], [2.7, PARK.z0 + 1.2]];
+const PARK_PED: [number, number][] = [[-3.5, HEYKEL.z - 2.3], [3.5, HEYKEL.z - 2.3]];
+export const PARK_AGAC: [number, number][] = [[-3.7, PARK.z1 - 0.5], [3.7, PARK.z1 - 0.5], [-3.7, PARK.z0 + 0.4], [3.7, PARK.z0 + 0.4]];
+export const WIN_Z_YEREL = -7.1, WIN_Z = WIN_Z_YEREL + BUFE_DZ;
 /** Stage 2+ büfe counter: the walnut serving board on the top (kiosk.ts) and the six product stack slots on it (rtview.ts). */
-export const COUNTER_BOARD = { x0: -1.62, x1: 0.5, z0: -4.98, z1: -4.5 };
+export const COUNTER_BOARD_YEREL = { x0: -1.62, x1: 0.5, z0: -4.98, z1: -4.5 };
+export const COUNTER_BOARD = { ...COUNTER_BOARD_YEREL, z0: COUNTER_BOARD_YEREL.z0 + BUFE_DZ, z1: COUNTER_BOARD_YEREL.z1 + BUFE_DZ };
 /** product stack slot on the counter (index = product order): one even row on the board, a 2nd column behind it */
 export function counterSlot(L: StageLayout, pi: number, col: number): { x: number; z: number } {
   const d = L.counter.drop;
   if (L.counter.span[0] === L.counter.span[1]) return { x: d.x + (pi - 2.5) * 0.24, z: d.z + (col ? -0.14 : 0.06) };   // stage 1 crate counter
   const w = (COUNTER_BOARD.x1 - COUNTER_BOARD.x0) / 6;
-  return { x: COUNTER_BOARD.x0 + w * (pi + 0.5), z: col ? -4.86 : -4.62 };
+  return { x: COUNTER_BOARD.x0 + w * (pi + 0.5), z: (col ? -4.86 : -4.62) + BUFE_DZ };
 }
 /** where the brand plaque / medal case stand: stage 2+ off the serving area (glass case lid / east low wall), stage 1 on the crates */
 export function counterExtra(L: StageLayout, which: 'plaque' | 'vitrin'): { x: number; y: number; z: number } {
   const c = L.counter;
   if (c.span[0] === c.span[1]) return { x: c.pos.x + 0.62, y: c.drop.y, z: c.pos.z + (which === 'plaque' ? 0.1 : 0.08) };
-  return which === 'plaque' ? { x: 1.9, y: 1.375, z: -4.72 } : { x: 2.5, y: 1.1, z: -4.52 };   // plaque: standing card on the glass case's lid (east end); medals: low wall west of the register
+  return which === 'plaque' ? { x: 1.9, y: 1.375, z: -4.72 + BUFE_DZ } : { x: 2.5, y: 1.1, z: -4.52 + BUFE_DZ };   // plaque: standing card on the glass case's lid (east end); medals: low wall west of the register
 }
 export const NEXT_SIGN = { x: 6.3, z: -12.3, ry: 0.4 };
 export const STATION_KINDS = ['doner', 'cay', 'ayran', 'simit', 'tost', 'gazoz'] as const;
@@ -57,7 +70,7 @@ const V3 = (x = 0, y = 0, z = 0): P3v => ({ x, y, z });
 const P3 = (x: number, z: number, y = 0): P3v => V3(x, y, z);
 export const BENCHES: { pos: P3v; rotY: number }[] = [
   { pos: V3(-7.2, 0, -12.5), rotY: PI }, { pos: V3(1.2, 0, -12.55), rotY: PI }, { pos: V3(-9.85, 0, 2.4), rotY: -HP },   // 2026-11-21: z 3.0 iken iskele adı tabelasının ayağına giriyordu
- 
+  { pos: V3(-2.55, 0, HEYKEL.z), rotY: HP }, { pos: V3(2.55, 0, HEYKEL.z), rotY: -HP },   // 2026-11-22 park: facing the monument
   { pos: V3(-30, 0, 5.95), rotY: PI }, { pos: V3(-12, 0, 5.95), rotY: PI }, { pos: V3(21, 0, 5.95), rotY: PI }, { pos: V3(41, 0, 5.95), rotY: PI }
 ];
 export function benchSeats(bn: { pos: P3v; rotY: number }): P3v[] { const c = Math.cos(bn.rotY), s = Math.sin(bn.rotY); return [-0.55, 0, 0.55].map(lx => V3(bn.pos.x + lx * c + 0.05 * s, 0, bn.pos.z - lx * s + 0.05 * c)); }
@@ -66,8 +79,8 @@ export const PIER_LAMPS: [number, number][] = [[-10.05, -10.6], [-10.05, -4.2], 
 export const local2world = (x: number, z: number, ry: number, lx: number, lz: number, y = 0): P3v => V3(x + lx * Math.cos(ry) + lz * Math.sin(ry), y, z - lx * Math.sin(ry) + lz * Math.cos(ry));
 export function rectAABB(x: number, z: number, w: number, d: number, ry: number, tag?: string): Obstacle { const c = Math.abs(Math.cos(ry)), s = Math.abs(Math.sin(ry)), hx = (w * c + d * s) / 2, hz = (w * s + d * c) / 2; return { x0: x - hx, x1: x + hx, z0: z - hz, z1: z + hz, tag }; }
 export function trophySpots(stage: number): { x: number; y: number; z: number; s: number }[] {
-  if (stage === 1) return Array.from({ length: 12 }, (_, i) => ({ x: -3.3 + i * 0.6, y: 2.52, z: -4.28, s: 1.5 }));
-  return Array.from({ length: 12 }, (_, i) => ({ x: -1.6 + i * 0.36, y: 1.98, z: -10.25, s: 1.15 }));
+  if (stage === 1) return Array.from({ length: 12 }, (_, i) => ({ x: -3.3 + i * 0.6, y: 2.52, z: -4.28 + BUFE_DZ, s: 1.5 }));
+  return Array.from({ length: 12 }, (_, i) => ({ x: -1.6 + i * 0.36, y: 1.98, z: -10.25 + BUFE_DZ, s: 1.15 }));
 }
 
 export function stageLayout(stage: number): StageLayout {
@@ -76,7 +89,30 @@ export function stageLayout(stage: number): StageLayout {
   L.tables = L.tables.concat(KANAT_MASALAR.map(m => ({ x: m.x, z: m.z, ax: m.ax, bolge: m.bolge, cati: m.cati })));
   return L;
 }
-function kioskLayout(stage: number): StageLayout {   // stages 6-10 grow around the kiosk (view/world/bufe-buyume.ts), the kiosk itself stays at 5
+/** v2 kiosk layout moved BUFE_DZ towards the promenade: everything that belongs to the büfe (stations, counter, queue, till, ferry
+ *  window, trays, cat/dog spots, door, player start and the tables in front of it) moves; the pier furniture (wing tables, slots,
+ *  walkways, perches on the rails) stays. */
+function kioskLayout(stage: number): StageLayout {
+  const L = kioskLayout0(stage), d = BUFE_DZ, m = (p: P3v): P3v => ({ x: p.x, y: p.y, z: p.z + d });
+  for (const k of Object.keys(L.stations)) { const st = L.stations[k]; if (st.z != null) st.z += d; }
+  L.counter = { pos: m(L.counter.pos), drop: m(L.counter.drop), standAt: m(L.counter.standAt), span: L.counter.span };
+  L.queue = L.queue.map(m); L.kasa = { pos: m(L.kasa.pos), pile: m(L.kasa.pile) };
+  L.window = { standAt: m(L.window.standAt), serve: m(L.window.serve), queue: L.window.queue.map(m) };
+  for (const k of ['tepsi1', 'tepsi2', 'pencere']) if (L.extraPads[k]) L.extraPads[k] = m(L.extraPads[k]);
+  for (const k of Object.keys(L.cat)) L.cat[k] = m(L.cat[k]);
+  L.dog = m(L.dog); L.playerStart = m(L.playerStart); if (L.door) L.door = { outside: m(L.door.outside), inside: m(L.door.inside) };
+  L.perch = L.perch.map(p => Math.abs(p[0]) < 4.5 ? [p[0], p[1], p[2] + d, p[3]] as [number, number, number, number] : p);   // on the kiosk (rails stay)
+  // the queue: straight out of the counter onto the promenade edge, then along it (west), off the walking lanes (z 7.6 / 10.0)
+  const bend = stage === 1 ? 2 : 3, q0 = L.queue[bend - 1];
+  L.queue = L.queue.map((q, i) => i < bend ? q : { x: q0.x - (i - bend + 1) * 0.8, y: 0, z: q0.z });
+  // the tables that stood in front of the büfe now stand in the park behind it
+  let pm = 0; L.tables = L.tables.map(t => Math.abs(t.x) < 5 && t.z > -4.5 ? { x: PARK_MASA[pm][0], z: PARK_MASA[pm++][1], ax: t.ax } : t);
+  // floor pads that would now be under the büfe or on the queue go to the park
+  let pp = 0; const icinde = (p: P3v) => p.x > BUFE.x0 - 0.6 && p.x < BUFE.x1 + 0.6 && p.z > BUFE.z0 - 0.6 && p.z < BUFE.z1 + 3.0;
+  for (const k of Object.keys(L.extraPads)) if (k !== 'tepsi1' && k !== 'tepsi2' && k !== 'pencere' && icinde(L.extraPads[k]) && pp < PARK_PED.length) L.extraPads[k] = P3(PARK_PED[pp][0], PARK_PED[pp++][1]);
+  return L;
+}
+function kioskLayout0(stage: number): StageLayout {   // stages 6-10 grow around the kiosk (view/world/bufe-buyume.ts), the kiosk itself stays at 5
   const s1 = stage === 1, s3 = stage >= 3;
   const L = {} as StageLayout;
   L.stations = s1 ? {
@@ -90,7 +126,7 @@ function kioskLayout(stage: number): StageLayout {   // stages 6-10 grow around 
     L.queue = Array.from({ length: 8 }, (_, i) => P3(1.0, -0.45 + i * 0.8));
     L.kasa = { pos: P3(-0.2, -1.35, 0.98), pile: P3(-0.95, -2.2, 0.02) };
     L.tables = [[-2.4, 0.5], [-2.4, 2.7], [4.2, 0.5], [4.2, 2.7], [-6.0, 0.5], [-6.0, 2.7], [-8.4, -1.6], [-6.0, -1.6]].map(([x, z]) => ({ x, z, ax: 'x' as 'x' | 'z' }));
-    L.window = { standAt: P3(4.95, WIN_Z), serve: P3(5.75, WIN_Z, 1.04), queue: [[6.5, WIN_Z], [7.2, WIN_Z], [7.05, -6.3], [7.05, -5.5], [7.05, -4.7], [7.05, -3.9]].map(([x, z]) => P3(x, z)) };
+    L.window = { standAt: P3(4.95, WIN_Z_YEREL), serve: P3(5.75, WIN_Z_YEREL, 1.04), queue: [[6.5, WIN_Z_YEREL], [7.2, WIN_Z_YEREL], [7.05, -6.3], [7.05, -5.5], [7.05, -4.7], [7.05, -3.9]].map(([x, z]) => P3(x, z)) };
     L.job = { board: [-7.6, -3.5, 0], pos: P3(-7.6, -2.65) };
     L.extraPads = { tepsi1: P3(-4.4, -0.9), tepsi2: P3(6.0, -1.6), miknatis: P3(-0.55, 1.7), tadilat: P3(-7.2, -6.4), pencere: P3(5.75, -5.3) };
     L.cat = { awning: P3(-1.9, -3.75, 2.5), basket: P3(-4.85, -5.0, 0.2), stool: P3(2.95, -0.95, 0.48), roof: P3(2.8, -6.2, 2.85) };
@@ -105,8 +141,8 @@ function kioskLayout(stage: number): StageLayout {   // stages 6-10 grow around 
     L.tables = s3
       ? [[-2.0, -1.5, 'x'], [1.6, -1.5, 'x'], [-6.3, -8.8, 'z'], [-8.7, -8.8, 'z'], [-6.3, -5.9, 'z'], [-8.7, -5.9, 'z'], [-6.3, -3.0, 'z'], [-8.7, -3.0, 'z']].map(([x, z, ax]) => ({ x: x as number, z: z as number, ax: ax as 'x' | 'z' }))
       : [[-2.0, -1.5], [1.6, -1.5], [-3.0, 0.9], [2.6, 0.9], [-6.6, -1.4], [6.1, -0.9], [-6.6, 1.4], [-6.6, 3.5]].map(([x, z]) => ({ x, z, ax: 'x' as 'x' | 'z' }));
-    L.window = { standAt: P3(3.45, WIN_Z), serve: P3(4.32, WIN_Z, 1.12), queue: [[4.95, WIN_Z], [5.75, WIN_Z], [6.55, WIN_Z], [6.6, -6.3], [6.6, -5.5], [6.6, -4.7]].map(([x, z]) => P3(x, z)) };
-    L.job = s3 ? { board: [5.7, -1.0, -0.3], pos: P3(5.6, -0.1) } : { board: [-7.4, -4.6, 0], pos: P3(-7.4, -3.75) };
+    L.window = { standAt: P3(3.45, WIN_Z_YEREL), serve: P3(4.32, WIN_Z_YEREL, 1.12), queue: [[4.95, WIN_Z_YEREL], [5.75, WIN_Z_YEREL], [6.55, WIN_Z_YEREL], [6.6, -6.3], [6.6, -5.5], [6.6, -4.7]].map(([x, z]) => P3(x, z)) };
+    L.job = s3 ? { board: [5.6, -5.4, -0.3], pos: P3(5.5, -4.5) } : { board: [-7.4, -4.6, 0], pos: P3(-7.4, -3.75) };
     L.extraPads = { tepsi1: P3(-0.9, -7.6), tepsi2: P3(1.1, -7.6), miknatis: P3(-1.4, 2.8), tadilat: s3 ? P3(3.0, 1.2) : P3(-7.4, -6.6), pencere: P3(5.6, -5.2) };
     L.cat = { awning: P3(-3.3, -4.0, 3.18), basket: P3(-4.85, -5.3, 0.2), stool: P3(-5.0, -3.55, 0.49), roof: P3(-3.4, -10.5, 2.7) };
     L.perch = [[1.5, 4.04, -10.56, 0.2], [4.1, 2.72, -10.5, 0.5], [2.1, 1.07, -4.45, -0.4], [-3.7, 3.31, -4.47, 0.3]];
@@ -126,7 +162,7 @@ function kioskLayout(stage: number): StageLayout {   // stages 6-10 grow around 
     [P3(-49.5, 7.6), P3(49.5, 7.6)], [P3(49.5, 10.0), P3(-49.5, 10.0)],   // the ends are the locked construction sites (kilitli-bolge.ts)
     s3 ? [P3(2.5, 6.6), P3(6.6, 2.4), P3(7.0, -3.0), P3(7.0, -11.8), P3(-9.4, -11.95)]
        : [P3(2.5, 6.6), P3(6.6, 2.4), P3(7.0, -3.0), P3(7.0, -11.6), P3(-9.2, -11.8), P3(-9.3, -1.0), P3(-6.5, 3.4), P3(-3.0, 6.6)],
-    s3 ? [P3(-3.0, 6.6), P3(-5.8, 2.8), P3(-5.8, -0.6)] : [P3(-1.8, 7.6), P3(-1.8, 3.6), P3(-4.6, 1.4)]
+    s3 ? [P3(-3.0, 6.6), P3(-5.8, 2.8), P3(-5.8, -0.6)] : [P3(-5.0, 7.6), P3(-5.0, 3.6), P3(-5.6, 1.4)]   // 2026-11-22: clear of the büfe on the pier mouth
   ];
   return L;
 }
@@ -152,6 +188,8 @@ export function staticObstacles(): Obstacle[] {
   // bilet gişesi + iki turnike (view/disari PIER_PROPS.gise = 18.9, -13.3): eskiden çarpışması yoktu, insanlar içinden geçiyordu
   add(18.2, 19.6, -13.85, -12.75, 'prop'); add(19.85, 21.0, -13.35, -12.95, 'prop');
   add(-1.85, -1.35, -13.15, -12.65, 'prop');
+  add(HEYKEL.x - HEYKEL.r, HEYKEL.x + HEYKEL.r, HEYKEL.z - HEYKEL.r, HEYKEL.z + HEYKEL.r, 'heykel');   // park monument pedestal
+  PARK_AGAC.forEach(([x, z]) => add(x - 0.22, x + 0.22, z - 0.22, z + 0.22, 'agac'));
   return o;
 }
 export const WALKABLE: Obstacle[] = [{ x0: PIER.x0 + 0.25, x1: PIER.x1 - 0.25, z0: PIER.z0 + 0.25, z1: PIER.z1 + 0.5 }, { x0: -62, x1: 62, z0: PIER.z1 + 0.45, z1: 13.3 }];

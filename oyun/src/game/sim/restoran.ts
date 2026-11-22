@@ -428,7 +428,8 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     const sahip = garsonlar().some(w => w.id !== wid && atama.get(w.id) === gz);
     if (!sahip) return { ok: true, ic: false };
     const komsu = bolgeList.find(b => b.id === z)?.komsu.includes(gz) ?? false;
-    return { ok: komsu && yas >= ADISYON.yardimBekleS, ic: false };
+    // 2026-11-22: komşu olmasa da uzun bekleyen masaya boştaki garson gider (park büfenin arkasına taşınınca bölgeler uzaklaştı, boştaki garson 60 sn+ bekleyen menülere bakmıyordu)
+    return { ok: (komsu && yas >= ADISYON.yardimBekleS) || yas >= ADISYON.yardimUzakS, ic: false };
   }
 
   // ───────── per tick ─────────
