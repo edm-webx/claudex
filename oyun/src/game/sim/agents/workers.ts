@@ -205,6 +205,23 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
     }
     rt.job = null; rt.state = 'toGeri'; goVia(rt, { x: tp[0].gx, z: tp[0].gz });
   }
+  /** boştaki garson için sıradaki iş: elde tabak / tezgâh malı, restoran işi (isAl), tezgâh taşıması. Bir iş başladıysa true. */
+  function garsonIsBul(rt: WRt, fx: ReturnType<typeof traitFx>): boolean {
+    const a = rt.a, wid = rt.w.id;
+    if ((host.tepsi?.(wid) || []).length) { rt.isT = 0; garsonDevam(rt); return true; }   // elde masa tabağı var: işine devam
+    if (a.carry.length) { rt.state = 'toCounter'; goVia(rt, side(book.get('counter.standAt'), 0.5, 0)); return true; }
+    const is = host.isAl?.(wid, { cap: garsonTasima(rankOf(rt.w.xp || 0), fx.carry || 0), at: { x: a.x, z: a.z } });
+    if (is) {
+      rt.isT = 0; rt.t = 0; rt.jobKey = is.tur; rt.job = { index: is.id };
+      if (is.tur === 'tabak') { rt.state = 'toPass'; goVia(rt, host.passDurak?.(wid) ?? { x: is.x, z: is.z }); }
+      else if (is.tur === 'sil') { rt.state = 'toClean'; goVia(rt, masaCati(is.table) ? sideOf(is.table) : { x: is.x, z: is.z }, is.table); }
+      else { rt.state = 'toMasa'; a.info.tasi = is.tur === 'hesap' ? 'hesap' : is.tur === 'menu' ? 'menu' : 'not'; goVia(rt, { x: is.x, z: is.z }, is.table); }
+      return true;
+    }
+    const p = garsonPick(rt);
+    if (p) { rt.job = null; rt.jobKey = p; rt.state = 'toSrc'; goVia(rt, side(book.stationStand(p), 0.55, 0.2)); return true; }
+    return false;
+  }
   const GARSON_IS = new Set(['toPass', 'pickJob', 'toTable', 'serve', 'toGeri', 'toMasa', 'masaAct', 'toClean', 'wipe']);
   function garsonWork(rt: WRt, S: GameState, dt: number) {
     const fx = traitFx(rt.w), a = rt.a, wid = rt.w.id;
@@ -219,21 +236,17 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
     }
     switch (rt.state) {
       case 'idle': {
-        if (rt.wk.walk(dt, speed)) { a.act = a.carry.length ? 'carry' : 'walk'; if (rt.jobKey === 'devriye') rt.t = 0; return; }
+        if (rt.wk.walk(dt, speed)) {
+          a.act = a.carry.length ? 'carry' : 'walk';
+          if (rt.jobKey !== 'devriye') return;
+          // devriye yürüyüşü boş zamandır: garson yolda da işlere bakar, iş çıkınca devriyeyi bırakıp masaya / pass'a döner
+          // (eskiden devriye noktasına varana kadar kör yürüyordu; bekleyen menü / sipariş o arada yaşlanıyordu)
+          rt.t = 0; rt.loadT -= dt; if (rt.loadT > 0) return;
+          rt.loadT = 0.4; garsonIsBul(rt, fx); return;
+        }
         rt.loadT -= dt; if (rt.loadT > 0) return;
         rt.loadT = 0.4;
-        if ((host.tepsi?.(wid) || []).length) { rt.isT = 0; garsonDevam(rt); return; }   // elde masa tabağı var: işine devam
-        if (a.carry.length) { rt.state = 'toCounter'; goVia(rt, side(book.get('counter.standAt'), 0.5, 0)); return; }
-        const is = host.isAl?.(wid, { cap: garsonTasima(rankOf(rt.w.xp || 0), fx.carry || 0), at: { x: a.x, z: a.z } });
-        if (is) {
-          rt.isT = 0; rt.t = 0; rt.jobKey = is.tur; rt.job = { index: is.id };
-          if (is.tur === 'tabak') { rt.state = 'toPass'; goVia(rt, host.passDurak?.(wid) ?? { x: is.x, z: is.z }); }
-          else if (is.tur === 'sil') { rt.state = 'toClean'; goVia(rt, masaCati(is.table) ? sideOf(is.table) : { x: is.x, z: is.z }, is.table); }
-          else { rt.state = 'toMasa'; a.info.tasi = is.tur === 'hesap' ? 'hesap' : is.tur === 'menu' ? 'menu' : 'not'; goVia(rt, { x: is.x, z: is.z }, is.table); }
-          return;
-        }
-        const p = garsonPick(rt);
-        if (p) { rt.job = null; rt.jobKey = p; rt.state = 'toSrc'; goVia(rt, side(book.stationStand(p), 0.55, 0.2)); return; }
+        if (garsonIsBul(rt, fx)) return;
         // 2026-11-21: boşta tezgâh yanında dizilmek yok: bölgesinin masa aralarında dolaşır, her durakta masalara göz atar
         const dv = host.garsonDevriye?.(wid) || [];
         if (dv.length) {
