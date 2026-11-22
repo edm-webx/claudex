@@ -47,12 +47,27 @@ export const KANAT_N = KANAT_MASALAR.length;
 /** sim masa indexinin kanat tanımı (büfe masası ise null) */
 export const kanatOf = (table: number): KanatMasa | null => KANAT_MASALAR[table - KANAT_BASE] ?? null;
 export const masaCati = (table: number): 'W' | 'E' | null => kanatOf(table)?.cati ?? null;
+/** o aşamada açılmış (alınabilir) kanat masalarının sim indexleri */
+export const kanatAcik = (stage: number): number[] => KANAT_MASALAR.map((m, k) => (stage >= m.asama ? KANAT_BASE + k : -1)).filter(i => i >= 0);
+/**
+ * 2026-11-22 (sahibi: "her yere masa alalım tek tek sarı karelerle müşteriler oturabilsin"): kanat / salon / çatı masaları aşama
+ * açınca kendiliğinden kurulmaz; her bölgenin ilk masası hediye, gerisi masanın yerindeki sarı kareyle tek tek alınır (sim/mulk.ts
+ * masaAl, S.zones.masa.alinan). Kayıt kaydı sim her adımda buraya yazar (setMasaAlinan); null = kayıt yok (eski davranış: hepsi kurulu).
+ */
+let MASA_ALINAN: ReadonlySet<number> | null = null;
+export const setMasaAlinan = (a: readonly number[] | null): void => { MASA_ALINAN = a ? new Set(a) : null; };
+/** bölgenin hediye masası (bölgedeki ilk masa) */
+export const masaHediye = (table: number): boolean => { const m = kanatOf(table); return !!m && KANAT_MASALAR.findIndex(x => x.bolge === m.bolge) === table - KANAT_BASE; };
 /** o aşamada kurulu kanat masalarının sim indexleri */
-export const kanatKurulu = (stage: number): number[] => KANAT_MASALAR.map((m, k) => (stage >= m.asama ? KANAT_BASE + k : -1)).filter(i => i >= 0);
-/** tam o aşamada kurulan kanat masaları (tadilat bitince) */
+export const kanatKurulu = (stage: number): number[] => kanatAcik(stage).filter(i => !MASA_ALINAN || MASA_ALINAN.has(i) || masaHediye(i));
+/** tam o aşamada açılan kanat masaları (tadilat bitince; kurulu olanı kanatKurulu söyler) */
 export const kanatYeni = (stage: number): number[] => KANAT_MASALAR.map((m, k) => (m.asama === stage ? KANAT_BASE + k : -1)).filter(i => i >= 0);
 /** bölge başına kurulu masa sayısı */
-export const kanatSay = (stage: number, b: KanatBolge): number => KANAT_MASALAR.filter(m => m.bolge === b && stage >= m.asama).length;
+export const kanatSay = (stage: number, b: KanatBolge): number => { const on = new Set(kanatKurulu(stage)); return KANAT_MASALAR.filter((m, k) => m.bolge === b && on.has(KANAT_BASE + k)).length; };
+/** masanın sarı kare fiyatı: açıldığı aşamanın gelirine oranlı (aşama 3 çay bahçesi 15 bin ... aşama 10 fine dining 6 milyon) */
+const MASA_FIYAT: Record<number, number> = { 3: 15000, 4: 40000, 5: 120000, 6: 300000, 7: 700000, 8: 1500000, 9: 3000000, 10: 6000000 };
+export const masaFiyat = (table: number): number => (masaHediye(table) ? 0 : MASA_FIYAT[kanatOf(table)?.asama ?? 3] ?? 15000);
+export const BOLGE_AD: Record<KanatBolge, string> = { cay: 'Çay bahçesi', dondurma: 'Dondurma terası', salonW: 'Kahvaltı salonu', salonE: 'Balık lokantası', catiW: 'Batı çatı terası', catiE: 'Doğu çatı terası' };
 
 /** Salon aleti (SALON_ESYA) hangi masalara etki eder: W -> çay bahçesi + kahvaltı salonu + batı çatısı, E -> dondurma + balık + doğu çatısı */
 export const kanatYanı = (b: KanatBolge): 'W' | 'E' => (b === 'cay' || b === 'salonW' || b === 'catiW' ? 'W' : 'E');

@@ -634,7 +634,7 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
         const so = api ? api.view().stands.filter(s => s.owned).map(s => ({ x: s.x, z: s.z, ry: s.ry })) : [];
         const key = so.map(s => s.x + ',' + s.z).join('|'); if (key !== standsKey) { standsKey = key; standsOwned = so; dynDirty = true; } }
       { const rr = getRules?.(); if (rr && !!(rr.state.owned as Record<string, number>).pencere !== winOwned) { winOwned = !winOwned; dynDirty = true; } }
-      { const rr = getRules?.(); if (rr) { const zs = rr.state.zones as Record<string, { esya?: string[]; alinan?: string[] } | undefined>, se = zs.salon?.esya || [], k = se.join(',') + '|' + (zs.mutfak?.alinan || []).join(','); if (k !== restoranKey) { restoranKey = k; salonSahip = [...se]; dynDirty = true; } } }
+      { const rr = getRules?.(); if (rr) { const zs = rr.state.zones as Record<string, { esya?: string[]; alinan?: string[] } | undefined>, se = zs.salon?.esya || [], k = se.join(',') + '|' + (zs.mutfak?.alinan || []).join(',') + '|' + ((zs as Record<string, { alinan?: unknown[] } | undefined>).masa?.alinan || []).join(','); if (k !== restoranKey) { restoranKey = k; salonSahip = [...se]; dynDirty = true; } } }
       if (dynDirty) syncDyn();
       const rl = getRules?.();
       if (rl) {

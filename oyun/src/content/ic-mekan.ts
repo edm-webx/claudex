@@ -8,6 +8,7 @@
  */
 import { ODA_X, ODA_Z, ODA_OLCU, SINEMA_BUFE } from './avm-kat';
 import { mutfakEsya, MUTFAK_IST_BY_ID } from './mutfak';
+import { KANAT_MASALAR, KANAT_BASE, kanatKurulu } from './kanat';
 export type Yon = '+x' | '-x' | '+z' | '-z';
 export type IcTur = 'kafe' | 'bistro' | 'kirtasiye' | 'okul' | 'lokanta' | 'kafeterya' | 'banka' | 'hastane' | 'acil' | 'morg' | 'kahvalti' | 'balik' | 'mutfak' | 'giyim' | 'elektronik' | 'oyuncak'
   | AvmYemekTur;
@@ -15,7 +16,7 @@ export type IcTur = 'kafe' | 'bistro' | 'kirtasiye' | 'okul' | 'lokanta' | 'kafe
 export type AvmYemekTur = 'sekerci' | 'kahveci' | 'dondurma' | 'baklava' | 'kuruyemis' | 'donerci' | 'kumpir' | 'midye' | 'avmLokanta' | 'sinema';
 /** kat: AVM katı (content/avm-kat.ts), yok = 0. Kat > 0 odalar zemin çarpışmasına girmez, oyuncunun katı tutunca görünür. */
 export interface IcMekan { id: string; ad: string; tur: IcTur; x: number; z: number; wx: number; wz: number; kapi: Yon; arsa?: string; bina?: string; salon?: 'W' | 'E'; mutfak?: boolean; h: number; kat?: number; /** açık stand: yalnız arka duvar var (yan ve ön duvar, kapı yok) */ acik?: boolean }
-export interface IcItem { k: string; u: number; v: number; w: number; d: number; ry?: number; solid?: boolean; esya?: string; y?: number; txt?: string; c?: string; /** büfe salonu: o aşamada kurulur (BUF-20 aşama 10 masaları) */ asama?: number }
+export interface IcItem { k: string; u: number; v: number; w: number; d: number; ry?: number; solid?: boolean; esya?: string; y?: number; txt?: string; c?: string; /** büfe salonu: o aşamada kurulur (BUF-20 aşama 10 masaları) */ asama?: number; /** salon masası: sim masa indexi (kanat.ts) */ masa?: number }
 export interface Rect { x0: number; x1: number; z0: number; z1: number }
 
 export const IC_MEKANLAR: IcMekan[] = [
@@ -83,7 +84,10 @@ const masa = (u: number, v: number, k = 'masa2') => it(k, u, v, 0.8, 0.8, { soli
 const SALON_U = [-3.9, -1.9, 1.9, 3.9], SALON_V = [-0.2, 1.6];
 /** 2026-11-21 salon pass penceresinin salon çerçevesindeki derinliği (v): mutfak tarafı duvarın arka köşesi (dünya z -16.4) */
 const SALON_PASS_V = -2.5;
-const salonMasalar = (): IcItem[] => SALON_V.flatMap(v => SALON_U.map(u => it('salonMasa', u, v, 0.9, 0.8, { solid: true, ...(v > 1 && Math.abs(u) < 3 ? { asama: 10 } : {}) })));
+/** salon masası = sim masası (aynı sıra: content/kanat.ts salon()); `masa` sim indexi: sarı kareyle alınmadıysa çizilmez, çarpmaz */
+const salonMasalar = (b: 'salonW' | 'salonE'): IcItem[] => { const i0 = KANAT_BASE + KANAT_MASALAR.findIndex(m => m.bolge === b); return SALON_V.flatMap((v, a) => SALON_U.map((u, c) => it('salonMasa', u, v, 0.9, 0.8, { solid: true, masa: i0 + a * SALON_U.length + c, ...(v > 1 && Math.abs(u) < 3 ? { asama: 10 } : {}) }))); };
+/** salon masası o an kurulu mu (kanat.ts kanatKurulu: aşama + sarı kare) */
+export const icMasaKurulu = (i: IcItem, stage: number): boolean => i.masa == null || kanatKurulu(stage).includes(i.masa);
 
 function kafeLayout(W: number, D: number, bistro: boolean): IcItem[] {
   // 2026-11-21 denetim: tezgâh arkasında 0.9 m personel koridoru (raf duvara yaslı, tezgâh öne alındı; eskiden 0.33 m kalıyordu)
@@ -293,7 +297,7 @@ function kahvaltiLayout(W: number, D: number): IcItem[] {
   return [
     // 2026-11-21: arka duvar dizisi batıya kaydı; doğu arka köşe (mutfak tarafı) salon pass penceresinin (SALON_PASS) önü, boş kalır
     it('lamba', 0, 0, W, D), it('acikBufe', -2.0, -D / 2 + 1.0, 4.4, 0.8, { solid: true }), it('menuPano', -2.0, -D / 2 + 0.27, 3.2, 0.05, { y: 2.5, txt: 'SERPME KAHVALTI' }),
-    ...salonMasalar(),
+    ...salonMasalar('salonW'),
     it('semaverDev', -W / 2 + 0.6, -D / 2 + 0.6, 0.8, 0.8, { esya: 'semaver_dev' }), it('tasFirin', 2.85, -D / 2 + 0.75, 1.7, 1.1, { esya: 'tas_firin' }),
     it('gozleme', 1.0, -D / 2 + 0.75, 1.4, 0.9, { esya: 'gozleme' }), it('balKaymak', -W / 2 + 0.45, -1.25, 1.4, 0.6, { esya: 'bal_kaymak', ry: 1 }),
     it('sarkuteri', W / 2 - 0.45, -1.15, 1.4, 0.7, { esya: 'sarkuteri', ry: 3 }), it('salonPass', W / 2 - 0.2, SALON_PASS_V, 1.6, 0.3, { ry: 3, y: 1.0 }),
@@ -303,7 +307,7 @@ function balikLayout(W: number, D: number): IcItem[] {
   return [
     // 2026-11-21: bar doğuya kaydı; batı arka köşe (mutfak tarafı) salon pass penceresinin (SALON_PASS) önü, boş kalır
     it('lamba', 0, 0, W, D), it('bar', -1.9, -D / 2 + 1.0, 5.0, 0.8, { solid: true }), it('menuPano', -1.9, -D / 2 + 0.27, 3.2, 0.05, { y: 2.5, txt: 'GÜNÜN BALIĞI' }),
-    ...salonMasalar(), it('salonPass', -W / 2 + 0.2, SALON_PASS_V, 1.6, 0.3, { ry: 1, y: 1.0 }),
+    ...salonMasalar('salonE'), it('salonPass', -W / 2 + 0.2, SALON_PASS_V, 1.6, 0.3, { ry: 1, y: 1.0 }),
     it('buzTezgah', 1.95, -D / 2 + 0.8, 2.3, 0.9, { esya: 'buz_tezgah' }), it('mangal', 4.6, -D / 2 + 0.65, 1.4, 0.8, { esya: 'mangal_e' }),
     it('akvaryum', -W / 2 + 0.32, 0.4, 3.6, 0.45, { esya: 'akvaryum_e', ry: 1 }), it('mezeDolap', W / 2 - 0.4, 1.6, 1.8, 0.6, { esya: 'meze_dolap', ry: 3 }),
     it('piyano', 4.4, -1.45, 1.6, 1.0, { esya: 'piyano_s' }),
@@ -462,7 +466,7 @@ export function icColliders(m: IcMekan, stage = 99, sahip?: readonly string[]): 
     else o.push(rectW(m, u0, u1, -D / 2, D / 2));
   }
   if (!m.acik) o.push(rectW(m, -W / 2, -g, D / 2 - t, D / 2), rectW(m, g, W / 2, D / 2 - t, D / 2));
-  for (const i of icLayout(m, Math.min(10, stage))) if ((i.solid || restoranKati(oda, i, stage, sahip)) && (i.asama ?? 0) <= stage) { const sw = (i.ry || 0) % 2 ? i.d : i.w, sd = (i.ry || 0) % 2 ? i.w : i.d; o.push(rectW(m, i.u - sw / 2, i.u + sw / 2, i.v - sd / 2, i.v + sd / 2)); }
+  for (const i of icLayout(m, Math.min(10, stage))) if ((i.solid || restoranKati(oda, i, stage, sahip)) && (i.asama ?? 0) <= stage && icMasaKurulu(i, stage)) { const sw = (i.ry || 0) % 2 ? i.d : i.w, sd = (i.ry || 0) % 2 ? i.w : i.d; o.push(rectW(m, i.u - sw / 2, i.u + sw / 2, i.v - sd / 2, i.v + sd / 2)); }
   return o;
 }
 /** Same, relative to the building centre (prefab-local colliders for an unrotated placement). */

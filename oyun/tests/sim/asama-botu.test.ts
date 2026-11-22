@@ -11,7 +11,7 @@ import { played } from './m1-helpers';
 import { restoranApi } from '../../src/game/sim/restoran';
 import { teslimatApi } from '../../src/game/sim/kurye';
 import { MUTFAK_ROL, mutfakSlot, mutfakEsya, mutfakAcik, pisirIstasyonu, PASS_KAP } from '../../src/content/mutfak';
-import { masaCati } from '../../src/content/kanat';
+import { masaCati, kanatAcik } from '../../src/content/kanat';
 import { acikYemekler, yeniYemekler, isProduct } from '../../src/content/yemek-menu';
 import { GAME_DAY_S } from '../../src/engine/api';
 
@@ -122,7 +122,9 @@ function kos(o: Opts = {}) {
       else izle('m' + m.table + m.durum[0], 'masa-' + m.durum, garsonlar.length > 0, bostaGarson.some(g => garsonYetkili(g, m.table)), () => `masa ${m.table} '${m.durum}'`);
     }
     // ── mutfak: pass rafı, istasyon tepsisi, bulaşık, paket ──
-    const pn = hd.pass.length;
+    // yalnız bir biletin hâlâ istediği tabak sayılır: kimsenin istemediği (müşterisi gitmiş) tabak mutfak-hat'ta 30 sn sonra kendiliğinden silinir
+    const istek = new Map<string, number>(); for (const k of v.tickets as any[]) for (const it of k.items) istek.set(it.p, (istek.get(it.p) || 0) + (it.left || 0));
+    const pn = hd.pass.filter((f: string) => { const n = istek.get(f) || 0; if (n > 0) istek.set(f, n - 1); return n > 0; }).length;
     if (pn < passN || pn === 0) isler.delete('pass'); passN = pn;
     if (pn > 0) izle('pass', 'pass-bekleyen', garsonlar.length > 0, bostaGarson.length > 0, () => `pass rafında ${pn} tabak alınmadı`);
     const sahipsiz = hd.tepsi.filter((p: any) => !p.wid);
@@ -214,6 +216,8 @@ function kos(o: Opts = {}) {
     kadro(); yeniCalisanlar();
     // 2026-11-22: mutfak istasyonları sarı kareyle alınır (sim/isletme-kareler.ts 'mutfak.<id>'): bot aşamanın açtığı her istasyonu alır
     for (const id of mutfakAcik(S.stage)) { S.money += 1e8; sim.command({ kind: 'mulk', op: 'mutfakAl', e: id } as never); }
+    // ... ve kanat / salon / çatı masaları da sarı kareyle (sim/isletme-kareler.ts 'masa.<i>'): bot açılan her masayı alır
+    for (const i of kanatAcik(S.stage)) { S.money += 1e9; sim.command({ kind: 'mulk', op: 'masaAl', e: i } as never); }
     const gelir0 = S.totalEarned, t0 = S.playT, d0 = S.day, hedef = d0 + gunler(a);
     for (let n = 0; S.day < hedef && n < 400 * gunler(a); n++) {
       ilerle(5); yeniCalisanlar();

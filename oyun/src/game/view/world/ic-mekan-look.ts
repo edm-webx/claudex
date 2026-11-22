@@ -12,6 +12,8 @@ import * as T from 'three';
 import { mutfakEsya, mutfakCelik, pisirIstasyonu, PASS_KAP } from '../../../content/mutfak';
 import { yemekRenk } from '../../../content/yemek-menu';
 import { Batch, mtx } from '../../../engine/prefab/batch';
+import { icMasaKurulu } from '../../../content/ic-mekan';
+import { kanatKurulu } from '../../../content/kanat';
 import { IC_CANLI, IC_MEKANLAR, icLayout, icDim, icYaw, icIcinde, mutfakUst, mutfakOda, mutfakVitrin, MUTFAK_YER, passAcik, SERVIS_KAPI_V, type IcMekan, type IcItem } from '../../../content/ic-mekan';
 import { useSkyEnv } from './glb';
 import { createFx, fanlar, asiliTavalar, biletRayi, menuPanosu, tabakYigini, islakTabela, FX_GEOS, type MutfakFx, type BiletRayi, type TabakYigini, type BiletVeri } from './mutfak-canli';
@@ -543,6 +545,7 @@ function buildRoom(m: IcMekan, own: { lv: number; isci: number; esya: string[]; 
   for (const it of items) {
     if (it.esya && !has.has(it.esya)) continue;
     if ((it.asama ?? 0) > stage) continue;   // BUF-20: aşama 10 fine dining masaları
+    if (!icMasaKurulu(it, stage)) continue;   // 2026-11-22: salon tables are bought one by one (yellow pads)
     if (it.k === 'masaK' || it.k === 'masa2' || it.k === 'masa4') ti++;
     const isMasa = it.k === 'masa2' || it.k === 'masa4' || it.k === 'salonMasa', fn = F[it.k]; if (!fn && !isMasa) continue;
     grp.userData.cur = new T.Group(); grp.userData.curItem = grp.userData.cur;
@@ -618,7 +621,7 @@ export function createIcMekan(d: IcDeps): IcView {
           if (!exists || dist > R + 30) { kill(m.id); continue; }
           if (dist > R + 18) continue;
           const o = m.arsa ? own[m.arsa] || null : null, fine = (!!m.salon || !!m.mutfak) && sl.stage >= 10, mk = m.mutfak ? d.mutfak() : null;
-          const key = (o ? o.lv + ':' + o.isci + ':' + (o.tema || '') + ':' + [...o.esya].sort().join(',') : '-') + '|' + (m.salon ? sl.esya.filter(e => e).sort().join(',') + (fine ? 'F' : '') : '') + (mk ? 'M' + sl.stage + ':' + mutfakEsya(sl.stage).join(',') + ':' + mk.ekip.map(e => e.rol + e.rank).join(',') : '');
+          const key = (o ? o.lv + ':' + o.isci + ':' + (o.tema || '') + ':' + [...o.esya].sort().join(',') : '-') + '|' + (m.salon ? sl.esya.filter(e => e).sort().join(',') + (fine ? 'F' : '') + ':' + kanatKurulu(sl.stage).join(',') : '') + (mk ? 'M' + sl.stage + ':' + mutfakEsya(sl.stage).join(',') + ':' + mk.ekip.map(e => e.rol + e.rank).join(',') : '');
           const r = rooms.get(m.id); if (r && r.key === key) continue;
           kill(m.id); const nb = buildRoom(m, o, sl.esya, fine, sl.stage, mk ? mk.ekip : []); (m.bina === 'avm' ? avmHolder : holder).add(nb.g); rooms.set(m.id, { key, g: nb.g, an: nb.an });
         }

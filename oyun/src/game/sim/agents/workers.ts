@@ -739,7 +739,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
         const nx = d > 0.001 ? dx / d : 1, nz = d > 0.001 ? dz / d : 0, push = (R - d) * Math.min(1, dt * 6) * 0.5;
         // 2026-11-22: masada iş yapan (sipariş/servis/silme) yerinde kalır; yanından geçen (hostes, öbür garson) iki payı da alır.
         // Eskiden aynı noktaya yürüyen biri masadaki garsonu 1.7 m öteye itiyordu: garson masadan uzakta sipariş alıyordu (aşama botu ışınlanma).
-        const ka = SABIT.has(rows[i].state) && !rows[i].wk.moving, kb = SABIT.has(rows[j].state) && !rows[j].wk.moving;
+        const ka = SABIT.has(rows[i].state) && !rows[i].wk.path.length, kb = SABIT.has(rows[j].state) && !rows[j].wk.path.length;   // wk.moving son walk()'tan kalır (vardığı adımda true): yol bitti mi ona bak
         if (ka && kb) continue;
         const pa = ka ? 0 : kb ? 2 : 1, pb = kb ? 0 : ka ? 2 : 1;
         p.x -= nx * push * pa; p.z -= nz * push * pa; q.x += nx * push * pb; q.z += nz * push * pb;

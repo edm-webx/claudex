@@ -19,6 +19,7 @@ import type { Vec2 } from '../../engine/api';
 import { ARSALAR, ISLETME, ARSA_ISLETME, SALON_ESYA, DUKKAN_MAX_SEVIYE, type Arsa } from '../../content/esya';
 import { icOfArsa, icWorld, icDim, IC_BY_ID, mutfakDunya, mutfakStand, type IcMekan } from '../../content/ic-mekan';
 import { mutfakAcik, istasyonFiyat, MUTFAK_HAZIR, MUTFAK_IST_BY_ID, MUTFAK_YER_SIRA } from '../../content/mutfak';
+import { kanatAcik, kanatOf, masaHediye, masaFiyat, catiAyak, BOLGE_AD } from '../../content/kanat';
 import { HOL, katY } from '../../content/avm-kat';
 import type { Kernel, PadRt } from './state';
 import { acilisEksik, acilisGorunur, tadilatEksik, kilitYazi, type AcilisDurum } from '../../content/acilis';
@@ -30,6 +31,8 @@ export interface IsletmeKareApi {
   salonEsya?(e: string): void; salonVar?(): string[];
   /** 2026-11-22 restoran mutfağı: istasyon satın al / alınmış istasyonlar */
   mutfakAl?(id: string): void; mutfakVar?(): string[];
+  /** 2026-11-22 kanat / salon / çatı masaları: masa satın al / alınmış masalar (sim masa indexi) */
+  masaAl?(i: number): void; masaVar?(): number[];
   /** açılış sırası durumu (content/acilis.ts); yoksa her şey açık sayılır (eski testler / araçlar) */
   durum?(): AcilisDurum;
 }
@@ -124,6 +127,17 @@ export function installIsletmeKareler(K: Kernel, api: IsletmeKareApi): { sync():
         const pos = mutfakDunya(mutfakStand(id)); if (konan.some(q => Math.hypot(q.x - pos.x, q.z - pos.z) < 1.75)) continue;
         konan.push(pos); const d = MUTFAK_IST_BY_ID[id];
         out.push({ key: 'mutfak.' + id, pos, label: '🍳 ' + d.ad, sub: 'Mutfak istasyonu: kendi yemeklerini burada pişirir', price: istasyonFiyat(id), kilit: '', done: () => api.mutfakAl!(id) });
+      }
+    }
+    // 2026-11-22 (sahibi: "sağda solda farklı restoran gibi görünen her yere masa alalım tek tek sarı karelerle"): her bölgenin sıradaki
+    // masası, masanın kendi yerinde sarı kare (bölgenin ilk masası hediye); çatı masalarının karesi merdivenin ayağında (oyuncu çıkmaz)
+    if (api.masaAl && api.masaVar) {
+      const own = new Set(api.masaVar()), st = S.stage || 1, bolgeler = new Set<string>();
+      for (const i of kanatAcik(st)) {
+        const m = kanatOf(i)!; if (own.has(i) || masaHediye(i) || bolgeler.has(m.bolge)) continue;
+        bolgeler.add(m.bolge);
+        const pos = m.cati ? { x: catiAyak(m.cati).x, z: catiAyak(m.cati).z + 0.9 } : { x: m.x, z: m.z };
+        out.push({ key: 'masa.' + i, pos, y: m.bolge === 'salonW' ? SOKAK_Y + 0.05 : undefined, label: '🪑 MASA', sub: BOLGE_AD[m.bolge] + (m.cati ? ' (çatıya)' : ''), price: masaFiyat(i), kilit: '', done: () => api.masaAl!(i) });
       }
     }
     return out;

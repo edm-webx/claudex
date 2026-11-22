@@ -396,13 +396,41 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
       },
     });
   }
+  /**
+   * 2026-11-22 (sahibi: "mutfakta bişeyler hazırlayıp tepsiye alıp servis edebilicez"): `pass.al.<yer>` pass'ın salon tarafında durunca
+   * bir biletin hâlâ beklediği (garsonun ayırmadığı) tabaklar tek tek oyuncunun tepsisine alınır; masaya `servis.<i>` ile götürülür.
+   */
+  const passIstek = (yer: PassYer): FoodId | null => {
+    const need = new Map<FoodId, number>();   // biletlerin garsonun ayırmadığı toplam isteği, eldeki aynı tabaklar düşülür
+    for (const t of tickets) for (const p of Object.keys(t.want) as FoodId[]) need.set(p, (need.get(p) || 0) + Math.max(0, (t.want[p] || 0) - tabakTasks(t, p)));
+    for (const it of rt.carry) if (need.has(it.type as FoodId)) need.set(it.type as FoodId, need.get(it.type as FoodId)! - 1);
+    for (const [p, n] of need) if (n > 0 && rafSerbest(p, 'pass', yer) > 0) return p;
+    return null;
+  };
+  function passAlKur(yer: PassYer) {
+    const id = 'pass.al.' + yer;
+    if (K.interactions.get(id)) return;
+    const at = passGarsonNokta(yer);
+    K.interactions.register({
+      id, pos: { x: at.x, z: at.z }, radius: 0.9, kind: 'counter', dwell: DWELL_DEFAULTS.counter, interval: 0.25,
+      canAct: () => !elleriDolu() && !!passIstek(yer),
+      act: () => {
+        const p = passIstek(yer); if (!p || elleriDolu()) return 'done';
+        const pl = hat.passTake(p, yer); if (!pl) return 'done';
+        pl.carrier = undefined as never; hat.pEldeye(pl); rt.carry.push(pl as Item); K.stat('oyuncuPassAl');
+        return !elleriDolu() && passIstek(yer) ? 'continue' : 'done';
+      },
+    });
+  }
   let kayitKey = '';
   /** mutfak büyüdükçe (aşama) istasyon etkileşimleri eklenir; mutfak yoksa (aşama < 3, yeni oyun) kaldırılır */
   function mutfakKayit(): void {
     if (!FAZ2_UI) return;
-    const ist = pisirIstler(), key = ist.join(',');
+    const ist = pisirIstler(), yerler = (['on', 'W', 'E'] as const).filter(y => passAcik(y, S.stage || 1)), key = ist.join(',') + '|' + yerler.join(',');
     if (key === kayitKey) return;
     kayitKey = key;
+    for (const y of ['on', 'W', 'E'] as const) { if (!(ist.length && yerler.includes(y)) && K.interactions.get('pass.al.' + y)) K.interactions.unregister('pass.al.' + y); }
+    if (ist.length) yerler.forEach(passAlKur);
     for (const i of Object.keys(MUTFAK_IST_BY_ID)) { if (!ist.includes(i) && K.interactions.get('mutfak.' + i)) K.interactions.unregister('mutfak.' + i); }
     if (!ist.length) { if (K.interactions.get('mutfak.pass')) K.interactions.unregister('mutfak.pass'); return; }
     ist.forEach(pisirKur); passKur();

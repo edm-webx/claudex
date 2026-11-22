@@ -87,6 +87,7 @@ export const ZONE_SCHEMA: Record<string, F> = {
   avm: o({ alinan: sa }),
   salon: o({ esya: sa }),
   mutfak: o({ v: n(0, 9, 0), alinan: sa }),   // 2026-11-22 restoran mutfağı: sarı kareyle alınan istasyonlar (sim/mulk.ts mutfakZ)
+  masa: o({ v: n(0, 9, 0), alinan: a(n(0, 200, 0), 80) }),   // 2026-11-22 kanat / salon / çatı masaları: sarı kareyle alınan sim masa indexleri (sim/mulk.ts masaZ)
   gizem: o({ basla: b, oku: r(n(0, 1e6, 0), 200) }),
   lig: o({ fin: n(0, 1e6, 0), bolum: r(n(0, 10, 0), 100), maclar: a(undefined, 2000), oynanan: r(b, 2000), gecmis: a(undefined, 500) }),
   halisaha: o({ offerDay: n(-1e6, 1e6, 0), played: n(), won: n(), drawn: n(), lost: n(), goals: n(), form: a(s('', 1), 40) }),

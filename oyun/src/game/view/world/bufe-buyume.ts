@@ -22,7 +22,7 @@ import { KIOSK_STAGES } from '../../../content/stages';
 import { WB, WT, EB, ET, insaatAlani } from '../../../content/insaat';
 import { Batch } from '../../../engine/prefab/batch';
 import { PIER, BUFE_YEREL as BUFE } from '../../../content/prefabs/iskele/layout';   // every büfe part here is stage 6+: the büfe is then the restaurant's front hall at the v2 spot (layout.ts bufeDz)
-import { KANAT_MASALAR, merdivenKutu, type KanatMasa } from '../../../content/kanat';
+import { KANAT_MASALAR, KANAT_BASE, kanatKurulu, merdivenKutu, type KanatMasa } from '../../../content/kanat';
 import { useSkyEnv } from './glb';
 import { radialTex, ensureKit } from '../../../content/prefabs/common/v2kit';
 
@@ -34,7 +34,7 @@ const HP = Math.PI / 2;
 /** wing footprints on the pier (content/insaat.ts: shared with the tadilat site and the sim ustalar) */
 const cx = (r: { x0: number; x1: number }) => (r.x0 + r.x1) / 2, cz = (r: { z0: number; z1: number }) => (r.z0 + r.z1) / 2;
 /** open-air wing tables built at this stage (sim tables, content/kanat.ts); salon tables are ic-mekan items, roof tables drawn by hall() */
-const acikMasalar = (st: number, b: 'cay' | 'dondurma'): KanatMasa[] => KANAT_MASALAR.filter(m => m.bolge === b && st >= m.asama);
+const acikMasalar = (st: number, b: 'cay' | 'dondurma'): KanatMasa[] => { const on = new Set(kanatKurulu(st)); return KANAT_MASALAR.filter((m, k) => m.bolge === b && on.has(KANAT_BASE + k)); };   // 2026-11-22: bought one by one (yellow pads)
 /** BUF-21: aşama adları tek kaynaktan (content/stages.ts short); 0 ve 1 boş (büyüme 2'den başlar) */
 export const BUYUME_AD = ['', '', ...KIOSK_STAGES.slice(1).map(s => s.short)];
 
@@ -155,7 +155,7 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
     if (roofTerrace) {
       const ry = top + 0.36, rr = (xa: number, za: number, xb: number, zb: number) => { const len = Math.hypot(xb - xa, zb - za), a = Math.atan2(xb - xa, zb - za), n = Math.round(len / 1.2); b.box(0.08, 0.07, len, accent, (xa + xb) / 2, ry + 1.0, (za + zb) / 2, { ry: a }); for (let i = 0; i <= n; i++) b.box(0.05, 1.0, 0.05, frame, xa + (xb - xa) * i / n, ry + 0.5, za + (zb - za) * i / n); };
       rr(r.x0 - 0.3, r.z0 - 0.3, r.x1 + 0.3, r.z0 - 0.3); rr(r.x0 - 0.3, r.z1 + 0.3, r.x1 + 0.3, r.z1 + 0.3); rr(r.x0 - 0.3, r.z0 - 0.3, r.x0 - 0.3, r.z1 + 0.3); rr(r.x1 + 0.3, r.z0 - 0.3, r.x1 + 0.3, r.z1 + 0.3);
-      KANAT_MASALAR.filter(m => m.cati === (X < 0 ? 'W' : 'E')).forEach((m, i) => table(m.x, m.z, m.ax, fine ? '#f4f2ec' : UMB[(i + 2) % UMB.length], true, fine, ry));   // sim roof tables (BUF-20)
+      KANAT_MASALAR.filter((m, k) => m.cati === (X < 0 ? 'W' : 'E') && kanatKurulu(stage).includes(KANAT_BASE + k)).forEach((m, i) => table(m.x, m.z, m.ax, fine ? '#f4f2ec' : UMB[(i + 2) % UMB.length], true, fine, ry));   // sim roof tables (BUF-20)
       for (let s2 = 0; s2 < 14; s2++) b.box(0.9, 0.12, 0.34, '#8a6a4a', (r.x0 < 0 ? r.x1 + 0.55 : r.x0 - 0.55), 0.25 + s2 * (ry / 14), r.z1 - 0.3 - s2 * 0.4);   // outside stair
       lights([[r.x0 - 0.3, r.z0 - 0.3], [r.x0 - 0.3, r.z1 + 0.3], [r.x1 + 0.3, r.z1 + 0.3], [r.x1 + 0.3, r.z0 - 0.3]].map(([x, z]) => [x, z] as [number, number]), ry + 2.2);
     }
@@ -445,7 +445,7 @@ function buildMevsim(k: 'bayrak' | 'lale' | 'yilbasi'): T.Group {
 export function createBufeBuyume(deps: BuyumeDeps): BuyumeView {
   let spon: T.Group | null = null, sponKey = '', mev: T.Group | null = null, mevKey = '';
   let site: ReturnType<typeof buildSite> | null = null, siteTo = 0;
-  let built = -1, grp: T.Group | null = null, t = 0, cur: Built | null = null;
+  let built = -1, builtK = '', grp: T.Group | null = null, t = 0, cur: Built | null = null;
   const signMats: T.MeshStandardMaterial[] = [], flames: T.Object3D[] = [];
   const clear = () => {
     if (!grp) return; grp.parent?.remove(grp);
@@ -457,7 +457,8 @@ export function createBufeBuyume(deps: BuyumeDeps): BuyumeView {
       t += dt;
       const root = deps.root(), st = Math.round(deps.stage() || 1);
       if (!root) { if (grp) clear(); built = -1; return; }
-      if (st !== built || (grp && grp.parent !== root)) { clear(); built = st; cur = null; if (st >= 2) { cur = build(st, signMats, flames); grp = cur.g; root.add(grp); } }
+      const mk0 = kanatKurulu(st).join(',');   // a bought table is drawn at once
+      if (st !== built || mk0 !== builtK || (grp && grp.parent !== root)) { clear(); built = st; builtK = mk0; cur = null; if (st >= 2) { cur = build(st, signMats, flames); grp = cur.g; root.add(grp); } }
       const td = deps.tadilat?.() ?? null, wantSite = td && td.to >= 2 ? td.to : 0;
       if (wantSite !== siteTo || (site && site.g.parent !== root)) { if (site) { site.g.removeFromParent(); site.g.traverse(o => { const mm = o as T.Mesh; mm.geometry?.dispose(); if (mm.name === 'pano') { const mt = mm.material as T.MeshBasicMaterial; mt.map?.dispose(); mt.dispose(); } }); site = null; } siteTo = wantSite; if (wantSite) { site = buildSite(wantSite); root.add(site.g); } }
       if (site && td) {
