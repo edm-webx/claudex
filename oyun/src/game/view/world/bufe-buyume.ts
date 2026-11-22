@@ -197,7 +197,15 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
     const px0 = WT.x0 + 1.8, px1 = WT.x1 - 0.4, pz0 = -4.4, pz1 = WT.z1 - 0.4;
     for (const [x, z] of [[px0, pz0], [px1, pz0], [px0, pz1], [px1, pz1], [(px0 + px1) / 2, pz0], [(px0 + px1) / 2, pz1]]) b.box(0.16, 2.9, 0.16, frame, x, 1.57, z);
     for (let i = 0; i < 10; i++) b.box(px1 - px0 + 0.3, 0.08, 0.1, '#8a6a4a', (px0 + px1) / 2, 3.0, pz0 + i * (pz1 - pz0) / 9);
-    for (let i = 0; i < 40; i++) { const x = px0 + ((i * 37) % 97) / 97 * (px1 - px0), z = pz0 + ((i * 53) % 89) / 89 * (pz1 - pz0); b.box(0.9 + (i % 3) * 0.25, 0.07, 0.6 + (i % 2) * 0.3, ['#4f8f3a', '#5f9f45', '#3f7a34'][i % 3], x, 3.07 + (i % 4) * 0.015, z, { ry: i * 0.7 }); if (i % 5 === 0) b.sph(0.07, i % 10 ? '#c94f6d' : '#f2a2b3', x + 0.2, 3.12, z, { ws: 5, hs: 3 }); }
+    // AR-GE 2026-11-22: asma yaprakları çıta boyunca düzenli sıralar (eskiden 40 rastgele dönük kutu: yukarıdan dağınık yeşil kareler gibiydi)
+    for (let r = 0; r < 10; r++) {
+      const z = pz0 + r * (pz1 - pz0) / 9, n = Math.max(2, Math.floor((px1 - px0) / 0.72));
+      for (let c = 0; c <= n; c++) {
+        const x = px0 + c * (px1 - px0) / n, q = (r * 7 + c * 3) % 5;
+        b.box(0.62 + (q % 3) * 0.08, 0.06, 0.4, ['#4f8f3a', '#5f9f45', '#3f7a34'][(r + c) % 3], x, 3.07 + (q % 2) * 0.012, z, { ry: (q - 2) * 0.05 });
+        if (q === 0 && c % 2 === 0) b.sph(0.06, r % 2 ? '#c94f6d' : '#f2a2b3', x + 0.18, 3.11, z + 0.1, { ws: 5, hs: 3 });
+      }
+    }
     lights([[-10.3, 3.7], [-5.4, 3.9]], 3.4); lights([[5.2, 4.1], [8.6, 3.8]], 3.4);   // 2026-11-22: not across the büfe front
   }
   /* 3+: büfe mutfağı shell behind the roofed service passage (interior: view/world/ic-mekan-look.ts, door on the walkway side).
