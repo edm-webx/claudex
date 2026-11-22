@@ -10,7 +10,7 @@
  *   batı blok 5.95 m | HOL 8 m: iki yürüyüş yolu + ortada yan yana iki yürüyen merdiven | doğu blok 5.95 m
  *   z 44 .. 46.5 lobi (tam genişlik, giriş kapısı ortada), z 46.5 .. 57.1 dükkânlar (ön + arka oda, kapı hola).
  * Ayrı harita olduğu için iskeledeki kabuğun ölçüsüne bağlı değil: hol geniş, önde ferah bir giriş lobisi var.
- * Her kat aynı plan; 3 kat (0 giriş, 1, 2), kat yüksekliği 3.6.
+ * Her kat aynı plan; 4 kat (0 giriş, 1, 2 dükkân; 3 eğlence katı: sinema + sahne, content/avm-eglence.ts), kat yüksekliği 3.6.
  * Merdivenler (paralel, üst üste): yukarı şerit U, aşağı şerit D; ikisi de önde alçak (z 48.4), arkada yüksek (z 54.64) ucu.
  *   U: k katının ön ucundan biner, k+1 katının arka sahanlığında iner.  D: k katının arka ucundan biner, k-1 katının önünde iner.
  * Üst katlarda merdiven boşluğunun çevresi korkuluklu galeridir (ön şerit, iki yan yürüyüş yolu, arka sahanlık).
@@ -21,7 +21,7 @@ import type { Rect } from '../engine/api';
 export const AVM_OX = 1180;
 const X = (x: number) => x + AVM_OX;
 const CX = X(20.15), HW = 4, OD = 5.95;
-export const AVM = { x0: CX - HW - OD, x1: CX + HW + OD, z0: 44, z1: 57.1, cx: CX, FH: 3.6, KAT: 3 } as const;
+export const AVM = { x0: CX - HW - OD, x1: CX + HW + OD, z0: 44, z1: 57.1, cx: CX, FH: 3.6, KAT: 4 } as const;
 /** dükkân bloklarının ön yüzü (lobi bunun önünde) */
 export const LOBI_Z1 = 46.5;
 /** orta hol (merdivenler + yürüyüş yolları) */
@@ -34,8 +34,8 @@ export const ODA_X = { W: CX - HW - OD / 2, E: CX + HW + OD / 2 } as const, ODA_
 /** iskeledeki AVM binası (kabuk) ve giriş kapısının önü: buraya yürüyen AVM'ye geçer */
 export const AVM_BINA = { x: 20.15, z: 51.8, wx: 16.9, wz: 10.6 } as const;
 export const AVM_DIS = { x: 20.15, z: 45.75 } as const, AVM_DIS_CIKIS = { x: 20.15, z: 44.5 } as const;
-export const KAT_ADI = ['Giriş Katı', '1. Kat · Kahve & Tatlı', '2. Kat · Yemek Katı'];
-export const KAT_KISA = ['Zemin', '1. Kat', '2. Kat'];
+export const KAT_ADI = ['Giriş Katı', '1. Kat · Kahve & Tatlı', '2. Kat · Yemek Katı', '3. Kat · Sinema & Sahne'];
+export const KAT_KISA = ['Zemin', '1. Kat', '2. Kat', '3. Kat'];
 export type SeritId = 'U' | 'D';
 const sc = (s: SeritId) => (SERIT[s].x0 + SERIT[s].x1) / 2;
 /** giriş kapısının boşluğu (zemin kat cephesinde, otomatik kapı) */
@@ -135,5 +135,13 @@ export function avmGidis(kat: number, from: { x: number; z: number }): P3[] {
     o.push(...holYol(k, cur, { x: bas.x, z: bas.z + 0.6 }), ...y.noktalar); cur = y.noktalar[y.noktalar.length - 1];
   }
   o.push(...holYol(0, cur, AVM_GIRIS_IC), { ...AVM_GIRIS, y: 0 });
+  return o;
+}
+/** kat ka'daki bir noktadan kat kb'deki bir noktaya: holde yürü, gereken merdivenle in ya da çık (a hariç, b dahil) */
+export function avmYol(ka: number, from: { x: number; z: number }, kb: number, to: { x: number; z: number }): P3[] {
+  const o: P3[] = []; let cur = from;
+  for (let k = ka; k < kb; k++) { const y = yolculuk('U', k), bas = y.noktalar[0]; o.push(...holYol(k, cur, { x: bas.x, z: bas.z - 0.6 }), ...y.noktalar); cur = y.noktalar[y.noktalar.length - 1]; }
+  for (let k = ka; k > kb; k--) { const y = yolculuk('D', k - 1), bas = y.noktalar[0]; o.push(...holYol(k, cur, { x: bas.x, z: bas.z + 0.6 }), ...y.noktalar); cur = y.noktalar[y.noktalar.length - 1]; }
+  o.push(...holYol(kb, cur, to));
   return o;
 }

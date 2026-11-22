@@ -38,11 +38,11 @@ describe('top fiziği', () => {
 });
 
 describe('top sürme ve vuruşlar', () => {
-  it('dokun-kovala: sürerken top-ayak mesafesi 0.5-1.6 m arasında salınır', () => {
+  it("yapışık top: sürerken top ayağın 0.3-0.9 m önünde kalır ve sahiplik kaybolmaz", () => {
     const m = bos(3, 0), me = m.pls[m.ctrl]; me.stun = 0; me.x = 5; me.y = 10; me.fx = 1; me.fy = 0; m.ball.owner = m.ctrl; m.ball.x = 5.5; m.ball.y = 10;
     const ds: number[] = [];
     for (let i = 0; i < 200 && m.ball.owner === m.ctrl; i++) { m.input.ix = 1; m.input.iy = 0; m.step(dt); if (i > 40) ds.push(Math.hypot(m.ball.x - me.x, m.ball.y - me.y)); }
-    expect(m.ball.owner).toBe(m.ctrl); expect(Math.min(...ds)).toBeGreaterThan(0.4); expect(Math.max(...ds)).toBeLessThan(1.6); expect(Math.max(...ds) - Math.min(...ds)).toBeGreaterThan(0.4);
+    expect(m.ball.owner).toBe(m.ctrl); expect(ds.length).toBeGreaterThan(100); expect(Math.min(...ds)).toBeGreaterThan(0.3); expect(Math.max(...ds)).toBeLessThan(0.9);
   });
   it('vuruşta p.act = kick, uzun top savunmanın üstünden uçar', () => {
     const m = bos(4, 0), me = m.pls[m.ctrl]; me.stun = 0; me.x = 10; me.y = 10; m.ball.owner = m.ctrl; m.ball.x = 10.5; m.ball.y = 10;
