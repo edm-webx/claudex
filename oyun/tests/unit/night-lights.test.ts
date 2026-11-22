@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { pickLamps, assignSlots, stepFade, PLAN_DT, icLambalar, floresanNoktasi, type FadeState } from '../../src/game/view/world/night-lights-plan';
 import { createNightLights, roomLightsFor, LIGHT_TUNE } from '../../src/game/view/world/night-lights';
 import { IC_BY_ID, IC_MEKANLAR, icIcinde } from '../../src/content/ic-mekan';
-import { BUFE } from '../../src/content/prefabs/iskele/layout';
+import { BUFE, bufeKutu } from '../../src/content/prefabs/iskele/layout';
 
 const row = (n: number, step = 3) => Array.from({ length: n }, (_, i) => ({ x: i * step, z: 0 }));
 
@@ -75,8 +75,9 @@ describe('night-lights planner (PRF-08)', () => {
     expect(floresanNoktasi(1)).toEqual({ x: 0.2, y: 2.12, z: BUFE.z1 + 1.12 });
     for (let st = 2; st <= 10; st++) {
       const p = floresanNoktasi(st);
-      expect(p).toEqual({ x: 0, y: 2.31, z: BUFE.z0 + 0.3 });
-      expect(p.x > BUFE.x0 && p.x < BUFE.x1 && p.z > BUFE.z0 && p.z < BUFE.z1 && p.y > 0).toBe(true);
+      const B = bufeKutu(st);   // stage 6+: the büfe is the restaurant's front hall against the kitchen
+      expect(p).toEqual({ x: 0, y: 2.31, z: B.z0 + 0.3 });
+      expect(p.x > B.x0 && p.x < B.x1 && p.z > B.z0 && p.z < B.z1 && p.y > 0).toBe(true);
     }
   });
 });

@@ -35,7 +35,7 @@ import { restoranApi } from '../../sim/restoran';
 import { createRtView, type RtView } from './rtview';
 import type { Rules } from '../../sim/state';
 import { partPos } from '../../../content/prefabs/iskele/kiosk';
-import { BUFE, BUFE_DZ } from '../../../content/prefabs/iskele/layout';
+import { BUFE_DZ, bufeDz, bufeKutu, parkEngel, parkYer, RESTORAN_ASAMA } from '../../../content/prefabs/iskele/layout';
 import { useSkyEnv } from './glb';
 import { setZeminSky } from '../../../engine/render/zemin-islak';
 import { ensureKit, MAT, radialTex } from '../../../content/prefabs/common/v2kit';
@@ -95,6 +95,8 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
 
   /* ---- state ---- */
   let winOwned = false;
+  /** 2026-11-22: alınmış salon aletleri ve mutfak istasyonları katı (ic-mekan.ts restoranKati): değişince ızgara yeniden kurulur */
+  let salonSahip: string[] = [], restoranKey = '';
   let standPoll = 0;
   let standsOwned: { x: number; z: number; ry: number }[] = [], standsKey = '';
   let stage = 1, renewed: Record<string, boolean> = {}, layout = stageLayout(1);
@@ -268,6 +270,10 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
     });
     for (const k in L.cat) put('catSpots.' + k, L.cat[k]);
     const bs = benchSeats(BENCHES[2])[1]; put('catSpots.bench', { x: bs.x, y: SEAT_H, z: bs.z });
+    parkYer(stage).bank.forEach((bn, i) => {   // park benches facing the monument (they move with the park at stage 6)
+      a['benches.park' + i] = { pos: { x: bn.pos.x, z: bn.pos.z }, rotY: bn.rotY, kind: 'bench' };
+      benchSeats(bn).forEach((s2, j) => { a['benches.park' + i + '.seat.' + j] = { pos: { x: s2.x, z: s2.z }, y: SEAT_H, rotY: bn.rotY, kind: 'seat' }; });
+    });
     put('dogSpot', L.dog);
     L.perch.forEach(([x, y, z, r], i) => put('gullPerches.' + i, { x, y, z }, r, 'perch'));
     L.slots.forEach((s, i) => { put('decorSlots.' + i, s.pos, s.rotY, 'decor'); a['decorSlots.' + i].tags = [s.size]; });
@@ -293,7 +299,8 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
     // owned stands (midye, ıslak hamburger...) are solid too: the 1.1 x 0.65 m table, turned with the stand
     for (const sv of standsOwned) { const side = Math.abs(Math.sin(sv.ry)) > 0.5; const hx = side ? 0.4 : 0.6, hz = side ? 0.6 : 0.4; out.push({ x0: sv.x - hx, x1: sv.x + hx, z0: sv.z - hz, z1: sv.z + hz, tag: 'stant' }); }
     if (stage >= 2 && winOwned) out.push({ x0: W.x - 0.62, x1: W.x - 0.36, z0: W.z - 0.78, z1: W.z + 0.78, tag: 'window' });
-    out.push(...buyumeEngel(stage));   // 2026-11-08: the business grows over the pier wings (bufe-buyume.ts)
+    out.push(...parkEngel(stage));   // 2026-11-22: the park (monument, trees, benches, entrance arch) moves to the pier mouth at stage 6
+    out.push(...buyumeEngel(stage, salonSahip));   // 2026-11-08: the business grows over the pier wings (bufe-buyume.ts)
     return out;
   }
 
@@ -354,12 +361,14 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
   zones.onBuilt?.((id) => { if (id === 'iskele') syncDyn(dynDirty); });
 
   /* ---- kiosk overrides ---- */
-  function kioskOverrides() { return { stage: Math.min(5, stage), renewed: renewedCsv(), sign: signText, font: signFont }; }
+  function kioskOverrides() { return { stage: Math.min(5, stage), renewed: renewedCsv(), sign: signText, font: signFont, restoran: stage >= RESTORAN_ASAMA ? stage : 0 }; }
   function applyKiosk() {
     const ov = kioskOverrides();
     // the registered def can be a copy of ZI (editor overrides): update both so the re-bake sees this stage
-    [ZI, zones.def('iskele')].forEach(d => { const pl = d?.props.find(p => p.id === 'kiosk'); if (pl) pl.overrides = ov; });
-    prefab.instance('kiosk')?.setPlacement({ overrides: ov });
+    // 2026-11-22: from stage 6 the büfe is the restaurant's front hall at the v2 spot against the kitchen (layout.ts bufeDz)
+    const pos = { x: 0, z: bufeDz(stage) };
+    [ZI, zones.def('iskele')].forEach(d => { const pl = d?.props.find(p => p.id === 'kiosk'); if (pl) { pl.overrides = ov; pl.pos = { ...pos }; } });
+    prefab.instance('kiosk')?.setPlacement({ overrides: ov, pos });
   }
 
   /* ---- ferry ---- */
@@ -556,7 +565,7 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
     setWindow(open) { winTarget = open ? 1 : 0; },
     playerStart(s?: number) { const L = s == null || s === stage ? layout : stageLayout(clamp(Math.round(+s) || 1, 1, 5)); return { x: L.playerStart.x, z: L.playerStart.z }; },
     layout: () => layout,
-    obstacles: () => staticObstacles().concat(prefab.colliders('iskele.kiosk', kioskOverrides()).map(r => ({ ...r, z0: r.z0 + BUFE_DZ, z1: r.z1 + BUFE_DZ, tag: 'kiosk' })), dynObstacles()),
+    obstacles: () => staticObstacles().concat(prefab.colliders('iskele.kiosk', kioskOverrides()).map(r => ({ ...r, z0: r.z0 + bufeDz(stage), z1: r.z1 + bufeDz(stage), tag: 'kiosk' })), dynObstacles()),
     makeItem(product, tierN = 1) {
       const HT = ITEM_HT as Record<string, number[]>;
       const p = HT[product] ? product : 'cay', t = clamp(Math.round(+tierN) || 1, 1, 4);
@@ -625,6 +634,7 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
         const so = api ? api.view().stands.filter(s => s.owned).map(s => ({ x: s.x, z: s.z, ry: s.ry })) : [];
         const key = so.map(s => s.x + ',' + s.z).join('|'); if (key !== standsKey) { standsKey = key; standsOwned = so; dynDirty = true; } }
       { const rr = getRules?.(); if (rr && !!(rr.state.owned as Record<string, number>).pencere !== winOwned) { winOwned = !winOwned; dynDirty = true; } }
+      { const rr = getRules?.(); if (rr) { const zs = rr.state.zones as Record<string, { esya?: string[]; alinan?: string[] } | undefined>, se = zs.salon?.esya || [], k = se.join(',') + '|' + (zs.mutfak?.alinan || []).join(',') + '|' + ((zs as Record<string, { alinan?: unknown[] } | undefined>).masa?.alinan || []).join(','); if (k !== restoranKey) { restoranKey = k; salonSahip = [...se]; dynDirty = true; } } }
       if (dynDirty) syncDyn();
       const rl = getRules?.();
       if (rl) {
@@ -633,7 +643,7 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
         rtv.update(rl, Math.min(0.1, Math.max(0, dt)));
       }
       if (roofMesh) {
-        const pp = poseFn?.(), dx = pp ? Math.max(BUFE.x0 - pp.x, 0, pp.x - BUFE.x1) : 99, dz = pp ? Math.max(BUFE.z0 - pp.z, 0, pp.z - BUFE.z1) : 99;
+        const BUFE = bufeKutu(stage), pp = poseFn?.(), dx = pp ? Math.max(BUFE.x0 - pp.x, 0, pp.x - BUFE.x1) : 99, dz = pp ? Math.max(BUFE.z0 - pp.z, 0, pp.z - BUFE.z1) : 99;
         // 16:52 user: the closed kiosk opened its roof and blinked its name whenever Sabri walked past the cart.
         // Cut away only once the kiosk is open (stage 2+) and Sabri is really inside it.
         const tgt = stage >= 2 && Math.hypot(dx, dz) < 0.25 ? 0 : 1;

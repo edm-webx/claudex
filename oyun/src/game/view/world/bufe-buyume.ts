@@ -21,8 +21,8 @@ import { IC_BY_ID, icColliders, icIcinde, mutfakOda, MUTFAK_YER, passAcik, servi
 import { KIOSK_STAGES } from '../../../content/stages';
 import { WB, WT, EB, ET, insaatAlani } from '../../../content/insaat';
 import { Batch } from '../../../engine/prefab/batch';
-import { PIER, BUFE } from '../../../content/prefabs/iskele/layout';
-import { KANAT_MASALAR, merdivenKutu, type KanatMasa } from '../../../content/kanat';
+import { PIER, BUFE_YEREL as BUFE } from '../../../content/prefabs/iskele/layout';   // every büfe part here is stage 6+: the büfe is then the restaurant's front hall at the v2 spot (layout.ts bufeDz)
+import { KANAT_MASALAR, KANAT_BASE, kanatKurulu, merdivenKutu, type KanatMasa } from '../../../content/kanat';
 import { useSkyEnv } from './glb';
 import { radialTex, ensureKit } from '../../../content/prefabs/common/v2kit';
 
@@ -34,7 +34,7 @@ const HP = Math.PI / 2;
 /** wing footprints on the pier (content/insaat.ts: shared with the tadilat site and the sim ustalar) */
 const cx = (r: { x0: number; x1: number }) => (r.x0 + r.x1) / 2, cz = (r: { z0: number; z1: number }) => (r.z0 + r.z1) / 2;
 /** open-air wing tables built at this stage (sim tables, content/kanat.ts); salon tables are ic-mekan items, roof tables drawn by hall() */
-const acikMasalar = (st: number, b: 'cay' | 'dondurma'): KanatMasa[] => KANAT_MASALAR.filter(m => m.bolge === b && st >= m.asama);
+const acikMasalar = (st: number, b: 'cay' | 'dondurma'): KanatMasa[] => { const on = new Set(kanatKurulu(st)); return KANAT_MASALAR.filter((m, k) => m.bolge === b && on.has(KANAT_BASE + k)); };   // 2026-11-22: bought one by one (yellow pads)
 /** BUF-21: aşama adları tek kaynaktan (content/stages.ts short); 0 ve 1 boş (büyüme 2'den başlar) */
 export const BUYUME_AD = ['', '', ...KIOSK_STAGES.slice(1).map(s => s.short)];
 
@@ -52,7 +52,7 @@ export function gecitDuvar(): { x0: number; x1: number; z0: number; z1: number }
   return [{ x0: G.x0, x1: G.x0 + t, z0: G.z0, z1: G.kz0 }, { x0: G.x0, x1: G.x0 + t, z0: G.kz1, z1: G.z1 }, { x0: G.x1 - t, x1: G.x1, z0: G.z0, z1: G.z1 }];
 }
 /** Solid parts of the growth for the walk grid (halls, counters, kitchen, tables). */
-export function buyumeEngel(stage: number): { x0: number; x1: number; z0: number; z1: number; tag: string }[] {
+export function buyumeEngel(stage: number, salonSahip?: readonly string[]): { x0: number; x1: number; z0: number; z1: number; tag: string }[] {
   const o: { x0: number; x1: number; z0: number; z1: number; tag: string }[] = [];
   const add = (x0: number, x1: number, z0: number, z1: number, tag = 'buyume') => o.push({ x0, x1, z0, z1, tag });
   // table top only (as the kiosk tables, view/world/index.ts): the seats (±0.78 on the seat axis) and the garson spot stay walkable
@@ -60,8 +60,8 @@ export function buyumeEngel(stage: number): { x0: number; x1: number; z0: number
   if (stage >= 3) add(WT.x0 + 0.2, WT.x0 + 1.4, -9.0, -6.4, 'buyume-ocak');
   if (stage >= 4) add(ET.x1 - 1.3, ET.x1 - 0.1, ET.z0 + 0.3, ET.z0 + 2.0, 'buyume-dolap');
   // 2026-11-09 "her yere girilebilmeli": the halls are rooms with a door on the promenade side (content/ic-mekan.ts)
-  if (stage >= 6) icColliders(IC_BY_ID.salonW, stage).forEach(r => add(r.x0, r.x1, r.z0, r.z1, 'buyume-salon'));
-  if (stage >= 7) icColliders(IC_BY_ID.salonE, stage).forEach(r => add(r.x0, r.x1, r.z0, r.z1, 'buyume-salon'));
+  if (stage >= 6) icColliders(IC_BY_ID.salonW, stage, salonSahip).forEach(r => add(r.x0, r.x1, r.z0, r.z1, 'buyume-salon'));
+  if (stage >= 7) icColliders(IC_BY_ID.salonE, stage, salonSahip).forEach(r => add(r.x0, r.x1, r.z0, r.z1, 'buyume-salon'));
   // roof terrace stairs (stage 8): closed on the ground grid, only the scripted roof route (sim content/kanat.ts) uses them
   if (stage >= 8) for (const sd of ['W', 'E'] as const) { const k = merdivenKutu(sd); add(k.x0, k.x1, k.z0, k.z1, 'buyume-merdiven'); }
   if (stage >= 3) icColliders(IC_BY_ID.mutfak, stage).forEach(r => add(r.x0, r.x1, r.z0, r.z1, 'buyume-bufemutfak'));   // 2026-11-09 büfe mutfağı (BUF-22: walls follow the stage room)
@@ -155,7 +155,7 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
     if (roofTerrace) {
       const ry = top + 0.36, rr = (xa: number, za: number, xb: number, zb: number) => { const len = Math.hypot(xb - xa, zb - za), a = Math.atan2(xb - xa, zb - za), n = Math.round(len / 1.2); b.box(0.08, 0.07, len, accent, (xa + xb) / 2, ry + 1.0, (za + zb) / 2, { ry: a }); for (let i = 0; i <= n; i++) b.box(0.05, 1.0, 0.05, frame, xa + (xb - xa) * i / n, ry + 0.5, za + (zb - za) * i / n); };
       rr(r.x0 - 0.3, r.z0 - 0.3, r.x1 + 0.3, r.z0 - 0.3); rr(r.x0 - 0.3, r.z1 + 0.3, r.x1 + 0.3, r.z1 + 0.3); rr(r.x0 - 0.3, r.z0 - 0.3, r.x0 - 0.3, r.z1 + 0.3); rr(r.x1 + 0.3, r.z0 - 0.3, r.x1 + 0.3, r.z1 + 0.3);
-      KANAT_MASALAR.filter(m => m.cati === (X < 0 ? 'W' : 'E')).forEach((m, i) => table(m.x, m.z, m.ax, fine ? '#f4f2ec' : UMB[(i + 2) % UMB.length], true, fine, ry));   // sim roof tables (BUF-20)
+      KANAT_MASALAR.filter((m, k) => m.cati === (X < 0 ? 'W' : 'E') && kanatKurulu(stage).includes(KANAT_BASE + k)).forEach((m, i) => table(m.x, m.z, m.ax, fine ? '#f4f2ec' : UMB[(i + 2) % UMB.length], true, fine, ry));   // sim roof tables (BUF-20)
       for (let s2 = 0; s2 < 14; s2++) b.box(0.9, 0.12, 0.34, '#8a6a4a', (r.x0 < 0 ? r.x1 + 0.55 : r.x0 - 0.55), 0.25 + s2 * (ry / 14), r.z1 - 0.3 - s2 * 0.4);   // outside stair
       lights([[r.x0 - 0.3, r.z0 - 0.3], [r.x0 - 0.3, r.z1 + 0.3], [r.x1 + 0.3, r.z1 + 0.3], [r.x1 + 0.3, r.z0 - 0.3]].map(([x, z]) => [x, z] as [number, number]), ry + 2.2);
     }
@@ -308,9 +308,9 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
   if (stage >= 6) {
     const sb = { g: new T.Group(), b: new Batch(), gl: new Batch(), lit: new Batch(), wm: new Batch() }; sb.g.name = 'susle-B'; catis.push(sb);
     const mb = b, ml = lit, mg = grp; b = sb.b; lit = sb.lit; grp = sb.g;
-    const Z1 = BUFE.z1, n = 12, w = (BUFE.x1 - BUFE.x0 + 0.2) / n, c1 = fine ? '#1f2a44' : stage >= 8 ? '#2f7fb3' : '#e0533c', c2 = fine ? '#c9a24a' : '#fbfaf6';
-    for (let i = 0; i < n; i++) b.box(w, 0.04, 1.0, i % 2 ? c2 : c1, BUFE.x0 - 0.1 + (i + 0.5) * w, 3.05, Z1 + 0.42, { rx: 0.42 });   // sloped tente
-    for (let i = 0; i < n; i++) b.box(w, 0.2, 0.03, i % 2 ? c2 : c1, BUFE.x0 - 0.1 + (i + 0.5) * w, 2.78, Z1 + 0.88);                 // valance
+    const Z1 = BUFE.z1, n = 12, w = (BUFE.x1 - BUFE.x0 + 0.2) / n, c1 = fine ? '#1f2a44' : '#2f7fb3', c2 = fine ? '#c9a24a' : '#fbfaf6';
+    // 2026-11-22: the striped tente is gone (it hid the bar of the restaurant's front hall from the camera): a thin painted fascia
+    for (let i = 0; i < n; i++) b.box(w, 0.16, 0.04, i % 2 ? c2 : c1, BUFE.x0 - 0.1 + (i + 0.5) * w, 3.38, Z1 + 0.04);
     for (const x of [-2.6, 0, 2.6]) { b.box(0.08, 0.1, 0.3, '#33373b', x, 3.12, Z1 + 0.12); lit.sph(0.07, '#fff3d6', x, 3.05, Z1 + 0.25, { ws: 6, hs: 4 }); }
     if (stage >= 7) lit.box(BUFE.x1 - BUFE.x0, 0.04, 0.03, fine ? '#e8c76a' : '#5ff0e0', 0, 3.33, Z1 + 0.03);   // neon line on the front beam
     if (stage >= 8) for (const x of [-1.4, 0.0, 1.4]) { b.cyl(0.01, 0.01, 0.9, '#3a3d42', x, 2.75, Z1 - 0.6, { seg: 4 }); b.cone(0.16, 0.18, fine ? '#c9a24a' : '#b8862f', x, 2.25, Z1 - 0.6, { seg: 10 }); lit.sph(0.06, '#ffe6b0', x, 2.17, Z1 - 0.6, { ws: 6, hs: 4 }); }
@@ -321,17 +321,7 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
     }
     if (stage >= 8) for (const xo of [BUFE.x0 - 0.03, BUFE.x1 + 0.03]) for (let k = 0; k < 9; k++) b.box(0.03, 2.5, 0.12, fine ? '#3a2a20' : '#9a6b45', xo, 1.25, BUFE.z0 + 0.2 + k * 0.17);   // slatted cladding on the tall side walls
   }
-  /* 9: rooftop sign on the büfe (the büfe keeps its own name: it is NOT the restaurant), restaurant crest on the kitchen roof.
-     2026-11-21: the old stage-9 "Şef Mutfağı · Izgara" counter on the east terrace is gone (an orphan grill cut off from the real
-     kitchen, owner: "iskelenin sağında şef mutfağı ızgara diye bir yer var neden?"); stage 9 is the two-line kitchen (ocak2 / izgara2). */
-  if (stage >= 9) {
-    // rooftop sign over the kiosk
-    { const tb = { g: new T.Group(), b: new Batch(), gl: new Batch(), lit: new Batch(), wm: new Batch() }; tb.g.name = 'tabela-B'; catis.push(tb);   // 2026-11-21: hides with the büfe cutaway (it floated over the open büfe and hid its inside)
-      const mb = b, mg = grp; b = tb.b; grp = tb.g;
-      sign('SABRİ\'NİN BÜFESİ · 1987', 0, 3.75, BUFE.z0 + 0.35, 7.0, 0, '#e0533c', '#fff6e6');   // büfe hep büfe: kırmızı tabela, Sofrası değil   // 2026-11-21 görsel: direkler kalktı, tabela arka duvarın üstüne monte
-      for (const x of [-3.0, 3.0]) b.box(0.12, 0.7, 0.12, '#9aa2ab', x, 3.3, BUFE.z0 + 0.3);   // kısa çelik konsollar
-      b = mb; grp = mg; }
-  }
+  /* 2026-11-22: no büfe sign any more from stage 6 (the büfe is the restaurant's front hall); the crest on the kitchen roof names it. */
   /* 6+: restaurant crest on the kitchen roof, facing the promenade over the büfe: the back row (salon + kitchen + salon) is one
      restaurant, "Sabri Restoran", at stage 10 "Sabri'nin Sofrası". Hidden from inside the büfe / kitchen (cutaway). */
   if (stage >= 6) {
@@ -463,7 +453,7 @@ function buildMevsim(k: 'bayrak' | 'lale' | 'yilbasi'): T.Group {
 export function createBufeBuyume(deps: BuyumeDeps): BuyumeView {
   let spon: T.Group | null = null, sponKey = '', mev: T.Group | null = null, mevKey = '';
   let site: ReturnType<typeof buildSite> | null = null, siteTo = 0;
-  let built = -1, grp: T.Group | null = null, t = 0, cur: Built | null = null;
+  let built = -1, builtK = '', grp: T.Group | null = null, t = 0, cur: Built | null = null;
   const signMats: T.MeshStandardMaterial[] = [], flames: T.Object3D[] = [];
   const clear = () => {
     if (!grp) return; grp.parent?.remove(grp);
@@ -475,7 +465,8 @@ export function createBufeBuyume(deps: BuyumeDeps): BuyumeView {
       t += dt;
       const root = deps.root(), st = Math.round(deps.stage() || 1);
       if (!root) { if (grp) clear(); built = -1; return; }
-      if (st !== built || (grp && grp.parent !== root)) { clear(); built = st; cur = null; if (st >= 2) { cur = build(st, signMats, flames); grp = cur.g; root.add(grp); } }
+      const mk0 = kanatKurulu(st).join(',');   // a bought table is drawn at once
+      if (st !== built || mk0 !== builtK || (grp && grp.parent !== root)) { clear(); built = st; builtK = mk0; cur = null; if (st >= 2) { cur = build(st, signMats, flames); grp = cur.g; root.add(grp); } }
       const td = deps.tadilat?.() ?? null, wantSite = td && td.to >= 2 ? td.to : 0;
       if (wantSite !== siteTo || (site && site.g.parent !== root)) { if (site) { site.g.removeFromParent(); site.g.traverse(o => { const mm = o as T.Mesh; mm.geometry?.dispose(); if (mm.name === 'pano') { const mt = mm.material as T.MeshBasicMaterial; mt.map?.dispose(); mt.dispose(); } }); site = null; } siteTo = wantSite; if (wantSite) { site = buildSite(wantSite); root.add(site.g); } }
       if (site && td) {

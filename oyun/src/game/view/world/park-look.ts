@@ -3,13 +3,18 @@
  * The pier strip between the büfe back and the kitchen front (content/prefabs/iskele/layout.ts PARK, HEYKEL): four lawns cut by a
  * paved cross, a round plaza with flower ring, the Atatürk monument on a stone pedestal (bronze, facing the promenade), four
  * plane trees, and a flock of pigeons that peck on the lawns, take off when the player walks into them and circle the monument
- * before landing again. View only: colliders (pedestal, trees) and benches live in layout.ts (staticObstacles / BENCHES).
+ * before landing again. View only: colliders live in layout.ts (parkEngel, added to the view's dynamic colliders).
+ * 2026-11-22 (sahibi: "park ön tarafta güzel bir mimari ile dursun"): from stage 6 (layout.ts RESTORAN_ASAMA) the büfe is part of the
+ * restaurant and the park moves to the pier mouth (parkYer): a stone entrance arch with the restaurant's name on the promenade side,
+ * four lanterns on the plaza corners, the benches beside the trees.
  */
 import * as T from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { PARK, HEYKEL, PARK_AGAC } from '../../../content/prefabs/iskele/layout';
+import { parkYer, parkFener, PARK_KEMER, type ParkYer } from '../../../content/prefabs/iskele/layout';
+import { Batch } from '../../../engine/prefab/batch';
+import { bench } from '../../../content/prefabs/iskele/pier';
 
-export interface ParkDeps { root: () => T.Object3D | null; hero?: () => { x: number; z: number } }
+export interface ParkDeps { root: () => T.Object3D | null; hero?: () => { x: number; z: number }; stage?: () => number }
 export interface ParkView { update(dt: number): void; dispose(): void }
 
 const Y0 = 0.125;
@@ -23,7 +28,15 @@ function plaqueTex(): T.CanvasTexture {
   const t = new T.CanvasTexture(cv); t.colorSpace = T.SRGBColorSpace; return t;
 }
 
-function buildPark(): { g: T.Group; mats: T.Material[]; geos: T.BufferGeometry[] } {
+function kemerTex(): T.CanvasTexture {
+  const cv = document.createElement('canvas'); cv.width = 1024; cv.height = 160; const g = cv.getContext('2d')!;
+  g.fillStyle = '#e9e1d0'; g.fillRect(0, 0, 1024, 160); g.strokeStyle = '#b08d4a'; g.lineWidth = 6; g.strokeRect(12, 12, 1000, 136);
+  g.fillStyle = '#5a4630'; g.font = 'bold 84px Georgia, serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('SABRİ\'NİN SOFRASI', 512, 84);
+  const t = new T.CanvasTexture(cv); t.colorSpace = T.SRGBColorSpace; t.anisotropy = 4; return t;
+}
+
+function buildPark(Y: ParkYer): { g: T.Group; mats: T.Material[]; geos: T.BufferGeometry[] } {
+  const PARK = Y.park, HEYKEL = Y.heykel, PARK_AGAC = Y.agac;
   // PRF: every static piece is baked into one merged mesh per (material, casts shadow) pair: ~70 meshes -> ~17 draw calls,
   // same look (same materials, same world placement; geometry transformed into park space before merging).
   const g = new T.Group(); g.name = 'park'; const mats: T.Material[] = [], geos: T.BufferGeometry[] = [];
@@ -68,6 +81,35 @@ function buildPark(): { g: T.Group; mats: T.Material[]; geos: T.BufferGeometry[]
   // plane trees in the four outer corners
   const trunk = M('#7a5a3e'), leaf = [M('#3f7a34'), M('#4f8f3a')];
   for (const [x, z] of PARK_AGAC) { add(new T.CylinderGeometry(0.12, 0.17, 2.4, 8), trunk, x, Y0 + 1.2, z); add(new T.SphereGeometry(1.0, 10, 8), leaf[0], x, Y0 + 2.9, z); add(new T.SphereGeometry(0.72, 10, 8), leaf[1], x + 0.35, Y0 + 3.45, z - 0.2); }
+  /* benches (same model as the pier benches) and, from the restaurant stage, the entrance arch + lanterns: all vertex-coloured
+     boxes in ONE Batch mesh (PRF: a single draw call however many pieces the arch has) */
+  const bb = new Batch(); for (const bn of Y.bank) bench(bb, bn.pos.x, bn.pos.z, bn.rotY);
+  if (Y.on) {
+    /* entrance arch on the promenade side: four rusticated stone piers on plinths, a round arch over the middle walkway, flat
+       lintels over the side gates, a cornice with the name plate, bronze lanterns on the outer piers; four lanterns on the plaza */
+    const zA = PARK.z1, st = '#e3dccd', st2 = '#cfc6b3', cap = '#bfb39a', brz = '#4e4636', [a0, a1, a2, a3] = PARK_KEMER.ayak;
+    for (const x of PARK_KEMER.ayak) {
+      bb.box(0.64, 0.3, 0.54, st2, x, Y0 + 0.15, zA - 0.05); bb.box(0.52, 2.9, 0.42, st, x, Y0 + 1.75, zA - 0.05);
+      for (let k = 0; k < 6; k++) bb.box(0.56, 0.04, 0.46, st2, x, Y0 + 0.62 + k * 0.45, zA - 0.05);   // rustication joints
+      bb.box(0.62, 0.16, 0.52, cap, x, Y0 + 3.28, zA - 0.05);
+    }
+    const mw = a2 - a1, r = mw / 2, cxA = (a1 + a2) / 2, yS = Y0 + 2.95, rise = 0.95;   // round arch over the walkway, springing at 2.95 m
+    for (let i = 0; i < 15; i++) { const t = (i + 0.5) / 15 * Math.PI, x = cxA - Math.cos(t) * r, y = yS + Math.sin(t) * rise; bb.box(0.3, 0.26, 0.42, i === 7 ? cap : st, x, y + 0.13, zA - 0.05, { rz: Math.atan2(Math.cos(t) * rise, Math.sin(t) * r) }); }
+    for (const [x0, x1] of [[a0, a1], [a2, a3]]) { bb.box(x1 - x0 - 0.45, 0.3, 0.38, st, (x0 + x1) / 2, Y0 + 2.62, zA - 0.05); bb.box(x1 - x0 + 0.1, 0.12, 0.5, cap, (x0 + x1) / 2, Y0 + 2.83, zA - 0.05); }   // side lintels + cornice
+    for (const x of [a0, a3]) { bb.cyl(0.16, 0.22, 0.32, cap, x, Y0 + 3.52, zA - 0.05, { seg: 10 }); bb.sph(0.14, '#6f9e4f', x, Y0 + 3.78, zA - 0.05); }   // urns with box shrubs on the outer piers
+    for (const x of [a1, a2]) bb.box(0.36, 0.22, 0.36, cap, x, Y0 + 3.46, zA - 0.05);
+    const lanterns = parkFener(PARK);
+    for (const [x, z] of lanterns) { bb.cyl(0.05, 0.07, 2.6, brz, x, Y0 + 1.3, z, { seg: 8 }); bb.box(0.22, 0.32, 0.22, brz, x, Y0 + 2.75, z); bb.cyl(0.18, 0.18, 0.08, brz, x, Y0 + 2.95, z, { seg: 8 }); }
+    const pm2 = new T.MeshStandardMaterial({ map: kemerTex(), roughness: 0.6 }); mats.push(pm2);
+    // name plate standing on the arch crown, leaned back so the high game camera reads it
+    bb.box(2.5, 0.5, 0.12, cap, cxA, yS + rise + 0.48, zA - 0.12, { rx: -0.45 });
+    add(new T.PlaneGeometry(2.36, 0.38), pm2, cxA, yS + rise + 0.5, zA - 0.04, false, -0.45);
+    // lantern glass: one emissive material, merged with the rest of its (material, no-shadow) group below
+    const glassM = M('#fff1c8', { emissive: '#ffcf6a', emissiveIntensity: 0.6 });
+    for (const [x, z] of lanterns) add(new T.BoxGeometry(0.16, 0.24, 0.16), glassM, x, Y0 + 2.75, z, false);
+    for (const x of [a0, a3]) add(new T.BoxGeometry(0.15, 0.2, 0.15), glassM, x, Y0 + 2.45, zA + 0.3, false);
+  }
+  if (!bb.empty) { const bm = new T.MeshStandardMaterial({ vertexColors: true, roughness: 0.8 }); mats.push(bm); const me = bb.mesh(bm, true, true); geos.push(me.geometry); g.add(me); }
   for (const { m, cast, list } of parts.values()) {
     const geo = list.length === 1 ? list[0] : mergeGeometries(list, false);
     if (list.length > 1) list.forEach(x => x.dispose());
@@ -104,7 +146,8 @@ function buildFlock(m: { body: T.Material; wing: T.Material; neck: T.Material })
 }
 
 export function createParkLook(deps: ParkDeps): ParkView {
-  let built: ReturnType<typeof buildPark> | null = null, flock: ReturnType<typeof buildFlock> | null = null, t = 0;
+  let built: ReturnType<typeof buildPark> | null = null, flock: ReturnType<typeof buildFlock> | null = null, t = 0, Y = parkYer(deps.stage?.() ?? 1);
+  let PARK = Y.park, HEYKEL = Y.heykel;
   const kuslar: Kus[] = [];
   const km = { body: mat('#8b9099'), wing: mat('#6b6f78'), neck: mat('#4f6f6a', { metalness: 0.3, roughness: 0.5 }) };
   let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
@@ -113,7 +156,8 @@ export function createParkLook(deps: ParkDeps): ParkView {
     return [PARK.x0 + 1, PARK.z0 + 1];
   };
   const kur = (root: T.Object3D) => {
-    built = buildPark(); root.add(built.g);
+    Y = parkYer(deps.stage?.() ?? 1); PARK = Y.park; HEYKEL = Y.heykel;
+    built = buildPark(Y); root.add(built.g);
     flock = buildFlock(km); root.add(flock.g);
     for (let i = 0; i < KUS_N; i++) {
       const b = buildKus(), [x, z] = yerNokta();
@@ -130,7 +174,7 @@ export function createParkLook(deps: ParkDeps): ParkView {
     update(dt) {
       t += dt; const root = deps.root();
       if (!root) { if (built) sil(); return; }
-      if (!built || built.g.parent !== root) { sil(); kur(root); }
+      if (!built || built.g.parent !== root || parkYer(deps.stage?.() ?? 1).on !== Y.on) { sil(); kur(root); }
       const hp = deps.hero?.(), d = Math.min(dt, 0.1);
       for (const k of kuslar) {
         k.t -= d;

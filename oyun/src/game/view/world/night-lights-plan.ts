@@ -9,7 +9,7 @@
  */
 import { katY } from '../../../content/avm-kat';
 import { icDim, icWorld, icKapi, type IcMekan } from '../../../content/ic-mekan';
-import { BUFE } from '../../../content/prefabs/iskele/layout';
+import { BUFE, bufeKutu } from '../../../content/prefabs/iskele/layout';
 
 export const PLAN_DT = 0.4, FADE_TAU = 0.3, HYST_MARGIN = 2;
 
@@ -75,7 +75,7 @@ export function icLambalar(m: IcMekan): { x: number; y: number; z: number; kat?:
 
 /** büfe floresan tube per stage (kiosk.ts K2.flo: stage 1 closed shell front, stage 2+ kitchen back wall). */
 export function floresanNoktasi(stage: number): { x: number; y: number; z: number } {
-  return stage <= 1 ? { x: 0.2, y: 2.12, z: BUFE.z1 + 1.12 } : { x: 0, y: 2.31, z: BUFE.z0 + 0.3 };
+  return stage <= 1 ? { x: 0.2, y: 2.12, z: BUFE.z1 + 1.12 } : { x: 0, y: 2.31, z: bufeKutu(stage).z0 + 0.3 };   // stage 6+: against the kitchen
 }
 
 /**

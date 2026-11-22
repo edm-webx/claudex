@@ -27,7 +27,8 @@ import { P } from '../../content/economy';
 import { PRODUCT_IDS } from '../../content/products';
 import { CITIZENS } from '../../content/citizens';
 import { STAGE_TABLES } from '../../content/pads';
-import { kanatKurulu, KANAT_BASE } from '../../content/kanat';
+import { kanatKurulu, kanatAcik, setMasaAlinan, KANAT_BASE } from '../../content/kanat';
+import { mutfakAcik, setMutfakAlinan } from '../../content/mutfak';
 import { stageLayout } from '../../content/prefabs/iskele/layout';
 import { defaultState, type GameState, type ProductId } from './schema';
 import { emptyRuntime, type Kernel, type Rules, type Item, type Order } from './state';
@@ -202,7 +203,15 @@ export function createRules(d: RulesDeps): RulesFull {
   const calisanM = installCalisan(K); // Kurs Merkezi, bekleyenler (calisan.ts)
 
   K.onLayout = () => {
+    const eski = rt.layout?.tables || [];
     rt.layout = stageLayout(S.stage);
+    // 2026-11-22: a table that moved with the stage (stage 6: the büfe tables go to the park at the pier mouth): its guests get up and
+    // go (no plate is carried to the old spot, nobody sits in the air), the garsons drop their claimed jobs and take them again
+    const tasinan = rt.layout.tables.map((t, i) => (eski[i] && Math.hypot(eski[i].x - t.x, eski[i].z - t.z) > 0.01 ? i : -1)).filter(i => i >= 0);
+    if (tasinan.length) {
+      for (const c of rt.customers.slice()) if (c.seat && [c.seat.table, ...(c.ekMasa || [])].some(i => tasinan.includes(i))) cu.leave(c, false);
+      for (const w of S.workers) if (w.role === 'garson') restoranM.isBirak?.(w.id);
+    }
     while (rt.tables.length < rt.layout.tables.length) rt.tables.push({ built: false, seats: [{ occ: 0 }, { occ: 0 }], pile: [], dirty: 0, dirtyT: 0 });
     for (const k of PRODUCT_IDS) { const it = d.interactions.get('station.' + k); if (it) it.pos = standAt(rt.layout, k); }
     const w = d.interactions.get('window'); if (w) w.pos = rt.layout.window.standAt;
@@ -337,6 +346,8 @@ export function createRules(d: RulesDeps): RulesFull {
       case 'resetSave': resetAll(); return true;
       case 'setStage': {
         S.stage = clamp(Math.round(Number(c.stage)) || 1, 1, 10);
+        { const mz = S.zones.mutfak as { v?: number; alinan?: string[] } | undefined; if (mz?.v && mz.alinan) { for (const id of mutfakAcik(S.stage)) if (!mz.alinan.includes(id)) mz.alinan.push(id); setMutfakAlinan(mz.alinan); } }   // yönetici aşaması: mutfak istasyonları kurulu gelir
+        { const mz = S.zones.masa as { v?: number; alinan?: number[] } | undefined; if (mz?.v && mz.alinan) { for (const i of kanatAcik(S.stage)) if (!mz.alinan.includes(i)) mz.alinan.push(i); setMasaAlinan(mz.alinan); } }   // ... ve kanat / salon masaları
         for (let s = 2; s <= S.stage; s++) (STAGE_TABLES[s] || []).forEach(i => K.setTableBuilt(i, true));
         { const on = new Set(kanatKurulu(S.stage)); for (let i = KANAT_BASE; i < rt.tables.length; i++) if (rt.tables[i].built && !on.has(i)) K.setTableBuilt(i, false); }   // BUF-19: aşama inince kanat masaları da kalkar
         for (let s = S.stage + 1; s <= 10; s++) (STAGE_TABLES[s] || []).forEach(i => { if (i < KANAT_BASE && rt.tables[i]?.built) K.setTableBuilt(i, false); });   // aşama inince o aşamanın otomatik masaları (3: 6,7) da kalkar
@@ -391,7 +402,7 @@ export function createRules(d: RulesDeps): RulesFull {
         else if (what === 'stars') S.stars = Math.max(S.stars, Number(v) || 0);
         else if (what === 'offline') off.welcome(Number(v) || 0);
         else if (what === 'unlock') { const key = String(v); if (!S.owned[key]) K.unlock(key); }
-        else if (what === 'stage') { const to = clamp(Number(v) || 1, 1, 10); for (let st = S.stage + 1; st <= to; st++) (STAGE_TABLES[st] || []).forEach(i => K.setTableBuilt(i, true)); S.stage = to; { const on = new Set(kanatKurulu(to)); for (let i = KANAT_BASE; i < rt.tables.length; i++) if (rt.tables[i].built && !on.has(i)) K.setTableBuilt(i, false); } K.bus.emit('stage', { stage: to }); K.onLayout(); }
+        else if (what === 'stage') { const to = clamp(Number(v) || 1, 1, 10); { const mz = S.zones.mutfak as { v?: number; alinan?: string[] } | undefined; if (mz?.v && mz.alinan) { for (const id of mutfakAcik(to)) if (!mz.alinan.includes(id)) mz.alinan.push(id); setMutfakAlinan(mz.alinan); } } { const mz = S.zones.masa as { v?: number; alinan?: number[] } | undefined; if (mz?.v && mz.alinan) { for (const i of kanatAcik(to)) if (!mz.alinan.includes(i)) mz.alinan.push(i); setMasaAlinan(mz.alinan); } }  /* yönetici / test: aşamanın mutfak istasyonları ve masaları da kurulu gelir */ for (let st = S.stage + 1; st <= to; st++) (STAGE_TABLES[st] || []).forEach(i => K.setTableBuilt(i, true)); S.stage = to; { const on = new Set(kanatKurulu(to)); for (let i = KANAT_BASE; i < rt.tables.length; i++) if (rt.tables[i].built && !on.has(i)) K.setTableBuilt(i, false); } K.bus.emit('stage', { stage: to }); K.onLayout(); }
         else (rt as unknown as { forceAgent?: (w: string, v?: unknown) => void }).forceAgent?.(what, v);
         return true;
       }

@@ -22,7 +22,7 @@ import { BULASIK, MUTFAK_MIN_STAGE, mutfakEsya, pisirIstasyonu } from '../../../
 import { createRoller, type ValeCar } from './roller';
 import { kasaDurus } from '../../../content/musteri';
 import { kanatOf, masaCati, catiAyak, catiYukari, catiAsagi, catiIc, catiTaraf, katY } from '../../../content/kanat';
-import { BUFE, PARK, HEYKEL } from '../../../content/prefabs/iskele/layout';
+import { BUFE, parkYer } from '../../../content/prefabs/iskele/layout';
 /** BUF-05: masa biletindeki yiyecek (FoodId) mutfakta kendi tabağıyla pişer ve garsonla taşınır (taşıyıcı ürün köprüsü yok). */
 export type { DishId, FoodId } from '../../../content/yemek-menu';
 
@@ -85,7 +85,9 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
       // 2026-11-22: the büfe front is the promenade edge now: security by the queue, the musician and the hostess in the park
       // behind (by the monument / the büfe tables), the manager at the east corner, the valet at the podium on the promenade
       const i = rows.filter((x) => x.w.role === rt.w.role).indexOf(rt);
-      const o: Record<string, [number, number]> = { guvenlik: [BUFE.x1 + 0.6, BUFE.z1 + 0.6], muzisyen: [HEYKEL.x - 1.5, HEYKEL.z + 2.6], hostes: [HEYKEL.x + 1.2, PARK.z1 - 0.4], mudur: [BUFE.x1 + 1.2, BUFE.z0 + 1.6], vale: [5.0, 6.2] };
+      // 2026-11-22 stage 6+: the park is at the pier mouth and the büfe is the restaurant's front hall: hostess and musician by its door
+      const PY = parkYer(S.stage || 1), PK = PY.park, HK = PY.heykel;
+      const o: Record<string, [number, number]> = { guvenlik: [BUFE.x1 + 0.6, BUFE.z1 + 0.6], muzisyen: PY.on ? [-0.9, PK.z0 + 0.45] : [HK.x - 1.5, HK.z + 2.6], hostes: PY.on ? [-2.6, PK.z0 + 0.45] : [HK.x + 1.2, PK.z1 - 0.4], mudur: [BUFE.x1 + 1.2, BUFE.z0 + 1.6], vale: [5.0, 6.2] };
       const [x, z] = o[rt.w.role] || [BUFE.x1 + 1.0, BUFE.z1 + 1.0];
       return { x: x + i * 1.1, z };
     }
@@ -737,7 +739,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
         const nx = d > 0.001 ? dx / d : 1, nz = d > 0.001 ? dz / d : 0, push = (R - d) * Math.min(1, dt * 6) * 0.5;
         // 2026-11-22: masada iş yapan (sipariş/servis/silme) yerinde kalır; yanından geçen (hostes, öbür garson) iki payı da alır.
         // Eskiden aynı noktaya yürüyen biri masadaki garsonu 1.7 m öteye itiyordu: garson masadan uzakta sipariş alıyordu (aşama botu ışınlanma).
-        const ka = SABIT.has(rows[i].state) && !rows[i].wk.moving, kb = SABIT.has(rows[j].state) && !rows[j].wk.moving;
+        const ka = SABIT.has(rows[i].state) && !rows[i].wk.path.length, kb = SABIT.has(rows[j].state) && !rows[j].wk.path.length;   // wk.moving son walk()'tan kalır (vardığı adımda true): yol bitti mi ona bak
         if (ka && kb) continue;
         const pa = ka ? 0 : kb ? 2 : 1, pb = kb ? 0 : ka ? 2 : 1;
         p.x -= nx * push * pa; p.z -= nz * push * pa; q.x += nx * push * pb; q.z += nz * push * pb;

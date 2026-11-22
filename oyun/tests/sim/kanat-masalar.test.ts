@@ -7,6 +7,7 @@ import { kur, evs } from './garson-yardimci';
 import { CITIZENS } from '../../src/content/citizens';
 import {
   KANAT_BASE, KANAT_MASALAR, KANAT_N, kanatKurulu, kanatSay, kanatOf, kanatFiyatX, catiY, katY, catiYukari, catiAsagi, catiAyak, merdivenKutu, KANAT_POST,
+  setMasaAlinan,
 } from '../../src/content/kanat';
 import { salonKatYan } from '../../src/game/sim/salon';
 import { IC_BY_ID, icColliders, icLayout, icWorld } from '../../src/content/ic-mekan';
@@ -164,6 +165,7 @@ describe('BUF-19/20 kanat masaları', () => {
   });
 
   it('salon masaları ic-mekan yerleşimiyle aynı yerde; koltuk ve garson noktası boş, aşama 10 masaları öncesinde yok', () => {
+    setMasaAlinan(null);   // yerleşim denetimi: bütün masalar kurulu sayılır (sarı kare kaydı başka testten kalmasın)
     for (const [id, b] of [['salonW', 'salonW'], ['salonE', 'salonE']] as const) {
       const room = IC_BY_ID[id], items = icLayout(room).filter(i => i.k === 'salonMasa');
       const ms = KANAT_MASALAR.filter(m => m.bolge === b);
