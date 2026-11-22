@@ -64,7 +64,7 @@ function insa(): Yapi {
   b.span(AVM.x0, HOL.x0 + 0.1, F + WH, F + WH + 0.08, LOBI_Z1 - 0.12, LOBI_Z1 + 0.12, ust);
 
   /* ---- Martı Sahne (doğu blok) ---- */
-  for (let i = 0; i < 6; i++) for (let j = 0; j < 9; j++) b.span(HOL.x1 + i, Math.min(SAHNE.x0, HOL.x1 + i + 1), F, F + 0.01, 47.6 + j, 47.6 + j + 1, (i + j) % 2 ? '#34304a' : '#2a2640');
+  for (let i = 0; i < Math.ceil(SAHNE.x0 - HOL.x1); i++) for (let j = 0; j < Math.ceil(AVM.z1 - LOBI_Z1 - 0.3); j++) b.span(HOL.x1 + i, Math.min(SAHNE.x0, HOL.x1 + i + 1), F, F + 0.01, LOBI_Z1 + 0.1 + j, Math.min(AVM.z1 - 0.2, LOBI_Z1 + 1.1 + j), (i + j) % 2 ? '#34304a' : '#2a2640');
   b.span(AVM.x1 - 0.2, AVM.x1, F, F + WH + 0.6, LOBI_Z1, AVM.z1, '#26233a'); b.span(HOL.x1, AVM.x1, F, F + WH + 0.6, AVM.z1 - 0.2, AVM.z1, '#26233a');
   b.span(SAHNE.x0, SAHNE.x1, F, F + SAHNE.h, SAHNE.z0, SAHNE.z1, '#2b2b33'); b.span(SAHNE.x0 + 0.05, SAHNE.x1, F + SAHNE.h, F + SAHNE.h + 0.02, SAHNE.z0 + 0.05, SAHNE.z1 - 0.05, '#4a3b2e');
   l.span(SAHNE.x0 - 0.02, SAHNE.x0, F + 0.08, F + SAHNE.h - 0.08, SAHNE.z0, SAHNE.z1, '#ffcf5a');

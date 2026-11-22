@@ -35,7 +35,7 @@ interface Guest { a: Actor; st: 'in' | 'gez' | 'queue' | 'served' | 'toSeat' | '
 interface Wk { a: Actor; cid: number; idx: number; st: 'post' | 'toSt' | 'brew' | 'hand' | 'pre'; t: number; guest: Guest | null; path: Pt[]; item: string }
 /** 2026-11-22 makine (content/isletme-istasyon.ts MAKINE): koyulan ürün kendi kendine pişer, bitince hazır tepsisinde bekler */
 interface Mak { ist: IstasyonId; cook: string; t: number; sure: number; ready: string[]; by: number }
-export interface MakineGorunum { room: string; kat: number; ist: IstasyonId; ad: string; x: number; z: number; cook: string; p: number; kalan: number; ready: string[] }
+export interface MakineGorunum { room: string; kat: number; ist: IstasyonId; ad: string; x: number; z: number; hx: number; hz: number; dx: number; dz: number; cook: string; p: number; kalan: number; ready: string[] }
 /** BUF-25: a hungry street citizen walking to the shop door; the guest appears when it arrives (or after VISIT_MAX seconds, so the flow count never drops) */
 interface Visitor { slot: number; t: number }
 interface Room { arsa: string; room: string; bistro: boolean; guests: Guest[]; wk: Wk[]; seatTaken: Set<number>; visitors: Visitor[]; mak: Map<IstasyonId, Mak>; preT: number }
@@ -321,8 +321,9 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
       if (room && r.room !== room) continue;
       for (const m of r.mak.values()) {
         if (!m.cook && !m.ready.length) continue;
-        const g = geom(r), at = g.P(istasyonA(r, m.ist), -0.05);
-        o.push({ room: r.room, kat: g.kat, ist: m.ist, ad: makAd(r, m.ist), x: at.x, z: at.z, cook: m.cook, p: m.cook ? Math.min(1, m.t / m.sure) : 1, kalan: m.cook ? Math.max(0, m.sure - m.t) : 0, ready: [...m.ready] });
+        // ürünler tezgâhın müşteri yarısında, halka makinenin üstünde personel tarafında (yukarıdan bakınca ürünü örtmez); dx/dz tezgâh boyu yönü
+        const g = geom(r), A = istasyonA(r, m.ist), Ai = A + (A + 0.5 < g.endU - 0.4 ? 0.48 : -0.48), at = g.P(Ai, 0.16), hl = g.P(A, -0.75), d1 = g.P(Ai + 1, 0.16);   // ürünler makinenin yanında (içinde kalmasın)
+        o.push({ room: r.room, kat: g.kat, ist: m.ist, ad: makAd(r, m.ist), x: at.x, z: at.z, hx: hl.x, hz: hl.z, dx: d1.x - at.x, dz: d1.z - at.z, cook: m.cook, p: m.cook ? Math.min(1, m.t / m.sure) : 1, kalan: m.cook ? Math.max(0, m.sure - m.t) : 0, ready: [...m.ready] });
       }
     }
     return o;

@@ -20,17 +20,27 @@ import type { Rect } from '../engine/api';
 /** iç mekânın x kayması (AVM diyarı, content/realm.ts) */
 export const AVM_OX = 1180;
 const X = (x: number) => x + AVM_OX;
-const CX = X(20.15), HW = 4, OD = 5.95;
-export const AVM = { x0: CX - HW - OD, x1: CX + HW + OD, z0: 44, z1: 57.1, cx: CX, FH: 3.6, KAT: 4 } as const;
+// 2026-11-22 sahip: "AVM çok güzel olmuş, içeriyi biraz daha büyütüp genişletip daha güzel hale getiricez": hol 8 -> 11 m,
+// dükkânlar 5.95 x 5.3 -> 7.0 x 6.8, lobi 2.5 -> 3.5 m derin, toplam 19.9 x 13.1 -> 25 x 17.1 m.
+const CX = X(20.15), HW = 5.5, OD = 7.0;
+export const AVM = { x0: CX - HW - OD, x1: CX + HW + OD, z0: 44, z1: 61.1, cx: CX, FH: 3.6, KAT: 4 } as const;
 /** dükkân bloklarının ön yüzü (lobi bunun önünde) */
-export const LOBI_Z1 = 46.5;
+export const LOBI_Z1 = 47.5;
+/** bir AVM dükkân odasının ölçüsü: W kapı duvarı (z boyunca, bir sıranın derinliği), D derinlik (x boyunca, blok genişliği) */
+export const ODA_OLCU = { W: (AVM.z1 - LOBI_Z1) / 2, D: OD } as const;
 /** orta hol (merdivenler + yürüyüş yolları) */
 export const HOL = { x0: CX - HW, x1: CX + HW } as const;
 /** merdiven şeritleri (yürünen genişlik 1.0, aralarda 0.15 korkuluk) ve uçları */
 export const SERIT = { U: { x0: CX - 1.075, x1: CX - 0.075 }, D: { x0: CX + 0.075, x1: CX + 1.075 } } as const;
-export const MERD = { on: 48.4, arka: 54.64, duz: 0.5, kx0: CX - 1.225, kx1: CX + 1.225 } as const;
+// yürüyen merdivenler holün ortasında (öndeki lobiden ve arkadaki çeşmeden uzak)
+const MERD_ON = (LOBI_Z1 + AVM.z1) / 2 - 3.12 - 0.6;
+export const MERD = { on: MERD_ON, arka: MERD_ON + 6.24, duz: 0.5, kx0: CX - 1.225, kx1: CX + 1.225 } as const;
+/** merdiven adası: merdiven bloğu + iki yanında saksı ve banklar (her katta; üst katlarda galeri korkuluğunun dışı) */
+export const ADA = { x0: MERD.kx0 - 0.95, x1: MERD.kx1 + 0.95, z0: MERD.on + 0.35, z1: MERD.arka - 0.35 } as const;
+/** zemin katta merdivenin arkasındaki çeşme (yuvarlak havuz) */
+export const CESME = { x: CX, z: AVM.z1 - 1.75, r: 1.05 } as const;
 /** dükkân odalarının merkezleri (batı / doğu blok, ön / arka sıra) */
-export const ODA_X = { W: CX - HW - OD / 2, E: CX + HW + OD / 2 } as const, ODA_Z = { F: 49.15, B: 54.45 } as const;
+export const ODA_X = { W: CX - HW - OD / 2, E: CX + HW + OD / 2 } as const, ODA_Z = { F: LOBI_Z1 + ODA_OLCU.W / 2, B: AVM.z1 - ODA_OLCU.W / 2 } as const;
 /** iskeledeki AVM binası (kabuk) ve giriş kapısının önü: buraya yürüyen AVM'ye geçer */
 export const AVM_BINA = { x: 20.15, z: 51.8, wx: 16.9, wz: 10.6 } as const;
 export const AVM_DIS = { x: 20.15, z: 45.75 } as const, AVM_DIS_CIKIS = { x: 20.15, z: 44.5 } as const;
@@ -45,7 +55,11 @@ export const AVM_GIRIS = { x: AVM.cx, z: AVM.z0 - 1.0 }, AVM_GIRIS_IC = { x: AVM
 /** iç girişten bu z'nin önüne yürüyen dışarı çıkar (sim/avm-gecis.ts) */
 export const AVM_CIKIS_Z = AVM.z0 - 0.25;
 /** hol yürüyüş yollarının ortası ve ön / arka sıra */
-const YOL_X = { W: (HOL.x0 + MERD.kx0) / 2, E: (MERD.kx1 + HOL.x1) / 2 }, SIRA_Z = { on: 47.4, arka: 55.8 };
+const YOL_X = { W: (HOL.x0 + ADA.x0) / 2, E: (ADA.x1 + HOL.x1) / 2 }, SIRA_Z = { on: MERD.on - 1.3, arka: MERD.arka + 1.25 };
+/** hol yürüyüş yolları (ada ile dükkân cepheleri arası): gezenler buralarda durur */
+export const YOL = { W: { x0: HOL.x0 + 0.6, x1: ADA.x0 - 0.45 }, E: { x0: ADA.x1 + 0.45, x1: HOL.x1 - 0.6 } } as const;
+/** holdeki duvar dibi saksıları (iki sıra dükkânın arasında, iki yanda) */
+export const HOL_SAKSI = [HOL.x0 + 0.45, HOL.x1 - 0.45].map(x => ({ x, z: (ODA_Z.F + ODA_Z.B) / 2, r: 0.38 }));
 
 export const avmIcinde = (p: { x: number; z: number }, m = 0) => p.x > AVM.x0 - m && p.x < AVM.x1 + m && p.z > AVM.z0 - m && p.z < AVM.z1 + m;
 export const katY = (kat: number) => Math.max(0, kat) * AVM.FH;
@@ -89,7 +103,9 @@ const T = 0.25;
 /** Holün kat çarpışması (dünya): giriş cephesi (zeminde kapı boşluklu), arka duvar, merdiven bloğu (zeminde şeritler, üstte boşluk). */
 export function holEngel(kat: number): Rect[] {
   // arka duvar (hol), merdiven bloğu, lobinin iki yan duvarı, cam cephe (zeminde ortada kapı; önünde rüzgârlık duvarı)
-  const o: Rect[] = [R(HOL.x0, HOL.x1, AVM.z1 - T, AVM.z1), R(MERD.kx0, MERD.kx1, MERD.on, MERD.arka), R(AVM.x0, AVM.x0 + T, AVM.z0, LOBI_Z1), R(AVM.x1 - T, AVM.x1, AVM.z0, LOBI_Z1)];
+  const o: Rect[] = [R(HOL.x0, HOL.x1, AVM.z1 - T, AVM.z1), R(MERD.kx0, MERD.kx1, MERD.on, MERD.arka), R(ADA.x0, ADA.x1, ADA.z0, ADA.z1), R(AVM.x0, AVM.x0 + T, AVM.z0, LOBI_Z1), R(AVM.x1 - T, AVM.x1, AVM.z0, LOBI_Z1),
+    ...HOL_SAKSI.map(p => R(p.x - p.r, p.x + p.r, p.z - p.r, p.z + p.r))];
+  if (kat === 0) o.push(R(CESME.x - CESME.r, CESME.x + CESME.r, CESME.z - CESME.r, CESME.z + CESME.r));
   if (kat === 0) o.push(...LOBI_DEKOR.map(d => R(d.x - d.w / 2, d.x + d.w / 2, d.z - d.d / 2, d.z + d.d / 2)), R(AVM.x0, GIRIS_KAPI.x0, AVM.z0, AVM.z0 + T), R(GIRIS_KAPI.x1, AVM.x1, AVM.z0, AVM.z0 + T), R(GIRIS_KAPI.x0 - 0.6, GIRIS_KAPI.x1 + 0.6, AVM.z0 - 1.9, AVM.z0 - 1.65));
   else o.push(R(AVM.x0, AVM.x1, AVM.z0, AVM.z0 + T));
   return o;
@@ -103,7 +119,7 @@ const kesisir = (a: { x: number; z: number }, b: { x: number; z: number }, r: Re
   const kes = (p: number, q: number) => { if (Math.abs(p) < 1e-9) return q >= 0; const t = q / p; if (p < 0) { if (t > t1) return false; if (t > t0) t0 = t; } else { if (t < t0) return false; if (t < t1) t1 = t; } return true; };
   return kes(-dx, a.x - r.x0) && kes(dx, r.x1 - a.x) && kes(-dz, a.z - r.z0) && kes(dz, r.z1 - a.z) && t0 < t1;
 };
-const BLOK = R(MERD.kx0 - 0.25, MERD.kx1 + 0.25, MERD.on - 0.2, MERD.arka + 0.2);
+const BLOK = R(ADA.x0 - 0.25, ADA.x1 + 0.25, MERD.on - 0.2, MERD.arka + 0.2);
 const KOSE = [{ x: YOL_X.W, z: SIRA_Z.on }, { x: YOL_X.E, z: SIRA_Z.on }, { x: YOL_X.W, z: SIRA_Z.arka }, { x: YOL_X.E, z: SIRA_Z.arka }];
 const ROTALAR: number[][] = [[], [0], [1], [2], [3], [0, 2], [2, 0], [1, 3], [3, 1]];
 /** bir kattaki iki nokta arası hol yolu (merdiven bloğunun çevresinden), y = kat yüksekliği; a hariç, b dahil */

@@ -8,18 +8,18 @@ import * as T from 'three';
 import { katY } from '../../../content/avm-kat';
 import { makeUrunModel } from '../chars/urun-model';
 
-export interface MakineVeri { room: string; kat: number; ist: string; ad: string; x: number; z: number; cook: string; p: number; kalan: number; ready: string[] }
+export interface MakineVeri { room: string; kat: number; ist: string; ad: string; x: number; z: number; hx: number; hz: number; dx: number; dz: number; cook: string; p: number; kalan: number; ready: string[] }
 export interface MakineDeps { root: () => T.Object3D | null; hero: () => { x: number; z: number; kat?: number }; list: () => MakineVeri[] }
 export interface MakineView { update(dt: number): void }
 
-const HALKA_N = 8, URUN_N = 24, MESAFE = 14, TEZGAH_Y = 1.07, HALKA_Y = 1.95;
+const HALKA_N = 8, URUN_N = 24, MESAFE = 14, TEZGAH_Y = 0.14 + 1.05, HALKA_Y = 2.05;   // oda tabanı katY + 0.14 (ic-mekan-look), tezgâh üstü 1.05
 interface Halka { s: T.Sprite; c: HTMLCanvasElement; g: CanvasRenderingContext2D; t: T.CanvasTexture; key: string }
 
 function halkaYap(): Halka {
   const c = document.createElement('canvas'); c.width = 192; c.height = 128; const g = c.getContext('2d')!;
   const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace;
   const s = new T.Sprite(new T.SpriteMaterial({ map: t, depthTest: false, transparent: true }));
-  s.scale.set(0.9, 0.6, 1); s.renderOrder = 20; s.visible = false;
+  s.scale.set(1.3, 0.87, 1); s.renderOrder = 20; s.visible = false;
   return { s, c, g, t, key: '' };
 }
 function halkaCiz(h: Halka, p: number, kalan: number, ad: string, hazir: number) {
@@ -43,7 +43,7 @@ export function createMakineGorunum(d: MakineDeps): MakineView {
   const kullan: T.Object3D[] = [];
   const urunAl = (id: string, i: number): T.Object3D => {
     let pool = urunler.get(id); if (!pool) { pool = []; urunler.set(id, pool); }
-    while (pool.length <= i) { const m = makeUrunModel(id); m.visible = false; pool.push(m); kok!.add(m); }
+    while (pool.length <= i) { const m = makeUrunModel(id); m.scale.setScalar(1.35); m.visible = false; pool.push(m); kok!.add(m); }
     return pool[i];
   };
   let tik = 0;
@@ -59,18 +59,21 @@ export function createMakineGorunum(d: MakineDeps): MakineView {
       list = list.filter(m => m.kat === kat && Math.hypot(m.x - hp.x, m.z - hp.z) < MESAFE).sort((a, b) => Math.hypot(a.x - hp.x, a.z - hp.z) - Math.hypot(b.x - hp.x, b.z - hp.z));
       for (const o of kullan) o.visible = false; kullan.length = 0;
       const sayac = new Map<string, number>();
-      let hi = 0, ui = 0;
+      let hi = 0, ui = 0; const dolu: { x: number; z: number }[] = [];
       for (const m of list) {
         const y0 = katY(m.kat);
         if (hi < HALKA_N && (m.cook || m.ready.length)) {
           const h = halkalar[hi++], key = (m.cook ? Math.round(m.p * 40) + ':' + Math.ceil(m.kalan) : 'h') + ':' + m.ready.length + m.ad;
           if (key !== h.key) { h.key = key; halkaCiz(h, m.cook ? m.p : 1, m.kalan, m.ad, m.ready.length); }
-          h.s.position.set(m.x, y0 + HALKA_Y, m.z); h.s.visible = true;
+          // aynı alette iki istasyon (ör. espresso hem kahve hem soğuk içecek): halkalar yan yana
+          let k2 = 0; while (dolu.some(q => Math.hypot(q.x - (m.hx + m.dx * k2 * 1.1), q.z - (m.hz + m.dz * k2 * 1.1)) < 0.9) && k2 < 4) k2++;
+          const hx = m.hx + m.dx * k2 * 1.1, hz = m.hz + m.dz * k2 * 1.1; dolu.push({ x: hx, z: hz });
+          h.s.position.set(hx, y0 + HALKA_Y, hz); h.s.visible = true;
         }
         m.ready.forEach((id, k) => {
           if (ui >= URUN_N) return;
           const n = sayac.get(id) || 0; sayac.set(id, n + 1);
-          const o = urunAl(id, n); o.position.set(m.x + (k - (m.ready.length - 1) / 2) * 0.22, y0 + TEZGAH_Y, m.z); o.visible = true; kullan.push(o); ui++;
+          const o = urunAl(id, n); const f = (k - (m.ready.length - 1) / 2) * 0.3; o.position.set(m.x + m.dx * f, y0 + TEZGAH_Y, m.z + m.dz * f); o.visible = true; kullan.push(o); ui++;
         });
       }
       for (let i = hi; i < HALKA_N; i++) halkalar[i].s.visible = false;

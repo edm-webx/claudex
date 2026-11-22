@@ -6,7 +6,7 @@
  * the door is at v = +D/2 and u runs along the door wall. Walls get colliders with a door gap; `solid` furniture collides.
  * Items with `esya` show only when that equipment is bought (never solid, so the static walk grid stays valid).
  */
-import { ODA_X, ODA_Z } from './avm-kat';
+import { ODA_X, ODA_Z, ODA_OLCU } from './avm-kat';
 export type Yon = '+x' | '-x' | '+z' | '-z';
 export type IcTur = 'kafe' | 'bistro' | 'kirtasiye' | 'okul' | 'lokanta' | 'kafeterya' | 'banka' | 'hastane' | 'acil' | 'morg' | 'kahvalti' | 'balik' | 'mutfak' | 'giyim' | 'elektronik' | 'oyuncak'
   | AvmYemekTur;
@@ -126,12 +126,12 @@ function okulLayout(W: number, D: number): IcItem[] {
   return o;
 }
 /* ---------- Martı AVM odaları (2026-11-21: 3 kat x 4 dükkân, content/avm-kat.ts) ----------
- * Her oda 5.3 (kapı duvarı) x 5.95 (derinlik), kapı hola bakar. Ortak iskelet: tezgâh arkada (u -2.3..1.3, v -0.925), arkasında 0.9 m
+ * Her oda 6.8 (kapı duvarı) x 7.0 (derinlik; 2026-11-22 büyütüldü, ilk hali 5.3 x 5.95), kapı hola bakar. Ortak iskelet: tezgâh arkada (u -2.3..1.3, v -0.925), arkasında 0.9 m
  * personel koridoru, arka duvarda aletler (v bw), tezgâhın doğu ucunda 1.1 m personel geçidi; kuyruk tezgâh önünde (v ~0.2).
  * Yemek dükkânlarında kapı tarafında iki masa, mağazalarda yan duvarda reyon + ortada teşhir masası (müşteri önce bakınır).
  * Aletler (`esya`) yalnız alınınca görünür, hiçbiri katı değil. */
 function avmOdalar(): IcMekan[] {   // (IC_MEKANLAR'dan önce çağrılır: sabitler içeride)
-  const AVM_ODA = { W: 5.3, D: 5.95 } as const;
+  const AVM_ODA = ODA_OLCU;   // 2026-11-22: 6.8 x 7.0 (content/avm-kat.ts)
   const AVM_SLOT = { WF: { x: ODA_X.W, z: ODA_Z.F, kapi: '+x' as Yon }, WB: { x: ODA_X.W, z: ODA_Z.B, kapi: '+x' as Yon }, EF: { x: ODA_X.E, z: ODA_Z.F, kapi: '-x' as Yon }, EB: { x: ODA_X.E, z: ODA_Z.B, kapi: '-x' as Yon } };   // AVM realm coords
   const o = (id: string, ad: string, tur: IcTur, arsa: string, kat: number, s: keyof typeof AVM_SLOT): IcMekan =>
     ({ id, ad, tur, x: AVM_SLOT[s].x, z: AVM_SLOT[s].z, wx: AVM_ODA.D, wz: AVM_ODA.W, kapi: AVM_SLOT[s].kapi, arsa, bina: 'avm', h: 3.6, ...(kat ? { kat } : {}) });

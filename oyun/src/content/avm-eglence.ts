@@ -39,14 +39,14 @@ export function seans(s: Salon, saat: number): { durum: SeansDurum; t: number; f
 }
 
 /* ---------- konser ---------- */
-export const SAHNE = { x0: AVM.x1 - 2.3, x1: AVM.x1 - 0.25, z0: 47.8, z1: 55.9, h: 0.55 } as const;
+export const SAHNE = { x0: AVM.x1 - 2.6, x1: AVM.x1 - 0.25, z0: LOBI_Z1 + 1.5, z1: AVM.z1 - 1.6, h: 0.55 } as const;
 /** sahne arkası kapısı (müzisyenler buradan gelip gider) ve sahneye çıkış basamağı */
 export const KULIS = { x: AVM.x1 - 1.25, z: AVM.z1 - 0.55 }, BASAMAK = { x: AVM.x1 - 1.25, z: SAHNE.z1 + 0.25 };
 /** üç müzisyenin yeri (sahnede, hola bakar): saz, vokal (mikrofon), davul */
 export const MUZISYEN = [
-  { ad: 'Sazcı Kemal', fx: 'saz', x: SAHNE.x0 + 0.85, z: 49.6 },
-  { ad: 'Vokal Ayten', fx: 'mik', x: SAHNE.x0 + 0.65, z: 51.8 },
-  { ad: 'Davulcu Rıza', fx: 'davul', x: SAHNE.x0 + 1.35, z: 54.0 },
+  { ad: 'Sazcı Kemal', fx: 'saz', x: SAHNE.x0 + 0.85, z: (SAHNE.z0 + SAHNE.z1) / 2 - 2.2 },
+  { ad: 'Vokal Ayten', fx: 'mik', x: SAHNE.x0 + 0.65, z: (SAHNE.z0 + SAHNE.z1) / 2 },
+  { ad: 'Davulcu Rıza', fx: 'davul', x: SAHNE.x0 + 1.35, z: (SAHNE.z0 + SAHNE.z1) / 2 + 2.2 },
 ] as const;
 /** konser grupları (parodi) ve saatleri: [başlangıç, bitiş) */
 export const KONSERLER = [
@@ -63,7 +63,7 @@ export function konser(saat: number): { durum: 'yok' | 'hazirlik' | 'sahnede'; g
   return { durum: 'yok', grup: '', sonraki: KONSERLER.find(k => k.bas > h) || KONSERLER[0] };
 }
 /** izleyici alanı: sahnenin önü, holün doğu yarısına taşar */
-export const SEYIRCI = { x0: HOL.x1 - 1.4, x1: SAHNE.x0 - 0.6, z0: 48.2, z1: 55.4 } as const;
+export const SEYIRCI = { x0: HOL.x1 - 1.4, x1: SAHNE.x0 - 0.6, z0: LOBI_Z1 + 1.9, z1: AVM.z1 - 2.1 } as const;
 
 /* ---------- lobi ---------- */
 export const GISE = { x: AVM.x0 + 2.4, z: 45.2, w: 2.6, d: 0.8 } as const, MISIR = { x: AVM.x0 + 5.0, z: 45.0, w: 1.1, d: 0.7 } as const;
