@@ -21,11 +21,12 @@ import type { Rect } from '../engine/api';
 export const AVM_OX = 1180;
 const X = (x: number) => x + AVM_OX;
 // 2026-11-22 sahip: "AVM çok güzel olmuş, içeriyi biraz daha büyütüp genişletip daha güzel hale getiricez": hol 8 -> 11 m,
-// dükkânlar 5.95 x 5.3 -> 7.0 x 6.8, lobi 2.5 -> 3.5 m derin, toplam 19.9 x 13.1 -> 25 x 17.1 m.
-const CX = X(20.15), HW = 5.5, OD = 7.0;
-export const AVM = { x0: CX - HW - OD, x1: CX + HW + OD, z0: 44, z1: 61.1, cx: CX, FH: 3.6, KAT: 4 } as const;
+// dükkânlar 5.95 x 5.3 -> 7.0 x 6.8, lobi 2.5 -> 3.5 m derin. 21:33 sahip: "daha da büyüt": hol 14 m, dükkânlar 8.6 x 8.6,
+// lobi 5 m; toplam 19.9 x 13.1 -> 31.2 x 22.2 m (dükkân içi yerleşim yeni boyuta yayılır, content/ic-mekan.ts avmOdaLayout).
+const CX = X(20.15), HW = 7.0, OD = 8.6;
 /** dükkân bloklarının ön yüzü (lobi bunun önünde) */
-export const LOBI_Z1 = 47.5;
+export const LOBI_Z1 = 49;
+export const AVM = { x0: CX - HW - OD, x1: CX + HW + OD, z0: 44, z1: LOBI_Z1 + 2 * OD, cx: CX, FH: 3.6, KAT: 4 } as const;
 /** bir AVM dükkân odasının ölçüsü: W kapı duvarı (z boyunca, bir sıranın derinliği), D derinlik (x boyunca, blok genişliği) */
 export const ODA_OLCU = { W: (AVM.z1 - LOBI_Z1) / 2, D: OD } as const;
 /** orta hol (merdivenler + yürüyüş yolları) */
@@ -38,7 +39,7 @@ export const MERD = { on: MERD_ON, arka: MERD_ON + 6.24, duz: 0.5, kx0: CX - 1.2
 /** merdiven adası: merdiven bloğu + iki yanında saksı ve banklar (her katta; üst katlarda galeri korkuluğunun dışı) */
 export const ADA = { x0: MERD.kx0 - 0.95, x1: MERD.kx1 + 0.95, z0: MERD.on + 0.35, z1: MERD.arka - 0.35 } as const;
 /** zemin katta merdivenin arkasındaki çeşme (yuvarlak havuz) */
-export const CESME = { x: CX, z: AVM.z1 - 1.75, r: 1.05 } as const;
+export const CESME = { x: CX, z: AVM.z1 - 2.5, r: 1.4 } as const;
 /** dükkân odalarının merkezleri (batı / doğu blok, ön / arka sıra) */
 export const ODA_X = { W: CX - HW - OD / 2, E: CX + HW + OD / 2 } as const, ODA_Z = { F: LOBI_Z1 + ODA_OLCU.W / 2, B: AVM.z1 - ODA_OLCU.W / 2 } as const;
 /** iskeledeki AVM binası (kabuk) ve giriş kapısının önü: buraya yürüyen AVM'ye geçer */

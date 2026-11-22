@@ -162,7 +162,33 @@ export const MAGAZA_RENK = AVM_TABELA as Record<'giyim' | 'elektronik' | 'oyunca
 const MAGAZA_TUR = new Set<IcTur>(['giyim', 'elektronik', 'oyuncak', 'sekerci', 'kuruyemis']);
 /** müşterinin önce reyonlara bakındığı dükkânlar (agents/kafe.ts) */
 export const icMagaza = (t: IcTur) => MAGAZA_TUR.has(t);
+/**
+ * 2026-11-22 sahip: "AVM'yi daha da büyüt". Yerleşim ilk oda ölçüsünde (5.3 x 5.95) yazıldı; daha büyük odada aynı yerleşim
+ * yeni boyuta yayılır: arka yarı (tezgâh, arkasındaki aletler, pano) arka duvara yapışık kalır, tezgâh uzar ve üstündeki
+ * aletler tezgâh boyunca açılır, yan duvardaki öğeler duvarda kalır, ön yarı (masalar, teşhir) kapıya doğru açılır.
+ */
+const AVM_ODA0 = { W: 5.3, D: 5.95 } as const;
 function avmOdaLayout(W: number, D: number, tur: IcTur): IcItem[] {
+  const base = avmOdaLayout0(AVM_ODA0.W, AVM_ODA0.D, tur);
+  if (W <= AVM_ODA0.W + 1e-6 && D <= AVM_ODA0.D + 1e-6) return base;
+  const dW = (W - AVM_ODA0.W) / 2, dD = (D - AVM_ODA0.D) / 2, tz = base.find(i => i.k === 'tezgah')!, s = (tz.w + 2 * dW * 0.7) / tz.w;
+  const yay = (x: number, yari: number, d: number) => x + Math.sign(x) * d * Math.min(1, Math.abs(x) / (yari - 0.6));
+  const o = base.map(i => {
+    if (i.k === 'zemin' || i.k === 'lamba') return { ...i, u: 0, v: 0, w: W, d: D };
+    const v = i.v < 0 ? i.v - dD : yay(i.v, AVM_ODA0.D / 2, dD);
+    if (i.v === tz.v) return { ...i, u: tz.u + (i.u - tz.u) * s, v, ...(i.k === 'tezgah' ? { w: i.w * s } : {}) };   // tezgâh ve üstündekiler
+    if (i.k === 'menuPano') return { ...i, v, w: i.w * s };
+    const duvar = Math.abs(i.u) >= AVM_ODA0.W / 2 - IC_DUVAR - 0.45;   // yan duvardaki öğe duvarda kalır
+    return { ...i, u: duvar ? i.u + Math.sign(i.u) * dW : yay(i.u, AVM_ODA0.W / 2, dW), v };
+  });
+  // büyüyen odanın ortası boş kalmasın: yemek dükkânına iki masa daha (yanlarda), mağazaya ikinci teşhir masası
+  if (dW > 0.8 && dD > 0.8) {
+    if (MAGAZA_TUR.has(tur)) o.push(it('teshir', W / 2 - 2.1, 0.35, 1.0, 0.7, { solid: true, c: tur }));
+    else for (const sx of [-1, 1]) { const mu = sx * (W / 2 - 1.35); if (!o.some(i => i.k !== 'zemin' && i.k !== 'lamba' && (i.y ?? 0) < 1 && Math.abs(i.u - mu) < 1.0 + i.w / 2 && Math.abs(i.v - 0.75) < 0.9 + i.d / 2)) o.push(masa(mu, 0.75)); }   // yan duvarda dolap / akvaryum varsa o tarafa koymaz
+  }
+  return o;
+}
+function avmOdaLayout0(W: number, D: number, tur: IcTur): IcItem[] {
   const R = AVM_TABELA[tur] || AVM_TABELA.avmLokanta, bv = -D / 2 + 2.05, bw = -D / 2 + IC_DUVAR + 0.27, cy = 1.05;
   const ct = (k: string, u: number, w: number, d: number, esya?: string, o: Partial<IcItem> = {}) => it(k, u, bv, w, d, { y: cy, ...(esya ? { esya } : {}), ...o });
   const arka = (k: string, u: number, w: number, d: number, esya?: string, o: Partial<IcItem> = {}) => it(k, u, bw + (0.5 - d) / 2, w, d, { ...(esya ? { esya } : {}), ...o });

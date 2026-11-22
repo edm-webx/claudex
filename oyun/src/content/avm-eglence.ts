@@ -13,7 +13,11 @@ const T = 0.2, ZM = (LOBI_Z1 + AVM.z1) / 2;
 
 /* ---------- sinema ---------- */
 export interface Salon { id: 1 | 2; ad: string; z0: number; z1: number; zc: number; kapi: { x: number; z: number }; ici: { x: number; z: number }; perde: { x: number; z: number; w: number }; koltuk: { x: number; z: number }[] }
-const SIRA_X = [AVM.x0 + 2.0, AVM.x0 + 2.85, AVM.x0 + 3.7], KOLTUK_N = 5, KOLTUK_ARA = 0.8;
+// 2026-11-22 salon büyüdü (8.6 m): koltuk sırası salon derinliğine göre (5 sıra x 7), sıraların doğusunda koridor
+const SIRA_N = Math.max(3, Math.min(5, Math.floor((HOL.x0 - AVM.x0 - 3.4) / 0.85))), SIRA_X = Array.from({ length: SIRA_N }, (_, i) => AVM.x0 + 2.0 + i * 0.85);
+const KOLTUK_N = Math.max(5, Math.min(7, Math.floor(((AVM.z1 - LOBI_Z1) / 2 - 2.2) / 0.8)) | 1), KOLTUK_ARA = 0.8;
+/** salonun içinde koltuk sıralarının doğusundaki koridor (seyirci buradan sırasına yürür) */
+export const KORIDOR_X = SIRA_X[SIRA_X.length - 1] + 0.75;
 function salon(id: 1 | 2, z0: number, z1: number): Salon {
   const zc = (z0 + z1) / 2, koltuk: Salon['koltuk'] = [];
   for (const x of SIRA_X) for (let i = 0; i < KOLTUK_N; i++) koltuk.push({ x, z: zc + (i - (KOLTUK_N - 1) / 2) * KOLTUK_ARA });

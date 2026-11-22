@@ -11,7 +11,7 @@ import type { System, SimCtx, Vec2 } from '../../../engine/api';
 import type { AgentEnv } from './env';
 import type { Actor } from './types';
 import { AVM, HOL, ODA_X, ODA_Z, AVM_GIRIS, LOBI_DEKOR, LOBI_Z1, YOL, katY, yolculuk, avmYol, avmGidis, avmGelis } from '../../../content/avm-kat';
-import { EGLENCE_KAT, SALONLAR, SEYIRCI, KULIS, BASAMAK, MUZISYEN, SAHNE, BANKLAR, seans, konser, type Salon } from '../../../content/avm-eglence';
+import { EGLENCE_KAT, KORIDOR_X, SALONLAR, SEYIRCI, KULIS, BASAMAK, MUZISYEN, SAHNE, BANKLAR, seans, konser, type Salon } from '../../../content/avm-eglence';
 import { realmAt } from '../../../content/realm';
 
 type Pt = Vec2 & { y?: number };
@@ -69,7 +69,7 @@ export function createAvmYasam(env: AgentEnv): AvmYasamSystem {
   function git(z: Z, kat: number, to: Vec2, hedef: Dur) { z.path = avmYol(z.kat, z.a, kat, to); z.kat = kat; z.st = 'yol'; z.hedef = hedef; z.t = 0; }
   const doluKoltuk = (s: Salon) => new Set(zs.filter(z => z.salon === s && z.koltuk !== undefined).map(z => z.koltuk));
   function bosKoltuk(s: Salon): number { const d = doluKoltuk(s); const bos = s.koltuk.map((_, i) => i).filter(i => !d.has(i)); return bos.length ? bos[Math.floor(rng.next() * bos.length)] : -1; }
-  const koltukYolu = (s: Salon, i: number): Pt[] => { const k = s.koltuk[i], y = katY(EGLENCE_KAT); return [{ ...s.ici, y }, { x: AVM.x0 + 4.45, z: k.z, y }, { x: k.x + 0.42, z: k.z, y }, { x: k.x, z: k.z, y }]; };
+  const koltukYolu = (s: Salon, i: number): Pt[] => { const k = s.koltuk[i], y = katY(EGLENCE_KAT); return [{ ...s.ici, y }, { x: KORIDOR_X, z: k.z, y }, { x: k.x + 0.42, z: k.z, y }, { x: k.x, z: k.z, y }]; };
 
   const walk = (a: Actor, path: Pt[], dt: number, sp = SP): boolean => {
     let left = sp * dt;
@@ -109,7 +109,7 @@ export function createAvmYasam(env: AgentEnv): AvmYasamSystem {
         if (d === 'cikis' || d === 'kapali') {
           const s = z.salon!, k = s.koltuk[z.koltuk!], y = katY(EGLENCE_KAT);
           if (rng.next() < 0.35) say(a, pick(SOZ_FILM));
-          const cik: Pt[] = [{ x: k.x + 0.42, z: k.z, y }, { x: AVM.x0 + 4.45, z: k.z, y }, { ...s.ici, y }, { ...s.kapi, y }];
+          const cik: Pt[] = [{ x: k.x + 0.42, z: k.z, y }, { x: KORIDOR_X, z: k.z, y }, { ...s.ici, y }, { ...s.kapi, y }];
           z.salon = undefined; z.koltuk = undefined;
           if (rng.next() < 0.5) { z.st = 'cik'; z.path = [...cik, ...avmGidis(EGLENCE_KAT, s.kapi)]; }   // film çıkışı: yarısı eve gider
           else { const kat = Math.floor(rng.next() * EGLENCE_KAT), p = yolNokta(); z.path = [...cik, ...avmYol(EGLENCE_KAT, s.kapi, kat, p)]; z.kat = kat; z.st = 'yol'; z.hedef = 'vitrin'; z.face = 0; }

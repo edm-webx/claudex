@@ -23,14 +23,15 @@ await p.evaluate((bos) => { const M = window.__marti; M.setTime(13); M.step(2); 
   M.setTime(12.3); for (let i = 0; i < 90; i++) M.step(1);
   if (!new URLSearchParams(location.search).get('ui')) { const st = document.createElement('style'); st.textContent = '#sbui{visibility:hidden!important}'; document.head.appendChild(st); } }, bos);
 const C = 1200.15;   // AVM diyarı (content/avm-kat.ts AVM_OX + 20.15)
-const SPOTS = {
+const SPOTS = {   // 2026-11-22: AVM 31 x 22 m (hol 14 m, dükkânlar 8.6 x 8.6), ön sıra z 53.3, arka sıra z 61.9
   dis: [20.15, 43.0, 0, 20.15, 47, 3.4, 0, 0.62], disYakin: [20.15, 44.6, 0, 20.15, 47.5, 2.2, 0, 0.7],
-  lobi: [C, 45.0, 0, C, 47.5, 2.4, 0, 0.8], zemin: [C, 47.0, 0, C, 51, 3.2, 0, 1.0],
-  merdiven: [C - 2.6, 49.0, 0, C, 51.5, 2.0, 1, 0.6],
-  kat1: [C - 2.6, 55.8, 1, C, 51, 3.2, 0, 1.0], kat1b: [C - 2.6, 55.8, 1, C, 51, 2.2, 2, 0.75],
-  kat2: [C - 2.6, 55.8, 2, C, 51, 3.2, 0, 1.0], kat2b: [C + 2.6, 49.5, 2, C, 51, 2.2, 2, 0.75],
-  dukkan: [C - 4.4, 49.15, 1, C - 6.5, 49.15, 1.6, 1, 0.8],
-  eglence: [C, 47.0, 3, C, 51, 3.2, 0, 1.0, 17.4], sinema: [C - 3.4, 50, 3, C - 7, 51.8, 2.0, 1, 0.75, 11.0], sahne: [C + 2.5, 51.8, 3, C + 6, 51.8, 2.0, 3, 0.7, 17.4], gise: [C - 5, 46.2, 3, C - 6, 45.5, 1.6, 0, 0.7, 10.1],
+  lobi: [C, 45.0, 0, C, 48, 2.4, 0, 0.8], zemin: [C, 47.0, 0, C, 55, 4.0, 0, 1.0],
+  merdiven: [C - 3.2, 52.0, 0, C, 57, 2.0, 1, 0.6],
+  kat1: [C - 3.2, 61.4, 1, C, 55, 4.0, 0, 1.0], kat2: [C - 3.2, 61.4, 2, C, 55, 4.0, 0, 1.0],
+  makine: [C - 9.6, 53.3, 1, C - 11.8, 53.3, 1.2, 1, 0.5], makine2: [C + 9.6, 53.3, 2, C + 11.8, 53.3, 1.2, 3, 0.5],
+  dukkan: [C - 7.6, 53.3, 1, C - 10.5, 53.3, 2.0, 1, 0.8], giyim: [C - 7.6, 53.3, 0, C - 10.5, 53.3, 2.0, 1, 0.8],
+  cesme: [C + 4.2, 62.4, 0, C, 61, 2.4, 2, 0.7],
+  eglence: [C, 47.0, 3, C, 55, 4.0, 0, 1.0, 17.4], sinema: [C - 4.2, 53, 3, C - 9, 55.6, 2.4, 1, 0.75, 11.0], sahne: [C + 3.2, 57.6, 3, C + 8, 57.6, 2.4, 3, 0.7, 17.4], gise: [C - 6, 46.2, 3, C - 7, 45.5, 1.6, 0, 0.7, 10.1],
 };
 const ids = (process.argv[3] || Object.keys(SPOTS).join(',')).split(',');
 for (const id of ids) {

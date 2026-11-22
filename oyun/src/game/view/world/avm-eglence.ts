@@ -8,7 +8,7 @@
 import * as T from 'three';
 import { Batch } from '../../../engine/prefab/batch';
 import { AVM, HOL, LOBI_Z1, katY, avmIcinde } from '../../../content/avm-kat';
-import { EGLENCE_KAT, SALONLAR, SAHNE, MUZISYEN, BASAMAK, GISE, MISIR, BANKLAR, seans, konser, type Salon } from '../../../content/avm-eglence';
+import { EGLENCE_KAT, KORIDOR_X, SALONLAR, SAHNE, MUZISYEN, BASAMAK, GISE, MISIR, BANKLAR, seans, konser, type Salon } from '../../../content/avm-eglence';
 
 export interface AvmEglenceDeps { root: () => T.Object3D | null; hero: () => { x: number; z: number; kat?: number }; saat: () => number }
 export interface AvmEglenceView { update(dt: number): void }
@@ -59,7 +59,7 @@ function insa(): Yapi {
       b.box(0.5, 0.36, 0.05, '#1d1a2c', k.x, F + 0.2, k.z - 0.33); b.box(0.5, 0.06, 0.08, '#1d1a2c', k.x, F + 0.62, k.z - 0.34);
     }
     for (const k of s.koltuk.filter((_, i) => i % 5 === 4)) b.box(0.5, 0.36, 0.05, '#1d1a2c', k.x, F + 0.2, k.z + 0.33);
-    l.span(AVM.x0 + 1.6, AVM.x0 + 4.1, F + 0.016, F + 0.02, s.z0 + 0.18, s.z0 + 0.22, '#7fd4ff'); l.span(AVM.x0 + 1.6, AVM.x0 + 4.1, F + 0.016, F + 0.02, s.z1 - 0.22, s.z1 - 0.18, '#7fd4ff');
+    l.span(AVM.x0 + 1.6, KORIDOR_X + 0.4, F + 0.016, F + 0.02, s.z0 + 0.18, s.z0 + 0.22, '#7fd4ff'); l.span(AVM.x0 + 1.6, KORIDOR_X + 0.4, F + 0.016, F + 0.02, s.z1 - 0.22, s.z1 - 0.18, '#7fd4ff');
   }
   b.span(AVM.x0, HOL.x0 + 0.1, F + WH, F + WH + 0.08, LOBI_Z1 - 0.12, LOBI_Z1 + 0.12, ust);
 
