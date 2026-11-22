@@ -16,7 +16,7 @@ export const ISLETME_ROL: Record<IsletmeId, IsletmeRol[]> = {
   // 2026-11-20 AVM shops: a sales consultant fetches the goods, the cashier rings them up
   giyim: [{ rol: 'danisman', ad: 'Satış danışmanı', huyRol: 'garson', gorunum: 'hostes', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }, { rol: 'vitrinci', ad: 'Vitrin sorumlusu', huyRol: 'komi', gorunum: 'gorevli', minLv: 3 }],
   elektronik: [{ rol: 'danisman', ad: 'Satış danışmanı', huyRol: 'garson', gorunum: 'hostes', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }, { rol: 'teknisyen', ad: 'Teknisyen', huyRol: 'komi', gorunum: 'gorevli', minLv: 2 }],
-  oyuncak: [{ rol: 'danisman', ad: 'Satış danışmanı', huyRol: 'garson', gorunum: 'tost', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }],
+  oyuncak: [{ rol: 'danisman', ad: 'Satış danışmanı', huyRol: 'garson', gorunum: 'hostes', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }],
   // 2026-11-21 AVM katları: her dükkânın kendi ustası + kasiyeri/garsonu
   sekerci: [{ rol: 'sekerci', ad: 'Şekerci ustası', huyRol: 'tost', gorunum: 'tost', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }, { rol: 'paketci', ad: 'Paketçi', huyRol: 'komi', gorunum: 'komi', minLv: 3 }],
   kahveci: [{ rol: 'barista', ad: 'Barista', huyRol: 'cay', gorunum: 'barista', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }, { rol: 'kavurmaci', ad: 'Kavurmacı', huyRol: 'komi', gorunum: 'komi', minLv: 3 }],

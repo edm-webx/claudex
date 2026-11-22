@@ -7,7 +7,7 @@
  * Numbers come from mulk.ts (`rt.kafeHost`): customers per hour, price. Rooms: content/ic-mekan.ts kafe1 / kafe2.
  */
 import type { System, SimCtx, Vec2 } from '../../../engine/api';
-import { IC_BY_ID, IC_MEKANLAR, icWorld, icDim, icLayout, icUV, icYol, personelGeo, icMagaza } from '../../../content/ic-mekan';
+import { IC_BY_ID, IC_MEKANLAR, icWorld, icDim, icLayout, icUV, icYol, personelGeo, personelDuraklari, icMagaza } from '../../../content/ic-mekan';
 import { AVM_GIRIS, AVM_DIS, avmGelis, avmGidis } from '../../../content/avm-kat';
 import { KAFE_ISCI_TAVAN, ARSA_ISLETME, kafeMenu, ARSALAR, arsaKapi } from '../../../content/esya';
 import { kalemOf, ISTASYON_LAYOUT_K, ISTASYON_SIRA, type IstasyonId } from '../../../content/isletme-istasyon';
@@ -64,7 +64,7 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
     const avm = m.bina === 'avm', kat = m.kat || 0, onKapi = w(0, D / 2 + 0.7);
     const gel = (): Pt[] => avm ? avmGelis(kat, onKapi) : [];
     const git = (): Pt[] => avm ? [onKapi, ...avmGidis(kat, onKapi)] : [];
-    return { m, D, W, bv: tz.v, cu, endU, arka, yol, w, P, vert, door: avm ? { x: AVM_GIRIS.x, z: AVM_GIRIS.z } : w(0, D / 2 + 2.6), inside: w(0, D / 2 - 1.0), avm, kat, gel, git, tables, sdv: D < 5 ? -0.6 : 0.7, wide: !vert && !(m.tur === 'kafe' || m.tur === 'bistro'), gap, post, maxQ: vert ? 3 : 5, gez };
+    return { m, D, W, bv: tz.v, cu, endU, arka, yol, w, P, vert, door: avm ? { x: AVM_GIRIS.x, z: AVM_GIRIS.z } : w(0, D / 2 + 2.6), inside: w(0, D / 2 - 1.0), avm, kat, gel, git, tables, sdv: D < 5 ? -0.6 : 0.7, wide: !vert && !(m.tur === 'kafe' || m.tur === 'bistro'), gap, post, maxQ: vert ? 3 : 5, gez, pg, narrow };
   };
   const gCache = new Map<string, ReturnType<typeof geom0>>();   // the room geometry is static: build it once per room
   const geom = (r: Room) => { let g = gCache.get(r.room); if (!g) { g = geom0(r); gCache.set(r.room, g); } return g; };
@@ -145,11 +145,12 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
       const g = geom(r), idx = r.wk.length, role = c.rol === 'barista' || c.rol === 'garson' || c.rol === 'kasiyer' || c.rol === 'asci' ? c.rol : (ISLETME_ROL[ARSA_ISLETME[r.arsa]].find(x => x.rol === c.rol)?.gorunum || 'garson');
       const a = env.reg.add('worker', 'kafe-' + r.room + '-' + c.id, { kind: 'worker', role, look: c.look, seed: (c.id * 977) % 10007 }, g.w(0, g.D / 2 + 0.6), { role, name: c.ad, rank: c.rank, trait: c.huy });
       if (g.avm) { a.x = a.px = AVM_GIRIS.x; a.z = a.pz = AVM_GIRIS.z; } a.y = a.py = 0;   // AVM crew walks in from the mall entrance and rides up
-      r.wk.push({ a, cid: c.id, idx, st: 'post', t: 0, guest: null, path: [...g.gel(), g.inside, ...g.yol(g.inside, g.P(g.cu + (g.vert ? 0.6 : 1.5) + idx * g.post, -g.arka))], item: '' });
+      r.wk.push({ a, cid: c.id, idx, st: 'post', t: 0, guest: null, path: [], item: '' });
+      { const w = r.wk[r.wk.length - 1]; w.path = [...g.gel(), g.inside, ...g.yol(g.inside, postOf(r, idx))]; }
     });
     r.wk.forEach((w, i) => { w.idx = i; });   // posts stay packed after somebody leaves
   }
-  const postOf = (r: Room, idx: number): Vec2 => { const g = geom(r); return g.P(g.cu + (g.vert ? 0.6 : 1.5) + idx * g.post, -g.arka); };
+  const postOf = (r: Room, idx: number): Vec2 => { const g = geom(r), L = personelDuraklari(g.pg, Math.max(r.wk.length, idx + 1), g.post, g.narrow); return g.P(L[Math.min(idx, L.length - 1)], -g.arka); };
 
   function tickRoom(r: Room, dt: number) {
     const h = host(), info = h?.info(r.arsa);
@@ -189,10 +190,11 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
     }
     // workers: take the oldest unclaimed waiting guest, walk to the station of what that guest asked for, make it (its own time), carry it over
     for (const w of r.wk) {
-      const a = w.a; w.t += dt;
+      const a = w.a; w.t += dt; a.state = w.st;   // denetçi / hata ayıklama: çalışanın iş adımı
       if (w.st === 'post') {
         if (w.path.length) { follow(a, w.path, 1.9, dt); continue; }
         const p = postOf(r, w.idx); if (Math.hypot(p.x - a.x, p.z - a.z) > 0.1) { step1(a, p, 1.6, dt); a.act = 'walk'; continue; }
+        a.x = p.x; a.z = p.z;   // 2026-11-22: 0.1 m kala durunca iki komşu çalışan birbirine 0.45 m'ye kadar yaklaşıyordu; durağa tam otur
         a.act = 'idle'; a.speed = 0; a.rot = geomYaw(r) + Math.PI; a.carry = [];
         const gu = waiting(r).find(x => !x.claimed);
         if (gu && !(h.fp && r.arsa === 'k3')) { gu.claimed = w.a.id; w.guest = gu; w.item = gu.want; w.st = 'toSt'; w.t = 0; }

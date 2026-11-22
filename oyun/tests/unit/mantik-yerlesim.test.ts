@@ -85,3 +85,26 @@ describe('orman', () => {
     expect(ormanZone().props.filter(p => p.prefab === 'mk.stop')).toEqual([]);
   });
 });
+
+describe('iç mekân personel durakları (kırtasiye / AVM dükkânları / kafe)', () => {
+  it('1-3 çalışan: aralar >= 0.58 m, duvarların içinde, hiçbir zemin eşyasının içinde değil', async () => {
+    const IC = await import('../../src/content/ic-mekan');
+    const hata: string[] = [];
+    for (const m of IC.IC_MEKANLAR) {
+      const pg = IC.personelGeo(m); if (!pg) continue;
+      const { W, D } = IC.icDim(m), narrow = W < 7;
+      const post = pg.vert ? Math.min(0.75, Math.max(0.3, (pg.hi + 0.1 - (pg.cu + 0.6)) / 2)) : narrow ? Math.min(1.4, (pg.endU - 0.6 - (pg.cu + 1.5)) / 2) : 1.4;
+      const engel = IC.icLayout(m).filter(i => IC.icZeminEngeli(i) && !(i.asama ?? 0)).map(IC.icItemRect);
+      for (let n = 1; n <= 3; n++) {
+        const L = IC.personelDuraklari(pg, n, post, narrow);
+        for (let i = 1; i < L.length; i++) if (L[i] - L[i - 1] < 0.58) hata.push(`${m.id} n=${n}: ara ${(L[i] - L[i - 1]).toFixed(2)}`);
+        for (const a of L) {
+          const u = pg.vert ? pg.tz.u + pg.arka : a, v = pg.vert ? a : pg.tz.v - pg.arka;
+          if (Math.abs(u) > W / 2 - 0.25 || Math.abs(v) > D / 2 - 0.25) hata.push(`${m.id} n=${n}: duvarda (${u.toFixed(2)}, ${v.toFixed(2)})`);
+          if (engel.some(r => u > r.u0 - 0.15 && u < r.u1 + 0.15 && v > r.v0 - 0.15 && v < r.v1 + 0.15)) hata.push(`${m.id} n=${n}: eşyanın içinde (${u.toFixed(2)}, ${v.toFixed(2)})`);
+        }
+      }
+    }
+    expect(hata).toEqual([]);
+  });
+});

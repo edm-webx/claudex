@@ -15,7 +15,9 @@ const errs = []; p.on('pageerror', e => errs.push(e.message)); p.on('console', m
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengeli&seed=3&stage=${STAGE}`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 90000 });
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const ad = await p.$('input[name="ad"]'); if (ad) await ad.fill('Olcum'); await go.click({ force: true }); await p.waitForFunction(() => !document.querySelector('.kl-go'), null, { timeout: 5000 }).catch(() => console.log('UYARI: karakter paneli kapanmadı, ölçüm geçersiz olabilir')); await p.waitForTimeout(300); }   // ad boşsa panel kapanmaz (sim duraklı kalır)
+// karakter atölyesi (kulis.ts .ka-go; eski .kl-go): ad yazılmazsa panel kapanmaz ve sim duraklı kalır
+  for (let k = 0; k < 3; k++) { const pb = await p.waitForSelector('.ka-pb', { timeout: k ? 500 : 6000 }).catch(() => null); if (pb) { await pb.click({ force: true }).catch(() => {}); await p.waitForTimeout(300); } const go = await p.waitForSelector('.ka-go, .kl-go', { timeout: k ? 2000 : 8000 }).catch(() => null); if (!go) break; const ad = await p.$('input[name="ad"]'); if (ad) await ad.fill('Olcum').catch(() => {}); await go.click({ force: true }).catch(() => {}); await p.waitForTimeout(400); }
+  if (await p.$('.ka-go, .kl-go')) console.log('UYARI: karakter paneli kapanmadı, ölçüm geçersiz');
 await p.evaluate(([STAGE, PADS]) => { const M = window.__marti; M.setTime(13); M.step(2); M.izgara(false); M.simCmd('money', 9e9); void 0; M.simCmd('level', 40); M.simCmd('unlock', 'isbul');
   try { M.simCmd('cmd', { kind: 'setStage', stage: STAGE }); } catch { /* */ }
   for (const k of PADS) try { M.simCmd('unlock', k); } catch { /* */ }
@@ -27,7 +29,7 @@ await p.evaluate(([STAGE, PADS]) => { const M = window.__marti; M.setTime(13); M
   if (!new URLSearchParams(location.search).get('ui')) { const st = document.createElement('style'); st.textContent = '#sbui{visibility:hidden!important}'; document.head.appendChild(st); } }, [STAGE, PADS]);
 // [id, hero x, z, cam x, z, zoomRaw, yaw (×π/2), tilt]
 const SPOTS = {
-  iskele: [0, -2, 0, -6, 3.6, 0, 0.9], yakindaTabela: [5, -8, 6.3, -12.3, 1.2, 0, -0.45], giseYeni: [17, -9, 19.5, -12, 1.2, 0, -0.45], batiKose: [-8, 0, -10, 3, 1.2, 0, -0.45], bufeAci: [0, 1, 0, -3, 1.8, 0, -0.45], garson: [4, 1, 1, -2, 0.9, 0, -0.45], iskeleArka: [0, -11, 0, -12, 2.6, 2, 0.8], bufeOn: [0, -4, 0, -6, 1.5, 0, 0.75], bufeYan: [-6, -8, -2, -10, 1.8, 1, 0.75],
+  iskele: [0, -2, 0, -6, 3.6, 0, 0.9], yakindaTabela: [5, -8, 6.3, -12.3, 1.2, 0, -0.45], giseYeni: [17, -9, 19.5, -12, 1.2, 0, -0.45], batiKose: [-8, 0, -10, 3, 1.2, 0, -0.45], bufeAci: [0, 1, 0, -3, 1.8, 0, -0.45], garson: [4, 1, 1, -2, 0.9, 0, -0.45], kafe1Yakin: [-16.4, 37.9, -17.5, 37.9, 0.7, 1, 0.3], kirtasiyeYakin: [28.6, 34.6, 28, 35.2, 0.6, 2, 0.3], avmTekno: [1193.5, 54, 1191.5, 54, 0.6, 1, 0.3], avmOyuncak: [1206.5, 49.8, 1208.8, 49.8, 0.6, 3, 0.3], tesisYakin: [-53.3, 44, -54.1, 45.4, 0.8, 1, 0.3], iskeleArka: [0, -11, 0, -12, 2.6, 2, 0.8], bufeOn: [0, -4, 0, -6, 1.5, 0, 0.75], bufeYan: [-6, -8, -2, -10, 1.8, 1, 0.75],
   mutfak: [0, -14.6, 0, -15, 1.2, 0, 0.9], mutfakDis: [0, -9, 0, -13, 1.6, 0, 0.7],
   salonW: [-17.6, -12.0, -17.6, -13.5, 1.6, 0, 0.8], salonE: [15.6, -12.0, 15.6, -13.5, 1.6, 0, 0.8],
   kafe1: [-16.4, 37.9, -17.5, 37.9, 1.6, 1, 0.8], kafe2: [-16.4, 51.5, -17.5, 51.5, 1.6, 1, 0.8], kirtasiye: [28.6, 34.6, 28, 35.2, 1.4, 2, 0.8], okul: [50, 35.2, 48.85, 37.25, 2.2, 2, 0.8],
