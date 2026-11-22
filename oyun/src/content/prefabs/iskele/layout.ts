@@ -151,10 +151,11 @@ function kioskLayout0(stage: number): StageLayout {   // stages 6-10 grow around
     L.door = { outside: P3(-3.3, -3.7), inside: P3(-3.3, -5.2) };
   }
   L.perch.push([7.75, 0.58, -8.55, -HP], [7.75, 0.58, -5.65, -HP], [-10.4, 1.06, -6.0, HP], [-5.0, 1.06, -13.3, 0.3], [-10.4, 1.06, 1.0, HP]);
+  // 2026-11-22: yuva 9 (5.9, 3.8) büfeyle öne gelen vapur penceresi padının (5.6, 3.2) üstüne düşüyordu; yuva 7-8 sırasına (x 7.75, pencere kuyruğunun doğusu) alındı
   // 2026-11-21 mantık denetimi: yuva 4 iskele adı tabelasının altındaydı (-8.1, 3.6), aşama 3+ yuva 2 lambanın içindeydi (-9.75, -4.45)
   const slots: [number, number, number, string][] = [
     [-9.6, -11.6, 0.6, 'm'], [-9.75, -8.0, HP, 'm'], [-9.75, -5.4, HP, 's'], [-9.75, -0.6, HP, 'm'], [-4.9, 3.7, 0.3, 's'], [-5.6, -6.2, 0, 's'],
-    [6.4, -9.8, 0, 'm'], [7.75, -2.4, -HP, 's'], [7.75, 0.9, -HP, 'm'], [5.9, 3.8, -0.3, 's'], [-4.2, 3.7, 0, 's'], [-4.6, -12.2, 0, 'l']
+    [6.4, -9.8, 0, 'm'], [7.75, -2.4, -HP, 's'], [7.75, 0.9, -HP, 'm'], [7.75, 3.9, -HP, 's'], [-4.2, 3.7, 0, 's'], [-4.6, -12.2, 0, 'l']
   ];
   if (s3) { slots[1] = [-9.75, -7.35, HP, 's']; slots[2] = [-9.85, -4.8, HP, 's']; slots[3] = [-9.75, -1.4, HP, 'm']; slots[5] = [-5.2, -1.2, 0, 's']; }
   L.slots = slots.map(([x, z, r, s]) => ({ pos: P3(x as number, z as number), rotY: r as number, size: s as string }));

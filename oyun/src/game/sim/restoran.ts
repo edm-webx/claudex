@@ -421,15 +421,16 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     atama = bolgeAtamasi(ws, bolgeList, elle);
   }
   const masaBolgesi = (table: number) => bolgeList.find(b => b.masalar.includes(table))?.id ?? null;
-  /** bölge kuralı: kendi bölgesi / sahipsiz bölge hemen, komşu bölge iş `yardimBekleS` sahipsiz kalınca; bölgesiz garson her yer */
-  function bolgeKurali(wid: number, table: number, yas: number): { ok: boolean; ic: boolean } {
+  /** bölge kuralı: kendi bölgesi / sahipsiz bölge hemen, komşu bölge iş `yardimBekleS` sahipsiz kalınca; bölgesiz garson her yer.
+   *  `uzak`: komşu olmayan bölgenin `yardimUzakS` bekleyen işi de olur (isAl'ın ikinci turu: yalnız yakında hiç işi olmayan garson) */
+  function bolgeKurali(wid: number, table: number, yas: number, uzak = false): { ok: boolean; ic: boolean } {
     const z = atama.get(wid) ?? null; if (!z) return { ok: true, ic: true };
     const gz = masaBolgesi(table); if (!gz || gz === z) return { ok: true, ic: true };
     const sahip = garsonlar().some(w => w.id !== wid && atama.get(w.id) === gz);
     if (!sahip) return { ok: true, ic: false };
     const komsu = bolgeList.find(b => b.id === z)?.komsu.includes(gz) ?? false;
     // 2026-11-22: komşu olmasa da uzun bekleyen masaya boştaki garson gider (park büfenin arkasına taşınınca bölgeler uzaklaştı, boştaki garson 60 sn+ bekleyen menülere bakmıyordu)
-    return { ok: (komsu && yas >= ADISYON.yardimBekleS) || yas >= ADISYON.yardimUzakS, ic: false };
+    return { ok: (komsu && yas >= ADISYON.yardimBekleS) || (uzak && yas >= ADISYON.yardimUzakS), ic: false };
   }
 
   // ───────── per tick ─────────
@@ -533,7 +534,10 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     const mine = gorevler.find(g => g.wid === wid); if (mine) return sonuc(mine);
     if (!garsonlar().some(w => w.id === wid)) return null;
     bolgeYenile();
-    for (const tur of ADISYON.oncelik) {
+    // 2026-11-22: iki tur. Önce kendi / sahipsiz / komşu bölgenin işleri (öncelik sırasıyla), uzak bölge yardımı yalnız bunlar boşsa.
+    // Tek turda uzak bölgenin 15 sn'lik tabağı kendi bölgesinin menüsünü geçiyordu (tabak > menü): garson haritanın öbür ucuna tabak
+    // taşırken kendi masaları 30 sn+ menü bekliyordu (aşama botu aşama 7, masa 11/13).
+    for (const uzak of [false, true]) for (const tur of ADISYON.oncelik) {
       if (tur === 'tabak') {
         // birim adaylar: bilet sırası (KDS FIFO), pass önce; bölge içi önce. Tek seferde tek kaynak (tek durak).
         type Aday = { t: Ticket; p: FoodId; src: 'pass' | 'counter'; yer?: PassYer; ic: boolean; o: number };
@@ -541,7 +545,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
         const sanal = new Map<string, number>();   // bu çağrıda ayrılan (rafSerbest'ten düş)
         for (const t of tickets) {
           const c = custOf(t); if (!c || c.state === 'leave') continue;
-          const r = bolgeKurali(wid, t.table, tabakYas.get(t) || 0); if (!r.ok) continue;
+          const r = bolgeKurali(wid, t.table, tabakYas.get(t) || 0, uzak); if (!r.ok) continue;
           for (const p of Object.keys(t.want)) {
             let need = (t.want[p] || 0) - tabakTasks(t, p);
             // 2026-11-21: pass'lar ayrı rafta: önce masanın kendi tarafındaki pass, sonra öbürleri (tabak nerede duruyorsa garson oraya yürür)
@@ -566,7 +570,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
         let best: { i: number; ic: boolean; yas: number } | null = null;
         rt.tables.forEach((t, i) => {
           if (!t || !t.built || !(t.dirty > 0) || gorevler.some(g => g.tur === 'sil' && g.table === i) || (tmz && !masaCati(i))) return;
-          const r = bolgeKurali(wid, i, t.dirtyT); if (!r.ok) return;
+          const r = bolgeKurali(wid, i, t.dirtyT, uzak); if (!r.ok) return;
           if (!best || (r.ic && !best.ic) || (r.ic === best.ic && t.dirtyT > best.yas + 1e-9)) best = { i, ic: r.ic, yas: t.dirtyT };
         });
         if (!best) continue;
@@ -574,7 +578,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
         const g: Gorev = { id: gid++, tur: 'sil', table: b.i, cid: 0, yas: 0, wid, claimT: saat };
         gorevler.push(g); return sonuc(g);
       }
-      const cand = gorevler.filter(g => g.tur === tur && !g.wid).map(g => ({ g, r: bolgeKurali(wid, g.table, g.yas) })).filter(x => x.r.ok);
+      const cand = gorevler.filter(g => g.tur === tur && !g.wid).map(g => ({ g, r: bolgeKurali(wid, g.table, g.yas, uzak) })).filter(x => x.r.ok);
       if (!cand.length) continue;
       cand.sort((a, b) => (a.r.ic === b.r.ic ? 0 : a.r.ic ? -1 : 1) || b.g.yas - a.g.yas || a.g.id - b.g.id);
       const g = cand[0].g; g.wid = wid; g.claimT = saat;   // zaman aşımı garsonun işi aldığı andan sayılır
