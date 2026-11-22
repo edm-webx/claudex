@@ -48,8 +48,8 @@ export const SOKAK_Y = 0.11;
 const DIS_YER: Record<string, Vec2[]> = {
   kafe1: [{ x: -7.0, z: 36.0 }, { x: -7.0, z: 39.8 }, { x: -7.0, z: 41.6 }],
   kafe2: [{ x: -7.0, z: 49.6 }, { x: -7.0, z: 53.4 }, { x: -7.0, z: 47.8 }],
-  // büfe salonları: önlerindeki çit ve saksı sırası kareyi örtüyordu; E terasın yan kenarına, W (yanında büfe bahçesinin çiti var) terasın önüne (0 = kullanılmaz, salon satın alınmaz)
-  salonW: [{ x: -21.4, z: -6.2 }, { x: -19.4, z: -2.7 }, { x: -15.8, z: -2.7 }],
+  // büfe salonları: önlerindeki çit ve saksı sırası kareyi örtüyordu; E terasın yan kenarına, W terasının önü saksı ve bitki dolu: terasın ucundaki gezinti yoluna (iskeleden biraz yüksek: y), bankların arasına (0 = kullanılmaz, salon satın alınmaz)
+  salonW: [{ x: -21.4, z: -6.2 }, { x: -22.0, z: 4.7 }, { x: -17.4, z: 4.7 }],
   salonE: [{ x: 21.4, z: -6.2 }, { x: 11.8, z: -7.9 }, { x: 11.8, z: -6.1 }],
 };
 export function disKareYerleri(m: IcMekan, bos?: (p: Vec2) => boolean): Vec2[] {
@@ -102,7 +102,7 @@ export function installIsletmeKareler(K: Kernel, api: IsletmeKareApi): { sync():
       for (const [k, room, asama] of [['W', 'salonW', 6], ['E', 'salonE', 7]] as const) {
         if (st < asama) continue; const m = IC_BY_ID[room]; if (!m) continue;
         const sira = SALON_ESYA.filter(e => e.salon === k && !own.has(e.id) && e.asama <= st).sort((x, y) => x.fiyat - y.fiyat).slice(0, 2), yer = yerler(m);
-        sira.forEach((e, i) => out.push({ key: 'salon.' + e.id, pos: yer[1 + i], label: e.ikon + ' ' + e.ad, sub: e.desc, price: e.fiyat, kilit: '', done: () => api.salonEsya!(e.id) }));
+        sira.forEach((e, i) => out.push({ key: 'salon.' + e.id, pos: yer[1 + i], y: k === 'W' ? SOKAK_Y + 0.05 : undefined, label: e.ikon + ' ' + e.ad, sub: e.desc, price: e.fiyat, kilit: '', done: () => api.salonEsya!(e.id) }));
       }
     }
     return out;

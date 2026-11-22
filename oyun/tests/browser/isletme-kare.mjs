@@ -19,6 +19,7 @@ const shot = async (name, [x, z, cx, cz, zr, yi, tilt]) => {
   await p.evaluate(([x, z, cx, cz, zr, yi, tilt]) => { const M = window.__marti; M.teleport(x, z); for (let k = 0; k < 6; k++) { M.step(0.5); M.renderFrames(3, 0.1); } M.camera({ x: cx, z: cz, zoomRaw: zr, yaw: yi * Math.PI / 2, tilt }); for (let k = 0; k < 16; k++) { M.step(0.1); M.renderFrames(2, 0.1); } }, [x, z, cx, cz, zr, yi, tilt]);
   await p.waitForTimeout(250); await p.screenshot({ path: join(out, name + '.png'), timeout: 600000 }); console.log('ok', name);
 };
+await p.evaluate(() => { const M = window.__marti; M.command({ kind: 'esnafim', op: 'set', data: { ad: 'Olcum' } }); M.command({ kind: 'esnafim', op: 'done' }); M.step(0.5); document.querySelector('.ka-go')?.click(); M.step(0.5); });   // kulis (karakter) paneli açık kalırsa sim duraklı kalır
 await p.evaluate(() => { const M = window.__marti; M.setTime(11); M.step(2); M.izgara(false); M.simCmd('money', 9e9); M.simCmd('level', 2); M.closeJobBoard?.(); M.closePanel?.(); });
 // A) satılık: kilitli (seviye 2) ve açık (seviye 6) satın alma kareleri
 await p.evaluate(() => { const M = window.__marti; M.simCmd('level', 6); M.step(1); });
@@ -28,7 +29,8 @@ await shot('a-kirtasiye-kantin', [37, 30.4, 38, 31.5, 2.6, 0, 0.85]);
 await p.evaluate(() => { const M = window.__marti; M.simCmd('level', 20); try { M.simCmd('cmd', { kind: 'setStage', stage: 7 }); } catch { /* */ }
   for (const id of ['k1', 'k2', 'k3', 'k4', 'k6']) M.command({ kind: 'mulk', op: 'arsaAl', id }); M.step(1); });
 await shot('b-kafe-aletler', [-5.5, 38.5, -7.5, 39, 1.8, 0, 0.8]);
-await shot('b-salonlar', [0, -6.5, 0, -8, 3.4, 0, 0.85]);
+await shot('b-salonW', [-19.7, 5.5, -19.7, 2.5, 2.0, 0, 0.8]);
+await shot('b-salonE', [15.6, -4.5, 15.6, -6.5, 2.0, 0, 0.8]);
 await p.evaluate(() => { const M = window.__marti; const pd = M.pads().find(q => q.key.startsWith('isl.k1.')); if (pd) M.teleport(pd.x, pd.z); M.step(0.6); });
 await shot('c-kafe-basinca', [-7, 40, -7.5, 39.5, 1.5, 0, 0.8]);
 console.log(await p.evaluate(() => JSON.stringify(window.__marti.pads().filter(q => /^(isl|salon)\./.test(q.key)).map(q => [q.key, Math.round(q.x * 10) / 10, Math.round(q.z * 10) / 10]))));
