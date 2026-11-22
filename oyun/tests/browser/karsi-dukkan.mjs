@@ -31,7 +31,7 @@ await p.evaluate((LV) => { const M = window.__marti; M.setTime(12); M.step(2); M
   const st = document.createElement('style'); st.textContent = '#sb-vig,#sbui{visibility:hidden!important}'; document.head.appendChild(st); }, LV);
 // [id, hero x, z, cam x, z, zoomRaw, yaw (×π/2), tilt]
 const SPOTS = {
-  kafe1: [-16.4, 37.9, -17.5, 37.9, 1.6, 1, 0.8], kafe1Dis: [-8, 37.9, -11, 37.9, 2.2, 1, 0.85],
+  kafe1: [-16.4, 37.9, -17.5, 37.9, 1.6, 1, 0.8], kafe1Yakin: [-17.6, 37.9, -19.0, 37.9, 0.8, 1, 0.7], kafe1Dis: [-8, 37.9, -11, 37.9, 2.2, 1, 0.85],
   kafe2: [-16.4, 51.5, -17.5, 51.5, 1.6, 1, 0.8], kafe2Dis: [-8, 51.5, -11, 51.5, 2.2, 1, 0.85],
   kirtasiye: [28.6, 34.6, 28, 35.2, 1.4, 2, 0.8], okul: [50, 35.2, 48.85, 37.25, 2.2, 2, 0.8], tesis: [-53.3, 44, -54.1, 45.4, 2.2, 1, 0.8],
 };
