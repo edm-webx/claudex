@@ -10,7 +10,7 @@ import type { System, SimCtx, Vec2 } from '../../../engine/api';
 import { IC_BY_ID, IC_MEKANLAR, icWorld, icDim, icLayout, icUV, icYol, personelGeo, icMagaza } from '../../../content/ic-mekan';
 import { AVM_GIRIS, AVM_DIS, avmGelis, avmGidis } from '../../../content/avm-kat';
 import { KAFE_ISCI_TAVAN, ARSA_ISLETME, kafeMenu, ARSALAR, arsaKapi } from '../../../content/esya';
-import { kalemOf, ISTASYON_LAYOUT_K, ISTASYON_SIRA, type IstasyonId } from '../../../content/isletme-istasyon';
+import { kalemOf, ISTASYON_LAYOUT_K, ISTASYON_SIRA, MAKINE, MAKINE_TEPSI, MAKINE_ON, makineAdi, type IstasyonId } from '../../../content/isletme-istasyon';
 import { ISLETME_ROL } from '../../../content/isletme-kadro';
 import type { AgentEnv } from './env';
 import type { Actor } from './types';
@@ -32,17 +32,20 @@ const LINES_GEZ = ['Şuna bir bakayım…', 'Bu güzelmiş.', 'Fiyatı ne kadar?
 /** path point: y set = the AVM escalator / floor height along the way (content/avm-kat.ts) */
 type Pt = Vec2 & { y?: number };
 interface Guest { a: Actor; st: 'in' | 'gez' | 'queue' | 'served' | 'toSeat' | 'sit' | 'out'; t: number; gez: number; gezYaw: number; path: Pt[]; slot: number; claimed: number; seat: Vec2 | null; tbl: number; face: number; want: string }
-interface Wk { a: Actor; cid: number; idx: number; st: 'post' | 'toSt' | 'brew' | 'hand'; t: number; guest: Guest | null; path: Pt[]; item: string }
+interface Wk { a: Actor; cid: number; idx: number; st: 'post' | 'toSt' | 'brew' | 'hand' | 'pre'; t: number; guest: Guest | null; path: Pt[]; item: string }
+/** 2026-11-22 makine (content/isletme-istasyon.ts MAKINE): koyulan ürün kendi kendine pişer, bitince hazır tepsisinde bekler */
+interface Mak { ist: IstasyonId; cook: string; t: number; sure: number; ready: string[]; by: number }
+export interface MakineGorunum { room: string; kat: number; ist: IstasyonId; ad: string; x: number; z: number; cook: string; p: number; kalan: number; ready: string[] }
 /** BUF-25: a hungry street citizen walking to the shop door; the guest appears when it arrives (or after VISIT_MAX seconds, so the flow count never drops) */
 interface Visitor { slot: number; t: number }
-interface Room { arsa: string; room: string; bistro: boolean; guests: Guest[]; wk: Wk[]; seatTaken: Set<number>; visitors: Visitor[] }
+interface Room { arsa: string; room: string; bistro: boolean; guests: Guest[]; wk: Wk[]; seatTaken: Set<number>; visitors: Visitor[]; mak: Map<IstasyonId, Mak>; preT: number }
 const HUNGRY_M = 40, VISIT_MAX = 50;
 
-export interface KafeSystem extends System { rooms(): { room: string; guests: number; waiting: number; workers: number; siparisler: string[] }[]; siparisOf(room: string): string[] }
+export interface KafeSystem extends System { rooms(): { room: string; guests: number; waiting: number; workers: number; siparisler: string[] }[]; siparisOf(room: string): string[]; makineler(room?: string): MakineGorunum[] }
 
 export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSystem {
   const rng = env.rng('kafe');
-  const rooms: Room[] = ROOMS.map(r => ({ ...r, guests: [], wk: [], seatTaken: new Set<number>(), visitors: [] }));
+  const rooms: Room[] = ROOMS.map(r => ({ ...r, guests: [], wk: [], seatTaken: new Set<number>(), visitors: [], mak: new Map<IstasyonId, Mak>(), preT: 0 }));
   const host = () => rt.kafeHost as KafeHostApi | undefined;
   const geom0 = (r: Room) => {
     const m = IC_BY_ID[r.room], D = icDim(m).D, W = icDim(m).W, lay = icLayout(m), tz = lay.find(i => i.k === 'tezgah')!;
@@ -96,6 +99,29 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
   }
   /** where a worker stands (staff side of the counter) to make an item of that station */
   const istasyonNoktasi = (r: Room, ist: IstasyonId, idx: number): Vec2 => { const g = geom(r), a = istasyonA(r, ist); return g.P(Math.max(g.cu + 0.2, Math.min(g.endU - 0.6, a + idx * 0.35)), -g.arka); };
+  /* ---------- makineler ---------- */
+  const lvOf = (r: Room) => host()?.info(r.arsa)?.lv ?? 1;
+  const makSure = (r: Room, item: string) => kalemOf(item).sure / (1 + 0.12 * lvOf(r));
+  const makOf = (r: Room, ist: IstasyonId): Mak => { let m = r.mak.get(ist); if (!m) { m = { ist, cook: '', t: 0, sure: 1, ready: [], by: 0 }; r.mak.set(ist, m); } return m; };
+  /** ürünü makineye koy (makine boşsa); tepsi doluysa en eski ürün bayatlar, atılır (stok yok) */
+  function makKoy(r: Room, m: Mak, item: string, by: number): boolean {
+    if (m.cook) return false;
+    if (m.ready.length >= MAKINE_TEPSI) m.ready.shift();
+    m.cook = item; m.t = 0; m.sure = makSure(r, item); m.by = by; return true;
+  }
+  /** hazır tepsiden o ürünü al */
+  const makAl = (m: Mak, item: string): boolean => { const i = m.ready.indexOf(item); if (i < 0) return false; m.ready.splice(i, 1); return true; };
+  function tickMak(r: Room, dt: number) { for (const m of r.mak.values()) if (m.cook) { m.t += dt; if (m.t >= m.sure) { m.ready.push(m.cook); m.cook = ''; m.t = 0; } } }
+  /** bu makinede yapılan menü kalemleri (seviyenin açtığı menüden), ucuzdan pahalıya */
+  const makMenu = (r: Room, ist: IstasyonId) => menuOf(r).filter(x => kalemOf(x.id).ist === ist).sort((a, b) => a.fiyat - b.fiyat);
+  /** boşta önceden yapılacak ürün: tepside olmayan en ucuz kalem (bekledikçe ürün gelir); yoksa '' */
+  function onceden(r: Room, m: Mak): string {
+    if (m.cook || m.ready.length >= MAKINE_ON) return '';
+    const mm = makMenu(r, m.ist); if (!mm.length) return '';
+    return (mm.find(x => !m.ready.includes(x.id)) || mm[0]).id;
+  }
+  /** makinenin odadaki adı (layout aleti) */
+  const makAd = (r: Room, ist: IstasyonId) => { const hit = icLayout(geom(r).m).find(i => ISTASYON_LAYOUT_K[ist].includes(i.k)); return makineAdi(ist, hit?.k); };
   function spawnGuest(r: Room) {
     const g = geom(r), seed = Math.floor(rng.next() * 1e6), look = LOOKS[Math.floor(rng.next() * LOOKS.length)];
     const a = env.reg.add('regular', 'kafe-' + r.room + '-' + seed, { kind: 'regular', look: { lookType: look, lookSeed: seed }, seed }, g.door, { name: '' });
@@ -153,8 +179,8 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
 
   function tickRoom(r: Room, dt: number) {
     const h = host(), info = h?.info(r.arsa);
-    if (!h || !info) { r.visitors.length = 0; for (const gu of r.guests) env.reg.remove(gu.a); for (const w of r.wk) env.reg.remove(w.a); r.guests.length = 0; r.wk.length = 0; r.seatTaken.clear(); return; }
-    syncWorkers(r);
+    if (!h || !info) { r.visitors.length = 0; for (const gu of r.guests) env.reg.remove(gu.a); for (const w of r.wk) env.reg.remove(w.a); r.guests.length = 0; r.wk.length = 0; r.seatTaken.clear(); r.mak.clear(); return; }
+    syncWorkers(r); tickMak(r, dt);
     // new guests from the hourly customer flow (mulk.ts accrues them into pending)
     const open = r.guests.filter(x => x.st === 'in' || x.st === 'gez' || x.st === 'queue').length + r.visitors.length;
     const amb = env.rules.ambient;
@@ -196,15 +222,34 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
         a.act = 'idle'; a.speed = 0; a.rot = geomYaw(r) + Math.PI; a.carry = [];
         const gu = waiting(r).find(x => !x.claimed);
         if (gu && !(h.fp && r.arsa === 'k3')) { gu.claimed = w.a.id; w.guest = gu; w.item = gu.want; w.st = 'toSt'; w.t = 0; }
+        else if (!gu && w.t > 2.5 && r.preT <= 0 && !(h.fp && r.arsa === 'k3')) {
+          // boşta: bir makineye önceden ürün koy (tepside beklesin); odada aynı anda tek çalışan, 4 sn arayla
+          for (const ist of ISTASYON_SIRA) { if (!MAKINE.has(ist) || !makMenu(r, ist).length) continue; const it = onceden(r, makOf(r, ist)); if (it) { w.item = it; w.st = 'pre'; w.t = 0; r.preT = 4; break; } }
+        }
+      } else if (w.st === 'pre') {
+        const kal = kalemOf(w.item), mp = istasyonNoktasi(r, kal.ist, w.idx), m = makOf(r, kal.ist);
+        if (waiting(r).some(x => !x.claimed) && w.t > 0.2 && Math.hypot(mp.x - a.x, mp.z - a.z) > 0.6) { w.st = 'post'; w.t = 0; continue; }   // müşteri geldi: önce ona
+        if (Math.hypot(mp.x - a.x, mp.z - a.z) > 0.1) { step1(a, mp, 1.8, dt); a.act = 'walk'; continue; }
+        a.speed = 0; a.rot = geomYaw(r) + Math.PI; a.act = 'pour';
+        if (w.t > 0.8) { makKoy(r, m, w.item, w.a.id); w.st = 'post'; w.t = 0; a.act = 'idle'; }
       } else if (w.st === 'toSt') {
         if (!w.guest || w.guest.st !== 'queue') { w.guest = null; w.st = 'post'; continue; }
         const kal = kalemOf(w.item), mp = istasyonNoktasi(r, kal.ist, w.idx);
         if (Math.hypot(mp.x - a.x, mp.z - a.z) > 0.1) { step1(a, mp, 1.8, dt); a.act = 'walk'; continue; }
         a.speed = 0; a.rot = geomYaw(r) + Math.PI; w.st = 'brew'; w.t = 0;
+        if (MAKINE.has(kal.ist)) { const m = makOf(r, kal.ist); if (!m.ready.includes(w.item) && !(m.cook === w.item)) makKoy(r, m, w.item, w.a.id); }
       } else if (w.st === 'brew') {
         const kal = kalemOf(w.item); a.speed = 0;
-        a.act = kal.ist === 'ocak' || kal.ist === 'izgara' || kal.ist === 'firin' || kal.ist === 'kopya' ? 'cut' : 'pour';
+        a.act = kal.ist === 'ocak' || kal.ist === 'izgara' || kal.ist === 'firin' || kal.ist === 'kopya' || kal.ist === 'dikis' ? 'cut' : 'pour';
         if (!w.guest || w.guest.st !== 'queue') { w.guest = null; w.st = 'post'; a.act = 'idle'; continue; }
+        if (MAKINE.has(kal.ist)) {
+          // makinede: hazırsa tepsiden al; makine boşaldıysa (başkasının ürünü çıktı) kendi ürününü koy; değilse başında bekle
+          const m = makOf(r, kal.ist);
+          if (makAl(m, w.item)) { w.st = 'hand'; w.t = 0; a.carry = [{ type: 'urun:' + w.item, tier: 1 } as never]; }
+          else if (!m.cook) makKoy(r, m, w.item, w.a.id);
+          else if (m.cook !== w.item) a.act = 'idle';
+          continue;
+        }
         if (w.t >= kal.sure / (1 + 0.12 * info.lv)) { w.st = 'hand'; w.t = 0; a.carry = [{ type: 'urun:' + w.item, tier: 1 } as never]; }
       } else if (w.st === 'hand') {
         const gu = w.guest; if (!gu || gu.st !== 'queue') { w.guest = null; w.st = 'post'; a.carry = []; continue; }
@@ -216,14 +261,46 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
   }
   const geomYaw = (r: Room) => { const m = IC_BY_ID[r.room], g = geom(r); const a = icWorld(m, 0, 0), b = g.vert ? icWorld(m, 1, 0) : icWorld(m, 0, -1); return Math.atan2(b.x - a.x, b.z - a.z); };   // facing the counter (-v)
 
-  // the player serves from the station that makes what the first waiting guest asked for: stand there until the bar fills
+  // the player serves from the station that makes what the first waiting guest asked for: stand there until the bar fills.
+  // 2026-11-22 makine istasyonları: oyuncu ürünü makineye koyar (0.4 sn), makine kendi kendine yapar (oyuncu başka makineye
+  // gidebilir); hazır olunca makinenin başına dönen oyuncu sıradaki müşteriye verir. Müşteri yoksa da koyabilir: tepside bekler.
+  const kat0 = () => ((env.player() as { kat?: number }).kat || 0);
+  const uygun = (r: Room, ist: IstasyonId) => waiting(r).filter(x => !!x.want && kalemOf(x.want).ist === ist);
   for (const r of rooms) {
     for (const ist of ISTASYON_SIRA) {
       const g = geom(r), head = () => waiting(r).find(x => !x.claimed) || waiting(r)[0];
       let work = 0, last = -99, who = 0;
+      if (MAKINE.has(ist)) {
+        /** tepsideki üründen bekleyen bir müşteri (önce kimsenin almadığı) */
+        const hazirMus = () => { const m = r.mak.get(ist); if (!m || !m.ready.length) return null; const q = uygun(r, ist).filter(x => m.ready.includes(x.want)); return q.find(x => !x.claimed) || q[0] || null; };
+        /** makine boşsa koyulacak ürün: bekleyen müşterinin istediği (tepside / makinede olmayan), yoksa önceden yapılacak */
+        const koyulacak = () => {
+          const m = makOf(r, ist); if (m.cook) return '';
+          const q = uygun(r, ist).find(x => !m.ready.includes(x.want)); if (q) return q.want;
+          return m.ready.length < MAKINE_TEPSI && makMenu(r, ist).length ? (onceden(r, m) || (m.ready.length < MAKINE_TEPSI ? makMenu(r, ist)[0].id : '')) : '';
+        };
+        env.interactions.register({
+          id: 'kafeIst.' + r.room + '.' + ist, pos: g.P(istasyonA(r, ist), 0.85), radius: 1.0, kind: 'station', dwell: 0.4, interval: 0.1,
+          canAct: () => kat0() === g.kat && !!host()?.info(r.arsa) && !(host()!.fp && r.arsa === 'k3') && (!!hazirMus() || !!koyulacak()),
+          act: () => {
+            const m = makOf(r, ist), gu = hazirMus();
+            if (gu && makAl(m, gu.want)) {
+              const ad = kalemAd(r, gu.want), v = served(r, gu, 'player');
+              if (v) env.host.heroSay('Buyurun! ' + (ad ? ad.charAt(0).toLocaleUpperCase('tr') + ad.slice(1) + ' ' : '') + '+' + Math.round(v) + ' ₺ kasaya', 1.6);
+              return 'continue';
+            }
+            const it = koyulacak();
+            if (it && makKoy(r, m, it, -1)) {
+              const ad = kalemAd(r, it); env.host.heroSay(makAd(r, ist) + ' çalışıyor: ' + ad + ' (' + Math.ceil(m.sure) + ' sn)', 1.8);
+            }
+            return 'done';
+          },
+        });
+        continue;
+      }
       env.interactions.register({
         id: 'kafeIst.' + r.room + '.' + ist, pos: g.P(istasyonA(r, ist), 0.85), radius: 1.0, kind: 'station', dwell: 0.4, interval: 0.1,
-        canAct: () => { const gu = head(); return ((env.player() as { kat?: number }).kat || 0) === g.kat && !!host()?.info(r.arsa) && !!gu && !!gu.want && kalemOf(gu.want).ist === ist; },
+        canAct: () => { const gu = head(); return kat0() === g.kat && !!host()?.info(r.arsa) && !!gu && !!gu.want && kalemOf(gu.want).ist === ist; },
         act: (_a, ctx) => {
           const gu = head(), inf = host()?.info(r.arsa); if (!gu || !inf) return 'done';
           const el = ctx.t - last < 0.5 ? ctx.t - last : 0.5; last = ctx.t;
@@ -237,6 +314,19 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
       });
     }
   }
+  /** görünüm için: makinelerin yeri, pişen ürün ve ilerleme, hazır tepsi (yalnız kullanılmış makineler) */
+  function makineler(room?: string): MakineGorunum[] {
+    const o: MakineGorunum[] = [];
+    for (const r of rooms) {
+      if (room && r.room !== room) continue;
+      for (const m of r.mak.values()) {
+        if (!m.cook && !m.ready.length) continue;
+        const g = geom(r), at = g.P(istasyonA(r, m.ist), -0.05);
+        o.push({ room: r.room, kat: g.kat, ist: m.ist, ad: makAd(r, m.ist), x: at.x, z: at.z, cook: m.cook, p: m.cook ? Math.min(1, m.t / m.sure) : 1, kalan: m.cook ? Math.max(0, m.sure - m.t) : 0, ready: [...m.ready] });
+      }
+    }
+    return o;
+  }
   const siparis = (r: Room) => waiting(r).slice(0, 4).map(gu => menuOf(r).find(m => m.id === gu.want)?.ad || '');
   let on = false;
   return {
@@ -244,12 +334,13 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
     step(ctx: SimCtx) {
       const h = host(); if (!h) return;
       if (!on) {
-        on = true; h.live = true;
+        on = true; h.live = true; rt.kafeMakineler = makineler;
         h.fpDone = (arsa, ok) => { const r = rooms.find(x => x.arsa === arsa); const gu = r && waiting(r)[0]; if (r && gu) { leave(r, gu, !ok); if (ok) gu.a.mood = 'happy'; } };   // first-person counter: the head of the queue is the one being served there
       }
-      for (const r of rooms) tickRoom(r, Math.min(ctx.dt, 0.25));
+      for (const r of rooms) { r.preT -= Math.min(ctx.dt, 0.25); tickRoom(r, Math.min(ctx.dt, 0.25)); }
     },
     rooms: () => rooms.map(r => ({ room: r.room, guests: r.guests.length, waiting: waiting(r).length, workers: r.wk.length, siparisler: siparis(r) })),
     siparisOf: (room: string) => { const r = rooms.find(x => x.room === room); return r ? siparis(r) : []; },
+    makineler,
   };
 }

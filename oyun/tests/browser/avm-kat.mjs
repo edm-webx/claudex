@@ -13,6 +13,7 @@ await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengel
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 90000 });
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
 const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { await p.fill('.kl-in[name=ad]', 'Denetci').catch(() => {}); await go.click({ force: true }); await p.waitForTimeout(700); }
+await p.evaluate(() => { const M = window.__marti; M.command({ kind: 'esnafim', op: 'set', data: { ad: 'Denetci' } }); M.command({ kind: 'esnafim', op: 'done' }); M.renderFrames(2, 0.1); });   // yeni kulis: ad + bitir komutla
 const bos = process.env.BOS === '1';
 await p.evaluate((bos) => { const M = window.__marti; M.setTime(13); M.step(2); M.izgara(false); M.simCmd('money', 9e9); M.simCmd('level', 40);
   M.closeJobBoard?.(); M.closePanel?.(); for (const id of ['sb-vig']) { const v = document.getElementById(id); if (v) v.style.display = 'none'; }
