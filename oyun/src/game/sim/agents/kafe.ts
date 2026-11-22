@@ -9,7 +9,7 @@
 import type { System, SimCtx, Vec2 } from '../../../engine/api';
 import { IC_BY_ID, IC_MEKANLAR, icWorld, icDim, icLayout, icUV, icYol, personelGeo, personelDuraklari, icMagaza } from '../../../content/ic-mekan';
 import { AVM_GIRIS, AVM_DIS, avmGelis, avmGidis } from '../../../content/avm-kat';
-import { KAFE_ISCI_TAVAN, ARSA_ISLETME, kafeMenu, ARSALAR, arsaKapi } from '../../../content/esya';
+import { KAFE_ISCI_TAVAN, ARSA_ISLETME, kafeSatis, ARSALAR, arsaKapi } from '../../../content/esya';
 import { kalemOf, ISTASYON_LAYOUT_K, ISTASYON_SIRA, MAKINE, MAKINE_TEPSI, MAKINE_ON, makineAdi, type IstasyonId } from '../../../content/isletme-istasyon';
 import { ISLETME_ROL } from '../../../content/isletme-kadro';
 import type { AgentEnv } from './env';
@@ -81,11 +81,12 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
   };
   const follow = (a: Actor, path: Pt[], sp: number, dt: number) => { if (!path.length) return true; if (step1(a, path[0], sp, dt)) path.shift(); a.act = 'walk'; return !path.length; };
 
+  // dolap içeceği (0,35 ağırlık): siparişlerin aşağı yukarı dörtte biri, pahalı ana yemeği çok itmesin
   /** what the next guest asks for: an item of this business's own menu (the level decides how many are on it), cheap ones more often */
-  const menuOf = (r: Room) => { const info = host()?.info(r.arsa); return info ? kafeMenu(r.arsa, info.lv) : []; };
+  const menuOf = (r: Room) => { const info = host()?.info(r.arsa); return info ? kafeSatis(r.arsa, info.lv) : []; };
   function pickWant(r: Room): string {
     const menu = menuOf(r); if (!menu.length) return '';
-    const w = menu.map(m => (m.fiyat > 150 ? 0.5 : m.fiyat < 20 ? 1.5 : 1)); let x = rng.next() * w.reduce((a, b) => a + b, 0);
+    const w = menu.map(m => (kalemOf(m.id).ist === 'dolap' ? 0.35 : m.fiyat > 150 ? 0.5 : m.fiyat < 20 ? 1.5 : 1));   let x = rng.next() * w.reduce((a, b) => a + b, 0);
     for (let i = 0; i < menu.length; i++) { x -= w[i]; if (x <= 0) return menu[i].id; }
     return menu[0].id;
   }

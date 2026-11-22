@@ -16,7 +16,7 @@ import { odulluMacKaldi, ODULLU_MAC_GUNLUK } from './halisaha';
 import type { Kernel } from './state';
 import {
   ESYA_BY_ID, SANDIK_BY_ID, GUNLUK_HAVUZ, SANDIK_DUSER, BANKA, ARSALAR, ARSA_HAK, arsaKapi, DUKKAN_BY_ID, DUKKAN_MAX_SEVIYE,
-  dukkanYukselt, dukkanMusteri, STADYUM, HALI_SAHA_KAPI, ISCI_MAX, isciFiyat, kafeMenu, kafeIsciMax, KAFE_ISCI_TAVAN, ISCI_SAAT_UCRET, ISCI_MUSTERI, ARSA_ISLETME, type Arsa,
+  dukkanYukselt, dukkanMusteri, STADYUM, HALI_SAHA_KAPI, ISCI_MAX, isciFiyat, kafeMenu, kafeDolap, kafeIsciMax, KAFE_ISCI_TAVAN, ISCI_SAAT_UCRET, ISCI_MUSTERI, ARSA_ISLETME, type Arsa,
   isletmeOf, isletmeEsya, SALON_ESYA, SALON_ESYA_BY_ID,
 } from '../../content/esya';
 import { TRAITS } from '../../content/traits';
@@ -336,7 +336,7 @@ export function installMulk(K: Kernel) {
     info(id: string) { const q = plotOf(id); if (!q || !q.p || !q.a.sabit) return null; const ek = ekon(q.a, q.p); return { lv: q.p.lv, isci: flo(q.p.isci), kadro: kadroOf(q.a, q.p).map(c => ({ id: c.id, ad: c.ad, rol: c.rol, huy: c.huy, look: c.look, rank: 0 })), masa: asamaDef(q.a.id, q.p.lv).masa, kuyruk: asamaDef(q.a.id, q.p.lv).kuyruk, tadilat: !!q.p.tadilat, tema: q.p.tema || '', fiyat: ek.fiyat * (1 + q.p.lv * 0.04), menu: ek.menu.map(x => ({ id: x.id, ad: x.ad, ikon: x.ikon })) }; },
     /** kalem = the menu item that was served (price = its own price x level x equipment); without it the menu average is used */
     sell(id: string, kalem = '', bonus = 1): number {
-      const q = plotOf(id); if (!q || !q.p) return 0; const ek = ekon(q.a, q.p), it = kalem ? ek.menu.find(m => m.id === kalem) : undefined;
+      const q = plotOf(id); if (!q || !q.p) return 0; const ek = ekon(q.a, q.p), it = kalem ? ek.menu.find(m => m.id === kalem) || kafeDolap(q.a.id).find(m => m.id === kalem) : undefined;
       const v = Math.max(1, Math.round((it ? it.fiyat * ek.fK : ek.fiyat) * (1 + q.p.lv * 0.04) * bonus)); q.p.sat += 1; q.p.till += v;
       if (it) { const sold = ((S.today as unknown as { sold?: Record<string, number> }).sold ||= {}); sold['k:' + it.id] = (sold['k:' + it.id] || 0) + 1; }
       K.addXP(1); K.stat('kafeSatis'); return v;
