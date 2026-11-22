@@ -99,3 +99,24 @@ export function tadilatEksik(id: string, lv: number, d: AcilisDurum): string[] {
 }
 /** Kilit satırı: en çok iki koşul ("🔒 4★ karne + 700 müşteri (212/700)"). */
 export const kilitYazi = (eksik: string[]): string => (eksik.length ? '🔒 ' + eksik.slice(0, 2).join(' + ') + (eksik.length > 2 ? ' …' : '') : '');
+
+/**
+ * Dükkân görevleri (2026-11-22): alınan her dükkânın kendi görev zinciri, sırayla. Sayılar o dükkânın kendi kaydından (Plot: esya, isci,
+ * sat, lv), ödül o dükkânın fiyatının payı (pahalı dükkân, büyük ödül). İlerleme S.tut['dg_<id>'] = sıradaki görevin indeksi.
+ * Satın alınca da sıraya göre sandık düşer (SATIN_SANDIK).
+ */
+export interface DukkanPlot { esya?: string[]; isci?: number; sat?: number; lv?: number }
+export interface DukkanGorev { ad: string; v: (p: DukkanPlot) => number; n: number; pay: number; sandik?: string }
+export const DUKKAN_GOREV: DukkanGorev[] = [
+  { ad: 'İlk aleti kur', v: p => (p.esya || []).length, n: 1, pay: 0.02 },
+  { ad: 'İlk işçini tut', v: p => Number(p.isci) || 0, n: 1, pay: 0.02 },
+  { ad: '50 satış yap', v: p => Number(p.sat) || 0, n: 50, pay: 0.03 },
+  { ad: '2. seviyeye çıkar', v: p => Number(p.lv) || 1, n: 2, pay: 0.04 },
+  { ad: '300 satış yap', v: p => Number(p.sat) || 0, n: 300, pay: 0.05 },
+  { ad: '3. seviyeye çıkar', v: p => Number(p.lv) || 1, n: 3, pay: 0.06, sandik: 'gumus' },
+  { ad: '1000 satış yap', v: p => Number(p.sat) || 0, n: 1000, pay: 0.08 },
+  { ad: 'En üst seviyeye çıkar', v: p => Number(p.lv) || 1, n: 5, pay: 0.12, sandik: 'gumus' },
+];
+export const dukkanGorevOdul = (a: Arsa, g: DukkanGorev): number => Math.max(500, Math.round(a.fiyat * g.pay / 100) * 100);
+/** satın alma sandığı: holding yolunda ilk iki dükkân tahta, sonrakiler gümüş */
+export const satinSandik = (id: string): string => (SIRA.indexOf(id) < 2 ? 'tahta' : 'gumus');

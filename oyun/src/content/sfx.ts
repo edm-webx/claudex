@@ -20,7 +20,7 @@ export const EVENT_SFX: Record<string, SfxRule> = {
   },
   pick: d => (d?.type === 'gazoz' ? 'fizz' : d?.type === 'cay' ? 'tik' : d?.type === 'tost' ? 'steamHiss' : 'pop'),
   // 2026-10-30 story + league + chests
-  ipucu: 'ticket', sabriGitti: 'bad', dukkanKare: 'sparkle', dukkanSatilik: 'confetti',   // sıralı açılma (content/acilis.ts): yeni dükkân karesi / kilidi açıldı
+  ipucu: 'ticket', sabriGitti: 'bad', dukkanKare: 'sparkle', dukkanSatilik: 'confetti', dukkanGorev: 'streak',   // sıralı açılma (content/acilis.ts): yeni dükkân karesi / kilidi açıldı
   ligMac: 'horn', ligYukseldi: 'confetti', sandikDustu: 'sparkle',
   firstCut: 'cut', cayUsed: 'pour', sale: 'coin', tip: 'coin', firstCollect: 'coin',
   streak: 'streak', firstStreak: 'streak', rankUp: 'streak', ach: 'streak',

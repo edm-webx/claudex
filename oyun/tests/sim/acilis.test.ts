@@ -5,6 +5,7 @@ import { played } from './m1-helpers';
 import { ARSALAR, ISLETME, ARSA_ISLETME } from '../../src/content/esya';
 import { ACILIS, acilisEksik, tadilatAsama } from '../../src/content/acilis';
 import { hedefApi } from '../../src/game/sim/goals';
+import { mulkApi } from '../../src/game/sim/mulk';
 
 const mk = () => { const sim = played(1) as any; sim.step(1); return { sim, S: sim.state }; };
 const keys = (sim: any) => [...sim.rules.rt.pads].map((p: any) => p.key).filter((k: string) => /^(isl|avm)\.k\d+$/.test(k)).sort();
@@ -64,4 +65,16 @@ it('keyif: sıradaki dükkân hedef kartında çubukla; kare ilk çıkınca ve k
   const f0 = goal().frac; S.stats.served = 400; sim.step(0.6); expect(goal().frac).toBeGreaterThan(f0);
   S.stats.served = 500; sim.step(0.6); expect(ev).toEqual(['dukkanKare', 'dukkanSatilik']); expect(goal().label).toBe('Meydan Kafe satılık!');
   sim.step(2); expect(ev).toHaveLength(2);   // bir kez
+});
+
+it('dükkân alınınca açılış sandığı düşer; dükkânın kendi görev zinciri sırayla ödül verir, panelde ilerlemesi görünür', () => {
+  const { sim, S } = mk(); S.money = 1e6; S.level = 20; S.stage = 2; S.stats.served = 600;
+  sim.command({ kind: 'mulk', op: 'arsaAl', id: 'k1' });
+  expect(S.zones.envanter.sandik.tahta).toBe(1);
+  const p = S.zones.arsa.plots.k1, m0 = () => S.money;
+  sim.step(0.6); expect(S.tut.dg_k1 || 0).toBe(0);   // henüz alet yok
+  const a = m0(); p.esya = ['x']; sim.step(0.6); expect(S.tut.dg_k1).toBe(1); expect(m0()).toBeGreaterThan(a);
+  p.isci = 1; p.sat = 60; sim.step(0.26); expect(S.tut.dg_k1).toBe(2); sim.step(0.26); expect(S.tut.dg_k1).toBe(3);   // tick başına bir görev
+  const row = (mulkApi(sim.rules) as any).model().arsa.find((x: any) => x.id === 'k1');
+  expect(row.dgorev).toMatchObject({ ad: '2. seviyeye çıkar', v: 1, n: 2, no: 4 });
 });
