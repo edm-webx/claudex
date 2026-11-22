@@ -3,7 +3,7 @@
  * Two item layers (H3): world/drop items (chest, match, forest, board) and production items (crafted from materials).
  * Character inventory vs account bank is a hard split: inventory = S.zones.envanter, bank = rt.banka (cloud, shared).
  */
-import { HOL, ODA_X, ODA_Z } from './avm-kat';
+import { HOL, ODA_X, ODA_Z, SINEMA_BUFE } from './avm-kat';
 export type EsyaTur = 'tuketim' | 'malzeme' | 'kozmetik' | 'anahtar';
 export interface Esya { id: string; ad: string; ikon: string; tur: EsyaTur; nadir: 0 | 1 | 2; blurb: string }
 export const ESYALAR: Esya[] = [
@@ -91,6 +91,8 @@ function avmArsalar(): Arsa[] {   // (ARSALAR'dan önce çağrılır: sabitler i
     a('k12', 'Maraşlı Martı Dondurma', 1, false, true, 320000, 7, 'k10'), a('k14', 'Çıtırcı Kuruyemiş', 1, false, false, 300000, 7, 'k10'),
     a('k5', 'Martı Lokantası', 2, true, true, 450000, 6), a('k15', 'Dürümcü Dayı', 2, true, false, 420000, 8, 'k5'),
     a('k16', 'Kumpir Kulesi', 2, false, true, 400000, 8, 'k5'), a('k17', 'Midyeci Mido', 2, false, false, 440000, 9, 'k5'),
+    // 2026-11-22 sahip: "sinema salonunun katında patlamış mısırcı olsun, dolaptan kola soda gazoz versin": 3. katın doğu lobisinde
+    { id: 'k18', x: SINEMA_BUFE.x, z: SINEMA_BUFE.z, fiyat: 380000, seviye: 8, rotY: -Math.PI / 2, sabit: 'kafe', kapi: { x: E, z: SINEMA_BUFE.z }, ad: 'Martı Sinema Büfesi (AVM)', once: 'k5', kat: 3 },
   ];
 }
 export const arsaKapi = (a: Arsa) => a.kapi ?? { x: a.x, z: a.z + (a.rotY ? -3.0 : 3.0) };
@@ -105,7 +107,7 @@ export interface KafeYemek { id: string; ad: string; ikon: string; fiyat: number
 /** ic: shown inside (ic-mekan-look); teras: shown on the café terrace (karsi-yasam) */
 export interface KafeEsya { id: string; ad: string; ikon: string; fiyat: number; lv: number; musteri?: number; fiyatK?: number; desc: string; teras?: boolean }
 export type IsletmeId = 'kafe' | 'bistro' | 'kirtasiye' | 'kantin' | 'lokanta' | 'kafeterya' | 'giyim' | 'elektronik' | 'oyuncak'
-  | 'sekerci' | 'kahveci' | 'dondurma' | 'baklava' | 'kuruyemis' | 'donerci' | 'kumpir' | 'midye';
+  | 'sekerci' | 'kahveci' | 'dondurma' | 'baklava' | 'kuruyemis' | 'donerci' | 'kumpir' | 'midye' | 'sinema';
 export interface Isletme { id: IsletmeId; ad: string; ikon: string; asama: string[]; mus: number; menu: KafeYemek[]; esya: KafeEsya[] }
 const Y = (id: string, ad: string, ikon: string, fiyat: number): KafeYemek => ({ id, ad, ikon, fiyat });
 const A = (id: string, ad: string, ikon: string, fiyat: number, lv: number, o: Partial<KafeEsya>, desc: string): KafeEsya => ({ id, ad, ikon, fiyat, lv, ...o, desc });
@@ -295,6 +297,17 @@ export const ISLETME: Record<IsletmeId, Isletme> = {
       A('neon', 'Neon tabela', '💡', 22000, 3, { musteri: 0.12 }, 'Pembe neon "KUMPİR": müşteri +%12'),
       A('kule_vitrin', 'Kule vitrini', '🗼', 40000, 4, { musteri: 0.12 }, 'Üç katlı kumpir camda döner: müşteri +%12'),
       A('usta_k', 'Ortaköylü usta', '👨‍🍳', 75000, 5, { fiyatK: 0.2 }, 'Kırk yıllık usta: fiyatlar +%20')] },
+  sinema: { id: 'sinema', ad: 'Sinema Büfesi', ikon: '🍿', mus: 1.4, asama: ['Mısır tezgâhı', 'Sinema büfesi', 'Mısır & slush', 'Fuaye büfesi', 'Martı Sinema Büfesi'],
+    menu: [Y('misir_kucuk', 'Küçük mısır', '🍿', 35), Y('kolaz', 'Kolaz (dolaptan)', '🥤', 30), Y('gazoz', 'Boğaz Gazozu', '🍾', 25), Y('soda', 'Martı Soda', '🫧', 20),
+      Y('misir_kova', 'Kova mısır', '🍿', 95), Y('slush', 'Buzlu slush', '🧊', 45), Y('nachos', 'Peynirli nachos', '🧀', 70), Y('film_menu', 'Film menüsü (kova + 2 Kolaz)', '🎬', 165)],
+    esya: [A('misir_mak', 'Mısır makinesi', '🍿', 30000, 1, { musteri: 0.14 }, 'Camlı kazanda patlayan mısır, koku bütün kata yayılır: müşteri +%14'),
+      A('icecek_dolap_s', 'İçecek dolabı', '🧊', 16000, 1, { musteri: 0.1 }, 'Buz gibi Kolaz, soda, Boğaz Gazozu: müşteri +%10'),
+      A('karamel_kazan', 'Karamel kazanı', '🍯', 18000, 2, { fiyatK: 0.1 }, 'Karamelli mısır: fiyatlar +%10'),
+      A('slush_mak', 'Slush makinesi', '🧊', 22000, 2, { musteri: 0.1 }, 'Dönen renkli buz: müşteri +%10'),
+      A('nacho_isitici', 'Nachos ısıtıcı', '🧀', 24000, 3, { fiyatK: 0.1 }, 'Erimiş peynirli nachos: fiyatlar +%10'),
+      A('afis_vitrin', 'Işıklı afiş vitrini', '🎬', 20000, 3, { musteri: 0.12 }, 'Vizyondaki filmler ışıl ışıl: müşteri +%12'),
+      A('led_menu_s', 'LED menü panosu', '💡', 26000, 4, { musteri: 0.12 }, 'Kayan fiyatlar ve fragman: müşteri +%12'),
+      A('vip_bar', 'VIP salon servisi', '⭐', 70000, 5, { fiyatK: 0.2 }, 'Koltuğa servis, kadife kordon: fiyatlar +%20')] },
   midye: { id: 'midye', ad: 'Midyeci', ikon: '🦪', mus: 1.5, asama: ['Midye tablası', 'Midyeci', 'Midye & tava', 'Deniz mezecisi', 'Midyeci Mido Saray'],
     menu: [Y('salgam', 'Şalgam', '🥤', 22), Y('midye_dolma', 'Midye dolma (5 tane)', '🦪', 42), Y('midye_tava', 'Midye tava', '🍤', 68), Y('balik_durum', 'Balık dürüm', '🐟', 85),
       Y('kalamar', 'Kalamar tava', '🦑', 98), Y('karides_guvec', 'Karides güveç', '🍤', 135), Y('levrek_sis', 'Levrek şiş', '🍢', 155), Y('mido_tabak', 'Mido tabağı (30 midye)', '🏆', 230)],
@@ -312,7 +325,7 @@ export const KAFE_MENU: Record<string, KafeYemek[]> = { k1: ISLETME.kafe.menu, k
 export const KAFE_MENU_LV = [0, 2, 4, 5, 6, 8];
 /** fixed plot id -> its business type */
 export const ARSA_ISLETME: Record<string, IsletmeId> = { k1: 'kafe', k2: 'bistro', k3: 'kirtasiye', k4: 'kantin', k5: 'lokanta', k6: 'kafeterya', k7: 'giyim', k8: 'elektronik', k9: 'oyuncak',
-  k10: 'sekerci', k11: 'kahveci', k12: 'dondurma', k13: 'baklava', k14: 'kuruyemis', k15: 'donerci', k16: 'kumpir', k17: 'midye' };
+  k10: 'sekerci', k11: 'kahveci', k12: 'dondurma', k13: 'baklava', k14: 'kuruyemis', k15: 'donerci', k16: 'kumpir', k17: 'midye', k18: 'sinema' };
 export const isletmeOf = (arsaId: string): Isletme => ISLETME[ARSA_ISLETME[arsaId] || 'kafe'];
 export const kafeMenu = (id: string, lv: number) => isletmeOf(id).menu.slice(0, KAFE_MENU_LV[Math.max(0, Math.min(5, lv))] || 2);
 export const KAFE_ESYA: KafeEsya[] = ISLETME.kafe.esya;

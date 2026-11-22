@@ -25,6 +25,7 @@ export const ISLETME_ROL: Record<IsletmeId, IsletmeRol[]> = {
   kuruyemis: [{ rol: 'tezgahci', ad: 'Tezgâhtar', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }, { rol: 'kavurmaci', ad: 'Kavurmacı', huyRol: 'tost', gorunum: 'tost', minLv: 1 }],
   donerci: [{ rol: 'donerci', ad: 'Döner ustası', huyRol: 'asci', gorunum: 'asci', minLv: 1 }, { rol: 'garson', ad: 'Garson', huyRol: 'garson', gorunum: 'garson', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 2 }],
   kumpir: [{ rol: 'kumpirci', ad: 'Kumpir ustası', huyRol: 'tost', gorunum: 'tost', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }, { rol: 'garson', ad: 'Garson', huyRol: 'garson', gorunum: 'garson', minLv: 2 }],
+  sinema: [{ rol: 'misirci', ad: 'Mısırcı', huyRol: 'tost', gorunum: 'tost', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }, { rol: 'garson', ad: 'Fuaye görevlisi', huyRol: 'garson', gorunum: 'garson', minLv: 2 }],
   midye: [{ rol: 'midyeci', ad: 'Midyeci', huyRol: 'asci', gorunum: 'asci', minLv: 1 }, { rol: 'garson', ad: 'Garson', huyRol: 'garson', gorunum: 'garson', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 2 }],
 };
 /** wage is paid once at day end: same total as the old hourly cut (24 game hours) */

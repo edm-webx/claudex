@@ -24,6 +24,13 @@ export function makeUrunModel(kalemId: string): T.Object3D {
     case 'kutu': add(g, K.mesh(K.roundBox(0.14, 0.07, 0.1, 0.01, 2), c), 0, 0.035, 0); add(g, K.mesh(K.roundBox(0.145, 0.015, 0.105, 0.005, 2), '#fbfbf8'), 0, 0.075, 0); h = 0.09; break;
     case 'defter': add(g, K.mesh(K.roundBox(0.17, 0.03, 0.23, 0.008, 2), c), 0, 0.015, 0); add(g, K.mesh(K.roundBox(0.015, 0.032, 0.23, 0.004, 1), '#2b2b30'), -0.08, 0.016, 0); h = 0.04; break;
     case 'kagit': add(g, K.mesh(K.roundBox(0.2, 0.05, 0.28, 0.004, 1), '#fbfbf8'), 0, 0.025, 0); add(g, K.mesh(K.roundBox(0.2, 0.004, 0.28, 0.002, 1), '#dfe6ee'), 0, 0.052, 0); h = 0.06; break;
+    case 'misir': {   // popcorn: red-white striped paper bucket heaped with popcorn (kova bigger)
+      const big = kal.sure >= 5, r = big ? 0.075 : 0.055, hh = big ? 0.17 : 0.12;
+      add(g, K.mesh(cyl(r, r * 0.72, hh, 12), '#fbfaf6'), 0, hh / 2, 0);
+      for (let i = 0; i < 4; i++) add(g, K.mesh(cyl(r * 1.005, r * 0.725, hh, 3), '#d63c3c'), 0, hh / 2, 0).rotation.y = i * Math.PI / 2;
+      for (let i = 0; i < 7; i++) add(g, K.mesh(sph(r * 0.38), i % 3 ? '#fff4c2' : c), Math.cos(i * 0.9) * r * 0.5, hh + 0.01 + (i % 2) * 0.02, Math.sin(i * 0.9) * r * 0.5);
+      h = hh + 0.05; break;
+    }
     case 'torba': add(g, K.mesh(K.roundBox(0.2, 0.22, 0.1, 0.04, 2), c), 0, 0.11, 0); add(g, K.mesh(K.roundBox(0.1, 0.1, 0.02, 0.02, 2), '#2b2b30'), 0, 0.08, 0.055); h = 0.24; break;
   }
   g.userData.h = h; return g;

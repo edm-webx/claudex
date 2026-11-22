@@ -3,8 +3,8 @@
  * (seconds at business level 1), what the worker carries (3D model family) and its colour. No stock, no ingredients.
  * 'raf' is only a pick-up point (endless, decorative). Menu ids are the ISLETME[...].menu ids of content/esya.ts.
  */
-export type IstasyonId = 'kahve' | 'cay' | 'bar' | 'ocak' | 'firin' | 'izgara' | 'vitrin' | 'tezgah' | 'kopya' | 'raf' | 'depo' | 'paket' | 'test' | 'dikis';
-export type TasimaKind = 'fincan' | 'bardak' | 'sise' | 'tabak' | 'kase' | 'tepsi' | 'dilim' | 'kutu' | 'defter' | 'kagit' | 'torba';
+export type IstasyonId = 'kahve' | 'cay' | 'bar' | 'ocak' | 'firin' | 'izgara' | 'vitrin' | 'tezgah' | 'kopya' | 'raf' | 'depo' | 'paket' | 'test' | 'dikis' | 'misir' | 'dolap';
+export type TasimaKind = 'fincan' | 'bardak' | 'sise' | 'tabak' | 'kase' | 'tepsi' | 'dilim' | 'kutu' | 'defter' | 'kagit' | 'torba' | 'misir';
 export interface Kalem { ist: IstasyonId; sure: number; tasima: TasimaKind; renk: string }
 const k = (ist: IstasyonId, sure: number, tasima: TasimaKind, renk: string): Kalem => ({ ist, sure, tasima, renk });
 export const KALEM: Record<string, Kalem> = {
@@ -50,15 +50,18 @@ export const KALEM: Record<string, Kalem> = {
   sucuklu_kumpir: k('firin', 5, 'tabak', '#c0392b'), karisik_kumpir: k('firin', 5.5, 'tabak', '#e0533c'), tavuklu_kumpir: k('firin', 5.5, 'tabak', '#e8b960'), kule_kumpir: k('firin', 7.5, 'tepsi', '#e2a82b'),
   salgam: k('bar', 1.5, 'bardak', '#7a1f3d'), midye_dolma: k('vitrin', 2, 'tabak', '#2a2d33'), midye_tava: k('ocak', 4.5, 'tabak', '#e8b960'), balik_durum: k('izgara', 5, 'dilim', '#d9a05b'),
   kalamar: k('ocak', 5, 'tabak', '#f2e6cc'), karides_guvec: k('firin', 6, 'kase', '#e0533c'), levrek_sis: k('izgara', 6.5, 'tabak', '#c8d3da'), mido_tabak: k('vitrin', 6, 'tepsi', '#2a2d33'),
+  // 2026-11-22 Sinema Büfesi: mısır makinesi kendi patlatır, içecekler dolaptan (makine değil, açıp alınır)
+  misir_kucuk: k('misir', 3.5, 'misir', '#ffe08a'), kolaz: k('dolap', 1, 'sise', '#5a2a1a'), gazoz: k('dolap', 1, 'sise', '#5aa9d6'), soda: k('dolap', 1, 'sise', '#dff3f7'),
+  misir_kova: k('misir', 5, 'misir', '#ffd23f'), slush: k('bar', 3, 'bardak', '#e0436b'), nachos: k('firin', 4, 'kase', '#f2c230'), film_menu: k('misir', 6, 'tepsi', '#ffd23f'),
 };
 /** which layout item names (content/ic-mekan.ts) stand for a station; the first one found is where the worker walks */
 export const ISTASYON_LAYOUT_K: Record<IstasyonId, string[]> = {
-  kahve: ['espresso', 'barista', 'kumOcak'], cay: ['semaver', 'cayOcak'], bar: ['buzdolap', 'espresso', 'buzVitrin', 'yayik'], ocak: ['benmari', 'corba', 'ocakK', 'kazan', 'kavurucu'],
-  firin: ['tostMak', 'firinK', 'tasFirin', 'waffle', 'kumpirFirin'], izgara: ['mangal', 'izgara', 'doner'], vitrin: ['vitrin', 'buzVitrin', 'tatliVitrin', 'dondurmaTezgah', 'kavanoz'], tezgah: ['tepsiTezgah', 'tezgah'], kopya: ['fotokopi'], raf: ['kavanoz', 'tezgah'],
-  depo: ['depoRaf'], paket: ['paketMasa', 'hediye'], test: ['testMasa'], dikis: ['dikis'],
+  kahve: ['espresso', 'barista', 'kumOcak'], cay: ['semaver', 'cayOcak'], bar: ['buzdolap', 'espresso', 'buzVitrin', 'yayik', 'slushMak'], ocak: ['benmari', 'corba', 'ocakK', 'kazan', 'kavurucu'],
+  firin: ['tostMak', 'firinK', 'tasFirin', 'waffle', 'kumpirFirin', 'nachoIsitici'], izgara: ['mangal', 'izgara', 'doner'], vitrin: ['vitrin', 'buzVitrin', 'tatliVitrin', 'dondurmaTezgah', 'kavanoz'], tezgah: ['tepsiTezgah', 'tezgah'], kopya: ['fotokopi'], raf: ['kavanoz', 'tezgah'],
+  depo: ['depoRaf'], paket: ['paketMasa', 'hediye'], test: ['testMasa'], dikis: ['dikis'], misir: ['misirMak'], dolap: ['icecekDolap', 'buzdolap'],
 };
 /** deterministic order, used to spread stations along a counter when the room has no matching layout item */
-export const ISTASYON_SIRA: IstasyonId[] = ['kahve', 'cay', 'bar', 'ocak', 'firin', 'izgara', 'vitrin', 'tezgah', 'kopya', 'raf', 'depo', 'paket', 'test', 'dikis'];
+export const ISTASYON_SIRA: IstasyonId[] = ['kahve', 'cay', 'bar', 'ocak', 'firin', 'izgara', 'vitrin', 'tezgah', 'kopya', 'raf', 'depo', 'paket', 'test', 'dikis', 'misir', 'dolap'];
 export const kalemOf = (id: string): Kalem => KALEM[id] || KALEM.turk_kahvesi;
 
 /**
@@ -68,15 +71,15 @@ export const kalemOf = (id: string): Kalem => KALEM[id] || KALEM.turk_kahvesi;
  * tepsisinde durur; kim alırsa sıradaki müşteriye götürür. Diğerleri (vitrin, raf, depo, tezgâh, paket) elle alınır, eskisi gibi.
  * Stok yok: tepsi en fazla MAKINE_TEPSI ürün tutar (dolu tepside yeni ürün koyulunca en eskisi bayatlar, atılır).
  */
-export const MAKINE: ReadonlySet<IstasyonId> = new Set<IstasyonId>(['kahve', 'cay', 'bar', 'ocak', 'firin', 'izgara', 'kopya', 'test', 'dikis']);
+export const MAKINE: ReadonlySet<IstasyonId> = new Set<IstasyonId>(['kahve', 'cay', 'bar', 'ocak', 'firin', 'izgara', 'kopya', 'test', 'dikis', 'misir']);
 export const MAKINE_TEPSI = 3;
 /** boşta çalışanın önceden hazırlayıp tepside beklettiği en fazla ürün (bekledikçe ürün gelir) */
 export const MAKINE_ON = 2;
-const MAKINE_GENEL: Record<string, string> = { kahve: 'Kahve makinesi', cay: 'Semaver', bar: 'Blender', ocak: 'Ocak', firin: 'Fırın', izgara: 'Izgara', kopya: 'Fotokopi makinesi', test: 'Test tezgâhı', dikis: 'Dikiş makinesi' };
+const MAKINE_GENEL: Record<string, string> = { kahve: 'Kahve makinesi', cay: 'Semaver', bar: 'Blender', ocak: 'Ocak', firin: 'Fırın', izgara: 'Izgara', kopya: 'Fotokopi makinesi', test: 'Test tezgâhı', dikis: 'Dikiş makinesi', misir: 'Mısır makinesi' };
 /** odadaki alete göre makinenin adı (content/ic-mekan.ts layout k) */
 const MAKINE_K: Record<string, string> = {
   espresso: 'Espresso makinesi', barista: 'Kahve makinesi', kumOcak: 'Kum ocağı', semaver: 'Semaver', cayOcak: 'Çay ocağı', buzdolap: 'Soğuk içecek dolabı', buzVitrin: 'Sorbe makinesi', yayik: 'Ayran yayığı',
   benmari: 'Benmari', corba: 'Çorba kazanı', ocakK: 'Ocak', kazan: 'Kestane kazanı', kavurucu: 'Kavurma kazanı', tostMak: 'Tost makinesi', firinK: 'Fırın', tasFirin: 'Taş fırın', waffle: 'Waffle makinesi',
-  kumpirFirin: 'Kumpir fırını', mangal: 'Mangal', izgara: 'Izgara', doner: 'Döner ocağı', fotokopi: 'Fotokopi makinesi', testMasa: 'Test tezgâhı', dikis: 'Dikiş makinesi',
+  kumpirFirin: 'Kumpir fırını', mangal: 'Mangal', izgara: 'Izgara', doner: 'Döner ocağı', fotokopi: 'Fotokopi makinesi', testMasa: 'Test tezgâhı', dikis: 'Dikiş makinesi', misirMak: 'Mısır makinesi', slushMak: 'Slush makinesi', nachoIsitici: 'Nachos ısıtıcı',
 };
 export const makineAdi = (ist: IstasyonId, layoutK?: string): string => (layoutK && MAKINE_K[layoutK]) || MAKINE_GENEL[ist] || 'Makine';

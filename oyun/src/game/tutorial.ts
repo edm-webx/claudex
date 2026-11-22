@@ -57,6 +57,7 @@ const BINA_IPUCU: Record<string, string> = {
   avm_doner: 'Dürümcü Dayı: ' + AVM_IPUCU,
   avm_kumpir: 'Kumpir Kulesi: ' + AVM_IPUCU,
   avm_midye: 'Midyeci Mido: ' + AVM_IPUCU,
+  avm_sinema: 'Martı Sinema Büfesi: mısır makinesi kendi patlatır, içecekler dolapta. ' + AVM_IPUCU,
   tesis: 'Halı Saha Tesisleri: sahibi olduğun işletmeler Mülk düğmesinde.',
   salonW: 'Kahvaltı salonu: ekipmanı Mülk düğmesinde, Salonlar sekmesinde.',
   salonE: 'Balık lokantası: ekipmanı Mülk düğmesinde, Salonlar sekmesinde.',

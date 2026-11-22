@@ -1,7 +1,7 @@
 /**
  * Martı AVM eğlence katı (2026-11-21 21:07 sahip: "AVM'nin içi gezilebilen başka bir âlem olsun: dükkânlar, insanlar, konserler,
  * sinema salonları hepsi ayarlansın"). En üst kat (3): batı blokta iki sinema salonu (Martı Sinemaları), doğu blok holle açık
- * konser alanı (Martı Sahne), önde gişe + mısır tezgâhı. Saf veri + saat takvimi: sim (agents/avm-yasam.ts) ve görünüm
+ * konser alanı (Martı Sahne), önde gişe; doğu lobide Sinema Büfesi (satın alınan gerçek dükkân, mısır + dolaptan içecek). Saf veri + saat takvimi: sim (agents/avm-yasam.ts) ve görünüm
  * (view/world/avm-eglence.ts) buradan okur. Saatler oyun saati (0..24).
  */
 import type { Rect } from '../engine/api';
@@ -70,15 +70,16 @@ export function konser(saat: number): { durum: 'yok' | 'hazirlik' | 'sahnede'; g
 export const SEYIRCI = { x0: HOL.x1 - 1.4, x1: SAHNE.x0 - 0.6, z0: LOBI_Z1 + 1.9, z1: AVM.z1 - 2.1 } as const;
 
 /* ---------- lobi ---------- */
-export const GISE = { x: AVM.x0 + 2.4, z: 45.2, w: 2.6, d: 0.8 } as const, MISIR = { x: AVM.x0 + 5.0, z: 45.0, w: 1.1, d: 0.7 } as const;
-export const BANKLAR = [{ x: AVM.x1 - 2.6, z: 45.4 }, { x: AVM.cx + 3.0, z: 45.4 }] as const;
+// 2026-11-22: süs mısır tezgâhı kaldırıldı; mısır artık doğu lobideki gerçek dükkânda (Martı Sinema Büfesi, k18, content/ic-mekan.ts)
+export const GISE = { x: AVM.x0 + 2.4, z: 45.2, w: 2.6, d: 0.8 } as const;
+export const BANKLAR = [{ x: AVM.cx - 3.0, z: 45.4 }, { x: AVM.cx + 3.0, z: 45.4 }] as const;
 
 /** eğlence katının çarpışması (dünya): sinema bloğu duvarları (kapılar holde), salon perdesi, sahne platformu, dış duvarlar, gişe */
 export function eglenceEngel(): Rect[] {
   const o: Rect[] = [
     R(AVM.x0, AVM.x0 + T, LOBI_Z1, AVM.z1), R(AVM.x0, HOL.x0, AVM.z1 - T, AVM.z1), R(AVM.x0, HOL.x0, LOBI_Z1 - T / 2, LOBI_Z1 + T / 2), R(AVM.x0, HOL.x0, ZM - T / 2, ZM + T / 2),
     R(HOL.x1, AVM.x1, AVM.z1 - T, AVM.z1), R(AVM.x1 - T, AVM.x1, LOBI_Z1, AVM.z1), R(SAHNE.x0, SAHNE.x1, SAHNE.z0, SAHNE.z1),
-    R(GISE.x - GISE.w / 2, GISE.x + GISE.w / 2, GISE.z - GISE.d / 2, GISE.z + GISE.d / 2), R(MISIR.x - MISIR.w / 2, MISIR.x + MISIR.w / 2, MISIR.z - MISIR.d / 2, MISIR.z + MISIR.d / 2),
+    R(GISE.x - GISE.w / 2, GISE.x + GISE.w / 2, GISE.z - GISE.d / 2, GISE.z + GISE.d / 2),
   ];
   for (const s of SALONLAR) { o.push(R(HOL.x0 - T / 2, HOL.x0 + T / 2, s.z0, s.zc - 0.65), R(HOL.x0 - T / 2, HOL.x0 + T / 2, s.zc + 0.65, s.z1)); o.push(R(AVM.x0, AVM.x0 + 0.5, s.perde.z - s.perde.w / 2, s.perde.z + s.perde.w / 2)); }
   return o;

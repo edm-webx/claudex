@@ -18,7 +18,7 @@ const bos = process.env.BOS === '1';
 await p.evaluate((bos) => { const M = window.__marti; M.setTime(13); M.step(2); M.izgara(false); M.simCmd('money', 9e9); M.simCmd('level', 40);
   M.closeJobBoard?.(); M.closePanel?.(); for (const id of ['sb-vig']) { const v = document.getElementById(id); if (v) v.style.display = 'none'; }
   if (!bos) { const pm = M.panelModel?.('mulk'); void pm;
-    for (const id of ['k5', 'k7', 'k8', 'k9', 'k10', 'k11', 'k12', 'k13', 'k14', 'k15', 'k16', 'k17']) { M.command({ kind: 'mulk', op: 'adminKafe', id, n: 5 }); for (let i = 0; i < 3; i++) M.command({ kind: 'mulk', op: 'adminIsci', id }); M.command({ kind: 'mulk', op: 'adminEsya', id }); }
+    for (const id of ['k5', 'k7', 'k8', 'k9', 'k10', 'k11', 'k12', 'k13', 'k14', 'k15', 'k16', 'k17', 'k18']) { M.command({ kind: 'mulk', op: 'adminKafe', id, n: 5 }); for (let i = 0; i < 3; i++) M.command({ kind: 'mulk', op: 'adminIsci', id }); M.command({ kind: 'mulk', op: 'adminEsya', id }); }
   }
   M.setTime(12.3); for (let i = 0; i < 90; i++) M.step(1);
   if (!new URLSearchParams(location.search).get('ui')) { const st = document.createElement('style'); st.textContent = '#sbui{visibility:hidden!important}'; document.head.appendChild(st); } }, bos);
@@ -32,6 +32,7 @@ const SPOTS = {   // 2026-11-22: AVM 31 x 22 m (hol 14 m, dükkânlar 8.6 x 8.6)
   dukkan: [C - 7.6, 53.3, 1, C - 10.5, 53.3, 2.0, 1, 0.8], giyim: [C - 7.6, 53.3, 0, C - 10.5, 53.3, 2.0, 1, 0.8],
   cesme: [C + 4.2, 62.4, 0, C, 61, 2.4, 2, 0.7],
   eglence: [C, 47.0, 3, C, 55, 4.0, 0, 1.0, 17.4], sinema: [C - 4.2, 53, 3, C - 9, 55.6, 2.4, 1, 0.75, 11.0], sahne: [C + 3.2, 57.6, 3, C + 8, 57.6, 2.4, 3, 0.7, 17.4], gise: [C - 6, 46.2, 3, C - 7, 45.5, 1.6, 0, 0.7, 10.1],
+  sinemaBufe: [C + 11.6, 46.65, 3, C + 13.0, 46.65, 1.6, 3, 0.6, 17.4], sinemaKapi: [C + 3.6, 47.2, 3, C + 8.0, 46.65, 2.6, 3, 0.75, 17.4],
 };
 const ids = (process.argv[3] || Object.keys(SPOTS).join(',')).split(',');
 for (const id of ids) {

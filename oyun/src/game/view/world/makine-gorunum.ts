@@ -66,7 +66,7 @@ export function createMakineGorunum(d: MakineDeps): MakineView {
           const h = halkalar[hi++], key = (m.cook ? Math.round(m.p * 40) + ':' + Math.ceil(m.kalan) : 'h') + ':' + m.ready.length + m.ad;
           if (key !== h.key) { h.key = key; halkaCiz(h, m.cook ? m.p : 1, m.kalan, m.ad, m.ready.length); }
           // aynı alette iki istasyon (ör. espresso hem kahve hem soğuk içecek): halkalar yan yana
-          let k2 = 0; while (dolu.some(q => Math.hypot(q.x - (m.hx + m.dx * k2 * 1.1), q.z - (m.hz + m.dz * k2 * 1.1)) < 0.9) && k2 < 4) k2++;
+          let k2 = 0; while (dolu.some(q => Math.hypot(q.x - (m.hx + m.dx * k2 * 1.1), q.z - (m.hz + m.dz * k2 * 1.1)) < 0.8) && k2 < 4) k2++;
           const hx = m.hx + m.dx * k2 * 1.1, hz = m.hz + m.dz * k2 * 1.1; dolu.push({ x: hx, z: hz });
           h.s.position.set(hx, y0 + HALKA_Y, hz); h.s.visible = true;
         }

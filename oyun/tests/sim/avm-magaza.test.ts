@@ -22,9 +22,9 @@ const plot = (id: string) => ARSALAR.find(a => a.id === id)!;
 const kafeActors = (sim: any, room: string, kind: string) => sim.rules.rt.agents.registry.list.filter((a: any) => !a.dead && a.key.startsWith('kafe-' + room + '-') && a.kind === kind);
 const buyAll = (c: any, ...ids: string[]) => { for (const id of ids) { kareyeGit(c.sim, id); c({ op: 'arsaAl', id }); } };
 
-it('AVM: 3 dükkân katı x 4 dükkân (en üst kat eğlence katı), aynı kattakiler kesişmez, hepsi binada; her birinin kendi kapısı (kendi katının holünde) ve arsası var', () => {
-  expect(ROOMS).toHaveLength(12); expect(IC_CANLI).toEqual(expect.arrayContaining(IDS));
-  for (let k = 0; k < AVM.KAT; k++) expect(ROOMS.filter(m => (m.kat || 0) === k)).toHaveLength(k === AVM.KAT - 1 ? 0 : 4);
+it('AVM: 3 dükkân katı x 4 dükkân + eğlence katında Sinema Büfesi, aynı kattakiler kesişmez, hepsi binada; her birinin kendi kapısı (kendi katının holünde) ve arsası var', () => {
+  expect(ROOMS).toHaveLength(13); expect(IC_CANLI).toEqual(expect.arrayContaining(IDS));
+  for (let k = 0; k < AVM.KAT; k++) expect(ROOMS.filter(m => (m.kat || 0) === k)).toHaveLength(k === AVM.KAT - 1 ? 1 : 4);   // en üst kat: yalnız Sinema Büfesi (2026-11-22)
   for (const m of ROOMS) {
     const kat = m.kat || 0, a = plot(m.arsa!), d = arsaKapi(a);
     expect(m.x - m.wx / 2).toBeGreaterThanOrEqual(AVM.x0 - 1e-6); expect(m.x + m.wx / 2).toBeLessThanOrEqual(AVM.x1 + 1e-6);
@@ -71,7 +71,7 @@ it('yeni işletmeler: 8 kalem net fiyatlı menü, 8 alet (hepsi odada görünür
     const shown = new Set(icLayout(roomOf(id)).map(i => i.esya).filter(Boolean)); for (const e of t.esya) expect(shown.has(e.id), id + ' ' + e.id).toBe(true);
     expect(JSON.stringify(t)).not.toMatch(/stok|maliyet/i);
   }
-  expect(new Set(IDS.map(id => ISLETME[ARSA_ISLETME[id]].ad)).size).toBe(12);
+  expect(new Set(IDS.map(id => ISLETME[ARSA_ISLETME[id]].ad)).size).toBe(13);
 });
 
 it('ekonomi: arsa fiyatına göre saatlik gelir lokantayla aynı bantta; mağazada müşteri az, fiş büyük', () => {
