@@ -443,6 +443,21 @@ export function personelGeo(m: IcMekan): PersonelGeo | null {
   const cu = vert ? a0 + 0.3 : tz.u - tz.w / 2 + 1.0, endU = a1 + 0.55;
   return { tz, vert, arka, cu, endU, lo: cu + 0.2, hi: a1 - 0.4 };
 }
+/**
+ * 2026-11-22 mantık denetimi (kırtasiyede kasiyer + iki komi 0.3 m arayla iç içe, AVM dükkânlarında omuz omuza 0.5 m):
+ * tezgâh arkasındaki personel duraklarının tezgâh boyunca konumları (a ekseni). Sığarsa eski düzen (ilk durak `cu + 0.6/1.5`,
+ * aralık `post`); sığmıyorsa duraklar tezgâh hattının içine eşit yayılır, en az `PERSONEL_MIN_ARA` m arayla.
+ */
+export const PERSONEL_MIN_ARA = 0.6;
+export function personelDuraklari(pg: PersonelGeo, n: number, post: number, narrow: boolean): number[] {
+  const base = pg.cu + (pg.vert ? 0.6 : 1.5);
+  if (n <= 1) return [base];
+  if (!pg.vert && !narrow) return Array.from({ length: n }, (_, i) => base + i * post);
+  const lo = pg.vert ? pg.cu : pg.cu + 0.5, hi = pg.vert ? pg.endU - 0.85 : pg.endU - 0.6;
+  const s = Math.min(pg.vert ? 0.75 : 1.4, Math.max(PERSONEL_MIN_ARA, post, (hi - lo) / (n - 1)));
+  const a0 = Math.max(lo, Math.min(base, hi - s * (n - 1)));
+  return Array.from({ length: n }, (_, i) => a0 + i * s);
+}
 /** oda içinde u/v çerçevesinde engelden kaçan yol (ızgara A*, 0.15 m, sonra görüş hattıyla sadeleştirilir). Duvarlar ve zemin
  *  eşyaları `rad` kadar şişirilir. Başlangıç / hedef bir engele değiyorsa en yakın boş hücreden başlar. Izgara oda başına bir kez kurulur. */
 const yolCache = new Map<string, { u: number; v: number }[]>();

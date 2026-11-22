@@ -25,17 +25,24 @@ for (const STAGE of STAGES) {
   await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengeli&seed=3&stage=${STAGE}`);
   await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 120000 });
   await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
-  const go = await p.waitForSelector('.kl-go', { timeout: 8000 }).catch(() => null); if (go) { const ad = await p.$('input[name="ad"]'); if (ad) await ad.fill('Denetci'); await go.click({ force: true }); await p.waitForTimeout(300); }
+  // karakter atölyesi (kulis.ts .ka-go; eski .kl-go): ad yazılmazsa panel kapanmaz ve sim duraklı kalır
+  for (let k = 0; k < 3; k++) { const pb = await p.waitForSelector('.ka-pb', { timeout: k ? 500 : 6000 }).catch(() => null); if (pb) { await pb.click({ force: true }).catch(() => {}); await p.waitForTimeout(300); } const go = await p.waitForSelector('.ka-go, .kl-go', { timeout: k ? 2000 : 8000 }).catch(() => null); if (!go) break; const ad = await p.$('input[name="ad"]'); if (ad) await ad.fill('Denetci').catch(() => {}); await go.click({ force: true }).catch(() => {}); await p.waitForTimeout(400); }
+  if (await p.$('.ka-go, .kl-go')) console.log('UYARI: karakter paneli kapanmadı, ölçüm geçersiz');
   await p.evaluate(([STAGE, PADS]) => { const M = window.__marti; M.setTime(13); M.step(2); M.izgara(false); M.simCmd('money', 9e9); M.simCmd('level', 40); M.simCmd('unlock', 'isbul');
     try { M.simCmd('cmd', { kind: 'setStage', stage: STAGE }); } catch { /* */ }
     for (const k of PADS) try { M.simCmd('unlock', k); } catch { /* */ }
     for (let i = 0; i < 12; i++) { M.simCmd('hire'); M.step(1); }
+    // karşı kıyı / AVM işletmeleri: satın alınmış, 5. kademe, 3 işçi, tüm ekipman (iç mekânlar canlı çalışsın)
+    const all = { k1: ['espresso', 'vitrin', 'koltuk', 'isik', 'muzik', 'kitaplik', 'saksi', 'barista'], k2: ['kahve_bar', 'waffle_mak', 'buz_vitrin', 'isik', 'akvaryum', 'mangal', 'piyano', 'sef_seti'], k3: ['fotokopi', 'pos', 'laminasyon', 'kitap_raf', 'vitrin_k', 'oyuncak', 'yazici3d', 'okuma'], k4: ['tost_mak', 'buzdolap', 'semaver_k', 'mikrodalga', 'meyve', 'masa_k', 'ekran_k', 'izgara_k'], k5: ['benmari', 'corba_kazan', 'pide_firin', 'cay_ocak', 'ocakbasi', 'doner', 'tatli_vitrin', 'led_menu', 'sef_ocak'], k6: ['cay_mak', 'icecek_dolap', 'mac_tv', 'langirt', 'kupa', 'izgara_t', 'forma_duvar', 'vip'], k7: [], k8: [], k9: [] };
+    for (const id of Object.keys(all)) { try { M.command({ kind: 'mulk', op: 'adminKafe', id, n: 5 }); for (let i = 0; i < 3; i++) M.command({ kind: 'mulk', op: 'adminIsci', id }); for (const e of all[id]) M.command({ kind: 'mulk', op: 'kafeEsya', id, e }); } catch { /* */ } }
     M.closeJobBoard?.(); M.closePanel?.(); M.setTime(12.3); for (let i = 0; i < 60; i++) M.step(1); }, [STAGE, PADS]);
   if (process.env.TELEPORT) { const [tx, tz] = process.env.TELEPORT.split(',').map(Number); await p.evaluate(([tx, tz]) => { const M = window.__marti; M.teleport(tx, tz); for (let k = 0; k < 20; k++) { M.step(0.5); M.renderFrames(1, 0.1); } }, [tx, tz]); }
   // ── aktör örnekleri ──
   const ornek = [];
   for (let s = 0; s < SURE; s++) { ornek.push(await p.evaluate(() => { const M = window.__marti; M.step(1); return M.ajanlar(); })); }
+  if (process.env.YAKIN) { const [yx, yz] = process.env.YAKIN.split(',').map(Number); console.log('YAKIN', JSON.stringify(ornek[ornek.length - 1].filter(a => Math.hypot(a.x - yx, a.z - yz) < 1.5))); }
   const bulgu = [];
+  { const say = {}; for (const a of ornek[ornek.length - 1]) say[a.kind] = (say[a.kind] || 0) + 1; console.log('  aktörler:', JSON.stringify(say), 'hata:', errs.slice(0, 3).join(' | ').slice(0, 400), JSON.stringify(await p.evaluate(() => { const st = window.__marti.state(); return { stage: st.stage, workers: (st.workers || []).length, money: st.money, kl: !!document.querySelector('.kl-go') }; }))); }
   const ciftSay = (filtre, esik, oran, kural, ad) => {
     const say = new Map(), poz = new Map();
     for (const liste of ornek) {
@@ -50,6 +57,8 @@ for (const STAGE of STAGES) {
   const adOf = a => `${a.kind}:${a.role || a.key}(${a.act}/${a.state || ''})`;
   ciftSay(a => ['worker', 'sakin', 'vip', 'regular'].includes(a.kind), 0.5, 0.6, 'K1 personel / sakin üst üste', adOf);
   ciftSay(a => a.kind === 'worker' && a.role === 'garson' && a.act === 'idle', 1.1, 0.5, 'K2 boştaki garsonlar yan yana', adOf);
+  // K7 müşteri / misafir üst üste: iki müşteri (ya da müşteri + çalışan / sakin) aynı noktada (< 0.38 m) örneklerin yarısında
+  ciftSay(a => ['musteri', 'regular', 'sakin', 'vip', 'worker'].includes(a.kind), 0.38, 0.5, 'K7 müşteri / kişi üst üste', adOf);
   for (const kd of ['gull', 'pigeon', 'cat', 'dog', 'parrot']) ciftSay(a => a.kind === kd, 0.35, 0.5, 'K3 hayvanlar üst üste', adOf);
   // ── sahne: tabela çakışması, iç içe yer propları ──
   const sahne = await p.evaluate((PROBE) => {
