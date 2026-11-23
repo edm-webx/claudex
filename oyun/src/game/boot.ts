@@ -880,7 +880,9 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     const ms = platform.clock.now() - t0;
     P.frame(fdt * 1000);
     P.count('frameWorkMs', ms);
-    quality.feed(fdt * 1000, fdt, ms);
+    // 2026-11-23: frames under a full-screen overlay draw no world; fed to the auto-watch they read as 'calm' and could lift a weak
+    // laptop to a heavier tier (karakter atölyesi at the start, halı saha, ev)
+    if (!coverOpen()) quality.feed(fdt * 1000, fdt, ms);
     if (saveOn()) {
       save.tick(platform.clock.wall());
       if (sim.rules.ext.takeDirty()) void save.save('purchase');

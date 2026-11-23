@@ -87,7 +87,7 @@ export interface Platform {
   audioCtx(): AudioContext | null;
   vibrate(ms?: number): void;
   visibility: { readonly hidden: boolean; onChange(cb: (hidden: boolean, why: 'visibility' | 'pagehide' | 'test') => void): Disposer; simulate(hidden: boolean): void; };
-  device: { memoryGB: number; cores: number; mobile: boolean; touch: boolean; reducedMotion: boolean; };
+  device: { memoryGB: number; cores: number; mobile: boolean; touch: boolean; reducedMotion: boolean; /** WebGL renderer name ('' unknown), only for the first tier guess */ gpu?: string; };
   /** Wall clocks: ONLY for loop pacing, perf and save timestamps. Never read from sim. */
   clock: { now(): number /* performance.now ms */; wall(): number /* Date.now ms */; };
   copyText(text: string): Promise<boolean>;
@@ -266,9 +266,11 @@ export interface Quality {
   /** PRF-03: applies a remembered automatic tier change now (pause/menu/hidden moment); true if one was applied */
   flushAuto?(): boolean;
   batterySaver(on: boolean): void;         // forces 30 fps
+  /** 2026-11-23: why auto mode sits on this tier, short Turkish text for Ayarlar ('' = manual) */
+  neden?(): string;
   table: Readonly<Record<TierName, TierDef>>;
 }
-export interface QualityDeps { platform: Platform; log?: Logger; }
+export interface QualityDeps { platform: Platform; log?: Logger; /** false: no start-up probe (unit tests of the later watch) */ probe?: boolean; }
 
 // ───────────────────────────── input (A) ─────────────────────────────
 

@@ -113,12 +113,23 @@ export function createPlatform(ov: PlatformOverrides = {}): Platform {
   }, undefined);
 
   const nav = safe(() => g.navigator as Navigator | undefined, undefined);
+  // 2026-11-23 laptop kasması: the first tier guess also reads the GPU name (a throwaway 1x1 WebGL context, released at once);
+  // deviceMemory caps at 8 in Chrome, so memory + cores alone sent every office laptop with an Intel iGPU to Şahane.
+  function gpuName(w: any): string {
+    const c = w.document?.createElement?.('canvas'); if (!c) return '';
+    const gl = (c.getContext('webgl2') || c.getContext('webgl')) as WebGLRenderingContext | null; if (!gl) return '';
+    const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+    const name = String(dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER) || '');
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
+    return name;
+  }
   const device = {
     memoryGB: safe(() => Number((nav as any)?.deviceMemory) || 4, 4),
     cores: safe(() => Number(nav?.hardwareConcurrency) || 4, 4),
     mobile: safe(() => /Android|iPhone|iPad|iPod|Mobile/i.test(nav?.userAgent || ''), false),
     touch: safe(() => (Number(nav?.maxTouchPoints) || 0) > 0 || 'ontouchstart' in g, false),
     reducedMotion: safe(() => !!g.matchMedia?.('(prefers-reduced-motion: reduce)').matches, false),
+    gpu: safe(() => gpuName(g), ''),
   };
 
   const perfNow = safe(() => g.performance && typeof g.performance.now === 'function', false);

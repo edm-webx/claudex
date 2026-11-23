@@ -39,14 +39,35 @@ export const TIER_FLAG_DOC: Readonly<Record<string, { konum: string; canli: 'uni
   reflectHi: { konum: 'src/engine/render/reflect.ts reflectBudget (yarım çözünürlük, her kare)', canli: 'rt-yeniden-boyut', paket: 'GRS-05' },
 });
 
-export function guessTier(memoryGB: number, cores: number, mobile = false): TierName {
+/** 2026-11-23 laptop kasması: GPU class from the WebGL renderer name. 'yazilim' = CPU raster (SwiftShader, llvmpipe, Microsoft Basic
+ *  Render), 'zayif' = plain Intel HD/UHD iGPU, 'entegre' = stronger shared-memory GPUs (Iris, AMD APU Radeon Graphics/Vega, Apple),
+ *  'harici' = NVIDIA / Radeon RX-Pro / Intel Arc, '' = unknown (old memory + cores rule). */
+export type GpuSinif = 'yazilim' | 'zayif' | 'entegre' | 'harici' | '';
+export function gpuSinif(name: string | undefined): GpuSinif {
+  const n = String(name || '').toLowerCase();
+  if (!n) return '';
+  if (/swiftshader|llvmpipe|softpipe|software|basic render/.test(n)) return 'yazilim';
+  if (/nvidia|geforce|quadro|rtx|gtx|radeon\s*(rx|pro)|\bintel\(r\)? arc|\barc\s*a\d/.test(n)) return 'harici';
+  if (/iris|radeon\(tm\) graphics|radeon graphics|vega|apple/.test(n)) return 'entegre';
+  if (/intel|uhd|hd graphics|mesa/.test(n)) return 'zayif';
+  return '';
+}
+
+export function guessTier(memoryGB: number, cores: number, mobile = false, gpu = ''): TierName {
   // PRF-13: on a phone the first guess is never 'sahane' (iOS Safari reports no deviceMemory, the fallback would read as a big PC);
   // 'dengeli' only with 6+ GB and 8+ cores. The auto-watch can still raise it later. Desktop guess unchanged.
   if (mobile) return memoryGB >= 6 && cores >= 8 ? 'dengeli' : 'akici';
+  const g = gpuSinif(gpu);
+  if (g === 'yazilim' || g === 'zayif') return 'akici';
   if (memoryGB <= 3 || cores <= 4) return 'akici';
-  if (memoryGB <= 4) return 'dengeli';
+  if (memoryGB <= 4 || g === 'entegre') return 'dengeli';
   return 'sahane';
 }
+
+/** First seconds of play (auto mode): a slow start drops the tier at once, not at the next menu. PROBE_SKIP s are ignored (shader
+ *  warm-up, zone streaming), then every 1 s bucket is checked; the median of the last 3 above PROBE_SLOW x target drops one tier.
+ *  Each drop restarts the window so the next tier gets its own 3 s look; the probe never raises a tier. */
+export const PROBE_SKIP = 3, PROBE_END = 20, PROBE_SLOW = 1.5;
 
 const KEY = 'marti-quality';
 type Why = 'auto' | 'manual' | 'probe' | 'url';
@@ -58,7 +79,9 @@ export function createQuality(deps: QualityDeps): Quality {
   let setting: QualitySetting = saved.setting && (saved.setting === 'auto' || ORDER.includes(saved.setting)) ? saved.setting : 'auto';
   let downThisSession = false;
   let autoTier: TierName | null = saved.autoTier && ORDER.includes(saved.autoTier) ? saved.autoTier : null;
-  const guess = () => guessTier(p.device.memoryGB, p.device.cores, p.device.mobile);
+  const guess = () => guessTier(p.device.memoryGB, p.device.cores, p.device.mobile, p.device.gpu);
+  const kisaGpu = (n: string) => n.replace(/^ANGLE \(([^,]*,\s*)?/, '').replace(/\s*(Direct3D|vs_|\(0x|OpenGL|,).*$/, '').replace(/\((R|TM)\)/gi, '').trim().slice(0, 40);
+  let neden = p.params.tier ? 'adres satırı' : setting !== 'auto' ? '' : autoTier ? 'önceki oyundaki ölçüm' : (p.device.gpu ? 'ekran kartı: ' + kisaGpu(p.device.gpu) : 'cihaz belleği ve işlemci');
   let cur: TierName = p.params.tier ?? (setting !== 'auto' ? setting : autoTier ?? guess());
   const subs = new Set<(t: TierDef, why: Why) => void>();
   const scaleSubs = new Set<(s: number) => void>();
@@ -88,6 +111,7 @@ export function createQuality(deps: QualityDeps): Quality {
   // watch state
   const buckets: number[] = []; // avg ms per completed 1 s bucket
   let bSum = 0, bN = 0, bT = 0, t = 0, lastChange = -1e9, calm = 0;
+  let probeT = 0, probeEnd = deps.probe === false ? -1 : PROBE_END; const probeBuf: number[] = [];
 
   const persist = () => { p.storage.set(KEY, JSON.stringify({ setting, autoTier })); };
   const apply = (n: TierName, why: Why) => {
@@ -105,8 +129,10 @@ export function createQuality(deps: QualityDeps): Quality {
     set(s) {
       setting = s;
       persist();
+      neden = s === 'auto' ? (autoTier ? 'önceki oyundaki ölçüm' : neden) : '';
       apply(s === 'auto' ? autoTier ?? guess() : s, 'manual');
     },
+    neden: () => neden,
     onChange(cb): Disposer { subs.add(cb); return () => { subs.delete(cb); }; },
     scale: () => scale,
     onScale(cb): Disposer { scaleSubs.add(cb); return () => { scaleSubs.delete(cb); }; },
@@ -121,6 +147,22 @@ export function createQuality(deps: QualityDeps): Quality {
       buckets.push(avg1); if (buckets.length > 10) buckets.shift();
       const fps = battery ? 30 : TIER_TABLE[cur].fps;
       const target = 1000 / fps;
+      // açılış sınaması (probe): applied at once, the player has only just started
+      probeT += 1;
+      if (probeT <= probeEnd) {
+        if (probeT <= PROBE_SKIP) return;
+        probeBuf.push(avg1); if (probeBuf.length > 3) probeBuf.shift();
+        const i = ORDER.indexOf(cur);
+        if (probeBuf.length === 3 && i > 0) {
+          const med = [...probeBuf].sort((a, b) => a - b)[1];
+          if (med > target * PROBE_SLOW) {
+            probeBuf.length = 0; probeEnd = probeT + PROBE_SKIP + 4; lastChange = t; downThisSession = true;
+            neden = 'açılış ölçümü: ' + Math.round(1000 / med) + ' FPS';
+            autoTier = ORDER[i - 1]; persist(); pendingAuto = null; apply(autoTier, 'probe'); return;
+          }
+        }
+        return;   // the fast layer waits for the probe: a tier drop helps more than a smaller picture
+      }
       if (avg1 < target * 0.8) calm += 1; else calm = 0;
       // fast layer: resolution scale, then the bloom cut
       const canCut = !!TIER_TABLE[cur].flags.bloom;
@@ -136,7 +178,11 @@ export function createQuality(deps: QualityDeps): Quality {
         const avg = buckets.reduce((a, b) => a + b, 0) / buckets.length;
         const i = ORDER.indexOf(cur);
         if (avg > target * 1.5 && i > 0 && atFloor && (postCut || !canCut)) {   // slow layer waits until both fast rungs are used
-          lastChange = t; downThisSession = true; autoTier = ORDER[i - 1]; persist(); autoApply(autoTier); return; }
+          lastChange = t; downThisSession = true; autoTier = ORDER[i - 1]; persist(); neden = 'oyun içi ölçüm: ' + Math.round(1000 / avg) + ' FPS';
+          // 2026-11-23: under 30 fps on a 60 tier waiting for a menu means minutes of stutter; with the shared post chain (GRS-17)
+          // a tier change relinks nothing, so it is applied at once. Milder cases still wait (PRF-03).
+          if (avg > target * 2) { pendingAuto = null; apply(autoTier, 'auto'); } else autoApply(autoTier);
+          return; }
       }
       // 2026-11-09 Chrome freeze: auto mode used to step back up after 120 calm seconds; a tier change toggles shadows,
       // which recompiles every material (multi-second freeze), then the heavier tier missed its target and stepped down
