@@ -647,6 +647,8 @@ export interface Nav {
   move(from: Vec2, to: Vec2, radius: number, out: Vec2, opts?: { solids?: boolean }): Vec2;
   /** Exact collider rects of a zone (walls, counters, props), used by move(..., { solids: true }). */
   setSolids(key: string, rects: Rect[]): void;
+  /** Tanı: p'yi (en az -rad içeriden) kapsayan ilk solid dikdörtgen, yoksa null (tests/browser/yuruyus-turu.mjs hayalet denetimi). */
+  solidAt?(p: Vec2, rad?: number): Rect | null;
   /** Kamera occlusion: from->to doğrusunun büyük solid (duvar/bina) ile ilk kesişim oranı, 1 = engel yok. */
   rayHit?(from: Vec2, to: Vec2, minSize?: number): number;
   defineTarget(id: string, at: Vec2): void;
