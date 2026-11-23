@@ -44,15 +44,15 @@ export function karsiPrefabs(): PrefabDef[] {
   pave('kr.pave.wide', 124, 3.2); pave('kr.pave.s', 124, 2.2);
   pave('kr.pave.gate', 14, 3.0, PAVE, 0.074); pave('kr.pave.e1', 26.6, 3.0, PAVE, 0.074); pave('kr.pave.v1', 3.0, 19, PAVE, 0.078); pave('kr.pave.v2', 6.3, 16, PAVE, 0.078); pave('kr.pave.h2', 25.6, 6, PAVE, 0.074);
   pave('kr.plaza', 18.4, 24.4, '#c8ad82', 0.082);
-  // tribün blocks: three steps with a crowd-free seat row
+  // tribün blocks: three steps with a crowd-free seat row; each step 1.5 cm narrower per side so the ends don't z-fight (2026-11-23)
   const stand = (id: string, w: number, d: number, axis: 'z' | 'x'): Def => {
     const parts: PartDef[] = [];
     for (let i = 0; i < 4; i++) {
       const dd = (axis === 'z' ? d : w) * (1 - i * 0.22), sh = 0.55 + i * 0.5;
       parts.push(axis === 'z' ? box(w, sh, dd, 0, sh / 2, (d - dd) / 2 * 0, i % 2 ? '#c8504a' : '#e0674f') : box(dd, sh, d, 0, sh / 2, 0, i % 2 ? '#c8504a' : '#e0674f'));
     }
-    return { id, parts: axis === 'z' ? [box(w, 0.5, d, 0, 0.25, 0, '#9aa0a6'), box(w, 1.1, d * 0.7, 0, 0.8, 0, '#e0674f'), box(w, 1.7, d * 0.45, 0, 1.35, 0, '#c8504a'), box(w, 2.3, d * 0.25, 0, 1.9, 0, '#e0674f')]
-      : [box(w, 0.5, d, 0, 0.25, 0, '#9aa0a6'), box(w * 0.7, 1.1, d, 0, 0.8, 0, '#e0674f'), box(w * 0.45, 1.7, d, 0, 1.35, 0, '#c8504a'), box(w * 0.25, 2.3, d, 0, 1.9, 0, '#e0674f')], colliders: [R(w, d)] };
+    return { id, parts: axis === 'z' ? [box(w, 0.5, d, 0, 0.25, 0, '#9aa0a6'), box(w - 0.03, 1.1, d * 0.7, 0, 0.8, 0, '#e0674f'), box(w - 0.06, 1.7, d * 0.45, 0, 1.35, 0, '#c8504a'), box(w - 0.09, 2.3, d * 0.25, 0, 1.9, 0, '#e0674f')]
+      : [box(w, 0.5, d, 0, 0.25, 0, '#9aa0a6'), box(w * 0.7, 1.1, d - 0.03, 0, 0.8, 0, '#e0674f'), box(w * 0.45, 1.7, d - 0.06, 0, 1.35, 0, '#c8504a'), box(w * 0.25, 2.3, d - 0.09, 0, 1.9, 0, '#e0674f')], colliders: [R(w, d)] };
   };
   defs.push(stand('kr.stand.z', 33.7, 3.5, 'z'), stand('kr.stand.x', 3.7, 17.8, 'x'));
   // halı saha tesis binası (2026-11-08) replaces the west stand: model in view/world/karsi-bina.ts, same footprint
@@ -94,7 +94,7 @@ export function karsiPrefabs(): PrefabDef[] {
   // fences (visual + collider), long low segments
   const fence = (id: string, w: number, d: number): Def => ({ id, parts: [box(w, 0.9, d, 0, 0.45, 0, '#6f7a85'), box(w, 0.08, d + 0.06, 0, 0.94, 0, '#9aa5b0')], colliders: [R(w, d)] });
   // 2026-11-08 user: "okulun bahçesi çitsiz korumasız, içinden geçilmemeli": tall school fence (low wall, posts, rails, mesh) closing the yard
-  const cit = (id: string, w: number, d: number): Def => { const n = Math.max(2, Math.round(Math.max(w, d) / 1.5)), parts: PartDef[] = [box(w, 0.45, d, 0, 0.22, 0, '#b9ad99'), box(w + (d > w ? 0.06 : 0), 0.07, d + (w > d ? 0.06 : 0), 0, 2.1, 0, '#3f4a55'), box(w, 0.05, d, 0, 1.3, 0, '#3f4a55'), box(w * 0.999, 1.6, d * 0.999 || 0.02, 0, 1.25, 0, '#7f8b96')];
+  const cit = (id: string, w: number, d: number): Def => { const n = Math.max(2, Math.round(Math.max(w, d) / 1.5)), parts: PartDef[] = [box(w, 0.45, d, 0, 0.22, 0, '#b9ad99'), box(w + (d > w ? 0.06 : 0), 0.07, d + (w > d ? 0.06 : 0), 0, 2.1, 0, '#3f4a55'), box(w + (d > w ? 0.02 : 0), 0.05, d + (w > d ? 0.02 : 0), 0, 1.3, 0, '#3f4a55'), box(w > d ? w * 0.999 : 0.05, 1.6, w > d ? 0.05 : d * 0.999, 0, 1.25, 0, '#7f8b96')];   // tel ince, raylar taşkın: eş düzlem yok (2026-11-23)
     for (let i = 0; i <= n; i++) { const t = i / n - 0.5; parts.push(box(0.09, 2.2, 0.09, w > d ? t * w : 0, 1.1, w > d ? 0 : t * d, '#2f3740')); }
     return { id, parts, colliders: [R(w, d)] }; };
   defs.push(cit('kr.cit.x10', 10, 0.12), cit('kr.cit.x5', 5, 0.12), cit('kr.cit.x8', 7.4, 0.12), cit('kr.cit.z11', 0.12, 11));
