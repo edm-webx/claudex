@@ -27,6 +27,8 @@ import { BUFE, parkYer } from '../../../content/prefabs/iskele/layout';
 export type { DishId, FoodId } from '../../../content/yemek-menu';
 
 interface WRt {
+  /** garsonun masada iş adımına ek bekleyeceği sn (menüden sonra sipariş: misafir menüye bakıyor) */
+  ekBekle?: number;
   w: WorkerSave; a: Actor; wk: Walker; st: ProductId | null;
   state: string; t: number; boostT: number; boostX: number; made: number; pauseT: number; /** garson devriye noktası sırası */ dv: number;
   job: { index: number } | null; loadT: number; /** BUF-09: seconds since the garson claimed its current task */ isT: number; nextSleep: number; selfieNext: number; songNext: number; chatNext: number; sleepFor: number; selfieFor: number;
@@ -220,7 +222,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
       rt.isT = 0; rt.t = 0; rt.jobKey = is.tur; rt.job = { index: is.id };
       if (is.tur === 'tabak') { rt.state = 'toPass'; goVia(rt, host.passDurak?.(wid) ?? { x: is.x, z: is.z }); }
       else if (is.tur === 'sil') { rt.state = 'toClean'; goVia(rt, masaCati(is.table) ? sideOf(is.table) : { x: is.x, z: is.z }, is.table); }
-      else { rt.state = 'toMasa'; a.info.tasi = is.tur === 'hesap' ? 'hesap' : is.tur === 'menu' ? 'menu' : 'not'; goVia(rt, { x: is.x, z: is.z }, is.table); }
+      else { rt.ekBekle = is.bekle || 0; rt.state = 'toMasa'; a.info.tasi = is.tur === 'hesap' ? 'hesap' : is.tur === 'menu' ? 'menu' : 'not'; goVia(rt, { x: is.x, z: is.z }, is.table); }
       return true;
     }
     const p = garsonPick(rt);
@@ -311,7 +313,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
       case 'toMasa': if (!rt.wk.walk(dt, speed)) { rt.state = 'masaAct'; rt.t = 0; } else a.act = 'walk'; return;
       case 'masaAct': {
         const tur = rt.jobKey as GarsonTur;
-        a.act = GARSON_ACT[tur] || 'pour'; if (rt.t < (ADISYON.adim[tur] ?? 1.3)) return;
+        a.act = GARSON_ACT[tur] || 'pour'; if (rt.t < (ADISYON.adim[tur] ?? 1.3) + (rt.ekBekle || 0)) return;
         const r = rt.job ? host.isTamam?.(wid, rt.job.index, { x: a.x, z: a.z }) : null;
         rt.job = null; a.info.tasi = '';
         if (r?.durum === 'tamam') {

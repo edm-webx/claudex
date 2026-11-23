@@ -66,8 +66,11 @@ export function bolgeleriKur(T: readonly Vec2[], built: readonly number[], k: nu
       if (d < nd - 1e-9) { nd = d; near = b; }
     }
     if (near && !a.komsu.includes(near.id)) a.komsu.push(near.id);   // every zone has at least one neighbour to help
-    a.komsu.sort();
   }
+  // 2026-11-23: komşuluk iki yönlü. "En yakın komşu" tek yöne ekleniyordu (b6 -> b2 ama b2 -> b6 değil): b2'nin garsonu boşta dururken
+  // b6'nın masası 30 sn+ menü / hesap bekliyordu (aşama botu aşama 10, akış kontrolüyle yük düşünce ortaya çıktı).
+  for (const a of out) for (const id of a.komsu) { const b = out.find(o => o.id === id)!; if (!b.komsu.includes(a.id)) b.komsu.push(a.id); }
+  for (const a of out) a.komsu.sort();
   return out;
 }
 

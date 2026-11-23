@@ -100,7 +100,7 @@ export interface AgentHost {
    * there, `isTamam` finishes a task at the table (plate: 'tasi' = carry it to another table, 'geri' = bring it back to the rack),
    * `tabakGeri` puts returned plates back, `isBirak` releases everything (timeout, fired, window post).
    */
-  isAl?(wid: number, o: { cap: number; at?: Vec2 }): { id: number; tur: 'tabak' | 'siparis' | 'menu' | 'hesap' | 'sil'; table: number; x: number; z: number; n?: number } | null;
+  isAl?(wid: number, o: { cap: number; at?: Vec2 }): { id: number; tur: 'tabak' | 'siparis' | 'menu' | 'hesap' | 'sil'; table: number; x: number; z: number; n?: number; bekle?: number } | null;
   tabakAl?(wid: number): GarsonTabak[];
   tepsi?(wid: number): GarsonTabak[];
   isTamam?(wid: number, id: number, at: Vec2): { durum: 'tamam' | 'tasi' | 'geri' | 'yok'; table?: number; x?: number; z?: number };
