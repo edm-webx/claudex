@@ -494,12 +494,15 @@ const F: Record<string, Fn> = {
   hediye: (c) => { const { b } = c; for (const [x, z, s, col] of [[-0.1, -0.05, 0.18, '#e0533c'], [0.1, 0.05, 0.14, '#2f6fdb'], [-0.05, 0.05, 0.1, '#ffd23f']] as [number, number, number, string][]) { const y = col === '#ffd23f' ? 0.23 : s / 2; b.box(s, s, s, col, x, y, z); b.box(s + 0.005, s + 0.005, 0.02, '#f4f2ec', x, y, z); b.box(0.02, s + 0.005, s + 0.005, '#f4f2ec', x, y, z); b.tor(0.03, 0.008, '#f4f2ec', x, y + s / 2 + 0.02, z, { ts: 8 }); } },
 };
 
+const _cam = new T.Vector3();
 /* ---------- one room ---------- */
 function buildRoom(m: IcMekan, own: { lv: number; isci: number; esya: string[]; tema?: string } | null, salonEsya: string[], fine: boolean, stage = 1, ekip: { rol: string; rank: number }[] = []): { g: T.Group; an: Anim } {
   const grp = new T.Group(); grp.name = 'ic-' + m.id; const cur = new T.Group(), curItem = new T.Group(); grp.add(cur); grp.userData.cur = cur;
   const hall = !!m.salon, { W, D } = icDim(m), h = Math.min(3.2, m.h), y0 = 0.14 + katY(m.kat || 0);   // above the ground detail layer (AVM: the room's floor)
   grp.position.set(m.x, y0, m.z); grp.rotation.y = icYaw(m);
   const b = new Batch(), g = new Batch(), l = new Batch(), wb = new Batch();
+  const trims = new Map<number, { b: Batch; x: number; z: number; ry: number }>();
+  const trimOf = (ry: number, x: number, z: number) => { const k = Math.round(ry * 100); let e = trims.get(k); if (!e) trims.set(k, e = { b: new Batch(), x, z, ry }); return e.b; };
   const an: Anim = { spin: [], fire: [], fish: [], screens: [], flick: [], bob: [], lamps: null };
   const seed = m.id.split('').reduce((a, ch) => a * 31 + ch.charCodeAt(0), 7) >>> 0;
   const ctx: Ctx = { b, g, l, grp, m, an, seed: seed % 97, fine, lv: own?.lv || 0, owned: !!own, stage, esnaf: !!m.mutfak && !mutfakCelik(stage) };
@@ -518,20 +521,22 @@ function buildRoom(m: IcMekan, own: { lv: number; isci: number; esya: string[]; 
     else if (desen === 'fayans') { for (let i = 0; i < Math.round(W / 0.4); i++) for (let j = 0; j < Math.round(D / 0.4); j++) if ((i + j) % 2) b.box(0.36, 0.004, 0.36, f2, -W / 2 + 0.2 + i * 0.4, 0.002, -D / 2 + 0.2 + j * 0.4); }
     else for (let i = 1; i < Math.round(W / 0.8); i++) b.box(0.015, 0.004, D - 0.05, f2, -W / 2 + i * W / Math.round(W / 0.8), 0.002, 0);
     // walls: inward faces only (near walls cull away from the outside camera), wainscot, skirting, cut cap, windows
+    // 2026-11-23: süpürgelik, bant, kesik başlık, pencere ve kapı kasası duvarın kendi mesh'inde (trimOf): yakın duvar
+    // arkadan bakınca kayboluyor ama kutular kalıyordu; odanın ortasında havada çubuk/kiriş gibi duruyorlardı
     const t = 0.25, wall = (len: number, x: number, z: number, ry: number, gap: number | [number, number] = 0) => {
       const segs: [number, number][] = Array.isArray(gap) ? [[-len / 2, gap[0]], [gap[1], len / 2]] : gap ? [[-len / 2, -gap / 2], [gap / 2, len / 2]] : [[-len / 2, len / 2]];
-      wb.push(mtx(x, 0, z, 0, ry, 0));
-      for (const [a, c2] of segs) { const L = c2 - a, cx = (a + c2) / 2; wb.plane(L, h, w1, cx, h / 2, 0); wb.plane(L, 1.0, w2, cx, 0.5, 0.01); wb.box(L, 0.1, 0.03, '#3a2416', cx, 0.05, 0.02); wb.box(L, 0.05, 0.03, w2, cx, 1.0, 0.02); wb.box(L, 0.08, t, '#e9e4da', cx, h + 0.04, -t / 2); }
-      wb.pop();
+      const tr = trimOf(ry, x, z); wb.push(mtx(x, 0, z, 0, ry, 0)); tr.push(mtx(x, 0, z, 0, ry, 0));
+      for (const [a, c2] of segs) { const L = c2 - a, cx = (a + c2) / 2; wb.plane(L, h, w1, cx, h / 2, 0); wb.plane(L, 1.0, w2, cx, 0.5, 0.01); tr.box(L, 0.1, 0.03, '#3a2416', cx, 0.05, 0.02); tr.box(L, 0.05, 0.03, w2, cx, 1.0, 0.02); tr.box(L, 0.08, t, '#e9e4da', cx, h + 0.04, -t / 2); }
+      wb.pop(); tr.pop();
     };
     // 2026-11-21: mutfağın yan duvarlarında servis koridoru kapısı (batı aşama 6, doğu aşama 7; v = KAPI_V)
     const kg = (y: 'W' | 'E'): number | [number, number] => (m.mutfak && passAcik(y, stage) ? (y === 'W' ? [-SERVIS_KAPI_V[1], -SERVIS_KAPI_V[0]] : [SERVIS_KAPI_V[0], SERVIS_KAPI_V[1]]) : 0);
     wall(W, 0, -D / 2 + 0.25, 0); if (!m.acik) { wall(D, -W / 2 + 0.25, 0, HP, kg('W')); wall(D, W / 2 - 0.25, 0, -HP, kg('E')); wall(W, 0, D / 2 - 0.25, Math.PI, 1.7); }   // açık stand: yalnız arka duvar
     if (!m.mutfak) for (const [x, z, ry, len] of (m.bina === 'avm' ? [] : [[-W / 2 + 0.26, 0, HP, D], [W / 2 - 0.26, 0, -HP, D]]) as [number, number, number, number][]) {   // side-wall windows (none inside the mall: shared walls; BUF-22: none in the kitchen, the menu board hangs there)
       const n = Math.max(1, Math.floor((len - 1) / 2.4));
-      for (let i = 0; i < n; i++) { const u = -len / 2 + (i + 0.5) * len / n; wb.push(mtx(x, 0, z, 0, ry, 0)); wb.box(1.1, 1.2, 0.04, '#fbfaf6', u, 1.75, 0.02); l.push(mtx(x, 0, z, 0, ry, 0)); l.plane(0.95, 1.05, '#bfe3f5', u, 1.75, 0.045); l.pop(); wb.pop(); }
+      for (let i = 0; i < n; i++) { const u = -len / 2 + (i + 0.5) * len / n, tr = trimOf(ry, x, z); tr.push(mtx(x, 0, z, 0, ry, 0)); tr.box(1.1, 1.2, 0.04, '#fbfaf6', u, 1.75, 0.02); tr.pop(); l.push(mtx(x, 0, z, 0, ry, 0)); l.plane(0.95, 1.05, '#bfe3f5', u, 1.75, 0.045); l.pop(); }
     }
-    if (!m.acik) { for (const s of [-1, 1]) b.box(0.12, 2.4, 0.3, w2, s * 0.92, 1.2, D / 2 - 0.15); b.box(1.96, 0.16, 0.3, w2, 0, 2.45, D / 2 - 0.15); b.box(1.2, 0.02, 0.8, '#9a1f2a', 0, 0.003, D / 2 - 0.8); }   // door frame, door mat
+    if (!m.acik) { const kp = trimOf(Math.PI, 0, D / 2 - 0.25); for (const s of [-1, 1]) kp.box(0.12, 2.4, 0.3, w2, s * 0.92, 1.2, D / 2 - 0.15); kp.box(1.96, 0.16, 0.3, w2, 0, 2.45, D / 2 - 0.15); b.box(1.2, 0.02, 0.8, '#9a1f2a', 0, 0.003, D / 2 - 0.8); }   // door frame, door mat
   } else {
     // rug (2026-11-21: own identity per hall, chairs must read on it): kahvaltı warm wood / cream, balık sea blue / white; fine adds a gold edge
     const [r1, r2, r3] = m.tur === 'balik' ? [fine ? '#c9a24a' : '#1d4f86', '#f4f7fa', '#9cc7dd'] : [fine ? '#c9a24a' : '#b08860', '#f3e3c8', '#e2c99c'];
@@ -584,7 +589,11 @@ function buildRoom(m: IcMekan, own: { lv: number; isci: number; esya: string[]; 
   if (m.tur === 'morg') an.flick.push(grp);
   const M = mats();
   if (!wb.empty) { const wm = wb.mesh(M.wall, false, true); grp.add(wm); }
-  if (!b.empty) grp.add(b.mesh(M.solid, true, true));
+  const trimM: T.Mesh[] = [];
+  for (const e of trims.values()) if (!e.b.empty) { const tm = e.b.mesh(M.wall, false, true); tm.userData.duvar = [e.x, e.z, Math.sin(e.ry), Math.cos(e.ry)]; grp.add(tm); trimM.push(tm); }
+  if (!b.empty) { const bm = b.mesh(M.solid, true, true); grp.add(bm);
+    // duvar süsü yalnız duvar düzlemi görünürken (kamera içeri bakan yüzün önünde); yansıma kamerası (su altı) sayılmaz
+    if (trimM.length) bm.onBeforeRender = (_r, _s, cam) => { _cam.setFromMatrixPosition(cam.matrixWorld); if (_cam.y < 0) return; grp.worldToLocal(_cam); for (const tm of trimM) { const [x, z, nx, nz] = tm.userData.duvar as number[]; tm.visible = (_cam.x - x) * nx + (_cam.z - z) * nz > 0; } }; }
   if (!g.empty) { const gm = g.mesh(M.glass, false, false); gm.renderOrder = 2; grp.add(gm); }
   if (!l.empty) { const lmesh = l.mesh(M.glow, false, false); grp.add(lmesh); an.lamps = lmesh; }
   return { g: grp, an };

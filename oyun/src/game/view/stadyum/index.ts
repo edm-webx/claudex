@@ -70,7 +70,7 @@ export function createStadyumView(d: StadyumViewDeps): StadyumView {
   // back of the upper tier faces the default camera: ribs, two stair towers, gate signs
   {
     const b = boxBatch(kit), zb = 34.55 + upper.back + 0.32, wall = M('#8a919a', { roughness: 0.9 }), dark = M('#2a3038');
-    for (let x = 410; x <= 442; x += 3.2) b.box(wall, 0.35, upper.top + 1.4, 0.3, x, (upper.top + 1.4) / 2, zb + 0.12);
+    for (let x = 410; x <= 442; x += 3.2) b.box(wall, 0.35, upper.top + 1.45, 0.3, x, (upper.top + 1.45) / 2, zb + 0.12);   // 5 cm üstte: tribün sırtıyla eş düzlem değil
     for (const sx of [-1, 1]) { const x = PITCH.x + sx * 18.6; b.box(wall, 2.6, upper.top + 2.2, 3.2, x, (upper.top + 2.2) / 2, 37.6); b.box(dark, 1.2, 2.2, 0.08, x, 1.1, 39.25); b.box(steel, 2.8, 0.15, 3.4, x, upper.top + 2.25, 37.6); }
     b.flush(root);
     for (const [x, txt] of [[PITCH.x - 8, 'TRİBÜN A'], [PITCH.x + 8, 'TRİBÜN B']] as const) {

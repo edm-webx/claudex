@@ -125,6 +125,18 @@ const k01 = (v: number) => Math.max(0, Math.min(1, v));
 const ease = (v: number) => v * v * (3 - 2 * v);
 const lerpA = (a: number, b: number, t: number) => { let d = b - a; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return a + d * t; };
 
+/** lathe yüzeyine yapışık spiral şerit (lathe-yerel: eksen y). Eski düz kutular uçlarda yüzeyden dışarı çubuk gibi taşıyordu. */
+function helis(b: Batch, prof: [number, number][], faz: number, tur: number, y0: number, y1: number, w: number, n = 24) {
+  const rAt = (y: number) => { for (let i = 1; i < prof.length; i++) if (y <= prof[i][1]) { const [ra, ya] = prof[i - 1], [rb, yb] = prof[i]; return ra + (rb - ra) * (y - ya) / (yb - ya); } return prof[prof.length - 1][0]; };
+  const P = (k: number) => { const y = y0 + (y1 - y0) * k / n, a = faz + y * tur, r = rAt(y) + 0.012; return new T.Vector3(r * Math.cos(a), y, r * Math.sin(a)); };
+  const geo = new T.BoxGeometry(1, 1, 1), m = new T.Matrix4(), X = new T.Vector3(), Y = new T.Vector3(), Z = new T.Vector3();
+  for (let k = 0; k < n; k++) {
+    const p0 = P(k), p1 = P(k + 1), mid = p0.clone().add(p1).multiplyScalar(0.5), len = p0.distanceTo(p1) + 0.02;
+    Z.subVectors(p1, p0).normalize(); Y.set(mid.x, 0, mid.z).normalize(); X.crossVectors(Y, Z).normalize(); Y.crossVectors(Z, X);
+    m.makeBasis(X.multiplyScalar(w), Y.multiplyScalar(0.025), Z.multiplyScalar(len)).setPosition(mid); b.add(geo, '#f6efe1', m);
+  }
+}
+
 function wheels(b: Batch, xs: number, zs: number[], r: number, w: number, y = r) {
   for (const z of zs) for (const s of [-1, 1]) { b.cyl(r, r, w, '#1f2023', s * xs, y, z, { rz: Math.PI / 2, seg: 12 }); b.cyl(r * 0.5, r * 0.5, w + 0.02, '#9aa0a8', s * xs, y, z, { rz: Math.PI / 2, seg: 8 }); }
 }
@@ -183,9 +195,12 @@ function kamyon(site: Site, u: UZ, yon: number, tip: 'damperli' | 'mikser', rob:
   } else {
     b.box(1.0, 0.8, 0.6, '#5b6068', 0, 1.3, 1.1); b.box(0.5, 0.12, 1.6, '#9aa0a8', 0, 2.3, -3.6, { rx: 0.5 });
     g.add(b.mesh(solidMat()));
-    const tambur = new T.Group(); tambur.position.set(0, 2.15, -1.2); tambur.rotation.x = -0.22; g.add(tambur);
-    const tb = new Batch(); tb.lathe([[0.05, -2.2], [0.75, -1.8], [1.15, -0.7], [1.15, 0.6], [0.6, 1.9], [0.35, 2.1]], '#e8892b', 0, 0, 0, { seg: 16, rx: Math.PI / 2 } as never);
-    for (let k = 0; k < 6; k++) { const a = k * Math.PI / 3; tb.box(0.08, 0.14, 2.4, '#f6efe1', Math.cos(a) * 1.13, Math.sin(a) * 1.13, -0.05, { rz: a, ry: 0.35 }); }
+    // tambur: ağzı arkada (oluğun üstünde) ve arka yukarı kalkık; kapalı uç kabine bakar
+    const tambur = new T.Group(); tambur.position.set(0, 2.15, -1.2); tambur.rotation.x = 0.22; g.add(tambur);
+    const prof: [number, number][] = [[0.05, -2.2], [0.75, -1.8], [1.15, -0.7], [1.15, 0.6], [0.6, 1.9], [0.35, 2.1]];
+    const tb = new Batch(); tb.lathe(prof, '#e8892b', 0, 0, 0, { seg: 16, rx: -Math.PI / 2 } as never);
+    tb.cyl(0.34, 0.34, 0.02, '#2a2622', 0, 0, -2.08, { rx: Math.PI / 2, seg: 16 });       // ağız içi koyu (açık uçtan arkası görünmesin)
+    tb.push(new T.Matrix4().makeRotationX(-Math.PI / 2)); for (const f of [0, Math.PI]) helis(tb, prof, f, 1.7, -1.95, 1.85, 0.11); tb.pop();   // yüzeye yapışık spiral şerit
     tambur.add(tb.mesh(solidMat())); tambur.userData.eksen = 'z'; site.tamburlar.push(tambur);
   }
   void rob;
@@ -345,7 +360,7 @@ function build(b: KilitliBolge): Site {
   }
   // betoniyer tamburu
   const bt = new T.Group(); bt.position.set(s * 55.0, 1.05, 7.0); bt.rotation.z = s * 0.5;
-  const tb = new Batch(); tb.lathe([[0.05, -0.55], [0.42, -0.4], [0.5, 0.0], [0.42, 0.35], [0.22, 0.55]], '#e8892b', 0, 0, 0, { seg: 14 }); tb.box(0.04, 0.9, 0.1, '#f6efe1', 0.46, 0, 0);
+  const tb = new Batch(); tb.lathe([[0.05, -0.55], [0.42, -0.4], [0.5, 0.0], [0.42, 0.35], [0.22, 0.55]], '#e8892b', 0, 0, 0, { seg: 14 }); helis(tb, [[0.05, -0.55], [0.42, -0.4], [0.5, 0.0], [0.42, 0.35], [0.22, 0.55]], 0, 3.5, -0.42, 0.45, 0.06);
   bt.add(tb.mesh(solidMat())); g.add(bt); site.tamburlar.push(bt);
   // flaşörler (bariyer üstü + kapı)
   for (const z of [PROM_Z0 + 0.7, b.kapiZ - 1.6, b.kapiZ + 1.6, PROM_Z1 - 0.5]) {

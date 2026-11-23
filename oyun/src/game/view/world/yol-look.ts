@@ -58,6 +58,7 @@ function buildRoad(): T.Group {
   return g;
 }
 
+const BUSH = new T.IcosahedronGeometry(0.9, 0);
 /** Tunnel blocks closing both road ends: vehicles come out of a dark mouth, nothing pops in view. */
 function buildPortals(): T.Group {
   const g = new T.Group(); g.name = 'yolTunel';
@@ -66,6 +67,10 @@ function buildPortals(): T.Group {
     g.add(box(24, 7, zw, lam('#9a9ea4'), sg * (RX + 12), 3.5, zc - 0.5));
     g.add(box(0.3, 3.6, ROAD_W, lam('#0d0f12'), sg * (RX + 0.01), 1.8, zc));
     g.add(box(0.5, 0.5, ROAD_W + 0.8, lam('#5b6068'), sg * (RX + 0.1), 3.85, zc));
+    // 2026-11-23: üstten bakınca düz gri kutuydu (bitmemiş gibi): tepesi çimenli toprak sırt + çalılar, ağız kenarında taş başlık
+    g.add(box(24.6, 0.5, zw + 0.6, lam('#6f9a52'), sg * (RX + 12), 7.2, zc - 0.5));
+    g.add(box(0.6, 0.9, zw + 0.2, lam('#b9b3a6'), sg * (RX + 0.25), 6.6, zc - 0.5));
+    const bush = lam('#4f7d3a'); for (let i = 0; i < 9; i++) { const m = new T.Mesh(BUSH, bush); m.position.set(sg * (RX + 3 + (i * 7.3) % 20), 7.55, zc - 0.5 + ((i * 5.1) % zw) - zw / 2 + 0.6); m.scale.setScalar(0.7 + (i % 3) * 0.3); g.add(m); }
   }
   return g;
 }
@@ -227,7 +232,7 @@ function busBody(c: string, len: number, label: string): T.Group {
     b.add(box(len - 0.9, 0.95, 0.05, GLASS(), -0.1, 2.25, sg * (wid / 2 + 0.015)));         // side windows
     const n = Math.floor((len - 1.2) / 1.5);
     for (let i = 1; i < n; i++) b.add(box(0.1, 1.0, 0.07, lam(c), -len / 2 + 0.6 + i * ((len - 1.2) / n), 2.25, sg * (wid / 2 + 0.02)));
-    b.add(box(1.0, 1.9, 0.08, lam('#cfd8df'), len / 2 - 2.0, 1.55, sg * (wid / 2 + 0.03)));  // door (2026-11-21: proud of the window and stripe, no coplanar faces)
+    b.add(box(1.0, 1.9, 0.08, lam('#cfd8df'), len / 2 - 2.0, 1.55, sg * (wid / 2 + 0.036)));  // door (2026-11-21: proud of the window and stripe, no coplanar faces)
     b.add(box(len - 0.8, 0.1, 0.06, lam('#ffffff'), -0.1, 1.0, sg * (wid / 2 + 0.02)));      // stripe
   }
   b.add(box(0.05, 1.15, wid - 0.3, GLASS(), len / 2 + 0.015, 2.0, 0));                     // windscreen

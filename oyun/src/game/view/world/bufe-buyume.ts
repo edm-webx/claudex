@@ -156,7 +156,15 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
       const ry = top + 0.36, rr = (xa: number, za: number, xb: number, zb: number) => { const len = Math.hypot(xb - xa, zb - za), a = Math.atan2(xb - xa, zb - za), n = Math.round(len / 1.2); b.box(0.08, 0.07, len, accent, (xa + xb) / 2, ry + 1.0, (za + zb) / 2, { ry: a }); for (let i = 0; i <= n; i++) b.box(0.05, 1.0, 0.05, frame, xa + (xb - xa) * i / n, ry + 0.5, za + (zb - za) * i / n); };
       rr(r.x0 - 0.3, r.z0 - 0.3, r.x1 + 0.3, r.z0 - 0.3); rr(r.x0 - 0.3, r.z1 + 0.3, r.x1 + 0.3, r.z1 + 0.3); rr(r.x0 - 0.3, r.z0 - 0.3, r.x0 - 0.3, r.z1 + 0.3); rr(r.x1 + 0.3, r.z0 - 0.3, r.x1 + 0.3, r.z1 + 0.3);
       KANAT_MASALAR.filter((m, k) => m.cati === (X < 0 ? 'W' : 'E') && kanatKurulu(stage).includes(KANAT_BASE + k)).forEach((m, i) => table(m.x, m.z, m.ax, fine ? '#f4f2ec' : UMB[(i + 2) % UMB.length], true, fine, ry));   // sim roof tables (BUF-20)
-      for (let s2 = 0; s2 < 14; s2++) b.box(0.9, 0.12, 0.34, '#8a6a4a', (r.x0 < 0 ? r.x1 + 0.55 : r.x0 - 0.55), 0.25 + s2 * (ry / 14), r.z1 - 0.3 - s2 * 0.4);   // outside stair
+      { const sx = r.x0 < 0 ? r.x1 + 0.55 : r.x0 - 0.55, dy = 13 * ry / 14, run = 13 * 0.4, ang = Math.atan2(dy, run), len = Math.hypot(dy, run) + 0.7, zm = r.z1 - 0.3 - run / 2;
+        for (let s2 = 0; s2 < 14; s2++) b.box(0.9, 0.12, 0.34, '#8a6a4a', sx, 0.25 + s2 * (ry / 14), r.z1 - 0.3 - s2 * 0.4);   // outside stair
+        // 2026-11-23: basamaklar havada duruyordu (taşıyıcı yok): iki yanda eğik limon kirişi + korkuluk, altta zemine basan dikme
+        for (const q of [-1, 1]) { const x = sx + q * 0.49;
+          b.box(0.07, 0.26, len, '#5e4630', x, 0.25 + dy / 2 - 0.1, zm, { rx: ang });
+          b.box(0.05, 0.05, len - 0.4, accent, x, 0.25 + dy / 2 + 0.92, zm, { rx: ang });
+          for (const k of [0, 4.5, 9, 13]) b.box(0.05, 0.92, 0.05, frame, x, 0.25 + k * (ry / 14) + 0.52, r.z1 - 0.3 - k * 0.4);
+          b.box(0.12, ry * 0.55, 0.12, '#5e4630', x, ry * 0.275, r.z1 - 0.3 - 9 * 0.4); }
+      }
       lights([[r.x0 - 0.3, r.z0 - 0.3], [r.x0 - 0.3, r.z1 + 0.3], [r.x1 + 0.3, r.z1 + 0.3], [r.x1 + 0.3, r.z0 - 0.3]].map(([x, z]) => [x, z] as [number, number]), ry + 2.2);
     }
     toMain();

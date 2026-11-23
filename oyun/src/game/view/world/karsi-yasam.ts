@@ -12,6 +12,7 @@ import { createMatch, L as ML, WD as MW } from '../../sim/macmotor';
 import { KARSI_PITCH } from '../../../content/zones/karsi';
 import { ARSALAR, arsaKapi } from '../../../content/esya';
 import { insaatYer } from '../../../content/isletme-insaat';
+import { IC_MEKANLAR, icIcinde } from '../../../content/ic-mekan';
 import { MORG, Canta } from '../../../content/ses/ambiyans';   // SNT-08: morg gece sesleri (aralık, çanta, konum)
 
 export interface YasamDeps { root: () => T.Object3D | null; chars: Chars | null; hero: () => { x: number; z: number }; hour: () => number; sfx: (id: string, at?: { x: number; z: number }) => void; /** hired café workers per owned fixed plot (sim/mulk) */ isci?: () => { id: string; n: number; lv?: number; esya?: string[] }[] }
@@ -250,6 +251,8 @@ export function createKarsiYasam(d: YasamDeps): YasamView {
       const h = d.hero(), near = h.z > 8, hour = d.hour(), night = hour >= 19.5 || hour < 6.2;
       holder.visible = near; if (!near) return;
       if (!built) build();
+      // 2026-11-23: içerideyken o dükkânın cephe süsü (tente, lamba kolları, ampul dizisi) gizlenir; kabuk gibi. Yoksa tente odanın üstünde havada asılı kalıyordu
+      for (const [id, c] of cephe) { const m = IC_MEKANLAR.find(x => x.arsa === id), ic = !!m && icIcinde(m, h, 0.5); if (c.g.visible === ic) c.g.visible = !ic; }
       dt = Math.min(dt, 0.1); tt += dt;
       (glowPts.material as T.PointsMaterial).opacity = night ? 0.85 : 0;
       // morg
