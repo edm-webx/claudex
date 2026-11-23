@@ -1,5 +1,5 @@
 /**
- * Martıköy sunucusu: Supabase (2026-10-24 13:05 user: kullanıcı adı + şifre, veritabanı; no server purchase needed).
+ * Martı Kimlik (hesap sistemi) + Martıköy sunucusu: Supabase (2026-10-24 13:05 user: kullanıcı adı + şifre, veritabanı; no server purchase needed).
  * - Auth: a username becomes a fake e-mail <name>@martikoy.oyun (Confirm email OFF in Supabase), so nobody types a mail.
  * - Tables (oyun/sunucu/supabase-kurulum.sql + migrations/): oyuncular (public profile: kullanici_adi, esnaf look),
  *   kayitlar (private save code, only the owner reads it; RLS).
@@ -32,40 +32,65 @@ export const userRe = /^[a-z0-9_çğıöşü]{3,16}$/;
  *  Nothing is ever mailed (Confirm email OFF); sign-in tries the same list. */
 const asciiOf = (name: string) => name.trim().toLocaleLowerCase('tr').replace(/ç/g, 'c1').replace(/ğ/g, 'g1').replace(/ı/g, 'i1').replace(/ö/g, 'o1').replace(/ş/g, 's1').replace(/ü/g, 'u1');
 const mailsOf = (name: string) => { const a = asciiOf(name); return ['martikoy.' + a + '@gmail.com', a + '@martikoy.com']; };
+/** Martı Kimlik ortak hata dili. Giriş hatası "ad mı şifre mi" ayrımı yapmaz (Supabase de yapmaz, yapmamalı): yol gösterir. */
+export const GIRIS_TUTMADI = 'Kullanıcı adı ya da şifre tutmadı. Adı kayıttaki gibi yaz (küçük harf, boşluksuz). Hesabın yoksa "Kayıt ol" sekmesinden aç.';
+export const AD_KURALI = 'Kullanıcı adı 3-16 karakter olsun: küçük harf, rakam ya da _ (boşluk yok).';
 const trErr = (m: string) =>
-  /Invalid login/i.test(m) ? 'Kullanıcı adı ya da şifre yanlış.'
+  /Invalid login/i.test(m) ? GIRIS_TUTMADI
   : /already registered|already exists/i.test(m) ? 'Bu kullanıcı adı alınmış.'
   : /Password should be/i.test(m) ? 'Şifre en az 6 karakter olmalı.'
   : /weak|pwned|known to be|easy to guess/i.test(m) ? 'Bu şifre sızdırılmış/çok bilinen bir şifre, başka bir şifre seç.'
   : /değiştirilemez/i.test(m) ? 'Kullanıcı adı değiştirilemez.'
-  : /oyuncular_ad_bicim|check constraint/i.test(m) ? 'Kullanıcı adı 3-16 küçük harf/rakam olsun (boşluk yok).'
-  : /rate limit|too many/i.test(m) ? 'Çok fazla deneme oldu, biraz bekle.'
-  : /fetch|network|Failed/i.test(m) ? 'Sunucuya ulaşılamadı. İnternetini kontrol et.'
-  : /signups not allowed|Signups/i.test(m) ? 'Kayıtlar kapalı (Supabase: Email provider açık olmalı).'
+  : /oyuncular_ad_bicim|check constraint/i.test(m) ? AD_KURALI
+  : /rate limit|too many/i.test(m) ? 'Çok fazla deneme oldu, birkaç dakika bekleyip tekrar dene.'
+  : /fetch|network|Failed|timeout|abort/i.test(m) ? 'Sunucuya ulaşılamadı. İnternetini kontrol edip tekrar dene.'
+  : /signups not allowed|Signups/i.test(m) ? 'Kayıtlar şu an kapalı, biraz sonra tekrar dene.'
   : /Email address .* is invalid/i.test(m) ? 'Bu kullanıcı adıyla kayıt olmadı, başka bir ad dene.'
-  : /Email not confirmed/i.test(m) ? 'Hesap onay bekliyor (Supabase: Confirm email kapalı olmalı).'
+  : /Email not confirmed/i.test(m) ? 'Hesap onay bekliyor, admine yaz.'
   : m;
 
 export interface Hesap { id: string; ad: string }
 let me: Hesap | null = null;
 export const hesap = () => me;
 
+/** Sahte e-postadan ad (yalnız yedek): martikoy.<a>@gmail.com / <a>@martikoy.com, c1→ç ... */
+const adOfMail = (mail: string) => mail.split('@')[0].replace(/^martikoy\./, '').replace(/c1/g, 'ç').replace(/g1/g, 'ğ').replace(/i1/g, 'ı').replace(/o1/g, 'ö').replace(/s1/g, 'ş').replace(/u1/g, 'ü');
+/**
+ * MARTI KİMLİK: görünen ad SUNUCUDAKİ oyuncular.kullanici_adi'dir (değiştirilemez, trigger korur). user_metadata.ad
+ * oyuncunun kendisinin değiştirebildiği bir alan, ona hiç güvenilmez. Profil satırı yoksa (kayıtta bağlantı koptuysa)
+ * burada onarılır: ad = giriş e-postasından çözülen ad (e-posta adın kendisinden türer, şifreyle doğrulandı).
+ * Dönüş: profil var/onarıldı mı (false = sunucu okunamadı, ad e-postadan; oyun yine açılır, onarım sonraki girişte).
+ */
+async function kimlikBagla(c: SupabaseClient, s: Session, yazilanAd = ''): Promise<boolean> {
+  const id = s.user.id, mailAd = adOfMail(String(s.user.email || '')), ad = (yazilanAd || mailAd || 'esnaf');
+  me = { id, ad };
+  try {
+    const r = await c.from('oyuncular').select('kullanici_adi').eq('id', id).maybeSingle();
+    if (r.error) return false;
+    if (r.data?.kullanici_adi) { me = { id, ad: String(r.data.kullanici_adi) }; return true; }
+    const u = await c.from('oyuncular').upsert({ id, kullanici_adi: ad });
+    return !u.error;
+  } catch { return false; }
+}
+
 export async function oturum(): Promise<Hesap | null> {
   const c = supa(); if (!c) return null;
   try {
     const { data } = await c.auth.getSession();
-    return (me = fromSession(data.session));
+    if (!data.session) return (me = null);
+    await kimlikBagla(c, data.session);
+    return me;
   } catch { return null; }
 }
-const fromSession = (s: Session | null): Hesap | null => s ? { id: s.user.id, ad: String((s.user.user_metadata as { ad?: string })?.ad || s.user.email?.split('@')[0] || 'esnaf') } : null;
 
 export async function kayitOl(ad: string, sifre: string): Promise<string | null> {
   const c = supa(); if (!c) return 'Sunucu henüz bağlı değil.';
   ad = ad.trim().toLocaleLowerCase('tr');
-  if (!userRe.test(ad)) return 'Kullanıcı adı 3-16 harf/rakam olsun (boşluk yok).';
+  if (!userRe.test(ad)) return AD_KURALI;
   if (sifre.length < 6) return 'Şifre en az 6 karakter olmalı.';
   try {
     const taken = await c.from('oyuncular').select('id').eq('kullanici_adi', ad).maybeSingle();
+    if (taken.error) return trErr(taken.error.message || 'network');
     if (taken.data) return 'Bu kullanıcı adı alınmış.';
     let data = null as Awaited<ReturnType<typeof c.auth.signUp>>['data'] | null, error: { message: string } | null = null;
     for (const email of mailsOf(ad)) {
@@ -74,22 +99,33 @@ export async function kayitOl(ad: string, sifre: string): Promise<string | null>
       if (!error || !/invalid/i.test(error.message) || /password/i.test(error.message)) break;
     }
     if (error || !data) return trErr(error ? error.message : 'Kayıt olmadı.');
-    if (!data.session) return 'Hesap onay bekliyor (Supabase: Confirm email kapalı olmalı).';
-    me = fromSession(data.session);
-    await c.from('oyuncular').upsert({ id: data.session.user.id, kullanici_adi: ad });
+    if (!data.session) return 'Hesap onay bekliyor, admine yaz.';
+    // profil satırı (görünen adın kaynağı): bir kez yeniden dene; yine olmazsa oturumu kapat, net söyle. Hesap açıldı,
+    // ilk girişte kimlikBagla satırı kendisi onarır; oyuncu "kayıt oldu mu olmadı mı" arafında kalmaz.
+    const id = data.session.user.id;
+    let pe: { message: string } | null = null;
+    for (let i = 0; i < 2; i++) { try { pe = (await c.from('oyuncular').upsert({ id, kullanici_adi: ad })).error; } catch (e) { pe = { message: String((e as Error)?.message || e) }; } if (!pe) break; }
+    if (pe) { me = null; try { await c.auth.signOut(); } catch { /* */ } return PROFIL_YAZILAMADI; }
+    me = { id, ad };
     return null;
   } catch (e) { return trErr(String((e as Error)?.message || e)); }
 }
+export const PROFIL_YAZILAMADI = 'Hesabın açıldı ama bağlantı koptu, profilin tamamlanamadı. Hiçbir şey kaybolmadı: "Giriş yap" sekmesinden aynı ad ve şifreyle gir, kendiliğinden tamamlanır.';
 
 export async function girisYap(ad: string, sifre: string): Promise<string | null> {
   const c = supa(); if (!c) return 'Sunucu henüz bağlı değil.';
+  ad = ad.trim().toLocaleLowerCase('tr');
+  // sunucuya hiç gitmeden yakalanan hatalar (her yanlış deneme 2 istek yiyordu)
+  if (!ad) return 'Kullanıcı adını yaz.';
+  if (!userRe.test(ad)) return AD_KURALI;
+  if (!sifre) return 'Şifreni yaz.';
   try {
     let msg = '';
     for (const email of mailsOf(ad)) {
       const { data, error } = await c.auth.signInWithPassword({ email, password: sifre });
-      if (!error) { me = fromSession(data.session); return null; }
-      msg = error.message;
-      if (/rate|fetch|network/i.test(msg)) break;
+      if (!error && data.session) { await kimlikBagla(c, data.session, ad); return null; }
+      msg = error?.message || 'Invalid login';
+      if (/rate|fetch|network|Failed/i.test(msg)) break;
     }
     return trErr(msg.replace(/Email address .* is invalid/i, 'Invalid login'));
   } catch (e) { return trErr(String((e as Error)?.message || e)); }

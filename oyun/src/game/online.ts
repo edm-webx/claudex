@@ -13,7 +13,8 @@
  */
 import { hesap } from './net/supa';
 import { MISAFIR_MAAS } from './net/misafir';
-import { susturuldu, benSusturuldum } from './net/admin';
+import { susturuldu, benSusturuldum, adlar } from './net/admin';
+import { adDogrulayici, etiket } from './net/kimlik';
 import { logYaz } from './net/log';
 import type { Object3D, Scene } from 'three';
 import type { Chars, HeroHandle, Vec2, Vec3, ScreenPt } from '../engine/api';
@@ -117,7 +118,7 @@ const CSS = `
 .on-err{min-height:18px;color:#b3261e;font:800 13px var(--body);text-align:center;margin-top:6px}
 `;
 
-interface Remote { peer: string; hero: HeroHandle | null; lookKey: string; x: number; z: number; rot: number; tx: number; tz: number; trot: number; speed: number; act: string; tag: HTMLDivElement; sayT: number; sayAt: number; seen: number; uid: string; hn: string; ad: string }
+interface Remote { peer: string; hero: HeroHandle | null; lookKey: string; x: number; z: number; rot: number; tx: number; tz: number; trot: number; speed: number; act: string; tag: HTMLDivElement; sayT: number; sayAt: number; seen: number; uid: string; hn: string; ad: string; dk: string }
 
 /** what other players need to draw my esnaf (kept small: presence is ~4 KiB on claude.ai) */
 const LOOK_KEYS: (keyof EsnafimSave)[] = ['ad', 'sinif', 'tip', 'vucut', 'boy', 'ten', 'goz', 'gozRenk', 'kas', 'allik', 'cil', 'gamze', 'ruj', 'sac', 'sacRenk', 'biyik', 'sakal',
@@ -134,6 +135,7 @@ export function createOnline(d: OnlineDeps): OnlineView {
   let pmTo: { peer: string; ad: string } | null = null;
   const hist: { who: string; text: string; kind: string; peer: string; t: number }[] = [];
   let hostMissing = 0;
+  const kimlik = adDogrulayici(adlar); let kimlikT = 0;   // Martı Kimlik: görünen hesap adı sunucudan (net/kimlik.ts)
   let retryT = 20, host = false, guestOf = '', guestSig = '', worldT = 0, worldWant = false, worldSig = '', kasaBase = -1, askT = 3, sheetT = 0, hostKasa = -1;
   try { const q = new URLSearchParams(location.search).get('oda'); if (q) code = kodTemiz(q); } catch { /* */ }
 
@@ -172,7 +174,7 @@ export function createOnline(d: OnlineDeps): OnlineView {
   function wireWorld(l: Link) {
     if (!d.world || !l.on) return;
     l.on('iste', () => { if (host) worldWant = true; });
-    l.on('pm', pl => { if (pl.to !== l.id || typeof pl.text !== 'string') return; const ad = String(pl.ad || 'Esnaf').slice(0, 14); addLog('🔒 ' + ad + ' → sen', filterChat(pl.text), 'pm', String(pl.id || '')); d.toast('🔒 ' + ad + ' sana yazdı'); });
+    l.on('pm', pl => { if (pl.to !== l.id || typeof pl.text !== 'string') return; const rp = remotes.get(String(pl.id || '')), ad = etiket(String(pl.ad || 'Esnaf'), rp ? kimlik.ad(rp.uid) : ''); addLog('🔒 ' + ad + ' → sen', filterChat(pl.text), 'pm', String(pl.id || '')); d.toast('🔒 ' + ad + ' sana yazdı'); });
     // net/misafir.ts: misafirin cüzdanı kendisinin; ev sahibinin kasası yalnız oda rozetinde yazar
     l.on('para', pl => { const n = Number(pl.n); if (!host && guestOf && Number.isFinite(n) && n >= 0) { hostKasa = Math.floor(n); ui(); } });
     l.on('kasa', pl => { const n = Number(pl.n); if (host && n > 0 && n < 1e7) d.world!.addKasa(Math.floor(n), String(pl.ad || 'Bir esnaf').slice(0, 14)); });
@@ -281,15 +283,15 @@ ${code ? `<div class="on-big">${code}</div><p>Şu an bu odadasın.</p>` : ''}
       let rm = remotes.get(p.peer);
       if (!rm) {
         const tag = document.createElement('div'); tag.className = 'on-tag'; tag.innerHTML = '<span class="s" style="display:none"></span><span class="n"></span><span class="d"></span>'; d.root.appendChild(tag);
-        rm = { peer: p.peer, hero: null, lookKey: '', x: Number(pr.x) || 0, z: Number(pr.z) || 0, rot: Number(pr.rot) || 0, tx: 0, tz: 0, trot: 0, speed: 0, act: 'idle', tag, sayT: 0, sayAt: 0, seen: now, uid: '', hn: '', ad: '' };
+        rm = { peer: p.peer, hero: null, lookKey: '', x: Number(pr.x) || 0, z: Number(pr.z) || 0, rot: Number(pr.rot) || 0, tx: 0, tz: 0, trot: 0, speed: 0, act: 'idle', tag, sayT: 0, sayAt: 0, seen: now, uid: '', hn: '', ad: '', dk: '' };
         remotes.set(p.peer, rm);
         d.toast((String(pr.ad || 'Bir esnaf')).slice(0, 14) + ' Martıköy\'e geldi!');
       }
-      rm.seen = now; rm.uid = String(pr.uid || '').slice(0, 40); rm.hn = String(pr.hn || '').slice(0, 20); rm.ad = String(pr.ad || 'Esnaf').slice(0, 14);
+      rm.seen = now; rm.uid = String(pr.uid || '').slice(0, 40); kimlik.iste(rm.uid); rm.hn = kimlik.ad(rm.uid);   // pr.hn istemci metni: gösterilmez rm.ad = String(pr.ad || 'Esnaf').slice(0, 14);
       rm.tx = Number(pr.x) || 0; rm.tz = Number(pr.z) || 0; rm.trot = Number(pr.rot) || 0; rm.speed = Number(pr.sp) || 0; rm.act = typeof pr.act === 'string' ? String(pr.act).slice(0, 12) : 'idle';
       const sn = SINIFLAR.find(s => s.id === (pr.look as { sinif?: string } | undefined)?.sinif);
       (rm.tag.querySelector('.n') as HTMLElement).textContent = (pr.ev ? '🏠 ' : '') + (sn ? sn.icon + ' ' : '') + String(pr.ad || 'Esnaf').slice(0, 14);
-      (rm.tag.querySelector('.d') as HTMLElement).textContent = String(pr.dukkan || '').slice(0, 22);
+      rm.dk = String(pr.dukkan || '').slice(0, 22); tagD(rm);
       const lk = JSON.stringify(pr.look || null);
       if (lk !== rm.lookKey && d.chars) {
         rm.lookKey = lk;
@@ -301,7 +303,7 @@ ${code ? `<div class="on-big">${code}</div><p>Şu an bu odadasın.</p>` : ''}
         const first = rm.sayT === 0; rm.sayT = say.t;
         if (rm.uid && susturuldu(rm.uid)) continue;   // muted by an admin
         const text = filterChat(String(say.text || ''));
-        if (!first || Date.now() - say.t < 15000) { rm.sayAt = now; const s = rm.tag.querySelector('.s') as HTMLElement; s.textContent = text; s.style.display = text ? 'block' : 'none'; addLog(String(pr.ad || 'Esnaf').slice(0, 14), text, '', p.peer); }
+        if (!first || Date.now() - say.t < 15000) { rm.sayAt = now; const s = rm.tag.querySelector('.s') as HTMLElement; s.textContent = text; s.style.display = text ? 'block' : 'none'; addLog(etiket(String(pr.ad || 'Esnaf'), rm.hn), text, '', p.peer); }
       }
     }
     for (const [k, rm] of remotes) if (!peers.some(p => p.peer === k)) { drop(rm); remotes.delete(k); }
@@ -313,6 +315,7 @@ ${code ? `<div class="on-big">${code}</div><p>Şu an bu odadasın.</p>` : ''}
     } else hostMissing = 0;
     ui();
   }
+  function tagD(rm: Remote) { (rm.tag.querySelector('.d') as HTMLElement).textContent = (rm.hn ? '@' + rm.hn + (rm.dk ? ' · ' : '') : '') + rm.dk; }
   function drop(rm: Remote) { try { rm.hero?.dispose(); } catch { /* */ } rm.tag.remove(); }
 
   return {
@@ -321,6 +324,7 @@ ${code ? `<div class="on-big">${code}</div><p>Şu an bu odadasın.</p>` : ''}
       if (odaBtn) { const solo = !code && remotes.size === 0; odaBtn.classList.toggle('kucuk', solo); if (pill && solo) pill.style.display = 'none'; if (solo && odaBtn.textContent !== '👥 Arkadaş çağır') odaBtn.textContent = '👥 Arkadaş çağır'; }
       // an open panel sheet takes the screen: chat and the server button step aside so nothing covers its text
       if (chat && (sheetT -= dt) <= 0) { sheetT = 0.25; const open = !!document.querySelector('.sb-sheet, .kl-p, .gr-bg'); chat.style.display = open || !code ? 'none' : ''; if (odaBtn) odaBtn.style.display = open ? 'none' : ''; if (pill) pill.style.display = open || (!code && remotes.size === 0) ? 'none' : ''; }
+      if (remotes.size && (kimlikT -= dt) <= 0) { kimlikT = 3; void kimlik.cek().then(yeni => { if (!yeni) return; for (const rm of remotes.values()) { rm.hn = kimlik.ad(rm.uid); tagD(rm); } }); }
       if (!link) { if (code && (retryT -= dt) <= 0) { retryT = 20; connect(code); } return; }
       const me = d.me();
       sendT -= dt;

@@ -1,7 +1,7 @@
-// Giriş ekranı (2026-10-24 13:05 user: "username ve password girişi olsun"). Opens after the title: Giriş yap /
+// Giriş ekranı = MARTI KİMLİK (oyunun hesap sistemi, 2026-11-23). (2026-10-24 13:05 user: "username ve password girişi olsun"). Opens after the title: Giriş yap /
 // Kayıt ol / Misafir oyna. Accounts live on Supabase (net/supa.ts); a remembered session skips the form.
 // After a login the boot merges the cloud save (afterLogin) and then the game starts.
-import { supaReady, girisYap, kayitOl, cikisYap } from '../net/supa';
+import { supaReady, girisYap, kayitOl, cikisYap, GIRIS_TUTMADI, PROFIL_YAZILAMADI } from '../net/supa';
 import { girisSonrasi, adminAdiMi, adminDogrula } from '../net/admin';
 import { girisLogu } from '../net/log';
 import { slotlariYukle, slotListesi, slotSec, aktifSlot, slotSil, slotsHazir } from '../net/slots';
@@ -32,6 +32,11 @@ const CSS = `
 .gr-card{max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);overflow:auto}
 .gr-adm{display:block;margin:10px auto 0;background:none;border:0;font:800 13px var(--body);color:#3b2a20;opacity:.55;text-decoration:underline;cursor:pointer}
 .gr-note{font:700 13px/1.35 var(--body);opacity:.7;text-align:center;margin-top:10px}
+.gr-kim{display:flex;align-items:center;gap:10px;margin:-4px auto 12px;width:max-content;max-width:100%;background:#3b2a20;color:#fdf3e1;border-radius:999px;padding:4px 16px 4px 4px;box-shadow:inset 0 0 0 2px #ffd23f}
+.gr-seal{flex:none;display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:#ffd23f;border:2px dashed #3b2a20;font-size:20px;line-height:1}
+.gr-kim b{display:block;font:900 15px/1 var(--disp);letter-spacing:.16em}.gr-kim small{display:block;font:700 11.5px/1.2 var(--body);opacity:.8;margin-top:2px;letter-spacing:.02em}
+.gr-hint{font:700 12.5px/1.3 var(--body);opacity:.65;margin-top:4px}
+.gr-unut{margin-top:10px;border:3px dashed #3b2a20;border-radius:14px;background:#fff6e6;padding:10px 12px;font:700 13.5px/1.45 var(--body)}.gr-unut b{font-family:var(--disp)}
 `;
 
 export function createGiris(deps: { root: HTMLElement; afterLogin: (isNew: boolean) => Promise<void>; sfx?: (id: string) => void }): GirisView {
@@ -83,17 +88,20 @@ export function createGiris(deps: { root: HTMLElement; afterLogin: (isNew: boole
       };
       const delMatch = (i: number) => { const s = slotListesi()[i], t = (bg.querySelector('input[name="onay"]') as HTMLInputElement | null)?.value || ''; return !!s && t.trim().toLocaleLowerCase('tr') === s.ad.replace(/[<>&]/g, '').trim().toLocaleLowerCase('tr'); };
       const bg = document.createElement('div'); bg.className = 'gr-bg';
-      let mode: 'giris' | 'kayit' = 'giris';
+      let mode: 'giris' | 'kayit' = 'giris', tutmadi = 0, unut = false;
+      // Martı Kimlik: oyunun hesap sistemi. E-posta yok, sıfırlama bağlantısı da yok: şifreyi unutan admine yazar.
+      const unutKutu = () => `<div class="gr-unut"><b>🔐 Şifreni mi unuttun?</b><br>Martı Kimlik e-posta istemediği için sıfırlama bağlantısı gönderemiyoruz. Oyunu oynadığın sayfadaki iletişim yolundan <b>admine yaz</b>, kullanıcı adını söyle. Hesabın doğrulanınca yeni şifre verilir; karakterlerin ve bankan bu sırada güvende.</div>`;
       const paint = (err = '') => {
-        bg.innerHTML = `<div class="gr-card"><div class="gr-h">🐦 Martıköy'e hoş geldin</div><div class="gr-sub">Hesabınla gir, dükkanın ve esnafın her cihazda seninle olsun.</div>
+        bg.innerHTML = `<div class="gr-card"><div class="gr-kim"><span class="gr-seal">🐦</span><div><b>MARTI KİMLİK</b><small>Martıköy'ün tek hesabı</small></div></div><div class="gr-h">Martıköy'e hoş geldin</div><div class="gr-sub">Tek kimlik, her cihazda aynı dükkan ve aynı esnaf.</div>
 <div class="gr-tabs"><button class="gr-t${mode === 'giris' ? ' on' : ''}" data-m="giris">Giriş yap</button><button class="gr-t${mode === 'kayit' ? ' on' : ''}" data-m="kayit">Kayıt ol</button></div>
-<div class="gr-l">Kullanıcı adı</div><input class="gr-in" name="ad" maxlength="16" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="ör. simitci_ali">
+<div class="gr-l">Kullanıcı adı</div><input class="gr-in" name="ad" maxlength="16" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="ör. simitci_ali">${mode === 'kayit' ? '<div class="gr-hint">3-16 karakter: küçük harf, rakam ya da _. Sonradan değişmez, herkes seni bu adla görür.</div>' : ''}
 <div class="gr-l">Şifre</div><input class="gr-in" name="sifre" type="password" maxlength="64" autocomplete="${mode === 'kayit' ? 'new-password' : 'current-password'}" placeholder="en az 6 karakter">
 <div class="gr-key" style="display:none"><div class="gr-l">🔑 Anahtar kod</div><input class="gr-in" name="kod" type="password" maxlength="64" autocomplete="off" placeholder="sadece sende olan kod"></div>
-<button class="gr-go" data-go="1">${mode === 'giris' ? 'Giriş yap' : 'Hesabı aç'}</button>
+<button class="gr-go" data-go="1">${mode === 'giris' ? 'Martı Kimlik ile gir' : 'Martı Kimliğimi aç'}</button>
+${mode === 'giris' ? (unut ? unutKutu() : '<button class="gr-adm" data-unut="1">Şifremi unuttum</button>') : ''}
 <button class="gr-guest" data-guest="1">Misafir oyna (hesapsız, ilerleme kaydedilmez)</button>
 <div class="gr-err">${err}</div>
-<div class="gr-note">${supaReady() ? 'E-posta istemiyoruz. Şifreni unutma, kimse göremez.' : 'Hesap sunucusu birazdan bağlanacak, biraz sonra tekrar dene.'}</div></div>`;
+<div class="gr-note">${supaReady() ? 'Martı Kimlik e-posta istemez. Şifren yalnız sende, kimse göremez; unutma.' : 'Hesap sunucusu birazdan bağlanacak, biraz sonra tekrar dene.'}</div></div>`;
       };
       const showKey = () => { const k = bg.querySelector('.gr-key') as HTMLElement | null; if (k) k.style.display = ''; };
       const submit = async () => {
@@ -107,6 +115,9 @@ export function createGiris(deps: { root: HTMLElement; afterLogin: (isNew: boole
         // admin / xynena: the key code is checked on the server (hash in the DB); without it the account never opens
         if (!err && adm) { const k = await adminDogrula(kod); if (k === 'yanlis') { await cikisYap(); err = 'Anahtar kod yanlış.'; } }
         isNew = !err && mode === 'kayit';
+        // üst üste 2 "tutmadı" = büyük ihtimalle unutulmuş şifre: yol gösteren kutu kendiliğinden açılır
+        if (err === GIRIS_TUTMADI) { if (++tutmadi >= 2) unut = true; } else if (!err) tutmadi = 0;
+        if (err === PROFIL_YAZILAMADI) mode = 'giris';
         if (err) { const keepAd = ad; paint(err); (bg.querySelector('input[name="ad"]') as HTMLInputElement).value = keepAd; try { deps.sfx?.('error'); } catch { /* */ } return; }
         try { deps.sfx?.('ok'); } catch { /* */ }
         finish(true);
@@ -125,6 +136,7 @@ export function createGiris(deps: { root: HTMLElement; afterLogin: (isNew: boole
         }
         if (el.dataset.slot) { slotSec(Number(el.dataset.slot)); try { deps.sfx?.('pick'); } catch { /* */ } void enter(); return; }
         if (el.dataset.enter) { void enter(); return; }
+        if (el.dataset.unut) { unut = true; const keepAd = (bg.querySelector('input[name="ad"]') as HTMLInputElement).value; paint(); (bg.querySelector('input[name="ad"]') as HTMLInputElement).value = keepAd; return; }
         if (el.dataset.m) { mode = el.dataset.m as 'giris' | 'kayit'; paint(); return; }
         if (el.dataset.go) { void submit(); return; }
         if (el.dataset.guest) finish(false);
