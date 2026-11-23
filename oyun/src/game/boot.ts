@@ -118,6 +118,7 @@ import { createKarsiBina, type BinaView } from './view/world/karsi-bina';
 import { createIsletmeInsaat, type InsaatView } from './view/world/isletme-insaat';
 import { createInsaatSahasi, type InsaatSahasiView } from './view/world/insaat-sahasi';
 import { gecitAcik } from '../content/kilitli-bolge';
+import { misafirDunya, misafirMaas, misafirDonus } from './net/misafir';
 import { createBufeBuyume, mevsimZorla, type BuyumeView } from './view/world/bufe-buyume';
 import { createParkLook, type ParkView } from './view/world/park-look';
 import { createAcilis, type AcilisView } from './view/world/acilis';
@@ -516,14 +517,16 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
       apply: (json: string) => {
         if (!ownBackup) { if (saveOn()) void save.save('manual'); ownBackup = JSON.stringify(sim.state); }
         const own = JSON.parse(ownBackup) as AnyRec, h = JSON.parse(json) as AnyRec;
-        const m = { ...h, player: own.player, settings: own.settings, hero: own.hero, lastSeen: own.lastSeen, zones: { ...(h.zones as AnyRec), esnafim: (own.zones as AnyRec).esnafim } };
-        guestWorld = true; sim.load(m as never);
+        // net/misafir.ts: ev sahibinin büfesi, misafirin kendi cüzdanı (zaten misafirse şu anki cüzdan: maaşı kaybolmasın)
+        const m = misafirDunya(guestWorld ? { ...own, money: sim.state.money, gold: sim.state.gold } : own, h);
+        guestWorld = true; sim.load(m as never); (sim.rules.rt as unknown as { misafir?: boolean }).misafir = true;
       },
       earned: () => Number(sim.state.totalEarned) || 0,
       money: () => sim.state.money,
       setMoney: (n: number) => { sim.state.money = n; },
+      maas: (n: number) => { sim.state.money = misafirMaas(sim.state.money, n); },
       addKasa: (n: number, from: string) => { sim.rules.credit!('diger', n); kasaToast += n; kasaFrom = from; },
-      leave: () => { if (ownBackup) { sim.load(JSON.parse(ownBackup)); ownBackup = null; } guestWorld = false; },
+      leave: () => { if (ownBackup) { sim.load(misafirDonus(JSON.parse(ownBackup), sim.state as unknown as AnyRec) as never); ownBackup = null; } guestWorld = false; (sim.rules.rt as unknown as { misafir?: boolean }).misafir = false; },
     } })) : null;
   // 13:05 user: kullanıcı adı + şifre (giris.ts, net/supa.ts). A login pulls the newer cloud save; while signed in the
   // save goes up every minute and when the tab hides.

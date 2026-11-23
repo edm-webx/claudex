@@ -66,6 +66,7 @@ export function installPads(K: Kernel): { update(dt: number): void } {
       id, pos: pr.pos, radius: 0.8, kind: 'pad', dwell: 0, interval: 0.05,
       canAct: () => rt.pads.includes(pr),
       act: (_a, ctx) => {
+        if (misafirKare(K)) return 'done';
         const paid = S.padPaid[d.key] || 0, left = pr.price - paid;
         if (S.money < 1) { if (!pr.warned) { pr.warned = true; K.toast('Para lazım: müşterilere satış yap, kasayı topla.', 'info'); } return 'continue'; }
         const rate = Math.max(pr.price / 1.2, 250);
@@ -140,3 +141,12 @@ export function installPads(K: Kernel): { update(dt: number): void } {
   void clamp; void LINES;
 }
 export const STAGE_TABLE_LIST = STAGE_TABLES;
+
+/** Odada misafirken (net/misafir.ts, rt.misafir) sarı kare para çekmez: kareleri ev sahibi açar. Uyarı 6 sn'de bir. */
+export function misafirKare(K: { rt: unknown; state: { playT: number }; toast(t: string, k?: string): void }): boolean {
+  const r = K.rt as { misafir?: boolean; misafirUyari?: number };
+  if (!r.misafir) return false;
+  const son = r.misafirUyari ?? -99;
+  if (K.state.playT - son > 6 || K.state.playT < son) { r.misafirUyari = K.state.playT; K.toast('Burası ev sahibinin büfesi: sarı kareleri o açar. Sen sat, maaşın cebine yatsın.', 'bad'); }
+  return true;
+}

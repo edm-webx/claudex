@@ -12,6 +12,7 @@
  * - Names travel as typed nicknames in presence (display data, untrusted), set with textContent only.
  */
 import { hesap } from './net/supa';
+import { MISAFIR_MAAS } from './net/misafir';
 import { susturuldu, benSusturuldum } from './net/admin';
 import { logYaz } from './net/log';
 import type { Object3D, Scene } from 'three';
@@ -74,7 +75,7 @@ export interface OnlineDeps {
   project(p: Vec3, out: ScreenPt): boolean;
   me(): { pos: Vec2; rot: number; speed: number; esnaf: EsnafimSave; region: string; act?: string };
   /** Kahoot-like shared world: the room's host sends its büfe, guests play inside it until they leave */
-  world?: { get(): string; sig(): string; apply(json: string, host: string): void; leave(): void; earned(): number; addKasa(n: number, from: string): void; money(): number; setMoney(n: number): void };
+  world?: { get(): string; sig(): string; apply(json: string, host: string): void; leave(): void; earned(): number; addKasa(n: number, from: string): void; money(): number; setMoney(n: number): void; maas?(n: number): void };
   toast(text: string): void;
 }
 
@@ -133,7 +134,7 @@ export function createOnline(d: OnlineDeps): OnlineView {
   let pmTo: { peer: string; ad: string } | null = null;
   const hist: { who: string; text: string; kind: string; peer: string; t: number }[] = [];
   let hostMissing = 0;
-  let retryT = 20, host = false, guestOf = '', guestSig = '', worldT = 0, worldWant = false, worldSig = '', kasaBase = -1, askT = 3, sheetT = 0;
+  let retryT = 20, host = false, guestOf = '', guestSig = '', worldT = 0, worldWant = false, worldSig = '', kasaBase = -1, askT = 3, sheetT = 0, hostKasa = -1;
   try { const q = new URLSearchParams(location.search).get('oda'); if (q) code = kodTemiz(q); } catch { /* */ }
 
   const w = window as unknown as { claude?: { use?: (n: string) => Promise<unknown> } };
@@ -153,7 +154,7 @@ export function createOnline(d: OnlineDeps): OnlineView {
 
   function connect(c: string, asHost = false) {
     if (link) { link.leave(); link = null; }
-    if (guestOf) { guestOf = ''; guestSig = ''; try { d.world?.leave(); } catch { /* */ } }
+    if (guestOf) { guestOf = ''; guestSig = ''; hostKasa = -1; try { d.world?.leave(); } catch { /* */ } }
     host = !!c && asHost; worldSig = ''; worldWant = host;
     for (const rm of remotes.values()) drop(rm); remotes.clear();
     code = c; lastSent = '';
@@ -172,7 +173,8 @@ export function createOnline(d: OnlineDeps): OnlineView {
     if (!d.world || !l.on) return;
     l.on('iste', () => { if (host) worldWant = true; });
     l.on('pm', pl => { if (pl.to !== l.id || typeof pl.text !== 'string') return; const ad = String(pl.ad || 'Esnaf').slice(0, 14); addLog('🔒 ' + ad + ' → sen', filterChat(pl.text), 'pm', String(pl.id || '')); d.toast('🔒 ' + ad + ' sana yazdı'); });
-    l.on('para', pl => { const n = Number(pl.n); if (!host && guestOf && Number.isFinite(n) && n >= 0) { d.world!.setMoney(n); } });
+    // net/misafir.ts: misafirin cüzdanı kendisinin; ev sahibinin kasası yalnız oda rozetinde yazar
+    l.on('para', pl => { const n = Number(pl.n); if (!host && guestOf && Number.isFinite(n) && n >= 0) { hostKasa = Math.floor(n); ui(); } });
     l.on('kasa', pl => { const n = Number(pl.n); if (host && n > 0 && n < 1e7) d.world!.addKasa(Math.floor(n), String(pl.ad || 'Bir esnaf').slice(0, 14)); });
     l.on('_ok', () => { if (!host && code) l.emit?.('iste', {}); });
     l.on('dunya', pl => {
@@ -182,7 +184,7 @@ export function createOnline(d: OnlineDeps): OnlineView {
       const first = !guestOf;
       guestSig = pl.sig; guestOf = ad;
       try { d.world!.apply(pl.w, ad); kasaBase = d.world!.earned(); } catch { /* bad world: keep own */ }
-      if (first) { d.toast('Ev sahibi ' + ad + '. Onun büfesindesin, beraber çalışın!'); addLog('Martıköy', 'Ev sahibi ' + ad + '. Sattıkların onun kasasına gider. Odadan çıkınca kendi dükkanına dönersin.'); }
+      if (first) { d.toast('Ev sahibi ' + ad + '. Onun büfesindesin, beraber çalışın!'); addLog('Martıköy', 'Ev sahibi ' + ad + '. Sattıkların onun kasasına gider, sana da satışın %' + Math.round(MISAFIR_MAAS * 100) + "'i maaş yatar (ondan kesilmez). Para gördüğün kendi cebin. Kareleri ev sahibi açar. Odadan çıkınca kendi dükkanına dönersin."); }
       ui();
     });
   }
@@ -242,7 +244,7 @@ export function createOnline(d: OnlineDeps): OnlineView {
       input.addEventListener('keyup', e => e.stopPropagation());
       addLog('Martıköy', 'Online dünyaya hoş geldin! Bir oyuncunun adına dokun, ona özel mesaj at.', 'sys');
     }
-    setPill('🟢 ' + (code ? 'Özel oda ' + code + (host ? ' · 🏠 ev sahibi' : guestOf ? ' · ev sahibi: ' + guestOf : '') : '') + ' · ' + (remotes.size + 1) + ' kişi');
+    setPill('🟢 ' + (code ? 'Özel oda ' + code + (host ? ' · 🏠 ev sahibi' : guestOf ? ' · ev sahibi: ' + guestOf + (hostKasa >= 0 ? ' · 🏪 kasası ' + hostKasa.toLocaleString('tr-TR') + ' ₺' : '') : '') : '') + ' · ' + (remotes.size + 1) + ' kişi');
     if (odaBtn) odaBtn.textContent = code ? '🔑 Oyun kodu: ' + code : '🔑 Arkadaşını çağır';
   }
   function odaPanel() {
@@ -307,7 +309,7 @@ ${code ? `<div class="on-big">${code}</div><p>Şu an bu odadasın.</p>` : ''}
     if (guestOf) {
       if (peers.some(p => (p.presence as Record<string, unknown>).ev === true)) hostMissing = 0;
       else if (!hostMissing) hostMissing = now;
-      else if (now - hostMissing > 12000) { hostMissing = 0; guestOf = ''; guestSig = ''; try { d.world?.leave(); } catch { /* */ } d.toast('Ev sahibi ayrıldı. Kendi büfene döndün.'); }
+      else if (now - hostMissing > 12000) { hostMissing = 0; guestOf = ''; guestSig = ''; hostKasa = -1; try { d.world?.leave(); } catch { /* */ } d.toast('Ev sahibi ayrıldı. Kendi büfene döndün.'); }
     } else hostMissing = 0;
     ui();
   }
@@ -338,7 +340,7 @@ ${code ? `<div class="on-big">${code}</div><p>Şu an bu odadasın.</p>` : ''}
       if (!host && guestOf && d.world && link.emit && (worldT -= dt) <= 0) {
         worldT = 2;
         const e = d.world.earned(), n = kasaBase >= 0 ? e - kasaBase : 0;
-        if (n > 0) { kasaBase = e; link.emit('kasa', { n, ad: me.esnaf.ad }); }
+        if (n > 0) { kasaBase = e; link.emit('kasa', { n, ad: me.esnaf.ad }); d.world.maas?.(n); }   // satış ev sahibine, cebe maaş (net/misafir.ts)
       }
       if (host && d.world && link.emit) {
         worldT -= dt;

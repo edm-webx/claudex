@@ -18,7 +18,7 @@ export type ModelId = PanelId | OverlayId;
 
 export type SettingKey = 'muted' | 'quality' | 'music' | 'sfx' | 'voice' | 'textScale' | 'hand' | 'colorBlindIcons' | 'haptics' | 'batterySaver' | 'perfMeter' | 'ownMusic';
 
-export type ForceKind = 'unlock' | 'ferry' | 'gull' | 'kapkac' | 'regular' | 'vip' | 'endDay' | 'money' | 'gold' | 'stars' | 'sleep' | 'offline';
+export type ForceKind = 'unlock' | 'ferry' | 'gull' | 'kapkac' | 'regular' | 'vip' | 'endDay' | 'money' | 'gold' | 'stars' | 'sleep' | 'offline' | 'serbest';
 
 export type SimCmd =
   // ── M0 (kept) ──

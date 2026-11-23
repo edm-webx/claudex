@@ -456,11 +456,20 @@ export function makeMarker(kind?: any, o: any = {}) {
     fill.rotation.x = -HP; fill.position.set(-0.71, 0.04, 0); fill.scale.x = 0.001; fill.renderOrder = 3; g.add(fill);
     const draw = (label?: any, sub?: any, price?: any) => {
       const c = cv.getContext('2d')!, w = 256, h = 256; c.clearRect(0, 0, w, h);
-      c.fillStyle = 'rgba(25,18,12,.66)'; rrect(c, 8, 8, w - 16, h - 16, 28); c.fill();
-      c.setLineDash([22, 14]); c.lineWidth = 9; c.strokeStyle = K.yellow; rrect(c, 10, 10, w - 20, h - 20, 28); c.stroke(); c.setLineDash([]);
-      txt(c, label || '', w / 2, 70, 32, '#fff6e6', { w: 900, max: w - 36 });
-      if (sub) txt(c, sub, w / 2, 110, 22, '#d9c8a8', { w: 700, max: w - 40 });
-      if (price != null && price !== '') txt(c, typeof price === 'number' ? fmtMoney(price) : String(price), w / 2, 180, 52, K.yellow, { w: 900, max: w - 30 });
+      // 2026-11-23 sahip: "sarı kare var, üstüne gidince para yatmıyor". Kilitli kare (alt satır 🔒 ile başlar, content/acilis.ts kilitYazi)
+      // artık sarı değil: gri düz çerçeve, fiyat yerine KİLİTLİ, eksik koşullar iki satır. Para çeken kare yalnız sarı kesikli olan.
+      const kilit = typeof sub === 'string' && sub.startsWith('🔒');
+      c.fillStyle = kilit ? 'rgba(20,20,24,.72)' : 'rgba(25,18,12,.66)'; rrect(c, 8, 8, w - 16, h - 16, 28); c.fill();
+      if (!kilit) c.setLineDash([22, 14]); c.lineWidth = 9; c.strokeStyle = kilit ? '#8a8f99' : K.yellow; rrect(c, 10, 10, w - 20, h - 20, 28); c.stroke(); c.setLineDash([]);
+      txt(c, label || '', w / 2, 62, 30, kilit ? '#c9ccd2' : '#fff6e6', { w: 900, max: w - 36 });
+      if (kilit) {
+        const parts = sub.replace('🔒 ', '').split(' + ');
+        txt(c, '🔒 KİLİTLİ', w / 2, 118, 40, '#e8eaee', { w: 900, max: w - 30 });
+        parts.slice(0, 2).forEach((s: string, i: number) => txt(c, s, w / 2, 168 + i * 30, 21, '#b8bdc6', { w: 700, max: w - 34 }));
+      } else {
+        if (sub) txt(c, sub, w / 2, 110, 22, '#d9c8a8', { w: 700, max: w - 40 });
+        if (price != null && price !== '') txt(c, typeof price === 'number' ? fmtMoney(price) : String(price), w / 2, 180, 52, K.yellow, { w: 900, max: w - 30 });
+      }
       tx.needsUpdate = true;
     };
     draw(o.label, o.sub, o.price);

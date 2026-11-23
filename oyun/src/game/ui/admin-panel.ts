@@ -211,11 +211,11 @@ ${sel.peer ? `<button class="ad-b" data-a="tp-to">Yanına git</button><button cl
     if (a === 'sg') { d.addGold(Number(el.dataset.n)); say('✓ Altın simit değişti.'); return; }
     if (a === 'sm-x') { const n = Math.floor(Number(val('miktar'))); if (Number.isFinite(n) && n !== 0 && Math.abs(n) <= 1e12) { d.addMoney(n); say('✓ Para değişti.'); } else say('⚠ Geçerli bir sayı yaz.'); return; }
     if (a === 'lvl') { const n = Math.floor(Number(val('seviye'))); if (n >= 1 && n <= 99) { d.setLevel(n); say('✓ Seviye ' + n + '.'); } else say('⚠ 1-99 arası yaz.'); return; }
-    if (a === 'stage') { d.command({ kind: 'force', what: 'stage', value: Number(el.dataset.n) }); say('✓ Aşama ' + el.dataset.n + '.'); setTimeout(paint, 50); return; }
+    if (a === 'stage') { const n = Number(el.dataset.n); d.command({ kind: 'force', what: 'stage', value: n }); if (n >= 2) d.command({ kind: 'force', what: 'level', value: n * 3 });   /* 2026-11-23: gerçek akışta 2. aşamaya gelen oyuncu çoktan esnaf 6+ (üst geçit 3'te, ~3. dk); kısayol da öyle olsun */ say('✓ Aşama ' + el.dataset.n + '.'); setTimeout(paint, 50); return; }
     if (a === 'saat') { d.command({ kind: 'setTime', hour: Number(el.dataset.n) }); say('✓ Saat ' + el.dataset.n + ':00.'); return; }
     if (a === 'dondur') { frozen = !frozen; d.command({ kind: 'freezeTime', on: frozen }); say(frozen ? '✓ Zaman donduruldu.' : '✓ Zaman akıyor.'); return; }
     if (a === 'gunbitir') { d.command({ kind: 'force', what: 'endDay' }); say('✓ Gün bitiyor.'); return; }
-    if (a === 'hepsiniAc') { for (const k of d.allPadKeys()) d.command({ kind: 'force', what: 'unlock', value: k }); say('✓ Bütün kareler açıldı.'); return; }
+    if (a === 'hepsiniAc') { d.command({ kind: 'force', what: 'serbest', value: 1 }); for (const k of d.allPadKeys()) d.command({ kind: 'force', what: 'unlock', value: k });   /* 2026-11-23: dükkân / AVM kareleri de (açılış sırası şartı kalkar, rt.acilisSerbest) */ say('✓ Bütün kareler açıldı.'); return; }
     if (a === 'yildiz') { d.command({ kind: 'force', what: 'stars', value: 5 }); say('✓ 5 yıldız.'); return; }
     if (a === 'sesKapat') { d.setMuted(true); say('✓ Ses kapandı.'); return; }
     if (a === 'sesAc') { d.setMuted(false); say('✓ Ses açıldı.'); return; }

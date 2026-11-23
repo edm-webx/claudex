@@ -401,6 +401,7 @@ export function createRules(d: RulesDeps): RulesFull {
         else if (what === 'level') S.level = Math.max(S.level, Number(v) || 1);
         else if (what === 'stars') S.stars = Math.max(S.stars, Number(v) || 0);
         else if (what === 'offline') off.welcome(Number(v) || 0);
+        else if (what === 'serbest') (rt as { acilisSerbest?: boolean }).acilisSerbest = true;   // yönetici "bütün kareleri aç": dükkân sırası şartı yok (kaydedilmez)
         else if (what === 'unlock') { const key = String(v); if (!S.owned[key]) K.unlock(key); }
         else if (what === 'stage') { const to = clamp(Number(v) || 1, 1, 10); { const mz = S.zones.mutfak as { v?: number; alinan?: string[] } | undefined; if (mz?.v && mz.alinan) { for (const id of mutfakAcik(to)) if (!mz.alinan.includes(id)) mz.alinan.push(id); setMutfakAlinan(mz.alinan); } } { const mz = S.zones.masa as { v?: number; alinan?: number[] } | undefined; if (mz?.v && mz.alinan) { for (const i of kanatAcik(to)) if (!mz.alinan.includes(i)) mz.alinan.push(i); setMasaAlinan(mz.alinan); } }  /* yönetici / test: aşamanın mutfak istasyonları ve masaları da kurulu gelir */ for (let st = S.stage + 1; st <= to; st++) (STAGE_TABLES[st] || []).forEach(i => K.setTableBuilt(i, true)); S.stage = to; { const on = new Set(kanatKurulu(to)); for (let i = KANAT_BASE; i < rt.tables.length; i++) if (rt.tables[i].built && !on.has(i)) K.setTableBuilt(i, false); } K.bus.emit('stage', { stage: to }); K.onLayout(); }
         else (rt as unknown as { forceAgent?: (w: string, v?: unknown) => void }).forceAgent?.(what, v);

@@ -22,6 +22,7 @@ import { mutfakAcik, istasyonFiyat, MUTFAK_HAZIR, MUTFAK_IST_BY_ID, MUTFAK_YER_S
 import { kanatAcik, kanatOf, masaHediye, masaFiyat, catiAyak, BOLGE_AD } from '../../content/kanat';
 import { HOL, katY } from '../../content/avm-kat';
 import type { Kernel, PadRt } from './state';
+import { misafirKare } from './pads';
 import { acilisEksik, acilisGorunur, tadilatEksik, kilitYazi, type AcilisDurum } from '../../content/acilis';
 
 interface Plot { lv: number; esya?: string[]; tadilat?: unknown }
@@ -75,7 +76,7 @@ export function disKareYerleri(m: IcMekan, bos?: (p: Vec2) => boolean): Vec2[] {
 }
 
 export function installIsletmeKareler(K: Kernel, api: IsletmeKareApi): { sync(): void } {
-  const S = K.state, rt = K.rt, ids = new Map<string, PadRt>(), uyari = new Set<string>();
+  const S = K.state, rt = K.rt, ids = new Map<string, PadRt>(), uyari = new Map<string, number>();
   const katim = () => (K.playerPos as { kat?: number }).kat || 0;
   const nav = (K as unknown as { nav?: { walkable(p: Vec2): boolean } }).nav;
   const yerCache = new Map<string, Vec2[]>();
@@ -150,7 +151,8 @@ export function installIsletmeKareler(K: Kernel, api: IsletmeKareApi): { sync():
       id: 'pad.' + k.key, pos: k.pos, radius: 0.8, kind: 'pad', dwell: 0, interval: 0.05,
       canAct: () => rt.pads.includes(pr) && katim() === (k.kat || 0),
       act: () => {
-        if (k.kilit) { if (!uyari.has(k.key)) { uyari.add(k.key); K.toast(k.label + ': önce ' + k.kilit.replace('🔒 ', '') + '.', 'info'); } return 'done'; }
+        if (misafirKare(K)) return 'done';
+        if (k.kilit) { if (S.playT - (uyari.get(k.key) ?? -99) > 6) { uyari.set(k.key, S.playT); K.toast(k.label + ': önce ' + k.kilit.replace('🔒 ', '') + '.', 'bad'); } return 'done'; }   // 'bad': sessizlik süzgecine (aynı cümle 60 sn) takılmasın, her basışta söylesin
         const paid = S.padPaid[k.key] || 0, left = pr.price - paid;
         if (S.money < 1) { if (!pr.warned) { pr.warned = true; K.toast('Para lazım: satış yap, kasayı topla.', 'info'); } return 'continue'; }
         const amt = Math.min(Math.max(pr.price / 1.2, 250) * 0.05, S.money, left);
