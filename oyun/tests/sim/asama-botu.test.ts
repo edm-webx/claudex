@@ -36,7 +36,7 @@ interface Ihlal { tur: string; t: number; asama: number; gun: number; ayrinti: s
 interface Opts { sabote?: string[]; asamalar?: number[]; gunler?: (asama: number) => number; uzakGun?: boolean }
 type W = { id: number; role: string; xp?: number; name: string };
 interface WS { id: number; ad: string; rol: string; ilkAsama: number; mesafe: number; is: number; xp: number; isinlanma: number; maxHareketsiz: number; durumlar: Set<string>; son: { x: number; z: number } | null; xp0: number; imza: string; imzaT: number; elde: string; eldeT: number; kapi: boolean; sayT?: number }
-interface AS { asama: number; gun: number; gelir: number; sureSn: number; gelirGun: number; calisan: number; aktor: number; maxAktor: number; maxMusteri: number; menuAcik: number; ustaMax: number; catiKirliEnYas: number; siparisYemek: Set<string>; roller: Record<string, number> }
+interface AS { asama: number; gun: number; gelir: number; sureSn: number; gelirGun: number; calisan: number; aktor: number; maxAktor: number; maxMusteri: number; menuAcik: number; ustaMax: number; catiKirliEnYas: number; siparisYemek: Set<string>; roller: Record<string, number>; bekle: Record<string, number[]> }
 
 const r1 = (v: number) => Math.round(v * 10) / 10;
 const r0 = Math.round;
@@ -66,7 +66,7 @@ function kos(o: Opts = {}) {
     let i = isler.get(key); if (!i) isler.set(key, i = { yas: 0, bos: 0, rapor: false, yuk: false });
     i.yas = yas ?? i.yas + DT; if (bosta) i.bos += DT;
     enYas[tur] = Math.max(enYas[tur] || 0, i.yas);
-    if (i.yas > ESIK && !i.rapor && (!kadroda || i.bos >= 10)) { i.rapor = true; raporla(tur, ayrinti() + (kadroda ? ' (boşta çalışan varken)' : ' (kadroda yapacak kimse yok)')); }
+    if (i.yas > ESIK && !i.rapor && (!kadroda || i.bos >= 10)) { i.rapor = true; raporla(tur, ayrinti() + (kadroda ? ' (boşta çalışan varken)' : ' (kadroda yapacak kimse yok)')); if (tur.startsWith('masa-')) { const tb = +key.slice(1, -1); console.log('DBG', tur, key, r1(t), JSON.stringify((globalThis as any).__gv.filter((g: any) => g.table === tb).map((g: any) => ({ tur: g.tur, wid: g.wid, yas: r1(g.yas), claimT: r1(g.claimT), uzakW: g.uzakW }))), JSON.stringify((S.workers as W[]).filter(w => w.role === 'garson').map(w => { const a = [...reg.list].find((x: any) => x.kind === 'worker' && +x.key === w.id); const row = [...wsys.rows()].find((r: any) => r.id === w.id); return [w.id, row?.state, a?.act, r1(a?.x), r1(a?.z), (globalThis as any).__bk(w.id, tb, i!.yas)]; }))); } }
     else if (i.yas > ESIK && !i.yuk && !i.rapor) { i.yuk = true; yuk[tur] = (yuk[tur] || 0) + 1; }
     if (i.yas > ASIRI_ESIK && !i.asiri) { i.asiri = true; raporla(tur + '-acliktan', ayrinti() + ` ${r0(i.yas)} sn (herkes meşgul ama iş hiç sıraya girmedi)`); }
   };
@@ -78,7 +78,7 @@ function kos(o: Opts = {}) {
   sim.rules.bus.on('canliMuzik', (d: { x: number; z: number }) => { musik.push(d); });
   const stat0: Record<string, number> = {};
   const statD = (k: string) => { const v = S.stats[k] || 0, d = v - (stat0[k] || 0); stat0[k] = v; return d; };
-  const yeniAS = (a: number): AS => ({ asama: a, gun: 0, gelir: 0, sureSn: 0, gelirGun: 0, calisan: 0, aktor: 0, maxAktor: 0, maxMusteri: 0, menuAcik: 0, ustaMax: 0, catiKirliEnYas: 0, siparisYemek: new Set(), roller: {} });
+  const yeniAS = (a: number): AS => ({ asama: a, gun: 0, gelir: 0, sureSn: 0, gelirGun: 0, calisan: 0, aktor: 0, maxAktor: 0, maxMusteri: 0, menuAcik: 0, ustaMax: 0, catiKirliEnYas: 0, siparisYemek: new Set(), roller: {}, bekle: {} });
 
   function hire(role: string): W | null {
     sim.command({ kind: 'openJobBoard' });
@@ -133,7 +133,7 @@ function kos(o: Opts = {}) {
     if (yik !== yikandi0) isler.delete('bulasik'); yikandi0 = yik;
     if (rt.dirtyDishes > 0) izle('bulasik', 'bulasik-yigini', bulasikcilar.length > 0, bostaMi(bulasikcilar, 'kIdle').length > 0, () => `${rt.dirtyDishes} kirli tabak yıkanmadı`);
     if (tes && tes.hazirVar()) izle('paket', 'paket-bekleyen', kuryeler.length > 0, bostaMi(kuryeler, 'idle').length > 0, () => 'hazır paket kuryeye gitmedi');
-    for (const k of [...isler.keys()]) if (!gorulen.has(k)) isler.delete(k);
+    for (const k of [...isler.keys()]) if (!gorulen.has(k)) { const i = isler.get(k)!; if (k[0] === 'm') { const tur = 'masa-' + ({ m: 'menu', s: 'siparis', h: 'hesap', k: 'kirli' } as Record<string, string>)[k[k.length - 1]]; (cur.bekle[tur] ||= []).push(i.yas); } isler.delete(k); }
     gorulen.clear();
     // ── takılı tabak: taşıyıcının elinde uzun süre ──
     const eldeMax = hd.elde.reduce((m: number, e: any) => Math.max(m, e.t), 0);
@@ -241,13 +241,17 @@ function kos(o: Opts = {}) {
   return { S, api, ast, calisanlar, rolOzet, ihlal, sayim, yuk, enYas, t };
 }
 
+/** aşama başına masa bekleme dağılımı (sn): adet, ortalama, p95, en uzun, 30 sn üstü oranı (2026-11-23 restoran 7-10 yoğunluk ölçümü) */
+export function beklemeOzet(b: Record<string, number[]>) {
+  return Object.fromEntries(Object.entries(b).sort().map(([tur, v]) => { const s = [...v].sort((x, y) => x - y), n = s.length; return [tur, { n, ort: r1(s.reduce((a, c) => a + c, 0) / n), p95: r1(s[Math.min(n - 1, Math.floor(n * 0.95))]), max: r1(s[n - 1]), ust30: r1(100 * s.filter(x => x > 30).length / n) }]; }));
+}
 const rapor = (k: ReturnType<typeof kos>) => ({
   surum: 1, aciklama: 'BUF-28 aşama botu: aşama 1-10, 14 rol, her aşama 3 oyun günü; deterministik (tohum sabit, duvar saati yok)', tohum: TOHUM, gunAsama: GUN_ASAMA, sonAsama: k.S.stage, toplamGun: k.S.day - 1, simSn: r0(k.t),
   esikSn: ESIK, ihlalSayisi: Object.values(k.sayim).reduce((a, b) => a + b, 0), ihlalTur: k.sayim, ihlaller: k.ihlal, asiriYukOlayi: k.yuk,
   enUzunBeklemeSn: Object.fromEntries(Object.entries(k.enYas).map(([a, b]) => [a, r0(b)])),
   bilinenSinir: { catiMasaKirliEnUzunSn: r0(Math.max(...k.ast.map(a => a.catiKirliEnYas))), not: 'çatı masasını garson ve temizlikçi siler (temizlikçi de merdivenden çıkar, 2026-11-21; önce yalnız garson: 1000-2400 sn kirli kalıyordu)' },
   istatistik: Object.fromEntries(['isinlanma', 'garsonZamanAsimi', 'tabakDustu', 'paketTeslim', 'paketSiparis', 'tabakYikandi', 'guvenlikRonda', 'hostesKarsilama', 'hostesMasaGosterdi', 'valeAnahtar', 'valePark', 'mudurVekil', 'mudurIs', 'mudurKasa'].map(a => [a, k.S.stats[a] || 0])),
-  asamalar: k.ast.map(a => ({ ...a, siparisYemek: [...a.siparisYemek].sort(), siparisYemekSayisi: a.siparisYemek.size })),
+  asamalar: k.ast.map(a => ({ ...a, bekle: beklemeOzet(a.bekle), siparisYemek: [...a.siparisYemek].sort(), siparisYemekSayisi: a.siparisYemek.size })),
   roller: k.rolOzet, calisanlar: k.calisanlar,
 });
 
@@ -295,6 +299,13 @@ describe('BUF-28 aşama botu: 1 -> 10, 14 rol, 30 oyun günü', () => {
     }
     expect(ast[9].menuAcik).toBeGreaterThanOrEqual(20);
     expect(ast[9].siparisYemek.size).toBeGreaterThan(ast[3].siparisYemek.size);
+    // 2026-11-23 restoran 7-10 yoğunluk kilidi (önce: menü ort ~21 sn / en uzun 66 sn, sipariş en uzun 61 sn, hesabın %30'u 40 sn sınırında)
+    for (const a of ast.filter(x => x.asama >= 7)) {
+      const b = beklemeOzet(a.bekle), m = `aşama ${a.asama} ` + JSON.stringify(b);
+      expect(b['masa-menu'].ort, m).toBeLessThan(18); expect(b['masa-menu'].max, m).toBeLessThan(50);
+      expect(b['masa-siparis'].max, m).toBeLessThan(25);
+      expect(b['masa-hesap'].ort, m).toBeLessThan(20); expect(b['masa-hesap'].ust30, m).toBeLessThan(15);
+    }
     // çatı masası: garson ve (2026-11-21) temizlikçi siler; eskiden yoğunlukta 1000-2400 sn kirli kalıyordu
     expect(S.stats.garsonSildi || 0).toBeGreaterThan(0);
     expect(Math.max(...ast.map(a => a.catiKirliEnYas)), 'çatı masası kirli kalma süresi (temizlikçi de çıkar)').toBeLessThan(300);

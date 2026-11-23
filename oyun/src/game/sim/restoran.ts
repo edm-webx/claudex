@@ -60,7 +60,7 @@ export interface RestoranView {
 export interface MasaView { table: number; durum: 'bos' | 'menu' | 'siparis' | 'tabak' | 'yemek' | 'hesap' | 'kirli'; frac: number }
 export type GorevTur = GarsonTur;
 /** isAl sonucu: tabak için x,z pass/tezgâh durağı, masa işleri için masanın garson tarafı (yan) */
-export interface IsAlSonuc { id: number; tur: GorevTur; table: number; x: number; z: number; n?: number }
+export interface IsAlSonuc { id: number; tur: GorevTur; table: number; x: number; z: number; n?: number; /** sipariş: misafir menüye bakarken garsonun masada bekleyeceği sn */ bekle?: number }
 /** garsonun elindeki (tepsideki) bir tabak: x,z hedef masanın yanı, geri ise gx,gz bırakılacak yer (pass ya da tezgâh) */
 export interface TepsiTabak { id: number; p: FoodId; table: number; x: number; z: number; geri: boolean; gx: number; gz: number }
 export interface IsTamamSonuc { durum: 'tamam' | 'tasi' | 'geri' | 'yok'; table?: number; x?: number; z?: number }
@@ -541,6 +541,11 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     const sh = Math.min(0.94, ((ADISYON.share[st - 1] ?? 0) + (kn ? 0.1 : 0)) * mk + Math.max(0, G().servis - 3) * SERVIS.sharePerStar);
     // 2026-11-22: from stage 6 the büfe is the restaurant itself: every guest sits at a table (no counter queue any more, customers.ts)
     if (st < RESTORAN_ASAMA && rng.next() >= sh) return false;
+    // 2026-11-23 restoran 7-10 yoğunluk: garson başına en çok ADISYON.yeniMasaGarson karşılanmamış (masaya yürüyen / siparişi alınmamış)
+    // misafir. Aşama açılışında / sabah açılışında 20+ masa aynı anda doluyordu: garsonlar yetişemiyor, menü 60-80 sn bekliyordu.
+    // Kapıdaki misafir sırası gelince oturur (müşteri doğmaz, 2 sn sonra yeniden bakılır); sürekli akış ve gelir değişmez.
+    const gN = garsonlar().length;
+    if (st >= RESTORAN_ASAMA && gN > 0 && rt.customers.filter(c => c.kind === 'masa' && (c.state === 'toSeat' || (c.state === 'wait' && !(c as unknown as CF).tk))).length >= Math.ceil(gN * ADISYON.yeniMasaGarson)) return false;
     return freeTable() >= 0;
   }
 
@@ -558,7 +563,9 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
       return { id: g.id, tur: 'tabak', table: g.table, x: d.x, z: d.z, n };
     }
     if (g.tur === 'sil') { const y = masaYan(g.table); return { id: g.id, tur: 'sil', table: g.table, x: y.x, z: y.z }; }   // BUF-28: masanın yanına (merkez katı: garson 2.4 m+ uzakta durup 'ışınlanma' sayılıyordu)
-    const y = masaYan(g.table); return { id: g.id, tur: g.tur, table: g.table, x: y.x, z: y.z };
+    const y = masaYan(g.table), c = g.tur === 'siparis' ? custById(g.cid) : null;
+    const bekle = c ? Math.max(0, ((c as unknown as CF).dusunT ?? 0) - c.t) : 0;
+    return { id: g.id, tur: g.tur, table: g.table, x: y.x, z: y.z, ...(bekle > 0 ? { bekle } : {}) };
   }
   const MENU_ACIL_S = 25;
   /** garsonun son aldığı iş yaşlanma kuralıyla mı alındı: art arda iki acil iş yok (aşağıda) */
@@ -582,8 +589,9 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
       // 100 sn+ menü bekledi (aşama botu). MENU_ACIL_S'yi aşan menü / sipariş işi tabaktan önce alınır (en yaşlısı); kısa iş, servis akışı bozulmaz.
       // 2026-11-22 (merge yifjtj): aşama 6+'da her misafir masaya oturur; masa sayısı garson kapasitesini aşınca HER menü / sipariş 25 sn'yi
       // geçiyordu ve yaşlanma tabağı (ve hesabı) hiç sıraya bırakmıyordu: yemek çıkmadı, adisyon donuyordu (menu-asama tadım testi).
+      // 2026-11-23: hesap da yaşlanır (en düşük öncelikte 40 sn'ye kadar bekleyip masayı tutuyordu, yeni misafir oturamıyordu).
       // Acil iş art arda alınmaz: acil bir işten sonraki iş normal öncelikle seçilir (tabak akışı en az yarı yarıya sürer).
-      const acil = acilSon.has(wid) ? [] : gorevler.filter(g => (g.tur === 'menu' || g.tur === 'siparis') && !g.wid && g.yas >= MENU_ACIL_S).map(g => ({ g, r: bolgeKurali(wid, g.table, g.yas, uzak) })).filter(x => x.r.ok);
+      const acil = acilSon.has(wid) ? [] : gorevler.filter(g => (g.tur === 'menu' || g.tur === 'siparis' || g.tur === 'hesap') && !g.wid && g.yas >= MENU_ACIL_S).map(g => ({ g, r: bolgeKurali(wid, g.table, g.yas, uzak) })).filter(x => x.r.ok);
       if (acil.length) { acil.sort((a, b) => (a.r.ic === b.r.ic ? 0 : a.r.ic ? -1 : 1) || b.g.yas - a.g.yas || a.g.id - b.g.id); const g = acil[0].g; g.wid = wid; g.claimT = saat; g.uzakW = uzak && !bolgeKurali(wid, g.table, g.yas, false).ok; acilSon.add(wid); return sonuc(g); }
       acilSon.delete(wid);
     for (const tur of ADISYON.oncelik) {
@@ -680,6 +688,9 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
       if (c.state !== 'wait' || f.tk) return { durum: 'yok' };
       f.menuOk = true; f.garsonlu = true; f.dusunT = c.t + rng.range(ADISYON.dusunS[0], ADISYON.dusunS[1]);
       K.stat('menuGetir'); cu.say(c, rng.pick(ADISYON_LINES.menu), 1.6);
+      // 2026-11-23 restoran 7-10 yoğunluk: menüyü getiren garson masanın başında bekler, misafir bakınca siparişi hemen alır (gerçek garson
+      // gibi). Eskiden menüden sonra gidip 3-5 sn sonra yeniden yürüyordu: garson zamanının ~%90'ı yürüyüştü, menü / sipariş 60 sn'yi buluyordu.
+      f.siparisJob = true; gorevler.push({ id: gid++, tur: 'siparis', table: g.table, cid: c.id, yas: 0, wid, claimT: saat });
       return { durum: 'tamam' };
     }
     if (g.tur === 'siparis') {

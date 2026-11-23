@@ -45,6 +45,8 @@ export const ADISYON = {
   yardimBekleS: 3,
   /** komşu olmayan bölgenin işi bu kadar sahipsiz bekleyince boştaki her garson yardım eder */
   yardimUzakS: 15,
+  /** aşama 6+: garson başına karşılanmamış (oturmaya yürüyen / siparişi alınmamış) masa misafiri üst sınırı (restoran.ts wantMasa) */
+  yeniMasaGarson: 1,
   /** test sentinel: a table action farther than this from the table counts as a teleport (stats.isinlanma) */
   isinlanmaM: 2.4,
 };
