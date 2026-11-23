@@ -1,6 +1,6 @@
 // DKN-05: every guest asks for an item of the business's own menu, the worker makes and carries exactly that
 import { it, expect } from 'vitest';
-import { played, kareyeGit } from './m1-helpers';
+import { played, kareyeGit, tepsi, tepsidenVer } from './m1-helpers';
 import { ISLETME, ARSA_ISLETME, kafeDolap } from '../../src/content/esya';
 import { KALEM, ISTASYON_SIRA, MAKINE } from '../../src/content/isletme-istasyon';
 
@@ -37,13 +37,15 @@ it('dolap: kafe, bistro, kantin, kafeterya, lokanta 1. seviyeden soğuk içecek 
   for (const id of ['k1', 'k2', 'k4', 'k5', 'k6']) { const d = kafeDolap(id); expect(d.length, id).toBeGreaterThanOrEqual(3); for (const m of d) { expect(KALEM[m.id].ist, m.id).toBe('dolap'); expect(m.fiyat).toBeGreaterThan(0); } }
   expect(kafeDolap('k3').length).toBe(0); expect(MAKINE.has('dolap')).toBe(false);
 });
-it('oyuncu dolaptan içeceği verir: Meydan Kafe, kola isteyen müşteri, dolabın önünde beklemeden satış', () => {
+it('oyuncu dolaptan içeceği alır (tepsiye), müşteriye verir: Meydan Kafe, kola isteyen müşteri', () => {
   const { sim, S, h, c } = mk(); kareyeGit(sim, 'k1'); c({ op: 'arsaAl', id: 'k1' }); const p = S.zones.arsa.plots.k1;
   let ok = false;
   for (let i = 0; i < 3000 && !ok; i++) { h.pending.k1 = Math.max(h.pending.k1 || 0, 1); sim.step(0.1); const w = sim.rules.rt.agents.kafe.siparisOf('kafe1')[0]; ok = !!w && kafeDolap('k1').some(m => m.ad === w); }
   expect(ok, 'dolap içeceği isteyen müşteri').toBe(true);
   const it0 = sim.interactions.get('kafeIst.kafe1.dolap'); expect(it0).toBeTruthy();
   const sat0 = p.sat; sim.command({ kind: 'teleport', x: it0.pos.x, z: it0.pos.z });
-  for (let i = 0; i < 20 && p.sat === sat0; i++) sim.step(0.1);
-  expect(p.sat).toBeGreaterThan(sat0); expect(Object.keys(S.today.sold || {}).some(k => k.startsWith('k:d_'))).toBe(true);
+  for (let i = 0; i < 20 && !tepsi(sim).length; i++) sim.step(0.1);
+  expect(tepsi(sim).length, 'dolaptan alınan şişe tepside').toBe(1); expect(p.sat).toBe(sat0);   // 2026-11-23: önce tepsiye, sonra müşteriye
+  expect(tepsidenVer(sim, 'kafe1')).toBe(true);
+  expect(p.sat).toBeGreaterThan(sat0); expect(tepsi(sim)).toHaveLength(0); expect(Object.keys(S.today.sold || {}).some(k => k.startsWith('k:d_'))).toBe(true);
 });

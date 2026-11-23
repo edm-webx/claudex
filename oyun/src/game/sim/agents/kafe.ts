@@ -7,7 +7,7 @@
  * Numbers come from mulk.ts (`rt.kafeHost`): customers per hour, price. Rooms: content/ic-mekan.ts kafe1 / kafe2.
  */
 import type { System, SimCtx, Vec2 } from '../../../engine/api';
-import { IC_BY_ID, IC_MEKANLAR, icWorld, icDim, icLayout, icUV, icYol, personelGeo, personelDuraklari, icMagaza } from '../../../content/ic-mekan';
+import { IC_BY_ID, IC_MEKANLAR, icIcinde, icWorld, icDim, icLayout, icUV, icYol, personelGeo, personelDuraklari, icMagaza } from '../../../content/ic-mekan';
 import { AVM_GIRIS, AVM_DIS, avmGelis, avmGidis } from '../../../content/avm-kat';
 import { KAFE_ISCI_TAVAN, ARSA_ISLETME, kafeSatis, ARSALAR, arsaKapi } from '../../../content/esya';
 import { kalemOf, ISTASYON_LAYOUT_K, ISTASYON_SIRA, MAKINE, MAKINE_TEPSI, MAKINE_ON, makineAdi, type IstasyonId } from '../../../content/isletme-istasyon';
@@ -264,58 +264,97 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
   }
   const geomYaw = (r: Room) => { const m = IC_BY_ID[r.room], g = geom(r); const a = icWorld(m, 0, 0), b = g.vert ? icWorld(m, 1, 0) : icWorld(m, 0, -1); return Math.atan2(b.x - a.x, b.z - a.z); };   // facing the counter (-v)
 
-  // the player serves from the station that makes what the first waiting guest asked for: stand there until the bar fills.
-  // 2026-11-22 makine istasyonları: oyuncu ürünü makineye koyar (0.4 sn), makine kendi kendine yapar (oyuncu başka makineye
-  // gidebilir); hazır olunca makinenin başına dönen oyuncu sıradaki müşteriye verir. Müşteri yoksa da koyabilir: tepside bekler.
+  // Oyuncu (2026-11-23 sahip: "niye espressonun başına gidip kahve yapıp tepsiye alamıyorum, bişeyler eksik"). Büfedeki gibi:
+  //  - makine (MAKINE): başına git (tezgâhın arkasından ya da önünden), ürünü koyar, makine kendi yapar; hazır ürünü TEPSİNE alırsın.
+  //  - elle alınan istasyon (vitrin, dolap, raf, depo...): başında durunca bekleyen müşterinin istediği ürün tepsine gelir.
+  //  - servis: tepsideki ürünü isteyen müşterinin önüne (ya da tezgâhın arkasından karşısına) git, verirsin, para kasaya.
+  // Tepsi en çok TEPSI_MAX ürün; dükkândan çıkınca boşalır (stok yok). Eskiden ürün makinenin önünden doğrudan müşteriye "ışınlanıyordu".
+  const TEPSI_MAX = 3;
+  const tepsi = { room: '', kat: 0, items: [] as string[] };
+  rt.kafeTepsi = tepsi;
   const kat0 = () => ((env.player() as { kat?: number }).kat || 0);
-  const uygun = (r: Room, ist: IstasyonId) => waiting(r).filter(x => !!x.want && kalemOf(x.want).ist === ist);
+  const tepsideki = (r: Room) => (tepsi.room === r.room ? tepsi.items : []);
+  const tepsiYer = (r: Room) => tepsideki(r).length < TEPSI_MAX;
+  const tepsiyeKoy = (r: Room, it: string) => { if (tepsi.room !== r.room) tepsi.items.length = 0; tepsi.room = r.room; tepsi.kat = geom(r).kat; tepsi.items.push(it); };
+  /** o istasyonda yapılan, bekleyen müşterilerin isteyip tepside henüz olmayan kalemleri (sıra düzeninde; iki müşteri = iki adet) */
+  const eksik = (r: Room, ist: IstasyonId): string[] => {
+    const kalan = [...tepsideki(r)], o: string[] = [];
+    for (const gu of waiting(r)) { if (!gu.want || kalemOf(gu.want).ist !== ist) continue; const i = kalan.indexOf(gu.want); if (i >= 0) kalan.splice(i, 1); else o.push(gu.want); }
+    return o;
+  };
+  const buyuk = (t: string) => t.charAt(0).toLocaleUpperCase('tr') + t.slice(1);
+  const acik = (r: Room) => kat0() === geom(r).kat && !!host()?.info(r.arsa) && !(host()!.fp && r.arsa === 'k3');
   for (const r of rooms) {
+    const g = geom(r);
+    /** istasyonun iki yanı: müşteri tarafı (tezgâhın önü) ve personel tarafı (makinenin başı, çalışanın durduğu yer) */
+    const yanlar = (a: number): Vec2[] => [g.P(a, 0.85), g.P(a, -g.arka)];
     for (const ist of ISTASYON_SIRA) {
-      const g = geom(r), head = () => waiting(r).find(x => !x.claimed) || waiting(r)[0];
-      let work = 0, last = -99, who = 0;
+      const A = istasyonA(r, ist);
       if (MAKINE.has(ist)) {
-        /** tepsideki üründen bekleyen bir müşteri (önce kimsenin almadığı) */
-        const hazirMus = () => { const m = r.mak.get(ist); if (!m || !m.ready.length) return null; const q = uygun(r, ist).filter(x => m.ready.includes(x.want)); return q.find(x => !x.claimed) || q[0] || null; };
-        /** makine boşsa koyulacak ürün: bekleyen müşterinin istediği (tepside / makinede olmayan), yoksa önceden yapılacak */
+        /** makine boşsa koyulacak ürün: bekleyen müşterinin istediği (tepside / makinede / hazırda olmayan), yoksa önceden yapılacak */
         const koyulacak = () => {
           const m = makOf(r, ist); if (m.cook) return '';
-          const q = uygun(r, ist).find(x => !m.ready.includes(x.want)); if (q) return q.want;
-          return m.ready.length < MAKINE_TEPSI && makMenu(r, ist).length ? (onceden(r, m) || (m.ready.length < MAKINE_TEPSI ? makMenu(r, ist)[0].id : '')) : '';
+          const hazir = [...m.ready], q = eksik(r, ist).find(x => { const i = hazir.indexOf(x); if (i >= 0) { hazir.splice(i, 1); return false; } return true; });
+          if (q) return q;
+          return m.ready.length < MAKINE_TEPSI ? onceden(r, m) : '';
         };
-        env.interactions.register({
-          id: 'kafeIst.' + r.room + '.' + ist, pos: g.P(istasyonA(r, ist), 0.85), radius: 1.0, kind: 'station', dwell: 0.4, interval: 0.1,
-          canAct: () => kat0() === g.kat && !!host()?.info(r.arsa) && !(host()!.fp && r.arsa === 'k3') && (!!hazirMus() || !!koyulacak()),
+        yanlar(A).forEach((pos, yi) => env.interactions.register({
+          id: 'kafeIst.' + r.room + '.' + ist + (yi ? '.arka' : ''), pos, radius: 0.95, kind: 'station', dwell: 0.4, interval: 0.25,
+          canAct: () => { if (!acik(r)) return false; const m = r.mak.get(ist); return (!!m && m.ready.length > 0 && tepsiYer(r)) || !!koyulacak(); },
           act: () => {
-            const m = makOf(r, ist), gu = hazirMus();
-            if (gu && makAl(m, gu.want)) {
-              const ad = kalemAd(r, gu.want), v = served(r, gu, 'player');
-              if (v) env.host.heroSay('Buyurun! ' + (ad ? ad.charAt(0).toLocaleUpperCase('tr') + ad.slice(1) + ' ' : '') + '+' + Math.round(v) + ' ₺ kasaya', 1.6);
+            const m = makOf(r, ist);
+            if (m.ready.length && tepsiYer(r)) {
+              // önce bekleyen birinin istediğini al, yoksa en eskisini
+              const ist2 = eksik(r, ist).find(x => m.ready.includes(x)) || m.ready[0];
+              makAl(m, ist2); tepsiyeKoy(r, ist2);
+              env.host.heroSay(buyuk(kalemAd(r, ist2) || 'ürün') + ' tepside (' + tepsideki(r).length + '/' + TEPSI_MAX + ')', 1.4);
               return 'continue';
             }
             const it = koyulacak();
-            if (it && makKoy(r, m, it, -1)) {
-              const ad = kalemAd(r, it); env.host.heroSay(makAd(r, ist) + ' çalışıyor: ' + ad + ' (' + Math.ceil(m.sure) + ' sn)', 1.8);
-            }
-            return 'done';
+            if (it && makKoy(r, m, it, -1)) env.host.heroSay(makAd(r, ist) + ' çalışıyor: ' + kalemAd(r, it) + ' (' + Math.ceil(m.sure) + ' sn)', 1.8);
+            return 'continue';
           },
-        });
+        }));
         continue;
       }
-      env.interactions.register({
-        id: 'kafeIst.' + r.room + '.' + ist, pos: g.P(istasyonA(r, ist), 0.85), radius: 1.0, kind: 'station', dwell: 0.4, interval: 0.1,
-        canAct: () => { const gu = head(); return kat0() === g.kat && !!host()?.info(r.arsa) && !!gu && !!gu.want && kalemOf(gu.want).ist === ist; },
+      let work = 0, last = -99, ne = '';
+      yanlar(A).forEach((pos, yi) => env.interactions.register({
+        id: 'kafeIst.' + r.room + '.' + ist + (yi ? '.arka' : ''), pos, radius: 0.95, kind: 'station', dwell: 0.4, interval: 0.1,
+        canAct: () => acik(r) && tepsiYer(r) && eksik(r, ist).length > 0,
         act: (_a, ctx) => {
-          const gu = head(), inf = host()?.info(r.arsa); if (!gu || !inf) return 'done';
+          const it = eksik(r, ist)[0], inf = host()?.info(r.arsa); if (!it || !inf) return 'done';
           const el = ctx.t - last < 0.5 ? ctx.t - last : 0.5; last = ctx.t;
-          if (who !== gu.a.id) { who = gu.a.id; work = 0; }
-          work += el * (1 + 0.12 * inf.lv) / kalemOf(gu.want).sure;
+          if (ne !== it) { ne = it; work = 0; }
+          work += el * (1 + 0.12 * inf.lv) / kalemOf(it).sure;
           if (work < 1) return 'continue';
-          work = 0; const ad = kalemAd(r, gu.want), v = served(r, gu, 'player');
-          if (v) env.host.heroSay('Buyurun! ' + (ad ? ad.charAt(0).toLocaleUpperCase('tr') + ad.slice(1) + ' ' : '') + '+' + Math.round(v) + ' ₺ kasaya', 1.6);
-          return waiting(r).length ? 'continue' : 'done';
+          work = 0; ne = ''; tepsiyeKoy(r, it);
+          env.host.heroSay(buyuk(kalemAd(r, it) || 'ürün') + ' tepside (' + tepsideki(r).length + '/' + TEPSI_MAX + ')', 1.4);
+          return 'continue';
         },
-      });
+      }));
     }
+    // servis: kuyruğun her yerinde, müşterinin yanında ya da tezgâhın arkasında karşısında; tepside istediği varsa verir
+    for (let i = 0; i < g.maxQ; i++) {
+      const gu = () => waiting(r)[i];
+      [g.P(slotU(g, i), 1.15), g.P(Math.min(g.endU - 0.6, slotU(g, i)), -g.arka)].forEach((pos, yi) => env.interactions.register({
+        id: 'kafeServis.' + r.room + '.' + i + (yi ? '.arka' : ''), pos, radius: yi ? 0.9 : 1.0, kind: 'counter', dwell: 0.3, interval: 0.2,
+        canAct: () => { const q = gu(); return acik(r) && !!q && !!q.want && tepsideki(r).includes(q.want); },
+        act: () => {
+          const q = gu(); if (!q) return 'done';
+          const k = tepsi.items.indexOf(q.want); if (k < 0) return 'done';
+          tepsi.items.splice(k, 1); const ad = kalemAd(r, q.want), v = served(r, q, 'player');
+          if (v) env.host.heroSay('Buyurun! ' + (ad ? buyuk(ad) + ' ' : '') + '+' + Math.round(v) + ' ₺ kasaya', 1.6);
+          return 'continue';
+        },
+      }));
+    }
+  }
+  /** tepsi dükkândan çıkınca boşalır: ürün o dükkânın, dışarı taşınmaz (stok yok) */
+  function tepsiKontrol() {
+    if (!tepsi.items.length) return;
+    const m = IC_BY_ID[tepsi.room], p = env.player();
+    if (m && icIcinde(m, { x: p.x, z: p.z, kat: kat0() }, 1.2)) return;
+    tepsi.items.length = 0; env.host.heroSay('Tepsidekiler dükkânda kaldı.', 1.6);
   }
   /** görünüm için: makinelerin yeri, pişen ürün ve ilerleme, hazır tepsi (yalnız kullanılmış makineler) */
   function makineler(room?: string): MakineGorunum[] {
@@ -342,6 +381,7 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
         h.fpDone = (arsa, ok) => { const r = rooms.find(x => x.arsa === arsa); const gu = r && waiting(r)[0]; if (r && gu) { leave(r, gu, !ok); if (ok) gu.a.mood = 'happy'; } };   // first-person counter: the head of the queue is the one being served there
       }
       for (const r of rooms) { r.preT -= Math.min(ctx.dt, 0.25); tickRoom(r, Math.min(ctx.dt, 0.25)); }
+      tepsiKontrol();
     },
     rooms: () => rooms.map(r => ({ room: r.room, guests: r.guests.length, waiting: waiting(r).length, workers: r.wk.length, siparisler: siparis(r) })),
     siparisOf: (room: string) => { const r = rooms.find(x => x.room === room); return r ? siparis(r) : []; },

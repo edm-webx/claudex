@@ -30,3 +30,12 @@ export function kareyeGit(sim: { command(c: unknown): void }, id: string): void 
   const m = icOfArsa(id), a = ARSALAR.find(x => x.id === id); if (!m || m.bina !== 'avm' || !a) return;
   const k = satisKaresi(a); sim.command({ kind: 'teleport', x: k.x, z: k.z, kat: m.kat || 0 });
 }
+
+/** 2026-11-23 dükkân tepsisi (sim/agents/kafe.ts): oyuncu tepsideki ürünü isteyen müşterinin servis noktasına gider ve verir; verilecek yoksa false */
+export function tepsidenVer(sim: any, room: string, kat = 0, adim = 10): boolean {
+  const it = (sim.interactions.all() as any[]).find(i => i.id.startsWith('kafeServis.' + room + '.') && !i.id.endsWith('.arka') && i.canAct(sim.player));
+  if (!it) return false;
+  sim.command({ kind: 'teleport', x: it.pos.x, z: it.pos.z, kat }); for (let i = 0; i < adim; i++) sim.step(0.1);
+  return true;
+}
+export const tepsi = (sim: any): string[] => sim.rules.rt.kafeTepsi?.items ?? [];

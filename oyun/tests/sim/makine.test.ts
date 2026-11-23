@@ -2,7 +2,7 @@
 // kullanabileceğiz; tost makinesi gibi bekledikçe ürün geliyor; tüm dükkânlara bu mantıkla iş eklenecek".
 // Makine istasyonu: ürünü koyan (oyuncu / çalışan) başında beklemek zorunda değil, makine kendi yapar, bitince hazır tepside durur.
 import { it, expect } from 'vitest';
-import { played, kareyeGit } from './m1-helpers';
+import { played, kareyeGit, tepsi, tepsidenVer } from './m1-helpers';
 import { icBina } from '../../src/content/ic-mekan';
 import { ARSA_ISLETME, ISLETME } from '../../src/content/esya';
 import { KALEM, MAKINE, MAKINE_TEPSI } from '../../src/content/isletme-istasyon';
@@ -20,7 +20,7 @@ it('her AVM dükkânının menüsünde en az bir makine istasyonu var (giyimde d
   }
 });
 
-it('oyuncu: ürünü makineye koyar, uzaklaşır, makine kendi bitirir; dönünce sıradaki müşteriye verir', () => {
+it('oyuncu: ürünü makineye koyar, uzaklaşır, makine kendi bitirir; dönünce tepsiye alır, müşterinin önüne götürüp verir', () => {
   const { sim, S, h, c } = mk(); S.level = 40; S.money = 1e8; buyAll(c, 'k10', 'k11');
   const room = roomOf('k11'), p = S.zones.arsa.plots.k11;
   // müşteri gelsin, kahve makinesinde yapılan bir şey istesin
@@ -43,8 +43,9 @@ it('oyuncu: ürünü makineye koyar, uzaklaşır, makine kendi bitirir; dönünc
   // geri dön: hazır ürünü müşteriye verir
   const sat0 = p.sat; void want;
   sim.command({ kind: 'teleport', x: it0.pos.x, z: it0.pos.z, kat: 1 });
-  for (let i = 0; i < 10 && p.sat === sat0; i++) sim.step(0.1);
-  expect(p.sat).toBeGreaterThan(sat0);
+  for (let i = 0; i < 10 && !tepsi(sim).length; i++) sim.step(0.1);
+  expect(tepsi(sim).length, 'hazır ürün tepside').toBeGreaterThan(0); expect(p.sat).toBe(sat0);   // 2026-11-23: önce tepsiye
+  expect(tepsidenVer(sim, room.id, 1)).toBe(true); expect(p.sat).toBeGreaterThan(sat0);
 });
 
 it('çalışan: makineye koyar, makine yaparken başında bekler, tepsiden alıp müşteriye götürür; boşta önceden ürün koyar (tepsi sınırlı)', () => {

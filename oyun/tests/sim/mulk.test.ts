@@ -1,6 +1,6 @@
 // J3-J8 sim: inventory, shared bank, chests, daily board, plots + shops, stadium ticket.
 import { it, expect } from 'vitest';
-import { played, kareyeGit } from './m1-helpers';
+import { played, kareyeGit, tepsidenVer } from './m1-helpers';
 import { mulkApi } from '../../src/game/sim/mulk';
 import { IC_BY_ID } from '../../src/content/ic-mekan';
 import { BANKA, ARSALAR, arsaKapi, STADYUM } from '../../src/content/esya';
@@ -99,6 +99,7 @@ it('kafe: müşteriler içeri gelir, hired worker ve oyuncu servis eder, para ka
   for (let i = 0; i < 400; i++) {
     sim.step(0.1); h.pending.k1 = Math.max(h.pending.k1 || 0, 1);
     const want = sim.rules.rt.agents.kafe.siparisOf('kafe1')[0];
+    if (tepsidenVer(sim, 'kafe1', 0, 1)) continue;   // 2026-11-23: makineden tepsiye, tepsiden müşteriye
     const it0 = sim.interactions.get('kafeIst.kafe1.' + (want === 'Demlik çay' ? 'cay' : 'kahve'));
     if (want && it0) sim.command({ kind: 'teleport', x: it0.pos.x, z: it0.pos.z });
   }

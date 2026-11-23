@@ -17,6 +17,7 @@ import { MAT } from '../../../content/prefabs/common/v2kit';
 import { padDef, padCost } from '../../../content/pads';
 import { mutfakDunya, mutfakUst } from '../../../content/ic-mekan';
 import { BULASIK } from '../../../content/mutfak';
+import { makeUrunModel } from '../chars/urun-model';
 import { STATION_KINDS, counterSlot } from '../../../content/prefabs/iskele/layout';
 import type { StageLayout } from '../../../content/prefabs/iskele/layout';
 
@@ -87,6 +88,9 @@ export function createRtView(env: RtEnv): RtView {
   { const b = new T.Mesh(new T.CylinderGeometry(0.27, 0.27, 0.03, 20), trayWood); trayRound.add(b); const r = new T.Mesh(new T.TorusGeometry(0.27, 0.014, 6, 24), trayRim); r.rotation.x = Math.PI / 2; r.position.y = 0.02; trayRound.add(r); }
   trayG.add(trayRect, trayRound);
   group.add(trayG);
+  let tepsiKey = '';
+  const tepsiObj: T.Object3D[] = [], urunHavuz = new Map<string, T.Object3D[]>();
+  const urunPool = (id: string, n: number): T.Object3D => { let p = urunHavuz.get(id); if (!p) { p = []; urunHavuz.set(id, p); } while (p.length <= n) { const o = makeUrunModel(id); o.userData.id = id; p.push(o); } return p[n]; };
   // trash bin outside the kitchen (see binPos in sim/pads.ts)
   const binG = new T.Group(); binG.name = 'copKutusu';
   { const body = new T.Mesh(new T.CylinderGeometry(0.34, 0.28, 0.8, 14), new T.MeshLambertMaterial({ color: '#4d6b5a' })); body.position.y = 0.4; binG.add(body);
@@ -127,8 +131,19 @@ export function createRtView(env: RtEnv): RtView {
       let y = hy + 0.03; for (let k = 0; k < i; k++) y += itemH(items[k]);
       return { x: hx, y, z: hz };
     };
-    trayG.visible = rt.carry.length > 0; trayRect.visible = !master; trayRound.visible = master;
-    if (trayG.visible) { trayG.position.set(hx, hy, hz); trayG.rotation.y = pp.rot; }
+    // 2026-11-23 dükkân tepsisi (sim/agents/kafe.ts rt.kafeTepsi): karşı yaka / AVM dükkânında makineden alınan ürünler aynı tepside
+    const kt = (rt as unknown as { kafeTepsi?: { kat: number; items: string[] } }).kafeTepsi, ktN = kt ? kt.items.length : 0;
+    const pk0 = rules.playerPos as { x: number; z: number; kat?: number }, avmT = ktN > 0 && avmIcinde(pk0, 3), ty = avmT ? katY(pk0.kat || 0) : 0;
+    const tp = avmT ? avmGrp : group; if (trayG.parent !== tp) tp.add(trayG);
+    trayG.visible = rt.carry.length > 0 || ktN > 0; trayRect.visible = !master; trayRound.visible = master;
+    if (trayG.visible) { trayG.position.set(hx, hy + ty, hz); trayG.rotation.y = pp.rot; }
+    {   // tepsi ürünleri trayG'nin çocukları (yerel konum): makine görünümündeki aynı model, küçük havuz
+      const want = ktN ? kt!.items.join('|') : '';
+      if (want !== tepsiKey) {
+        tepsiKey = want; for (const o of tepsiObj) trayG.remove(o); tepsiObj.length = 0;
+        (ktN ? kt!.items : []).forEach((id, i) => { const o = urunPool(id, tepsiObj.filter(x => x.userData.id === id).length); o.position.set((i - (ktN - 1) / 2) * 0.19, 0.02, 0); o.scale.setScalar(1.15); trayG.add(o); tepsiObj.push(o); });
+      }
+    }
     const emit = (obj: object, key: string, to: Pt, rot: number, h: number, from: Pt | null, dur?: number, arc?: number) => { place(obj, key, to, rot, h, frame <= 2 ? null : from, dur, arc); };
     // BUF-06: oyuncunun elindeki mutfak tabağı (yemek kimliği) ürün modeli değil, sade tabak olarak çizilir
     const itemKey = (it: Item<string>) => ((PROD as readonly string[]).includes(it.type) ? it.type + ':' + Math.max(1, Math.min(4, it.tier || 1)) : 'plate');

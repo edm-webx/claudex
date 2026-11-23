@@ -17,7 +17,7 @@
  */
 import type { Vec2 } from '../../engine/api';
 import { ARSALAR, ISLETME, ARSA_ISLETME, SALON_ESYA, DUKKAN_MAX_SEVIYE, type Arsa } from '../../content/esya';
-import { icOfArsa, icWorld, icDim, IC_BY_ID, mutfakDunya, mutfakStand, type IcMekan } from '../../content/ic-mekan';
+import { icOfArsa, icWorld, icDim, icLayout, icItemRect, icZeminEngeli, IC_DUVAR, IC_BY_ID, mutfakDunya, mutfakStand, type IcMekan } from '../../content/ic-mekan';
 import { mutfakAcik, istasyonFiyat, MUTFAK_HAZIR, MUTFAK_IST_BY_ID, MUTFAK_YER_SIRA } from '../../content/mutfak';
 import { kanatAcik, kanatOf, masaHediye, masaFiyat, catiAyak, BOLGE_AD } from '../../content/kanat';
 import { HOL, katY } from '../../content/avm-kat';
@@ -50,19 +50,50 @@ export const aletKaresi = (m: IcMekan, i: number): Vec2 => icWorld(m, i ? 1.7 : 
 /**
  * Sokak dükkânının dışındaki kare yerleri (oda çerçevesi: u kapı duvarı boyunca, v dışarı doğru). Kapının önü (|u| < 1.2) boş kalır,
  * yürüyüş yolu kapanmasın. Aday yerler kapıdan dışa doğru sıralı; `bos` kare izinin (1.5 m) tamamı yürünebilir mi der (nav).
- * İlk 3 boş yer: 0 = satın alma / tadilat, 1-2 = aletler. Yer bulunamazsa (nav henüz yok) kapının iki yanına sabit konur.
+ * İlk 3 boş yer: 0 = satın alma / tadilat; dükkânın içinde yer yoksa aletler 0-1 (kapının iki yanı; satın alma karesi o an yok, tadilat
+ * karesi aynı yere çıkarsa oyuncu inmeden para çekmez). 2 = salonlarda. Yer bulunamazsa (nav henüz yok) kapının iki yanına sabit konur.
  */
 /** karşı yaka kaldırımı / meydan taşı zeminin üstünde (kr.pave ~0.08 m): kare onun altında kalıp görünmez olmasın */
 export const SOKAK_Y = 0.11;
-/** elle seçilmiş yerler (dünya x, z): kafelerin önü kendi terası ve şemsiyeleriyle dolu (prefab kr.kafe1/2 + karsi-yasam teras),
- *  kareler terasın ötesinde meydanın taşına, oturma banklarının arasına gelir */
+/** elle seçilmiş yerler (dünya x, z). 2026-11-23 sahip: "meydan kafe'nin kareleri neden dışarıda, kaç metre uzakta?" Kafelerin
+ *  kareleri meydanın ortasındaydı (kapıdan 7,3-7,9 m, bankların yanında). Kapının iki yanı terasın şemsiyeli masaları (kareyi örter):
+ *  satın alma / tadilat karesi kapının tam önünde, şemsiyelerin arasında [0]; alet kareleri dükkânın İÇİNDE (icKareYerleri), [1], [2]
+ *  yalnız içeride yer yoksa (şemsiye sırasının önü). Büfe salonları: önlerindeki çit ve saksı sırası; E terasın yan kenarı, W terasın ucu. */
 const DIS_YER: Record<string, Vec2[]> = {
-  kafe1: [{ x: -7.0, z: 36.0 }, { x: -7.0, z: 39.8 }, { x: -7.0, z: 41.6 }],
-  kafe2: [{ x: -7.0, z: 49.6 }, { x: -7.0, z: 53.4 }, { x: -7.0, z: 47.8 }],
-  // büfe salonları: önlerindeki çit ve saksı sırası kareyi örtüyordu; E terasın yan kenarına, W terasının önü saksı ve bitki dolu: terasın ucundaki gezinti yoluna (iskeleden biraz yüksek: y), bankların arasına (0 = kullanılmaz, salon satın alınmaz)
+  kafe1: [{ x: -13.0, z: 37.9 }, { x: -9.8, z: 36.0 }, { x: -9.8, z: 39.8 }],
+  kafe2: [{ x: -13.0, z: 51.5 }, { x: -9.8, z: 49.6 }, { x: -9.8, z: 53.4 }],
   salonW: [{ x: -21.4, z: -6.2 }, { x: -22.0, z: 4.7 }, { x: -17.4, z: 4.7 }],
   salonE: [{ x: 21.4, z: -6.2 }, { x: 11.8, z: -7.9 }, { x: 11.8, z: -6.1 }],
 };
+/**
+ * 2026-11-23: sokak dükkânının alet kareleri dükkânın içinde, müşteri tarafında (AVM'deki gibi). Kare hiçbir zemin eşyasına (alınmamış
+ * aletler dahil; masaların çevresi sandalye payıyla) binmez, tezgâh önündeki kuyruk bandına girmez, tezgâhın boyunu çok aşmaz (okulda
+ * kantin yarısında kalır, sınıfa geçmez). Kapıya en yakın, aralarında 1.6 m olan yerler. Yer yoksa boş (dışarıdaki yerler kullanılır).
+ * Kapıdan tezgâha giden yolun üstüne gelebilir: kare yürürken para çekmez (durunca çeker), büfedeki gibi.
+ */
+const icYerCache = new Map<string, Vec2[]>();
+export function icKareYerleri(m: IcMekan, n = 2): Vec2[] {
+  const ck = m.id + ':' + n, c0 = icYerCache.get(ck); if (c0) return c0;
+  const { W, D } = icDim(m), lay = icLayout(m), tz = lay.find(i => i.k === 'tezgah'), out: Vec2[] = [];
+  if (!tz) { icYerCache.set(ck, out); return out; }
+  const vert = (tz.ry || 0) % 2 === 1, tr = icItemRect(tz), H = 0.72, kenar = IC_DUVAR + H + 0.03;
+  const engel = lay.filter(i => icZeminEngeli(i)).map(i => { const r = icItemRect(i), e = i.k.startsWith('masa') ? 0.3 : 0.03; return { u0: r.u0 - e, u1: r.u1 + e, v0: r.v0 - e, v1: r.v1 + e }; });
+  const a0 = vert ? tr.v0 : tr.u0, a1 = vert ? tr.v1 : tr.u1, aday: { u: number; v: number; d: number }[] = [];
+  for (let u = -W / 2 + kenar; u <= W / 2 - kenar + 1e-6; u += 0.05) for (let v = -D / 2 + kenar; v <= D / 2 - kenar + 1e-6; v += 0.05) {
+    if (vert ? u + H > tz.u - 1.45 : v - H < tz.v + 1.45) continue;   // kuyruk bandı (müşteri tezgâh merkezinden 1.15 m'de durur)
+    const a = vert ? v : u; if (a < a0 - 1.0 || a > a1 + 1.0) continue;   // tezgâhın yanında kal
+    if (engel.some(r => u + H > r.u0 && u - H < r.u1 && v + H > r.v0 && v - H < r.v1)) continue;
+    aday.push({ u, v, d: Math.hypot(u, v - D / 2) });
+  }
+  aday.sort((p, q) => p.d - q.d);
+  const uv: { u: number; v: number }[] = [];
+  for (const c of aday) {
+    if (out.length >= n) break;
+    if (uv.every(q => Math.hypot(q.u - c.u, q.v - c.v) >= 1.6)) { uv.push(c); out.push(icWorld(m, +c.u.toFixed(2), +c.v.toFixed(2))); }
+  }
+  if (out.length < n) out.length = 0;   // ikisi birden içeride değilse ikisi de dışarıda (biri içeride biri dışarıda karışık durmasın)
+  icYerCache.set(ck, out); return out;
+}
 export function disKareYerleri(m: IcMekan, bos?: (p: Vec2) => boolean): Vec2[] {
   if (DIS_YER[m.id]) return DIS_YER[m.id];
   const { W, D } = icDim(m), out: Vec2[] = [], uMax = Math.max(2.2, W / 2 + 0.6);
@@ -78,6 +109,14 @@ export function disKareYerleri(m: IcMekan, bos?: (p: Vec2) => boolean): Vec2[] {
 export function installIsletmeKareler(K: Kernel, api: IsletmeKareApi): { sync(): void } {
   const S = K.state, rt = K.rt, ids = new Map<string, PadRt>(), uyari = new Map<string, number>();
   const katim = () => (K.playerPos as { kat?: number }).kat || 0;
+  /** 2026-11-23: bir kare dolunca sıradaki kare aynı yere çıkabiliyor (alet, tadilat); oyuncu kareden inmeden o yeni kare para çekmez */
+  //  (canAct yalnız oyuncu bir karenin içindeyken sorulur: bir süre sorulmadıysa oyuncu inmiş demektir)
+  let sonDolan: Vec2 | null = null, sonSoru = 0;
+  const inmedi = () => {
+    if (!sonDolan) return false;
+    const gitti = S.playT - sonSoru > 0.3 || Math.hypot(K.playerPos.x - sonDolan.x, K.playerPos.z - sonDolan.z) > 1.1; sonSoru = S.playT;
+    if (gitti) { sonDolan = null; return false; } return true;
+  };
   const nav = (K as unknown as { nav?: { walkable(p: Vec2): boolean } }).nav;
   const yerCache = new Map<string, Vec2[]>();
   /** dış kare yerleri bir kez hesaplanır (nav yüklüyse: kapı noktası yürünebilir olmalı, yoksa sonra yeniden denenir) */
@@ -90,7 +129,7 @@ export function installIsletmeKareler(K: Kernel, api: IsletmeKareApi): { sync():
     const out: Kare[] = [];
     for (const { m, a } of ROOMS) {
       const avm = avmMi(m), kat = avm ? m.kat || 0 : undefined, p = api.plot(a.id), ad = adOf(a), pre = (avm ? 'avm.' : 'isl.') + a.id;
-      const yer = avm ? null : yerler(m), y = avm ? undefined : SOKAK_Y;
+      const yer = avm ? null : yerler(m), ic = avm ? [] : icKareYerleri(m), y = avm ? undefined : SOKAK_Y;
       if (!p) {
         // sıralı açılma (content/acilis.ts): büfe o aşamaya gelmeden / sıradaki önceki dükkân alınmadan kare hiç çıkmaz; çıkınca eksik koşulu yazar
         const d = api.durum?.(); if (d && !acilisGorunur(a, d)) { const yarim = Number(S.padPaid[pre]) || 0; if (yarim > 0) { S.money = Math.round((S.money + yarim) * 100) / 100; delete S.padPaid[pre]; } continue; }   // AR-GE: sıralı açılmadan önce yarım ödenmiş, şimdi gizli kare: para iade (eski kayıt)
@@ -101,7 +140,7 @@ export function installIsletmeKareler(K: Kernel, api: IsletmeKareApi): { sync():
       if (p.tadilat) continue;
       const own = p.esya || [], t = ISLETME[ARSA_ISLETME[a.id]];
       const sira = t.esya.filter(e => !own.includes(e.id) && e.lv <= p.lv).sort((x, y) => x.fiyat - y.fiyat).slice(0, 2);
-      sira.forEach((e, i) => out.push({ key: pre + '.' + e.id, pos: avm ? aletKaresi(m, i) : yer![1 + i], kat, label: e.ikon + ' ' + e.ad, sub: e.desc, price: e.fiyat, kilit: '', y, done: () => api.kafeEsya(a.id, e.id) }));
+      sira.forEach((e, i) => out.push({ key: pre + '.' + e.id, pos: avm ? aletKaresi(m, i) : ic[i] || yer![i], kat, label: e.ikon + ' ' + e.ad, sub: e.desc, price: e.fiyat, kilit: '', y, done: () => api.kafeEsya(a.id, e.id) }));
       // o seviyenin aletleri bitti: sıradaki aşamaya tadilat (sokak dükkânları; AVM'de yer kapının önündeki satış karesinin yeri)
       if (!sira.length && p.lv < DUKKAN_MAX_SEVIYE && api.yukselt && api.yukFiyat) {
         const sonraki = api.asamaAd?.(a.id, p.lv + 1) || (p.lv + 1) + '. seviye';
@@ -149,7 +188,7 @@ export function installIsletmeKareler(K: Kernel, api: IsletmeKareApi): { sync():
     rt.pads.push(pr); ids.set(k.key, pr);
     K.interactions.register({
       id: 'pad.' + k.key, pos: k.pos, radius: 0.8, kind: 'pad', dwell: 0, interval: 0.05,
-      canAct: () => rt.pads.includes(pr) && katim() === (k.kat || 0),
+      canAct: () => rt.pads.includes(pr) && katim() === (k.kat || 0) && !inmedi(),
       act: () => {
         if (misafirKare(K)) return 'done';
         if (k.kilit) { if (S.playT - (uyari.get(k.key) ?? -99) > 6) { uyari.set(k.key, S.playT); K.toast(k.label + ': önce ' + k.kilit.replace('🔒 ', '') + '.', 'bad'); } return 'done'; }   // 'bad': sessizlik süzgecine (aynı cümle 60 sn) takılmasın, her basışta söylesin
@@ -160,7 +199,7 @@ export function installIsletmeKareler(K: Kernel, api: IsletmeKareApi): { sync():
         if (S.padPaid[k.key] < pr.price - 0.01) return 'continue';
         // full: hand the money back and buy through the normal path (same checks, toast, XP, save); a refused buy keeps it in the pocket
         S.money = Math.round((S.money + S.padPaid[k.key]) * 100) / 100; delete S.padPaid[k.key]; pr.paid = 0;
-        k.done(); if (k.kat === undefined) (rt.uiLast as Record<string, unknown>).decorFocus = { x: k.pos.x, z: k.pos.z, until: S.playT + 2.2 };   // sokakta altın ışık sütunu: burada bir şey açıldı
+        sonDolan = { x: K.playerPos.x, z: K.playerPos.z }; sonSoru = S.playT; k.done(); if (k.kat === undefined) (rt.uiLast as Record<string, unknown>).decorFocus = { x: k.pos.x, z: k.pos.z, until: S.playT + 2.2 };   // sokakta altın ışık sütunu: burada bir şey açıldı
         sync(); return 'done';
       },
     });

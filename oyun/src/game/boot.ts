@@ -824,7 +824,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
       const r = rt();
       H.setPose(pos, pose.rot);
       const moving = walk.speed > 0.1;
-      H.setInput({ speed: walk.speed, carry: playMode && r.carry.length ? Math.min(1, 0.35 + r.carry.length / 8) : 0, act: moving ? 'walk' : (playMode ? heroAct(r.act) : 'idle'), mood: playMode && r.streak >= 2 ? 'happy' : 'ok', t: simT, oneHand: (sim.state.level || 1) >= 8 } as never);
+      H.setInput({ speed: walk.speed, carry: playMode && (r.carry.length || ((r as unknown as { kafeTepsi?: { items: string[] } }).kafeTepsi?.items.length ?? 0)) ? Math.min(1, 0.35 + (r.carry.length + ((r as unknown as { kafeTepsi?: { items: string[] } }).kafeTepsi?.items.length ?? 0)) / 8) : 0, act: moving ? 'walk' : (playMode ? heroAct(r.act) : 'idle'), mood: playMode && r.streak >= 2 ? 'happy' : 'ok', t: simT, oneHand: (sim.state.level || 1) >= 8 } as never);
       const hs = (H as unknown as { setState?: (s: AnyRec | null) => void }).setState;
       if (hs && playMode) hs.call(H, !moving && r.act === 'count' ? { act: 'count' } : null);
       H.update(fdt, alpha);
@@ -1051,6 +1051,12 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     const rv = restoranApi(sim.rules)?.view();
     return { stage: sim.state.stage, cust: r.customers.map(c => ({ k: c.kind || 'q', s: c.state, t: c.seat ? c.seat.table : -1, x: +c.x.toFixed(2), z: +c.z.toFixed(2) })), q: r.queue.length,
       w: (r.agents?.workers?.rows() || []).map(w => ({ r: w.role, s: w.state, x: +w.x.toFixed(2), z: +w.z.toFixed(2) })), passYer: rv?.passYer ?? null, bilet: rv?.tickets.length ?? 0 };
+  });
+  // 2026-11-23 dükkân tepsisi denetimi (tests/browser/meydan-kafe.mjs): tepsi, siparişler, uygun servis noktaları (yalnız okuma)
+  if (hileAcik) reg('dukkan', (room: string) => {
+    const r = sim.rules.rt as unknown as { kafeHost?: { pending: Record<string, number> }; kafeTepsi?: { items: string[] }; agents?: { kafe?: { siparisOf(x: string): string[]; makineler(x: string): unknown[] } } };
+    const servis = sim.rules.interactions.all().filter(i => i.id.startsWith('kafeServis.' + room + '.')).map(i => { let ok = false; try { ok = i.canAct(sim.player); } catch { ok = false; } return { id: i.id, x: i.pos.x, z: i.pos.z, ok }; });
+    return { tepsi: [...(r.kafeTepsi?.items || [])], siparis: r.agents?.kafe?.siparisOf(room) || [], makine: r.agents?.kafe?.makineler(room) || [], servis, plots: Object.keys(((sim.state.zones as Record<string, { plots?: object }>).arsa?.plots) || {}), bekleyen: { ...(r.kafeHost?.pending || {}) }, saat: +sim.clock.hour.toFixed(2), odalar: (r.agents?.kafe as unknown as { rooms?(): unknown[] })?.rooms?.() || [] };
   });
   reg('pads', () => sim.rules.rt.pads.map(q => ({ key: q.key, x: q.pos.x, z: q.pos.z, price: q.price, paid: q.paid })));   // sarı kareler (test / denetim)
   reg('izgara', (on?: boolean) => { if (on !== undefined) izgaraLook?.set(!!on); return izgaraLook?.get() ?? null; });
