@@ -61,11 +61,14 @@ export function karsiPrefabs(): PrefabDef[] {
   const line = (w: number, d: number, x: number, z: number): PartDef => box(w, 0.02, d, x, 0.1, z, '#f4f4f0');
   const W = 25.2, D = 17.8, lines: PartDef[] = [box(W, 0.06, D, 0, 0.05, 0, '#4f9a4a'), line(W, 0.12, 0, D / 2), line(W, 0.12, 0, -D / 2), line(0.12, D, W / 2, 0), line(0.12, D, -W / 2, 0), line(0.12, D, 0, 0), cyl(2.0, 0.02, 2.0, 0, 0.1, 0, '#f4f4f0', 28), cyl(1.85, 0.03, 1.85, 0, 0.11, 0, '#4f9a4a', 28)];
   for (const sx of [-1, 1]) { lines.push(line(0.12, 7, sx * (W / 2 - 3), 0), line(3, 0.12, sx * (W / 2 - 1.5), 3.5), line(3, 0.12, sx * (W / 2 - 1.5), -3.5));
-    lines.push(box(0.1, 2.0, 0.1, sx * W / 2, 1.0, -1.6, '#f4f4f0'), box(0.1, 2.0, 0.1, sx * W / 2, 1.0, 1.6, '#f4f4f0'), box(0.1, 0.1, 3.3, sx * W / 2, 2.0, 0, '#f4f4f0'), box(1.2, 1.8, 3.2, sx * (W / 2 + 0.7), 0.95, 0, '#e8ecef'));
+    lines.push(box(0.1, 2.0, 0.1, sx * W / 2, 1.0, -1.6, '#f4f4f0'), box(0.1, 2.0, 0.1, sx * W / 2, 1.0, 1.6, '#f4f4f0'), box(0.1, 0.1, 3.3, sx * W / 2, 2.0, 0, '#f4f4f0'));
+    if (sx > 0) lines.push(box(1.2, 1.8, 3.2, sx * (W / 2 + 0.7), 0.95, 0, '#e8ecef'));
   }
   for (const [x, z] of [[-W / 2 - 1.5, -D / 2 - 1.5], [W / 2 + 1.5, -D / 2 - 1.5], [-W / 2 - 1.5, D / 2 + 1.5], [W / 2 + 1.5, D / 2 + 1.5]]) lines.push(box(0.2, 8, 0.2, x, 4, z, '#5b6068'), box(1.6, 0.5, 0.4, x, 8.1, z, '#fff7cf'));
   // PRF-09: the floodlight masts and the goal nets are real things: they block like everything else that stands up (no walking through)
-  const pitchCol: Rect[] = [R(0.4, 0.4, -W / 2 - 1.5, -D / 2 - 1.5), R(0.4, 0.4, W / 2 + 1.5, -D / 2 - 1.5), R(0.4, 0.4, -W / 2 - 1.5, D / 2 + 1.5), R(0.4, 0.4, W / 2 + 1.5, D / 2 + 1.5), R(1.2, 3.2, -(W / 2 + 0.7), 0), R(1.2, 3.2, W / 2 + 0.7, 0)];
+  // 2026-11-23 yürüyüş turu: batı kalenin ağı tesis binasının duvarına gömülüydü ve tesis kapısını (x -52.25) kapatıyordu (gezgin bilinen.json
+  // 'tesis'): batıda ağ yok, kalenin arkası tesis duvarı. Doğu ağı çitin kapı boşluğunu kapatıyordu: kapı kuzeye alındı (karsiProps).
+  const pitchCol: Rect[] = [R(0.4, 0.4, -W / 2 - 1.5, -D / 2 - 1.5), R(0.4, 0.4, W / 2 + 1.5, -D / 2 - 1.5), R(0.4, 0.4, -W / 2 - 1.5, D / 2 + 1.5), R(0.4, 0.4, W / 2 + 1.5, D / 2 + 1.5), R(1.2, 3.2, W / 2 + 0.7, 0)];
   defs.push({ id: 'kr.pitch', parts: lines, colliders: pitchCol });
   // fountain: basin, rim, central column, water jets
   defs.push({ id: 'kr.fiskiye', parts: [cyl(2.9, 0.5, 2.9, 0, 0.25, 0, '#b9ad99', 24), cyl(2.5, 0.52, 2.5, 0, 0.27, 0, '#5fa8d0', 24), cyl(0.35, 1.8, 0.45, 0, 1.2, 0, '#b9ad99', 12),
@@ -98,7 +101,7 @@ export function karsiPrefabs(): PrefabDef[] {
     for (let i = 0; i <= n; i++) { const t = i / n - 0.5; parts.push(box(0.09, 2.2, 0.09, w > d ? t * w : 0, 1.1, w > d ? 0 : t * d, '#2f3740')); }
     return { id, parts, colliders: [R(w, d)] }; };
   defs.push(cit('kr.cit.x10', 10, 0.12), cit('kr.cit.x5', 5, 0.12), cit('kr.cit.x8', 7.4, 0.12), cit('kr.cit.z11', 0.12, 11));
-  defs.push(fence('kr.fence.x10', 10, 0.22), fence('kr.fence.x8', 8, 0.22), fence('kr.fence.x12', 12, 0.22), fence('kr.fence.z7', 0.22, 7), fence('kr.fence.z11', 0.22, 11));
+  defs.push(fence('kr.fence.x10', 10, 0.22), fence('kr.fence.x8', 8, 0.22), fence('kr.fence.x12', 12, 0.22), fence('kr.fence.z5', 0.22, 5), fence('kr.fence.z7', 0.22, 7), fence('kr.fence.z11', 0.22, 11));
   return defs;
 }
 
@@ -116,7 +119,9 @@ export function karsiProps(): PrefabPlacement[] {
   // halı saha: pitch + three stands + fence with a gate on the east side
   out.push(P('kr-pitch', 'kr.pitch', -39.4, 45.4));
   out.push(P('kr-stand-n', 'kr.stand.z', -39.2, 34.8, Math.PI), P('kr-stand-s', 'kr.stand.z', -39.2, 55.2), P('kr-stand-w', 'kr.tesis', -54.1, 45.4));
-  out.push(P('kr-fence-gn', 'kr.fence.z7', -26.7, 40.0), P('kr-fence-gs', 'kr.fence.z7', -26.7, 51.0));
+  // 2026-11-23: kapı boşluğu kalenin arkasındaydı (z 43.5..47.5), doğu kale ağı (z 43.8..47) onu tıkıyordu: sahaya ve tesise girilemiyordu.
+  // Boşluk ağın kuzeyinde (z 41.3..43.5), taş yolun (kr-pave-gate) kuzey kenarında.
+  out.push(P('kr-fence-gn', 'kr.fence.z5', -26.7, 38.8), P('kr-fence-gs', 'kr.fence.z11', -26.7, 49.0));
   out.push(P('kr-fence-t', 'kr.fence.x12', -45.5, 36.3), P('kr-fence-t2', 'kr.fence.x12', -33.5, 36.3), P('kr-fence-b', 'kr.fence.x12', -45.5, 54.5), P('kr-fence-b2', 'kr.fence.x12', -33.5, 54.5));
   out.push(P('kr-kafe1', 'kr.kafe1', -17.5, 37.9), P('kr-kafe2', 'kr.kafe2', -17.5, 51.5), P('kr-banka', 'kr.banka', 11.7, 36.8));
   out.push(P('kr-fiskiye', 'kr.fiskiye', -3.9, 45));

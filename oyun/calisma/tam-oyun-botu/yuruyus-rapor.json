@@ -1,0 +1,4778 @@
+{
+ "tarih": "2026-11-23T22:53:17.939Z",
+ "kayit": "/tmp/claude-0/sp/kayitlar2",
+ "asamalar": [
+  {
+   "dosya": "asama-6.json",
+   "asama": 6,
+   "para": 786803,
+   "baslangic": {
+    "x": -0.257,
+    "z": 2.949
+   },
+   "hatalar": [],
+   "sonuclar": [
+    {
+     "tur": "kare",
+     "ad": "kare tadilat",
+     "hedef": {
+      "x": 3,
+      "z": 1.2
+     },
+     "vardi": true,
+     "sn": 0.8,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 2.701,
+      "z": 1.302,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 727,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 786803,
+      "kalan": 30000000,
+      "cekilen": 786803,
+      "odendi": 786803,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.tadilat",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare isl.k6.tadilat",
+     "hedef": {
+      "x": -51,
+      "z": 43.45
+     },
+     "vardi": true,
+     "sn": 28.4,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": -50.465,
+      "z": 43.35,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 6207,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 794767,
+      "kalan": 468000,
+      "cekilen": 428997,
+      "odendi": 429000,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.isl.k6.tadilat",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare avm.k7.tadilat",
+     "hedef": {
+      "x": 1194.3,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 16.3,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1194.518,
+      "z": 53.006,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 3411,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 796237,
+      "kalan": 270000,
+      "cekilen": 247500,
+      "odendi": 247500,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.avm.k7.tadilat",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare avm.k8",
+     "hedef": {
+      "x": 1194.3,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 17.9,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1194.528,
+      "z": 61.253,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 3415,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 796785,
+      "kalan": 380000,
+      "cekilen": 348333,
+      "odendi": 348333,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.avm.k8",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare avm.k9.tadilat",
+     "hedef": {
+      "x": 1206,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 16.3,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1205.748,
+      "z": 52.966,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 3029,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 806387,
+      "kalan": 234000,
+      "cekilen": 214500,
+      "odendi": 214500,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.avm.k9.tadilat",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare avm.k10.tadilat",
+     "hedef": {
+      "x": 1206,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 18,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1205.914,
+      "z": 61.659,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 3013,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 808424,
+      "kalan": 198000,
+      "cekilen": 181500,
+      "odendi": 181500,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.avm.k10.tadilat",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare avm.k11",
+     "hedef": {
+      "x": 1194.3,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 21.8,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1194.386,
+      "z": 53.905,
+      "kat": 1
+     },
+     "maxY": 3.6,
+     "katlar": [
+      0,
+      1
+     ],
+     "yolYok": [],
+     "ms": 3260,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 808530,
+      "kalan": 340000,
+      "cekilen": 311667,
+      "odendi": 311667,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.avm.k11",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare salon.semaver_dev",
+     "hedef": {
+      "x": -22,
+      "z": 4.7
+     },
+     "vardi": true,
+     "sn": 5.1,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": -21.517,
+      "z": 4.809,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 1221,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 808985,
+      "kalan": 60000,
+      "cekilen": 55000,
+      "odendi": 55000,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.salon.semaver_dev",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare salon.gozleme",
+     "hedef": {
+      "x": -17.4,
+      "z": 4.7
+     },
+     "vardi": true,
+     "sn": 4.1,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": -16.806,
+      "z": 4.85,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 1107,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 808985,
+      "kalan": 80000,
+      "cekilen": 73333,
+      "odendi": 73333,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.salon.gozleme",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare mutfak.doner",
+     "hedef": {
+      "x": 5,
+      "z": -15.9
+     },
+     "vardi": true,
+     "sn": 7.2,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 4.384,
+      "z": -15.842,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 1487,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 809706,
+      "kalan": 450000,
+      "cekilen": 412500,
+      "odendi": 412500,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.mutfak.doner",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare mutfak.salata",
+     "hedef": {
+      "x": -5.4,
+      "z": -14.3
+     },
+     "vardi": true,
+     "sn": 7.6,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": -4.938,
+      "z": -14.11,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 1189,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 809706,
+      "kalan": 450000,
+      "cekilen": 412211,
+      "odendi": 412500,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.mutfak.salata",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare masa.23",
+     "hedef": {
+      "x": -19.5,
+      "z": -14.1
+     },
+     "vardi": true,
+     "sn": 7.6,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": -19.388,
+      "z": -13.849,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 1270,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 811986,
+      "kalan": 300000,
+      "cekilen": 275000,
+      "odendi": 275000,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.masa.23",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k1 Meydan Kafe",
+     "hedef": {
+      "x": -15.3,
+      "z": 37.9
+     },
+     "vardi": true,
+     "sn": 20.4,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": -15.075,
+      "z": 37.89,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 3904,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k2 Sahil Bistro",
+     "hedef": {
+      "x": -15.3,
+      "z": 51.5
+     },
+     "vardi": true,
+     "sn": 21.5,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": -14.892,
+      "z": 51.493,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 4235,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k4 Martıköy İlkokulu",
+     "hedef": {
+      "x": 48.85,
+      "z": 34.8
+     },
+     "vardi": true,
+     "sn": 17.1,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 48.849,
+      "z": 34.568,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 3649,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k3 Martı Kırtasiye",
+     "hedef": {
+      "x": 28,
+      "z": 34.7
+     },
+     "vardi": true,
+     "sn": 12.6,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 28,
+      "z": 34.414,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 2394,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k6 Halı Saha Tesisleri",
+     "hedef": {
+      "x": -53.55,
+      "z": 45.4
+     },
+     "vardi": true,
+     "sn": 29.2,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": -53.424,
+      "z": 45.403,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 4827,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k10 Hacı Martı Şekerleme",
+     "hedef": {
+      "x": 1208.45,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 18.6,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1208.394,
+      "z": 61.897,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 2820,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k7 Martı Moda",
+     "hedef": {
+      "x": 1191.85,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 16.9,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1191.975,
+      "z": 53.293,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 2959,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k9 Oyuncak Dünyası",
+     "hedef": {
+      "x": 1208.45,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 16.9,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1208.105,
+      "z": 53.322,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 3172,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k8 Tekno Martı",
+     "hedef": {
+      "x": 1191.85,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 18.6,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1191.894,
+      "z": 61.898,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 2980,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k11 Telve Kahve Laboratuvarı",
+     "hedef": {
+      "x": 1191.85,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 22.4,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1192.296,
+      "z": 53.33,
+      "kat": 1
+     },
+     "maxY": 3.6,
+     "katlar": [
+      0,
+      1
+     ],
+     "yolYok": [],
+     "ms": 3344,
+     "icerde": true
+    },
+    {
+     "tur": "ustgecit",
+     "ad": "üst geçit",
+     "hedef": {
+      "x": 24,
+      "z": 33.8
+     },
+     "vardi": true,
+     "sn": 11.5,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 24,
+      "z": 33.623,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 1978,
+     "gecitAcik": true
+    },
+    {
+     "tur": "avm",
+     "ad": "AVM kat 0",
+     "hedef": {
+      "x": 1195.64,
+      "z": 61.37
+     },
+     "vardi": true,
+     "sn": 17.8,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1195.633,
+      "z": 61.123,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 2898
+    },
+    {
+     "tur": "avm",
+     "ad": "AVM kat 1",
+     "hedef": {
+      "x": 1195.64,
+      "z": 61.37
+     },
+     "vardi": true,
+     "sn": 20.1,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1195.731,
+      "z": 61.358,
+      "kat": 1
+     },
+     "maxY": 3.6,
+     "katlar": [
+      0,
+      1
+     ],
+     "yolYok": [],
+     "ms": 3314
+    },
+    {
+     "tur": "avm",
+     "ad": "AVM kat 2",
+     "hedef": {
+      "x": 1195.64,
+      "z": 61.37
+     },
+     "vardi": true,
+     "sn": 27,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1195.731,
+      "z": 61.358,
+      "kat": 2
+     },
+     "maxY": 7.2,
+     "katlar": [
+      0,
+      1,
+      2
+     ],
+     "yolYok": [],
+     "ms": 3999
+    },
+    {
+     "tur": "avm",
+     "ad": "AVM kat 3",
+     "hedef": {
+      "x": 1195.64,
+      "z": 61.37
+     },
+     "vardi": true,
+     "sn": 33.9,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1195.731,
+      "z": 61.358,
+      "kat": 3
+     },
+     "maxY": 10.8,
+     "katlar": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "yolYok": [],
+     "ms": 4266
+    }
+   ]
+  },
+  {
+   "dosya": "asama-7.json",
+   "asama": 7,
+   "para": 5122711,
+   "baslangic": {
+    "x": -0.257,
+    "z": 2.949
+   },
+   "hatalar": [],
+   "sonuclar": [
+    {
+     "tur": "kare",
+     "ad": "kare tadilat",
+     "hedef": {
+      "x": 3,
+      "z": 1.2
+     },
+     "vardi": true,
+     "sn": 0.8,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 2.701,
+      "z": 1.302,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 735,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 5122711,
+      "kalan": 70000000,
+      "cekilen": 5122711,
+      "odendi": 5122711,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.tadilat",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare avm.k7.tadilat",
+     "hedef": {
+      "x": 1194.3,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 16.3,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1194.518,
+      "z": 53.006,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 4621,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 5148306,
+      "kalan": 540000,
+      "cekilen": 495000,
+      "odendi": 495000,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.avm.k7.tadilat",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare avm.k8.tadilat",
+     "hedef": {
+      "x": 1194.3,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 17.9,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1194.528,
+      "z": 61.253,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 4086,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 5241764,
+      "kalan": 342000,
+      "cekilen": 313500,
+      "odendi": 313500,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.avm.k8.tadilat",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare avm.k9.tadilat",
+     "hedef": {
+      "x": 1206,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 16.3,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1205.748,
+      "z": 52.966,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 3654,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 5561673,
+      "kalan": 468000,
+      "cekilen": 429000,
+      "odendi": 429000,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.avm.k9.tadilat",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare avm.k10.tadilat",
+     "hedef": {
+      "x": 1206,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 18,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1205.914,
+      "z": 61.659,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 3638,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 5631142,
+      "kalan": 396000,
+      "cekilen": 363000,
+      "odendi": 363000,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.avm.k10.tadilat",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare avm.k11.tadilat",
+     "hedef": {
+      "x": 1194.3,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 21.8,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1194.386,
+      "z": 53.905,
+      "kat": 1
+     },
+     "maxY": 3.6,
+     "katlar": [
+      0,
+      1
+     ],
+     "yolYok": [],
+     "ms": 3633,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 5635947,
+      "kalan": 306000,
+      "cekilen": 280500,
+      "odendi": 280500,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.avm.k11.tadilat",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare avm.k12.tadilat",
+     "hedef": {
+      "x": 1206,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 22,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1205.896,
+      "z": 53.913,
+      "kat": 1
+     },
+     "maxY": 3.6,
+     "katlar": [
+      0,
+      1
+     ],
+     "yolYok": [],
+     "ms": 3897,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 5644660,
+      "kalan": 288000,
+      "cekilen": 264000,
+      "odendi": 264000,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.avm.k12.tadilat",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare avm.k14",
+     "hedef": {
+      "x": 1206,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 20.6,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1205.672,
+      "z": 61.847,
+      "kat": 1
+     },
+     "maxY": 3.6,
+     "katlar": [
+      0,
+      1
+     ],
+     "yolYok": [],
+     "ms": 3863,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 5666351,
+      "kalan": 300000,
+      "cekilen": 274315,
+      "odendi": 275000,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.avm.k14",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare avm.k5",
+     "hedef": {
+      "x": 1194.3,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 28.7,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1194.386,
+      "z": 53.905,
+      "kat": 2
+     },
+     "maxY": 7.2,
+     "katlar": [
+      0,
+      1,
+      2
+     ],
+     "yolYok": [],
+     "ms": 4430,
+     "para": {
+      "acik": true,
+      "kilitli": true,
+      "para0": 5684945,
+      "kalan": 450000,
+      "cekilen": 0,
+      "odendi": 0,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.avm.k5",
+       "progress": 1,
+       "transferring": false,
+       "transfers": 1
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare salon.buz_tezgah",
+     "hedef": {
+      "x": 11.8,
+      "z": -7.9
+     },
+     "vardi": true,
+     "sn": 3.8,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 11.462,
+      "z": -7.566,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 977,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 5687197,
+      "kalan": 160000,
+      "cekilen": 146667,
+      "odendi": 146667,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.salon.buz_tezgah",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare salon.mangal_e",
+     "hedef": {
+      "x": 11.8,
+      "z": -6.1
+     },
+     "vardi": true,
+     "sn": 3.5,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 11.393,
+      "z": -5.559,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 703,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 5691136,
+      "kalan": 180000,
+      "cekilen": 165000,
+      "odendi": 165000,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.salon.mangal_e",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare mutfak.meze",
+     "hedef": {
+      "x": 4.6,
+      "z": -14.3
+     },
+     "vardi": true,
+     "sn": 7.4,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 4.698,
+      "z": -14.647,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 1237,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 5691890,
+      "kalan": 1200000,
+      "cekilen": 1096451,
+      "odendi": 1100000,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.mutfak.meze",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare masa.20",
+     "hedef": {
+      "x": 16.8,
+      "z": -1.4
+     },
+     "vardi": true,
+     "sn": 4,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 16.433,
+      "z": -1.107,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 1272,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 5691890,
+      "kalan": 700000,
+      "cekilen": 641602,
+      "odendi": 641667,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.masa.20",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare masa.31",
+     "hedef": {
+      "x": 13.7,
+      "z": -14.1
+     },
+     "vardi": true,
+     "sn": 5.7,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 13.826,
+      "z": -13.568,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 1219,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 5721107,
+      "kalan": 700000,
+      "cekilen": 640132,
+      "odendi": 641667,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.masa.31",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k1 Meydan Kafe",
+     "hedef": {
+      "x": -15.3,
+      "z": 37.9
+     },
+     "vardi": true,
+     "sn": 20.4,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": -15.075,
+      "z": 37.89,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 4030,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k2 Sahil Bistro",
+     "hedef": {
+      "x": -15.3,
+      "z": 51.5
+     },
+     "vardi": true,
+     "sn": 21.5,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": -14.892,
+      "z": 51.493,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 4118,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k4 Martıköy İlkokulu",
+     "hedef": {
+      "x": 48.85,
+      "z": 34.8
+     },
+     "vardi": true,
+     "sn": 17.1,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 48.849,
+      "z": 34.568,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 3395,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k3 Martı Kırtasiye",
+     "hedef": {
+      "x": 28,
+      "z": 34.7
+     },
+     "vardi": true,
+     "sn": 12.6,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 28,
+      "z": 34.414,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 2295,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k6 Halı Saha Tesisleri",
+     "hedef": {
+      "x": -53.55,
+      "z": 45.4
+     },
+     "vardi": true,
+     "sn": 29.2,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": -53.424,
+      "z": 45.403,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 5459,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k10 Hacı Martı Şekerleme",
+     "hedef": {
+      "x": 1208.45,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 18.6,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1208.394,
+      "z": 61.897,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 2988,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k7 Martı Moda",
+     "hedef": {
+      "x": 1191.85,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 16.9,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1191.975,
+      "z": 53.293,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 3041,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k9 Oyuncak Dünyası",
+     "hedef": {
+      "x": 1208.45,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 16.9,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1208.105,
+      "z": 53.322,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 3278,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k11 Telve Kahve Laboratuvarı",
+     "hedef": {
+      "x": 1191.85,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 22.4,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1192.296,
+      "z": 53.33,
+      "kat": 1
+     },
+     "maxY": 3.6,
+     "katlar": [
+      0,
+      1
+     ],
+     "yolYok": [],
+     "ms": 3322,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k12 Maraşlı Martı Dondurma",
+     "hedef": {
+      "x": 1208.45,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 22.6,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1207.997,
+      "z": 53.33,
+      "kat": 1
+     },
+     "maxY": 3.6,
+     "katlar": [
+      0,
+      1
+     ],
+     "yolYok": [],
+     "ms": 3500,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k8 Tekno Martı",
+     "hedef": {
+      "x": 1191.85,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 18.6,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1191.894,
+      "z": 61.898,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 3090,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k14 Çıtırcı Kuruyemiş",
+     "hedef": {
+      "x": 1208.45,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 21.1,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1207.963,
+      "z": 61.9,
+      "kat": 1
+     },
+     "maxY": 3.6,
+     "katlar": [
+      0,
+      1
+     ],
+     "yolYok": [],
+     "ms": 3592,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k5 Martı Lokantası",
+     "hedef": {
+      "x": 1191.85,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 29.3,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1192.296,
+      "z": 53.33,
+      "kat": 2
+     },
+     "maxY": 7.2,
+     "katlar": [
+      0,
+      1,
+      2
+     ],
+     "yolYok": [],
+     "ms": 4035,
+     "icerde": true
+    },
+    {
+     "tur": "ustgecit",
+     "ad": "üst geçit",
+     "hedef": {
+      "x": 24,
+      "z": 33.8
+     },
+     "vardi": true,
+     "sn": 11.5,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 24,
+      "z": 33.623,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 2135,
+     "gecitAcik": true
+    },
+    {
+     "tur": "avm",
+     "ad": "AVM kat 0",
+     "hedef": {
+      "x": 1195.64,
+      "z": 61.37
+     },
+     "vardi": true,
+     "sn": 17.8,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1195.633,
+      "z": 61.123,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 2914
+    },
+    {
+     "tur": "avm",
+     "ad": "AVM kat 1",
+     "hedef": {
+      "x": 1195.64,
+      "z": 61.37
+     },
+     "vardi": true,
+     "sn": 20.1,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1195.731,
+      "z": 61.358,
+      "kat": 1
+     },
+     "maxY": 3.6,
+     "katlar": [
+      0,
+      1
+     ],
+     "yolYok": [],
+     "ms": 3497
+    },
+    {
+     "tur": "avm",
+     "ad": "AVM kat 2",
+     "hedef": {
+      "x": 1195.64,
+      "z": 61.37
+     },
+     "vardi": true,
+     "sn": 27,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1195.731,
+      "z": 61.358,
+      "kat": 2
+     },
+     "maxY": 7.2,
+     "katlar": [
+      0,
+      1,
+      2
+     ],
+     "yolYok": [],
+     "ms": 3831
+    },
+    {
+     "tur": "avm",
+     "ad": "AVM kat 3",
+     "hedef": {
+      "x": 1195.64,
+      "z": 61.37
+     },
+     "vardi": true,
+     "sn": 33.9,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1195.731,
+      "z": 61.358,
+      "kat": 3
+     },
+     "maxY": 10.8,
+     "katlar": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "yolYok": [],
+     "ms": 4267
+    }
+   ]
+  },
+  {
+   "dosya": "asama-8.json",
+   "asama": 8,
+   "para": 10130533,
+   "baslangic": {
+    "x": -0.257,
+    "z": 2.949
+   },
+   "hatalar": [],
+   "sonuclar": [
+    {
+     "tur": "kare",
+     "ad": "kare tadilat",
+     "hedef": {
+      "x": 3,
+      "z": 1.2
+     },
+     "vardi": true,
+     "sn": 0.8,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 2.701,
+      "z": 1.302,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 790,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 10130533,
+      "kalan": 150000000,
+      "cekilen": 10130533,
+      "odendi": 10130533,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.tadilat",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare avm.k8.tadilat",
+     "hedef": {
+      "x": 1194.3,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 17.9,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1194.528,
+      "z": 61.253,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 4987,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 11577718,
+      "kalan": 684000,
+      "cekilen": 627000,
+      "odendi": 627000,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.avm.k8.tadilat",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare avm.k11.tadilat",
+     "hedef": {
+      "x": 1194.3,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 21.8,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1194.386,
+      "z": 53.905,
+      "kat": 1
+     },
+     "maxY": 3.6,
+     "katlar": [
+      0,
+      1
+     ],
+     "yolYok": [],
+     "ms": 4783,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 11700450,
+      "kalan": 612000,
+      "cekilen": 561000,
+      "odendi": 561000,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.avm.k11.tadilat",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare avm.k13.tadilat",
+     "hedef": {
+      "x": 1194.3,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 20.3,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1194.869,
+      "z": 61.789,
+      "kat": 1
+     },
+     "maxY": 3.6,
+     "katlar": [
+      0,
+      1
+     ],
+     "yolYok": [],
+     "ms": 4372,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 11764948,
+      "kalan": 324000,
+      "cekilen": 297000,
+      "odendi": 297000,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.avm.k13.tadilat",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare avm.k12.tadilat",
+     "hedef": {
+      "x": 1206,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 22,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1205.896,
+      "z": 53.913,
+      "kat": 1
+     },
+     "maxY": 3.6,
+     "katlar": [
+      0,
+      1
+     ],
+     "yolYok": [],
+     "ms": 4114,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 11864796,
+      "kalan": 576000,
+      "cekilen": 528000,
+      "odendi": 528000,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.avm.k12.tadilat",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare avm.k14.tadilat",
+     "hedef": {
+      "x": 1206,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 20.6,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1205.672,
+      "z": 61.847,
+      "kat": 1
+     },
+     "maxY": 3.6,
+     "katlar": [
+      0,
+      1
+     ],
+     "yolYok": [],
+     "ms": 3723,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 11865872,
+      "kalan": 270000,
+      "cekilen": 247500,
+      "odendi": 247500,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.avm.k14.tadilat",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare avm.k5",
+     "hedef": {
+      "x": 1194.3,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 28.7,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1194.386,
+      "z": 53.905,
+      "kat": 2
+     },
+     "maxY": 7.2,
+     "katlar": [
+      0,
+      1,
+      2
+     ],
+     "yolYok": [],
+     "ms": 4674,
+     "para": {
+      "acik": true,
+      "kilitli": true,
+      "para0": 11902405,
+      "kalan": 450000,
+      "cekilen": 0,
+      "odendi": 0,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.avm.k5",
+       "progress": 1,
+       "transferring": false,
+       "transfers": 1
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare salon.bal_kaymak",
+     "hedef": {
+      "x": -22,
+      "z": 4.7
+     },
+     "vardi": true,
+     "sn": 5.1,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": -21.517,
+      "z": 4.809,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 1343,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 11902405,
+      "kalan": 110000,
+      "cekilen": 100833,
+      "odendi": 100833,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.salon.bal_kaymak",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare salon.meze_dolap",
+     "hedef": {
+      "x": 11.8,
+      "z": -7.9
+     },
+     "vardi": true,
+     "sn": 3.8,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 11.462,
+      "z": -7.566,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 880,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 11903120,
+      "kalan": 150000,
+      "cekilen": 137500,
+      "odendi": 137500,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.salon.meze_dolap",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare salon.akvaryum_e",
+     "hedef": {
+      "x": 11.8,
+      "z": -6.1
+     },
+     "vardi": true,
+     "sn": 3.5,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 11.393,
+      "z": -5.559,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 784,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 11903120,
+      "kalan": 220000,
+      "cekilen": 199850,
+      "odendi": 201667,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.salon.akvaryum_e",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare mutfak.tas_firin",
+     "hedef": {
+      "x": -5.5,
+      "z": -15.9
+     },
+     "vardi": true,
+     "sn": 7.3,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": -5.197,
+      "z": -15.869,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 1411,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 11904654,
+      "kalan": 2500000,
+      "cekilen": 2291667,
+      "odendi": 2291667,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.mutfak.tas_firin",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare masa.39",
+     "hedef": {
+      "x": -11.65,
+      "z": -9.35
+     },
+     "vardi": true,
+     "sn": 5.7,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": -11.32,
+      "z": -8.748,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 1412,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 11904654,
+      "kalan": 1500000,
+      "cekilen": 1375000,
+      "odendi": 1375000,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.masa.39",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare masa.43",
+     "hedef": {
+      "x": 9.05,
+      "z": -9.35
+     },
+     "vardi": true,
+     "sn": 3.7,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 8.809,
+      "z": -8.979,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 674,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 11904688,
+      "kalan": 1500000,
+      "cekilen": 1375000,
+      "odendi": 1375000,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.masa.43",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k1 Meydan Kafe",
+     "hedef": {
+      "x": -15.3,
+      "z": 37.9
+     },
+     "vardi": true,
+     "sn": 20.4,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": -15.129,
+      "z": 37.887,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 4341,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k2 Sahil Bistro",
+     "hedef": {
+      "x": -15.3,
+      "z": 51.5
+     },
+     "vardi": true,
+     "sn": 21.5,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": -14.892,
+      "z": 51.493,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 4073,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k4 Martıköy İlkokulu",
+     "hedef": {
+      "x": 48.85,
+      "z": 34.8
+     },
+     "vardi": true,
+     "sn": 17.1,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 48.849,
+      "z": 34.568,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 3604,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k3 Martı Kırtasiye",
+     "hedef": {
+      "x": 28,
+      "z": 34.7
+     },
+     "vardi": true,
+     "sn": 12.6,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 28,
+      "z": 34.414,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 2727,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k6 Halı Saha Tesisleri",
+     "hedef": {
+      "x": -53.55,
+      "z": 45.4
+     },
+     "vardi": true,
+     "sn": 29.3,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": -53.249,
+      "z": 45.406,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 5688,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k10 Hacı Martı Şekerleme",
+     "hedef": {
+      "x": 1208.45,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 18.6,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1208.394,
+      "z": 61.897,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 3354,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k7 Martı Moda",
+     "hedef": {
+      "x": 1191.85,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 16.9,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1191.975,
+      "z": 53.293,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 3373,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k9 Oyuncak Dünyası",
+     "hedef": {
+      "x": 1208.45,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 16.9,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1208.105,
+      "z": 53.322,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 3410,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k11 Telve Kahve Laboratuvarı",
+     "hedef": {
+      "x": 1191.85,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 22.4,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1192.296,
+      "z": 53.33,
+      "kat": 1
+     },
+     "maxY": 3.6,
+     "katlar": [
+      0,
+      1
+     ],
+     "yolYok": [],
+     "ms": 3694,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k12 Maraşlı Martı Dondurma",
+     "hedef": {
+      "x": 1208.45,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 22.6,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1207.997,
+      "z": 53.33,
+      "kat": 1
+     },
+     "maxY": 3.6,
+     "katlar": [
+      0,
+      1
+     ],
+     "yolYok": [],
+     "ms": 3826,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k8 Tekno Martı",
+     "hedef": {
+      "x": 1191.85,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 18.6,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1191.894,
+      "z": 61.898,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 3040,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k14 Çıtırcı Kuruyemiş",
+     "hedef": {
+      "x": 1208.45,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 21.1,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1207.963,
+      "z": 61.9,
+      "kat": 1
+     },
+     "maxY": 3.6,
+     "katlar": [
+      0,
+      1
+     ],
+     "yolYok": [],
+     "ms": 3951,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k13 Şerbetçi Baklava Sarayı",
+     "hedef": {
+      "x": 1191.85,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 20.9,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1192.122,
+      "z": 61.895,
+      "kat": 1
+     },
+     "maxY": 3.6,
+     "katlar": [
+      0,
+      1
+     ],
+     "yolYok": [],
+     "ms": 3740,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k5 Martı Lokantası",
+     "hedef": {
+      "x": 1191.85,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 29.3,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1192.296,
+      "z": 53.33,
+      "kat": 2
+     },
+     "maxY": 7.2,
+     "katlar": [
+      0,
+      1,
+      2
+     ],
+     "yolYok": [],
+     "ms": 4329,
+     "icerde": true
+    },
+    {
+     "tur": "ustgecit",
+     "ad": "üst geçit",
+     "hedef": {
+      "x": 24,
+      "z": 33.8
+     },
+     "vardi": true,
+     "sn": 11.5,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 24,
+      "z": 33.623,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 2000,
+     "gecitAcik": true
+    },
+    {
+     "tur": "avm",
+     "ad": "AVM kat 0",
+     "hedef": {
+      "x": 1195.64,
+      "z": 61.37
+     },
+     "vardi": true,
+     "sn": 17.8,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1195.633,
+      "z": 61.123,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 2965
+    },
+    {
+     "tur": "avm",
+     "ad": "AVM kat 1",
+     "hedef": {
+      "x": 1195.64,
+      "z": 61.37
+     },
+     "vardi": true,
+     "sn": 20.1,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1195.731,
+      "z": 61.358,
+      "kat": 1
+     },
+     "maxY": 3.6,
+     "katlar": [
+      0,
+      1
+     ],
+     "yolYok": [],
+     "ms": 3827
+    },
+    {
+     "tur": "avm",
+     "ad": "AVM kat 2",
+     "hedef": {
+      "x": 1195.64,
+      "z": 61.37
+     },
+     "vardi": true,
+     "sn": 27,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1195.731,
+      "z": 61.358,
+      "kat": 2
+     },
+     "maxY": 7.2,
+     "katlar": [
+      0,
+      1,
+      2
+     ],
+     "yolYok": [],
+     "ms": 4392
+    },
+    {
+     "tur": "avm",
+     "ad": "AVM kat 3",
+     "hedef": {
+      "x": 1195.64,
+      "z": 61.37
+     },
+     "vardi": true,
+     "sn": 33.9,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1195.731,
+      "z": 61.358,
+      "kat": 3
+     },
+     "maxY": 10.8,
+     "katlar": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "yolYok": [],
+     "ms": 4782
+    }
+   ]
+  },
+  {
+   "dosya": "asama-9.json",
+   "asama": 9,
+   "para": 18705557,
+   "baslangic": {
+    "x": -0.257,
+    "z": 2.949
+   },
+   "hatalar": [],
+   "sonuclar": [
+    {
+     "tur": "kare",
+     "ad": "kare tadilat",
+     "hedef": {
+      "x": 3,
+      "z": 1.2
+     },
+     "vardi": true,
+     "sn": 0.8,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 2.701,
+      "z": 1.302,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 949,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 18705557,
+      "kalan": 300000000,
+      "cekilen": 18705557,
+      "odendi": 18705557,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.tadilat",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare avm.k13.tadilat",
+     "hedef": {
+      "x": 1194.3,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 20.3,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1194.869,
+      "z": 61.789,
+      "kat": 1
+     },
+     "maxY": 3.6,
+     "katlar": [
+      0,
+      1
+     ],
+     "yolYok": [],
+     "ms": 5844,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 19012445,
+      "kalan": 648000,
+      "cekilen": 594000,
+      "odendi": 594000,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.avm.k13.tadilat",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare avm.k14.tadilat",
+     "hedef": {
+      "x": 1206,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 20.6,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1205.672,
+      "z": 61.847,
+      "kat": 1
+     },
+     "maxY": 3.6,
+     "katlar": [
+      0,
+      1
+     ],
+     "yolYok": [],
+     "ms": 5628,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 19154836,
+      "kalan": 540000,
+      "cekilen": 494936,
+      "odendi": 495000,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.avm.k14.tadilat",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare avm.k5.tadilat",
+     "hedef": {
+      "x": 1194.3,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 28.7,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1194.386,
+      "z": 53.905,
+      "kat": 2
+     },
+     "maxY": 7.2,
+     "katlar": [
+      0,
+      1,
+      2
+     ],
+     "yolYok": [],
+     "ms": 5893,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 19766068,
+      "kalan": 810000,
+      "cekilen": 742486,
+      "odendi": 742500,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.avm.k5.tadilat",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare avm.k15.tadilat",
+     "hedef": {
+      "x": 1194.3,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 27.2,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1194.869,
+      "z": 61.789,
+      "kat": 2
+     },
+     "maxY": 7.2,
+     "katlar": [
+      0,
+      1,
+      2
+     ],
+     "yolYok": [],
+     "ms": 5504,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 19766663,
+      "kalan": 378000,
+      "cekilen": 342132,
+      "odendi": 346500,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.avm.k15.tadilat",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare avm.k16.tadilat",
+     "hedef": {
+      "x": 1206,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 28.9,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1205.896,
+      "z": 53.913,
+      "kat": 2
+     },
+     "maxY": 7.2,
+     "katlar": [
+      0,
+      1,
+      2
+     ],
+     "yolYok": [],
+     "ms": 5399,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 19778943,
+      "kalan": 360000,
+      "cekilen": 299529,
+      "odendi": 330000,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.avm.k16.tadilat",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare avm.k17",
+     "hedef": {
+      "x": 1206,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 27.5,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1205.672,
+      "z": 61.847,
+      "kat": 2
+     },
+     "maxY": 7.2,
+     "katlar": [
+      0,
+      1,
+      2
+     ],
+     "yolYok": [],
+     "ms": 5009,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 19836714,
+      "kalan": 440000,
+      "cekilen": 402985,
+      "odendi": 403333,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.avm.k17",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare avm.k18.tadilat",
+     "hedef": {
+      "x": 1206,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 35.8,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1205.896,
+      "z": 53.913,
+      "kat": 3
+     },
+     "maxY": 10.8,
+     "katlar": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "yolYok": [],
+     "ms": 6072,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 19961133,
+      "kalan": 342000,
+      "cekilen": 301058,
+      "odendi": 313500,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.avm.k18.tadilat",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare mutfak.ocak2",
+     "hedef": {
+      "x": -7.45,
+      "z": -15.9
+     },
+     "vardi": true,
+     "sn": 7.7,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": -6.858,
+      "z": -15.849,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 1977,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 19969147,
+      "kalan": 5000000,
+      "cekilen": 4583333,
+      "odendi": 4583333,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.mutfak.ocak2",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare mutfak.izgara2",
+     "hedef": {
+      "x": 7.45,
+      "z": -15.9
+     },
+     "vardi": true,
+     "sn": 7.7,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 6.979,
+      "z": -15.849,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 1846,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 20077997,
+      "kalan": 5000000,
+      "cekilen": 4583333,
+      "odendi": 4583333,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.mutfak.izgara2",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k1 Meydan Kafe",
+     "hedef": {
+      "x": -15.3,
+      "z": 37.9
+     },
+     "vardi": true,
+     "sn": 20.4,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": -15.129,
+      "z": 37.887,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 4758,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k2 Sahil Bistro",
+     "hedef": {
+      "x": -15.3,
+      "z": 51.5
+     },
+     "vardi": true,
+     "sn": 21.5,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": -14.892,
+      "z": 51.493,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 5146,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k4 Martıköy İlkokulu",
+     "hedef": {
+      "x": 48.85,
+      "z": 34.8
+     },
+     "vardi": true,
+     "sn": 17.1,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 48.849,
+      "z": 34.568,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 4441,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k3 Martı Kırtasiye",
+     "hedef": {
+      "x": 28,
+      "z": 34.7
+     },
+     "vardi": true,
+     "sn": 12.6,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 28,
+      "z": 34.414,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 3038,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k6 Halı Saha Tesisleri",
+     "hedef": {
+      "x": -53.55,
+      "z": 45.4
+     },
+     "vardi": true,
+     "sn": 29.3,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": -53.249,
+      "z": 45.406,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 6065,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k10 Hacı Martı Şekerleme",
+     "hedef": {
+      "x": 1208.45,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 18.6,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1208.394,
+      "z": 61.897,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 3894,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k7 Martı Moda",
+     "hedef": {
+      "x": 1191.85,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 16.9,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1191.975,
+      "z": 53.293,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 4003,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k9 Oyuncak Dünyası",
+     "hedef": {
+      "x": 1208.45,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 16.9,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1208.105,
+      "z": 53.322,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 4252,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k11 Telve Kahve Laboratuvarı",
+     "hedef": {
+      "x": 1191.85,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 22.4,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1192.296,
+      "z": 53.33,
+      "kat": 1
+     },
+     "maxY": 3.6,
+     "katlar": [
+      0,
+      1
+     ],
+     "yolYok": [],
+     "ms": 4407,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k12 Maraşlı Martı Dondurma",
+     "hedef": {
+      "x": 1208.45,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 22.6,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1207.997,
+      "z": 53.33,
+      "kat": 1
+     },
+     "maxY": 3.6,
+     "katlar": [
+      0,
+      1
+     ],
+     "yolYok": [],
+     "ms": 4126,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k8 Tekno Martı",
+     "hedef": {
+      "x": 1191.85,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 18.6,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1191.894,
+      "z": 61.898,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 3760,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k14 Çıtırcı Kuruyemiş",
+     "hedef": {
+      "x": 1208.45,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 21.1,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1207.963,
+      "z": 61.9,
+      "kat": 1
+     },
+     "maxY": 3.6,
+     "katlar": [
+      0,
+      1
+     ],
+     "yolYok": [],
+     "ms": 4310,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k13 Şerbetçi Baklava Sarayı",
+     "hedef": {
+      "x": 1191.85,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 20.9,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1192.122,
+      "z": 61.895,
+      "kat": 1
+     },
+     "maxY": 3.6,
+     "katlar": [
+      0,
+      1
+     ],
+     "yolYok": [],
+     "ms": 3934,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k5 Martı Lokantası",
+     "hedef": {
+      "x": 1191.85,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 29.3,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1192.296,
+      "z": 53.33,
+      "kat": 2
+     },
+     "maxY": 7.2,
+     "katlar": [
+      0,
+      1,
+      2
+     ],
+     "yolYok": [],
+     "ms": 5198,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k18 Martı Sinema Büfesi",
+     "hedef": {
+      "x": 1208.45,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 36.4,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1207.997,
+      "z": 53.33,
+      "kat": 3
+     },
+     "maxY": 10.8,
+     "katlar": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "yolYok": [],
+     "ms": 5956,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k15 Dürümcü Dayı",
+     "hedef": {
+      "x": 1191.85,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 27.8,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1192.122,
+      "z": 61.895,
+      "kat": 2
+     },
+     "maxY": 7.2,
+     "katlar": [
+      0,
+      1,
+      2
+     ],
+     "yolYok": [],
+     "ms": 5360,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k16 Kumpir Kulesi",
+     "hedef": {
+      "x": 1208.45,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 29.5,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1207.997,
+      "z": 53.33,
+      "kat": 2
+     },
+     "maxY": 7.2,
+     "katlar": [
+      0,
+      1,
+      2
+     ],
+     "yolYok": [],
+     "ms": 4904,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k17 Midyeci Mido",
+     "hedef": {
+      "x": 1208.45,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 28,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1207.963,
+      "z": 61.9,
+      "kat": 2
+     },
+     "maxY": 7.2,
+     "katlar": [
+      0,
+      1,
+      2
+     ],
+     "yolYok": [],
+     "ms": 5002,
+     "icerde": true
+    },
+    {
+     "tur": "ustgecit",
+     "ad": "üst geçit",
+     "hedef": {
+      "x": 24,
+      "z": 33.8
+     },
+     "vardi": true,
+     "sn": 11.5,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 24,
+      "z": 33.623,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 2372,
+     "gecitAcik": true
+    },
+    {
+     "tur": "avm",
+     "ad": "AVM kat 0",
+     "hedef": {
+      "x": 1195.64,
+      "z": 61.37
+     },
+     "vardi": true,
+     "sn": 17.8,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1195.633,
+      "z": 61.123,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 3851
+    },
+    {
+     "tur": "avm",
+     "ad": "AVM kat 1",
+     "hedef": {
+      "x": 1195.64,
+      "z": 61.37
+     },
+     "vardi": true,
+     "sn": 20.1,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1195.731,
+      "z": 61.358,
+      "kat": 1
+     },
+     "maxY": 3.6,
+     "katlar": [
+      0,
+      1
+     ],
+     "yolYok": [],
+     "ms": 4020
+    },
+    {
+     "tur": "avm",
+     "ad": "AVM kat 2",
+     "hedef": {
+      "x": 1195.64,
+      "z": 61.37
+     },
+     "vardi": true,
+     "sn": 27,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1195.731,
+      "z": 61.358,
+      "kat": 2
+     },
+     "maxY": 7.2,
+     "katlar": [
+      0,
+      1,
+      2
+     ],
+     "yolYok": [],
+     "ms": 5240
+    },
+    {
+     "tur": "avm",
+     "ad": "AVM kat 3",
+     "hedef": {
+      "x": 1195.64,
+      "z": 61.37
+     },
+     "vardi": true,
+     "sn": 33.9,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1195.731,
+      "z": 61.358,
+      "kat": 3
+     },
+     "maxY": 10.8,
+     "katlar": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "yolYok": [],
+     "ms": 5098
+    }
+   ]
+  },
+  {
+   "dosya": "asama-10.json",
+   "asama": 10,
+   "para": 48691184,
+   "baslangic": {
+    "x": -0.257,
+    "z": 2.949
+   },
+   "hatalar": [],
+   "sonuclar": [
+    {
+     "tur": "kare",
+     "ad": "kare avm.k15.tadilat",
+     "hedef": {
+      "x": 1194.3,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 27.2,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1194.869,
+      "z": 61.789,
+      "kat": 2
+     },
+     "maxY": 7.2,
+     "katlar": [
+      0,
+      1,
+      2
+     ],
+     "yolYok": [],
+     "ms": 7038,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 51676682,
+      "kalan": 756000,
+      "cekilen": 693000,
+      "odendi": 693000,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.avm.k15.tadilat",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare avm.k16.tadilat",
+     "hedef": {
+      "x": 1206,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 28.9,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1205.896,
+      "z": 53.913,
+      "kat": 2
+     },
+     "maxY": 7.2,
+     "katlar": [
+      0,
+      1,
+      2
+     ],
+     "yolYok": [],
+     "ms": 6078,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 51771958,
+      "kalan": 720000,
+      "cekilen": 659943,
+      "odendi": 660000,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.avm.k16.tadilat",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare avm.k17.tadilat",
+     "hedef": {
+      "x": 1206,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 27.5,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1205.672,
+      "z": 61.847,
+      "kat": 2
+     },
+     "maxY": 7.2,
+     "katlar": [
+      0,
+      1,
+      2
+     ],
+     "yolYok": [],
+     "ms": 5571,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 51861205,
+      "kalan": 396000,
+      "cekilen": 362995,
+      "odendi": 363000,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.avm.k17.tadilat",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare avm.k18.tadilat",
+     "hedef": {
+      "x": 1206,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 35.8,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1205.896,
+      "z": 53.913,
+      "kat": 3
+     },
+     "maxY": 10.8,
+     "katlar": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "yolYok": [],
+     "ms": 5798,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 52065007,
+      "kalan": 684000,
+      "cekilen": 626958,
+      "odendi": 627000,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.avm.k18.tadilat",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare salon.sarkuteri",
+     "hedef": {
+      "x": -22,
+      "z": 4.7
+     },
+     "vardi": true,
+     "sn": 5.1,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": -21.517,
+      "z": 4.809,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 1553,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 52096777,
+      "kalan": 260000,
+      "cekilen": 238333,
+      "odendi": 238333,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.salon.sarkuteri",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare salon.piyano_s",
+     "hedef": {
+      "x": 11.8,
+      "z": -7.9
+     },
+     "vardi": true,
+     "sn": 3.8,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 11.462,
+      "z": -7.566,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 1077,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 52096777,
+      "kalan": 400000,
+      "cekilen": 366667,
+      "odendi": 366667,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.salon.piyano_s",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare mutfak.sef_masa",
+     "hedef": {
+      "x": 6,
+      "z": -15.9
+     },
+     "vardi": true,
+     "sn": 7.3,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 5.506,
+      "z": -15.866,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 1718,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 52096777,
+      "kalan": 10000000,
+      "cekilen": 9166667,
+      "odendi": 9166667,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.mutfak.sef_masa",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare masa.27",
+     "hedef": {
+      "x": -19.5,
+      "z": -12.3
+     },
+     "vardi": true,
+     "sn": 7.4,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": -19.343,
+      "z": -12.068,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 1779,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 52096777,
+      "kalan": 6000000,
+      "cekilen": 5500000,
+      "odendi": 5500000,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.masa.27",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kare",
+     "ad": "kare masa.35",
+     "hedef": {
+      "x": 13.7,
+      "z": -12.3
+     },
+     "vardi": true,
+     "sn": 5.3,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 14.069,
+      "z": -12.047,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 1738,
+     "para": {
+      "acik": true,
+      "kilitli": false,
+      "para0": 52096777,
+      "kalan": 6000000,
+      "cekilen": 5500000,
+      "odendi": 5500000,
+      "kayboldu": false,
+      "dwell": {
+       "id": "pad.masa.35",
+       "progress": 1,
+       "transferring": true,
+       "transfers": 22
+      }
+     },
+     "paraHata": false
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k1 Meydan Kafe",
+     "hedef": {
+      "x": -15.3,
+      "z": 37.9
+     },
+     "vardi": true,
+     "sn": 20.4,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": -15.129,
+      "z": 37.887,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 5014,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k2 Sahil Bistro",
+     "hedef": {
+      "x": -15.3,
+      "z": 51.5
+     },
+     "vardi": true,
+     "sn": 21.5,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": -14.892,
+      "z": 51.493,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 4689,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k4 Martıköy İlkokulu",
+     "hedef": {
+      "x": 48.85,
+      "z": 34.8
+     },
+     "vardi": true,
+     "sn": 17.1,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 48.849,
+      "z": 34.568,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 4385,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k3 Martı Kırtasiye",
+     "hedef": {
+      "x": 28,
+      "z": 34.7
+     },
+     "vardi": true,
+     "sn": 12.6,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 28,
+      "z": 34.414,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 3171,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k6 Halı Saha Tesisleri",
+     "hedef": {
+      "x": -53.55,
+      "z": 45.4
+     },
+     "vardi": true,
+     "sn": 29.3,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": -53.249,
+      "z": 45.406,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 6137,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k10 Hacı Martı Şekerleme",
+     "hedef": {
+      "x": 1208.45,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 18.6,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1208.394,
+      "z": 61.897,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 3674,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k7 Martı Moda",
+     "hedef": {
+      "x": 1191.85,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 16.9,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1191.975,
+      "z": 53.293,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 3966,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k9 Oyuncak Dünyası",
+     "hedef": {
+      "x": 1208.45,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 16.9,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1208.105,
+      "z": 53.322,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 3931,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k11 Telve Kahve Laboratuvarı",
+     "hedef": {
+      "x": 1191.85,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 22.4,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1192.296,
+      "z": 53.33,
+      "kat": 1
+     },
+     "maxY": 3.6,
+     "katlar": [
+      0,
+      1
+     ],
+     "yolYok": [],
+     "ms": 4419,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k12 Maraşlı Martı Dondurma",
+     "hedef": {
+      "x": 1208.45,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 22.6,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1207.997,
+      "z": 53.33,
+      "kat": 1
+     },
+     "maxY": 3.6,
+     "katlar": [
+      0,
+      1
+     ],
+     "yolYok": [],
+     "ms": 4573,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k8 Tekno Martı",
+     "hedef": {
+      "x": 1191.85,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 18.6,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1191.894,
+      "z": 61.898,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 3982,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k14 Çıtırcı Kuruyemiş",
+     "hedef": {
+      "x": 1208.45,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 21.1,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1207.963,
+      "z": 61.9,
+      "kat": 1
+     },
+     "maxY": 3.6,
+     "katlar": [
+      0,
+      1
+     ],
+     "yolYok": [],
+     "ms": 4568,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k13 Şerbetçi Baklava Sarayı",
+     "hedef": {
+      "x": 1191.85,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 20.9,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1192.122,
+      "z": 61.895,
+      "kat": 1
+     },
+     "maxY": 3.6,
+     "katlar": [
+      0,
+      1
+     ],
+     "yolYok": [],
+     "ms": 4562,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k5 Martı Lokantası",
+     "hedef": {
+      "x": 1191.85,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 29.3,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1192.296,
+      "z": 53.33,
+      "kat": 2
+     },
+     "maxY": 7.2,
+     "katlar": [
+      0,
+      1,
+      2
+     ],
+     "yolYok": [],
+     "ms": 5102,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k18 Martı Sinema Büfesi",
+     "hedef": {
+      "x": 1208.45,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 36.4,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1207.997,
+      "z": 53.33,
+      "kat": 3
+     },
+     "maxY": 10.8,
+     "katlar": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "yolYok": [],
+     "ms": 6189,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k15 Dürümcü Dayı",
+     "hedef": {
+      "x": 1191.85,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 27.8,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1192.122,
+      "z": 61.895,
+      "kat": 2
+     },
+     "maxY": 7.2,
+     "katlar": [
+      0,
+      1,
+      2
+     ],
+     "yolYok": [],
+     "ms": 5012,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k16 Kumpir Kulesi",
+     "hedef": {
+      "x": 1208.45,
+      "z": 53.3
+     },
+     "vardi": true,
+     "sn": 29.5,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1207.997,
+      "z": 53.33,
+      "kat": 2
+     },
+     "maxY": 7.2,
+     "katlar": [
+      0,
+      1,
+      2
+     ],
+     "yolYok": [],
+     "ms": 4960,
+     "icerde": true
+    },
+    {
+     "tur": "kapi",
+     "ad": "kapı k17 Midyeci Mido",
+     "hedef": {
+      "x": 1208.45,
+      "z": 61.9
+     },
+     "vardi": true,
+     "sn": 28,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1207.963,
+      "z": 61.9,
+      "kat": 2
+     },
+     "maxY": 7.2,
+     "katlar": [
+      0,
+      1,
+      2
+     ],
+     "yolYok": [],
+     "ms": 4958,
+     "icerde": true
+    },
+    {
+     "tur": "ustgecit",
+     "ad": "üst geçit",
+     "hedef": {
+      "x": 24,
+      "z": 33.8
+     },
+     "vardi": true,
+     "sn": 11.5,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 24,
+      "z": 33.623,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 2287,
+     "gecitAcik": true
+    },
+    {
+     "tur": "avm",
+     "ad": "AVM kat 0",
+     "hedef": {
+      "x": 1195.64,
+      "z": 61.37
+     },
+     "vardi": true,
+     "sn": 17.8,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1195.633,
+      "z": 61.123,
+      "kat": 0
+     },
+     "maxY": 0,
+     "katlar": [
+      0
+     ],
+     "yolYok": [],
+     "ms": 3693
+    },
+    {
+     "tur": "avm",
+     "ad": "AVM kat 1",
+     "hedef": {
+      "x": 1195.64,
+      "z": 61.37
+     },
+     "vardi": true,
+     "sn": 20.1,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1195.731,
+      "z": 61.358,
+      "kat": 1
+     },
+     "maxY": 3.6,
+     "katlar": [
+      0,
+      1
+     ],
+     "yolYok": [],
+     "ms": 4220
+    },
+    {
+     "tur": "avm",
+     "ad": "AVM kat 2",
+     "hedef": {
+      "x": 1195.64,
+      "z": 61.37
+     },
+     "vardi": true,
+     "sn": 27,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1195.731,
+      "z": 61.358,
+      "kat": 2
+     },
+     "maxY": 7.2,
+     "katlar": [
+      0,
+      1,
+      2
+     ],
+     "yolYok": [],
+     "ms": 4767
+    },
+    {
+     "tur": "avm",
+     "ad": "AVM kat 3",
+     "hedef": {
+      "x": 1195.64,
+      "z": 61.37
+     },
+     "vardi": true,
+     "sn": 33.9,
+     "takildi": null,
+     "hayalet": [],
+     "son": {
+      "x": 1195.731,
+      "z": 61.358,
+      "kat": 3
+     },
+     "maxY": 10.8,
+     "katlar": [
+      0,
+      1,
+      2,
+      3
+     ],
+     "yolYok": [],
+     "ms": 5521
+    }
+   ]
+  }
+ ],
+ "ozet": {
+  "hedef": 156,
+  "vardi": 156,
+  "takildi": [],
+  "hayalet": [],
+  "ustGecit": [],
+  "varamadi": [],
+  "gövdeYoluYok": [],
+  "icerGirmedi": [],
+  "paraCekmedi": [],
+  "sayfaHatasi": []
+ }
+}

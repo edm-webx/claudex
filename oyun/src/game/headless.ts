@@ -54,6 +54,8 @@ export interface SimFull extends Sim {
   readonly player: Entity;
   readonly interactions: InteractionRegistry;
   readonly nav: Nav;
+  /** Martı AVM katının kendi çarpışma nav'ı (AVM dışında / geçersiz katta null) */
+  readonly katNav: (kat: number) => Nav | null;
   readonly ctx: SimCtx;
   /** M1 rules (A): state, runtime, commands, v2State. */
   readonly rules: RulesFull;
@@ -200,7 +202,7 @@ export function createSim(o: SimOpts, extra: SimExtra = {}): SimFull {
     get state() { return state; },
     world, bus, clock,
     get tick() { return tick; },
-    walk, scheduler, rng, agents, player, interactions, nav, ctx, rules,
+    walk, scheduler, rng, agents, player, interactions, nav, katNav, ctx, rules,
     get timeFrozen() { return timeFrozen; },
     tickOnce,
     step(sec) {

@@ -560,6 +560,10 @@ export function createNav(deps: NavDeps = {}): Nav {
       else solids.delete(key);
       solidList = ([] as Rect[]).concat(...solids.values());
     },
+    solidAt(p, rad = 0) {
+      for (const r of solidList) if (p.x > r.x0 - rad && p.x < r.x1 + rad && p.z > r.z0 - rad && p.z < r.z1 + rad) return { ...r };
+      return null;
+    },
     defineTarget(id, at) {
       targets.set(id, { x: at.x, z: at.z });
       const f = flows.get(id);
