@@ -32,16 +32,16 @@ export const ACILIS: Record<string, AcilisKosul> = {
   // Martı AVM: zemin kat > 1. kat (yeme-içme) > 2. kat (yemek katı)
   k10: { asama: 5, once: 'k6', gorev: [g('miniPlay', 10, '10 mini oyun oyna')] },   // şekerci: oyun ve şeker
   k7: { asama: 5, once: 'k10', gorev: [g('turistFoto', 15, 'turistler büfeni 15 kez fotoğraflasın')] },   // moda: şöhret
-  k9: { asama: 5, once: 'k7' },
-  k8: { asama: 6, once: 'k9' },
+  k9: { asama: 5, once: 'k7', gorev: [servis(17500)] },   // 2026-11-24 dengeleme: aşama 5-6 arası boş kalmasın diye ara hedef
+  k8: { asama: 6, once: 'k9', gorev: [servis(23500)] },
   k11: { asama: 6, once: 'k10' },
   k12: { asama: 6, once: 'k11' },
   k14: { asama: 7, once: 'k12' },
   k13: { asama: 7, once: 'k14' },
-  k5: { asama: 7, once: 'k11', gorev: [g('paketTeslim', 40, '40 paket siparişi teslim et (büfeye Aşçı ve Kurye al)'), servis(15000)] },   // lokanta: paket servis tecrübesi
+  k5: { asama: 7, once: 'k11', gorev: [g('paketTeslim', 40, '40 paket siparişi teslim et (büfeye Aşçı ve Kurye al)'), servis(29000)] },   // lokanta: paket servis tecrübesi
   k15: { asama: 8, once: 'k5' },
-  k16: { asama: 8, once: 'k15' },
-  k17: { asama: 9, once: 'k16' },
+  k16: { asama: 8, once: 'k15', gorev: [servis(36000)] },
+  k17: { asama: 9, once: 'k16', gorev: [servis(42500)] },
   k18: { asama: 8, once: 'k5' },   // Martı Sinema Büfesi (AVM sinema katı)
   // boş arsalar (panelden alınır)
   a1: { asama: 2 }, a2: { asama: 3 }, a3: { asama: 4 }, a4: { asama: 5 }, a5: { asama: 6 },

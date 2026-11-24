@@ -44,7 +44,9 @@ export const GIDER = { kira: [0, 150, 550, 1900, 5600, 9000, 14000, 21000, 30000
 /** Offline: hours cap and rate per kepenk level (rate × idle income/min). */
 export const KEPENK2: [number, number][] = [[1, 0.02], [2, 0.03], [3, 0.04], [4, 0.05]];
 /** Tadilat costs (stage 2..5) and crew seconds: rarer, dearer, real change. */
-export const STAGE_COST = [0, 25000, 180000, 900000, 4500000, 12000000, 30000000, 70000000, 150000000, 300000000];
+// 2026-11-24 sahip "dengele, sıkılınmasın ama uzun oynansın": tam oyun botuyla ölçüldü, aşama 3/4/6/8/9 ucuzladı (180k/900k/12M/70M/150M ->
+// 120k/650k/6M/60M/110M). Etkin bot 61 sa -> 52,5 sa, aşama varışları HEDEF_ASAMA_DK +-%35 içinde; ara dükkân görevleri content/acilis.ts
+export const STAGE_COST = [0, 25000, 120000, 650000, 4500000, 6000000, 30000000, 60000000, 110000000, 300000000];
 export const STAGE_TIME_S = [0, 90, 300, 900, 1800, 2400, 3000, 3600, 4200, 4800];
 /** Stage income multiplier shown on the tadilat card (flat now, the growth is capacity). */
 export const STAGE_MULT = [1, 1.04, 1.08, 1.12, 1.16, 1.2, 1.24, 1.28, 1.32, 1.36];
