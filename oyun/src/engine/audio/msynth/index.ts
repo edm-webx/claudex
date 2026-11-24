@@ -40,7 +40,7 @@ const idle = (fn: () => void) => {
 };
 
 /** Döngü + parça önbellek tavanı (mono float32 bayt). PS3 ruhu: toplam ses belleği < 20 MB (sfx ~3 MB + bu). */
-export const STREAM_BUDGET = 12 * 1024 * 1024;
+export const STREAM_BUDGET = 16 * 1024 * 1024;
 
 export function createBank(ac: BaseAudioContext, db: SesDb, budget = STREAM_BUDGET): Bank {
   const rc = (sr: number): RenderCtx => ({ sr, patches: db.patches || {} });

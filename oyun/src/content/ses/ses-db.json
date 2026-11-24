@@ -2009,7 +2009,8 @@
       "v": 0.22
      }
     }
-   ]
+   ],
+   "file": "deniz.opus"
   },
   "yagmur": {
    "dur": 12,
@@ -2064,7 +2065,8 @@
       "v": 0.08
      }
     }
-   ]
+   ],
+   "file": "yagmur.opus"
   },
   "ruzgar": {
    "dur": 16,
@@ -2101,7 +2103,8 @@
       "rand": 0.5
      }
     }
-   ]
+   ],
+   "file": "ruzgar.opus"
   },
   "izgara": {
    "dur": 8,
@@ -2269,7 +2272,8 @@
       "v": 0.05
      }
     }
-   ]
+   ],
+   "file": "orman_gunduz.opus"
   },
   "orman_gece": {
    "dur": 14,
@@ -2321,7 +2325,8 @@
       }
      }
     }
-   ]
+   ],
+   "file": "orman_gece.opus"
   },
   "karsi_sokak": {
    "dur": 16,
@@ -2383,7 +2388,8 @@
       "v": 0.14
      }
     }
-   ]
+   ],
+   "file": "karsi_sokak.opus"
   },
   "fiskiye": {
    "dur": 10,
@@ -2432,7 +2438,8 @@
       "v": 0.025
      }
     }
-   ]
+   ],
+   "file": "fiskiye.opus"
   },
   "kalabalik": {
    "dur": 14,
@@ -2485,7 +2492,8 @@
       "v": 0.12
      }
     }
-   ]
+   ],
+   "file": "kalabalik.opus"
   },
   "ic_kafe": {
    "dur": 14,
@@ -2574,7 +2582,8 @@
       "v": 0.04
      }
     }
-   ]
+   ],
+   "file": "ic_kalabalik.opus"
   },
   "ic_lokanta": {
    "dur": 16,
@@ -2678,7 +2687,8 @@
       "v": 0.06
      }
     }
-   ]
+   ],
+   "file": "ic_kalabalik.opus"
   },
   "ic_avm": {
    "dur": 16,
@@ -2765,7 +2775,8 @@
       "v": 0.05
      }
     }
-   ]
+   ],
+   "file": "ic_avm.opus"
   },
   "ic_hastane": {
    "dur": 16,
@@ -2967,7 +2978,8 @@
       "v": 0.03
      }
     }
-   ]
+   ],
+   "file": "ic_oda.opus"
   },
   "ic_mutfak": {
    "dur": 12,
@@ -3049,7 +3061,8 @@
       "v": 0.035
      }
     }
-   ]
+   ],
+   "file": "ic_mutfak.opus"
   }
  },
  "music": {
