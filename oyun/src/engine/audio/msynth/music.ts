@@ -6,6 +6,8 @@ import { Rng, Svf, env, reverbGen, pluck, mtof, noteHz, hashSeed, osc, noiseSrc,
 
 export type Inst = 'saz' | 'nylon' | 'epiano' | 'kutu' | 'keman' | 'ney' | 'klarnet' | 'none';
 export interface TrackSpec {
+  /** gerçek kayıt/mastering: public/ses altında Opus/OGG dosya adı; yüklenemezse tarif (sentez) yedek çalışır */
+  file?: string;
   bpm: number; root: string; scale: number[];
   /** [chord root in semitones from `root`, chord intervals], one chord per `chordBars` bars */
   chords: [number, number[]][]; chordBars?: number; bars?: number;

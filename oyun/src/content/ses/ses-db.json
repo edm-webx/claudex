@@ -2055,7 +2055,8 @@
       "v": 0.22
      }
     }
-   ]
+   ],
+   "file": "deniz.opus"
   },
   "yagmur": {
    "dur": 12,
@@ -2110,7 +2111,8 @@
       "v": 0.08
      }
     }
-   ]
+   ],
+   "file": "yagmur.opus"
   },
   "ruzgar": {
    "dur": 16,
@@ -2147,7 +2149,8 @@
       "rand": 0.5
      }
     }
-   ]
+   ],
+   "file": "ruzgar.opus"
   },
   "izgara": {
    "dur": 8,
@@ -2315,7 +2318,8 @@
       "v": 0.05
      }
     }
-   ]
+   ],
+   "file": "orman_gunduz.opus"
   },
   "orman_gece": {
    "dur": 14,
@@ -2367,7 +2371,8 @@
       }
      }
     }
-   ]
+   ],
+   "file": "orman_gece.opus"
   },
   "karsi_sokak": {
    "dur": 16,
@@ -2429,7 +2434,8 @@
       "v": 0.14
      }
     }
-   ]
+   ],
+   "file": "karsi_sokak.opus"
   },
   "fiskiye": {
    "dur": 10,
@@ -2478,7 +2484,8 @@
       "v": 0.025
      }
     }
-   ]
+   ],
+   "file": "fiskiye.opus"
   },
   "ic_mirilti": {"dur": 14, "gain": 0.3, "rev": 0.18, "note": "Lokanta/kafe iç mekan: kısık masa mırıltısı, ara sıra uzak çatal-tabak ve fincan.", "layers": [{"k": "noise", "color": "pink", "filter": {"type": "bp", "f": 520, "q": 0.6}, "v": 0.22, "swell": {"rate": 0.11, "depth": 0.35, "rand": 0.7}}, {"k": "noise", "color": "brown", "filter": {"type": "lp", "f": 240, "q": 0.6}, "v": 0.12}], "events": [{"every": [2.5, 6], "layer": {"k": "tone", "f": 2300, "f1": 2050, "a": 0.002, "d": 0.09, "v": 0.018}}, {"every": [3, 8], "layer": {"k": "noise", "color": "pink", "filter": {"type": "bp", "f": 800, "f1": 500, "q": 0.9}, "a": 0.25, "d": 0.5, "v": 0.07}}]},
   "mutfak_oda": {"dur": 12, "gain": 0.25, "rev": 0.1, "note": "Mutfak oda tonu: kısık davlumbaz uğultusu; pişirme cızırtısı istasyon bazlı ayrı.", "layers": [{"k": "noise", "color": "brown", "filter": {"type": "lp", "f": 160, "q": 0.7}, "v": 0.3, "swell": {"rate": 0.06, "depth": 0.15, "rand": 0.5}}, {"k": "noise", "color": "pink", "filter": {"type": "bp", "f": 900, "q": 0.4}, "v": 0.05, "swell": {"rate": 0.17, "depth": 0.3, "rand": 0.7}}], "events": []},
@@ -2534,7 +2541,8 @@
       "v": 0.12
      }
     }
-   ]
+   ],
+   "file": "kalabalik.opus"
   },
   "ic_kafe": {
    "dur": 14,
@@ -2623,7 +2631,8 @@
       "v": 0.04
      }
     }
-   ]
+   ],
+   "file": "ic_kalabalik.opus"
   },
   "ic_lokanta": {
    "dur": 16,
@@ -2727,7 +2736,8 @@
       "v": 0.06
      }
     }
-   ]
+   ],
+   "file": "ic_kalabalik.opus"
   },
   "ic_avm": {
    "dur": 16,
@@ -2814,7 +2824,8 @@
       "v": 0.05
      }
     }
-   ]
+   ],
+   "file": "ic_avm.opus"
   },
   "ic_hastane": {
    "dur": 16,
@@ -3016,7 +3027,8 @@
       "v": 0.03
      }
     }
-   ]
+   ],
+   "file": "ic_oda.opus"
   },
   "ic_mutfak": {
    "dur": 12,
@@ -3098,7 +3110,8 @@
       "v": 0.035
      }
     }
-   ]
+   ],
+   "file": "ic_mutfak.opus"
   }
  },
  "music": {

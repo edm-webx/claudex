@@ -15,11 +15,31 @@ describe('bank LRU', () => {
     const s = b.stats();
     expect(s.loops).toBe(2); expect(s.bytes).toBeLessThanOrEqual(one * 2.5);
   }, 20000);
-  it('drop() önbellekten bırakır; varsayılan bütçe 12 MB (toplam ses belleği < 20 MB ruhu)', async () => {
+  it('drop() önbellekten bırakır; varsayılan bütçe 16 MB (48 kHz Opus çözülmüş) (toplam ses belleği < 20 MB ruhu)', async () => {
     const b = createBank(fakeAc, db(1));
     b.loop('l0', () => {}); await flush(); expect(b.stats().loops).toBe(1);
     b.drop('loop', 'l0'); expect(b.stats().loops).toBe(0); expect(b.stats().bytes).toBe(0);
-    expect(STREAM_BUDGET).toBeLessThanOrEqual(12 * 1024 * 1024);
+    expect(STREAM_BUDGET).toBeLessThanOrEqual(16 * 1024 * 1024);
   }, 10000);
 });
 void vi;
+
+describe('bank: gerçek kayıt dosyası', () => {
+  const mk = (file: string) => ({ version: 1, patches: {}, sfx: {}, music: { tracks: {} } as never, voices: {}, loops: { k: { file, dur: 1, layers: [{ k: 'noise', v: 0.2, d: 1 }] } } }) as unknown as SesDb;
+  const decAc = { ...fakeAc, decodeAudioData: async () => ({ length: 96000, numberOfChannels: 2, sampleRate: 48000, duration: 2 }) as unknown as AudioBuffer } as unknown as BaseAudioContext;
+  it('dosya indirilip çözülür (stereo) ve önbelleğe girer; sentez çalışmaz', async () => {
+    const f = vi.fn(async () => ({ ok: true, arrayBuffer: async () => new ArrayBuffer(8) }));
+    vi.stubGlobal('fetch', f);
+    const b = createBank(decAc, mk('deniz.opus')); let got: AudioBuffer | null = null;
+    b.loop('k', x => { got = x; }); await flush();
+    expect(f).toHaveBeenCalledWith('ses/deniz.opus'); expect(got!.numberOfChannels).toBe(2); expect(b.stats().loops).toBe(1);
+    vi.unstubAllGlobals();
+  });
+  it('dosya yoksa (404) sentez yedeği devreye girer', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: false, arrayBuffer: async () => new ArrayBuffer(0) })));
+    const b = createBank(decAc, mk('yok.opus')); let got: AudioBuffer | null = null;
+    b.loop('k', x => { got = x; }); await flush();
+    expect(got!.numberOfChannels).toBe(1); expect(got!.sampleRate).toBe(24000);
+    vi.unstubAllGlobals();
+  }, 10000);
+});
