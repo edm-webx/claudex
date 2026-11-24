@@ -14,6 +14,8 @@ import { standAt } from './stations';
 import { clamp, fmtMoney } from './util';
 import { TABLE_PADS } from '../../content/prefabs/iskele/layout';
 
+/** tadilat karesinde ödeme başlamadan önce durma süresi (sn): yürürken kısa duraksamak para çekmez, halka dolunca ödeme başlar */
+export const TADILAT_DWELL_S = 1;
 export function padPos(K: Kernel, d: PadDef2): Vec2 {
   const L = K.rt.layout;
   if (d.kind === 'station' && d.station) return standAt(L, d.station);
@@ -63,7 +65,9 @@ export function installPads(K: Kernel): { update(dt: number): void } {
     if (!S.tut['padSeen_' + d.key]) { S.tut['padSeen_' + d.key] = 1; K.logEv('padShown', { key: d.key, price }); }
     const id = 'pad.' + d.key; ids.add(id);
     K.interactions.register({
-      id, pos: pr.pos, radius: 0.8, kind: 'pad', dwell: 0, interval: 0.05,
+      id, pos: pr.pos, radius: 0.8, kind: 'pad', interval: 0.05,
+      // 2026-11-24 sahip: tadilat karesi aşama 6+ yürüyüş yolunda, üstünden geçerken cebi boşaltıyordu. Tadilat (milyonluk) ancak durunca ödenir
+      dwell: d.kind === 'tadilat' ? TADILAT_DWELL_S : 0,
       canAct: () => rt.pads.includes(pr),
       act: (_a, ctx) => {
         if (misafirKare(K)) return 'done';

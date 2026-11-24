@@ -89,8 +89,8 @@ export const STAR_RULES: { n: number; text: string; ok: (r: StarReport) => boole
   { n: 1, text: '3 istasyon açık, 1 işçi', ok: (r: StarReport) => r.stations >= 3 && r.workers >= 1 },
   { n: 2, text: '6 istasyon açık, 3 işçi, karnede iki "Orta"', ok: (r: StarReport) => r.stations >= 6 && r.workers >= 3 && Object.values(r.grades).filter(g => g >= 3).length >= 2 },
   { n: 3, text: 'Esnaf Plaketi (bütün istasyonlar K2) ve gurme sınavı', ok: (r: StarReport) => r.plaque >= 1 && r.gurme },
-  { n: 4, text: '1. Tadilat, 8 sarı kare, karnede üç "İyi"', ok: (r: StarReport) => r.tadilat >= 1 && r.pads >= 8 && Object.values(r.grades).filter(g => g >= 4).length >= 3 },
-  { n: 5, text: '2. Tadilat, 16 sarı kare, 2. plaket, beş "İyi", biri "Pekiyi"', ok: (r: StarReport) => r.tadilat >= 2 && r.pads >= 16 && r.plaque >= 2 && Object.values(r.grades).filter(g => g >= 4).length >= 5 && Object.values(r.grades).some(g => g >= 5) }
+  { n: 4, text: '1. Tadilat, 8 sarı kare, karnede üç "İyi" (Şıklık için dekor koy)', ok: (r: StarReport) => r.tadilat >= 1 && r.pads >= 8 && Object.values(r.grades).filter(g => g >= 4).length >= 3 },
+  { n: 5, text: '2. Tadilat, 16 sarı kare, 2. plaket, beş "İyi", biri "Pekiyi" (Şıklık için dekor koy)', ok: (r: StarReport) => r.tadilat >= 2 && r.pads >= 16 && r.plaque >= 2 && Object.values(r.grades).filter(g => g >= 4).length >= 5 && Object.values(r.grades).some(g => g >= 5) }
 ];
 export const starsFor = (report: StarReport): number => { let s = 0; for (const rule of STAR_RULES) { if (rule.ok(report)) s = rule.n; else break; } return s; };
 

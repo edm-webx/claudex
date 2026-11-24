@@ -42,7 +42,7 @@ export function karsiPrefabs(): PrefabDef[] {
   // PRF-09: overlapping strips sat in one plane (y 0.07) and z-fought ("uzakta titreyip çift görünme"); each crossing layer is 4 mm up
   const pave = (id: string, w: number, d: number, color = PAVE, y = 0.07) => defs.push({ id, parts: [plane(w, d, y, color)] });
   pave('kr.pave.wide', 124, 3.2); pave('kr.pave.s', 124, 2.2);
-  pave('kr.pave.gate', 14, 3.0, PAVE, 0.074); pave('kr.pave.e1', 26.6, 3.0, PAVE, 0.074); pave('kr.pave.v1', 3.0, 19, PAVE, 0.078); pave('kr.pave.v2', 6.3, 16, PAVE, 0.078); pave('kr.pave.h2', 25.6, 6, PAVE, 0.074);
+  pave('kr.pave.gate', 14, 3.0, PAVE, 0.074); pave('kr.pave.gate2', 3.4, 3.0, PAVE, 0.078); pave('kr.pave.e1', 26.6, 3.0, PAVE, 0.074); pave('kr.pave.v1', 3.0, 19, PAVE, 0.078); pave('kr.pave.v2', 6.3, 16, PAVE, 0.078); pave('kr.pave.h2', 25.6, 6, PAVE, 0.074);
   pave('kr.plaza', 18.4, 24.4, '#c8ad82', 0.082);
   // tribün blocks: three steps with a crowd-free seat row; each step 1.5 cm narrower per side so the ends don't z-fight (2026-11-23)
   const stand = (id: string, w: number, d: number, axis: 'z' | 'x'): Def => {
@@ -115,12 +115,12 @@ export const KARSI_TREES: [number, number][] = [[-59.5, 34], [-59.5, 46], [-59.5
 export function karsiProps(): PrefabPlacement[] {
   const out: PrefabPlacement[] = [];
   out.push(P('kr-pave-n', 'kr.pave.wide', 0, 30.4), P('kr-pave-s', 'kr.pave.s', 0, 58.0));
-  out.push(P('kr-plaza', 'kr.plaza', -3.8, 44.8), P('kr-pave-gate', 'kr.pave.gate', -19.8, 44.9), P('kr-pave-e1', 'kr.pave.e1', 18.7, 42.6), P('kr-pave-v1', 'kr.pave.v1', 30.5, 47.5), P('kr-pave-v2', 'kr.pave.v2', 8.5, 49), P('kr-pave-h2', 'kr.pave.h2', 45.2, 47.2));
+  out.push(P('kr-plaza', 'kr.plaza', -3.8, 44.8), P('kr-pave-gate', 'kr.pave.gate', -19.8, 44.9), P('kr-pave-gate2', 'kr.pave.gate2', -25.1, 42.4), P('kr-pave-e1', 'kr.pave.e1', 18.7, 42.6), P('kr-pave-v1', 'kr.pave.v1', 30.5, 47.5), P('kr-pave-v2', 'kr.pave.v2', 8.5, 49), P('kr-pave-h2', 'kr.pave.h2', 45.2, 47.2));
   // halı saha: pitch + three stands + fence with a gate on the east side
   out.push(P('kr-pitch', 'kr.pitch', -39.4, 45.4));
   out.push(P('kr-stand-n', 'kr.stand.z', -39.2, 34.8, Math.PI), P('kr-stand-s', 'kr.stand.z', -39.2, 55.2), P('kr-stand-w', 'kr.tesis', -54.1, 45.4));
   // 2026-11-23: kapı boşluğu kalenin arkasındaydı (z 43.5..47.5), doğu kale ağı (z 43.8..47) onu tıkıyordu: sahaya ve tesise girilemiyordu.
-  // Boşluk ağın kuzeyinde (z 41.3..43.5), taş yolun (kr-pave-gate) kuzey kenarında.
+  // Boşluk ağın kuzeyinde (z 41.3..43.5); 2026-11-24 sahip "düzelt": taş yol kapıya kısa bir dirsekle (kr-pave-gate2) bağlanır, kafe 1'e (z <= 42.6, x >= -21) değmez.
   out.push(P('kr-fence-gn', 'kr.fence.z5', -26.7, 38.8), P('kr-fence-gs', 'kr.fence.z11', -26.7, 49.0));
   out.push(P('kr-fence-t', 'kr.fence.x12', -45.5, 36.3), P('kr-fence-t2', 'kr.fence.x12', -33.5, 36.3), P('kr-fence-b', 'kr.fence.x12', -45.5, 54.5), P('kr-fence-b2', 'kr.fence.x12', -33.5, 54.5));
   out.push(P('kr-kafe1', 'kr.kafe1', -17.5, 37.9), P('kr-kafe2', 'kr.kafe2', -17.5, 51.5), P('kr-banka', 'kr.banka', 11.7, 36.8));

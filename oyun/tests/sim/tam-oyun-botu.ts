@@ -272,7 +272,7 @@ async function kos(o: { tohum?: number; maxDk: number; hedefAsama?: number; tika
         if (o.kayit !== false) await kaydetYukle();
         if (S.stage >= hedef) break;
       }
-      if (sn % 600 === 0) o.izle?.(`${r1(S.playT / 60)} dk aşama ${S.stage} sev ${S.level} ★${S.stars} para ${Math.round(S.money)} dükkân ${Object.keys(plots(S)).join(',')} kareler ${(rt.pads as any[]).map(p => p.key + (/🔒/.test(p.sub || '') ? '🔒' : '')).join(' ')}`);
+      if (sn % 600 === 0) o.izle?.(`${r1(S.playT / 60)} dk aşama ${S.stage} sev ${S.level} ★${S.stars} servis ${S.stats?.served | 0} para ${Math.round(S.money)} dükkân ${Object.keys(plots(S)).join(',')} kareler ${(rt.pads as any[]).map(p => p.key + (/🔒/.test(p.sub || '') ? '🔒' : '')).join(' ')}`);
       if (S.money > paraTepe * 1.15) { paraTepe = S.money; ilerle(); }   // hedefe para biriktirmek de ilerlemedir (gelir büyümüyorsa tıkanma)
       if (S.playT - sonIlerleme > tikanmaS) { tikanma = teshis(); o.izle?.('TIKANMA ' + tikanma); break; }
     }

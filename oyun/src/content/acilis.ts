@@ -38,7 +38,7 @@ export const ACILIS: Record<string, AcilisKosul> = {
   k12: { asama: 6, once: 'k11' },
   k14: { asama: 7, once: 'k12' },
   k13: { asama: 7, once: 'k14' },
-  k5: { asama: 7, once: 'k11', gorev: [g('paketTeslim', 40, '40 paket siparişi teslim et'), servis(15000)] },   // lokanta: paket servis tecrübesi
+  k5: { asama: 7, once: 'k11', gorev: [g('paketTeslim', 40, '40 paket siparişi teslim et (büfeye Aşçı ve Kurye al)'), servis(15000)] },   // lokanta: paket servis tecrübesi
   k15: { asama: 8, once: 'k5' },
   k16: { asama: 8, once: 'k15' },
   k17: { asama: 9, once: 'k16' },
