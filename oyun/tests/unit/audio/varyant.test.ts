@@ -23,3 +23,16 @@ describe('müzik varyantları', () => {
   }, 60000);
   it('coklu yapılandırması geçerli', () => { const c = M.coklu!; expect(c.minSn).toBeLessThan(c.maxSn); expect(c.araMin).toBeLessThan(c.araMax); });
 });
+
+import { renderSfx } from '../../../src/engine/audio/msynth/render';
+import { SR_SFX } from '../../../src/engine/audio/msynth/dsp';
+describe('ses efekti çeşitleri', () => {
+  const S = db.sfx as unknown as Record<string, import('../../../src/engine/audio/msynth/render').SfxDef>;
+  it('adım ve kapı sesleri var, sonlu ve çeşitler birbirinden farklı', () => {
+    for (const id of ['adim_ahsap', 'adim_beton', 'adim_toprak', 'adim_fayans', 'kapi_ac', 'kapi_kapa']) {
+      const a = renderSfx(id, S[id], { sr: SR_SFX, patches: {} }), b = renderSfx(id + '#1', S[id], { sr: SR_SFX, patches: {} });
+      expect(a.length).toBeGreaterThan(100); expect(a.every(Number.isFinite)).toBe(true);
+      if (id.startsWith('adim')) { let d = 0; for (let i = 0; i < Math.min(a.length, b.length); i++) d += Math.abs(a[i] - b[i]); expect(d).toBeGreaterThan(0.5); }
+    }
+  });
+});

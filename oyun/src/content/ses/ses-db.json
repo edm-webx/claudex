@@ -1948,6 +1948,252 @@
      }
     }
    ]
+  },
+  "adim_ahsap": {
+   "pitchVar": 0.1,
+   "cooldown": 150,
+   "gain": 0.5,
+   "variants": 5,
+   "note": "Iskele tahtasi: yumusak tok adim.",
+   "layers": [
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 650
+     },
+     "a": 0.002,
+     "d": 0.07,
+     "v": 0.32
+    },
+    {
+     "k": "tone",
+     "f": 120,
+     "a": 0.001,
+     "d": 0.07,
+     "v": 0.3,
+     "f1": 80
+    },
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 1800,
+      "q": 1.2
+     },
+     "a": 0.002,
+     "d": 0.03,
+     "v": 0.06,
+     "at": 0.004
+    }
+   ]
+  },
+  "adim_beton": {
+   "pitchVar": 0.1,
+   "cooldown": 150,
+   "gain": 0.45,
+   "variants": 5,
+   "note": "Beton/kaldirim adimi.",
+   "layers": [
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 2400,
+      "q": 1.2
+     },
+     "a": 0.002,
+     "d": 0.045,
+     "v": 0.3
+    },
+    {
+     "k": "tone",
+     "f": 190,
+     "a": 0.001,
+     "d": 0.05,
+     "v": 0.18,
+     "f1": 130
+    },
+    {
+     "k": "noise",
+     "color": "white",
+     "filter": {
+      "type": "hp",
+      "f": 5000
+     },
+     "a": 0.002,
+     "d": 0.02,
+     "v": 0.05,
+     "at": 0.003
+    }
+   ]
+  },
+  "adim_toprak": {
+   "pitchVar": 0.1,
+   "cooldown": 150,
+   "gain": 0.45,
+   "variants": 5,
+   "note": "Orman yolu: toprak + kuru yaprak.",
+   "layers": [
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 900
+     },
+     "a": 0.002,
+     "d": 0.1,
+     "v": 0.32
+    },
+    {
+     "k": "noise",
+     "color": "white",
+     "filter": {
+      "type": "bp",
+      "f": 3600,
+      "q": 1.5
+     },
+     "a": 0.002,
+     "d": 0.04,
+     "v": 0.09,
+     "at": 0.01
+    },
+    {
+     "k": "tone",
+     "f": 95,
+     "a": 0.001,
+     "d": 0.08,
+     "v": 0.16,
+     "f1": 70
+    }
+   ]
+  },
+  "adim_fayans": {
+   "pitchVar": 0.08,
+   "cooldown": 150,
+   "gain": 0.4,
+   "variants": 5,
+   "note": "Ic mekan zemin: sert tok tak.",
+   "layers": [
+    {
+     "k": "tone",
+     "f": 900,
+     "a": 0.001,
+     "d": 0.035,
+     "v": 0.12,
+     "f1": 600
+    },
+    {
+     "k": "noise",
+     "color": "white",
+     "filter": {
+      "type": "bp",
+      "f": 4200,
+      "q": 2
+     },
+     "a": 0.002,
+     "d": 0.03,
+     "v": 0.2
+    },
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 500
+     },
+     "a": 0.002,
+     "d": 0.06,
+     "v": 0.15
+    }
+   ]
+  },
+  "kapi_ac": {
+   "pitchVar": 0.06,
+   "cooldown": 400,
+   "gain": 0.5,
+   "rev": 0.15,
+   "note": "Kapi acilisi: mandal tik + ahsap gicirti + zil.",
+   "layers": [
+    {
+     "k": "tone",
+     "f": 1800,
+     "a": 0.001,
+     "d": 0.02,
+     "v": 0.15
+    },
+    {
+     "k": "tone",
+     "f": 160,
+     "a": 0.001,
+     "d": 0.18,
+     "v": 0.07,
+     "f1": 200,
+     "at": 0.03,
+     "wave": "sawtooth"
+    },
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 1100,
+      "q": 2
+     },
+     "a": 0.01,
+     "d": 0.14,
+     "v": 0.12,
+     "at": 0.03
+    },
+    {
+     "k": "tone",
+     "f": 2600,
+     "a": 0.001,
+     "d": 0.4,
+     "v": 0.03,
+     "at": 0.08
+    }
+   ]
+  },
+  "kapi_kapa": {
+   "pitchVar": 0.06,
+   "cooldown": 400,
+   "gain": 0.55,
+   "rev": 0.15,
+   "note": "Kapi kapanisi: tok carpma + mandal.",
+   "layers": [
+    {
+     "k": "tone",
+     "f": 75,
+     "a": 0.001,
+     "d": 0.2,
+     "v": 0.5,
+     "f1": 50
+    },
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 600
+     },
+     "a": 0.002,
+     "d": 0.16,
+     "v": 0.3
+    },
+    {
+     "k": "tone",
+     "f": 1600,
+     "a": 0.001,
+     "d": 0.02,
+     "v": 0.1,
+     "at": 0.05
+    }
+   ]
   }
  },
  "loops": {

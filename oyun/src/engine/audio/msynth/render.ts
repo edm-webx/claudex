@@ -13,7 +13,7 @@ export interface PluckLayer extends LayerBase { k: 'pluck'; f: number | string; 
 export interface OmniLayer extends LayerBase { k: 'omni'; patch: string | OmniPatch; note?: number | string }
 export interface BurstLayer { k: 'burst'; at?: number; n: number; every: [number, number]; layer: Layer; fJit?: number; vJit?: number }
 export type Layer = ToneLayer | NoiseLayer | PluckLayer | OmniLayer | BurstLayer;
-export interface SfxDef { layers: Layer[]; gain?: number; rev?: number; echo?: [number, number, number]; pitchVar?: number; cooldown?: number; len?: number; note?: string }
+export interface SfxDef { layers: Layer[]; gain?: number; rev?: number; echo?: [number, number, number]; pitchVar?: number; /** ses cesidi sayisi (farkli tohum); varsayilan 4 */ variants?: number; cooldown?: number; len?: number; note?: string }
 export interface LoopDef { /** gerçek kayıt: public/ses altında Opus/OGG dosya adı; yüklenemezse tarif (sentez) yedek çalışır */ file?: string; dur: number; layers: Layer[]; gain?: number; rev?: number; xf?: number; events?: { every: [number, number]; layer: Layer; vJit?: number }[]; note?: string }
 
 export interface RenderCtx { sr: number; patches: Record<string, OmniPatch> }

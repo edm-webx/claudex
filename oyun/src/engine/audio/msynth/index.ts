@@ -19,7 +19,9 @@ export interface Bank {
   readonly db: SesDb;
   hasSfx(id: string): boolean;
   /** Rendered buffer for a one-shot (renders now if needed); null if unknown. */
-  sfx(id: string): AudioBuffer | null;
+  sfx(id: string, variant?: number): AudioBuffer | null;
+  /** Kac ses cesidi var (seed farkli render): varsayilan 4. */
+  variantCount(id: string): number;
   /** Per-sound cooldown gate; returns false if `id` played too recently. */
   gate(id: string, nowMs: number): boolean;
   pitchVar(id: string): number;
@@ -110,14 +112,16 @@ export function createBank(ac: BaseAudioContext, db: SesDb, budget = STREAM_BUDG
   const bank: Bank = {
     db,
     hasSfx: id => !!db.sfx[id],
-    sfx(id) {
-      const hit = sfxC.get(id); if (hit) return hit;
+    sfx(id, variant = 0) {
+      const key = variant ? id + '#' + variant : id;
+      const hit = sfxC.get(key); if (hit) return hit;
       const def = db.sfx[id]; if (!def) return null;
       let b: AudioBuffer | null = null;
-      try { b = toBuf(renderSfx(id, def, rc(SR_SFX)), SR_SFX); } catch { b = null; }
-      if (b) sfxC.set(id, b);
+      try { b = toBuf(renderSfx(key, def, rc(SR_SFX)), SR_SFX); } catch { b = null; }
+      if (b) sfxC.set(key, b);
       return b;
     },
+    variantCount: id => Math.max(1, db.sfx[id]?.variants ?? 4),
     gate(id, now) {
       const cd = db.sfx[id]?.cooldown ?? 30, l = last.get(id) ?? -1e9;
       if (now - l < cd) return false;
