@@ -22,7 +22,7 @@ export function tabelaSave(S: { zones: Record<string, Record<string, unknown>> }
 /** extra walk-in share for the hour (customers.ts multiplies arrivals by 1 + this) */
 export function tabelaFx(S: { zones: Record<string, Record<string, unknown>>; day?: number }, hour: number): number {
   const t = TABELA[tabelaSave(S).tier] || TABELA[0];
-  return t.musteri + (hour >= 19 || hour < 4 ? t.gece : 0) + hijyenTalep(S);   // BUF-16: müfettiş sonrası geçici talep
+  return t.musteri + (hour % 24 >= 19 || hour % 24 < 5 ? t.gece : 0) + hijyenTalep(S);   // BUF-16: müfettiş sonrası geçici talep
 }
 export function installTabela(K: Kernel) {
   const S = K.state;

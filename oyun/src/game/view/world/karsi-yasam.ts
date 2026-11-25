@@ -248,7 +248,7 @@ export function createKarsiYasam(d: YasamDeps): YasamView {
     update(dt) {
       const root = d.root(); if (!root) return;
       if (holder.parent !== root) root.add(holder);
-      const h = d.hero(), near = h.z > 8, hour = d.hour(), night = hour >= 19.5 || hour < 6.2;
+      const h = d.hero(), near = h.z > 8, hour = d.hour(), night = (hour >= 19.5 && hour < 30.2) || hour < 6.2;
       holder.visible = near; if (!near) return;
       if (!built) build();
       // 2026-11-23: içerideyken o dükkânın cephe süsü (tente, lamba kolları, ampul dizisi) gizlenir; kabuk gibi. Yoksa tente odanın üstünde havada asılı kalıyordu
@@ -256,7 +256,7 @@ export function createKarsiYasam(d: YasamDeps): YasamView {
       dt = Math.min(dt, 0.1); tt += dt;
       (glowPts.material as T.PointsMaterial).opacity = night ? 0.85 : 0;
       // morg
-      { if (night && (hour >= 22 || hour < 5.5)) { morgLight.visible = Math.sin(tt * 23) * Math.sin(tt * 7.3) > -0.15; (morgLight.material as T.MeshLambertMaterial).color.set(Math.random() < 0.08 ? '#ffffff' : '#ff2a1a');
+      { if (night && (hour % 24 >= 22 || hour % 24 < 5.5)) { morgLight.visible = Math.sin(tt * 23) * Math.sin(tt * 7.3) > -0.15; (morgLight.material as T.MeshLambertMaterial).color.set(Math.random() < 0.08 ? '#ffffff' : '#ff2a1a');
           morgT -= dt; if (morgT <= 0 && Math.hypot(h.x - MORG.at.x, h.z - MORG.at.z) < MORG.r) { morgT = rnd(MORG.aralik[0], MORG.aralik[1]); morgShadow.visible = true; const ici = Math.abs(h.x - MORG.at.x) < 1.65 && Math.abs(h.z - MORG.at.z) < 1.6; d.sfx(morgCanta.next() ?? 'moan', ici ? { x: h.x + 1.5, z: h.z } : MORG.at); setTimeout(() => { morgShadow.visible = false; }, 1400); }
           if (morgShadow.visible) morgShadow.position.z = 55.5 + Math.sin(tt * 3) * 0.5; } else { morgLight.visible = false; morgShadow.visible = false; } }
       if ((isciT -= dt) <= 0) { isciT = 1.0; syncIsci(); }

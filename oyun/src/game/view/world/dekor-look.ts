@@ -11,6 +11,7 @@ import * as T from 'three';
 import { dekorEvApi } from '../../sim/dekor-ev';
 import { seasonFor, SIGN_SLOGANS, SIGN_TEXT_COLORS, SIGN_BG_COLORS } from '../../../content/dekor-katalog';
 import type { Rules } from '../../sim/state';
+import { oyunTakvim } from '../../sim/hava';
 
 export interface DekorLookDeps {
   root: () => T.Object3D | null; rules: () => Rules | null; camera: () => T.Camera | null; hour: () => number;
@@ -204,14 +205,14 @@ export function createDekorLook(deps: DekorLookDeps): DekorLookView {
         const D = a.data(), E = a.ev();
         const ka = E.areas.join(',') + '|' + top.toFixed(2);
         if (ka !== keyAttic) { keyAttic = ka; buildAttic(E.areas); }
-        const se = D.season ? seasonFor(String((r.state as { calendar?: string }).calendar || '')) : null;
+        const se = D.season ? seasonFor(oyunTakvim(r.state as never)) : null;
         const ks = se ? se.id : '-';
         if (ks !== keySeason) { keySeason = ks; buildSeason(se ? se.id : null, se ? se.colors : []); }
         const ksg = JSON.stringify(D.sign);
         if (ksg !== keySign) { keySign = ksg; buildSign(D.sign); }
       }
       // night window glow + smoke + bulbs twinkle
-      const h = deps.hour(), night = h >= 19 || h < 6;
+      const h = deps.hour(), night = (h >= 19 && h < 30) || h < 6;
       if (winMesh) (winMesh.material as T.MeshBasicMaterial).color.set(a.evOpen ? '#ffe27a' : night ? '#ffc96a' : '#8fd0f2');
       smoke.forEach((s, i) => { const k = (t * 0.4 + i / 3) % 1; s.position.y = 1.55 + k * 0.7; s.scale.setScalar(0.6 + k); (s.material as T.MeshBasicMaterial).opacity = 0.7 * (1 - k); });
       seasonBulbs.forEach((b, i) => { b.visible = !night || Math.sin(t * 3 + i) > -0.6; });

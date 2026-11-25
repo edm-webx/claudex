@@ -23,8 +23,8 @@ describe('sokak rolleri (DNY-02)', () => {
         const R = SOKAK_ROLLER[d.rol[i] - 1]; seen.add(R.id);
         const h = r.clock.hour;
         // saati bitince rolünü bırakır ve en yakın kapıya yürür (yavaş amca uzun iskelede 4 oyun saati yürüyebilir: 1 oyun saati 25 sn)
-        if (!R.saat.some(([a, b]) => h >= a && h < b + 0.2) && !exit.has(i)) outside.push(R.id + ' rolde @' + h.toFixed(1));
-        if (!R.saat.some(([a, b]) => h >= a && h < b + 4.5)) outside.push(R.id + ' hâlâ sokakta @' + h.toFixed(1));
+        if (!R.saat.some(([a, b]) => (h >= a && h < b + 0.2) || (h >= 24 && h - 24 >= a && h - 24 < b + 0.2)) && !exit.has(i)) outside.push(R.id + ' rolde @' + h.toFixed(1));
+        if (!R.saat.some(([a, b]) => (h >= a && h < b + 4.5) || (h >= 24 && h - 24 >= a && h - 24 < b + 4.5) || (b === 24 && h < 28.5))) outside.push(R.id + ' hâlâ sokakta @' + h.toFixed(1));
         if (R.id === 'kosucu') { jogMax = Math.max(jogMax, SP[i]); expect(GAIT_ORDER[G[i]]).toBe('run'); }
         if (R.id === 'kopekli') { const o = i * 4; expect(Number.isFinite(d.kopek[o])).toBe(true); dogMax = Math.max(dogMax, Math.hypot(d.kopek[o] - X[i], d.kopek[o + 1] - Z[i])); }
         if (R.id === 'muzisyen') expect(r.clock.hour).toBeGreaterThanOrEqual(11);

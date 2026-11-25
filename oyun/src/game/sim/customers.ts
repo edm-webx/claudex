@@ -19,7 +19,7 @@ import { isProduct } from '../../content/yemek-menu';
 import { clamp, dist2d, hourOf, inHours, near2, pointBack } from './util';
 import { setChance, setById } from './sets';
 import { SETS } from '../../content/products';
-import { havaOf } from './hava';
+import { havaOf, oyunTakvim } from './hava';
 import { STAGE_ARRIVAL } from '../../content/ekonomi2';
 import { yatirimFx } from './yatirim';
 import { tabelaFx } from './tabela';
@@ -46,7 +46,7 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
     for (const k of ['spawn.0', 'spawn.1']) if (a[k]) l.push({ x: a[k].pos.x, z: a[k].pos.z });
     return l.length ? l : [{ x: -60, z: 8.8 }, { x: 60, z: 8.8 }];
   })();
-  const month = () => Number(S.calendar.slice(5, 7)) || 6;
+  const month = () => Number(oyunTakvim(S).slice(5, 7)) || 6;   // ZMN-02: game calendar, not the wall clock
   const spawnPoint = (): Vec2 => spawns[Math.floor(K.R.main.next() * spawns.length)];
   const nearestSpawn = (p: Vec2): Vec2 => { let b = spawns[0], bd = 1e9; for (const s of spawns) { const d = dist2d(s, p); if (d < bd) { bd = d; b = s; } } return b; };
   const farthestSpawn = (p: Vec2): Vec2 => { let b = spawns[0], bd = -1; for (const s of spawns) { const d = dist2d(s, p); if (d > bd) { bd = d; b = s; } } return b; };
@@ -91,7 +91,9 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
     const open = openProducts().length, h = K.hour();
     // 2026-10-24 ("aşırı yavaş"): a few more walk-ins from the start (was 3.6 + 1.25 per open station)
     let k = 4.3 + 1.45 * (open - 1) + (STAGE_ARRIVAL[S.stage - 1] ?? 2.2 * (S.stage - 1)) + 0.45 * K.hiredCount() + 0.35 * K.tablesBuilt();
-    k *= h < 10 ? 0.85 : h < 12 ? 1.0 : h < 14 ? 1.25 : h < 18 ? 1.0 : h < 21 ? 1.15 : h < 24 ? 0.8 : h < 25 ? 0.45 : h < 26 ? 0.22 : 0.08;   // after midnight the pier empties
+    // ZMN-01: the day is 24 h (08 -> 08) in the same 480 s, so daytime got 20 % fewer seconds; the night keeps a living pier (night owls,
+    // taxi drivers, fishermen, early workers) and the whole-day sum of this curve x seconds equals the old 08-03 day within 1 % (economy unchanged)
+    k *= h < 10 ? 0.85 : h < 12 ? 1.0 : h < 14 ? 1.25 : h < 18 ? 1.0 : h < 21 ? 1.15 : h < 24 ? 0.8 : h < 25 ? 0.7 : h < 26 ? 0.55 : h < 28 ? 0.45 : h < 29 ? 0.45 : h < 30 ? 0.65 : h < 31 ? 0.9 : 1.0;
     k *= 1 + K.siklikBonus() + yatirimFx(S, 'reklam') + tabelaFx(S as never, h) + yetenekFxOf(rt).arrival;
     // BUF-24: hafta sonu çarpanı x maç günü dalgaları (öncesi / sonrası); birlikte KALABALIK_UST'u geçmez (açık bilet ve sabır payı korunur)
     let crowd = 1;

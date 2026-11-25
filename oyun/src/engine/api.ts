@@ -56,17 +56,17 @@ export interface Bus<E extends object> {
 export type DayPhase = 'morning' | 'noon' | 'sunset' | 'night';
 export type Season = 'ilkbahar' | 'yaz' | 'sonbahar' | 'kis';
 
-/** Game clock: 4-min day, 08:00..24:00, 1 game hour = 15 s. Pure, stepped by sim. */
+/** Game clock: 8-min day, 08:00..32:00 (08:00 next morning), 1 game hour = 20 s. Pure, stepped by sim. */
 export interface GameClock {
   readonly day: number;        // 1-based
   readonly dayT: number;       // seconds into the current day, 0..GAME_DAY_S
-  readonly hour: number;       // 8..27 (float; 24+ is after midnight)
+  readonly hour: number;       // 8..32 (float; 24+ is after midnight, 32 = 08:00 next morning)
   readonly phase: DayPhase;
   readonly season: Season;     // from the real calendar, passed in at session start
 }
 export const GAME_DAY_S = 480; // survey: ~8 min game day
 export const DAY_START_H = 8;
-export const DAY_END_H = 27;   // survey 2026-10-24: the day runs until 03:00 (night is seen), then the gün sonu card
+export const DAY_END_H = 32;   // ZMN-01 2026-11-25 owner "gece saatlerini de yaşayalım": a full 24 h day, 08:00 -> 08:00 next morning (night and dawn are played), then the gün sonu card
 
 export interface Logger { info(...a: unknown[]): void; warn(...a: unknown[]): void; error(...a: unknown[]): void; }
 

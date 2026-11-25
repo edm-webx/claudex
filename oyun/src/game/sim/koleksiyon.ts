@@ -29,6 +29,7 @@ import {
   FIRIN_LEVEL, FIRIN_SHELF, FIRIN_POOL, FIRIN_KIND_NAME, FIRIN_LINES, GOLD_SOURCES, GOLD_RULES, SEASON_NAME, STICKER_LINES, CAST_LINES,
   type CollPage, type CollItem, type PageReward, type Season, type FirinItem,
 } from '../../content/koleksiyon';
+import { oyunTakvim } from './hava';
 
 interface KolSave {
   st: string[]; shiny: string[]; dupes: number; packs: number; salesN: number; regN: number;
@@ -80,8 +81,8 @@ export function installKoleksiyon(K: Kernel): KolApi {
     if (m.adDay !== S.day) { m.adDay = S.day; m.adUsed = 0; }
     return m;
   }
-  const season = () => seasonOf(K.state.calendar, K.state.day);
-  const isNight = () => K.hour() >= 21;
+  const season = () => seasonOf(oyunTakvim(K.state), K.state.day);   // ZMN-02: game calendar
+  const isNight = () => K.hour() >= 21 && K.hour() < 29.5;
   const firinOpen = () => K.state.level >= FIRIN_LEVEL;
 
   function gainGold(n: number): void {

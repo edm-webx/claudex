@@ -166,7 +166,7 @@ export function createDisariLook(d: DisariViewDeps): DisariLookView {
       if (ir && pierParent !== ir) { ir.add(pier); pierParent = ir; }
       const r = d.rules(); const api = disariApi(r);
       const v: DisariView | null = api ? api.view() : null;
-      const h = d.hero(), hr = d.hour(), night = hr >= 19 || hr < 6;
+      const h = d.hero(), hr = d.hour(), night = (hr >= 19 && hr < 30) || hr < 6;   // ZMN-01: 30 = 06:00 next morning
       // wheel + film
       const sahilLive = live('sahil');
       lunaRoot.visible = sahilLive;

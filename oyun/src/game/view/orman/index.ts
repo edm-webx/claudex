@@ -102,7 +102,7 @@ export function createOrmanView(d: OrmanViewDeps): OrmanView {
         if (d.setSolid && (solidT -= dt) <= 0) { solidT = 0.1; d.setSolid([{ x0: x - 5.3, x1: x + 5.3, z0: z - 1.3, z1: z + 1.3 }]); solidOn = true; }
         const moved = x - busX; busX = x;
         bus.object.visible = true; bus.object.position.set(x, 0, z);
-        bus.set({ doors, lights: h >= 19 || h < 7 ? 1 : 0.2, moved });
+        bus.set({ doors, lights: h % 24 >= 19 || h % 24 < 7 ? 1 : 0.2, moved });
       } else { bus.object.visible = false; busKey = ''; if (solidOn && d.setSolid) { d.setSolid([]); solidOn = false; } }
       uzak.update(p.x, p.z);
       { const sky = d.scene.getObjectByName('sky'), cm = d.camera?.();

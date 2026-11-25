@@ -29,6 +29,7 @@ import { defaultState, AGENTS, AGENT_CAP, AGENT_SCHEMA, type GameState } from '.
 import type { SimEvents, EventName } from './events';
 import { createRules, type RulesFull } from './sim/rules';
 import { installAgents } from './sim/agents';
+import { oyunTakvim } from './sim/hava';
 
 export const SIM_HZ = 30;
 
@@ -68,7 +69,7 @@ export interface SimFull extends Sim {
 }
 
 export function phaseOf(hour: number): DayPhase {
-  return hour < 12 ? 'morning' : hour < 17 ? 'noon' : hour < 20 ? 'sunset' : 'night';
+  return hour < 12 ? 'morning' : hour < 17 ? 'noon' : hour < 20 ? 'sunset' : hour < 30 ? 'night' : 'morning';
 }
 
 /** Open-floor nav used when C's nav is missing (no blocking, straight paths). */
@@ -131,13 +132,13 @@ export function createSim(o: SimOpts, extra: SimExtra = {}): SimFull {
   if (o.startClock?.day) state.day = o.startClock.day;
   let timeFrozen = false;
   if (o.startClock?.hour !== undefined) { state.dayT = (o.startClock.hour - DAY_START_H) * (GAME_DAY_S / (DAY_END_H - DAY_START_H)); timeFrozen = true; }
-  const season: Season = o.season ?? seasonOf(state.calendar);
+  const season = (): Season => o.season ?? seasonOf(oyunTakvim(state));   // ZMN-02: follows the game calendar
   const clock: GameClock = {
     get day() { return state.day; },
     get dayT() { return state.dayT; },
     get hour() { return DAY_START_H + (DAY_END_H - DAY_START_H) * Math.min(1, Math.max(0, state.dayT / GAME_DAY_S)); },
     get phase() { return phaseOf(clock.hour); },
-    season,
+    get season() { return season(); },
   };
 
   const zp = o.content.zones?.iskele?.playerStart;

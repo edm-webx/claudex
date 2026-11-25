@@ -38,6 +38,17 @@ describe('görsel saat: gün sonu ve şafak (GRS-02)', () => {
     expect(g.gecis).toBe(false); expect(g.saat).toBe(8);
   });
 
+  it('ZMN-01: 24 saatlik gün 32de (08:00) biter, kart sonrası hiç koşturma yok', () => {
+    const g = createGorselSaat(31.9, 1);
+    g.update(31.99, 1, false, DT); g.update(8, 2, true, DT);
+    let mx = 0, prev = 31.99;
+    for (let i = 0; i < 400 && (g.gecis || i === 0); i++) { const v = g.update(8 + i * DT / 20, 2, false, DT); if (g.gecis) { mx = Math.max(mx, v - prev); prev = v; } }
+    expect(mx).toBeLessThan(0.002);   // at most a hair per frame (normal play: 1/60 s / 20 s per hour = 0.0008 h)
+    expect(g.gecis).toBe(false);
+    const a = todAt(31.99), b = todAt(8);
+    expect(Math.abs(a.top.r - b.top.r) + Math.abs(a.top.g - b.top.g) + Math.abs(a.top.b - b.top.b)).toBeLessThan(0.01);
+  });
+
   it('aynı gün içinde saat atlaması şafak başlatmaz', () => {
     const g = createGorselSaat(12, 2);
     expect(g.update(20, 2, false, DT)).toBe(20);

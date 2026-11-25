@@ -15,8 +15,9 @@ export const SOKAK_HAVUZ = 48;
 /** Kahramandan bu kadar uzaktaki vatandaş çizilmez ve 3 adımda bir yürütülür (DNY-20); arada gecikme payı. */
 export const SOKAK_LOD = { yakin: 15, gizle: 52, goster: 46, seyrek: 3 };
 
-/** Saat (8..27, 24+ gece yarısından sonra) -> sokakta olan oran (0..1). Aradaki saatler doğrusal. */
-export const SOKAK_YOGUNLUK: [number, number][] = [[8, 0.55], [9, 0.8], [12, 1], [14, 0.9], [17, 1], [20, 0.85], [22, 0.6], [24, 0.32], [26, 0.15], [27, 0.12]];
+/** Saat (8..32, 24+ gece yarısından sonra; ZMN-01 gün 24 saat) -> sokakta olan oran (0..1). Aradaki saatler doğrusal.
+ *  Gece sokak boşalmaz: 03-05 arası en sakin (bekçi, taksici, balıkçı), 05'ten sonra erkenciler çıkar, 08'de sabah kalabalığı. */
+export const SOKAK_YOGUNLUK: [number, number][] = [[8, 0.55], [9, 0.8], [12, 1], [14, 0.9], [17, 1], [20, 0.85], [22, 0.6], [24, 0.36], [26, 0.22], [28, 0.18], [29.5, 0.28], [30.5, 0.42], [32, 0.55]];
 
 export type SokakHedef = 'gez' | 'otur' | 'bekle' | 'kapi' | 'karsi' | 'korkuluk' | 'siginak' | 'golge';
 /** Saat bandı -> hedef ağırlıkları (DNY-01 programı). */
@@ -24,7 +25,8 @@ export const SOKAK_PROGRAM: { saat: [number, number]; w: Partial<Record<SokakHed
   { saat: [8, 11], w: { kapi: 0.2, karsi: 0.22, gez: 0.26, otur: 0.1, bekle: 0.14, korkuluk: 0.08 } },     // sabah: işe, okula, vapura
   { saat: [11, 15], w: { otur: 0.3, gez: 0.28, karsi: 0.16, kapi: 0.1, korkuluk: 0.1, bekle: 0.06 } },     // öğlen: oturan, yemek molası
   { saat: [15, 21], w: { gez: 0.34, otur: 0.2, korkuluk: 0.16, karsi: 0.16, kapi: 0.09, bekle: 0.05 } },  // akşam gezmesi
-  { saat: [21, 28], w: { kapi: 0.3, gez: 0.32, korkuluk: 0.16, otur: 0.1, karsi: 0.12 } },                // gece seyrelir
+  { saat: [21, 29], w: { kapi: 0.3, gez: 0.32, korkuluk: 0.16, otur: 0.1, karsi: 0.12 } },                // gece seyrelir
+  { saat: [29, 32], w: { kapi: 0.18, karsi: 0.22, gez: 0.26, bekle: 0.16, korkuluk: 0.12, otur: 0.06 } },  // şafak: erkenciler, işe gidenler
 ];
 
 export type Yaka = 'i' | 'k';
@@ -84,17 +86,17 @@ export type SokakRolId = 'kosucu' | 'balikci' | 'bekci' | 'muzisyen' | 'kopekli'
 export interface SokakRol {
   id: SokakRolId; ad: string;
   /** citizens tip kimliği (görünüş) */ tip: string;
-  /** saat aralıkları (8..27) */ saat: [number, number][];
+  /** saat aralıkları (8..32; 0..8 de yazılabilir, gece yarısından sonra eşleşir) */ saat: [number, number][];
   /** aynı anda en çok */ adet: number;
   /** tur rotası (sırayla, döngü) ya da duraklar (rastgele) */ rota?: SokakNokta[]; durak?: SokakNokta[];
   /** durakta kalma süresi sn */ kal?: [number, number];
 }
 export const SOKAK_ROLLER: SokakRol[] = [
-  { id: 'kosucu', ad: 'Koşucu', tip: 'universiteli', saat: [[8, 10.5], [18, 21]], adet: 2,
+  { id: 'kosucu', ad: 'Koşucu', tip: 'universiteli', saat: [[8, 10.5], [18, 21], [6, 8]], adet: 2,
     rota: [N(-46, 9.5), N(18, 9.5), N(UG.x, UG.zA - 0.7), N(UG.x, UG.zD + 0.7), N(40, 30.2), N(-46, 30.2), N(UG.x - 0.01, UG.zD + 0.7), N(UG.x - 0.01, UG.zA - 0.7)] },
-  { id: 'balikci', ad: 'Balıkçı', tip: 'oltaci', saat: [[8, 20]], adet: 2, kal: [45, 110],
+  { id: 'balikci', ad: 'Balıkçı', tip: 'oltaci', saat: [[8, 20], [4.5, 8]], adet: 2, kal: [45, 110],
     durak: [N(18.5, 4.6, Math.PI), N(-22.7, -13, -Math.PI / 2), N(-22.7, -2, -Math.PI / 2), N(-16, -17.35, Math.PI), N(14, -17.35, Math.PI), N(22.05, -16.2, Math.PI / 2)] },
-  { id: 'bekci', ad: 'Gece bekçisi', tip: 'taksici', saat: [[22, 27]], adet: 1, kal: [3, 6],
+  { id: 'bekci', ad: 'Gece bekçisi', tip: 'taksici', saat: [[22, 24], [0, 6]], adet: 1, kal: [3, 6],
     durak: [N(-40, 9.5), N(-12.6, 38.6), N(11.7, 42.4), N(26.0, 46.4), N(8.5, 46), N(40, 30.6), N(-30, 9.5), N(30, 9.5), N(46.95, 48.8)] },
   { id: 'muzisyen', ad: 'Sokak müzisyeni', tip: 'muzisyen', saat: [[11, 23]], adet: 1, kal: [60, 140],
     durak: [N(-11.2, 44.2, Math.PI / 2), N(14.5, 7.6, 0), N(-36, 7.6, 0)] },

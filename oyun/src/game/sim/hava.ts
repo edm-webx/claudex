@@ -2,9 +2,11 @@
  * Hava, mevsimler ve etkinlikler (survey etkinlik-1..8, yasam-5, motor-7, icecek-6, yiyecek-6, iskele-8, genel-4).
  * Pure sim module: no three, no DOM, no wall clock, seeded rng only.
  *
- * - In-game calendar: one game day = one calendar day. It is anchored to GameState.calendar (the real date the host
- *   writes at session start); when the real date runs ahead of the in-game date the calendar jumps forward, so
- *   events follow real life for a slow player and come faster for a busy one. Without a calendar: 1 June 2026.
+ * - In-game calendar (ZMN-02, 2026-11-25 owner: "gerçek ay hafta döngüsünden farklı, daha hızlı ama hızlı hissettirmesin"): one game day
+ *   moves the date one WEEK (TAKVIM_ADIM days) while the weekday moves one day, so a month is ~4 game days, a season ~13 (~1.7 h of play),
+ *   a year ~52. The real date (GameState.calendar) only picks where a new save starts; after that the calendar never follows the wall
+ *   clock. Season edges blend: the last and first quarter of a season mix in the neighbour's weather weights, so the first snow comes
+ *   late in autumn as a rare day, not as a switch. Without a calendar: 1 June 2026.
  * - Weather: one roll per game day (season weights), as hour windows ("segments"); a sağanak is followed by a
  *   gökkuşağı. Effects: arrival multiplier, hot/cold demand shift (season + weather), wet tables (customers sit only
  *   under umbrellas), sunny umbrellas (longer stay, bigger tips), fırtına skips one ferry wave, lodos makes an
@@ -39,11 +41,19 @@ interface HavaSave {
   lastEv: string;
   mkt: { day: number; sold: number; earned: number; open: boolean; closed: boolean };
   caught: number; skipDay: number;
+  /** ZMN-02 calendar version: 2 = one game day is one week */ tv?: number;
 }
+/** ZMN-02: calendar days per game day */
+export const TAKVIM_ADIM = 7;
+/** ZMN-02: a weather window fades in and out over this many game hours (was 0.4 h = 10 s, now ~24 s), never more than a third of it */
+export const HAVA_RAMPA = 1.2;
+const rampOf = (s: Seg, hr: number) => { const r = Math.min(HAVA_RAMPA, (s.b - s.a) / 3); return smooth(Math.min((hr - s.a) / r, (s.b - hr) / r)); };
 export interface YMD { y: number; m: number; d: number }
 export interface FlyUmbrella { phase: 'fly' | 'down'; x0: number; z0: number; x: number; z: number; t: number; color: number }
 export interface HavaView {
   kind: HavaKind; name: string; icon: string;
+  /** ZMN-02 chip lines: "Kasım 2. hafta", "Salı" */ ayText: string; gunText: string;
+  /** 0..1 cloud build-up: rises in the hour before a grey window and follows it (clouds come before the rain, not with it) */ bulut: number;
   /** 0..1 ramp in/out of the current weather window */ k: number;
   season: HavaSeason; date: YMD; dateText: string;
   market: { today: boolean; open: boolean };
@@ -81,6 +91,37 @@ const md = (m: number, d: number) => m * 100 + d;
 const inRange = (v: YMD, from: [number, number], to: [number, number]) => { const x = md(v.m, v.d), a = md(from[0], from[1]), b = md(to[0], to[1]); return a <= b ? x >= a && x <= b : x >= a || x <= b; };
 const smooth = (x: number) => { const t = x < 0 ? 0 : x > 1 ? 1 : x; return t * t * (3 - 2 * t); };
 
+/** ZMN-02: weather windows end before the next 08:00 */
+const HAVA_SON = 31.8;
+/** ZMN-02 game calendar, pure (also read by customers / yiyecek / koleksiyon / dekor so every season agrees). null before the first anchor. */
+export function oyunTarihi(st: { zones?: unknown; day?: number; calendar?: string }): YMD | null {
+  const h = (st.zones as Record<string, Partial<HavaSave>> | undefined)?.[HAVA_KEY];
+  const a = parseYMD(h?.anchorDate || '') || parseYMD(st.calendar || '');
+  if (!a) return null;
+  const day = Number(st.day) || 1, ad = h?.anchorDate ? Number(h.anchorDay) || day : day;
+  const step = h?.tv === 2 || !h?.anchorDate ? TAKVIM_ADIM : 1;
+  return civilFromDays(daysFromCivil(a.y, a.m, a.d) + (day - ad) * step);
+}
+/** game weekday 0 = Pazar: moves one day per game day (weekends and the Saturday Gece Pazarı keep their rhythm) */
+export function oyunHaftaGunu(st: { zones?: unknown; day?: number; calendar?: string }): number {
+  const h = (st.zones as Record<string, Partial<HavaSave>> | undefined)?.[HAVA_KEY];
+  const a = parseYMD(h?.anchorDate || '') || parseYMD(st.calendar || '') || { y: 2026, m: 6, d: 1 };
+  const day = Number(st.day) || 1, ad = h?.anchorDate ? Number(h.anchorDay) || day : day;
+  return (((weekday(a) + day - ad) % 7) + 7) % 7;
+}
+/** game calendar as 'YYYY-MM-DD' (falls back to the real date string) */
+export const oyunTakvim = (st: { zones?: unknown; day?: number; calendar?: string }): string => { const v = oyunTarihi(st); return v ? ymdStr(v) : String(st.calendar || ''); };
+/** weather weights with the neighbour season blended in over the edge quarters (max 50/50 right at the edge) */
+const SIRA: HavaSeason[] = ['ilkbahar', 'yaz', 'sonbahar', 'kis'];
+export function havaAgirlik(v: YMD): Partial<Record<HavaKind, number>> {
+  const ss = seasonOfMonth(v.m), i = SIRA.indexOf(ss);
+  const t = ((((v.m - 3) % 3) + 3) % 3 + (v.d - 1) / 31) / 3;   // 0..1 through the season
+  const nb = t > 0.75 ? SIRA[(i + 1) % 4] : t < 0.25 ? SIRA[(i + 3) % 4] : null, x = nb ? (t > 0.75 ? (t - 0.75) * 2 : (0.25 - t) * 2) : 0;
+  const a = HAVA_WEIGHTS[ss], b = nb ? HAVA_WEIGHTS[nb] : {}, o: Partial<Record<HavaKind, number>> = {};
+  for (const k of new Set([...Object.keys(a), ...Object.keys(b)]) as Set<HavaKind>) o[k] = (a[k] || 0) * (1 - x) + (b[k] || 0) * x;
+  return o;
+}
+
 export function installHava(K: Kernel): HavaApi {
   const rng = K.rng('sim.hava');
   const S = () => K.state, rt = K.rt;
@@ -97,25 +138,26 @@ export function installHava(K: Kernel): HavaApi {
     h.lastEv = typeof h.lastEv === 'string' ? h.lastEv : '';
     if (!h.mkt || typeof h.mkt !== 'object') h.mkt = { day: 0, sold: 0, earned: 0, open: false, closed: false };
     h.caught = Number(h.caught) || 0; h.skipDay = Number(h.skipDay) || 0;
+    // ZMN-02 migration: an old save keeps today's date and weekday, from here on a game day is a week
+    if (h.tv !== 2) {
+      const a = parseYMD(h.anchorDate);
+      if (a) { const cur = civilFromDays(daysFromCivil(a.y, a.m, a.d) + (st.day - (h.anchorDay || st.day))); h.anchorDate = ymdStr(cur); h.anchorDay = st.day; }
+      h.tv = 2;
+    }
     return h;
   };
 
   // ───────── calendar ─────────
   function syncAnchor(): void {
     const h = H(), st = S();
+    if (h.anchorDate) return;   // ZMN-02: the real date only places a new save; the game calendar runs on its own after that
     const real = parseYMD(st.calendar);
-    if (!h.anchorDate) { h.anchorDate = real ? ymdStr(real) : '2026-06-01'; h.anchorDay = st.day; return; }
-    if (real) {
-      const cur = date(), rd = daysFromCivil(real.y, real.m, real.d), cd = daysFromCivil(cur.y, cur.m, cur.d);
-      if (rd > cd) { h.anchorDate = ymdStr(real); h.anchorDay = st.day; }
-    }
+    h.anchorDate = real ? ymdStr(real) : '2026-06-01'; h.anchorDay = st.day;
   }
-  function date(): YMD {
-    const h = H(), a = parseYMD(h.anchorDate) || { y: 2026, m: 6, d: 1 };
-    return civilFromDays(daysFromCivil(a.y, a.m, a.d) + (S().day - (h.anchorDay || S().day)));
-  }
+  const date = (): YMD => oyunTarihi(S()) || { y: 2026, m: 6, d: 1 };
+  const wday = (): number => oyunHaftaGunu(S());
   const season = () => seasonOfMonth(date().m);
-  const marketDay = () => weekday(date()) === MARKET.weekday;
+  const marketDay = () => wday() === MARKET.weekday;
   const priceX = () => HAVA_PRICE_X * Math.sqrt(Math.max(1, K.venueMult()));
 
   // ───────── weather ─────────
@@ -125,26 +167,38 @@ export function installHava(K: Kernel): HavaApi {
     // fixed per seed + day, so a reload rolls the same day
     const r = { v: hashStr(st.seed + ':' + st.day) };
     const rnd = () => { r.v = (Math.imul(r.v ^ (r.v >>> 15), 2246822507) + 0x9e3779b9) >>> 0; return (r.v >>> 8) / 16777216; };
-    const ss = season(), w = HAVA_WEIGHTS[ss];
+    const w = havaAgirlik(date());
     if (st.day <= 2) return; // first days stay sunny (tutorial)
     let tot = 0; for (const k in w) tot += w[k as HavaKind] || 0;
     let x = rnd() * tot, kind: HavaKind = 'acik';
     for (const k in w) { x -= w[k as HavaKind] || 0; if (x <= 0) { kind = k as HavaKind; break; } }
     const win = HAVA_WINDOW[kind];
     if (kind === 'acik' || !win) return;
-    const a = win[0] + rnd() * (win[1] - win[0]), b = Math.min(24, a + win[2] + rnd() * (win[3] - win[2]));
+    // ZMN-02: windows cover the whole 24 h day (night rain, dawn fog) and end before 08:00 next morning
+    const a = win[0] + rnd() * (win[1] - win[0]), b = Math.min(HAVA_SON, a + win[2] + rnd() * (win[3] - win[2]));
     h.segs.push({ k: kind, a, b });
-    if (kind === 'saganak' && b < 23) h.segs.push({ k: 'gokkusagi', a: b, b: Math.min(24, b + RAINBOW_H) });
+    if (kind === 'saganak' && b > 8.5 && b < 18.5) h.segs.push({ k: 'gokkusagi', a: b, b: b + RAINBOW_H });   // a rainbow needs the sun up
   }
   function seg(): Seg | null { const hr = K.hour(); return H().segs.find(s => hr >= s.a && hr < s.b) || null; }
   const kind = (): HavaKind => seg()?.k ?? 'acik';
-  const ramp = (): number => { const s = seg(); if (!s) return 0; const hr = K.hour(); return smooth(Math.min((hr - s.a) / 0.4, (s.b - hr) / 0.4)); };
+  const ramp = (): number => { const s = seg(); return s ? rampOf(s, K.hour()) : 0; };
+  /** clouds gather over the hour before a grey window (rain, snow, storm, fog) and stay through it */
+  const bulut = (): number => {
+    const hr = K.hour(); let v = 0;
+    for (const s of H().segs) {
+      if (s.k === 'gokkusagi' || s.k === 'sicak') continue;
+      const mid = (s.a + s.b) / 2;
+      if (hr >= s.a && hr < s.b) v = Math.max(v, hr < mid ? 1 : rampOf(s, hr));
+      else if (hr < s.a && s.a - hr < 1) v = Math.max(v, smooth(1 - (s.a - hr)));
+    }
+    return v;
+  };
 
   // ───────── mods (customers.ts, ferry.ts) ─────────
   const tablesN = () => K.tablesBuilt();
   const umbN = () => Math.min(H().umb, tablesN());
   const mods: HavaMods = {
-    weekend() { const w = weekday(date()); return w === 0 || w === 6; },
+    weekend() { const w = wday(); return w === 0 || w === 6; },
     arrival() {
       if (!rt.started) return 1;
       const kd = HAVA_KINDS[kind()];
@@ -218,7 +272,7 @@ export function installHava(K: Kernel): HavaApi {
     rollDay();
     const h = H();
     const s0 = H().segs[0];
-    if (s0) K.toast(HAVA_KINDS[s0.k].icon + ' Bugün ' + HAVA_KINDS[s0.k].name.toLocaleLowerCase('tr') + ' bekleniyor, saat ' + Math.floor(s0.a) + ' gibi.', 'info');
+    if (s0) K.toast(HAVA_KINDS[s0.k].icon + ' Bugün ' + HAVA_KINDS[s0.k].name.toLocaleLowerCase('tr') + ' bekleniyor, saat ' + (Math.floor(s0.a) % 24) + ' gibi.', 'info');
     if (marketDay()) { h.mkt = { day: S().day, sold: 0, earned: 0, open: false, closed: false }; K.toast(MARKET_LINES.morning, 'info'); }
     K.saveNow();
   }
@@ -278,11 +332,12 @@ export function installHava(K: Kernel): HavaApi {
   }
 
   // ───────── views and panel ─────────
-  function dateText(v: YMD = date()): string { return v.d + ' ' + MONTHS[v.m - 1] + ' ' + WEEKDAYS[weekday(v)]; }
+  const ayText = (v: YMD = date()) => MONTHS[v.m - 1] + ' ' + Math.ceil(v.d / 7) + '. hafta';
+  function dateText(v: YMD = date()): string { return ayText(v) + ', ' + WEEKDAYS[wday()]; }
   function view(): HavaView {
     const v = date(), kd = HAVA_KINDS[kind()], m = H().mkt;
     return {
-      kind: kd.id, name: kd.name, icon: kd.icon, k: ramp(), season: seasonOfMonth(v.m), date: v, dateText: dateText(v),
+      kind: kd.id, name: kd.name, icon: kd.icon, ayText: ayText(v), gunText: WEEKDAYS[wday()], bulut: bulut(), k: ramp(), season: seasonOfMonth(v.m), date: v, dateText: dateText(v),
       market: { today: marketDay(), open: marketDay() && m.open && !m.closed },
       umbrellas: umbN(), tables: tablesN(), fly,
     };
@@ -301,11 +356,11 @@ export function installHava(K: Kernel): HavaApi {
   function model(): Record<string, unknown> {
     const h = H(), v = date(), ss = seasonOfMonth(v.m), st = S(), kd = HAVA_KINDS[kind()];
     const px = priceX();
-    const mDays = (MARKET.weekday - weekday(v) + 7) % 7;
+    const mDays = (MARKET.weekday - wday() + 7) % 7;
     return {
       dateText: dateText(v), season: SEASON_NAMES[ss], seasonId: ss,
       weather: { id: kd.id, name: kd.name, icon: kd.icon, effect: effectText(kd.id), on: ramp() > 0.05 },
-      today: h.segs.map(s => ({ name: HAVA_KINDS[s.k].name, icon: HAVA_KINDS[s.k].icon, from: Math.floor(s.a), to: Math.min(24, Math.ceil(s.b)) })),
+      today: h.segs.map(s => ({ name: HAVA_KINDS[s.k].name, icon: HAVA_KINDS[s.k].icon, from: Math.floor(s.a) % 24, to: Math.ceil(s.b) % 24 || 24 })),
       umbrella: { n: h.umb, max: UMBRELLA.max, tables: tablesN(), cost: h.umb < UMBRELLA.max ? UMBRELLA.cost(h.umb) : 0, money: st.money },
       market: {
         today: marketDay(), days: mDays, open: marketDay() && h.mkt.open && !h.mkt.closed, closed: marketDay() && h.mkt.closed, sold: h.mkt.sold, earned: h.mkt.earned,
@@ -336,6 +391,6 @@ export function havaSokak(state: { zones?: unknown; day?: number }, hour: number
   const h = (state.zones as Record<string, { segs?: Seg[]; wDay?: number }> | undefined)?.[HAVA_KEY];
   const s = h && Array.isArray(h.segs) && (h.wDay === undefined || h.wDay === state.day) ? h.segs.find(g => hour >= g.a && hour < g.b) : undefined;
   if (!s) return { kind: 'acik', k: 0, wet: false, kar: false, sicak: false };
-  const k = smooth(Math.min((hour - s.a) / 0.4, (s.b - hour) / 0.4));
+  const k = rampOf(s, hour);
   return { kind: s.k, k, wet: !!HAVA_KINDS[s.k]?.wet && k >= 0.3, kar: s.k === 'kar' && k > 0.05, sicak: s.k === 'sicak' && k > 0.05 };
 }

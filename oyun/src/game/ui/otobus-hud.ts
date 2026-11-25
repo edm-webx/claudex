@@ -37,7 +37,7 @@ export function createOtobusHud(d: Deps): OtobusHud {
     const dpr = Math.min(1.25, window.devicePixelRatio || 1), w = cut.clientWidth, h = cut.clientHeight;
     if (cv.width !== Math.round(w * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
     const g = cv.getContext('2d')!; g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const hr = d.hour(), night = hr >= 20 || hr < 6, dusk = hr >= 18 && hr < 20;
+    const hr = d.hour() % 24, night = hr >= 20 || hr < 6, dusk = hr >= 18 && hr < 20;
     // how "forest" the view is: city at the start, forest at the end (reverse on the way back)
     const f = toForest ? Math.min(1, Math.max(0, (k - 0.25) / 0.5)) : 0;
     const sky = g.createLinearGradient(0, 0, 0, h * 0.7);

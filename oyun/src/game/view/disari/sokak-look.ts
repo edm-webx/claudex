@@ -83,7 +83,7 @@ export function createSokakLook(d: SokakLookDeps): SokakLookView {
       const s = d.agents(), st = sokakDurum(s);
       for (const g of dogs) g.slot = -1;
       if (!s || !st) { for (const g of dogs) g.h.object.visible = false; return; }
-      const R = s.f32('rot'), F = s.u16('flags'), A = s.u8('act'), night = d.hour() >= 20 || d.hour() < 6;
+      const R = s.f32('rot'), F = s.u16('flags'), A = s.u8('act'), night = (d.hour() >= 20 && d.hour() < 30) || d.hour() < 6;
       for (let i = 0, n = Math.min(s.hi, 256); i < n; i++) {
         if (!s.alive(i) || !(F[i] & AGENT_FLAG.ambient)) continue;
         const rol = st.rol[i], um = st.semsiye[i], act = A[i];

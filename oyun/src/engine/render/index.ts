@@ -452,7 +452,7 @@ export function createRender(deps: RenderDeps): MotorRender {
       if (renderer) api.setTime(hour);   // GRS-01: the light tint follows the post chain (GRADE vs akıcı tone-map grade)
     },
     setTime(h: number, _season?: Season) {
-      // GRS-02: the game day runs to DAY_END_H (03:00 = 27); 27..32 is the visual dawn corridor after the gün sonu card (32 = 08:00)
+      // ZMN-01: the game day runs to DAY_END_H (32 = 08:00 next morning), dawn included
       hour = clamp(+h || 12, DAY_START_H, DAY_END_H + DAWN_EXTRA);
       tod = todAt(hour); night = tod.n;
       const su = (sky.material as T.ShaderMaterial).uniforms;

@@ -336,7 +336,7 @@ export function createMomentsView(d: MomentsViewDeps): MomentsView {
       if (!nowLive && live) { stopFx(); chatLabel.hide(); radioLabel.hide(); radio.visible = false; }
       live = nowLive;
       const h = d.hour();
-      env.live = live; env.night = h >= 20 || h < 6;
+      env.live = live; env.night = h % 24 >= 20 || h % 24 < 6;   // ZMN-01: clock 8..32
       candT -= dt;
       if (live && candT <= 0) { candT = 0.5; gatherCands(); }
       const f = dir.update(dt, env, cands);
