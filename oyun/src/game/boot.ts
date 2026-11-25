@@ -459,7 +459,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
       return hit ? Math.max(0, hit.distance / len) : 1;
     });
   }
-  const salonUstGizli = (x: number, z: number) => { for (const m of [KT_IC.salonW, KT_IC.salonE]) if (ktIcinde(m, pos, 0.2) && ktIcinde(m, { x, z }, 0.4)) return true; return false; };
+  const salonUstGizli = (x: number, z: number) => { for (const m of [KT_IC.salonW, KT_IC.salonE]) if (ktIcinde(m, pos, 0.2) && pos.z > -8.4 && ktIcinde(m, { x, z }, 0.4)) return true; return false; };   // terasın altındayken (teras-W / teras-E kalkınca)
   const agentsOf = (): AgentsHandle | null => (sim.rules.rt as unknown as { agents?: AgentsHandle }).agents ?? null;
   const agentsView: AgentsView | null = playMode && chars ? make('agentsView', () => createAgentsView({
     chars: chars as MotorChars, quality, agents: agentsOf,

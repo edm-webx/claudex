@@ -16,7 +16,7 @@ import { Walker, near2, side } from './move';
 import { traitFx, traitId, workerSpeed } from './traits';
 import type { AgentEnv } from './env';
 import { zeminSave } from '../zemin';
-import { IC_BY_ID, icWorld, icDim, icIcinde, icKapi, mutfakRota, mutfakStand, mutfakKoridor, mutfakOda, mutfakIcine, MUTFAK_NOKTA, MUTFAK_YER, passAsciUV, passAcik, servisKoridor } from '../../../content/ic-mekan';
+import { IC_BY_ID, icWorld, icDim, icIcinde, icKapi, mutfakRota, mutfakStand, mutfakKoridor, mutfakOda, mutfakIcine, MUTFAK_NOKTA, MUTFAK_YER, passAsciUV, mutfakPersonelAlani } from '../../../content/ic-mekan';
 import { isProduct } from '../../../content/yemek-menu';
 import { BULASIK, MUTFAK_MIN_STAGE, mutfakEsya, pisirIstasyonu } from '../../../content/mutfak';
 import { createRoller, type ValeCar } from './roller';
@@ -429,7 +429,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
   const uvOf = (p: Vec2): [number, number] => [p.x - KM.x, p.z - KM.z];   // the room faces +z: u = x - room x, v = z - room z
   const KOMI_YAS = 6;
   /** 2026-11-21: mutfak odası + açık servis koridorları (personel alanı; dar koridorda karşılaşan iki kişi itişmez, sıyrılır) */
-  const mutfakAlan = (p: Vec2) => { if (icIcinde(KMs(), p, 0)) return true; const st = env.rules.state.stage || 1; for (const y of ['W', 'E'] as const) { if (!passAcik(y, st)) continue; const r = servisKoridor(y, st); if (p.x > r.x0 - 0.6 && p.x < r.x1 + 0.1 && p.z > r.z0 - 0.1 && p.z < r.z1 + 0.6) return true; } return false; };   // a tray plate the komi leaves this long is taken by an idle cook
+  const mutfakAlan = (p: Vec2) => mutfakPersonelAlani(p, env.rules.state.stage || 1);   // a tray plate the komi leaves this long is taken by an idle cook
   /**
    * BUF-22: inside the stage room. 2026-11-21 (denetçi: komi, bulaşıkçı ve boştaki aşçılar bulaşık hattının önünde omuz omuza üst üste
    * duruyordu): fixed posts first (şef, devralınmış istasyonun aşçısı, ilk bulaşıkçı / barista), the rest slide along their aisle in
