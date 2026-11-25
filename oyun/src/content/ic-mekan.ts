@@ -310,7 +310,7 @@ function balikLayout(W: number, D: number): IcItem[] {
     it('lamba', 0, 0, W, D), it('bar', 2.4, -D / 2 + 0.95, 5.0, 0.8, { solid: true }), it('menuPano', 2.4, -D / 2 + 0.27, 3.2, 0.05, { y: 2.5, txt: 'GÜNÜN BALIĞI' }),
     ...salonMasalar('salonE'), it('salonPass', -W / 2 + 0.8, PASS_Z - (KANAT_E.z0 + KANAT_E.z1) / 2, 1.4, 0.4, { y: 1.0, solid: true }),
     it('mangal', -2.6, -D / 2 + 0.75, 1.4, 0.8, { esya: 'mangal_e' }), it('buzTezgah', -W / 2 + 0.75, -4.1, 2.3, 0.9, { esya: 'buz_tezgah', ry: 1 }),
-    it('mezeDolap', -W / 2 + 0.65, 3.4, 1.8, 0.6, { esya: 'meze_dolap', ry: 1 }), it('akvaryum', W / 2 - 0.5, -6.0, 3.6, 0.45, { esya: 'akvaryum_e', ry: 3 }),
+    it('mezeDolap', -W / 2 + 0.65, 3.4, 1.8, 0.6, { esya: 'meze_dolap', ry: 1 }), it('akvaryum', W / 2 - 0.5, 8.2, 3.6, 0.45, { esya: 'akvaryum_e', ry: 3 }),
     it('piyano', 4.4, 9.0, 1.6, 1.0, { esya: 'piyano_s' }),
   ];
 }

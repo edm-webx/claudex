@@ -9,7 +9,9 @@
 import { katY, avmIcinde } from '../../../content/avm-kat';
 import { KAFE_TEMA, type TemaId } from '../../../content/kafe-tema';
 import * as T from 'three';
-import { mutfakEsya, mutfakCelik, pisirIstasyonu, PASS_KAP } from '../../../content/mutfak';
+import { mutfakEsya, mutfakAcik, mutfakCelik, pisirIstasyonu, MUTFAK_IST_BY_ID, PASS_KAP } from '../../../content/mutfak';
+import { SALON_ESYA_BY_ID } from '../../../content/esya';
+import { SALON_ALET } from '../../../content/salon-alet';
 import { yemekRenk } from '../../../content/yemek-menu';
 import { Batch, mtx } from '../../../engine/prefab/batch';
 import { icMasaKurulu } from '../../../content/ic-mekan';
@@ -45,15 +47,16 @@ const WALL: Record<string, [string, string]> = { kafe: ['#f3e3c8', '#7a4a2a'], b
   sekerci: ['#fff3f5', '#c94f6d'], kahveci: ['#efe2cf', '#5a3a22'], dondurma: ['#fbf7f0', '#e0533c'], baklava: ['#f6edd8', '#2f6b3a'], kuruyemis: ['#f3e6cf', '#8a5a3c'],
   donerci: ['#f4ece0', '#a2472f'], kumpir: ['#fff4dc', '#e8892b'], midye: ['#eef5f7', '#1d4f86'], avmLokanta: ['#f2efe9', '#a2472f'], sinema: ['#f6ece6', '#b3122e'] };
 
-let solid: T.MeshStandardMaterial | null = null, glass: T.MeshStandardMaterial | null = null, glow: T.MeshBasicMaterial | null = null, wallM: T.MeshStandardMaterial | null = null;
+let solid: T.MeshStandardMaterial | null = null, glass: T.MeshStandardMaterial | null = null, glow: T.MeshBasicMaterial | null = null, wallM: T.MeshStandardMaterial | null = null, ghostM: T.MeshBasicMaterial | null = null;
 function mats() {
   if (!solid) {
     solid = new T.MeshStandardMaterial({ vertexColors: true, roughness: 0.78, metalness: 0.04 }); useSkyEnv(solid, 'matte');
     wallM = new T.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0 });
     glass = new T.MeshStandardMaterial({ vertexColors: true, roughness: 0.05, metalness: 0.4, transparent: true, opacity: 0.45, depthWrite: false }); useSkyEnv(glass, 'glass');
     glow = new T.MeshBasicMaterial({ vertexColors: true });
+    ghostM = new T.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.22, depthWrite: false });
   }
-  return { solid: solid!, glass: glass!, glow: glow!, wall: wallM! };
+  return { solid: solid!, glass: glass!, glow: glow!, wall: wallM!, ghost: ghostM! };
 }
 const LM = new Map<string, T.MeshLambertMaterial>();
 const lm = (c: string) => { let m = LM.get(c); if (!m) { m = new T.MeshLambertMaterial({ color: c }); LM.set(c, m); } return m; };
@@ -494,6 +497,14 @@ const F: Record<string, Fn> = {
   hediye: (c) => { const { b } = c; for (const [x, z, s, col] of [[-0.1, -0.05, 0.18, '#e0533c'], [0.1, 0.05, 0.14, '#2f6fdb'], [-0.05, 0.05, 0.1, '#ffd23f']] as [number, number, number, string][]) { const y = col === '#ffd23f' ? 0.23 : s / 2; b.box(s, s, s, col, x, y, z); b.box(s + 0.005, s + 0.005, 0.02, '#f4f2ec', x, y, z); b.box(0.02, s + 0.005, s + 0.005, '#f4f2ec', x, y, z); b.tor(0.03, 0.008, '#f4f2ec', x, y + s / 2 + 0.02, z, { ts: 8 }); } },
 };
 
+function etiketTex(ad: string, is: string): T.CanvasTexture {
+  const c = document.createElement('canvas'); c.width = 448; c.height = 120; const g = c.getContext('2d')!;
+  g.fillStyle = '#8a2219'; g.beginPath(); g.roundRect(4, 4, 440, 112, 22); g.fill(); g.strokeStyle = '#f3e6c8'; g.lineWidth = 6; g.stroke();
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  const yaz = (t: string, f: string, y: number, r: string) => { g.font = f; g.fillStyle = r; const w = g.measureText(t).width; g.save(); g.translate(224, y); if (w > 410) g.scale(410 / w, 1); g.fillText(t, 0, 0); g.restore(); };
+  if (is) { yaz(ad, '800 46px system-ui,"Segoe UI",sans-serif', 42, '#fff3dc'); yaz(is, '600 32px system-ui,"Segoe UI",sans-serif', 87, '#ffcf8a'); } else yaz(ad, '800 54px system-ui,"Segoe UI",sans-serif', 62, '#fff3dc');
+  const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace; t.anisotropy = 4; return t;
+}
 const _cam = new T.Vector3();
 /* ---------- one room ---------- */
 function buildRoom(m: IcMekan, own: { lv: number; isci: number; esya: string[]; tema?: string } | null, salonEsya: string[], fine: boolean, stage = 1, ekip: { rol: string; rank: number }[] = []): { g: T.Group; an: Anim } {
@@ -545,7 +556,21 @@ function buildRoom(m: IcMekan, own: { lv: number; isci: number; esya: string[]; 
   const items = icLayout(m, stage), occ = own ? Math.min(0.9, 0.35 + 0.12 * own.lv) : m.salon ? (fine ? 0.85 : 0.65) : 0.4;
   let ti = 0;
   const live = !!own && !!m.arsa && IC_CANLI.includes(m.arsa), empty = !!m.arsa && !own; grp.userData.live = live || empty;   // owned: real actors; unsold: an empty shop, no statues   // café/bistro: guests and staff are real actors (agents/kafe.ts), not props
+  // 2026-11-25 (sahibi: "hepsini aldım ama nerde oldu bu güncelleme, anlaşılmıyor"): alınmamış alet yerinde soluk gölgesiyle durur,
+  // alınınca aynı yerde gerçek olur ve üstünde adı ile ne işe yaradığı yazar
+  const gb = new Batch();
+  const gitan = (id: string) => (m.salon ? (SALON_ESYA_BY_ID[id]?.asama ?? 99) <= stage : m.mutfak ? mutfakAcik(stage).includes(id) : false);
+  const etiket: { it: IcItem; ad: string; is: string }[] = [], etiketli = new Set<string>();
   for (const it of items) {
+    if (it.esya && (m.salon || m.mutfak) && !etiketli.has(it.esya) && has.has(it.esya) && (it.asama ?? 0) <= stage) {
+      const s = SALON_ESYA_BY_ID[it.esya], k = MUTFAK_IST_BY_ID[it.esya];
+      if (m.salon && s) { etiketli.add(it.esya); etiket.push({ it, ad: s.ad, is: SALON_ALET[it.esya]?.is || '' }); } else if (m.mutfak && k && MUTFAK_YER[it.esya]?.k === it.k) { etiketli.add(it.esya); etiket.push({ it, ad: k.ad.split(' (')[0], is: '' }); }
+    }
+    if (it.esya && !has.has(it.esya) && gitan(it.esya) && F[it.k] && it.k !== 'davlumbaz') {
+      const tut = [grp.userData.cur, grp.userData.curItem]; grp.userData.cur = new T.Group(); grp.userData.curItem = grp.userData.cur;
+      gb.push(mtx(it.u, it.y || 0, it.v, 0, (it.ry || 0) * HP, 0)); F[it.k]!({ ...ctx, b: gb, g: gb, l: gb, an: { spin: [], fire: [], fish: [], screens: [], flick: [], bob: [], lamps: null } }, it); gb.pop();
+      [grp.userData.cur, grp.userData.curItem] = tut;
+    }
     if (it.esya && !has.has(it.esya)) continue;
     if ((it.asama ?? 0) > stage) continue;   // BUF-20: aşama 10 fine dining masaları
     if (!icMasaKurulu(it, stage)) continue;   // 2026-11-22: salon tables are bought one by one (yellow pads)
@@ -586,6 +611,11 @@ function buildRoom(m: IcMekan, own: { lv: number; isci: number; esya: string[]; 
   }
   if (m.tur === 'morg') an.flick.push(grp);
   const M = mats();
+  if (!gb.empty) { const gm2 = gb.mesh(M.ghost, false, false); gm2.renderOrder = 2; grp.add(gm2); }
+  for (const e of etiket) {   // aletin üstündeki küçük pano: adı + ne işe yarar
+    const mt = new T.MeshBasicMaterial({ map: etiketTex(e.ad, e.is), transparent: true }), w = e.is ? 1.95 : 1.4, p = new T.Mesh(new T.PlaneGeometry(w, w * 0.27), mt);
+    const [pu, pv] = m.mutfak && e.it.esya ? mutfakUst(e.it.esya) : [e.it.u, e.it.v]; p.position.set(pu, m.mutfak ? 1.75 : 1.7, pv); p.rotation.x = -0.75; p.rotation.order = 'YXZ'; p.renderOrder = 3; grp.add(p);
+  }
   if (!wb.empty) { const wm = wb.mesh(M.wall, false, true); grp.add(wm); }
   const trimM: T.Mesh[] = [];
   for (const e of trims.values()) if (!e.b.empty) { const tm = e.b.mesh(M.wall, false, true); tm.userData.duvar = [e.x, e.z, Math.sin(e.ry), Math.cos(e.ry)]; grp.add(tm); trimM.push(tm); }
@@ -605,7 +635,7 @@ export function createIcMekan(d: IcDeps): IcView {
   const keep = new Set<unknown>([BOX, SPH, TABAK, YEMEK, ...FX_GEOS]);
   const kill = (id: string) => {
     const r = rooms.get(id); if (!r) return; r.g.removeFromParent();
-    const M = mats(), shared = new Set<unknown>([M.solid, M.glass, M.glow, M.wall, ...LM.values()]);
+    const M = mats(), shared = new Set<unknown>([M.solid, M.glass, M.glow, M.wall, M.ghost, ...LM.values()]);
     r.g.traverse(o => { const mm = o as T.Mesh; if (!mm.isMesh) return; if (!keep.has(mm.geometry)) mm.geometry.dispose(); const mt = mm.material as T.MeshBasicMaterial; if (!shared.has(mt)) { mt.map?.dispose(); mt.dispose(); } });
     rooms.delete(id);
   };

@@ -18,7 +18,7 @@
  */
 import * as T from 'three';
 import { IC_BY_ID, icColliders, icIcinde, mutfakOda, MUTFAK_YER } from '../../../content/ic-mekan';
-import { kanatDik, kanatKapi, kanatAcikMi, revakDirek, onDolgu, restoranDuvar, restoranAlani, RES_H, TERAS_Y, TERAS_Z, VAPUR_GECIT, KANAT_W } from '../../../content/restoran-plan';
+import { kanatDik, kanatKapi, kanatAcikMi, revakDirek, onDolgu, restoranDuvar, restoranAlani, saksiYer, RES_H, TERAS_Y, TERAS_Z, VAPUR_GECIT, KANAT_W } from '../../../content/restoran-plan';
 import { KIOSK_STAGES } from '../../../content/stages';
 import { WB, WT, EB, ET, insaatAlani } from '../../../content/insaat';
 import { Batch } from '../../../engine/prefab/batch';
@@ -260,7 +260,7 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
      kırmızı-beyaz tente. Alçak duvarlar, zemin, direkler ve tenteler hep durur; çatı ('cati-R') oyuncu restoranın alanındayken,
      teraslar ('teras-W' / 'teras-E') yalnız altındayken kalkar: alınan her alet her zaman görünür. */
   if (stage >= 6) {
-    const RED = '#b93a2c', RED2 = '#a53125', CREAM = '#f3e6c8', TILE = '#c2402f', TILE2 = '#a83226', PLK = '#b9814f', SEAM = '#8e5d36', GOLD = fine ? '#c9a24a' : CREAM;
+    const RED = '#b93a2c', RED2 = '#a53125', CREAM = '#f3e6c8', TILE = '#a6432f', TILE2 = '#8f3626', PLK = '#b9814f', SEAM = '#8e5d36', GOLD = fine ? '#c9a24a' : CREAM;
     const ucu = (['W', 'E'] as const).filter(s => kanatAcikMi(s, stage)), R = cati('cati-R');
     const zemin = (x0: number, x1: number, z0: number, z1: number, y = 0.14) => { b.box(x1 - x0, y, z1 - z0, PLK, (x0 + x1) / 2, y / 2, (z0 + z1) / 2); const n = Math.round((x1 - x0) / 0.8); for (let i = 1; i < n; i++) b.box(0.025, 0.004, z1 - z0, SEAM, x0 + (x1 - x0) * i / n, y + 0.002, (z0 + z1) / 2); };
     const ex = stage >= 7 ? 8.0 : 8.55;
@@ -269,8 +269,8 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
     const kiremit = (x0: number, x1: number, z0: number, z1: number, y: number, h: number, eks: 'x' | 'z') => {
       const bb = R.b, X = (x0 + x1) / 2, Z = (z0 + z1) / 2, L = eks === 'x' ? x1 - x0 : z1 - z0, G = (eks === 'x' ? z1 - z0 : x1 - x0) / 2, len = Math.hypot(G, h) + 0.15, ang = Math.atan2(h, G);
       for (const q of [-1, 1]) {
-        if (eks === 'x') { bb.box(L, 0.16, len, TILE, X, y + h / 2, Z + q * G / 2, { rx: q * ang }); for (let t = -L / 2 + 0.35; t < L / 2; t += 0.7) bb.box(0.12, 0.1, len, TILE2, X + t, y + h / 2 + 0.1, Z + q * G / 2, { rx: q * ang }); bb.box(L + 0.2, 0.16, 0.16, CREAM, X, y + 0.02, Z + q * (G + 0.02)); }
-        else { bb.box(len, 0.16, L, TILE, X + q * G / 2, y + h / 2, Z, { rz: -q * ang }); for (let t = -L / 2 + 0.35; t < L / 2; t += 0.7) bb.box(len, 0.1, 0.12, TILE2, X + q * G / 2, y + h / 2 + 0.1, Z + t, { rz: -q * ang }); bb.box(0.16, 0.16, L + 0.2, CREAM, X + q * (G + 0.02), y + 0.02, Z); }
+        if (eks === 'x') { bb.box(L, 0.16, len, TILE, X, y + h / 2, Z + q * G / 2, { rx: q * ang }); for (let t = -L / 2 + 0.35; t < L / 2; t += 0.7) bb.box(0.12, 0.1, len, TILE2, X + t, y + h / 2 + 0.1, Z + q * G / 2, { rx: q * ang }); for (let k = 1; k < 8; k++) bb.box(L, 0.04, 0.06, TILE2, X, y + h * (1 - k / 8) + 0.1, Z + q * G * k / 8, { rx: q * ang }); bb.box(L + 0.2, 0.16, 0.16, CREAM, X, y + 0.02, Z + q * (G + 0.02)); }
+        else { bb.box(len, 0.16, L, TILE, X + q * G / 2, y + h / 2, Z, { rz: -q * ang }); for (let t = -L / 2 + 0.35; t < L / 2; t += 0.7) bb.box(len, 0.1, 0.12, TILE2, X + q * G / 2, y + h / 2 + 0.1, Z + t, { rz: -q * ang }); for (let k = 1; k < 8; k++) bb.box(0.06, 0.04, L, TILE2, X + q * G * k / 8, y + h * (1 - k / 8) + 0.1, Z, { rz: -q * ang }); bb.box(0.16, 0.16, L + 0.2, CREAM, X + q * (G + 0.02), y + 0.02, Z); }
       }
       if (eks === 'x') bb.box(L + 0.2, 0.2, 0.34, TILE2, X, y + h + 0.06, Z); else bb.box(0.34, 0.2, L + 0.2, TILE2, X, y + h + 0.06, Z);
       for (let i = 0; i < 6; i++) { const w = 2 * G * (1 - (i + 0.5) / 6), yy = y + h * (i + 0.5) / 6; for (const q of [-1, 1]) if (eks === 'x') bb.box(0.1, h / 6 + 0.02, w, RED, X + q * (L / 2 - 0.1), yy, Z); else bb.box(w, h / 6 + 0.02, 0.1, RED, X, yy, Z + q * (L / 2 - 0.1)); }
@@ -299,6 +299,8 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
       for (const x of [kx - 1, kx + 1]) b.box(0.2, 2.7, 0.2, GOLD, x, 1.35, k.z1 - 0.12); b.box(2.2, 0.22, 0.22, GOLD, kx, 2.75, k.z1 - 0.12);   // promenad kapısı
       for (const z of revakDirek(s)) { b.box(0.2, 2.8, 0.2, CREAM, ic, 1.4, z); b.box(0.3, 0.16, 0.3, RED, ic, 0.2, z); }
       b.box(0.24, 0.26, k.z1 + 13.2, RED, ic, 2.85, (k.z1 - 13.2) / 2);   // revak kirişi
+      for (const [x, z] of saksiYer(s, stage)) { b.cyl(0.3, 0.24, 0.55, fine ? '#c9a24a' : '#b5562f', x, 0.41, z, { seg: 10 }); b.sph(0.42, '#3f7a34', x, 1.05, z, { ws: 8, hs: 6 }); b.sph(0.3, '#4f8f3a', x + 0.12, 1.38, z - 0.05, { ws: 7, hs: 5 }); }
+      for (const lx of [k.x0 + 2.6, kx, k.x1 - 2.6]) for (const lz of stage >= 8 ? [-12.4, -10.4, -7.0] : [-12.4, -10.4, -7.0, -2.4, 1.2]) { b.cyl(0.012, 0.012, 0.5, '#3a2a20', lx, 2.95, lz, { seg: 4 }); b.cone(0.2, 0.2, fine ? '#c9a24a' : '#b8733d', lx, 2.62, lz, { seg: 10 }); lit.sph(0.08, '#ffe6b0', lx, 2.5, lz, { ws: 6, hs: 4 }); glowAt(lx, lz, 1.5); }   // bakır sarkıtlar
       for (let z = -12.4; z < 3.8; z += 1.1) lit.sph(0.06, '#ffd890', ic + q * 0.16, 2.6, z, { ws: 6, hs: 4 });
       tente(k.x0, k.x1, -12.6, 3.9, s === 'W' ? 'x+' : 'x-'); tente(k.x0 + 0.2, k.x1 - 0.2, k.z1, k.z1, 'z+');
       kiremit(k.x0 - 0.3, k.x1 + 0.3, -13.6, fz + (stage >= 8 ? 0 : 0.35), RES_H, 2.2, 'z');
@@ -330,7 +332,7 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
   if (stage >= 6) {
     const sb = { g: new T.Group(), b: new Batch(), gl: new Batch(), lit: new Batch(), wm: new Batch() }; sb.g.name = 'susle-B'; catis.push(sb);
     const mb = b, ml = lit, mg = grp; b = sb.b; lit = sb.lit; grp = sb.g;
-    const Z1 = BUFE.z1, n = 12, w = (BUFE.x1 - BUFE.x0 + 0.2) / n, c1 = fine ? '#1f2a44' : '#2f7fb3', c2 = fine ? '#c9a24a' : '#fbfaf6';
+    const Z1 = BUFE.z1, n = 12, w = (BUFE.x1 - BUFE.x0 + 0.2) / n, c1 = fine ? '#1f2a44' : '#b93a2c', c2 = fine ? '#c9a24a' : '#fbf3e2';
     // 2026-11-22: the striped tente is gone (it hid the bar of the restaurant's front hall from the camera): a thin painted fascia
     for (let i = 0; i < n; i++) b.box(w, 0.16, 0.04, i % 2 ? c2 : c1, BUFE.x0 - 0.1 + (i + 0.5) * w, 3.38, Z1 + 0.04);
     for (const x of [-2.6, 0, 2.6]) { b.box(0.08, 0.1, 0.3, '#33373b', x, 3.12, Z1 + 0.12); lit.sph(0.07, '#fff3d6', x, 3.05, Z1 + 0.25, { ws: 6, hs: 4 }); }

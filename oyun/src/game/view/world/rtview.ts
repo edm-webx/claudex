@@ -308,7 +308,17 @@ export function createRtView(env: RtEnv): RtView {
       }
       dwellMat.color.set(ds.transferring ? '#7bd88f' : '#ffd23f');
       dwell.g.scale.set(1, 1, 1);   // steady ring: no per-frame pulse (it read as jitter on phones)
-    } else { dwell.g.visible = false; dwell.last = -1; }
+    } else {
+      // 2026-11-25: mutfakta hazırlarken oyuncunun çevresinde dolan halka (büfedeki gibi ne kadar kaldığı görünür)
+      const mo = (rules.rt as unknown as { mutfakOyuncu?: { ist: string | null; frac: number } }).mutfakOyuncu, pk = rules.playerPos as { x: number; z: number };
+      if (mo?.ist && rt.act !== 'idle' && rt.actT > 0) {
+        if (dwell.g.parent !== group) group.add(dwell.g);
+        dwell.g.visible = true; dwell.g.position.set(pk.x, 0.16, pk.z);
+        const step = Math.max(1, Math.round(mo.frac * 48));
+        if (step !== dwell.last) { dwell.last = step; let g = dwellGeos.get(step); if (!g) { g = new T.RingGeometry(0.46, 0.62, 40, 1, Math.PI / 2, -(step / 48) * Math.PI * 2 - 1e-3); dwellGeos.set(step, g); } dwell.ring!.geometry = g; }
+        dwellMat.color.set('#ff9a3d');
+      } else { dwell.g.visible = false; dwell.last = -1; }
+    }
   }
   const plateObjs = new Map<string, object>();
 

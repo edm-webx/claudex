@@ -26,6 +26,8 @@ export const PASS_Z = -13.35;
 export const kanatAcikMi = (s: 'W' | 'E', stage: number): boolean => stage >= (s === 'W' ? 6 : 7);
 /** U tezgâhın ön hattındaki dolgu tezgâhları (istasyonların arası; ortada personel girişi -1.9..1.0 açık) */
 export const onDolgu = (stage: number): Dik[] => (stage < 6 ? [] : [{ x0: -9.7, x1: -6.35, z0: -13.75, z1: -13.1 }, ...(stage >= 7 ? [{ x0: 6.75, x1: 8.0, z0: -13.75, z1: -13.1 }] : [])]);
+/** saksı köşeleri (katı, görünüm de buradan çizer): kanatların boş köşeleri ve avlu kapıları */
+export const saksiYer = (s: 'W' | 'E', stage: number): [number, number][] => (s === 'W' ? [[-22.55, -13.6], [-22.55, -5.4], [-22.55, 3.4], ...(stage < 8 ? [[-10.7, 3.4] as [number, number]] : [])] : [[21.2, -13.6], [21.2, -10.2], ...(stage < 8 ? [[8.7, 3.4] as [number, number]] : [])]);
 /** restoranın katı duvarları (dünya): arka, dış yan, kanat ucu; avlu kenarı yalnız direk */
 export function restoranDuvar(stage: number): Dik[] {
   const o: Dik[] = [], t = DUVAR_T; if (stage < 6) return o;
@@ -35,6 +37,7 @@ export function restoranDuvar(stage: number): Dik[] {
     const yan = s === 'W' ? { x0: k.x0, x1: k.x0 + t } : { x0: k.x1 - t, x1: k.x1 };
     if (s === 'W') o.push({ ...yan, z0: k.z0, z1: k.z1 }); else o.push({ ...yan, z0: k.z0, z1: VAPUR_GECIT[0] }, { ...yan, z0: VAPUR_GECIT[1], z1: k.z1 });
     o.push({ x0: k.x0, x1: kx - 1, z0: k.z1 - t, z1: k.z1 }, { x0: kx + 1, x1: k.x1, z0: k.z1 - t, z1: k.z1 });
+    for (const [x, z] of saksiYer(s, stage)) o.push({ x0: x - 0.28, x1: x + 0.28, z0: z - 0.28, z1: z + 0.28 });
     for (const z of revakDirek(s)) { const x = s === 'W' ? k.x1 : k.x0; o.push({ x0: x - 0.12, x1: x + 0.12, z0: z - 0.12, z1: z + 0.12 }); }
   }
   // orta bandın arkası; aşama 6'da doğu yanı henüz kapalı

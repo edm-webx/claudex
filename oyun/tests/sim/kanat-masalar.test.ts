@@ -125,7 +125,7 @@ describe('BUF-19/20 kanat masaları', () => {
       expect(katY(7, to.x, to.z, true)).toBe(0);
       const mid = katY(8, ayak.x, (ayak.z + kutu.z0) / 2, true); expect(mid).toBeGreaterThan(0.5); expect(mid).toBeLessThan(catiY(8, s) - 0.5);
     }
-    expect(catiY(8, 'E')).toBeGreaterThan(catiY(8, 'W'));   // balık lokantası aşama 8'de iki katlı
+    expect(catiY(8, 'E')).toBe(catiY(8, 'W'));   // 2026-11-25 ters U: iki kanat terası aynı yükseklikte
   });
 
   it('pasif salon geliri yok: aşama 10, kanat müşterisi yokken salon geliri 0', () => {

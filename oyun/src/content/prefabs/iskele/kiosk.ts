@@ -48,7 +48,7 @@ export function buildKiosk(stage?: any, rn?: any, RS = 0) {
   const s1 = stage === 1, gold = stage >= 5;
   const paintC = RS ? (RS >= 10 ? '#f3e6c8' : '#f4f2ec') : worn('boya') ? (s1 ? '#a9bba8' : '#e2d6bf') : '#f6ecd6';
   const paintO = {};   // 2026-10-24: unpainted walls no longer show peeling stains ("dükkanın içi kirli")
-  const trim = RS ? (RS >= 10 ? K.gold : '#2f7fb3') : gold ? K.gold : worn('boya') ? (s1 ? '#7f8f84' : '#b9ad98') : K.red;
+  const trim = RS ? (RS >= 10 ? K.gold : '#b93a2c') : gold ? K.gold : worn('boya') ? (s1 ? '#7f8f84' : '#b9ad98') : K.red;
   const wall = (x0?: any, x1?: any, y0?: any, y1?: any, z0?: any, z1?: any) => {
     const lx = Math.abs(x1 - x0), lz = Math.abs(z1 - z0), along = lx > lz, L = Math.max(lx, lz), n = Math.max(1, Math.round(L / 1.7));
     for (let i = 0; i < n; i++) {
