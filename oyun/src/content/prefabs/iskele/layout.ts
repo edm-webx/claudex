@@ -179,7 +179,8 @@ function kioskLayout0(stage: number): StageLayout {   // stages 6-10 grow around
       ? [[-2.0, -1.5, 'x'], [1.6, -1.5, 'x'], [-6.3, -8.8, 'z'], [-8.7, -8.8, 'z'], [-6.3, -5.9, 'z'], [-8.7, -5.9, 'z'], [-6.3, -3.0, 'z'], [-8.7, -3.0, 'z']].map(([x, z, ax]) => ({ x: x as number, z: z as number, ax: ax as 'x' | 'z' }))
       : [[-2.0, -1.5], [1.6, -1.5], [-3.0, 0.9], [2.6, 0.9], [-6.6, -1.4], [6.1, -0.9], [-6.6, 1.4], [-6.6, 3.5]].map(([x, z]) => ({ x, z, ax: 'x' as 'x' | 'z' }));
     L.window = { standAt: P3(3.45, WIN_Z_YEREL), serve: P3(4.32, WIN_Z_YEREL, 1.12), queue: [[4.95, WIN_Z_YEREL], [5.75, WIN_Z_YEREL], [6.55, WIN_Z_YEREL], [6.6, -6.3], [6.6, -5.5], [6.6, -4.7]].map(([x, z]) => P3(x, z)) };
-    L.job = s3 ? { board: [5.6, -5.4, -0.3], pos: P3(5.5, -4.5) } : { board: [-7.4, -4.6, 0], pos: P3(-7.4, -3.75) };
+    // 2026-11-25 (sahibi: "işçi bulma panosu yürüyüş yoluna çıkarılmalı"): aşama 3+ pano promenatta, iskele ağzının doğusunda, yürüyüş şeridinin (z 7.6) önünde
+    L.job = s3 ? { board: [6.6, 5.5, 0], pos: P3(6.6, 6.4) } : { board: [-7.4, -4.6, 0], pos: P3(-7.4, -3.75) };
     L.extraPads = { tepsi1: P3(-0.9, -7.6), tepsi2: P3(1.1, -7.6), miknatis: P3(-1.4, 2.8), tadilat: s3 ? P3(3.0, 1.2) : P3(-7.4, -6.6), pencere: P3(5.6, -5.2) };
     L.cat = { awning: P3(-3.3, -4.0, 3.18), basket: P3(-4.85, -5.3, 0.2), stool: P3(-5.0, -3.55, 0.49), roof: P3(-3.4, -10.5, 2.7) };
     L.perch = [[1.5, 4.04, -10.56, 0.2], [4.1, 2.72, -10.5, 0.5], [2.1, 1.07, -4.45, -0.4], [-3.7, 3.31, -4.47, 0.3]];

@@ -11,7 +11,7 @@ export const PADS: PadDef2[] = [
   { key: 'tabure1', label: 'TABURE', sub: 'Oturan bahşiş bırakır', price: 250, kind: 'table', table: 0, after: ['ayran'], minPlay: 270 },
   { key: 'tabure2', label: 'TABURE', sub: 'Bir tabure daha', price: 300, kind: 'table', table: 1, after: ['tabure1'] },
   { key: 'isbul', label: 'İŞ VE İŞÇİ BULMA', sub: 'Çırak tut, iş büyüsün', price: 600, kind: 'job', after: ['simit', 'tabure2'], minPlay: 450 },
-  { key: 'tepsi1', label: 'BÜYÜK TEPSİ', sub: '+2 taşıma', price: 400, kind: 'tray', after: ['isbul'] },
+  { key: 'tepsi1', label: 'BÜYÜK TEPSİ', sub: '+2 taşıma', price: 400, kind: 'tray', after: ['isbul'], when: 'hiredOne', minPlay: 510 },   // 2026-11-25: vapur penceresinin yerini aldı (aynı açılış koşulu, tempo aynı)
   { key: 'masa1', label: 'MASA', sub: 'İki kişilik masa', price: 1200, kind: 'table', table: 2, after: ['tepsi1'] },
   { key: 'gazoz', label: 'GAZOZ DOLABI', sub: 'Boğaz Gazozu, Kolaz', price: 2000, kind: 'station', station: 'gazoz', after: ['masa1'] },
   { key: 'miknatis', label: 'MIKNATISLI ÖNLÜK', sub: 'Para kendiliğinden gelir', price: 2500, kind: 'magnet', after: ['gazoz'] },

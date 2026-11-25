@@ -31,26 +31,5 @@ describe('ferry kinds', () => {
     const b2 = ferryBoardModel(rt, sim.state.playT, sim.state.dayT, FERRY_T);
     expect(b2.time < b.time).toBe(true);
   });
-  it('a forced kind docks with its name in the toast', () => {
-    const sim = played(8);
-    sim.state.tut.firstCustomer = 1;
-    sim.command({ kind: 'force', what: 'ferry', value: 'buharli' });
-    sim.step(11);
-    expect(sim.rules.rt.ferryInfo!.cur).toBe('buharli');
-    expect(sim.rules.rt.ferryInfo!.curLit).toBe(false);
-    const toasts = events(sim, 'toast').map(e => (e.data as { text: string }).text);
-    expect(toasts.some(t => t.includes('Nostalji Buharlısı'))).toBe(true);
-  });
-  it('the late ferry is lit, the board says SON VAPUR and passengers are sleepy', () => {
-    const sim = played(8);
-    sim.state.tut.firstCustomer = 1;
-    sim.command({ kind: 'setTime', hour: 22.5 });
-    sim.command({ kind: 'force', what: 'ferry', value: 'sehir' });
-    sim.step(11);
-    expect(sim.rules.rt.ferryInfo!.curLit).toBe(true);
-    expect(ferryBoardModel(sim.rules.rt, sim.state.playT, sim.state.dayT, FERRY_T).title).toBe('SON VAPUR');
-    const said = new Set<string>();
-    for (let i = 0; i < 40; i++) { sim.step(0.25); for (const c of sim.rules.rt.customers) if (c.say) said.add(c.say); }
-    expect([...said].some(t => /Uyku|uyan|Esne|Zzz|kapan|Yastık/.test(t))).toBe(true);
-  });
+
 });

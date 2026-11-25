@@ -14,6 +14,8 @@ import { havaOf } from './hava';
 export const ferryGap = (stage: number): [number, number] => (stage <= 1 ? [75, 105] : stage === 2 ? [110, 160] : [150, 230]);
 export const FERRY_T = { arriving: 10, docked: 25, leaving: 16 } as const;
 export const FERRY_DOOR = { x: 22.4, z: -7.1 };
+/** dalga büyüklüğü eski vapur dalgasına oranla: yolcular artık uzak vapur kapısından değil yakın promenattan geliyor (gelir dengesi, first-session parity) */
+export const KALABALIK_PAY = 0.4;
 
 export function installFerry(K: Kernel, cu: ReturnType<typeof installCustomers>, w: { open(): void; close(): void; update(dt: number): void }) {
   const rt = K.rt, S = K.state, f = rt.ferry, rng = K.R.main;
@@ -27,7 +29,7 @@ export function installFerry(K: Kernel, cu: ReturnType<typeof installCustomers>,
   function onDock() {
     f.next = S.playT + rng.range(ferryGap(S.stage)[0], ferryGap(S.stage)[1]);
     const open = K.openProducts();
-    const buyers = ferryBuyers(clamp(Math.round(3 + 1.6 * S.stage + open.length * 0.6), 3, 10), info.cur, info.curLit);
+    const buyers = Math.round(ferryBuyers(clamp(Math.round(3 + 1.6 * S.stage + open.length * 0.6), 3, 10), info.cur, info.curLit) * KALABALIK_PAY);
     for (let i = 0; i < buyers; i++) wave.push(() => {
       if (rt.queue.length < Math.min(P.QUEUE_MAX, rt.layout.queue.length)) {
         const pid = ferryPassenger(frng, info.cur, info.curLit);
@@ -39,7 +41,9 @@ export function installFerry(K: Kernel, cu: ReturnType<typeof installCustomers>,
   }
   function update(dt: number) {
     f.state = 'away'; f.docked = false;
-    if (S.playT >= f.next) { if (havaOf(rt)?.skipFerry()) f.next = S.playT + ferryGap(S.stage)[0]; else onDock(); }
+    // eski ritimle aynı an: dalga, eski düdükten (next - 10 sn) 10 sn sonra, yani next'te; uzun bir duraklamadan dönüşte de önce 10 sn bekler
+    if (f.arriveAt < 0 && S.playT >= f.next - FERRY_T.arriving) { if (havaOf(rt)?.skipFerry()) f.next = S.playT + ferryGap(S.stage)[0] + FERRY_T.arriving; else f.arriveAt = S.playT + FERRY_T.arriving; }
+    if (f.arriveAt >= 0 && S.playT >= f.arriveAt) { f.arriveAt = -1; onDock(); }
     w.update(dt);
     if (wave.length) { waveT -= dt; if (waveT <= 0) { waveT = 1.4; const fn = wave.shift()!; fn(); } }
   }
