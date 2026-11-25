@@ -97,7 +97,7 @@ describe('tam sim: oyuncu mutfakta', () => {
     k.step(1);
     expect(api.hat!.ist(-1)).toBe('izgara'); expect(api.view().oyuncu.ist).toBe('izgara');
     k.step(hazirlikOf('tost') + 2);
-    expect(r.carry.length).toBe(1); expect(r.carry[0].type).toBe('tost'); expect(api.hat!.ist(-1)).toBeNull();
+    expect(r.carry.length).toBe(1); expect(r.carry[0].type).toBe('tost');
     // masaya götürmek yerine pass'a bırak
     const q = mutfakDunya(MUTFAK_NOKTA.passAsci); sim.command({ kind: 'teleport', x: q.x, z: q.z });
     k.step(1.5);
@@ -114,16 +114,26 @@ describe('tam sim: oyuncu mutfakta', () => {
     expect(r.carry.length).toBe(0); expect(api.view().tickets.length).toBe(0); expect(c.state).toBe('eat');
     expect(api.hat!.durum().elde.length).toBe(0);
   });
-  it('bilet yokken eller boşsa istasyon boştaki aşçıya devredilir (devredildi), yine durunca geri alınır', () => {
+  it('bilet yokken istasyon başında hazırlık yapılır (en çok 2 tabak elde, pass\'a bırakılır)', () => {
+    const k = hazir(), { sim, api, r } = k;
+    const p = stand('izgara'); sim.command({ kind: 'teleport', x: p.x, z: p.z });
+    k.step(1); expect(api.hat!.ist(-1)).toBe('izgara');
+    k.step(60);
+    expect(r.carry.length, 'elde en çok 2 hazırlık tabağı').toBe(2);
+    const q = mutfakDunya(MUTFAK_NOKTA.passAsci); sim.command({ kind: 'teleport', x: q.x, z: q.z });
+    k.step(2); expect(r.carry.length).toBe(0);
+  });
+  it('bilet yokken eller boşsa devredilmiş istasyon boştaki aşçıdan geri alınır, sonra hazırlık yapılır', () => {
     const k = hazir(), { sim, api, S } = k;
     S.workers.push({ id: 7001, name: 'Deneme Aşçı', role: 'asci', xp: 0, rank: 0, morale: 70, traits: ['hamarat'], trait: 'hamarat', rarity: 'gri' });
     k.step(0.5);
     const p = stand('ocak'), away = stand('izgara');
-    sim.command({ kind: 'teleport', x: p.x, z: p.z }); k.step(1.5);
-    expect(api.view().devir.ocak).toEqual({ wid: 7001, ad: 'Deneme Aşçı' }); expect(api.kitchenDevir!(7001)).toBe('ocak');
-    sim.command({ kind: 'teleport', x: away.x, z: away.z }); k.step(0.3);
+    expect(api.hat!.devret('ocak', 7001)).toBe(true);
     sim.command({ kind: 'teleport', x: p.x, z: p.z }); k.step(1.5);
     expect(api.view().devir.ocak).toBeUndefined();
+    sim.command({ kind: 'teleport', x: away.x, z: away.z }); k.step(0.3);
+    sim.command({ kind: 'teleport', x: p.x, z: p.z }); k.step(1.5);
+    expect(api.hat!.ist(-1)).toBe('ocak');
   });
   it('aşama 1-2 servis önce elle: mutfak etkileşimi yok, bilet oyuncuyla servis edilir', () => {
     const k = kur(4), { sim, api, r } = k;

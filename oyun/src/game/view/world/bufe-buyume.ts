@@ -31,6 +31,8 @@ export interface BuyumeView { update(dt: number): void; dispose(): void }
 
 const UMB = ['#e0533c', '#2f7fb3', '#ffd23f', '#2f9e8f', '#f4f2ec', '#c94f6d'];
 const HP = Math.PI / 2;
+/** salon çatısı oyuncu salonun bu kadar yakınındayken (m) kalkar */
+const SALON_CATI_YAKIN = 5;
 /** wing footprints on the pier (content/insaat.ts: shared with the tadilat site and the sim ustalar) */
 const cx = (r: { x0: number; x1: number }) => (r.x0 + r.x1) / 2, cz = (r: { z0: number; z1: number }) => (r.z0 + r.z1) / 2;
 /** open-air wing tables built at this stage (sim tables, content/kanat.ts); salon tables are ic-mekan items, roof tables drawn by hall() */
@@ -490,7 +492,7 @@ export function createBufeBuyume(deps: BuyumeDeps): BuyumeView {
       if (!grp) return;
       const hp = deps.hero?.();
       if (hp) {
-        for (const [nm, m] of [['cati-W', IC_BY_ID.salonW], ['cati-E', IC_BY_ID.salonE], ['duvar-K', mutfakOda(st)]] as const) { const o = grp.getObjectByName(nm); if (o) o.visible = !icIcinde(m, hp, 0.2); }
+        for (const [nm, m] of [['cati-W', IC_BY_ID.salonW], ['cati-E', IC_BY_ID.salonE], ['duvar-K', mutfakOda(st)]] as const) { const o = grp.getObjectByName(nm); if (o) o.visible = !icIcinde(m, hp, nm === 'duvar-K' ? 0.2 : SALON_CATI_YAKIN); }   // 2026-11-25 sahip: "geliştirmeler hiçbir yerde görünmüyor": salon çatısı dışarıdan düz beyaz kutuydu; yaklaşınca kalkar, içerideki alınan eşyalar görünür
         const ck = grp.getObjectByName('cati-K'), inK = icIcinde(mutfakOda(st), hp, 0.2); if (ck) ck.visible = !inK;   // 2026-11-21: the kitchen roof lifts only while the player is inside the kitchen
         const inB = hp.x > BUFE.x0 - 0.2 && hp.x < BUFE.x1 + 0.2 && hp.z > BUFE.z0 - 0.2 && hp.z < BUFE.z1, tbB = grp.getObjectByName('tabela-B'); if (tbB) tbB.visible = !inB && !gecitIcinde(hp);
         const sB = grp.getObjectByName('susle-B'); if (sB) sB.visible = !inB;
