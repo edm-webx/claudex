@@ -32,9 +32,10 @@ const kare = async (ad, saat, hava = '', bekle = 4) => {
   const y = meanY(buf); console.log(ad.padEnd(22), 'saat', saat, 'ortY', y); return y;
 };
 const sonuc = { ana: {}, safak: {} };
-for (const [ad, h, k, n] of [['1-gun-dogumu-0610', 30.17], ['2-ogle-1300', 13], ['3-gun-batimi-1940', 19.67], ['4-gece-2330', 23.5], ['5-gece-0400', 28], ['6-yagmur-1500', 15, 'saganak', 30], ['7-kar-1100', 11, 'kar', 60]])
-  sonuc.ana[ad] = await kare(ad, h, k, n);
+const ANA = [['1-gun-dogumu-0610', 30.17], ['2-ogle-1300', 13], ['3-gun-batimi-1940', 19.67], ['4-gece-2330', 23.5], ['5-gece-0400', 28], ['6-yagmur-1500', 15, 'saganak', 30], ['7-kar-1100', 11, 'kar', 18]];
+const sadece = arg('--sadece');   // ör. --sadece 7 (sadece adı 7 ile başlayan kareler)
+for (const [ad, h, k, n] of ANA) if (!sadece || ad.startsWith(sadece)) sonuc.ana[ad] = await kare(ad, h, k, n);
 await p.evaluate(() => window.__marti.havaZorla(''));
-if (process.argv.includes('--hepsi')) for (let h = 28.5; h <= 32.001; h += 0.25) sonuc.safak[h.toFixed(2)] = await kare('safak-' + h.toFixed(2).replace('.', '_'), +h.toFixed(2), '', 2);
+if (process.argv.includes('--hepsi')) for (const h of (arg('--safak') || '28.5,29,29.5,29.75,30,30.25,30.5,31,32').split(',').map(Number)) sonuc.safak[h.toFixed(2)] = await kare('safak-' + h.toFixed(2).replace('.', '_'), +h.toFixed(2), '', 2);
 writeFileSync(join(OUT, 'seri.json'), JSON.stringify(sonuc, null, 1));
 await ctx.close(); await b.close(); srv.close();

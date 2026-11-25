@@ -237,7 +237,10 @@ export function createHavaLook(d: HavaLookDeps): HavaLookView {
     const key = kiosk ? (kiosk as T.Object3D).uuid + ':' + (kiosk as T.Object3D).children.length : 'none';
     if (key === roofKey) return; roofKey = key;
     const box = new T.Box3();
-    if (kiosk) box.setFromObject(kiosk); else box.set(new T.Vector3(BUFE.x0, 0, BUFE.z0), new T.Vector3(BUFE.x1, 3, BUFE.z1));
+    // ZMN-02: fit the cap to the roof mesh itself; the whole kiosk group also holds the job board, the light pool and the counter
+    // (its box ran 1-2 m past the roof onto the promenade)
+    const roofMesh = kiosk ? (kiosk as T.Object3D).getObjectByName('kioskRoof') : undefined;
+    if (roofMesh) box.setFromObject(roofMesh); else if (kiosk) box.setFromObject(kiosk); else box.set(new T.Vector3(BUFE.x0, 0, BUFE.z0), new T.Vector3(BUFE.x1, 3, BUFE.z1));
     if (!isFinite(box.max.y) || box.max.y < 1) box.set(new T.Vector3(BUFE.x0, 0, BUFE.z0), new T.Vector3(BUFE.x1, 3, BUFE.z1));
     const sx = Math.min(box.max.x - box.min.x, BUFE.x1 - BUFE.x0 + 1.4), sz = Math.min(box.max.z - box.min.z, BUFE.z1 - BUFE.z0 + 1.4);
     roof.scale.set(sx * 0.92, 0.14, sz * 0.92); roof.position.set((box.min.x + box.max.x) / 2, box.max.y + 0.03, (box.min.z + box.max.z) / 2);
