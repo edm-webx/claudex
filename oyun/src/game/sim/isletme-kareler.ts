@@ -37,7 +37,7 @@ export interface IsletmeKareApi {
   /** açılış sırası durumu (content/acilis.ts); yoksa her şey açık sayılır (eski testler / araçlar) */
   durum?(): AcilisDurum;
 }
-interface Kare { key: string; pos: Vec2; kat?: number; y?: number; label: string; sub: string; price: number; kilit: string; done: () => void }
+interface Kare { key: string; pos: Vec2; kat?: number; y?: number; label: string; sub: string; price: number; kilit: string; /** alınınca ışık sütununun yandığı yer (varsayılan: kare); salon eşyası için eşyanın kendi yeri */ odak?: Vec2; done: () => void }
 
 const ROOMS: { m: IcMekan; a: Arsa }[] = ARSALAR.filter(a => a.sabit && icOfArsa(a.id)).map(a => ({ a, m: icOfArsa(a.id)! }));
 const avmMi = (m: IcMekan) => m.bina === 'avm';
@@ -154,7 +154,7 @@ export function installIsletmeKareler(K: Kernel, api: IsletmeKareApi): { sync():
       for (const [k, room, asama] of [['W', 'salonW', 6], ['E', 'salonE', 7]] as const) {
         if (st < asama) continue; const m = IC_BY_ID[room]; if (!m) continue;
         const sira = SALON_ESYA.filter(e => e.salon === k && !own.has(e.id) && e.asama <= st).sort((x, y) => x.fiyat - y.fiyat).slice(0, 2), yer = yerler(m);
-        sira.forEach((e, i) => out.push({ key: 'salon.' + e.id, pos: yer[1 + i], y: k === 'W' ? SOKAK_Y + 0.05 : undefined, label: e.ikon + ' ' + e.ad, sub: e.desc, price: e.fiyat, kilit: '', done: () => api.salonEsya!(e.id) }));
+        sira.forEach((e, i) => { const it = icLayout(m, 10).find(x => x.esya === e.id); out.push({ key: 'salon.' + e.id, pos: yer[1 + i], odak: it ? icWorld(m, it.u, it.v) : undefined, y: k === 'W' ? SOKAK_Y + 0.05 : undefined, label: e.ikon + ' ' + e.ad, sub: e.desc, price: e.fiyat, kilit: '', done: () => api.salonEsya!(e.id) }); });
       }
     }
     // 2026-11-22 restoran mutfağı (sahibi: "karelerle tek tek açılan istasyonlar yok"): aşamanın açtığı istasyonlar mutfağın içinde,
@@ -199,7 +199,7 @@ export function installIsletmeKareler(K: Kernel, api: IsletmeKareApi): { sync():
         if (S.padPaid[k.key] < pr.price - 0.01) return 'continue';
         // full: hand the money back and buy through the normal path (same checks, toast, XP, save); a refused buy keeps it in the pocket
         S.money = Math.round((S.money + S.padPaid[k.key]) * 100) / 100; delete S.padPaid[k.key]; pr.paid = 0;
-        sonDolan = { x: K.playerPos.x, z: K.playerPos.z }; sonSoru = S.playT; k.done(); if (k.kat === undefined) (rt.uiLast as Record<string, unknown>).decorFocus = { x: k.pos.x, z: k.pos.z, until: S.playT + 2.2 };   // sokakta altın ışık sütunu: burada bir şey açıldı
+        sonDolan = { x: K.playerPos.x, z: K.playerPos.z }; sonSoru = S.playT; k.done(); if (k.kat === undefined) (rt.uiLast as Record<string, unknown>).decorFocus = { x: (k.odak ?? k.pos).x, z: (k.odak ?? k.pos).z, until: S.playT + 2.2 };   // sokakta altın ışık sütunu: burada bir şey açıldı
         sync(); return 'done';
       },
     });
