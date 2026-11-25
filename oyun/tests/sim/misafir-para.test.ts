@@ -1,11 +1,13 @@
 // 2026-11-25 sahip: "arkadaşın oyununa katılınca paranın ortak oluşunu dert ediyorlar, öyle bir hal almalı ki dert edilmemeli".
-// Kural net/misafir.ts + sim/misafir-kural.ts: sattığın senin (tamamı, kesintisiz, kalıcı); ev sahibine oyundan ortaklık payı
-// basılır, kimseden kesilmez; misafir ev sahibinin dünyasında para harcayamaz, kirası / pasif geliri misafire dokunmaz.
+// Aynı gün: "bir mmorpg gibi düşün herkesin seviyesi parası gelişimi kendine, gelen arkadaş yardım ediyor karşılığında maaş alıyor".
+// Kural net/misafir.ts + sim/misafir-kural.ts: satış ev sahibine, misafire oyundan maaş (kesintisiz, geri düşmez, kalıcı), XP misafirin
+// kendi seviyesine; misafir ev sahibinin dünyasında para harcayamaz, kirası / pasif geliri misafire dokunmaz.
 import { it, expect } from 'vitest';
 import { played } from './m1-helpers';
 import { createSim } from '../../src/game/headless';
 import { emptyContent } from '../../src/content/index';
-import { misafirDunya, misafirDonus, ortakPay, toplanmamis, ORTAK_PAY } from '../../src/game/net/misafir';
+import { misafirDunya, misafirDonus, toplanmamis, toplanmamisMaas, MISAFIR_MAAS } from '../../src/game/net/misafir';
+import { xpForLevel } from '../../src/content/economy';
 import { misafirYasak } from '../../src/game/sim/misafir-kural';
 const log = { info() {}, warn() {}, error() {} };
 function misafirSim() {
@@ -24,25 +26,36 @@ it('misafir ev sahibinin dünyasına girer ama kendi parası, altını, yeri dur
   expect(m.zones.esnafim.ad).toBe('Ali'); expect(m.zones.arsa.plots.k1).toBeDefined(); expect(m.player.x).toBe(1);
   // çıkış: kazandığı para + altın kendi kaydına, misafirlik süresi oyun süresine (bulut kaydı daha yeni sayılır)
   const geri = misafirDonus(own, { ...m, money: 5400, gold: 9 }, 120) as any;
-  expect(geri).toMatchObject({ money: 5400, gold: 9, stage: 1, playT: 620 });
+  expect(geri).toMatchObject({ money: 5400, gold: 9, stage: 1, playT: 620, level: 1 });
+  // misafirken kazandığı XP kendi seviyesini atlatır
+  const lv = misafirDonus({ ...own, level: 1, xp: 0 }, own, 0, xpForLevel(1) + 3) as any;
+  expect(lv).toMatchObject({ level: 2, xp: 3 });
 });
 
-it('ev sahibine misafirin satışının ortaklık payı basılır; misafirin toplanmamış kasası sayılır', () => {
-  expect(ORTAK_PAY).toBe(0.25);
-  expect(ortakPay(400)).toBe(100);
-  expect(ortakPay(0)).toBe(0); expect(ortakPay(-5)).toBe(0); expect(ortakPay(1e9)).toBe(0);   // bozuk / sahte mesaj
-  expect(toplanmamis({ kasa: [{ value: 40 }, { value: 60.5 }], tables: [{ pile: [{ value: 10 }] }, {}], floor: [{ value: 5 }] })).toBe(115);
+it('misafirin toplanmamış satışından maaşı sayılır', () => {
+  expect(MISAFIR_MAAS).toBe(0.25);
+  const rt = { kasa: [{ value: 40 }, { value: 60.5 }], tables: [{ pile: [{ value: 10 }] }, {}], floor: [{ value: 5 }] };
+  expect(toplanmamis(rt)).toBe(115); expect(toplanmamisMaas(rt)).toBe(28);
 });
 
-it('misafirin sattığı tamamı cebinde kalır; ev sahibinin işletme / faiz / hedef geliri misafire ödenmez', () => {
-  const sim = misafirSim(), S = sim.rules.state; S.money = 1000;
-  expect(sim.rules.credit('tezgah', 400)).toBe(400);
-  expect(sim.rules.credit('adisyon', 100)).toBe(100);
-  expect(S.money).toBe(1500);
+it('misafirin satışı ev sahibinin defterine tam yazılır, cebine maaş girer (geri düşmez); pasif gelir misafire ödenmez', () => {
+  const sim = misafirSim(), S = sim.rules.state; S.money = 1000; const e0 = S.totalEarned;
+  sim.rules.credit('tezgah', 400); sim.rules.credit('adisyon', 100);
+  expect(S.money).toBe(1125);                 // 500 satışın %25'i maaş
+  expect(S.totalEarned - e0).toBe(500);       // ev sahibine bildirilen satış tam
+  sim.rules.cashIn(200); expect(S.money).toBe(1175);   // kasadan toplanan satış parası da maaş olarak
+  sim.rules.credit('mac', 300); expect(S.money).toBe(1475);   // kendi oynadığı maçın parası tam kendisinin
   for (const k of ['isletme', 'faiz', 'hedef', 'basarim', 'yildiz', 'tadilat']) expect(sim.rules.credit(k, 5000)).toBe(0);
-  expect(S.money).toBe(1500);
+  expect(S.money).toBe(1475);
   sim.rules.rt.misafir = false;
-  expect(sim.rules.credit('isletme', 5000)).toBe(5000);   // kendi oyununda normal
+  sim.rules.credit('tezgah', 400); expect(S.money).toBe(1875);   // kendi oyununda satış tam
+  expect(sim.rules.credit('isletme', 5000)).toBe(5000);
+});
+
+it('misafirin XP ev sahibinin seviyesini oynatmaz, kendi hesabına birikir', () => {
+  const sim = misafirSim(), S = sim.rules.state; const lv = S.level, xp = S.xp;
+  sim.rules.addXP(99999);
+  expect(S.level).toBe(lv); expect(S.xp).toBe(xp); expect(sim.rules.rt.misafirXp).toBe(99999);
 });
 
 it('misafirin cebinden gün sonu kira / fatura kesilmez (kendi oyununda kesilir)', () => {

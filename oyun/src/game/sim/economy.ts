@@ -18,7 +18,7 @@ import { clamp, r1 } from './util';
 import { streakStep, streakMult } from './streak';
 import { setHit } from './sets';
 import { yatirimFx } from './yatirim';
-import { MISAFIR_KAPALI_KAYNAK } from './misafir-kural';
+import { MISAFIR_KAPALI_KAYNAK, MISAFIR_IS, MISAFIR_MAAS } from './misafir-kural';
 
 export function installEconomy(K: Kernel, addMoneyTo: (pile: MoneyStack[], v: number) => void): { sales: SalesApi; settleSale(c: Customer | null, items: Plate[], opts?: { direct?: boolean; at?: Vec2 }): number; tipMult(): number; earn(v: number, at?: Vec2): number; earnTam(v: number, kaynak?: string): void; credit(kaynak: string, tutar: number, o?: { tavanli?: boolean; at?: Vec2 }): number; book(kaynak: string, tutar: number): void; cashIn(tutar: number): void; incomePerMin(): number } {
   const rt = K.rt, S = K.state;
@@ -37,8 +37,10 @@ export function installEconomy(K: Kernel, addMoneyTo: (pile: MoneyStack[], v: nu
     const src = (t.src ||= {}); src[k] = (src[k] || 0) + v;
     S.stats['kaynak_' + k] = (S.stats['kaynak_' + k] || 0) + v;
   };
-  const cashIn = (v: number) => { if (!(v > 0)) return; S.money += v; K.statMax('moneyMax', S.money); };
-  const pay = (v: number, kaynak = 'tezgah') => { S.money += v; book(kaynak, v); K.statMax('moneyMax', S.money); };
+  // odada misafir (sim/misafir-kural.ts): ev sahibinin büfesindeki satış ev sahibinindir, misafirin cebine oyunun bastığı maaş girer
+  const misafir = () => !!(rt as unknown as { misafir?: boolean }).misafir;
+  const cashIn = (v: number) => { if (!(v > 0)) return; S.money += misafir() ? v * MISAFIR_MAAS : v; K.statMax('moneyMax', S.money); };
+  const pay = (v: number, kaynak = 'tezgah') => { S.money += misafir() && MISAFIR_IS.has(kaynak) ? v * MISAFIR_MAAS : v; book(kaynak, v); K.statMax('moneyMax', S.money); };
   // Yan gelir tavanı yalnız rastgele küçük bonuslara: max(600, %10 x günlük hedef geliri), dünden devreden pay ile.
   const T = () => S.today as unknown as { sales?: number; bonus?: number; cost?: number; bonusDoldu?: boolean };
   const bonusTavan = (): number => {
@@ -48,7 +50,7 @@ export function installEconomy(K: Kernel, addMoneyTo: (pile: MoneyStack[], v: nu
   };
   const credit = (kaynak: string, tutar: number, o: { tavanli?: boolean; at?: Vec2 } = {}): number => {
     let v = Math.max(0, Math.round(tutar)); if (!v) return 0;
-    if ((rt as unknown as { misafir?: boolean }).misafir && MISAFIR_KAPALI_KAYNAK.has(kaynak)) return 0;   // ev sahibinin pasif geliri / ödülü misafire ikiz para olmasın
+    if (misafir() && MISAFIR_KAPALI_KAYNAK.has(kaynak)) return 0;   // ev sahibinin pasif geliri / ödülü misafire ikiz para olmasın
     if (o.tavanli) {
       const t = T(), kalan = Math.max(0, Math.round(bonusTavan() - (t.bonus || 0)));
       if (v > kalan) { v = kalan; if (!t.bonusDoldu) { t.bonusDoldu = true; K.toast('Bugünlük bonus doldu.', 'info'); } }
