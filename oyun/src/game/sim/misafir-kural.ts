@@ -1,14 +1,21 @@
 /**
  * Odada misafirken (rt.misafir, net/misafir.ts) sim kuralları. 2026-11-25 sahip: "arkadaşın oyununa katılınca paranın ortak
- * oluşunu dert ediyorlar, dert edilmemeli". Misafirin ekranındaki dünya ev sahibinin büfesinin yerel kopyasıdır; o kopyada
+ * oluşunu dert ediyorlar, dert edilmemeli". Aynı gün: "bir mmorpg gibi düşün herkesin seviyesi parası gelişimi kendine, gelen
+ * arkadaş yardım ediyor karşılığında maaş alıyor". Misafirin ekranındaki dünya ev sahibinin büfesinin yerel kopyasıdır; o kopyada
  * harcanan para hiçbir yere gitmez, oradan gelen pasif gelir de ev sahibinin kendi gelirinin ikizidir. Kural:
- *  - Misafirin cebine yalnız kendi emeği girer (tezgah, adisyon, bahşiş, salon, kendi oynadığı maç / bahis / sınav / iş).
+ *  - Misafirin ev sahibinin büfesindeki satışı (MISAFIR_IS) ev sahibinindir; misafirin cebine oyunun bastığı MISAFIR_MAAS maaş girer
+ *    (economy.ts pay / cashIn). Kendi oynadığı maç / bahis / sınav / iş parası tam kendisinin.
+ *  - XP misafirin kendi seviyesine yazılır, ev sahibinin seviyesi oynamaz (levels.ts, rt.misafirXp).
  *  - Ev sahibinin işletme kasası, faizi, hedef / başarım / yıldız / tadilat ödülleri misafire ödenmez (ikiz para).
  *  - Ev sahibinin dünyasını değiştiren alışveriş misafire kapalıdır (para cebinden çıkıp boşa giderdi); toast söyler.
  *  - Gün sonu kira / fatura / maaş misafirin cebinden kesilmez (gider.ts, karne.ts).
  */
 type Cmd = { kind: string; op?: unknown; arg?: unknown };
 
+/** misafirin ev sahibinin büfesinde çalışarak kazandığı (satış ev sahibine gider, misafire maaş) */
+export const MISAFIR_IS: ReadonlySet<string> = new Set(['tezgah', 'adisyon', 'bahsis', 'salon']);
+/** satışın misafire maaş olarak basılan payı (ev sahibinden kesilmez) */
+export const MISAFIR_MAAS = 0.25;
 /** misafirin cebine girmeyen gelir kaynakları (economy.ts credit) */
 export const MISAFIR_KAPALI_KAYNAK: ReadonlySet<string> = new Set(['isletme', 'faiz', 'hedef', 'basarim', 'yildiz', 'tadilat']);
 
