@@ -121,7 +121,12 @@ const PG: any = {};
 const prim = (k?: any, f?: any) => PG[k] || (PG[k] = normalOnar(f()));
 /* SEGK: global tessellation factor, set per builder (hero/crowd/animals) to stay inside the GDD triangle budgets */
 let SEGK = 1;
-const SEG: any = { hero: 0.6, crowd: 0.55, crowdS: 0.5, animal: 0.5, gull: 1, flock: 0.45 };
+// 2026-11-25 public çıkış: kafa/gövde/hayvan yakında köşeli (6-8 kenar) görünüyordu; bölüm sayısı arttı (üçgen ölçümü calisma/grafik-kalite)
+const SEG_YUKSEK = { hero: 0.9, crowd: 0.75, crowdS: 0.65, animal: 0.75, gull: 1, flock: 0.45 };
+const SEG_AKICI = { hero: 0.6, crowd: 0.55, crowdS: 0.5, animal: 0.5, gull: 1, flock: 0.45 };   // eski değerler: zayıf GPU üçgen bütçesi
+const SEG: any = { ...SEG_YUKSEK };
+/** Kademe detayı: ilk karakter yapılmadan önce çağrılır (kalabalık geometrisi önbellekte; sonradan değişim yalnız yeni karakterlere) */
+CH.setDetay = (akici: boolean) => { Object.assign(SEG, akici ? SEG_AKICI : SEG_YUKSEK); };
 const sgN = (n?: any, m?: any) => Math.max(m, Math.round(n * SEGK));
 const withSeg = (k?: any, f?: any) => { const o = SEGK; SEGK = k; try { return f(); } finally { SEGK = o; } };
 const sph = (r?: any, w?: any, h?: any, p0 = 0, pl = TAU, t0 = 0, tl = PI) => { w = sgN(w, 5); h = sgN(h, 3); return prim(`s${r}|${w}|${h}|${p0}|${pl}|${t0}|${tl}`, () => new T.SphereGeometry(r, w, h, p0, pl, t0, tl)); };

@@ -73,6 +73,7 @@ const dyn = (o: T.Object3D) => { o.userData.parity = 'dyn'; return o; };
 export function createChars(deps: CharsDeps): MotorChars {
   const scene = deps.scene, anim = deps.anim as CharsDeps['anim'] & { createAnimator(g: GaitId, s?: number): MotorAnimator };
   try { K.setMaxAnisotropy(8); } catch { /* headless */ }
+  try { CH.setDetay(deps.quality.current().name === 'akici'); } catch { /* */ }   // 2026-11-25: yuvarlak kafa/gövde, akıcıda eski bölüm sayısı
   for (const id in CLIPS) if (!anim.clip(id)) anim.defineClip(CLIPS[id]);
   let itemFactory: ((id: string) => T.Object3D | null) | null = null;
   const autos: { update(dt: number): void }[] = [];
