@@ -20,7 +20,7 @@
 import type { Vec2 } from '../../engine/api';
 import type { Kernel, Plate } from './state';
 import { PASS_KAP, MUTFAK_IST_BY_ID, hatUyeleri, mutfakEsya, pisirIstasyonu, pisirmeSuresi } from '../../content/mutfak';
-import { calismaIstasyonu, hazirlikOf, icecekMi, isProduct, type FoodId } from '../../content/yemek-menu';
+import { acikYemekler, calismaIstasyonu, hazirlikOf, icecekMi, isProduct, type FoodId } from '../../content/yemek-menu';
 import { mutfakStand, mutfakDunya, passAsciUV, type PassYer } from '../../content/ic-mekan';
 import { rankOf } from '../../content/ranks';
 import { SES_ISTASYON } from '../../content/mutfak-ses';
@@ -39,7 +39,9 @@ export interface OyuncuIs { ist: string | null; p: FoodId | null; frac: number; 
 export const OYUNCU = -1;
 export interface MutfakHatApi<T extends HatTicket = HatTicket> {
   /** aşçı `wid` için en eski bilet kalemini ve boş istasyonunu ayırır (yiyecek döner, yoksa null) */
-  claim(wid: number, from?: Vec2, opt?: { ist?: string }): FoodId | null;
+  claim(wid: number, from?: Vec2, opt?: { ist?: string; hazir?: boolean }): FoodId | null;
+  /** 2026-11-25: bilet yokken oyuncunun `ist` başında hazırlayabileceği yemek (o istasyonun açık menüsü, ilk sıradaki); yoksa null. Stok değil: tabak elde kalır, pass'ta 30 sn istenmezse silinir */
+  hazirAday(ist: string): FoodId | null;
   /** BUF-06: oyuncu `ist` başında dursa hangi kalemi pişirirdi (KDS sırası, ayırmaz) */
   aday(ist: string): FoodId | null;
   /** BUF-06: oyuncunun pişirmesi `dt` sn ilerler (yalnız başında dururken); süre dolunca tabağı döndürür (istasyondan alınmış, elde) */
@@ -177,7 +179,16 @@ export function installMutfakHat<T extends HatTicket>(K: Kernel, deps: HatDeps<T
       const own = wid > 0 ? devirIstOf(wid) : null;
       // devralan aşçı önce kendi istasyonunun işine bakar, yoksa diğer istasyonlara (devir aşçıyı kilitlemez)
       if (own) { const f = pick(wid, from, undefined, own, true); if (f) return f; }
-      return pick(wid, from, opt?.ist, null, true);
+      const f = pick(wid, from, opt?.ist, null, true);
+      if (f || !opt?.hazir || !opt.ist || wid !== OYUNCU) return f;
+      // bilet yok: oyuncu kendi hazırlığını yapar (sahip: "istasyonda yemek ve hazırlık yapamıyorum")
+      const h = api.hazirAday(opt.ist); if (!h || busy(opt.ist)) return null;
+      cooking.push({ wid, ticket: null, food: h, ist: opt.ist, t: 0, off: 0 });
+      return h;
+    },
+    hazirAday(ist) {
+      if (inLine() >= PASS_KAP || busy(ist)) return null;
+      return acikYemekler(stage()).find(d => d.istasyon === ist && calismaIstasyonu(d.id, stage()) === ist)?.id ?? null;
     },
     aday(ist) {
       if (inLine() >= PASS_KAP) return null;

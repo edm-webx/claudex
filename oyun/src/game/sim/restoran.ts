@@ -169,8 +169,10 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
   const kumbaraYukle = () => { if (kumbaraYuklu) return; kumbaraYuklu = true; const g = G(); kumbara = Math.max(0, Number(g.kumbara) || 0); sonDagitim = g.sonDagitim ?? null; };
   const kumbaraYaz = () => { const g = G(); g.kumbara = Math.round(kumbara * 100) / 100; g.sonDagitim = sonDagitim; };
 
+  const AYIRMA_BILET = 3;
   // stations produce for open tickets too (room above the counter stock)
-  rt.reserved.push(() => { const r: Order = {}; for (const t of tickets) for (const p in t.want) if (isProduct(p)) add(r, p, t.want[p] || 0); return r; });
+  // 2026-11-25 sahip: "tezgaha hala bırakamıyorum": 48 masaya kadar bütün adisyonlar elde taşınan her ürünü ayırıyordu; yalnız en eski AYIRMA_BILET adisyon elde servis için ayrılır, fazlası tezgâha iner (garson tezgâhtan alır)
+  rt.reserved.push(() => { const r: Order = {}; for (const t of tickets.slice(0, AYIRMA_BILET)) for (const p in t.want) if (isProduct(p)) add(r, p, t.want[p] || 0); return r; });
   // BUF-05: mutfak hattı (istasyonlar, tepsi, pass rafı). Garsonun ELİNDEKİ tabaklar bilete sayılır; ayrılmış ama raftaki tabak hâlâ raftadır.
   // BUF-15: paket biletleri (sim/kurye.ts rt.teslimat) masa biletlerinin ARKASINDA aynı hatta pişer; masa mantığı (garson, sabır, hesap) onlara dokunmaz
   const paketler = (): readonly Ticket[] => (rt as unknown as { teslimat?: { biletler(): Ticket[] } }).teslimat?.biletler() ?? [];
@@ -343,14 +345,16 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
         if (hat.ist(OYUNCU) === ist) return true;
         if (elleriDolu()) return false;
         if (hat.aday(ist)) return true;
-        return rt.carry.length === 0 && (hat.devirOf(ist) != null || !!bosAsci());
+        if (hat.devirOf(ist) != null) return rt.carry.length === 0;   // aşçıdan geri al
+        // 2026-11-25 sahip: bilet yokken de istasyonda hazırlık yapılabilsin (en çok 2 tabak elde); devir yalnız hazırlanacak yemek kalmayınca
+        return (rt.carry.length < 2 && !!hat.hazirAday(ist)) || (rt.carry.length === 0 && !!bosAsci());
       },
       act: (_a, ctx) => {
         let cur = hat.ist(OYUNCU);
         if (cur !== ist) {
           if (elleriDolu()) { if (ctx.t - pStat.fullT > 3) { pStat.fullT = ctx.t; K.toast('Eller dolu!', 'info'); } return 'continue'; }
           if (cur) hat.pBirak();   // başka bilete geçti
-          const f = hat.claim(OYUNCU, undefined, { ist });
+          const f = hat.claim(OYUNCU, undefined, { ist, hazir: hat.devirOf(ist) == null });
           if (!f) return devirDeneme(ist, ctx.t);
           pStat.last = -99; cur = ist; K.stat('oyuncuPisirme');
           K.toast(yemekAd(f) + ' pişiyor, başında dur.', 'info');
