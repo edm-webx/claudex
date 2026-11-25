@@ -4,6 +4,7 @@
 - Çekimler: /mnt/project-files/sosisci-oyun/urun-gorsel-2026-11-25/ (kontak önce/sonra, tepsi, pass, masa, genel).
 
 ## Sıradaki adımlar
+0. Yuvarlak (usta) tepside yemekler hâlâ küçük görünüyor (sonra-tepsi.png): rtview.ts ölçek 0.7 kodda ama son çekimde yansımamış görünüyor, yeniden derleyip çekerek doğrula.
 1. Kullanıcı ekran görüntülerine bakıp beğenmediği ürünü söylerse o tarifi yemek-geo.ts'de düzelt.
 2. Ana İş (jo0q11) veya restoran-ters-u bu dalı birleştirmeli.
 3. Grafik thread'i KayKit tarzına geçiyor: Türk yemeklerinin KayKit karşılığı yok, prosedürel kalıyor. İstenirse KayKit gradyan atlasına benzer renk geçişi eklenebilir; burger/çorba gibi birkaç genel üründe KayKit modeli denenebilir.
