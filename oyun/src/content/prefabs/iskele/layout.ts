@@ -101,7 +101,7 @@ export const STATION_KINDS = ['doner', 'cay', 'ayran', 'simit', 'tost', 'gazoz']
 export type StationKind = typeof STATION_KINDS[number];
 export const PARTS = ['kepenk', 'tabela', 'fayans', 'floresan', 'tezgah', 'boya'];
 export const TABLE_PADS: Record<string, number> = { tabure1: 0, tabure2: 1, masa1: 2, masa2: 3, masa3: 4, masa4: 5 };
-export const PAD_KEYS_FALLBACK = ['cay', 'ayran', 'simit', 'tabure1', 'tabure2', 'isbul', 'pencere', 'tepsi1', 'masa1', 'gazoz', 'miknatis', 'masa2', 'tost', 'tepsi2', 'tadilat', 'masa3', 'masa4'];
+export const PAD_KEYS_FALLBACK = ['cay', 'ayran', 'simit', 'tabure1', 'tabure2', 'isbul', 'tepsi1', 'masa1', 'gazoz', 'miknatis', 'masa2', 'tost', 'tepsi2', 'tadilat', 'masa3', 'masa4'];
 const V3 = (x = 0, y = 0, z = 0): P3v => ({ x, y, z });
 const P3 = (x: number, z: number, y = 0): P3v => V3(x, y, z);
 export const BENCHES: { pos: P3v; rotY: number }[] = [

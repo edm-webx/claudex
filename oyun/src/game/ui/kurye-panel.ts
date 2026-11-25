@@ -84,7 +84,7 @@ export function renderKurye(m: any): string {
   if (!tab.length) s += `<div class="sb-card sb-muted">Tablet sessiz. Biraz bekle, mahalle acıkacak.</div>`;
   for (const o of tab) s += `<div class="sb-card ky-ord"><div><h3>${esc(o.semtName)} · ${tl(o.value)}</h3><p>${esc(o.items)}</p><p class="sb-muted">${esc(o.who)}: ${esc(o.note)} · ${esc(o.terrain)} · ${o.left} sn</p></div><div class="bt">${btn('Kabul', 'kAccept', o.id, 'green')}${o.sen ? btn('Sen götür!', 'kSelf', o.id, 'blue', '20 sn') : ''}${btn('Geç', 'kDecline', o.id, 'cream sm')}</div></div>`;
   // map
-  s += `<div class="sb-sec">${I('ferry')}Teslimat haritası</div><div class="sb-card">${mapSvg(m.semtler || [], m.live || [])}</div>`;
+  s += `<div class="sb-sec">${I('map')}Teslimat haritası</div><div class="sb-card">${mapSvg(m.semtler || [], m.live || [])}</div>`;
   // couriers
   const cs = m.couriers || [];
   s += `<div class="sb-sec">${I('people')}Kuryeler<span>${cs.length} / ${m.max}</span></div>`;
@@ -115,7 +115,7 @@ export function renderKurye(m: any): string {
   for (const x of m.sus || []) s += btn((x.on ? '✓ ' : '') + x.name, 'kSus', x.id, x.on ? '' : 'cream', x.kindName + (x.owned ? '' : ' · ' + (x.price ? tl(x.price) : 'bedava')), !x.owned && (m.money ?? 0) < x.price, 'Biraz daha para lazım.').replace('<span class="sb-bl">', `<span class="sw" style="background:${esc(x.color)}"></span><span class="sb-bl">`);
   s += '</div>';
   // districts
-  s += `<div class="sb-sec">${I('ferry')}Semtler</div>`;
+  s += `<div class="sb-sec">${I('map')}Semtler</div>`;
   for (const t of m.semtler || []) s += `<div class="sb-card ky-row" style="${t.open ? '' : 'opacity:.55'}"><div style="font:900 15px/1.1 var(--disp);text-align:center">×${String(t.payX).replace('.', ',')}</div><div><h3>${esc(t.name)}</h3><p>${esc(t.blurb)}</p></div><span class="sb-chip">${t.open ? esc(t.terrain) : I('lock') + ' Menzil ' + t.range}</span></div>`;
   return s;
 }

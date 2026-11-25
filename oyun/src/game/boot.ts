@@ -354,7 +354,8 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     });
   }
   // ferry kinds + tarife tahtası (ferry-look.ts)
-  const ferryLook: FerryLookView | null = playMode && zones ? make('ferryLook', () => createFerryLook({ root: () => zones.root('iskele') ?? null, rules: () => sim.rules })) : null;
+  const ferryLook = null as FerryLookView | null;   // 2026-11-25: vapur ve tarife tahtası kalktı
+  void createFerryLook;
 
   const karsiLook: KarsiLookView | null = playMode && zones ? make('karsiLook', () => createKarsiLook({ root: () => zones.root('iskele') ?? null })) : null;
   const karsiBina: BinaView | null = playMode && zones ? make('karsiBina', () => createKarsiBina({ root: () => zones.root('iskele') ?? null, night: () => nightK, camera: () => cam.camera, hero: () => walk.pos })) : null;

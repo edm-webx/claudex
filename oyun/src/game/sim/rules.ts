@@ -313,17 +313,7 @@ export function createRules(d: RulesDeps): RulesFull {
     if (c.kind === 'esnaf') return esnafM.handle(c);
     if (c.kind === 'hedef') return hedefM.handle(c);
     if (c.kind === 'restoran') return restoranM.handle(c);
-    if (c.kind === 'pencere' && c.op === 'hire') { // new hire for the ferry window: open the board, the next hire is posted there
-      if (!S.owned.pencere) { K.toast('Önce vapur penceresini aç.', 'info'); return true; }
-      if (!S.owned.isbul) { K.toast(K.isbulHint(), 'info'); return true; }
-      S.zones.pencere = { wid: Number((S.zones.pencere as { wid?: number } | undefined)?.wid) || 0, want: 1 } as never; board.open();
-      K.toast('Pencere için bir eleman seç, seçtiğin pencerede çalışır.', 'info'); return true;
-    }
-    if (c.kind === 'pencere') { // Faz 2: post a worker at the ferry window (same id again = take them back)
-      const wid = Number(c.wid) || 0, cur = Number((S.zones.pencere as { wid?: number } | undefined)?.wid) || 0;
-      S.zones.pencere = { wid: wid === cur ? 0 : wid }; const w = S.workers.find(x => x.id === wid);
-      K.toast(wid === cur || !w ? 'Pencereye kimse bakmayacak, vapur gelince sen koş.' : w.name + ' vapur gelince pencereye geçecek.', 'info'); K.saveNow(); return true;
-    }
+    if (c.kind === 'pencere') return true;   // 2026-11-25: vapur penceresi kalktı (eski komut sessizce yutulur)
     if (c.kind === 'mini') return miniM.handle(c);
     if (c.kind === 'yiyecek') return yiyecekM.handle(c);
     if (c.kind === 'hava') return havaM.handle(c);

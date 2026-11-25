@@ -35,7 +35,6 @@ export const TUT: readonly TutStep[] = [
   padStep('isbul'),
   { id: 'isbul', show: v => v.owned.includes('isbul'), done: v => v.workers.length > 0, at: v => v.anchors.job },
   padStep('ayran'), padStep('simit'), padStep('tabure1'),
-  padStep('pencere'),
 ];
 
 /** UX-06: tek seferlik sakin ipuçları (kayıt: st.tut['ip_<id>']). Bir yere ilk girişte tek satır; sahip: "binaya ilk girişte ipucu çipi olsun". */
