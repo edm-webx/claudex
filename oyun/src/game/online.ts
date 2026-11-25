@@ -12,7 +12,7 @@
  * - Names travel as typed nicknames in presence (display data, untrusted), set with textContent only.
  */
 import { hesap } from './net/supa';
-import { ORTAK_PAY } from './net/misafir';
+import { MISAFIR_MAAS } from './net/misafir';
 import { susturuldu, benSusturuldum, adlar } from './net/admin';
 import { adDogrulayici, etiket } from './net/kimlik';
 import { logYaz } from './net/log';
@@ -143,7 +143,7 @@ export function createOnline(d: OnlineDeps): OnlineView {
   let hostMissing = 0;
   const kimlik = adDogrulayici(adlar); let kimlikT = 0;   // Martı Kimlik: görünen hesap adı sunucudan (net/kimlik.ts)
   let retryT = 20, host = false, guestOf = '', guestSig = '', worldT = 0, worldWant = false, worldSig = '', kasaBase = -1, askT = 3, sheetT = 0;
-  /** net/misafir.ts: misafirin bu odada kazandığı (tamamı kendi cebinde) / ev sahibine gelen ortaklık payı; oda rozetinde yazar */
+  /** net/misafir.ts: misafirin bu odada ev sahibine sattığı (maaşı bunun MISAFIR_MAAS payı) / ev sahibine misafirlerden gelen; oda rozetinde yazar */
   let misafirKazanc = 0, ortakToplam = 0;
   try { const q = new URLSearchParams(location.search).get('oda'); if (q) code = kodTemiz(q); } catch { /* */ }
 
@@ -163,7 +163,7 @@ export function createOnline(d: OnlineDeps): OnlineView {
   if (supaReady()) connect(code);
 
   function connect(c: string, asHost = false) {
-    kasaGonder();   // odadan çıkmadan son satış bildirilir (ev sahibinin ortaklık payı kaybolmasın)
+    kasaGonder();   // odadan çıkmadan son satış ev sahibinin kasasına bildirilir
     if (link) { link.leave(); link = null; }
     if (guestOf) { guestOf = ''; guestSig = ''; try { d.world?.leave(); } catch { /* */ } }
     misafirKazanc = 0; ortakToplam = 0;
@@ -185,7 +185,7 @@ export function createOnline(d: OnlineDeps): OnlineView {
     if (!d.world || !l.on) return;
     l.on('iste', () => { if (host) worldWant = true; });
     l.on('pm', pl => { if (pl.to !== l.id || typeof pl.text !== 'string') return; const rp = remotes.get(String(pl.id || '')), ad = etiket(String(pl.ad || 'Esnaf'), rp ? kimlik.ad(rp.uid) : ''); addLog('🔒 ' + ad + ' → sen', filterChat(pl.text), 'pm', String(pl.id || '')); d.toast('🔒 ' + ad + ' sana yazdı'); });
-    // net/misafir.ts: misafirin sattığı kendi cebinde; ev sahibine yalnız oyunun bastığı ortaklık payı gelir (kimseden kesilmez)
+    // net/misafir.ts: misafirin sattığı ev sahibinin kasasına; misafirin maaşını oyun basar (kimseden kesilmez)
     l.on('kasa', pl => { const n = Number(pl.n); if (host && n > 0 && n < 1e7) { ortakToplam += d.world!.addKasa(Math.floor(n), String(pl.ad || 'Bir esnaf').slice(0, 14)) || 0; ui(); } });
     l.on('_ok', () => { if (!host && code) l.emit?.('iste', {}); });
     l.on('dunya', pl => {
@@ -194,13 +194,13 @@ export function createOnline(d: OnlineDeps): OnlineView {
       if (pl.sig === guestSig) return;
       const first = !guestOf;
       guestSig = pl.sig; guestOf = ad;
-      if (!first) kasaGonder();   // dünya yenilenmeden önce bekleyen satış bildirilir (eskiden her yenilemede siliniyordu: ortaklık payı / kazanç 0 kalıyordu)
+      if (!first) kasaGonder();   // dünya yenilenmeden önce bekleyen satış bildirilir (eskiden her yenilemede siliniyordu: ev sahibine 0 gidiyordu)
       try { d.world!.apply(pl.w, ad); kasaBase = d.world!.earned(); } catch { /* bad world: keep own */ }
-      if (first) { d.toast(tamlayan(ad) + " büfesindesin. Sattığın senin cebine!"); addLog('Martıköy', tamlayan(ad) + " büfesindesin. Sattığın her kuruş senin cebine girer ve kendi oyununa gelir. " + ad + "'in parası azalmaz, ona da oyundan %" + Math.round(ORTAK_PAY * 100) + ' ortaklık payı gelir. Büfeye alışverişi ve sarı kareleri ' + ad + ' yapar. Odadan çıkınca paranla kendi dükkanına dönersin.', 'sys'); }
+      if (first) { d.toast(tamlayan(ad) + ' büfesinde yardımdasın. Satış başına maaş alırsın!'); addLog('Martıköy', tamlayan(ad) + ' büfesindesin. Sattıkların onun kasasına gider; sana da her satışın %' + Math.round(MISAFIR_MAAS * 100) + "'i maaş olarak cebine girer (oyun öder, " + ad + "'den kesilmez). Paran, seviyen, XP'n hep senin: kazandıkların kendi oyununa yazılır. Büfeye alışverişi ve sarı kareleri " + ad + ' yapar.', 'sys'); }
       ui();
     });
   }
-  /** misafirin son bildirimden beri sattığı: cebinde kalır (net/misafir.ts), ev sahibine ortaklık payı için bildirilir */
+  /** misafirin son bildirimden beri sattığı: ev sahibinin kasasına bildirilir (net/misafir.ts) */
   function kasaGonder() {
     if (host || !guestOf || !d.world || !link?.emit) return;
     const e = d.world.earned(), n = kasaBase >= 0 ? e - kasaBase : 0;
@@ -262,7 +262,7 @@ export function createOnline(d: OnlineDeps): OnlineView {
       input.addEventListener('keyup', e => e.stopPropagation());
       addLog('Martıköy', 'Online dünyaya hoş geldin! Bir oyuncunun adına dokun, ona özel mesaj at.', 'sys');
     }
-    setPill('🟢 ' + (code ? 'Özel oda ' + code + (host ? ' · 🏠 ev sahibi' + (ortakToplam > 0 ? ' · 🤝 ortaklık +' + Math.floor(ortakToplam).toLocaleString('tr-TR') + ' ₺' : '') : guestOf ? ' · 🏠 ' + tamlayan(guestOf) + " büfesi · 👛 kazancın +" + Math.floor(misafirKazanc).toLocaleString('tr-TR') + ' ₺' : '') : '') + ' · ' + (remotes.size + 1) + ' kişi');
+    setPill('🟢 ' + (code ? 'Özel oda ' + code + (host ? ' · 🏠 ev sahibi' + (ortakToplam > 0 ? ' · 🤝 yardım +' + Math.floor(ortakToplam).toLocaleString('tr-TR') + ' ₺' : '') : guestOf ? ' · 🏠 ' + tamlayan(guestOf) + " büfesi · 👛 maaşın +" + Math.floor(misafirKazanc * MISAFIR_MAAS).toLocaleString('tr-TR') + ' ₺' : '') : '') + ' · ' + (remotes.size + 1) + ' kişi');
     if (odaBtn) odaBtn.textContent = code ? '🔑 Oyun kodu: ' + code : '🔑 Arkadaşını çağır';
   }
   function odaPanel() {
@@ -271,7 +271,7 @@ export function createOnline(d: OnlineDeps): OnlineView {
     const main = (err = '') => {
       bg.innerHTML = `<div class="on-card"><h3>🔑 Oyun kodu</h3><p>Oyunun sadece senin. Arkadaşın gelsin istersen kod oluştur, kodu ona söyle. O da "Katıl"a yazsın, aynı Martıköy'de buluşun.</p>
 ${code ? `<div class="on-big">${code}</div><p>Şu an bu odadasın.</p>` : ''}
-<button class="on-b g" data-a="kur">Yeni oda kur</button><p style="margin:6px 0 0;font-size:12px">Odayı kuran ev sahibi olur: girenler senin büfende çalışır. Herkes sattığını kendi cebine koyar, kimsenin parası azalmaz; ev sahibine ortaklık payı gelir.</p>
+<button class="on-b g" data-a="kur">Yeni oda kur</button><p style="margin:6px 0 0;font-size:12px">Odayı kuran ev sahibi olur: girenler senin büfende çalışır. Sattıkları senin kasana gelir, onlara maaşı oyun öder; kimsenin parası ve seviyesi karışmaz.</p>
 <div style="margin-top:12px;font:900 15px var(--disp)">Odaya katıl</div>
 <input class="on-code" maxlength="6" placeholder="KOD" autocomplete="off" spellcheck="false">
 <button class="on-b y" data-a="katil">Katıl</button><div class="on-err">${err}</div>

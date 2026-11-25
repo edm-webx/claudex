@@ -9,42 +9,42 @@
     {
       "ad": "oda kuruldu",
       "ok": true,
-      "kod": "8E54RV"
+      "kod": "BYGVR9"
     },
     {
       "ad": "misafir ev sahibinin büfesinde, kendi cüzdanıyla",
       "ok": true,
       "stage": 5,
       "money": 1000,
-      "pill": "🟢 Özel oda 8E54RV · 🏠 Sabri'nin büfesi · 👛 kazancın +0 ₺ · 2 kişi"
+      "pill": "🟢 Özel oda BYGVR9 · 🏠 Sabri'nin büfesi · 👛 maaşın +0 ₺ · 2 kişi"
     },
     {
-      "ad": "misafirin sattığı tamamı kendi cebinde, geri düşmüyor",
+      "ad": "misafire satışın %25 maaşı, geri düşmüyor",
       "ok": true,
-      "miPara1": 6000
+      "miPara1": 2250
     },
     {
-      "ad": "ev sahibine %25 ortaklık payı, parası azalmadı",
+      "ad": "misafirin satışı ev sahibinin kasasında",
       "ok": true,
-      "evPara1": 2001250,
-      "fark": 1250
+      "evPara1": 2005000,
+      "fark": 5000
     },
     {
-      "ad": "rozetler: misafirde kendi kazancı, ev sahibinde ortaklık; ev sahibinin kasası misafirde yazmıyor",
+      "ad": "rozetler: misafirde kendi maaşı, ev sahibinde yardım; ev sahibinin kasası misafirde yazmıyor",
       "ok": true,
-      "misafir": "🟢 Özel oda 8E54RV · 🏠 Sabri'nin büfesi · 👛 kazancın +5.000 ₺ · 2 kişi",
-      "ev": "🟢 Özel oda 8E54RV · 🏠 ev sahibi · 🤝 ortaklık +1.250 ₺ · 2 kişi"
+      "misafir": "🟢 Özel oda BYGVR9 · 🏠 Sabri'nin büfesi · 👛 maaşın +1.250 ₺ · 2 kişi",
+      "ev": "🟢 Özel oda BYGVR9 · 🏠 ev sahibi · 🤝 yardım +5.000 ₺ · 2 kişi"
     },
     {
       "ad": "misafire ikiz pasif gelir yok, alışveriş kapalı",
       "ok": true,
       "pasif": 0,
-      "miPara2": 6000
+      "miPara2": 2250
     },
     {
       "ad": "dünya yenilenince misafirin parası ve yeri durur",
       "ok": true,
-      "miPara3": 6000,
+      "miPara3": 2250,
       "yer0": {
         "x": 3,
         "z": 6
@@ -57,20 +57,20 @@
     {
       "ad": "sekme kapanınca misafirin kazancı kendi kaydında (kendi aşaması)",
       "ok": true,
-      "miPara4": 6000,
+      "miPara4": 2250,
       "stage": 1
     },
     {
       "ad": "odadan çıkınca parasıyla kendi dükkânında",
       "ok": true,
       "stage": 1,
-      "money": 8000
+      "money": 2750
     },
     {
       "ad": "ev sahibinin parası misafir yüzünden hiç azalmadı (kendi aldıkları hariç)",
       "ok": true,
-      "evPara2": 1991650,
-      "evParaSon": 1992150
+      "evPara2": 1995400,
+      "evParaSon": 1997400
     }
   ],
   "hatalar": []

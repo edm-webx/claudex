@@ -1,6 +1,6 @@
 // 2026-11-25 iki oyunculu para denetimi (net/misafir.ts): iki ayrı tarayıcı bağlamı, Supabase Realtime yerine yerel Phoenix
-// rölesi (page.routeWebSocket). Ev sahibi oda kurar, misafir kodla katılır; misafirin satışı tamamı kendi cebinde mi, ev sahibine
-// ortaklık payı geliyor mu, kimsenin parası azalıyor mu, misafir ev sahibinin dünyasında para harcayabiliyor mu, sekme kapanınca
+// rölesi (page.routeWebSocket). Ev sahibi oda kurar, misafir kodla katılır; misafirin satışı ev sahibinin kasasına gidiyor mu,
+// misafire maaş geliyor mu (geri düşmeden), kimsenin parası azalıyor mu, misafir ev sahibinin dünyasında para harcayabiliyor mu, sekme kapanınca
 // misafirin kazancı kendi kaydında kalıyor mu, odadan çıkınca parasıyla kendi dükkânına dönüyor mu.
 //  npx vite build && node tests/browser/iki-oyuncu-para.mjs [çıktı-klasörü]
 import { createServer } from 'node:http'; import { readFileSync, existsSync, statSync, mkdirSync, writeFileSync } from 'node:fs'; import { join, resolve } from 'node:path'; import { createRequire } from 'node:module';
@@ -74,13 +74,13 @@ await mi.screenshot({ path: join(out, '1-misafir-katildi.png') });
 
 // misafir satar: 4000 ₺ tezgah + 1000 ₺ adisyon (sim kredi kapısı, gerçek satışla aynı defter)
 await mi.evaluate(() => { const M = window.__marti; M.kazanc('tezgah', 4000); M.kazanc('adisyon', 1000); M.step(0.1); });
-await bekleKadar(20, () => pill(ev).then(t => /ortaklık/.test(t)), ev, mi);   // bildirim 2 sn'de bir; yavaş swiftshader karesinde gerçek süre değişir
+await bekleKadar(20, () => pill(ev).then(t => /yardım/.test(t)), ev, mi);   // bildirim 2 sn'de bir; yavaş swiftshader karesinde gerçek süre değişir
 const miPara1 = await para(mi), evPara1 = await para(ev);
-adim('misafirin sattığı tamamı kendi cebinde, geri düşmüyor', miPara1 === miPara0 + 5000, { miPara1 });
-adim('ev sahibine %25 ortaklık payı, parası azalmadı', evPara1 >= evPara0 + 1250, { evPara1, fark: evPara1 - evPara0 });
+adim('misafire satışın %25 maaşı, geri düşmüyor', miPara1 === miPara0 + 1250, { miPara1 });
+adim('misafirin satışı ev sahibinin kasasında', evPara1 >= evPara0 + 5000, { evPara1, fark: evPara1 - evPara0 });
 const p1 = await pill(mi), p2 = await pill(ev);
-adim('rozetler: misafirde kendi kazancı, ev sahibinde ortaklık; ev sahibinin kasası misafirde yazmıyor', /kazancın \+5\.000/.test(p1) && /ortaklık \+1\.250/.test(p2) && !/kasası/.test(p1), { misafir: p1, ev: p2 });
-await mi.screenshot({ path: join(out, '2-misafir-satti.png') }); await ev.screenshot({ path: join(out, '3-ev-sahibi-ortaklik.png') });
+adim('rozetler: misafirde kendi maaşı, ev sahibinde yardım; ev sahibinin kasası misafirde yazmıyor', /maaşın \+1\.250/.test(p1) && /yardım \+5\.000/.test(p2) && !/kasası/.test(p1), { misafir: p1, ev: p2 });
+await mi.screenshot({ path: join(out, '2-misafir-satti.png') }); await ev.screenshot({ path: join(out, '3-ev-sahibi-yardim.png') });
 
 // ev sahibinin pasif geliri misafire ödenmez; misafir ev sahibinin bankasına / büfesine para harcayamaz
 const pasif = await mi.evaluate(() => window.__marti.kazanc('isletme', 9000));
@@ -110,9 +110,9 @@ await birlikte(4, ev, mi);
 await mi.click('.on-oda', { force: true }); await mi.click('[data-a="kur"]', { force: true }); await mi.click('[data-a="kapat"]', { force: true });   // başka oda kurmak = bu odadan çıkış
 await birlikte(2, ev, mi);
 const son = await mi.evaluate(() => { const s = window.__marti.state(); return { stage: s.stage, money: Math.round(s.money) }; });
-adim('odadan çıkınca parasıyla kendi dükkânında', son.stage === 1 && son.money === miPara1 + 2000, son);
+adim('odadan çıkınca parasıyla kendi dükkânında', son.stage === 1 && son.money === miPara1 + 500, son);
 const evParaSon = await para(ev);
-adim('ev sahibinin parası misafir yüzünden hiç azalmadı (kendi aldıkları hariç)', evParaSon >= evPara2 + 500, { evPara2, evParaSon });
+adim('ev sahibinin parası misafir yüzünden hiç azalmadı (kendi aldıkları hariç)', evParaSon >= evPara2 + 2000, { evPara2, evParaSon });
 
 sonuc.hatalar = errs.slice(0, 20);
 writeFileSync(join(out, 'rapor.json'), JSON.stringify(sonuc, null, 2));

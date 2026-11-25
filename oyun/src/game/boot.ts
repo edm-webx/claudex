@@ -118,7 +118,7 @@ import { createKarsiBina, type BinaView } from './view/world/karsi-bina';
 import { createIsletmeInsaat, type InsaatView } from './view/world/isletme-insaat';
 import { createInsaatSahasi, type InsaatSahasiView } from './view/world/insaat-sahasi';
 import { gecitAcik } from '../content/kilitli-bolge';
-import { misafirDunya, misafirDonus, ortakPay, toplanmamis } from './net/misafir';
+import { misafirDunya, misafirDonus, toplanmamisMaas } from './net/misafir';
 import { createBufeBuyume, mevsimZorla, type BuyumeView } from './view/world/bufe-buyume';
 import { createParkLook, type ParkView } from './view/world/park-look';
 import { createAcilis, type AcilisView } from './view/world/acilis';
@@ -300,7 +300,8 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const saveOn = () => !noSave && !guestWorld;
   // 2026-11-25 (net/misafir.ts): misafirken kazanılan para misafirin KENDİ kaydına yazılır; sekme kapansa da kaybolmaz
   let misafirSure = 0, misafirKayitT = 10;
-  const misafirKendi = () => misafirDonus(JSON.parse(ownBackup!) as AnyRec, sim.state as unknown as AnyRec, misafirSure) as unknown as GameState;
+  const misafirXp = () => Number((sim.rules.rt as unknown as { misafirXp?: number }).misafirXp) || 0;   // sim/levels.ts
+  const misafirKendi = () => misafirDonus(JSON.parse(ownBackup!) as AnyRec, sim.state as unknown as AnyRec, misafirSure, misafirXp()) as unknown as GameState;
   const ownSave: SaveStore<GameState> = createStateSave(misafirKendi, platform, { key: params.save ?? SAVE_KEY, log });
   /** kayıt yazılabilir mi (kendi oyunu ya da misafirken kendi kaydı) ve hangi depo / durum */
   const kayitAcik = () => !noSave && (!guestWorld || !!ownBackup);
@@ -523,23 +524,24 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
       sig: () => { const S = sim.state as unknown as AnyRec; return JSON.stringify([S.owned, S.padPaid, S.tiers, S.stage, S.renewed, S.tadilat, S.decorOwned, S.decorSlots, S.sign, (S.workers as unknown[] | undefined)?.length, S.kepenk, (S.zones as AnyRec | undefined)?.restoran]); },
       apply: (json: string) => {
         // kendi kaydı önce EŞZAMANLI alınır: eskiden save.save() asenkron koşup ev sahibinin dünyasını misafirin kendi kaydı diye yazıyordu
-        if (!ownBackup) { try { sim.rules.snapshot(platform.clock.wall()); } catch { /* */ } ownBackup = JSON.stringify(sim.state); misafirSure = 0; misafirKayitT = 10; }
+        if (!ownBackup) { try { sim.rules.snapshot(platform.clock.wall()); } catch { /* */ } ownBackup = JSON.stringify(sim.state); misafirSure = 0; misafirKayitT = 10; (sim.rules.rt as unknown as { misafirXp?: number }).misafirXp = 0; }
         const own = JSON.parse(ownBackup) as AnyRec, h = JSON.parse(json) as AnyRec;
         // net/misafir.ts: ev sahibinin büfesi, misafirin kendi cüzdanı. Zaten misafirse (ev sahibi bir şey aldı, dünya yenilendi):
         // şu anki cüzdan + toplanmamış kasası cebe, yeri değişmez (eskiden kasa yığını kayboluyor, misafir giriş yerine ışınlanıyordu)
         const pl = { ...(sim.state.player as unknown as AnyRec), x: walk.pos.x, z: walk.pos.z, kat: (walk as unknown as { kat?: number }).kat || 0 };
-        const m = misafirDunya(guestWorld ? { ...own, money: sim.state.money + toplanmamis(sim.rules.rt as never), gold: sim.state.gold, player: pl } : own, h);
+        const m = misafirDunya(guestWorld ? { ...own, money: sim.state.money + toplanmamisMaas(sim.rules.rt as never), gold: sim.state.gold, player: pl } : own, h);
         guestWorld = true; sim.load(m as never); (sim.rules.rt as unknown as { misafir?: boolean }).misafir = true;
         if (!noSave && !save.readOnly) void ownSave.save('manual');   // kendi kaydı (ev sahibinin dünyası değil)
       },
       earned: () => Number(sim.state.totalEarned) || 0,
       money: () => sim.state.money,
       setMoney: (n: number) => { sim.state.money = n; },
-      addKasa: (n: number, from: string) => { const pay = ortakPay(n); if (pay > 0) { sim.rules.credit!('diger', pay); kasaToast += pay; kasaFrom = from; } return pay; },
+      addKasa: (n: number, from: string) => { const v = sim.rules.credit!('diger', n); kasaToast += v; kasaFrom = from; return v; },   // misafirin satışı ev sahibinin kasasına (net/misafir.ts)
       leave: () => {
         if (ownBackup) {
-          const cur = { money: sim.state.money + toplanmamis(sim.rules.rt as never), gold: sim.state.gold };   // toplanmamış kasa da misafirin emeği
-          sim.load(misafirDonus(JSON.parse(ownBackup), cur, misafirSure) as never); ownBackup = null;
+          const cur = { money: sim.state.money + toplanmamisMaas(sim.rules.rt as never), gold: sim.state.gold };   // toplanmamış satışın maaşı da misafirin
+          sim.load(misafirDonus(JSON.parse(ownBackup), cur, misafirSure, misafirXp()) as never); ownBackup = null;
+          (sim.rules.rt as unknown as { misafirXp?: number }).misafirXp = 0;
         }
         guestWorld = false; (sim.rules.rt as unknown as { misafir?: boolean }).misafir = false;
         if (saveOn()) void save.save('manual').then(bulutPush);   // kazanç hemen kendi kaydına
@@ -824,7 +826,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (kayitRozet) guard('kayitRozet', () => kayitRozet.guncelle());
     if (online) guard('online', () => online.update(fdt));
     if (adminPanel) guard('adminPanel', () => adminPanel.update(fdt));
-    if (kasaToast > 0 && (kasaT -= fdt) <= 0) { kasaT = 6; U.toast(kasaFrom + ' senin büfende satıyor: ortaklık payın +' + Math.floor(kasaToast).toLocaleString('tr-TR') + ' ₺ (ondan kesilmedi)', 'good'); kasaToast = 0; }
+    if (kasaToast > 0 && (kasaT -= fdt) <= 0) { kasaT = 6; U.toast(kasaFrom + ' büfende yardım etti: kasaya +' + Math.floor(kasaToast).toLocaleString('tr-TR') + ' ₺. Maaşını oyun öder, senden kesilmez.', 'good'); kasaToast = 0; }
     if (haliSaha) guard('haliSaha', () => haliSaha.update());
     if (reklam) guard('reklam', () => reklam.update(fdt));
     if (havaLook) guard('havaLook', () => havaLook.update(fdt));
