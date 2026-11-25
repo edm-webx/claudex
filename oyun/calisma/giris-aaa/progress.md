@@ -21,6 +21,6 @@
 2. Kullanıcının PC'sinde gerçek ekran kartıyla önce/sonra görüntüleri al (build'i PC klasörüne kopyala, Claude Browser ya da yerel sunucu).
 3. Menü kamera kadrajını gerçek görüntüde ince ayarla (masaüstü yaw +0.13, telefonda r 54).
 4. Kullanıcıya göster, onay gelince Ana İş thread'i jo0q11'e birleştirsin. Yeni zip ÜRETME.
+5. KARAR (koordinatör, 2026-11-25): uzak süs vapuru (ferryFar, ferry) oyundan TAMAMEN kalksın. Önce tz1bfz dalındaki vapur kaldırma işiyle çakışmayı kontrol et.
 ## Açık sorular
-- Dünyadaki uzak vapur (ferryFar) oyun içinde de duruyor; kullanıcı vapur istemiyor -> tamamen kaldıralım mı sor.
-- Yapımcılar'da "Kod ve tasarım ortağı: Claude (Anthropic)" satırı kalsın mı sor.
+- Yapımcılar'da "Kod ve tasarım ortağı: Claude (Anthropic)" satırı: kullanıcıya sorulacak. Cevaba kadar satır KALDIRILDI.

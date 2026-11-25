@@ -984,7 +984,7 @@ ${sl('music', 'Müzik')}${sl('sfx', 'Efekt sesleri')}
   const yapimPaneli = () => {
     const satir = (k, v) => `<div><small>${k}</small><b>${v}</b></div>`;
     yan.innerHTML = `<div class="mn-panel"><button class="mn-geri" data-geri aria-label="Geri">✕</button><h2>Yapımcılar</h2><div class="mn-studyo">${STUDYO}</div>
-<div class="mn-krediler">${satir('Yapım, tasarım ve yönetim', STUDYO)}${satir('Kod ve tasarım ortağı', 'Claude (Anthropic)')}${satir('Oyun motoru', 'Martı Motoru · three.js (MIT)')}${satir('Araç, bina ve ağaç modelleri', 'Kenney · kenney.nl (CC0)')}${satir('Zemin dokuları', 'Poly Haven (CC0)')}${satir('Yazı tipleri', 'Baloo 2, Rubik (SIL Open Font License)')}${satir('Hesap ve çok oyunculu', 'Martı Kimlik · Supabase')}</div>
+<div class="mn-krediler">${satir('Yapım, tasarım ve yönetim', STUDYO)}${satir('Oyun motoru', 'Martı Motoru · three.js (MIT)')}${satir('Araç, bina ve ağaç modelleri', 'Kenney · kenney.nl (CC0)')}${satir('Zemin dokuları', 'Poly Haven (CC0)')}${satir('Yazı tipleri', 'Baloo 2, Rubik (SIL Open Font License)')}${satir('Hesap ve çok oyunculu', 'Martı Kimlik · Supabase')}</div>
 <div class="mn-not">Oyundaki bütün markalar, dükkânlar ve kişiler uydurmadır. Martıköy'e hoş geldin.</div>
 <button class="mn-btn mn-ikinci" data-geri>Kapat</button></div>`;
   };
