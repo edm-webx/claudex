@@ -175,7 +175,7 @@ export function installIsletmeKareler(K: Kernel, api: IsletmeKareApi): { sync():
         const m = kanatOf(i)!; if (own.has(i) || masaHediye(i) || bolgeler.has(m.bolge)) continue;
         bolgeler.add(m.bolge);
         const pos = m.cati ? { x: catiAyak(m.cati).x, z: catiAyak(m.cati).z + 0.9 } : { x: m.x, z: m.z };
-        out.push({ key: 'masa.' + i, pos, y: m.bolge === 'salonW' ? SOKAK_Y + 0.05 : undefined, label: '🪑 MASA', sub: BOLGE_AD[m.bolge] + (m.cati ? ' (çatıya)' : ''), price: masaFiyat(i), kilit: '', done: () => api.masaAl!(i) });
+        out.push({ key: 'masa.' + i, pos, y: m.bolge === 'salonW' ? SOKAK_Y + 0.05 : undefined, label: m.cati ? '🪑 ÇATI MASASI' : '🪑 MASA', sub: m.cati ? 'Çatı terası masası: burada al' : BOLGE_AD[m.bolge], price: masaFiyat(i), kilit: '', done: () => api.masaAl!(i) });
       }
     }
     return out;
