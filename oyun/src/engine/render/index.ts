@@ -26,6 +26,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 import { akisGuncelle } from './doku-akis';
 import { groundRadius, nextShadowExt } from './shadow-fit';
 import { renderScale } from '../quality';
@@ -277,19 +278,22 @@ export function createRender(deps: RenderDeps): MotorRender {
   const reflInfo = { ran: false, ever: false, calls: 0, tris: 0, main: 0 };
 
   // post-process (tier flag `bloom`): MSAA half-float target -> bloom -> OutputPass (tone mapping + sRGB)
-  let composer: EffectComposer | null = null, rpass: RenderPass | null = null, bloom: UnrealBloomPass | null = null, grade: ShaderPass | null = null;
+  let composer: EffectComposer | null = null, rpass: RenderPass | null = null, bloom: UnrealBloomPass | null = null, grade: ShaderPass | null = null, fxaa: ShaderPass | null = null;
+  // 2026-11-25 public çıkış: akıcı (no MSAA) had no AA at all = jagged edges on every silhouette; a last FXAA pass smooths them there only
+  const fxaaSize = () => { if (!fxaa || !composer) return; const rb = (composer as unknown as { readBuffer: T.WebGLRenderTarget }).readBuffer; fxaa.uniforms.resolution.value.set(1 / Math.max(1, rb.width), 1 / Math.max(1, rb.height)); };
   function setupPost(t: TierDef) {
     const want = !!renderer && postTier(t);
     // PRF-15: EffectComposer.dispose frees only its own two targets; the bloom pass keeps ~10 half-float mip targets and every
     // pass its material, so each switch to a no-bloom tier leaked them on the GPU. Passes are disposed first now.
     // GRS-01: without the post chain (akıcı) the grade runs inside tone mapping (look.ts CustomToneMapping); with it, ACES + GRADE pass
     if (renderer) { renderer.toneMapping = want ? T.ACESFilmicToneMapping : T.CustomToneMapping; renderer.toneMappingExposure = want ? LOOK_POZ.ana : LOOK_POZ.ana * AKICI_POZ; }
-    if (!want) { if (composer) { composer.passes.forEach(ps => { try { ps.dispose(); } catch { /* */ } }); composer.dispose(); composer = null; rpass = null; bloom = null; grade = null; } return; }
+    if (!want) { if (composer) { composer.passes.forEach(ps => { try { ps.dispose(); } catch { /* */ } }); composer.dispose(); composer = null; rpass = null; bloom = null; grade = null; fxaa = null; } return; }
     if (composer) {
       if (bloom) bloom.enabled = !!t.flags?.bloom && !postCut;
       // GRS-17: MSAA follows the tier live (only the scene target is multisampled; samples are not in any program key)
       const rb = (composer as unknown as { renderTarget2: T.WebGLRenderTarget }).renderTarget2, ns = t.antialias ? 4 : 0;
       if (rb.samples !== ns) { rb.samples = ns; rb.dispose(); }
+      if (fxaa) fxaa.enabled = !t.antialias;
       return;
     }
     const { w, h } = size(), pr = basePR(t) * resScale;
@@ -306,7 +310,8 @@ export function createRender(deps: RenderDeps): MotorRender {
     bloom = new UnrealBloomPass(new T.Vector2(w, h), 0.22, 0.4, 0.92); composer.addPass(bloom);
     composer.addPass(new OutputPass());
     grade = new ShaderPass(GRADE); composer.addPass(grade);
-    composer.setPixelRatio(pr); composer.setSize(w, h);
+    fxaa = new ShaderPass(FXAAShader); fxaa.enabled = !t.antialias; composer.addPass(fxaa);
+    composer.setPixelRatio(pr); composer.setSize(w, h); fxaaSize();
     tuneBloom();
     bloom.enabled = !!t.flags?.bloom && !postCut;
   }
@@ -418,6 +423,8 @@ export function createRender(deps: RenderDeps): MotorRender {
         deps.perf?.meta('gpu', dbg ? String(c.getParameter(dbg.UNMASKED_RENDERER_WEBGL)) : 'bilinmiyor');
         deps.perf?.meta('gpuZamanOlcer', gpuExt ? 'var' : 'yok');
       } catch { /* headless */ }
+      // 2026-11-25 public çıkış: textures with no explicit setting (GLB maps, signs) blurred/shimmered at grazing angles; default anisotropy
+      try { T.Texture.DEFAULT_ANISOTROPY = Math.min(8, renderer.capabilities.getMaxAnisotropy()); } catch { /* headless */ }
       renderer.shadowMap.type = T.PCFSoftShadowMap;
       renderer.shadowMap.enabled = true;
       try { loseExt = renderer.getContext().getExtension('WEBGL_lose_context'); } catch { loseExt = null; }
@@ -543,7 +550,7 @@ export function createRender(deps: RenderDeps): MotorRender {
       const { w, h } = size();
       // a canvas size write reallocates the drawing buffer even when the value is the same: only when something changed
       if (renderer) { const pr = renderer.getPixelRatio(), cv = renderer.domElement; renderer.getSize(_rs); if (_rs.x !== w || _rs.y !== h || cv.width !== Math.floor(w * pr) || cv.height !== Math.floor(h * pr)) renderer.setSize(w, h, false); }
-      if (composer && renderer) { composer.setPixelRatio(tier ? basePR(tier) * resScale : renderer.getPixelRatio()); composer.setSize(w, h); }
+      if (composer && renderer) { composer.setPixelRatio(tier ? basePR(tier) * resScale : renderer.getPixelRatio()); composer.setSize(w, h); fxaaSize(); }
       rig.setAspect(w / h);
     },
     registerPick(id: string, p: Vec3, radius: number) {
