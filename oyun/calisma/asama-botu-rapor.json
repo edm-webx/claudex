@@ -11,37 +11,37 @@
  "ihlalTur": {},
  "ihlaller": [],
  "asiriYukOlayi": {
-  "masa-menu": 18,
-  "masa-hesap": 45,
-  "masa-kirli": 21
+  "masa-hesap": 50,
+  "masa-menu": 28,
+  "masa-kirli": 12
  },
  "enUzunBeklemeSn": {
   "elde-mutfak": 9,
-  "masa-kirli": 42,
-  "masa-menu": 37,
+  "masa-kirli": 44,
+  "masa-menu": 56,
   "masa-siparis": 19,
-  "pass-bekleyen": 24,
-  "masa-hesap": 39,
-  "tepsi-sahipsiz": 7,
+  "pass-bekleyen": 29,
+  "masa-hesap": 40,
+  "tepsi-sahipsiz": 10,
   "bulasik-yigini": 2,
   "paket-bekleyen": 7
  },
  "bilinenSinir": {
-  "catiMasaKirliEnUzunSn": 29,
+  "catiMasaKirliEnUzunSn": 27,
   "not": "çatı masasını garson ve temizlikçi siler (temizlikçi de merdivenden çıkar, 2026-11-21; önce yalnız garson: 1000-2400 sn kirli kalıyordu)"
  },
  "istatistik": {
   "isinlanma": 0,
   "garsonZamanAsimi": 0,
-  "tabakDustu": 0,
-  "paketTeslim": 59,
-  "paketSiparis": 68,
-  "tabakYikandi": 3457,
-  "guvenlikRonda": 903,
-  "hostesKarsilama": 878,
-  "hostesMasaGosterdi": 199,
-  "valeAnahtar": 73,
-  "valePark": 73,
+  "tabakDustu": 1,
+  "paketTeslim": 48,
+  "paketSiparis": 69,
+  "tabakYikandi": 3381,
+  "guvenlikRonda": 900,
+  "hostesKarsilama": 850,
+  "hostesMasaGosterdi": 178,
+  "valeAnahtar": 77,
+  "valePark": 76,
   "mudurVekil": 48,
   "mudurIs": 0,
   "mudurKasa": 0
@@ -50,13 +50,13 @@
   {
    "asama": 1,
    "gun": 3,
-   "gelir": 61366,
+   "gelir": 60076,
    "sureSn": 1440,
-   "gelirGun": 20455,
+   "gelirGun": 20025,
    "calisan": 6,
    "aktor": 28,
    "maxAktor": 28,
-   "maxMusteri": 17,
+   "maxMusteri": 16,
    "menuAcik": 0,
    "ustaMax": 0,
    "catiKirliEnYas": 0,
@@ -70,9 +70,9 @@
    },
    "bekle": {
     "masa-kirli": {
-     "n": 141,
-     "ort": 7.7,
-     "p95": 15.3,
+     "n": 136,
+     "ort": 7.6,
+     "p95": 14.8,
      "max": 25.3,
      "ust30": 0
     }
@@ -82,9 +82,9 @@
   {
    "asama": 2,
    "gun": 3,
-   "gelir": 56528,
+   "gelir": 59664,
    "sureSn": 1415,
-   "gelirGun": 19176,
+   "gelirGun": 20239,
    "calisan": 7,
    "aktor": 29,
    "maxAktor": 32,
@@ -102,9 +102,9 @@
    },
    "bekle": {
     "masa-kirli": {
-     "n": 180,
-     "ort": 7.2,
-     "p95": 12.3,
+     "n": 178,
+     "ort": 6.9,
+     "p95": 12.8,
      "max": 22.8,
      "ust30": 0
     }
@@ -114,13 +114,13 @@
   {
    "asama": 3,
    "gun": 3,
-   "gelir": 98891,
+   "gelir": 99920,
    "sureSn": 1415,
-   "gelirGun": 33546,
+   "gelirGun": 33895,
    "calisan": 10,
    "aktor": 32,
    "maxAktor": 35,
-   "maxMusteri": 30,
+   "maxMusteri": 28,
    "menuAcik": 4,
    "ustaMax": 3,
    "catiKirliEnYas": 0,
@@ -147,29 +147,29 @@
    },
    "bekle": {
     "masa-hesap": {
-     "n": 67,
-     "ort": 12.2,
-     "p95": 29,
-     "max": 33,
-     "ust30": 1.5
+     "n": 54,
+     "ort": 10.7,
+     "p95": 22.3,
+     "max": 34.5,
+     "ust30": 3.7
     },
     "masa-kirli": {
-     "n": 168,
-     "ort": 8.2,
-     "p95": 13.5,
-     "max": 18.3,
+     "n": 175,
+     "ort": 8.1,
+     "p95": 13.8,
+     "max": 19.3,
      "ust30": 0
     },
     "masa-menu": {
-     "n": 72,
-     "ort": 13,
-     "p95": 22.5,
-     "max": 35.3,
-     "ust30": 2.8
+     "n": 59,
+     "ort": 11.9,
+     "p95": 20.5,
+     "max": 24.3,
+     "ust30": 0
     },
     "masa-siparis": {
-     "n": 72,
-     "ort": 5.8,
+     "n": 59,
+     "ort": 5.6,
      "p95": 6.5,
      "max": 6.8,
      "ust30": 0
@@ -180,13 +180,13 @@
   {
    "asama": 4,
    "gun": 3,
-   "gelir": 152609,
+   "gelir": 172241,
    "sureSn": 1410,
-   "gelirGun": 51952,
+   "gelirGun": 58635,
    "calisan": 14,
    "aktor": 36,
    "maxAktor": 39,
-   "maxMusteri": 33,
+   "maxMusteri": 32,
    "menuAcik": 8,
    "ustaMax": 3,
    "catiKirliEnYas": 0,
@@ -220,30 +220,30 @@
    },
    "bekle": {
     "masa-hesap": {
-     "n": 76,
-     "ort": 11.7,
-     "p95": 28,
-     "max": 35.8,
-     "ust30": 3.9
+     "n": 87,
+     "ort": 11,
+     "p95": 22.5,
+     "max": 40,
+     "ust30": 2.3
     },
     "masa-kirli": {
-     "n": 247,
-     "ort": 9.9,
-     "p95": 21,
-     "max": 31.5,
-     "ust30": 1.2
+     "n": 208,
+     "ort": 9.1,
+     "p95": 17.8,
+     "max": 28.8,
+     "ust30": 0
     },
     "masa-menu": {
-     "n": 76,
+     "n": 91,
      "ort": 12.2,
-     "p95": 22,
-     "max": 32.5,
-     "ust30": 1.3
+     "p95": 29.8,
+     "max": 41.8,
+     "ust30": 4.4
     },
     "masa-siparis": {
-     "n": 76,
-     "ort": 5.7,
-     "p95": 6.8,
+     "n": 91,
+     "ort": 5.6,
+     "p95": 6.5,
      "max": 6.8,
      "ust30": 0
     }
@@ -253,13 +253,13 @@
   {
    "asama": 5,
    "gun": 3,
-   "gelir": 276581,
+   "gelir": 258962,
    "sureSn": 1415,
-   "gelirGun": 93823,
+   "gelirGun": 87846,
    "calisan": 20,
    "aktor": 42,
    "maxAktor": 45,
-   "maxMusteri": 39,
+   "maxMusteri": 42,
    "menuAcik": 11,
    "ustaMax": 3,
    "catiKirliEnYas": 0,
@@ -300,31 +300,31 @@
    },
    "bekle": {
     "masa-hesap": {
-     "n": 117,
-     "ort": 13.9,
-     "p95": 27.8,
-     "max": 34.3,
-     "ust30": 3.4
+     "n": 128,
+     "ort": 14,
+     "p95": 30,
+     "max": 40,
+     "ust30": 4.7
     },
     "masa-kirli": {
-     "n": 235,
-     "ort": 11.6,
-     "p95": 23.3,
-     "max": 32.5,
-     "ust30": 0.9
+     "n": 240,
+     "ort": 10.8,
+     "p95": 20.3,
+     "max": 27.5,
+     "ust30": 0
     },
     "masa-menu": {
-     "n": 119,
-     "ort": 13.4,
-     "p95": 28.5,
-     "max": 32,
-     "ust30": 1.7
+     "n": 127,
+     "ort": 15,
+     "p95": 30.5,
+     "max": 55.5,
+     "ust30": 5.5
     },
     "masa-siparis": {
-     "n": 118,
+     "n": 127,
      "ort": 5.6,
-     "p95": 6.5,
-     "max": 7,
+     "p95": 6.8,
+     "max": 6.8,
      "ust30": 0
     }
    },
@@ -333,13 +333,13 @@
   {
    "asama": 6,
    "gun": 3,
-   "gelir": 741970,
+   "gelir": 716222,
    "sureSn": 1415,
-   "gelirGun": 251693,
+   "gelirGun": 242959,
    "calisan": 23,
    "aktor": 46,
    "maxAktor": 49,
-   "maxMusteri": 27,
+   "maxMusteri": 26,
    "menuAcik": 16,
    "ustaMax": 4,
    "catiKirliEnYas": 0,
@@ -386,31 +386,31 @@
    },
    "bekle": {
     "masa-hesap": {
-     "n": 132,
-     "ort": 16.8,
-     "p95": 30.3,
+     "n": 125,
+     "ort": 13.3,
+     "p95": 31.5,
      "max": 37.5,
-     "ust30": 5.3
+     "ust30": 5.6
     },
     "masa-kirli": {
-     "n": 210,
-     "ort": 11.9,
+     "n": 203,
+     "ort": 11.3,
      "p95": 20.5,
-     "max": 38.8,
-     "ust30": 1
+     "max": 32.8,
+     "ust30": 0.5
     },
     "masa-menu": {
-     "n": 135,
-     "ort": 14.4,
-     "p95": 28,
-     "max": 36.5,
-     "ust30": 3
+     "n": 129,
+     "ort": 12.8,
+     "p95": 27.3,
+     "max": 36,
+     "ust30": 3.1
     },
     "masa-siparis": {
-     "n": 135,
-     "ort": 5.6,
+     "n": 128,
+     "ort": 5.7,
      "p95": 6.5,
-     "max": 6.8,
+     "max": 17.5,
      "ust30": 0
     }
    },
@@ -419,13 +419,13 @@
   {
    "asama": 7,
    "gun": 3,
-   "gelir": 2066071,
+   "gelir": 2040870,
    "sureSn": 1415,
-   "gelirGun": 700858,
+   "gelirGun": 692309,
    "calisan": 27,
    "aktor": 50,
    "maxAktor": 55,
-   "maxMusteri": 32,
+   "maxMusteri": 31,
    "menuAcik": 21,
    "ustaMax": 4,
    "catiKirliEnYas": 0,
@@ -478,28 +478,28 @@
    },
    "bekle": {
     "masa-hesap": {
-     "n": 171,
-     "ort": 14.9,
-     "p95": 30.8,
-     "max": 35,
-     "ust30": 5.8
+     "n": 177,
+     "ort": 15.7,
+     "p95": 33.8,
+     "max": 40,
+     "ust30": 7.9
     },
     "masa-kirli": {
-     "n": 241,
-     "ort": 13.8,
-     "p95": 25,
-     "max": 41,
-     "ust30": 0.8
+     "n": 251,
+     "ort": 14.1,
+     "p95": 27.3,
+     "max": 43.8,
+     "ust30": 2.4
     },
     "masa-menu": {
-     "n": 180,
-     "ort": 13.3,
-     "p95": 25.8,
-     "max": 32.5,
-     "ust30": 2.2
+     "n": 182,
+     "ort": 13.8,
+     "p95": 25.3,
+     "max": 38.8,
+     "ust30": 1.6
     },
     "masa-siparis": {
-     "n": 177,
+     "n": 183,
      "ort": 5.6,
      "p95": 6.5,
      "max": 6.8,
@@ -511,13 +511,13 @@
   {
    "asama": 8,
    "gun": 3,
-   "gelir": 3051766,
+   "gelir": 3105925,
    "sureSn": 1415,
-   "gelirGun": 1035228,
+   "gelirGun": 1053600,
    "calisan": 36,
    "aktor": 59,
    "maxAktor": 64,
-   "maxMusteri": 37,
+   "maxMusteri": 39,
    "menuAcik": 27,
    "ustaMax": 4,
    "catiKirliEnYas": 27,
@@ -577,31 +577,31 @@
    },
    "bekle": {
     "masa-hesap": {
-     "n": 199,
-     "ort": 13.4,
-     "p95": 29.5,
-     "max": 39,
-     "ust30": 4
+     "n": 191,
+     "ort": 13.1,
+     "p95": 27,
+     "max": 38.8,
+     "ust30": 2.6
     },
     "masa-kirli": {
-     "n": 247,
-     "ort": 11.6,
-     "p95": 22.5,
-     "max": 39.8,
-     "ust30": 1.2
+     "n": 237,
+     "ort": 11.5,
+     "p95": 20.5,
+     "max": 30.8,
+     "ust30": 0.4
     },
     "masa-menu": {
-     "n": 215,
-     "ort": 12.9,
-     "p95": 23.8,
-     "max": 32.5,
-     "ust30": 0.9
+     "n": 206,
+     "ort": 13.2,
+     "p95": 26,
+     "max": 42.8,
+     "ust30": 2.9
     },
     "masa-siparis": {
-     "n": 214,
-     "ort": 6.4,
-     "p95": 12.8,
-     "max": 18.5,
+     "n": 205,
+     "ort": 6.5,
+     "p95": 14,
+     "max": 18.8,
      "ust30": 0
     }
    },
@@ -610,16 +610,16 @@
   {
    "asama": 9,
    "gun": 3,
-   "gelir": 7735367,
+   "gelir": 8181482,
    "sureSn": 1410,
-   "gelirGun": 2633316,
+   "gelirGun": 2785185,
    "calisan": 40,
    "aktor": 63,
    "maxAktor": 70,
-   "maxMusteri": 37,
+   "maxMusteri": 39,
    "menuAcik": 32,
    "ustaMax": 5,
-   "catiKirliEnYas": 28.75,
+   "catiKirliEnYas": 26.5,
    "siparisYemek": [
     "adana",
     "ahtapot_salata",
@@ -681,31 +681,31 @@
    },
    "bekle": {
     "masa-hesap": {
-     "n": 191,
-     "ort": 13.1,
-     "p95": 28.5,
+     "n": 188,
+     "ort": 13.3,
+     "p95": 26.5,
      "max": 35.3,
-     "ust30": 3.1
+     "ust30": 3.7
     },
     "masa-kirli": {
-     "n": 245,
-     "ort": 11.8,
-     "p95": 22.3,
-     "max": 41.5,
-     "ust30": 2
+     "n": 216,
+     "ort": 12,
+     "p95": 24.3,
+     "max": 37.8,
+     "ust30": 0.9
     },
     "masa-menu": {
-     "n": 200,
-     "ort": 13.6,
-     "p95": 27.8,
-     "max": 36.8,
-     "ust30": 1
+     "n": 192,
+     "ort": 13,
+     "p95": 24.8,
+     "max": 31.3,
+     "ust30": 0.5
     },
     "masa-siparis": {
-     "n": 203,
-     "ort": 6.7,
-     "p95": 15.3,
-     "max": 17.8,
+     "n": 191,
+     "ort": 6.4,
+     "p95": 13.5,
+     "max": 16.5,
      "ust30": 0
     }
    },
@@ -714,16 +714,16 @@
   {
    "asama": 10,
    "gun": 3,
-   "gelir": 14951114,
+   "gelir": 14331970,
    "sureSn": 1415,
-   "gelirGun": 5071756,
+   "gelirGun": 4861728,
    "calisan": 45,
    "aktor": 68,
    "maxAktor": 74,
-   "maxMusteri": 42,
+   "maxMusteri": 38,
    "menuAcik": 38,
    "ustaMax": 5,
-   "catiKirliEnYas": 24.5,
+   "catiKirliEnYas": 26.25,
    "siparisYemek": [
     "adana",
     "ahtapot_salata",
@@ -791,31 +791,31 @@
    },
    "bekle": {
     "masa-hesap": {
-     "n": 194,
-     "ort": 13.9,
-     "p95": 26.8,
-     "max": 36.3,
-     "ust30": 3.1
+     "n": 182,
+     "ort": 12,
+     "p95": 28.8,
+     "max": 37.3,
+     "ust30": 3.8
     },
     "masa-kirli": {
-     "n": 230,
-     "ort": 11.7,
-     "p95": 23.3,
-     "max": 39.5,
-     "ust30": 1.7
+     "n": 224,
+     "ort": 11.8,
+     "p95": 23,
+     "max": 38.3,
+     "ust30": 0.9
     },
     "masa-menu": {
-     "n": 217,
-     "ort": 12.3,
-     "p95": 24.3,
-     "max": 33.8,
-     "ust30": 0.5
+     "n": 214,
+     "ort": 12.7,
+     "p95": 26.5,
+     "max": 38,
+     "ust30": 1.4
     },
     "masa-siparis": {
-     "n": 217,
-     "ort": 6.4,
-     "p95": 12.8,
-     "max": 18,
+     "n": 214,
+     "ort": 6.5,
+     "p95": 14.3,
+     "max": 17.3,
      "ust30": 0
     }
    },
@@ -825,122 +825,122 @@
  "roller": {
   "doner": {
    "kisi": 1,
-   "mesafeM": 292,
-   "is": 2064,
-   "enAzMesafeM": 292,
-   "enAzIs": 2064
+   "mesafeM": 286,
+   "is": 2010,
+   "enAzMesafeM": 286,
+   "enAzIs": 2010
   },
   "cay": {
    "kisi": 1,
-   "mesafeM": 249,
-   "is": 1597,
-   "enAzMesafeM": 249,
-   "enAzIs": 1597
+   "mesafeM": 261,
+   "is": 1558,
+   "enAzMesafeM": 261,
+   "enAzIs": 1558
   },
   "tost": {
    "kisi": 1,
-   "mesafeM": 181,
-   "is": 1322,
-   "enAzMesafeM": 181,
-   "enAzIs": 1322
+   "mesafeM": 175,
+   "is": 1337,
+   "enAzMesafeM": 175,
+   "enAzIs": 1337
   },
   "garson": {
    "kisi": 10,
-   "mesafeM": 144108,
-   "is": 10405,
-   "enAzMesafeM": 2427,
-   "enAzIs": 122
+   "mesafeM": 142267,
+   "is": 10158,
+   "enAzMesafeM": 2503,
+   "enAzIs": 106
   },
   "temizlik": {
    "kisi": 3,
-   "mesafeM": 52863,
-   "is": 2769,
-   "enAzMesafeM": 7891,
-   "enAzIs": 342
+   "mesafeM": 52400,
+   "is": 2672,
+   "enAzMesafeM": 8137,
+   "enAzIs": 328
   },
   "asci": {
    "kisi": 5,
-   "mesafeM": 9815,
-   "is": 1305,
-   "enAzMesafeM": 492,
-   "enAzIs": 36
+   "mesafeM": 9831,
+   "is": 1285,
+   "enAzMesafeM": 431,
+   "enAzIs": 37
   },
   "kasiyer": {
    "kisi": 3,
-   "mesafeM": 405,
-   "is": 1368,
-   "enAzMesafeM": 51,
-   "enAzIs": 62
+   "mesafeM": 420,
+   "is": 1299,
+   "enAzMesafeM": 50,
+   "enAzIs": 53
   },
   "komi": {
    "kisi": 4,
-   "mesafeM": 35962,
-   "is": 1749,
-   "enAzMesafeM": 2232,
-   "enAzIs": 87
+   "mesafeM": 36255,
+   "is": 1743,
+   "enAzMesafeM": 2182,
+   "enAzIs": 82
   },
   "guvenlik": {
    "kisi": 2,
-   "mesafeM": 13770,
-   "is": 903,
-   "enAzMesafeM": 4553,
+   "mesafeM": 13795,
+   "is": 900,
+   "enAzMesafeM": 4547,
    "enAzIs": 248
   },
   "muzisyen": {
    "kisi": 2,
-   "mesafeM": 173,
+   "mesafeM": 151,
    "is": 1169,
-   "enAzMesafeM": 55,
+   "enAzMesafeM": 46,
    "enAzIs": 258
   },
   "bulasikci": {
    "kisi": 2,
    "mesafeM": 14,
-   "is": 3457,
+   "is": 3381,
    "enAzMesafeM": 6,
-   "enAzIs": 716
+   "enAzIs": 693
   },
   "hostes": {
    "kisi": 2,
-   "mesafeM": 5000,
-   "is": 1077,
-   "enAzMesafeM": 1221,
-   "enAzIs": 317
+   "mesafeM": 4552,
+   "is": 1028,
+   "enAzMesafeM": 1084,
+   "enAzIs": 304
   },
   "barista": {
    "kisi": 2,
-   "mesafeM": 1058,
-   "is": 588,
-   "enAzMesafeM": 144,
-   "enAzIs": 68
+   "mesafeM": 1212,
+   "is": 603,
+   "enAzMesafeM": 119,
+   "enAzIs": 75
   },
   "kurye": {
    "kisi": 2,
-   "mesafeM": 11998,
-   "is": 59,
-   "enAzMesafeM": 4380,
-   "enAzIs": 15
+   "mesafeM": 10919,
+   "is": 48,
+   "enAzMesafeM": 3651,
+   "enAzIs": 6
   },
   "mudur": {
    "kisi": 1,
-   "mesafeM": 36,
+   "mesafeM": 38,
    "is": 48,
-   "enAzMesafeM": 36,
+   "enAzMesafeM": 38,
    "enAzIs": 48
   },
   "sef": {
    "kisi": 2,
-   "mesafeM": 2465,
-   "is": 1500,
-   "enAzMesafeM": 463,
-   "enAzIs": 212
+   "mesafeM": 2517,
+   "is": 1473,
+   "enAzMesafeM": 515,
+   "enAzIs": 204
   },
   "vale": {
    "kisi": 2,
-   "mesafeM": 2249,
-   "is": 146,
-   "enAzMesafeM": 407,
-   "enAzIs": 26
+   "mesafeM": 2154,
+   "is": 153,
+   "enAzMesafeM": 398,
+   "enAzIs": 27
   }
  },
  "calisanlar": [
@@ -949,11 +949,11 @@
    "ad": "Rıza",
    "rol": "doner",
    "ilkAsama": 1,
-   "mesafeM": 292,
-   "is": 2064,
-   "xp": 2064,
+   "mesafeM": 286,
+   "is": 2010,
+   "xp": 2010,
    "isinlanma": 0,
-   "maxHareketsizSn": 94,
+   "maxHareketsizSn": 89,
    "durumSayisi": 4,
    "durumlar": [
     "arrive",
@@ -967,11 +967,11 @@
    "ad": "Tayfun",
    "rol": "cay",
    "ilkAsama": 1,
-   "mesafeM": 249,
-   "is": 1597,
-   "xp": 1597,
+   "mesafeM": 261,
+   "is": 1558,
+   "xp": 1558,
    "isinlanma": 0,
-   "maxHareketsizSn": 102,
+   "maxHareketsizSn": 114,
    "durumSayisi": 4,
    "durumlar": [
     "arrive",
@@ -985,11 +985,11 @@
    "ad": "Selin",
    "rol": "tost",
    "ilkAsama": 1,
-   "mesafeM": 181,
-   "is": 1322,
-   "xp": 1322,
+   "mesafeM": 175,
+   "is": 1337,
+   "xp": 1337,
    "isinlanma": 0,
-   "maxHareketsizSn": 316,
+   "maxHareketsizSn": 221,
    "durumSayisi": 3,
    "durumlar": [
     "arrive",
@@ -1002,9 +1002,9 @@
    "ad": "İbrahim",
    "rol": "garson",
    "ilkAsama": 1,
-   "mesafeM": 22755,
-   "is": 1985,
-   "xp": 3270,
+   "mesafeM": 22452,
+   "is": 1913,
+   "xp": 3067,
    "isinlanma": 0,
    "maxHareketsizSn": 7,
    "durumSayisi": 15,
@@ -1031,9 +1031,9 @@
    "ad": "Selin",
    "rol": "garson",
    "ilkAsama": 1,
-   "mesafeM": 24523,
-   "is": 2296,
-   "xp": 3719,
+   "mesafeM": 24135,
+   "is": 2276,
+   "xp": 3664,
    "isinlanma": 0,
    "maxHareketsizSn": 6,
    "durumSayisi": 16,
@@ -1061,9 +1061,9 @@
    "ad": "Zehra",
    "rol": "temizlik",
    "ilkAsama": 1,
-   "mesafeM": 24684,
-   "is": 1404,
-   "xp": 2808,
+   "mesafeM": 24214,
+   "is": 1357,
+   "xp": 2714,
    "isinlanma": 0,
    "maxHareketsizSn": 58,
    "durumSayisi": 6,
@@ -1081,97 +1081,11 @@
    "ad": "Nazlı",
    "rol": "garson",
    "ilkAsama": 2,
-   "mesafeM": 22481,
-   "is": 1820,
-   "xp": 2995,
+   "mesafeM": 22591,
+   "is": 1783,
+   "xp": 2977,
    "isinlanma": 0,
    "maxHareketsizSn": 8,
-   "durumSayisi": 15,
-   "durumlar": [
-    "arrive",
-    "idle",
-    "load",
-    "masaAct",
-    "pickJob",
-    "serve",
-    "toClean",
-    "toCounter",
-    "toMasa",
-    "toPass",
-    "toSrc",
-    "toTable",
-    "unload",
-    "watch",
-    "wipe"
-   ]
-  },
-  {
-   "id": 8,
-   "ad": "Cem",
-   "rol": "temizlik",
-   "ilkAsama": 3,
-   "mesafeM": 20288,
-   "is": 1023,
-   "xp": 2046,
-   "isinlanma": 0,
-   "maxHareketsizSn": 13,
-   "durumSayisi": 6,
-   "durumlar": [
-    "idle",
-    "mop",
-    "mopK",
-    "toClean",
-    "watch",
-    "wipe"
-   ]
-  },
-  {
-   "id": 9,
-   "ad": "Ömer",
-   "rol": "asci",
-   "ilkAsama": 3,
-   "mesafeM": 4165,
-   "is": 666,
-   "xp": 666,
-   "isinlanma": 0,
-   "maxHareketsizSn": 24,
-   "durumSayisi": 6,
-   "durumlar": [
-    "kBack",
-    "kCook",
-    "kGoCook",
-    "kIdle",
-    "kPass",
-    "kTasiAl"
-   ]
-  },
-  {
-   "id": 10,
-   "ad": "İpek",
-   "rol": "kasiyer",
-   "ilkAsama": 3,
-   "mesafeM": 188,
-   "is": 1122,
-   "xp": 1161,
-   "isinlanma": 0,
-   "maxHareketsizSn": 73,
-   "durumSayisi": 3,
-   "durumlar": [
-    "arrive",
-    "front",
-    "watch"
-   ]
-  },
-  {
-   "id": 11,
-   "ad": "Sinan",
-   "rol": "garson",
-   "ilkAsama": 4,
-   "mesafeM": 18735,
-   "is": 1210,
-   "xp": 2131,
-   "isinlanma": 0,
-   "maxHareketsizSn": 6,
    "durumSayisi": 16,
    "durumlar": [
     "arrive",
@@ -1193,13 +1107,97 @@
    ]
   },
   {
+   "id": 8,
+   "ad": "Cem",
+   "rol": "temizlik",
+   "ilkAsama": 3,
+   "mesafeM": 20049,
+   "is": 987,
+   "xp": 1974,
+   "isinlanma": 0,
+   "maxHareketsizSn": 21,
+   "durumSayisi": 6,
+   "durumlar": [
+    "idle",
+    "mop",
+    "mopK",
+    "toClean",
+    "watch",
+    "wipe"
+   ]
+  },
+  {
+   "id": 9,
+   "ad": "Ömer",
+   "rol": "asci",
+   "ilkAsama": 3,
+   "mesafeM": 4048,
+   "is": 641,
+   "xp": 641,
+   "isinlanma": 0,
+   "maxHareketsizSn": 21,
+   "durumSayisi": 6,
+   "durumlar": [
+    "kBack",
+    "kCook",
+    "kGoCook",
+    "kIdle",
+    "kPass",
+    "kTasiAl"
+   ]
+  },
+  {
+   "id": 10,
+   "ad": "İpek",
+   "rol": "kasiyer",
+   "ilkAsama": 3,
+   "mesafeM": 213,
+   "is": 1075,
+   "xp": 1109,
+   "isinlanma": 0,
+   "maxHareketsizSn": 65,
+   "durumSayisi": 3,
+   "durumlar": [
+    "arrive",
+    "front",
+    "watch"
+   ]
+  },
+  {
+   "id": 11,
+   "ad": "Sinan",
+   "rol": "garson",
+   "ilkAsama": 4,
+   "mesafeM": 18616,
+   "is": 1199,
+   "xp": 2132,
+   "isinlanma": 0,
+   "maxHareketsizSn": 6,
+   "durumSayisi": 13,
+   "durumlar": [
+    "arrive",
+    "idle",
+    "load",
+    "masaAct",
+    "pickJob",
+    "serve",
+    "toCounter",
+    "toMasa",
+    "toPass",
+    "toSrc",
+    "toTable",
+    "unload",
+    "watch"
+   ]
+  },
+  {
    "id": 12,
    "ad": "Pınar",
    "rol": "komi",
    "ilkAsama": 4,
-   "mesafeM": 15293,
-   "is": 850,
-   "xp": 852,
+   "mesafeM": 15251,
+   "is": 843,
+   "xp": 850,
    "isinlanma": 0,
    "maxHareketsizSn": 4,
    "durumSayisi": 4,
@@ -1215,11 +1213,11 @@
    "ad": "Taner",
    "rol": "guvenlik",
    "ilkAsama": 4,
-   "mesafeM": 9217,
-   "is": 655,
+   "mesafeM": 9248,
+   "is": 652,
    "xp": 0,
    "isinlanma": 0,
-   "maxHareketsizSn": 15,
+   "maxHareketsizSn": 14,
    "durumSayisi": 3,
    "durumlar": [
     "arrive",
@@ -1232,7 +1230,7 @@
    "ad": "Hüseyin",
    "rol": "muzisyen",
    "ilkAsama": 4,
-   "mesafeM": 118,
+   "mesafeM": 105,
    "is": 911,
    "xp": 0,
    "isinlanma": 0,
@@ -1249,186 +1247,11 @@
    "ad": "Hatice",
    "rol": "garson",
    "ilkAsama": 5,
-   "mesafeM": 16206,
-   "is": 974,
-   "xp": 1755,
+   "mesafeM": 15853,
+   "is": 989,
+   "xp": 1760,
    "isinlanma": 0,
    "maxHareketsizSn": 6,
-   "durumSayisi": 14,
-   "durumlar": [
-    "arrive",
-    "idle",
-    "load",
-    "masaAct",
-    "pickJob",
-    "serve",
-    "toCounter",
-    "toGeri",
-    "toMasa",
-    "toPass",
-    "toSrc",
-    "toTable",
-    "unload",
-    "watch"
-   ]
-  },
-  {
-   "id": 16,
-   "ad": "Seda",
-   "rol": "asci",
-   "ilkAsama": 5,
-   "mesafeM": 2263,
-   "is": 311,
-   "xp": 311,
-   "isinlanma": 0,
-   "maxHareketsizSn": 26,
-   "durumSayisi": 6,
-   "durumlar": [
-    "kBack",
-    "kCook",
-    "kGoCook",
-    "kIdle",
-    "kPass",
-    "kTasiAl"
-   ]
-  },
-  {
-   "id": 17,
-   "ad": "Burak",
-   "rol": "bulasikci",
-   "ilkAsama": 5,
-   "mesafeM": 6,
-   "is": 2741,
-   "xp": 2741,
-   "isinlanma": 0,
-   "maxHareketsizSn": 43,
-   "durumSayisi": 3,
-   "durumlar": [
-    "kBack",
-    "kIdle",
-    "kWash"
-   ]
-  },
-  {
-   "id": 18,
-   "ad": "Hüseyin",
-   "rol": "hostes",
-   "ilkAsama": 5,
-   "mesafeM": 3779,
-   "is": 760,
-   "xp": 0,
-   "isinlanma": 0,
-   "maxHareketsizSn": 99,
-   "durumSayisi": 3,
-   "durumlar": [
-    "arrive",
-    "front",
-    "watch"
-   ]
-  },
-  {
-   "id": 19,
-   "ad": "Tuğba",
-   "rol": "barista",
-   "ilkAsama": 5,
-   "mesafeM": 914,
-   "is": 520,
-   "xp": 520,
-   "isinlanma": 0,
-   "maxHareketsizSn": 125,
-   "durumSayisi": 6,
-   "durumlar": [
-    "kBack",
-    "kCook",
-    "kGoCook",
-    "kIdle",
-    "kPass",
-    "kTasiAl"
-   ]
-  },
-  {
-   "id": 20,
-   "ad": "Kemal",
-   "rol": "kurye",
-   "ilkAsama": 5,
-   "mesafeM": 7618,
-   "is": 44,
-   "xp": 132,
-   "isinlanma": 0,
-   "maxHareketsizSn": 80,
-   "durumSayisi": 7,
-   "durumlar": [
-    "idle",
-    "qAl",
-    "qDon",
-    "qPass",
-    "qTeslim",
-    "qYol",
-    "watch"
-   ]
-  },
-  {
-   "id": 21,
-   "ad": "Ece",
-   "rol": "komi",
-   "ilkAsama": 6,
-   "mesafeM": 11448,
-   "is": 519,
-   "xp": 519,
-   "isinlanma": 0,
-   "maxHareketsizSn": 4,
-   "durumSayisi": 4,
-   "durumlar": [
-    "kBack",
-    "kIdle",
-    "kPass",
-    "kTasiAl"
-   ]
-  },
-  {
-   "id": 22,
-   "ad": "Süleyman",
-   "rol": "kasiyer",
-   "ilkAsama": 6,
-   "mesafeM": 166,
-   "is": 184,
-   "xp": 184,
-   "isinlanma": 0,
-   "maxHareketsizSn": 64,
-   "durumSayisi": 3,
-   "durumlar": [
-    "arrive",
-    "front",
-    "watch"
-   ]
-  },
-  {
-   "id": 23,
-   "ad": "Fatma",
-   "rol": "mudur",
-   "ilkAsama": 6,
-   "mesafeM": 36,
-   "is": 48,
-   "xp": 0,
-   "isinlanma": 0,
-   "maxHareketsizSn": 428,
-   "durumSayisi": 3,
-   "durumlar": [
-    "arrive",
-    "front",
-    "watch"
-   ]
-  },
-  {
-   "id": 24,
-   "ad": "Sinan",
-   "rol": "garson",
-   "ilkAsama": 7,
-   "mesafeM": 10561,
-   "is": 585,
-   "xp": 1054,
-   "isinlanma": 0,
-   "maxHareketsizSn": 7,
    "durumSayisi": 15,
    "durumlar": [
     "arrive",
@@ -1449,13 +1272,190 @@
    ]
   },
   {
+   "id": 16,
+   "ad": "Seda",
+   "rol": "asci",
+   "ilkAsama": 5,
+   "mesafeM": 2425,
+   "is": 316,
+   "xp": 316,
+   "isinlanma": 0,
+   "maxHareketsizSn": 26,
+   "durumSayisi": 6,
+   "durumlar": [
+    "kBack",
+    "kCook",
+    "kGoCook",
+    "kIdle",
+    "kPass",
+    "kTasiAl"
+   ]
+  },
+  {
+   "id": 17,
+   "ad": "Burak",
+   "rol": "bulasikci",
+   "ilkAsama": 5,
+   "mesafeM": 6,
+   "is": 2688,
+   "xp": 2688,
+   "isinlanma": 0,
+   "maxHareketsizSn": 39,
+   "durumSayisi": 3,
+   "durumlar": [
+    "kBack",
+    "kIdle",
+    "kWash"
+   ]
+  },
+  {
+   "id": 18,
+   "ad": "Hüseyin",
+   "rol": "hostes",
+   "ilkAsama": 5,
+   "mesafeM": 3468,
+   "is": 724,
+   "xp": 0,
+   "isinlanma": 0,
+   "maxHareketsizSn": 76,
+   "durumSayisi": 3,
+   "durumlar": [
+    "arrive",
+    "front",
+    "watch"
+   ]
+  },
+  {
+   "id": 19,
+   "ad": "Tuğba",
+   "rol": "barista",
+   "ilkAsama": 5,
+   "mesafeM": 1093,
+   "is": 528,
+   "xp": 528,
+   "isinlanma": 0,
+   "maxHareketsizSn": 234,
+   "durumSayisi": 6,
+   "durumlar": [
+    "kBack",
+    "kCook",
+    "kGoCook",
+    "kIdle",
+    "kPass",
+    "kTasiAl"
+   ]
+  },
+  {
+   "id": 20,
+   "ad": "Kemal",
+   "rol": "kurye",
+   "ilkAsama": 5,
+   "mesafeM": 7268,
+   "is": 42,
+   "xp": 126,
+   "isinlanma": 0,
+   "maxHareketsizSn": 72,
+   "durumSayisi": 7,
+   "durumlar": [
+    "idle",
+    "qAl",
+    "qDon",
+    "qPass",
+    "qTeslim",
+    "qYol",
+    "watch"
+   ]
+  },
+  {
+   "id": 21,
+   "ad": "Ece",
+   "rol": "komi",
+   "ilkAsama": 6,
+   "mesafeM": 11824,
+   "is": 546,
+   "xp": 546,
+   "isinlanma": 0,
+   "maxHareketsizSn": 4,
+   "durumSayisi": 4,
+   "durumlar": [
+    "kBack",
+    "kIdle",
+    "kPass",
+    "kTasiAl"
+   ]
+  },
+  {
+   "id": 22,
+   "ad": "Süleyman",
+   "rol": "kasiyer",
+   "ilkAsama": 6,
+   "mesafeM": 157,
+   "is": 171,
+   "xp": 171,
+   "isinlanma": 0,
+   "maxHareketsizSn": 76,
+   "durumSayisi": 3,
+   "durumlar": [
+    "arrive",
+    "front",
+    "watch"
+   ]
+  },
+  {
+   "id": 23,
+   "ad": "Fatma",
+   "rol": "mudur",
+   "ilkAsama": 6,
+   "mesafeM": 38,
+   "is": 48,
+   "xp": 0,
+   "isinlanma": 0,
+   "maxHareketsizSn": 620,
+   "durumSayisi": 3,
+   "durumlar": [
+    "arrive",
+    "front",
+    "watch"
+   ]
+  },
+  {
+   "id": 24,
+   "ad": "Sinan",
+   "rol": "garson",
+   "ilkAsama": 7,
+   "mesafeM": 10672,
+   "is": 569,
+   "xp": 1038,
+   "isinlanma": 0,
+   "maxHareketsizSn": 7,
+   "durumSayisi": 16,
+   "durumlar": [
+    "arrive",
+    "idle",
+    "load",
+    "masaAct",
+    "pickJob",
+    "serve",
+    "toClean",
+    "toCounter",
+    "toGeri",
+    "toMasa",
+    "toPass",
+    "toSrc",
+    "toTable",
+    "unload",
+    "watch",
+    "wipe"
+   ]
+  },
+  {
    "id": 25,
    "ad": "Ümran",
    "rol": "garson",
    "ilkAsama": 7,
-   "mesafeM": 10565,
-   "is": 601,
-   "xp": 1102,
+   "mesafeM": 10410,
+   "is": 584,
+   "xp": 1042,
    "isinlanma": 0,
    "maxHareketsizSn": 6,
    "durumSayisi": 16,
@@ -1483,11 +1483,11 @@
    "ad": "Burcu",
    "rol": "asci",
    "ilkAsama": 7,
-   "mesafeM": 1843,
-   "is": 211,
-   "xp": 211,
+   "mesafeM": 1862,
+   "is": 203,
+   "xp": 203,
    "isinlanma": 0,
-   "maxHareketsizSn": 29,
+   "maxHareketsizSn": 26,
    "durumSayisi": 6,
    "durumlar": [
     "kBack",
@@ -1504,10 +1504,10 @@
    "rol": "sef",
    "ilkAsama": 7,
    "mesafeM": 2002,
-   "is": 1288,
-   "xp": 203,
+   "is": 1269,
+   "xp": 202,
    "isinlanma": 0,
-   "maxHareketsizSn": 57,
+   "maxHareketsizSn": 66,
    "durumSayisi": 6,
    "durumlar": [
     "kBack",
@@ -1523,12 +1523,12 @@
    "ad": "Mert",
    "rol": "garson",
    "ilkAsama": 8,
-   "mesafeM": 7979,
-   "is": 409,
-   "xp": 732,
+   "mesafeM": 7767,
+   "is": 373,
+   "xp": 694,
    "isinlanma": 0,
-   "maxHareketsizSn": 25,
-   "durumSayisi": 16,
+   "maxHareketsizSn": 22,
+   "durumSayisi": 15,
    "durumlar": [
     "arrive",
     "idle",
@@ -1538,7 +1538,6 @@
     "serve",
     "toClean",
     "toCounter",
-    "toGeri",
     "toMasa",
     "toPass",
     "toSrc",
@@ -1553,11 +1552,11 @@
    "ad": "Canan",
    "rol": "garson",
    "ilkAsama": 8,
-   "mesafeM": 7876,
-   "is": 403,
-   "xp": 726,
+   "mesafeM": 7268,
+   "is": 366,
+   "xp": 663,
    "isinlanma": 0,
-   "maxHareketsizSn": 37,
+   "maxHareketsizSn": 66,
    "durumSayisi": 15,
    "durumlar": [
     "arrive",
@@ -1582,11 +1581,11 @@
    "ad": "Taner",
    "rol": "temizlik",
    "ilkAsama": 8,
-   "mesafeM": 7891,
-   "is": 342,
-   "xp": 684,
+   "mesafeM": 8137,
+   "is": 328,
+   "xp": 656,
    "isinlanma": 0,
-   "maxHareketsizSn": 10,
+   "maxHareketsizSn": 3,
    "durumSayisi": 6,
    "durumlar": [
     "idle",
@@ -1602,9 +1601,9 @@
    "ad": "Hülya",
    "rol": "komi",
    "ilkAsama": 8,
-   "mesafeM": 6989,
-   "is": 293,
-   "xp": 293,
+   "mesafeM": 6998,
+   "is": 272,
+   "xp": 272,
    "isinlanma": 0,
    "maxHareketsizSn": 4,
    "durumSayisi": 4,
@@ -1621,10 +1620,10 @@
    "rol": "bulasikci",
    "ilkAsama": 8,
    "mesafeM": 8,
-   "is": 716,
-   "xp": 716,
+   "is": 693,
+   "xp": 693,
    "isinlanma": 0,
-   "maxHareketsizSn": 42,
+   "maxHareketsizSn": 39,
    "durumSayisi": 3,
    "durumlar": [
     "kBack",
@@ -1637,11 +1636,11 @@
    "ad": "Tolga",
    "rol": "guvenlik",
    "ilkAsama": 8,
-   "mesafeM": 4553,
+   "mesafeM": 4547,
    "is": 248,
    "xp": 0,
    "isinlanma": 0,
-   "maxHareketsizSn": 13,
+   "maxHareketsizSn": 14,
    "durumSayisi": 3,
    "durumlar": [
     "arrive",
@@ -1654,11 +1653,11 @@
    "ad": "Yavuz",
    "rol": "hostes",
    "ilkAsama": 8,
-   "mesafeM": 1221,
-   "is": 317,
+   "mesafeM": 1084,
+   "is": 304,
    "xp": 0,
    "isinlanma": 0,
-   "maxHareketsizSn": 108,
+   "maxHareketsizSn": 89,
    "durumSayisi": 3,
    "durumlar": [
     "arrive",
@@ -1671,11 +1670,11 @@
    "ad": "Murat",
    "rol": "vale",
    "ilkAsama": 8,
-   "mesafeM": 1842,
-   "is": 120,
+   "mesafeM": 1756,
+   "is": 126,
    "xp": 0,
    "isinlanma": 0,
-   "maxHareketsizSn": 187,
+   "maxHareketsizSn": 188,
    "durumSayisi": 3,
    "durumlar": [
     "arrive",
@@ -1688,11 +1687,11 @@
    "ad": "Ömer",
    "rol": "kurye",
    "ilkAsama": 8,
-   "mesafeM": 4380,
-   "is": 15,
-   "xp": 45,
+   "mesafeM": 3651,
+   "is": 6,
+   "xp": 18,
    "isinlanma": 0,
-   "maxHareketsizSn": 11,
+   "maxHareketsizSn": 14,
    "durumSayisi": 7,
    "durumlar": [
     "idle",
@@ -1709,17 +1708,19 @@
    "ad": "Deniz",
    "rol": "asci",
    "ilkAsama": 9,
-   "mesafeM": 1052,
-   "is": 81,
-   "xp": 81,
+   "mesafeM": 1065,
+   "is": 88,
+   "xp": 88,
    "isinlanma": 0,
    "maxHareketsizSn": 29,
-   "durumSayisi": 4,
+   "durumSayisi": 6,
    "durumlar": [
     "kBack",
     "kCook",
     "kGoCook",
-    "kIdle"
+    "kIdle",
+    "kPass",
+    "kTasiAl"
    ]
   },
   {
@@ -1727,11 +1728,11 @@
    "ad": "Cengiz",
    "rol": "kasiyer",
    "ilkAsama": 9,
-   "mesafeM": 51,
-   "is": 62,
-   "xp": 63,
+   "mesafeM": 50,
+   "is": 53,
+   "xp": 55,
    "isinlanma": 0,
-   "maxHareketsizSn": 87,
+   "maxHareketsizSn": 70,
    "durumSayisi": 3,
    "durumlar": [
     "arrive",
@@ -1744,7 +1745,7 @@
    "ad": "Emine",
    "rol": "muzisyen",
    "ilkAsama": 9,
-   "mesafeM": 55,
+   "mesafeM": 46,
    "is": 258,
    "xp": 0,
    "isinlanma": 0,
@@ -1761,19 +1762,17 @@
    "ad": "Serkan",
    "rol": "barista",
    "ilkAsama": 9,
-   "mesafeM": 144,
-   "is": 68,
-   "xp": 68,
+   "mesafeM": 119,
+   "is": 75,
+   "xp": 75,
    "isinlanma": 0,
-   "maxHareketsizSn": 128,
-   "durumSayisi": 6,
+   "maxHareketsizSn": 229,
+   "durumSayisi": 4,
    "durumlar": [
     "kBack",
     "kCook",
     "kGoCook",
-    "kIdle",
-    "kPass",
-    "kTasiAl"
+    "kIdle"
    ]
   },
   {
@@ -1781,11 +1780,11 @@
    "ad": "Recep",
    "rol": "garson",
    "ilkAsama": 10,
-   "mesafeM": 2427,
-   "is": 122,
-   "xp": 215,
+   "mesafeM": 2503,
+   "is": 106,
+   "xp": 197,
    "isinlanma": 0,
-   "maxHareketsizSn": 30,
+   "maxHareketsizSn": 18,
    "durumSayisi": 15,
    "durumlar": [
     "arrive",
@@ -1810,11 +1809,11 @@
    "ad": "Lale",
    "rol": "asci",
    "ilkAsama": 10,
-   "mesafeM": 492,
-   "is": 36,
-   "xp": 36,
+   "mesafeM": 431,
+   "is": 37,
+   "xp": 37,
    "isinlanma": 0,
-   "maxHareketsizSn": 24,
+   "maxHareketsizSn": 25,
    "durumSayisi": 4,
    "durumlar": [
     "kBack",
@@ -1828,9 +1827,9 @@
    "ad": "Can",
    "rol": "komi",
    "ilkAsama": 10,
-   "mesafeM": 2232,
-   "is": 87,
-   "xp": 87,
+   "mesafeM": 2182,
+   "is": 82,
+   "xp": 82,
    "isinlanma": 0,
    "maxHareketsizSn": 4,
    "durumSayisi": 4,
@@ -1846,11 +1845,11 @@
    "ad": "Yasemin",
    "rol": "sef",
    "ilkAsama": 10,
-   "mesafeM": 463,
-   "is": 212,
-   "xp": 36,
+   "mesafeM": 515,
+   "is": 204,
+   "xp": 35,
    "isinlanma": 0,
-   "maxHareketsizSn": 70,
+   "maxHareketsizSn": 88,
    "durumSayisi": 4,
    "durumlar": [
     "kBack",
@@ -1864,11 +1863,11 @@
    "ad": "Elif",
    "rol": "vale",
    "ilkAsama": 10,
-   "mesafeM": 407,
-   "is": 26,
+   "mesafeM": 398,
+   "is": 27,
    "xp": 0,
    "isinlanma": 0,
-   "maxHareketsizSn": 141,
+   "maxHareketsizSn": 196,
    "durumSayisi": 3,
    "durumlar": [
     "arrive",
