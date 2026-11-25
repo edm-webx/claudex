@@ -21,6 +21,7 @@ import { renderKoleksiyon, renderKolSection } from './koleksiyon-panel';
 import { renderHarita, renderHaritaSection } from './harita-panel';
 import { renderHikaye, renderHikayeSection } from './hikaye-panel';
 import { renderCalisanSel, renderCalisanSection } from './calisan-panel';
+import { menuStilKur, sahneKatmani, logoHtml, STUDYO, SURUM } from './menu-stil';
 
 export interface V2UiEnv { sfx(id: string): void; buzz(ms: number): void; unlock(): void; artApi?(): any; }
 
@@ -941,20 +942,99 @@ function artBackdrop(host) {
   } catch (e) { console.warn('[SB.ui] backdrop', e); }
 }
 let titleEl = null;
+/* 2026-11-25 "Altın Saat" ana menü (menu-stil.ts): arkada oyunun canlı 3B sahnesi (boot menü kamerası), önce "başlamak için
+   dokun" (sesin açılması tarayıcıda bir dokunuş ister), sonra Oyna / Arkadaşınla oyna / Ayarlar / Yapımcılar. Klavye: ↑↓ Enter Esc. */
 U.title = function (o) {
   need(); o = o || {};
   if (titleEl) titleEl.remove();
-  const t = titleEl = mk('div', 'sb-full sb-title');
-  t.innerHTML = SCENE + `<div class="sb-tl-wrap"><div class="sb-tl-top"><div class="sb-logo" role="img" aria-label="Sabri'nin Büfesi"><span class="sb-pamuk">${PAMUK}</span><div class="sb-awn"></div><div class="sb-signb"><span class="l1">Sabri'nin</span><span class="l2">Büfesi</span></div></div>
-    <div class="sb-sub">${ICONS.gull}Martıköy İskelesi</div><div class="sb-ver" aria-label="Sürüm 2.0">v2.0</div></div>
-    <div class="sb-tl-bot"><button class="sb-btn big" data-play>${ICONS.play}Oyna</button><div class="sb-tl-note">Hesabınla gir, arkadaşınla oda kur, beraber çalışın.</div></div></div>`;
-  root.appendChild(t); artBackdrop(t);
-  t.querySelector('[data-play]').addEventListener('click', () => {
+  menuStilKur();
+  const t = titleEl = mk('div', 'sb-full sb-title mn-title mn-anim mn-bekle');
+  const MENU = [['oyna', 'Oyna', ''], ['arkadas', 'Arkadaşınla oyna', 'Oda kur'], ['ayar', 'Ayarlar', ''], ['yapim', 'Yapımcılar', '']];
+  t.innerHTML = sahneKatmani() + logoHtml() + `<div class="mn-basla"><span class="mn-dokun">Başlamak için dokun</span><span class="mn-kb">Başlamak için bir tuşa bas</span></div><div class="mn-yan"></div>`;
+  root.appendChild(t);
+  t.insertAdjacentHTML('beforeend', `<nav class="mn-menu" aria-label="Ana menü">${MENU.map(([id, ad, alt], i) => `<button class="mn-mi${i === 0 ? ' ana on' : ''}" data-m="${id}"${i === 0 ? ' data-play' : ''}>${ad}${alt ? `<small>${alt}</small>` : ''}</button>`).join('')}</nav><div class="mn-foot"></div>`);
+  requestAnimationFrame(() => requestAnimationFrame(() => t.classList.add('mn-acik')));
+  const yan = t.querySelector('.mn-yan');
+  let faz = 'basla', sec = 0, bitti = false, panel = '';
+  const sesAcik = () => { try { const g = o.ayar && o.ayar.get(); return !(g && (g.muted || g.music <= 0)); } catch (e) { return true; } };
+  const ayak = () => `<button class="mn-ses${sesAcik() ? '' : ' kapali'}" data-ses aria-label="Müziği aç ya da kapat"><span class="mn-eq"><i></i><i></i><i></i><i></i></span>Müzik: <b>${sesAcik() ? 'açık' : 'kapalı'}</b></button><div class="sag"><span class="mn-kb"><span class="mn-key">↑↓</span>Seç &nbsp; <span class="mn-key">↵</span>Onayla</span><span>${SURUM} · ${STUDYO}</span></div>`;
+  const isaretle = (i, ses) => {
+    sec = (i + MENU.length) % MENU.length;
+    t.querySelectorAll('.mn-mi').forEach((b, k) => b.classList.toggle('on', k === sec));
+    if (ses) sfx('tik');
+  };
+  const menuyuAc = () => {
+    if (faz !== 'basla') return; faz = 'menu';
     try { if (C.audioOn) C.audioOn(); } catch (e) {}
-    sfx('buy');
-    t.classList.add('out'); setTimeout(() => { t.remove(); if (titleEl === t) titleEl = null; }, 340);
-    safe(o.onPlay);
-  }, { once: true });
+    sfx('sparkle');
+    const bs = t.querySelector('.mn-basla'); if (bs) bs.remove();
+    t.querySelector('.mn-foot').innerHTML = ayak(); t.classList.remove('mn-bekle');
+  };
+  const kapatPanel = () => { if (!panel) return; panel = ''; yan.innerHTML = ''; t.classList.remove('mn-panelde'); sfx('pop'); const m = t.querySelector('.mn-menu'); if (m) m.style.opacity = ''; };
+  const ayarPaneli = () => {
+    const g = (o.ayar && o.ayar.get()) || { music: 1, sfx: 1, quality: 'auto', muted: false };
+    const q = g.quality === 'otomatik' || g.quality == null ? 'auto' : g.quality;
+    const sl = (bus, ad) => `<div class="mn-ayar-satir"><label>${ad}<output>${Math.round((g[bus] ?? 1) * 100)}</output></label><input type="range" min="0" max="100" step="5" value="${Math.round((g[bus] ?? 1) * 100)}" data-vol="${bus}" aria-label="${ad}"></div>`;
+    yan.innerHTML = `<div class="mn-panel"><button class="mn-geri" data-geri aria-label="Geri">✕</button><h2>Ayarlar</h2><div class="mn-sub">Oyunun içinden de her zaman değiştirebilirsin.</div>
+${sl('music', 'Müzik')}${sl('sfx', 'Efekt sesleri')}
+<div class="mn-ayar-satir"><label>Görüntü kalitesi</label><div class="mn-seg">${QUAL.map(x => `<button class="${q === x[0] ? 'on' : ''}" data-kal="${x[0]}">${x[1]}</button>`).join('')}</div></div>
+<div class="mn-not">Otomatik, bilgisayarına ya da telefonuna göre en akıcı ayarı kendisi seçer.</div>
+<button class="mn-btn" data-geri>Tamam</button></div>`;
+  };
+  const yapimPaneli = () => {
+    const satir = (k, v) => `<div><small>${k}</small><b>${v}</b></div>`;
+    yan.innerHTML = `<div class="mn-panel"><button class="mn-geri" data-geri aria-label="Geri">✕</button><h2>Yapımcılar</h2><div class="mn-studyo">${STUDYO}</div>
+<div class="mn-krediler">${satir('Yapım, tasarım ve yönetim', STUDYO)}${satir('Kod ve tasarım ortağı', 'Claude (Anthropic)')}${satir('Oyun motoru', 'Martı Motoru · three.js (MIT)')}${satir('Araç, bina ve ağaç modelleri', 'Kenney · kenney.nl (CC0)')}${satir('Zemin dokuları', 'Poly Haven (CC0)')}${satir('Yazı tipleri', 'Baloo 2, Rubik (SIL Open Font License)')}${satir('Hesap ve çok oyunculu', 'Martı Kimlik · Supabase')}</div>
+<div class="mn-not">Oyundaki bütün markalar, dükkânlar ve kişiler uydurmadır. Martıköy'e hoş geldin.</div>
+<button class="mn-btn mn-ikinci" data-geri>Kapat</button></div>`;
+  };
+  const sec_ = id => {
+    if (bitti) return;
+    if (id === 'oyna' || id === 'arkadas') {
+      bitti = true; sfx('buy');
+      try { if (C.audioOn) C.audioOn(); } catch (e) {}
+      t.classList.add('mn-tut', 'out');
+      setTimeout(() => { t.remove(); if (titleEl === t) titleEl = null; }, 380);
+      safe(id === 'arkadas' && o.onFriends ? o.onFriends : o.onPlay);
+      return;
+    }
+    sfx('feather');
+    panel = id; t.classList.add('mn-panelde'); const m = t.querySelector('.mn-menu'); if (m) m.style.opacity = '.35';
+    if (id === 'ayar') ayarPaneli(); else yapimPaneli();
+  };
+  t.addEventListener('pointerdown', () => menuyuAc());
+  t.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.m) { isaretle(MENU.findIndex(x => x[0] === b.dataset.m), false); sec_(b.dataset.m); return; }
+    if (b.dataset.geri !== undefined) { kapatPanel(); return; }
+    if (b.dataset.kal) { safe(o.ayar && o.ayar.acts.setQuality, b.dataset.kal); yan.querySelectorAll('[data-kal]').forEach(x => x.classList.toggle('on', x === b)); sfx('tik'); return; }
+    if (b.dataset.ses !== undefined) {
+      const ac = !sesAcik(), g = (o.ayar && o.ayar.get()) || {};
+      if (!ac) safe(o.ayar && o.ayar.acts.setVol, 'music', 0);
+      else { if (g.muted) safe(o.ayar && o.ayar.acts.setMuted, true); if (!(g.music > 0)) safe(o.ayar && o.ayar.acts.setVol, 'music', 0.8); }
+      const f = t.querySelector('.mn-foot'); if (f) f.innerHTML = ayak(); sfx('tik');
+    }
+  });
+  t.addEventListener('input', e => {
+    const r = e.target; if (!r.dataset || !r.dataset.vol) return;
+    const v = (+r.value || 0) / 100; safe(o.ayar && o.ayar.acts.setVol, r.dataset.vol, v);
+    const out = r.parentNode.querySelector('output'); if (out) out.textContent = r.value;
+    if (v > 0 && o.ayar && o.ayar.get().muted) safe(o.ayar.acts.setMuted, true);
+  });
+  t.addEventListener('change', e => { if (e.target.dataset && e.target.dataset.vol === 'sfx') sfx('tik'); });
+  t.addEventListener('pointerover', e => { const b = e.target.closest('.mn-mi'); if (!b || panel) return; const i = [...t.querySelectorAll('.mn-mi')].indexOf(b); if (i >= 0 && i !== sec) isaretle(i, true); });
+  const tus = e => {
+    if (!t.isConnected) { removeEventListener('keydown', tus, true); return; }
+    if (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName) && e.target.type !== 'range') return;
+    if (faz === 'basla') { e.preventDefault(); menuyuAc(); return; }
+    if (panel) { if (e.key === 'Escape' || e.key === 'Backspace') { e.preventDefault(); kapatPanel(); } return; }
+    if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') { e.preventDefault(); isaretle(sec + 1, true); }
+    else if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') { e.preventDefault(); isaretle(sec - 1, true); }
+    else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sec_(MENU[sec][0]); }
+    else return;
+    e.stopPropagation();
+  };
+  addEventListener('keydown', tus, true);
   return t;
 };
 U.pickHero = function () {

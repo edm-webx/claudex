@@ -25,7 +25,7 @@ export interface PanelsDeps {
   /** GRS-17: current tier for the 'Otomatik: Şu an ...' line */
   quality?: { current(): { label: string } };
 }
-export interface Panels { update(): void; v2: V2UiApi; open(id: string): void; dispose(): void; }
+export interface Panels { update(): void; v2: V2UiApi; open(id: string): void; dispose(): void; /** ana menü ayarları (menu-stil): ayarlar panelinin eylemleri */ ayarEylem(): Record<string, (a?: any, b?: any) => void>; }
 
 const PANEL_IDS = ['isciler', 'menu', 'dekor', 'gorevler', 'kedi', 'karne', 'tadilat', 'ayarlar'];
 
@@ -168,6 +168,7 @@ export function createPanels(deps: PanelsDeps): Panels {
 
   return {
     v2,
+    ayarEylem: () => actionsFor('ayarlar'),
     open(id) { send({ kind: 'openPanel', id } as Cmd); },
     update() {
       const r = rt();
