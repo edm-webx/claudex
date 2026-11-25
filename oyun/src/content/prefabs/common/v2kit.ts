@@ -162,7 +162,7 @@ function buildAtlas(): void {
   });
   region('soon', 256, 128, '#fff6e6', (g, w, h) => {
     g.strokeStyle = '#7d5638'; g.lineWidth = 8; g.strokeRect(4, 4, w - 8, h - 8);
-    txt(g, 'YAKINDA', w / 2, 30, 30, '#e0533c', { w: 900 }); txt(g, 'Vapur Büfesi', w / 2 - 14, 72, 30, '#1d5fa8', { w: 900, max: 170 });
+    txt(g, 'YAKINDA', w / 2, 30, 30, '#e0533c', { w: 900 }); txt(g, 'Yeni Dükkân', w / 2 - 14, 72, 30, '#1d5fa8', { w: 900, max: 170 });
     g.save(); g.translate(w / 2 + 92, 74); g.fillStyle = '#2b3a55'; g.beginPath(); g.moveTo(-26, 0); g.lineTo(26, 0); g.lineTo(20, 9); g.lineTo(-20, 9); g.fill(); g.fillStyle = '#fbfaf6'; g.fillRect(-18, -12, 36, 12); g.fillStyle = '#f2b632'; g.fillRect(-4, -22, 8, 10); g.restore();
     g.fillStyle = '#3fb5b0'; for (let i = 0; i < 9; i++) { g.beginPath(); g.arc(30 + i * 25, 104, 8, PI, 0); g.fill(); }
   });
