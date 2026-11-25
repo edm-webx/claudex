@@ -256,7 +256,9 @@ export function createRtView(env: RtEnv): RtView {
     const keep = new Set<string>();
     rt.pads.forEach(pd => {
       keep.add(pd.key);
-      const def = padDef(pd.key) ?? (pd.label ? { label: pd.label, sub: pd.sub || '' } : null); if (!def) return;
+      const def0 = padDef(pd.key) ?? (pd.label ? { label: pd.label, sub: pd.sub || '' } : null); if (!def0) return;
+      // 2026-11-25 misafir: kareleri ev sahibi açar (sim/pads.ts misafirKare); kare sarı/alınabilir görünüp para çekmesin, gri "Ev sahibi açar" yazsın
+      const def = (rt as { misafir?: boolean }).misafir ? { ...def0, sub: '🔒 Ev sahibi açar' } : def0;
       const price = pd.price || padCost(pd.key, rules.state.stage);
       let rec = padMk.get(pd.key);
       const paid = rules.state.padPaid[pd.key] || 0;
