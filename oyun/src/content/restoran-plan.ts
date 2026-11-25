@@ -20,10 +20,12 @@ export const kanatKapi = (s: 'W' | 'E'): number => { const k = kanatDik(s); retu
 /** revak direkleri (avlu kenarı): iskele lambaları zaten z -10.6 / -4.2 / 2.2 ve -11.4 / -3.4 / 2.4 çizgisinde */
 export const revakDirek = (s: 'W' | 'E'): number[] => (s === 'W' ? [-13.2, -7.4, -1.0, 4.05] : [-13.2, -9.3, -4.7, -0.5, 4.05]);
 /** pass pencereleri (kanat başları): U tezgâhın köşeleri */
-export const PASS_X = { W: -10.6, E: 8.9 } as const;
+export const PASS_X = { W: -8.0, E: 7.4 } as const;
 export const PASS_Z = -13.35;
 /** kanat açık mı */
 export const kanatAcikMi = (s: 'W' | 'E', stage: number): boolean => stage >= (s === 'W' ? 6 : 7);
+/** mutfağın iki ucundaki alçak tezgâh: müşteri bir kanattan ötekine mutfağın içinden geçmesin (oyuncu ortadaki personel girişinden girer) */
+export const mutfakUc = (stage: number): Dik[] => (stage < 6 ? [] : [{ x0: -9.95, x1: -9.6, z0: -17.15, z1: -13.1 }, ...(stage >= 7 ? [{ x0: 8.0, x1: 8.35, z0: -17.15, z1: -13.1 }] : [])]);
 /** U tezgâhın ön hattındaki dolgu tezgâhları (istasyonların arası; ortada personel girişi -1.9..1.0 açık) */
 export const onDolgu = (stage: number): Dik[] => (stage < 6 ? [] : [{ x0: -9.7, x1: -6.35, z0: -13.75, z1: -13.1 }, ...(stage >= 7 ? [{ x0: 6.75, x1: 8.0, z0: -13.75, z1: -13.1 }] : [])]);
 /** saksı köşeleri (katı, görünüm de buradan çizer): kanatların boş köşeleri ve avlu kapıları */
@@ -43,7 +45,7 @@ export function restoranDuvar(stage: number): Dik[] {
   // orta bandın arkası; aşama 6'da doğu yanı henüz kapalı
   o.push({ x0: KANAT_W.x1, x1: 8.55, z0: -17.4, z1: -17.4 + t });
   if (stage < 7) o.push({ x0: 8.3, x1: 8.55, z0: -17.4, z1: -13.0 });
-  o.push(...onDolgu(stage));
+  o.push(...onDolgu(stage), ...mutfakUc(stage));
   return o;
 }
 /** oyuncu restoranın içinde / avlusunda mı: çatılar kalkar, aletler hep görünür (sahibi: "geliştirmeler hiçbir yerde görünmüyor") */

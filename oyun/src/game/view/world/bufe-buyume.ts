@@ -18,7 +18,7 @@
  */
 import * as T from 'three';
 import { IC_BY_ID, icColliders, icIcinde, mutfakOda, MUTFAK_YER } from '../../../content/ic-mekan';
-import { kanatDik, kanatKapi, kanatAcikMi, revakDirek, onDolgu, restoranDuvar, restoranAlani, saksiYer, RES_H, TERAS_Y, TERAS_Z, VAPUR_GECIT, KANAT_W } from '../../../content/restoran-plan';
+import { kanatDik, kanatKapi, kanatAcikMi, revakDirek, onDolgu, mutfakUc, restoranDuvar, restoranAlani, saksiYer, RES_H, TERAS_Y, TERAS_Z, VAPUR_GECIT, KANAT_W } from '../../../content/restoran-plan';
 import { KIOSK_STAGES } from '../../../content/stages';
 import { WB, WT, EB, ET, insaatAlani } from '../../../content/insaat';
 import { Batch } from '../../../engine/prefab/batch';
@@ -320,6 +320,7 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
     }
     duvar(KANAT_W.x1, ex, -17.4, -17.15, true); if (stage < 7) duvar(8.3, 8.55, -17.15, -13.0, true);
     for (const r of onDolgu(stage)) { b.box(r.x1 - r.x0, 1.0, r.z1 - r.z0, '#8a5a3a', (r.x0 + r.x1) / 2, 0.64, (r.z0 + r.z1) / 2); b.box(r.x1 - r.x0 + 0.08, 0.08, r.z1 - r.z0 + 0.1, CREAM, (r.x0 + r.x1) / 2, 1.18, (r.z0 + r.z1) / 2); for (let x = r.x0 + 0.5; x < r.x1 - 0.2; x += 0.8) b.cyl(0.17, 0.17, 0.03, '#ffffff', x, 1.24, (r.z0 + r.z1) / 2, { seg: 12 }); }   // U tezgâhın dolgusu
+    for (const r of mutfakUc(stage)) { b.box(r.x1 - r.x0, 1.0, r.z1 - r.z0, RED, (r.x0 + r.x1) / 2, 0.6, (r.z0 + r.z1) / 2); b.box(r.x1 - r.x0 + 0.1, 0.08, r.z1 - r.z0 + 0.06, CREAM, (r.x0 + r.x1) / 2, 1.14, (r.z0 + r.z1) / 2); }
     kiremit(stage >= 6 ? KANAT_W.x0 - 0.3 : KANAT_W.x1, stage >= 7 ? 22.1 : 8.85, -17.7, -9.9, RES_H, 2.6, 'x');   // arka bandın tek çatısı
     for (const x of [-6.2, 0.6, 5.6]) { R.b.cyl(0.36, 0.42, 1.7, '#8a5a44', x, RES_H + 2.4, -14.6, { seg: 8 }); R.b.cyl(0.46, 0.46, 0.14, CREAM, x, RES_H + 3.3, -14.6, { seg: 8 }); }
     if (stage >= 9) { R.b.box(9.4, 1.5, 3.2, RED, 0, RES_H + 2.5, -13.6); for (const x of [-3.4, -1.1, 1.1, 3.4]) { R.b.box(1.3, 0.9, 0.1, CREAM, x, RES_H + 2.6, -11.97); R.lit.box(1.1, 0.7, 0.12, '#ffdf9a', x, RES_H + 2.6, -11.96); } kiremit(-5.0, 5.0, -15.5, -11.7, RES_H + 3.2, 1.3, 'x'); }   // şefin açık mutfağının fener çatısı

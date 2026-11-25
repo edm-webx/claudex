@@ -302,13 +302,13 @@ function kahvaltiLayout(W: number, D: number): IcItem[] {
     ...salonMasalar('salonW'),
     it('tasFirin', 2.2, -D / 2 + 0.85, 1.7, 1.1, { esya: 'tas_firin' }), it('gozleme', 4.5, -D / 2 + 0.85, 1.4, 0.9, { esya: 'gozleme' }),
     it('semaverDev', W / 2 - 0.65, -4.4, 0.8, 0.8, { esya: 'semaver_dev' }), it('balKaymak', W / 2 - 0.6, -2.7, 1.4, 0.6, { esya: 'bal_kaymak', ry: 3 }),
-    it('sarkuteri', W / 2 - 0.65, -0.8, 1.4, 0.7, { esya: 'sarkuteri', ry: 3 }), it('salonPass', W / 2 - 0.65, PASS_Z - (KANAT_W.z0 + KANAT_W.z1) / 2, 1.4, 0.4, { y: 1.0, solid: true }),
+    it('sarkuteri', W / 2 - 0.65, -0.8, 1.4, 0.7, { esya: 'sarkuteri', ry: 3 }), it('salonPass', PASS_X.W - (KANAT_W.x0 + KANAT_W.x1) / 2, PASS_Z - (KANAT_W.z0 + KANAT_W.z1) / 2, 1.4, 0.4, { y: 1.0, solid: true }),
   ];
 }
 function balikLayout(W: number, D: number): IcItem[] {
   return [
     it('lamba', 0, 0, W, D), it('bar', 2.4, -D / 2 + 0.95, 5.0, 0.8, { solid: true }), it('menuPano', 2.4, -D / 2 + 0.27, 3.2, 0.05, { y: 2.5, txt: 'GÜNÜN BALIĞI' }),
-    ...salonMasalar('salonE'), it('salonPass', -W / 2 + 0.8, PASS_Z - (KANAT_E.z0 + KANAT_E.z1) / 2, 1.4, 0.4, { y: 1.0, solid: true }),
+    ...salonMasalar('salonE'), it('salonPass', PASS_X.E - (KANAT_E.x0 + KANAT_E.x1) / 2, PASS_Z - (KANAT_E.z0 + KANAT_E.z1) / 2, 1.4, 0.4, { y: 1.0, solid: true }),
     it('mangal', -2.6, -D / 2 + 0.75, 1.4, 0.8, { esya: 'mangal_e' }), it('buzTezgah', -W / 2 + 0.75, -4.1, 2.3, 0.9, { esya: 'buz_tezgah', ry: 1 }),
     it('mezeDolap', -W / 2 + 0.65, 3.4, 1.8, 0.6, { esya: 'meze_dolap', ry: 1 }), it('akvaryum', W / 2 - 0.5, 8.2, 3.6, 0.45, { esya: 'akvaryum_e', ry: 3 }),
     it('piyano', 4.4, 9.0, 1.6, 1.0, { esya: 'piyano_s' }),
@@ -600,9 +600,9 @@ export function passAsciUV(yer: PassYer): [number, number] {
 export function passGarsonNokta(yer: PassYer): { x: number; z: number } {
   return yer === 'on' ? mutfakDunya(MUTFAK_NOKTA.passGarson) : { x: PASS_X[yer], z: PASS_Z + 0.8 };
 }
-/** mutfak personelinin alanı (oda + kanat pass'larına uzanan arka bant): dar yerde karşılaşan iki kişi itişmez */
+/** mutfak personelinin alanı: dar yerde karşılaşan iki kişi itişmez */
 export const mutfakPersonelAlani = (p: { x: number; z: number }, stage: number): boolean =>
-  icIcinde(mutfakOda(stage), p, 0) || (p.z < -13.6 && p.z > -17.4 && ((passAcik('W', stage) && p.x < 0 && p.x > PASS_X.W - 0.8) || (passAcik('E', stage) && p.x > 0 && p.x < PASS_X.E + 0.8)));
+  icIcinde(mutfakOda(stage), p, 0);
 /** 2026-11-25: aletin önünde durulan nokta (dünya): kare aletin yerinde, oyuncu buradan kullanır */
 export function icItemOn(m: IcMekan, i: IcItem, bosluk = 0.55): { x: number; z: number } {
   const r = i.ry || 0, d = i.d / 2 + bosluk;
