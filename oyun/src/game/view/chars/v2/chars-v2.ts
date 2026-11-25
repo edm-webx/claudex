@@ -122,7 +122,7 @@ const prim = (k?: any, f?: any) => PG[k] || (PG[k] = normalOnar(f()));
 /* SEGK: global tessellation factor, set per builder (hero/crowd/animals) to stay inside the GDD triangle budgets */
 let SEGK = 1;
 // 2026-11-25 public çıkış: kafa/gövde/hayvan yakında köşeli (6-8 kenar) görünüyordu; bölüm sayısı arttı (üçgen ölçümü calisma/grafik-kalite)
-const SEG_YUKSEK = { hero: 0.9, crowd: 0.75, crowdS: 0.65, animal: 0.75, gull: 1, flock: 0.45 };
+const SEG_YUKSEK = { hero: 0.7, crowd: 0.75, crowdS: 0.65, animal: 0.75, gull: 1, flock: 0.45 };   // hero 0.9 → 0.7: karşı yaka dengeli üçgen bütçesi (0.9 = 749k > 617k; 0.7 = 597k)
 const SEG_AKICI = { hero: 0.6, crowd: 0.55, crowdS: 0.5, animal: 0.5, gull: 1, flock: 0.45 };   // eski değerler: zayıf GPU üçgen bütçesi
 const SEG: any = { ...SEG_YUKSEK };
 /** Kademe detayı: ilk karakter yapılmadan önce çağrılır (kalabalık geometrisi önbellekte; sonradan değişim yalnız yeni karakterlere) */
