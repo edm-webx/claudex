@@ -18,7 +18,7 @@
  */
 import * as T from 'three';
 import { IC_BY_ID, icColliders, icIcinde, mutfakOda, MUTFAK_YER } from '../../../content/ic-mekan';
-import { kanatDik, kanatKapi, kanatAcikMi, revakDirek, onDolgu, mutfakUc, restoranDuvar, restoranAlani, saksiYer, RES_H, TERAS_Y, TERAS_Z, VAPUR_GECIT, KANAT_W } from '../../../content/restoran-plan';
+import { kanatDik, kanatKapi, kanatAcikMi, revakDirek, onDolgu, mutfakUc, restoranDuvar, restoranAlani, sefKatGizli, terasGizli, saksiYer, RES_H, TERAS_Y, TERAS_Z, VAPUR_GECIT, KANAT_W, KOSK, KOSK_KAPI, KOSK_KAPI_W, KOSK_STAGE, SEF_KAT_STAGE, SOV, FISKIYE } from '../../../content/restoran-plan';
 import { KIOSK_STAGES } from '../../../content/stages';
 import { WB, WT, EB, ET, insaatAlani } from '../../../content/insaat';
 import { Batch } from '../../../engine/prefab/batch';
@@ -62,6 +62,12 @@ export function buyumeEngel(stage: number, salonSahip?: readonly string[]): { x0
   if (stage >= 4) add(ET.x1 - 1.3, ET.x1 - 0.1, ET.z0 + 0.3, ET.z0 + 2.0, 'buyume-dolap');
   // 2026-11-09 "her yere girilebilmeli": the halls are rooms with a door on the promenade side (content/ic-mekan.ts)
   for (const r of restoranDuvar(stage)) add(r.x0, r.x1, r.z0, r.z1, 'buyume-duvar');   // 2026-11-25 ters U: dış duvar + revak direkleri + ön tezgâh
+  // 2026-11-25: 9 şov ızgarası, 10 deniz köşkü (öncesinde kapalı) ve fıskiyeler
+  if (stage >= SEF_KAT_STAGE) add(SOV.x - SOV.r, SOV.x + SOV.r, SOV.z - SOV.r, SOV.z + SOV.r, 'buyume-sov');
+  if (stage < KOSK_STAGE) add(KOSK.x0 - 0.5, KOSK.x1 + 0.5, KOSK.z0 - 1, KOSK.z1 - 0.1, 'kosk-kapali');
+  else { for (const m of KANAT_MASALAR.filter((q, i) => q.bolge === 'kosk' && kanatKurulu(stage).includes(KANAT_BASE + i))) add(m.x - 0.45, m.x + 0.45, m.z - 0.45, m.z + 0.45, 'kosk-masa');
+    let x = KOSK.x0; for (const d of KOSK_KAPI) { add(x, d - KOSK_KAPI_W / 2, KOSK.z1 - 0.25, KOSK.z1 + 0.2, 'kosk-duvar'); x = d + KOSK_KAPI_W / 2; } add(x, KOSK.x1, KOSK.z1 - 0.25, KOSK.z1 + 0.2, 'kosk-duvar');
+    for (const [fx, fz] of FISKIYE) add(fx - 0.8, fx + 0.8, fz - 0.8, fz + 0.8, 'fiskiye'); }
   if (stage >= 6) icColliders(IC_BY_ID.salonW, stage, salonSahip).forEach(r => add(r.x0, r.x1, r.z0, r.z1, 'buyume-salon'));
   if (stage >= 7) icColliders(IC_BY_ID.salonE, stage, salonSahip).forEach(r => add(r.x0, r.x1, r.z0, r.z1, 'buyume-salon'));
   // roof terrace stairs (stage 8): closed on the ground grid, only the scripted roof route (sim content/kanat.ts) uses them
@@ -260,7 +266,8 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
      kırmızı-beyaz tente. Alçak duvarlar, zemin, direkler ve tenteler hep durur; çatı ('cati-R') oyuncu restoranın alanındayken,
      teraslar ('teras-W' / 'teras-E') yalnız altındayken kalkar: alınan her alet her zaman görünür. */
   if (stage >= 6) {
-    const RED = '#b93a2c', RED2 = '#a53125', CREAM = '#f3e6c8', TILE = '#a6432f', TILE2 = '#8f3626', PLK = '#b9814f', SEAM = '#8e5d36', GOLD = fine ? '#c9a24a' : CREAM;
+    const RED = fine ? '#7d2230' : '#b93a2c', RED2 = fine ? '#6b1a27' : '#a53125', CREAM = fine ? '#ead9a8' : '#f3e6c8', BAKIR = fine ? '#2c5a55' : '#4f8a80', BAKIR2 = fine ? '#234945' : '#3f7268', PLK = fine ? '#7a4d30' : '#b9814f', SEAM = fine ? '#5a3722' : '#8e5d36',
+      TILE = stage >= SEF_KAT_STAGE ? BAKIR : '#a6432f', TILE2 = stage >= SEF_KAT_STAGE ? BAKIR2 : '#8f3626', GOLD = fine ? '#c9a24a' : CREAM;
     const ucu = (['W', 'E'] as const).filter(s => kanatAcikMi(s, stage)), R = cati('cati-R');
     const zemin = (x0: number, x1: number, z0: number, z1: number, y = 0.14) => { b.box(x1 - x0, y, z1 - z0, PLK, (x0 + x1) / 2, y / 2, (z0 + z1) / 2); const n = Math.round((x1 - x0) / 0.8); for (let i = 1; i < n; i++) b.box(0.025, 0.004, z1 - z0, SEAM, x0 + (x1 - x0) * i / n, y + 0.002, (z0 + z1) / 2); };
     const ex = stage >= 7 ? 8.0 : 8.55;
@@ -286,7 +293,7 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
     };
     const tente = (x0: number, x1: number, z0: number, z1: number, yon: 'x+' | 'x-' | 'z+') => {
       const yat = yon === 'z+', L = yat ? x1 - x0 : z1 - z0, n = Math.max(2, Math.round(L / 0.55)), w = L / n;
-      for (let i = 0; i < n; i++) { const c = i % 2 ? '#fbf3e2' : fine ? '#9c2a22' : '#c8402f', p = (i + 0.5) * w;
+      for (let i = 0; i < n; i++) { const c = i % 2 ? (fine ? '#d9b659' : '#fbf3e2') : fine ? '#7d2230' : '#c8402f', p = (i + 0.5) * w;
         if (yat) { b.box(w, 0.06, 1.0, c, x0 + p, 2.62, z1 + 0.45, { rx: 0.35 }); b.box(w, 0.2, 0.05, c, x0 + p, 2.36, z1 + 0.92); }
         else { const q = yon === 'x+' ? 1 : -1, X = q > 0 ? x1 : x0; b.box(1.0, 0.06, w, c, X + q * 0.45, 2.62, z0 + p, { rz: -q * 0.35 }); b.box(0.05, 0.2, w, c, X + q * 0.92, 2.36, z0 + p); } }
     };
@@ -303,15 +310,32 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
       for (const lx of [k.x0 + 2.6, kx, k.x1 - 2.6]) for (const lz of stage >= 8 ? [-12.4, -10.4, -7.0] : [-12.4, -10.4, -7.0, -2.4, 1.2]) { b.cyl(0.012, 0.012, 0.5, '#3a2a20', lx, 2.95, lz, { seg: 4 }); b.cone(0.2, 0.2, fine ? '#c9a24a' : '#b8733d', lx, 2.62, lz, { seg: 10 }); lit.sph(0.08, '#ffe6b0', lx, 2.5, lz, { ws: 6, hs: 4 }); glowAt(lx, lz, 1.5); }   // bakır sarkıtlar
       for (let z = -12.4; z < 3.8; z += 1.1) lit.sph(0.06, '#ffd890', ic + q * 0.16, 2.6, z, { ws: 6, hs: 4 });
       tente(k.x0, k.x1, -12.6, 3.9, s === 'W' ? 'x+' : 'x-'); tente(k.x0 + 0.2, k.x1 - 0.2, k.z1, k.z1, 'z+');
-      kiremit(k.x0 - 0.3, k.x1 + 0.3, -13.6, fz + (stage >= 8 ? 0 : 0.35), RES_H, 2.2, 'z');
+      if (stage < 8) kiremit(k.x0 - 0.3, k.x1 + 0.3, -13.6, fz + 0.35, RES_H, 2.2, 'z');   // 8+: kanadın önü baştan sona teras
       { const g0 = grp; grp = R.g; const bb = b; b = R.b; sign(s === 'W' ? (fine ? 'KAHVALTI' : 'SABRİ KAHVALTI') : (fine ? 'BALIK' : 'SABRİ BALIK'), kx, RES_H + 0.55, (stage >= 8 ? k.z1 + 0.4 : k.z1 + 0.45), 4.2, 0, fine ? '#14192a' : '#8a2219', fine ? '#e8c76a' : '#fbf3e2'); b = bb; grp = g0; }
+      // avlu kenarındaki kirişte sarkan çiçek kutuları (8+)
+      if (stage >= 8) for (let z = -11.6; z < 3.6; z += 1.9) { b.box(0.3, 0.22, 1.0, fine ? '#c9a24a' : '#8a5a3a', ic + q * 0.2, 3.05, z); for (let i = 0; i < 4; i++) b.sph(0.14, ['#e0533c', '#f2a2b3', '#ffd23f', '#8f6fd0'][(i + Math.round(z)) & 3], ic + q * 0.26, 3.24, z - 0.36 + i * 0.24, { ws: 6, hs: 4 }); }
       if (stage >= 8) {
         const t = cati('teras-' + s), M0 = b, G0 = grp, L0 = lit, sx = s === 'W' ? -10.75 : 8.75, si = s === 'W' ? sx - 0.55 : sx + 0.55; b = t.b; grp = t.g; lit = t.lit;
-        const dos = (x0: number, x1: number, z0: number, z1: number) => { b.box(x1 - x0, 0.3, z1 - z0, RED, (x0 + x1) / 2, TERAS_Y - 0.17, (z0 + z1) / 2); b.box(x1 - x0 - 0.1, 0.05, z1 - z0 - 0.1, '#b5834f', (x0 + x1) / 2, TERAS_Y, (z0 + z1) / 2); };
+        const dos = (x0: number, x1: number, z0: number, z1: number) => { b.box(x1 - x0, 0.3, z1 - z0, RED, (x0 + x1) / 2, TERAS_Y - 0.17, (z0 + z1) / 2); b.box(x1 - x0 - 0.1, 0.05, z1 - z0 - 0.1, fine ? '#e9e1d0' : '#b5834f', (x0 + x1) / 2, TERAS_Y, (z0 + z1) / 2); };
         if (s === 'W') { dos(k.x0, si, TERAS_Z, k.z1); dos(si, k.x1, TERAS_Z, -2.0); dos(si, k.x1, 2.9, k.z1); } else { dos(si, k.x1, TERAS_Z, k.z1); dos(k.x0, si, TERAS_Z, -2.0); dos(k.x0, si, 2.9, k.z1); }
         const rr = (xa: number, za: number, xb: number, zb: number) => { const len = Math.hypot(xb - xa, zb - za), a = Math.atan2(xb - xa, zb - za), n = Math.round(len / 1.1); b.box(0.1, 0.08, len, GOLD, (xa + xb) / 2, TERAS_Y + 0.95, (za + zb) / 2, { ry: a }); for (let i = 0; i <= n; i++) b.box(0.08, 0.95, 0.08, CREAM, xa + (xb - xa) * i / n, TERAS_Y + 0.47, za + (zb - za) * i / n); };
         rr(k.x0, TERAS_Z, k.x0, k.z1); rr(k.x1, TERAS_Z, k.x1, k.z1); rr(k.x0, k.z1, k.x1, k.z1); rr(si, -1.9, si, 2.9);
-        KANAT_MASALAR.filter((m, i) => m.cati === s && kanatKurulu(stage).includes(KANAT_BASE + i)).forEach((m, i) => table(m.x, m.z, m.ax, fine ? '#f4f2ec' : i % 2 ? '#fbf3e2' : '#c8402f', true, fine, TERAS_Y));
+        KANAT_MASALAR.forEach((m, i) => { if (m.cati === s && m.bolge !== 'sefW' && m.bolge !== 'sefE' && kanatKurulu(stage).includes(KANAT_BASE + i)) table(m.x, m.z, m.ax, '#f4f2ec', false, fine, TERAS_Y); });
+        if (s === 'W') {   // asma ve mor salkım pergolası
+          const px0 = k.x0 + 0.5, px1 = -12.1, pz0 = -8.6, pz1 = 2.2;
+          for (const x of [px0, (px0 + px1) / 2, px1]) for (const z of [pz0, -3.2 - 1.6, pz1]) b.box(0.16, 2.5, 0.16, '#7a4a2a', x, TERAS_Y + 1.25, z);
+          for (let z = pz0; z <= pz1 + 0.01; z += 0.9) b.box(px1 - px0 + 0.4, 0.1, 0.12, '#8a5a3a', (px0 + px1) / 2, TERAS_Y + 2.55, z);
+          for (let r = 0; r < 12; r++) for (let c = 0; c < 13; c++) { const rs = Math.abs(Math.sin(r * 12.9898 + c * 78.233) * 43758.5453), h = Math.floor((rs - Math.floor(rs)) * 11); if (h > 6) continue; const x = px0 + 0.2 + c * (px1 - px0 - 0.4) / 12, z = pz0 + r * (pz1 - pz0) / 11, mor = h === 1 || h === 4; b.sph(0.4 + (h % 3) * 0.1, mor ? '#8f6fd0' : ['#5c9a3e', '#6fae4c', '#4a8538'][h % 3], x + (h - 3) * 0.06, TERAS_Y + 2.66, z + (h % 4 - 1.5) * 0.12, { ws: 9, hs: 6 }); if (mor) { b.sph(0.26, '#b59ae8', x + 0.3, TERAS_Y + 2.8, z + 0.15, { ws: 8, hs: 5 }); b.cone(0.16, 0.55, '#a98be0', x + 0.2, TERAS_Y + 2.15, z, { seg: 6, rx: Math.PI }); } }
+          for (let x = px0; x < px1; x += 0.55) { const h = Math.round(x * 13) & 3; b.cone(0.17, 0.5 + h * 0.12, ['#a98be0', '#8f6fd0', '#5c9a3e', '#c3aef0'][h], x, TERAS_Y + 2.25 - h * 0.05, pz1 + 0.15, { seg: 6, rx: Math.PI }); }   // ön kenardan sarkan salkımlar
+        } else {   // beyaz yelkenler + teras barı
+          for (const [x, z] of [[15.6, -5.0], [20.0, -5.0], [12.6, 0.2], [17.6, 0.2]] as [number, number][]) { b.cyl(0.07, 0.09, 3.2, fine ? '#c9a24a' : '#e9e2d2', x, TERAS_Y + 1.6, z, { seg: 8 }); b.cone(2.3, 0.9, fine ? '#efe0b8' : '#fbfaf6', x, TERAS_Y + 2.9, z, { seg: 4, ry: Math.PI / 4 }); b.cyl(2.32, 2.32, 0.05, fine ? '#c9a24a' : '#2f7fb3', x, TERAS_Y + 2.46, z, { seg: 4, ry: Math.PI / 4 }); }
+        }
+        { const bx = s === 'W' ? k.x0 + 0.9 : k.x1 - 0.9; b.box(0.9, 1.0, 3.4, fine ? '#1f2a44' : '#8a5a3a', bx, TERAS_Y + 0.5, 1.2 - 0.6); b.box(1.05, 0.07, 3.55, GOLD, bx, TERAS_Y + 1.03, 0.6); for (let i = 0; i < 7; i++) b.cyl(0.05, 0.05, 0.28, ['#2f7fb3', '#e0533c', '#4f8f3a', '#ffd23f'][i % 4], bx, TERAS_Y + 1.2, -0.8 + i * 0.45, { seg: 6 }); }
+        if (fine) {   // 10: kış bahçesi: terasın arkasında cam oda
+          const gx0 = k.x0 + 0.4, gx1 = k.x1 - 1.9; t.gl.box(gx1 - gx0, 2.3, 0.04, '#cfe6ea', (gx0 + gx1) / 2, TERAS_Y + 1.2, -4.7); for (const x of [gx0, gx1]) t.gl.box(0.04, 2.3, 4.2, '#cfe6ea', x, TERAS_Y + 1.2, -6.8);
+          for (let i = 0; i <= 6; i++) { const x = gx0 + (gx1 - gx0) * i / 6; b.box(0.1, 2.4, 0.1, '#c9a24a', x, TERAS_Y + 1.2, -4.7); b.box(0.08, 0.1, 4.3, '#c9a24a', x, TERAS_Y + 2.45, -6.8); } b.box(gx1 - gx0, 0.14, 0.14, '#c9a24a', (gx0 + gx1) / 2, TERAS_Y + 2.45, -4.7); b.box(gx1 - gx0, 0.14, 0.14, '#c9a24a', (gx0 + gx1) / 2, TERAS_Y + 2.45, -8.9);
+        }
+        if (fine) { const tx = s === 'W' ? k.x0 + 0.1 : k.x1 - 0.1; for (const [x, z, r] of [[tx, k.z1 - 0.1, 1.15], [ic, k.z1 - 0.1, 0.8]]) { b.cone(r, 1.1, '#c9a24a', x, TERAS_Y - 0.5, z, { seg: 16, rx: Math.PI }); b.cyl(r, r, 2.5, RED, x, TERAS_Y + 1.2, z, { seg: 18 }); b.cyl(r + 0.12, r + 0.12, 0.16, '#d9ab3f', x, TERAS_Y + 0.02, z, { seg: 18 }); b.cyl(r + 0.14, r + 0.14, 0.2, '#d9ab3f', x, TERAS_Y + 2.5, z, { seg: 18 }); for (let i = 0; i < 6; i++) lit.box(0.34, 1.0, 0.1, '#ffdf9a', x + Math.sin(i * 1.047) * r, TERAS_Y + 1.4, z + Math.cos(i * 1.047) * r, { ry: i * 1.047 }); b.sph(r + 0.06, '#e0b23c', x, TERAS_Y + 2.6, z, { ws: 18, hs: 12 }); b.sph(0.14, '#e0b23c', x, TERAS_Y + 3.85 + (r - 0.8), z, { ws: 8, hs: 6 }); } }   // 10: ön köşelerde altın kubbeli kuleler
         planter(kx, k.z1 - 0.6, 4.0, 0.4); lights([[k.x0, TERAS_Z], [k.x0, k.z1], [k.x1, k.z1], [k.x1, TERAS_Z]], TERAS_Y + 2.2);
         b = M0; grp = G0; lit = L0;
         for (let i = 0; i < 14; i++) b.box(0.9, 0.12, 0.38, '#a8673a', sx, 0.25 + i * (TERAS_Y - 0.14) / 14, 2.75 - i * 0.35);   // terasın merdiveni (kanadın içinde, revak kenarında)
@@ -321,9 +345,44 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
     duvar(KANAT_W.x1, ex, -17.4, -17.15, true); if (stage < 7) duvar(8.3, 8.55, -17.15, -13.0, true);
     for (const r of onDolgu(stage)) { b.box(r.x1 - r.x0, 1.0, r.z1 - r.z0, '#8a5a3a', (r.x0 + r.x1) / 2, 0.64, (r.z0 + r.z1) / 2); b.box(r.x1 - r.x0 + 0.08, 0.08, r.z1 - r.z0 + 0.1, CREAM, (r.x0 + r.x1) / 2, 1.18, (r.z0 + r.z1) / 2); for (let x = r.x0 + 0.5; x < r.x1 - 0.2; x += 0.8) b.cyl(0.17, 0.17, 0.03, '#ffffff', x, 1.24, (r.z0 + r.z1) / 2, { seg: 12 }); }   // U tezgâhın dolgusu
     for (const r of mutfakUc(stage)) { b.box(r.x1 - r.x0, 1.0, r.z1 - r.z0, RED, (r.x0 + r.x1) / 2, 0.6, (r.z0 + r.z1) / 2); b.box(r.x1 - r.x0 + 0.1, 0.08, r.z1 - r.z0 + 0.06, CREAM, (r.x0 + r.x1) / 2, 1.14, (r.z0 + r.z1) / 2); }
-    kiremit(stage >= 6 ? KANAT_W.x0 - 0.3 : KANAT_W.x1, stage >= 7 ? 22.1 : 8.85, -17.7, -9.9, RES_H, 2.6, 'x');   // arka bandın tek çatısı
-    for (const x of [-6.2, 0.6, 5.6]) { R.b.cyl(0.36, 0.42, 1.7, '#8a5a44', x, RES_H + 2.4, -14.6, { seg: 8 }); R.b.cyl(0.46, 0.46, 0.14, CREAM, x, RES_H + 3.3, -14.6, { seg: 8 }); }
-    if (stage >= 9) { R.b.box(9.4, 1.5, 3.2, RED, 0, RES_H + 2.5, -13.6); for (const x of [-3.4, -1.1, 1.1, 3.4]) { R.b.box(1.3, 0.9, 0.1, CREAM, x, RES_H + 2.6, -11.97); R.lit.box(1.1, 0.7, 0.12, '#ffdf9a', x, RES_H + 2.6, -11.96); } kiremit(-5.0, 5.0, -15.5, -11.7, RES_H + 3.2, 1.3, 'x'); }   // şefin açık mutfağının fener çatısı
+    if (stage < SEF_KAT_STAGE) kiremit(KANAT_W.x0 - 0.3, stage >= 7 ? 22.1 : 8.85, -17.7, stage >= 8 ? TERAS_Z : -9.9, RES_H, 2.6, 'x');   // arka bandın tek çatısı
+    else {   // 9+: arka bant ikinci kat (Şef salonu): döşeme + masalar 'kat-K', cephe + yeşil bakır çatı 'cati-R'
+      const t = cati('kat-K'), M0 = b, G0 = grp, L0 = lit, X0 = KANAT_W.x0, X1 = 21.8, Z0 = -17.4, Z1 = TERAS_Z; b = t.b; grp = t.g; lit = t.lit;
+      b.box(X1 - X0, 0.3, Z1 - Z0, RED, (X0 + X1) / 2, TERAS_Y - 0.17, (Z0 + Z1) / 2); b.box(X1 - X0 - 0.1, 0.05, Z1 - Z0 - 0.1, fine ? '#5a3722' : '#a8673a', (X0 + X1) / 2, TERAS_Y, (Z0 + Z1) / 2);
+      for (const [kx0, kx1, c] of [[-18.2, -2.0, fine ? '#1f2a44' : '#2f6f66'], [2.0, 19.2, fine ? '#1f2a44' : '#2f6f66']] as [number, number, string][]) { b.box(kx1 - kx0, 0.02, 5.6, c, (kx0 + kx1) / 2, TERAS_Y + 0.04, -13.1); b.box(kx1 - kx0 - 0.4, 0.022, 5.2, fine ? '#e6d6a8' : '#e9dfc8', (kx0 + kx1) / 2, TERAS_Y + 0.045, -13.1); }
+      KANAT_MASALAR.forEach((m, i) => { if ((m.bolge === 'sefW' || m.bolge === 'sefE') && kanatKurulu(stage).includes(KANAT_BASE + i)) table(m.x, m.z, m.ax, '#f4f2ec', false, true, TERAS_Y + 0.04); });
+      for (const [xa, xb] of [[-11.2, 9.2]] as [number, number][]) { b.box(xb - xa, 0.08, 0.1, GOLD, (xa + xb) / 2, TERAS_Y + 0.95, Z1); for (let x = xa; x <= xb; x += 1.1) b.box(0.07, 0.95, 0.07, CREAM, x, TERAS_Y + 0.47, Z1); }
+      b.box(X1 - X0, 1.0, 0.2, RED, (X0 + X1) / 2, TERAS_Y + 0.5, Z0 + 0.1); for (const x of [X0 + 0.1, X1 - 0.1]) b.box(0.2, 1.0, Z1 - Z0, RED, x, TERAS_Y + 0.5, (Z0 + Z1) / 2);
+      b = M0; grp = G0; lit = L0;
+      const bb = R.b; for (let x = X0; x < X1 - 0.1; x += 1.5) { const w = Math.min(1.5, X1 - x); bb.box(w, 0.6, 0.2, RED, x + w / 2, TERAS_Y + 2.7, Z1); bb.box(0.18, 2.5, 0.24, GOLD, x, TERAS_Y + 1.25, Z1); if (x > -11.4 && x < 9) { R.gl.box(w - 0.2, 2.0, 0.04, '#ffe2a0', x + w / 2, TERAS_Y + 1.3, Z1); R.lit.box(w - 0.5, 0.06, 0.05, '#ffdf9a', x + w / 2, TERAS_Y + 2.3, Z1 + 0.03); } }
+      bb.box(X1 - X0, 2.9, 0.2, RED, (X0 + X1) / 2, TERAS_Y + 1.45, Z0 + 0.1); for (const x of [X0 + 0.1, X1 - 0.1]) bb.box(0.2, 2.9, Z1 - Z0, RED, x, TERAS_Y + 1.45, (Z0 + Z1) / 2);
+      kiremit(X0 - 0.4, X1 + 0.4, Z0 - 0.3, Z1 + 0.5, TERAS_Y + 2.95, 2.3, 'x');
+    }
+    for (const x of [-6.2, 5.6]) { const y = stage >= SEF_KAT_STAGE ? TERAS_Y + 4.6 : RES_H + 2.4; R.b.cyl(0.36, 0.42, 1.7, '#8a5a44', x, y, -14.6, { seg: 8 }); R.b.cyl(0.46, 0.46, 0.14, CREAM, x, y + 0.9, -14.6, { seg: 8 }); }
+    // avlu zemini: 7 taş parke, 8 iki renk taş, 10 mermer (doğu yürüyüş şeridi ve kanat önleri)
+    if (stage >= 7) { if (fine) { b.box(17, 0.02, 4.2, '#efe9dc', 0, 0.02, 6.4); for (let x = -8; x <= 8; x += 1.6) b.box(0.05, 0.004, 4.2, '#c9a24a', x, 0.032, 6.4); } const A1 = fine ? '#efe9dc' : stage >= 8 ? '#d6c8a8' : '#cdbd9c', A2 = fine ? '#c9a24a' : '#b9a683'; for (const [x0, x1, z0, z1] of [[4.5, 7.9, -10.5, 4.2], [-9.95, -4.4, -10.5, 4.2]] as number[][]) { b.box(x1 - x0, 0.02, z1 - z0, A1, (x0 + x1) / 2, 0.02, (z0 + z1) / 2); for (let z = z0; z < z1; z += 1.1) b.box(x1 - x0, 0.004, 0.05, A2, (x0 + x1) / 2, 0.032, z); if (x1 - x0 > 1) for (let x = x0 + 1.1; x < x1; x += 1.1) b.box(0.05, 0.004, z1 - z0, A2, x, 0.032, (z0 + z1) / 2); } }
+    if (stage >= SEF_KAT_STAGE) {   // 9: büfe holünde yuvarlak şov ızgarası, dev bakır davlumbaz, cam tavan
+      b.cyl(SOV.r, SOV.r, 0.95, fine ? '#1f2a44' : '#8a3327', SOV.x, 0.5, SOV.z, { seg: 24 }); b.cyl(SOV.r + 0.12, SOV.r + 0.12, 0.08, GOLD, SOV.x, 1.0, SOV.z, { seg: 24 }); b.cyl(SOV.r - 0.3, SOV.r - 0.3, 0.1, '#26292e', SOV.x, 1.05, SOV.z, { seg: 20 });
+      for (let i = 0; i < 9; i++) { const a = i * 0.7, r = 0.16 + (i % 3) * 0.18; lit.sph(0.09, i % 2 ? '#ff7a2a' : '#ffb347', SOV.x + Math.cos(a) * r, 1.12, SOV.z + Math.sin(a) * r, { ws: 6, hs: 4 }); }
+      for (let i = 0; i < 4; i++) { const f = new T.Mesh(new T.ConeGeometry(0.12, 0.42, 6), new T.MeshBasicMaterial({ color: i % 2 ? '#ffb347' : '#ff6a1f' })); f.position.set(SOV.x + Math.cos(i * 1.57) * 0.3, 1.3, SOV.z + Math.sin(i * 1.57) * 0.3); f.userData.ph = i * 1.3; grp.add(f); flames.push(f); }
+      for (let i = 0; i < 8; i++) { const a = i * 0.785; b.cyl(0.11, 0.11, 0.03, '#ffffff', SOV.x + Math.cos(a) * (SOV.r - 0.12), 1.06, SOV.z + Math.sin(a) * (SOV.r - 0.12), { seg: 10 }); }
+      const d = cati('davlumbaz-S'); d.b.cone(1.5, 1.2, '#b87333', SOV.x, 3.4, SOV.z, { seg: 24 }); d.b.cyl(1.52, 1.52, 0.14, '#8f5526', SOV.x, 2.82, SOV.z, { seg: 24 }); d.b.cyl(0.34, 0.4, 4.6, '#b87333', SOV.x, 6.0, SOV.z, { seg: 14 }); d.b.cyl(0.5, 0.5, 0.2, '#8f5526', SOV.x, 8.3, SOV.z, { seg: 14 });
+      for (let x = -4.0; x <= 4.01; x += 1.0) R.b.box(0.08, 0.1, 6.0, GOLD, x, RES_H + 0.3, -7.5); R.gl.box(8.3, 0.04, 6.0, '#bfe3e6', 0, RES_H + 0.36, -7.5);
+    }
+    if (stage >= KOSK_STAGE) {   // 10: deniz köşkü, altın kubbeli kuleler, fıskiyeler, yat iskelesi
+      const K = KOSK, P2 = '#6b4128'; b.box(K.x1 - K.x0, 0.14, K.z1 - K.z0, PLK, 0, 0.05, (K.z0 + K.z1) / 2); for (let x = K.x0 + 0.9; x < K.x1; x += 0.9) b.box(0.025, 0.004, K.z1 - K.z0, SEAM, x, 0.123, (K.z0 + K.z1) / 2);
+      for (let x = K.x0 + 0.4; x <= K.x1; x += 3.4) for (const z of [K.z0 + 0.3, -22]) b.cyl(0.2, 0.24, 2.2, P2, x, -1.0, z, { seg: 8 });
+      b.box(22, 0.02, 5.6, '#1f2a44', 0, 0.13, -22.4); b.box(21.6, 0.022, 5.2, '#e6d6a8', 0, 0.135, -22.4);
+      for (const [x0, z0, x1, z1] of [[K.x0, K.z0, K.x1, K.z0], [K.x0, K.z0, K.x0, K.z1], [K.x1, K.z0, K.x1, K.z1]]) { const yat = x0 !== x1, L = yat ? x1 - x0 : z1 - z0; b.box(yat ? L : 0.1, 0.1, yat ? 0.1 : L, '#c9a24a', (x0 + x1) / 2, 1.05, (z0 + z1) / 2); for (let i = 0; i <= L; i += 1.4) b.box(0.09, 1.0, 0.09, '#ead9a8', yat ? x0 + i : x0, 0.55, yat ? z0 : z0 + i); }
+      KANAT_MASALAR.forEach((m, i) => { if (m.bolge === 'kosk' && kanatKurulu(stage).includes(KANAT_BASE + i)) table(m.x, m.z, m.ax, '#f4f2ec', false, true, 0.12); });
+      const kc = cati('kosk-C'), S0 = [b, grp, lit] as const, Rb = R.b; for (const x of [K.x0 + 0.2, -7, 0, 7, K.x1 - 0.2]) for (const z of [K.z0 + 0.2, K.z1 - 0.2]) kc.b.box(0.24, 3.6, 0.24, '#c9a24a', x, 1.9, z);
+      kc.gl.box(K.x1 - K.x0, 2.6, 0.04, '#cfe6ea', 0, 2.4, K.z0 + 0.2); for (const x of [K.x0 + 0.2, K.x1 - 0.2]) kc.gl.box(0.04, 2.6, K.z1 - K.z0, '#cfe6ea', x, 2.4, (K.z0 + K.z1) / 2); kc.b.box(K.x1 - K.x0 + 0.4, 0.3, 0.3, RED, 0, 3.75, K.z0 + 0.2); kc.b.box(K.x1 - K.x0 + 0.4, 0.3, 0.3, RED, 0, 3.75, K.z1 - 0.2);
+      R.b = kc.b; kiremit(K.x0 - 0.4, K.x1 + 0.4, K.z0 - 0.3, K.z1 + 0.2, 3.9, 2.0, 'x'); R.b = Rb; void S0;
+      for (const x of [-21.9, 20.5]) { R.b.cyl(1.9, 1.9, 4.4, RED, x, TERAS_Y + 3.6, -15.9, { seg: 18 }); R.b.cyl(2.1, 2.1, 0.3, '#c9a24a', x, TERAS_Y + 5.9, -15.9, { seg: 18 }); for (let i = 0; i < 8; i++) R.lit.box(0.5, 1.1, 0.5, '#ffdf9a', x + Math.cos(i * 0.785) * 1.7, TERAS_Y + 4.4, -15.9 + Math.sin(i * 0.785) * 1.7, { ry: -i * 0.785 }); R.b.sph(1.95, '#d9ab3f', x, TERAS_Y + 6.1, -15.9, { ws: 18, hs: 12 }); R.b.cone(0.16, 1.2, '#d9ab3f', x, TERAS_Y + 8.5, -15.9, { seg: 8 }); }
+      for (const [x, z] of FISKIYE) { b.cyl(0.8, 0.85, 0.45, '#efe9dc', x, 0.22, z, { seg: 18 }); b.cyl(0.66, 0.66, 0.04, '#49b5d6', x, 0.44, z, { seg: 18 }); b.cyl(0.14, 0.2, 0.7, '#e2d6bd', x, 0.75, z, { seg: 10 }); b.cyl(0.36, 0.24, 0.1, '#efe9dc', x, 1.1, z, { seg: 14 }); lit.sph(0.16, '#cdeefa', x, 1.28, z, { ws: 8, hs: 6 }); }
+      b.box(2.2, 0.14, 7, PLK, -25.3, -0.1, -11); b.box(2.4, 1.2, 6.6, '#f6f6f2', -28.2, -0.5, -11); b.box(2.45, 0.2, 6.7, '#1f2a44', -28.2, -0.85, -11); b.box(1.8, 0.9, 2.8, '#f6f6f2', -28.2, 0.5, -11.6); b.box(1.85, 0.35, 2.0, '#2b3f55', -28.2, 0.65, -11.4); b.cyl(0.02, 1.2, 2.4, '#f6f6f2', -28.2, -0.5, -6.5, { seg: 3, rx: Math.PI / 2 }); b.box(1.9, 0.08, 6.2, '#b9814f', -28.2, 0.12, -11);   // yat iskelesi
+      b.box(2.2, 0.025, 8.6, '#9a1f2a', 0, 0.045, 4.0 + 0.2); for (const x of [-1.25, 1.25]) for (const z of [5.4, 7.2]) { b.cyl(0.04, 0.05, 0.95, '#c9a24a', x, 0.48, z, { seg: 6 }); b.sph(0.08, '#c9a24a', x, 1.0, z, { ws: 6, hs: 4 }); }
+    }
     glowAt(0, -11.8, 3.2);
   }
   /* 6-10: the büfe kiosk itself keeps growing (2026-11-22, owner: "büfe her seviyede değişim görmeli"). The kiosk prefab stops at
@@ -506,8 +565,11 @@ export function createBufeBuyume(deps: BuyumeDeps): BuyumeView {
       if (hp) {
         const inK = st < 6 && icIcinde(mutfakOda(st), hp, 0.2), inR = st >= 6 && restoranAlani(hp);
         for (const nm of ['duvar-K', 'cati-K']) { const o = grp.getObjectByName(nm); if (o) o.visible = !inK; }
-        const cR = grp.getObjectByName('cati-R'); if (cR) cR.visible = !inR;   // 2026-11-25: oyuncu iskeledeyken restoranın içi hep açık
-        for (const s of ['W', 'E'] as const) { const o = grp.getObjectByName('teras-' + s); if (o) { const k = kanatDik(s); o.visible = !(hp.x > k.x0 && hp.x < k.x1 && hp.z > TERAS_Z - 4 && hp.z < k.z1 + 0.4); } }
+        const cR = grp.getObjectByName('cati-R'); if (cR) cR.visible = !inR;
+        const kK = grp.getObjectByName('kat-K'); if (kK) kK.visible = !sefKatGizli(hp);
+        const kC = grp.getObjectByName('kosk-C'); if (kC) kC.visible = !inR && hp.z > -10;
+        const dS = grp.getObjectByName('davlumbaz-S'); if (dS) dS.visible = !(hp.x > BUFE.x0 && hp.x < BUFE.x1 && hp.z > -13.2 && hp.z < -4.2);   // 2026-11-25: oyuncu iskeledeyken restoranın içi hep açık
+        for (const s of ['W', 'E'] as const) { const o = grp.getObjectByName('teras-' + s); if (o) { const k = kanatDik(s); o.visible = !terasGizli(s, hp); } }
         const inB = hp.x > BUFE.x0 - 0.2 && hp.x < BUFE.x1 + 0.2 && hp.z > BUFE.z0 - 0.2 && hp.z < BUFE.z1, tbB = grp.getObjectByName('tabela-B'); if (tbB) tbB.visible = !inB && !gecitIcinde(hp);
         const sB = grp.getObjectByName('susle-B'); if (sB) sB.visible = !inB;
         const tbR = grp.getObjectByName('tabela-R'); if (tbR) tbR.visible = !inR;

@@ -31,7 +31,7 @@ export function iskeleZone(): ZoneDef {
   return {
     id: 'iskele',
     name: 'İskele',
-    bounds: { x0: -62, z0: -19, x1: 62, z1: 59 },
+    bounds: { x0: -62, z0: -28, x1: 62, z1: 59 },
     walk: { cell: 0.5, bake: true },
     props: [
       { id: 'sea', prefab: 'iskele.sea', pos: { x: 0, z: 0 } },

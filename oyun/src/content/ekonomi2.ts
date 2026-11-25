@@ -51,7 +51,7 @@ export const STAGE_TIME_S = [0, 90, 300, 900, 1800, 2400, 3000, 3600, 4200, 4800
 /** Stage income multiplier shown on the tadilat card (flat now, the growth is capacity). */
 export const STAGE_MULT = [1, 1.04, 1.08, 1.12, 1.16, 1.2, 1.24, 1.28, 1.32, 1.36];
 /** Arrival rate bonus per stage (customers / min) - the real reward of a tadilat. */
-export const STAGE_ARRIVAL = [0, 2.6, 5.5, 9, 13, 15.5, 18, 20.5, 23, 25.5];
+export const STAGE_ARRIVAL = [0, 2.6, 5.5, 9, 13, 15.5, 18, 25, 32, 40];
 
 export const fmtTL = (v: number): string => Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' ₺';
 

@@ -19,10 +19,10 @@
  */
 import type { Vec2 } from '../../engine/api';
 import type { Kernel, Plate } from './state';
-import { PASS_KAP, MUTFAK_IST_BY_ID, hatUyeleri, mutfakEsya, pisirIstasyonu, pisirmeSuresi } from '../../content/mutfak';
+import { passKap, MUTFAK_IST_BY_ID, hatUyeleri, mutfakEsya, pisirIstasyonu, pisirmeSuresi } from '../../content/mutfak';
 import { acikYemekler, calismaIstasyonu, hazirlikOf, icecekMi, isDish, DISH_BY_ID, isProduct, type FoodId } from '../../content/yemek-menu';
 import { PRODUCT_IDS } from '../../content/products';
-import { aletHiz } from '../../content/salon-alet';
+import { aletHiz, asamaHiz } from '../../content/salon-alet';
 import { mutfakStand, mutfakDunya, passAsciUV, type PassYer } from '../../content/ic-mekan';
 import { rankOf } from '../../content/ranks';
 import { SES_ISTASYON } from '../../content/mutfak-ses';
@@ -177,7 +177,7 @@ export function installMutfakHat<T extends HatTicket>(K: Kernel, deps: HatDeps<T
     return null;
   }
   const oyuncuIs = () => cooking.find(c => c.wid === OYUNCU);
-  const sureOf = (c: Cook) => { const w = S.workers.find(k => k.id === c.wid); const s = pisirmeSuresi(hazirlikOf(c.food), rankOf(w?.xp || 0), S.workers) * aletHiz(c.food, sahipAlet()); return c.wid === OYUNCU ? oyuncuSure(s) : s; };
+  const sureOf = (c: Cook) => { const w = S.workers.find(k => k.id === c.wid); const s = pisirmeSuresi(hazirlikOf(c.food), rankOf(w?.xp || 0), S.workers) * aletHiz(c.food, sahipAlet()) * asamaHiz(c.food, stage()); return c.wid === OYUNCU ? oyuncuSure(s) : s; };
   /** oyuncunun elindeki tabaklar: rt.carry'deki hattın tabakları (hat yalnız sayar) */
   const carryPlates = (): Plate[] => (((rt as unknown as { carry?: Plate[] }).carry) || []).filter(p => mutfakSet.has(p));
 
@@ -190,7 +190,7 @@ export function installMutfakHat<T extends HatTicket>(K: Kernel, deps: HatDeps<T
   const api: MutfakHatApi<T> = {
     claim(wid, from, opt) {
       if (cooking.some(c => c.wid === wid) || (wid > 0 && elde.some(e => e.wid === wid))) return null;
-      if (wid !== OYUNCU && inLine() >= PASS_KAP) return null;
+      if (wid !== OYUNCU && inLine() >= passKap(stage())) return null;
       if (opt?.alet) {
         const f = pick(wid, from, undefined, null, true, opt.alet); if (f) return f;
         const h = siradaki('alet.' + opt.alet.id, opt.alet.yemek.filter(acikMi)); if (!h) return null;
@@ -228,7 +228,7 @@ export function installMutfakHat<T extends HatTicket>(K: Kernel, deps: HatDeps<T
     pBirak() { for (let i = cooking.length - 1; i >= 0; i--) if (cooking[i].wid === OYUNCU) cooking.splice(i, 1); },
     pEldeye(plate) { mutfakSet.add(plate); },
     pPass(plate) {
-      if (pass.length >= PASS_KAP) return false;
+      if (pass.length >= passKap(stage())) return false;
       const i = elde.findIndex(e => e.plate === plate); if (i >= 0) elde.splice(i, 1);
       pass.push({ plate, idle: -ORPHAN_S * 3, yer: 'on' });   // oyuncunun hazırladığı tabak dört kat bekler; oyuncu tabağı mutfağın sokak pass'ına bırakır (garson tabağın durduğu pass'a yürür)
       bell(plate, 'on');
@@ -274,7 +274,7 @@ export function installMutfakHat<T extends HatTicket>(K: Kernel, deps: HatDeps<T
     },
     done(wid) {
       const i = elde.findIndex(e => e.wid === wid); if (i < 0) return false;
-      if (pass.length >= PASS_KAP) return false;
+      if (pass.length >= passKap(stage())) return false;
       const e = elde.splice(i, 1)[0];
       pass.push({ plate: e.plate, idle: 0, yer: e.yer });
       bell(e.plate, e.yer);
@@ -285,13 +285,13 @@ export function installMutfakHat<T extends HatTicket>(K: Kernel, deps: HatDeps<T
     drop(wid) {
       for (let i = cooking.length - 1; i >= 0; i--) if (cooking[i].wid === wid) cooking.splice(i, 1);
       for (const t of tepsi) if (t.wid === wid) t.wid = 0;
-      for (let i = elde.length - 1; i >= 0; i--) if (elde[i].wid === wid) { const e = elde.splice(i, 1)[0]; if (pass.length < PASS_KAP) pass.push({ plate: e.plate, idle: 0, yer: e.yer }); }
+      for (let i = elde.length - 1; i >= 0; i--) if (elde[i].wid === wid) { const e = elde.splice(i, 1)[0]; if (pass.length < passKap(stage())) pass.push({ plate: e.plate, idle: 0, yer: e.yer }); }
     },
     passTake(f, yer) {
       const i = pass.findIndex(p => p.plate.type === f && (!yer || p.yer === yer)); if (i < 0) return null;
       return pass.splice(i, 1)[0].plate;
     },
-    geriKoy(plate, yer = 'on') { if (pass.length >= PASS_KAP) return false; pass.push({ plate, idle: 0, yer }); return true; },
+    geriKoy(plate, yer = 'on') { if (pass.length >= passKap(stage())) return false; pass.push({ plate, idle: 0, yer }); return true; },
     passCount: (f, yer) => pass.reduce((n, p) => n + ((f == null || p.plate.type === f) && (!yer || p.yer === yer) ? 1 : 0), 0),
     bekleyenTepsi: yas => tepsi.some(t => !t.wid && t.t >= yas),
     view() {
@@ -323,7 +323,7 @@ export function installMutfakHat<T extends HatTicket>(K: Kernel, deps: HatDeps<T
         if (c.t > hazirlikOf(c.food) + 60) { cooking.splice(i, 1); asim++; }   // aşçı kayboldu: istasyon serbest
       }
       for (const t of tepsi) { t.t += dt; if (t.wid) { t.claimT += dt; if (t.claimT > CLAIM_S) { t.wid = 0; asim++; } } }
-      for (let i = elde.length - 1; i >= 0; i--) { const e = elde[i]; e.t += dt; if (e.wid !== OYUNCU && e.t > 60) { elde.splice(i, 1); asim++; if (pass.length < PASS_KAP) pass.push({ plate: e.plate, idle: 0, yer: e.yer }); } }
+      for (let i = elde.length - 1; i >= 0; i--) { const e = elde[i]; e.t += dt; if (e.wid !== OYUNCU && e.t > 60) { elde.splice(i, 1); asim++; if (pass.length < passKap(stage())) pass.push({ plate: e.plate, idle: 0, yer: e.yer }); } }
       // kimsenin istemediği tabak: 30 sn sonra sessizce silinir (stok birikmez)
       const need = new Map<FoodId, number>();
       for (const t of tk) for (const f in t.want) need.set(f, (need.get(f) || 0) + Math.max(0, (t.want[f] || 0) - deps.jobs(t, f) - cooking.filter(c => c.ticket === t && c.food === f).length));

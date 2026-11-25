@@ -13,9 +13,9 @@
  * garson: actor y). Çatıdaki biri yalnız merdivenden iner; yerdeki kimse çatı yüksekliğine çıkmaz (yukarıda bayrağı yoksa 0).
  */
 import type { Vec2 } from '../engine/api';
-import { KANAT_W, KANAT_E, TERAS_Y, TERAS_Z } from './restoran-plan';
+import { KANAT_W, KANAT_E, TERAS_Y, TERAS_Z, SEF_KAT_STAGE } from './restoran-plan';
 
-export type KanatBolge = 'cay' | 'dondurma' | 'salonW' | 'salonE' | 'catiW' | 'catiE';
+export type KanatBolge = 'cay' | 'dondurma' | 'salonW' | 'salonE' | 'catiW' | 'catiE' | 'sefW' | 'sefE' | 'kosk';
 export interface KanatMasa { x: number; z: number; ax: 'x' | 'z'; bolge: KanatBolge; asama: number; cati?: 'W' | 'E' }
 /** sim masa indexi bu sayıdan başlar (0..7 büfe önü / tabure / tavla masaları, content/prefabs/iskele/layout.ts) */
 export const KANAT_BASE = 8;
@@ -45,6 +45,14 @@ export const KANAT_MASALAR: KanatMasa[] = [
   // çatı terasları (aşama 8): salonun ortası boyunca 4 masa, koltuklar z ekseninde, garson masanın doğusunda
   ...[-21.0, -18.4, -15.8, -13.2].map(x => ({ x, z: 0.2, ax: 'z' as const, bolge: 'catiW' as const, asama: 8, cati: 'W' as const })),
   ...[11.4, 14.2, 17.0, 19.8].map(x => ({ x, z: 0.2, ax: 'z' as const, bolge: 'catiE' as const, asama: 8, cati: 'E' as const })),
+  // 2026-11-25 (sahibi: "8, 9 ve 10. aşamada hiç fark yok"): 8 tam teras (+12), 9 ikinci kat Şef salonu (+12), 10 deniz köşkü (+8) ve kış bahçesi (+4)
+  ...[-3.4, -6.6].flatMap(z => [-21.0, -18.4, -15.8].map(x => ({ x, z, ax: 'z' as const, bolge: 'catiW' as const, asama: 8, cati: 'W' as const }))),
+  ...[-3.4, -6.6].flatMap(z => [14.2, 17.0, 19.8].map(x => ({ x, z, ax: 'z' as const, bolge: 'catiE' as const, asama: 8, cati: 'E' as const }))),
+  ...[-11.4, -14.8].flatMap(z => [-16.5, -8.5, -3.5].map(x => ({ x, z, ax: 'z' as const, bolge: 'sefW' as const, asama: 9, cati: 'W' as const }))),
+  ...[-11.4, -14.8].flatMap(z => [3.5, 13.5, 17.5].map(x => ({ x, z, ax: 'z' as const, bolge: 'sefE' as const, asama: 9, cati: 'E' as const }))),
+  ...[-20.8, -24.0].flatMap(z => [-10.5, -3.5, 3.5, 10.5].map(x => ({ x, z, ax: 'x' as const, bolge: 'kosk' as const, asama: 10 }))),
+  ...[-3.4, -6.6].map(z => ({ x: -13.2, z, ax: 'z' as const, bolge: 'catiW' as const, asama: 10, cati: 'W' as const })),
+  ...[-3.4, -6.6].map(z => ({ x: 11.4, z, ax: 'z' as const, bolge: 'catiE' as const, asama: 10, cati: 'E' as const })),
 ];
 export const KANAT_N = KANAT_MASALAR.length;
 /** sim masa indexinin kanat tanımı (büfe masası ise null) */
@@ -68,12 +76,12 @@ export const kanatYeni = (stage: number): number[] => KANAT_MASALAR.map((m, k) =
 /** bölge başına kurulu masa sayısı */
 export const kanatSay = (stage: number, b: KanatBolge): number => { const on = new Set(kanatKurulu(stage)); return KANAT_MASALAR.filter((m, k) => m.bolge === b && on.has(KANAT_BASE + k)).length; };
 /** masanın sarı kare fiyatı: açıldığı aşamanın gelirine oranlı (aşama 3 çay bahçesi 15 bin ... aşama 10 fine dining 6 milyon) */
-const MASA_FIYAT: Record<number, number> = { 3: 15000, 4: 40000, 5: 120000, 6: 300000, 7: 700000, 8: 1500000, 9: 3000000, 10: 6000000 };
+const MASA_FIYAT: Record<number, number> = { 3: 15000, 4: 40000, 5: 120000, 6: 300000, 7: 700000, 8: 900000, 9: 1800000, 10: 3600000 };
 export const masaFiyat = (table: number): number => (masaHediye(table) ? 0 : MASA_FIYAT[kanatOf(table)?.asama ?? 3] ?? 15000);
-export const BOLGE_AD: Record<KanatBolge, string> = { cay: 'Çay bahçesi', dondurma: 'Dondurma terası', salonW: 'Kahvaltı salonu', salonE: 'Balık lokantası', catiW: 'Batı çatı terası', catiE: 'Doğu çatı terası' };
+export const BOLGE_AD: Record<KanatBolge, string> = { cay: 'Çay bahçesi', dondurma: 'Dondurma terası', salonW: 'Kahvaltı salonu', salonE: 'Balık lokantası', catiW: 'Batı çatı terası', catiE: 'Doğu çatı terası', sefW: 'Şef salonu (batı)', sefE: 'Şef salonu (doğu)', kosk: 'Deniz köşkü' };
 
 /** Salon aleti (SALON_ESYA) hangi masalara etki eder: W -> çay bahçesi + kahvaltı salonu + batı çatısı, E -> dondurma + balık + doğu çatısı */
-export const kanatYanı = (b: KanatBolge): 'W' | 'E' => (b === 'cay' || b === 'salonW' || b === 'catiW' ? 'W' : 'E');
+export const kanatYanı = (b: KanatBolge): 'W' | 'E' => (b === 'cay' || b === 'salonW' || b === 'catiW' || b === 'sefW' ? 'W' : 'E');
 
 /**
  * Kanat masasında kişi başı adisyon çarpanı: masa hesabı = bilet kalemleri x bu çarpan (x salon aleti adisyon çarpanı).
@@ -85,7 +93,7 @@ export const kanatYanı = (b: KanatBolge): 'W' | 'E' => (b === 'cay' || b === 's
  */
 // 2026-11-21 (restoran ayrımı: masa payı 6-10 %60-%90, salon pass'ları): 3 tohum x 12 dk tam kadro ölçümüyle aşama başına toplam gelir
 // eskisiyle ±%5 içinde kalsın diye 6 / 8 / 9 yeniden ayarlandı (6: -%18 -> 50, 8: +%21 -> 85, 9: +%26 -> 185; 5, 7, 10 değişmedi).
-export const KANAT_FIYAT_X = [1, 1, 1, 16, 20, 20, 50, 73, 85, 185, 290];
+export const KANAT_FIYAT_X = [1, 1, 1, 16, 20, 20, 50, 73, 95, 120, 195];   // 2026-11-25: 8-10 masa ve müşteri arttı, hedef günlük 1,5M / 3,3M / 7M (aşama botu)
 export const kanatFiyatX = (stage: number) => KANAT_FIYAT_X[Math.max(0, Math.min(10, Math.round(stage) || 0))];
 
 /* ---------- çatı terası rotası ve yüksekliği ---------- */
@@ -96,23 +104,28 @@ export const CATI = {
   W: { sx: -10.75, x0: KANAT_W.x0 + 0.2, x1: KANAT_W.x1 - 0.2, entryX: -11.7 },
   E: { sx: 8.75, x0: KANAT_E.x0 + 0.2, x1: KANAT_E.x1 - 0.2, entryX: 9.7 },
 } as const;
-const Z_ALT = 2.9, Z_UST = -2.0, Z0 = TERAS_Z, Z1 = KANAT_W.z1, KORIDOR = -2.0, MERD_YARI = 0.4;
+const Z_ALT = 2.9, Z_UST = -2.0, Z0 = TERAS_Z, Z1 = KANAT_W.z1, MERD_YARI = 0.4;
+/** çatıdaki koridor (z): terasın ön iki sırası -2.0, arka sırası -5.0, Şef salonu (arka bandın ikinci katı) -13.1 */
+const koridor = (z: number): number => (z > -4.5 ? -2.0 : z > -9.2 ? -5.0 : -13.1);
 /** merdivenin ayağı (yerde, yürünebilir) */
 export const catiAyak = (s: 'W' | 'E'): Vec2 => ({ x: CATI[s].sx, z: Z_ALT + 0.35 });
 /** merdivenin yürünebilir ızgarada kapalı kutusu (aşama 8+; yerdeki kimse girmez) */
 export const merdivenKutu = (s: 'W' | 'E') => ({ x0: CATI[s].sx - 0.45, x1: CATI[s].sx + 0.45, z0: Z_UST - 0.3, z1: Z_ALT - 0.1 });
-/** merdiven ayağından çatıdaki `to` noktasına: basamaklar, çatıya giriş, koridor, hedef */
+/** merdiven ayağından çatıdaki `to` noktasına: basamaklar, omurga (entryX), koridor, hedef */
 export function catiYukari(s: 'W' | 'E', to: Vec2): Vec2[] {
-  const c = CATI[s];
-  return [{ x: c.sx, z: Z_ALT }, { x: c.sx, z: Z_UST }, { x: c.entryX, z: Z_UST }, { x: to.x, z: KORIDOR }, { x: to.x, z: to.z }];
+  const c = CATI[s], k = koridor(to.z);
+  return [{ x: c.sx, z: Z_ALT }, { x: c.sx, z: Z_UST }, { x: c.entryX, z: Z_UST }, ...(k !== Z_UST ? [{ x: c.entryX, z: k }] : []), { x: to.x, z: k }, { x: to.x, z: to.z }];
 }
 /** çatıdaki `from` noktasından merdiven ayağına */
 export function catiAsagi(s: 'W' | 'E', from: Vec2): Vec2[] {
-  const c = CATI[s];
-  return [{ x: from.x, z: KORIDOR }, { x: c.entryX, z: Z_UST }, { x: c.sx, z: Z_UST }, { x: c.sx, z: Z_ALT }, catiAyak(s)];
+  const c = CATI[s], k = koridor(from.z);
+  return [{ x: from.x, z: k }, ...(k !== Z_UST ? [{ x: c.entryX, z: k }] : []), { x: c.entryX, z: Z_UST }, { x: c.sx, z: Z_UST }, { x: c.sx, z: Z_ALT }, catiAyak(s)];
 }
 /** çatıda bir noktadan ötekine (koridor üzerinden, masaların arasından değil) */
-export const catiIc = (from: Vec2, to: Vec2): Vec2[] => [{ x: from.x, z: KORIDOR }, { x: to.x, z: KORIDOR }, { x: to.x, z: to.z }];
+export function catiIc(from: Vec2, to: Vec2): Vec2[] {
+  const a = koridor(from.z), b = koridor(to.z), x = CATI[from.x < 0 ? 'W' : 'E'].entryX;
+  return a === b ? [{ x: from.x, z: a }, { x: to.x, z: a }, { x: to.x, z: to.z }] : [{ x: from.x, z: a }, { x, z: a }, { x, z: b }, { x: to.x, z: b }, { x: to.x, z: to.z }];
+}
 /** konumun çatı tarafı (x'e göre) */
 export const catiTaraf = (p: Vec2): 'W' | 'E' => (p.x < 0 ? 'W' : 'E');
 /**
@@ -125,6 +138,7 @@ export function katY(stage: number, x: number, z: number, yukari: boolean): numb
     const c = CATI[s], ry = catiY(stage, s);
     if (Math.abs(x - c.sx) < MERD_YARI && z <= Z_ALT + 0.05 && z >= Z_UST - 0.3) return ry * Math.max(0, Math.min(1, (Z_ALT - z) / (Z_ALT - Z_UST)));
     if (yukari && x > Math.min(c.x0, c.entryX) - 0.5 && x < Math.max(c.x1, c.entryX) + 0.5 && z > Z0 - 0.5 && z < Z1 + 0.5) return ry;
+    if (yukari && stage >= SEF_KAT_STAGE && z <= Z0 - 0.4 && z > -17.9 && (s === 'W' ? x > -23.6 && x <= 0.3 : x > -0.3 && x < 22.2)) return ry;   // Şef salonu: arka bandın ikinci katı
   }
   return 0;
 }
@@ -135,5 +149,5 @@ export function katY(stage: number, x: number, z: number, yukari: boolean): numb
  */
 export const KANAT_POST: Record<KanatBolge, Vec2> = {
   cay: { x: -20.9, z: -7.9 }, dondurma: { x: 19.6, z: -0.2 }, salonW: { x: SW.x, z: -14.6 }, salonE: { x: SE.x, z: -14.6 },
-  catiW: { x: -11.7, z: 3.4 }, catiE: { x: 9.7, z: 3.4 },
+  catiW: { x: -11.7, z: 3.4 }, catiE: { x: 9.7, z: 3.4 }, sefW: { x: -12.4, z: 3.4 }, sefE: { x: 10.4, z: 3.4 }, kosk: { x: 9.4, z: -16.2 },
 };

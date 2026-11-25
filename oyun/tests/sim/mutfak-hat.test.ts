@@ -15,7 +15,7 @@ import { played, events } from './m1-helpers';
 import { makeSandbox, addWorker, stubHat } from './agents-harness';
 import { restoranApi } from '../../src/game/sim/restoran';
 import { installMutfakHat, type HatTicket } from '../../src/game/sim/mutfak-hat';
-import { MUTFAK_ISTASYON, PASS_KAP, mutfakEsya, mutfakEtki, pisirIstasyonu, pisirmeSuresi, sefHizi } from '../../src/content/mutfak';
+import { MUTFAK_ISTASYON, passKap, mutfakEsya, mutfakEtki, pisirIstasyonu, pisirmeSuresi, sefHizi } from '../../src/content/mutfak';
 import { DISHES, calismaIstasyonu, hazirlikOf } from '../../src/content/yemek-menu';
 import { PRODUCT_IDS } from '../../src/content/products';
 import { IC_BY_ID, icLayout, icDim, mutfakRota, mutfakStand, mutfakDunya, mutfakKoridor, MUTFAK_NOKTA, MUTFAK_YER } from '../../src/content/ic-mekan';
@@ -90,15 +90,15 @@ describe('mutfak hattı (sim/mutfak-hat.ts)', () => {
     expect(b.hat.claim(102)).toBeNull();
   });
   it('tepsi istasyonu tutar, pass rafı görünür, her tabakta tek zil, PASS_KAP üstü olmaz', () => {
-    const { hat, ev } = hatKur(10, asci(1), [{ no: 1, table: 2, want: { doner: 20 } }]);
+    const { hat, ev } = hatKur(10, asci(1), [{ no: 1, table: 2, want: { doner: 30 } }]);
     expect(hat.claim(100)).toBe('doner'); hat.ready(100);
     expect(hat.view().ist.doner).toEqual({ d: 'hazir', p: 'doner' });
     expect(hat.claim(101)).toBeNull();   // döner istasyonu tepsi alınana kadar dolu
     hat.tasiClaim(100, { kendi: true }); expect(hat.tasiAl(100)?.type).toBe('doner'); expect(hat.done(100)).toBe(true);
     expect(hat.view().pass).toEqual(['doner']); expect(ev.filter(e => e[0] === 'passBell').length).toBe(1);
     let n = 1; while (tabakla(hat, 100)) n++;
-    expect(n).toBe(PASS_KAP); expect(hat.passCount()).toBe(PASS_KAP); expect(ev.filter(e => e[0] === 'passBell').length).toBe(PASS_KAP);
-    expect(hat.passTake('doner')?.type).toBe('doner'); expect(hat.passCount()).toBe(PASS_KAP - 1);
+    expect(n).toBe(passKap(10)); expect(hat.passCount()).toBe(passKap(10)); expect(ev.filter(e => e[0] === 'passBell').length).toBe(passKap(10));
+    expect(hat.passTake('doner')?.type).toBe('doner'); expect(hat.passCount()).toBe(passKap(10) - 1);
   });
   it('gerçek yiyecek akar: yemek tabağı kendi adıyla (taşıyıcı ürün yok), tezgâh stoğu ihtiyaçtan düşülür', () => {
     const { hat, K } = hatKur(7, asci(1), [{ no: 1, table: 0, want: { hamsi_tava: 1, cay: 1 } }]);
@@ -214,7 +214,7 @@ describe('aşama 10 tam mutfak (gerçek sim, 30 dk)', () => {
     for (const ist of PISIR10) expect(is.get(ist) || 0, ist).toBeGreaterThan(0);
     expect(is.get('soguk_oda') || 0).toBe(0); expect(is.get('bulasik') || 0).toBe(0);
     expect(cift).toBe(0);                       // bir istasyonda aynı anda tek iş
-    expect(maxPass).toBeLessThanOrEqual(PASS_KAP);
+    expect(maxPass).toBeLessThanOrEqual(passKap(10));
     expect(d.asim).toBe(0);                     // hiçbir emniyet zaman aşımı tetiklenmedi: takılı iş yok
     expect(enUzunSessiz).toBeLessThan(600);     // açık bilet varken 60 sn'den uzun sessizlik (ne pass zili ne masaya teslim) yok: ölü kilit yok
     expect(maxFrac).toBeLessThan(1);            // hiçbir masa bileti mutfak yüzünden zaman aşımına düşmedi
