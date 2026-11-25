@@ -25,3 +25,9 @@ Sahibi: "tek dev restoran, ayrı dükkânlar gibi olmayacak", kırmızı çizgi 
 - 1-6. adımlar bitti. Oyuncu mutfakta ve salon aletinde büfe gibi çalışır (OYUNCU_HIZ 0.4, en az 1.2 sn, eller dolana kadar); content/salon-alet.ts.
 - Gelir/gün (aşama botu, jo0q11 -> ters U): 6 %-10, 7 %-5, 8 %+5, 9 %+3, 10 %0; 1-5 aynı.
 - vitest: 8 kırmızı jo0q11'de de vardı (Windows yol ayracı: kirmizi-cizgi, baglilik, ekonomi-kapi).
+
+## Aşama 6-10 sıçraması (2026-11-25/26, sahibi "tamamdır")
+- 8 tam teras (asma pergola, yelkenler, bar), 9 arka bant ikinci kat Şef salonu + şov ızgarası + bakır davlumbaz, 10 kubbeli kuleler, deniz köşkü, kış bahçesi, fıskiye, mermer.
+- Masa 46 / 58 / 74. Garson 14 / 19 / 25. Pass rafı aşamayla büyür (passKap 13 / 18 / 22): darboğaz buydu.
+- Bot (asama-botu): gelir/gün 6: 257b, 7: 720b, 8: 1,50M, 9: 3,32M, 10: 7,01M. Bekleme: menü ort 15-18 sn, en uzun 48 sn; sipariş ort 8-10 sn.
+- Vapur geçidi: vapurun kalktığı dal birleşince VAPUR_GECIT kapanacak (bu dalda vapur müşterisi hâlâ oradan giriyor).

@@ -614,7 +614,7 @@ function buildRoom(m: IcMekan, own: { lv: number; isci: number; esya: string[]; 
   if (!gb.empty) { const gm2 = gb.mesh(M.ghost, false, false); gm2.renderOrder = 2; grp.add(gm2); }
   for (const e of etiket) {   // aletin üstündeki küçük pano: adı + ne işe yarar
     const mt = new T.MeshBasicMaterial({ map: etiketTex(e.ad, e.is), transparent: true }), w = e.is ? 1.95 : 1.4, p = new T.Mesh(new T.PlaneGeometry(w, w * 0.27), mt);
-    const [pu, pv] = m.mutfak && e.it.esya ? mutfakUst(e.it.esya) : [e.it.u, e.it.v]; const arka = m.mutfak && e.it.esya && MUTFAK_YER[e.it.esya]?.sira === 'arka', yr = e.it.ry || 0; p.position.set(pu + (m.salon ? (yr === 3 ? -0.5 : yr === 1 ? 0.5 : 0) : 0), arka ? 1.25 : 1.7, pv + (arka ? 0.75 : 0)); p.rotation.x = -0.75; p.rotation.order = 'YXZ'; p.renderOrder = 3; grp.add(p);
+    const [pu, pv] = m.mutfak && e.it.esya ? mutfakUst(e.it.esya) : [e.it.u, e.it.v]; const arka = m.mutfak && e.it.esya && MUTFAK_YER[e.it.esya]?.sira === 'arka', yr = e.it.ry || 0; p.position.set(pu + (m.salon ? (yr === 3 ? -0.5 : yr === 1 ? 0.5 : 0) : 0), arka ? 1.25 : e.it.k === 'buzdolap' ? 2.4 : 1.7, pv + (arka ? 0.75 : 0)); p.rotation.x = -0.75; p.rotation.order = 'YXZ'; p.renderOrder = 3; grp.add(p);
   }
   if (!wb.empty) { const wm = wb.mesh(M.wall, false, true); grp.add(wm); }
   const trimM: T.Mesh[] = [];

@@ -1,5 +1,6 @@
 import { UG } from '../../ustgecit';
 import { KANAT_MASALAR, type KanatBolge } from '../../kanat';
+import { KOSK_KAPI, KOSK_KAPI_W } from '../../restoran-plan';
 /**
  * İskele geography and per-stage layout (pure data, no three, no DOM): v2 world.js constants, stageLayout(),
  * staticObstacles(), WALKABLE, benches, lamp posts, trophy spots. Ported 1:1 (numbers kept).
@@ -209,7 +210,8 @@ export function staticObstacles(): Obstacle[] {
   const o: Obstacle[] = [];
   const add = (x0: number, x1: number, z0: number, z1: number, tag: string) => o.push({ x0, x1, z0, z1, tag });
   add(PIER.x0 - 0.4, PIER.x0 + 0.2, PIER.z0 - 0.4, PIER.z1, 'rail');
-  add(PIER.x0 - 0.4, PIER.x1 + 0.4, PIER.z0 - 0.4, PIER.z0 + 0.2, 'rail');
+  // 2026-11-25: deniz köşkünün iki kapısı (aşama 10); öncesinde buyumeEngel kapatır
+  { let x = PIER.x0 - 0.4; for (const d of KOSK_KAPI) { add(x, d - KOSK_KAPI_W / 2, PIER.z0 - 0.4, PIER.z0 + 0.2, 'rail'); x = d + KOSK_KAPI_W / 2; } add(x, PIER.x1 + 0.4, PIER.z0 - 0.4, PIER.z0 + 0.2, 'rail'); }
   add(PIER.x1 - 0.2, PIER.x1 + 0.4, PIER.z0 - 0.4, GANG.z0, 'rail'); add(PIER.x1 - 0.2, PIER.x1 + 0.4, GANG.z1, PIER.z1, 'rail');
   add(-80, PIER.x0, PIER.z1 - 0.4, PIER.z1 + 0.45, 'rail'); add(PIER.x1, 80, PIER.z1 - 0.4, PIER.z1 + 0.45, 'rail');
   // road-side rail along the promenade; the footbridge stairs interrupt it

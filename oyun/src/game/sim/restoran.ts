@@ -18,13 +18,14 @@
  * bahşiş ortak kumbarada birikir (oyuncuya gelir değil), gün sonunda (karne.ts) garsonlara eşit paylaşılır.
  */
 import { RESTORAN_ASAMA } from '../../content/prefabs/iskele/layout';
-import { mutfakEtki, sefHizi, mutfakEsya, MUTFAK_IST_BY_ID, PASS_KAP } from '../../content/mutfak';
+import { mutfakEtki, sefHizi, mutfakEsya, MUTFAK_IST_BY_ID, passKap } from '../../content/mutfak';
 import { ADISYON, ADISYON_LINES, SERVIS, FAZ2_UI, type GarsonTur } from '../../content/restoran';
 import { bolgeleriKur, bolgeAtamasi, devriyeNoktalari, type Bolge } from './garson-bolge';
 import { YEMEK } from '../../content/ekonomi2';
 import { DISH_BY_ID, acikYemekler, menuPano, yemekAgirlik, yemekAd, isProduct, type DishId, type FoodId, type MenuAsama } from '../../content/yemek-menu';
 import { IC_BY_ID, icIcinde, icItemOn, icLayout, mutfakDunya, mutfakStand, mutfakOda, passAcik, passAsciUV, passGarsonNokta, type PassYer } from '../../content/ic-mekan';
-import { SALON_ALET } from '../../content/salon-alet';
+import { SALON_ALET, SOV_YEMEK } from '../../content/salon-alet';
+import { SEF_KAT_STAGE, SOV } from '../../content/restoran-plan';
 import { SALON_ESYA_BY_ID } from '../../content/esya';
 import { installMutfakHat, OYUNCU, type IstDurum, type MutfakHatApi, type OyuncuIs } from './mutfak-hat';
 import { DWELL_DEFAULTS, type Vec2 } from '../../engine/api';
@@ -404,7 +405,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     const at = mutfakDunya(passAsciUV('on'));
     K.interactions.register({
       id, pos: { x: at.x, z: at.z }, radius: 0.9, kind: 'counter', dwell: DWELL_DEFAULTS.counter, interval: 0.16,
-      canAct: () => rt.carry.some(it => hat.mutfakTabagi(it)) && hat.passCount() < PASS_KAP,
+      canAct: () => rt.carry.some(it => hat.mutfakTabagi(it)) && hat.passCount() < passKap(S.stage || 1),
       act: () => {
         const k = rt.carry.findIndex(it => hat.mutfakTabagi(it)); if (k < 0) return 'done';
         const it = rt.carry[k] as unknown as Plate;
@@ -444,7 +445,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
   /** mutfak büyüdükçe (aşama) istasyon etkileşimleri eklenir; mutfak yoksa (aşama < 3, yeni oyun) kaldırılır */
   function mutfakKayit(): void {
     if (!FAZ2_UI) return;
-    const ist = pisirIstler(), al = aletler(), yerler = (['on', 'W', 'E'] as const).filter(y => passAcik(y, S.stage || 1)), key = ist.join(',') + '|' + yerler.join(',') + '|' + al.join(',');
+    const ist = pisirIstler(), al = aletler(), yerler = (['on', 'W', 'E'] as const).filter(y => passAcik(y, S.stage || 1)), key = ist.join(',') + '|' + yerler.join(',') + '|' + al.join(',') + '|' + ((S.stage || 1) >= SEF_KAT_STAGE);
     if (key === kayitKey) return;
     kayitKey = key;
     for (const y of ['on', 'W', 'E'] as const) { if (!(ist.length && yerler.includes(y)) && K.interactions.get('pass.al.' + y)) K.interactions.unregister('pass.al.' + y); }
@@ -454,6 +455,8 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     ist.forEach(pisirKur); passKur();
     for (const e of Object.keys(SALON_ALET)) if (!al.includes(e) && K.interactions.get('alet.' + e)) K.interactions.unregister('alet.' + e);
     al.forEach(aletKur);
+    if ((S.stage || 1) >= SEF_KAT_STAGE) istasyonKur('alet.sov', { x: SOV.x, z: SOV.z + SOV.r + 0.5 }, { acik: () => (S.stage || 1) >= SEF_KAT_STAGE, act: 'cut', ist: 'alet.sov', var_: () => true, basla: () => hat.claim(OYUNCU, undefined, { alet: { id: 'sov', yemek: SOV_YEMEK } }) });
+    else if (K.interactions.get('alet.sov')) K.interactions.unregister('alet.sov');
   }
 
   // ───────── BUF-10 bölgeler (çalışma anı) ─────────
@@ -466,7 +469,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     if (key === bolgeKey) return;
     bolgeKey = key;
     // çatı masaları salonun tam üstünde: kümelemede ayrı dursunlar diye denize doğru kaydırılmış konumla (yalnız bölge hesabı)
-    bolgeList = bolgeleriKur(rt.layout.tables.map((tb, i) => (masaCati(i) ? { x: tb.x, z: tb.z - 12 } : tb)), built, ws.length);
+    bolgeList = bolgeleriKur(rt.layout.tables.map((tb, i) => (masaCati(i) ? { x: tb.x, z: tb.z - 40 } : tb)), built, ws.length);
     atama = bolgeAtamasi(ws, bolgeList, elle);
   }
   const masaBolgesi = (table: number) => bolgeList.find(b => b.masalar.includes(table))?.id ?? null;
