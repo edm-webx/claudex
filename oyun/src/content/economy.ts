@@ -31,7 +31,7 @@ export const P = {
   MAGNET_M: [0.8, 1.2, 1.6, 2.2, 3.0],   // Mıknatıslı Önlük levels
   MAGNET_COST: [0, 2500, 15000, 60000, 200000],
   KEPENK: [ // [hours cap, rate, where sold, price] - Faz 2: offline income is almost nothing on purpose
-    [KEPENK2[0][0], KEPENK2[0][1], 'İskele', 0], [KEPENK2[1][0], KEPENK2[1][1], 'İskele', 30000], [KEPENK2[2][0], KEPENK2[2][1], 'Vapur Büfesi', null], [KEPENK2[3][0], KEPENK2[3][1], 'Köprüaltı', null]],
+    [KEPENK2[0][0], KEPENK2[0][1], 'İskele', 0], [KEPENK2[1][0], KEPENK2[1][1], 'İskele', 30000], [KEPENK2[2][0], KEPENK2[2][1], 'Sahil', null], [KEPENK2[3][0], KEPENK2[3][1], 'Köprüaltı', null]],
   ACT_PERFECT: 2.5, EFF: 0.7,            // active vs idle (worker) rate, player efficiency (sim)
   RET_MIN_GAP_S: 900,                    // welcome-back x2 ad only after 15 min away (GDD); card from 2 min
   WELCOME_MIN_S: 120,

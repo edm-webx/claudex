@@ -23,7 +23,7 @@ export const SPEAKERS: Record<SpeakerId, Speaker> = {
   zeki: { name: 'Kuruyemişçi Zeki', skin: '#d9a77c', shirt: '#7a4e2d', hat: 'bere', accent: '#2e4a6b' },
   kemal: { name: 'Balıkçı Kemal', skin: '#c99068', shirt: '#2f6f9a', hat: 'yagmurluk', accent: '#e8b23a' },
   ayten: { name: 'Bisikletçi Ayten', skin: '#eebd96', shirt: '#3a8a6e', hat: 'kask', accent: '#7a3a2a' },
-  kaptan: { name: 'Vapur Kaptanı', skin: '#ffffff', shirt: '#22344f', hat: 'kaptan', accent: '#e8b23a' },
+  kaptan: { name: 'Kaptan', skin: '#ffffff', shirt: '#22344f', hat: 'kaptan', accent: '#e8b23a' },
   muhtar: { name: 'Muhtar Rüstem', skin: '#e0b088', shirt: '#6b5a8a', hat: 'gozluk', accent: '#6b5a8a' },
   radyo: { name: 'Martı FM', skin: '#ffd23f', shirt: '#2f7fb3', hat: 'radyo', accent: '#2f7fb3' },
   plaza: { name: 'Genel Müdür Plazaoğlu', skin: '#efc6a0', shirt: '#2b2b38', hat: 'kravat', accent: '#d23b3b' },
@@ -59,7 +59,7 @@ export const CHAPTERS: readonly ChapterDef[] = [
     quests: [
       { id: 'iskele-1', title: 'İlk 20 müşteri', giver: 'pamuk', text: '20 müşteriye servis yap.', goal: { t: 'stat', k: 'served', n: 20 }, start: 'Miyav. (Tercüme: 20 müşteri doyur, sonra beni doyur.)', done: 'Pamuk onaylar gibi kuyruğunu salladı. Ya da sinek kovaladı.' },
       { id: 'iskele-2', title: 'Demlik yansın', giver: 'zeki', text: 'Çay ocağını kur.', goal: { t: 'owned', k: 'cay' }, start: 'Çaysız iskele, tuzsuz leblebi gibi Sabri. Bir ocak kur!', done: 'İşte bu! Çay kokusu çarşıya kadar geldi.' },
-      { id: 'iskele-3', title: 'Vapuru karşıla', giver: 'kaptan', text: '3 vapur yanaşsın.', goal: { t: 'stat', k: 'ferries', n: 3 }, start: 'Düüüt! Yolcularım aç gelir, hazır ol!', done: 'Düüüt düüt! (Kaptan memnun. Sanırım. Paltosu kıpırdadı.)' },
+      { id: 'iskele-3', title: 'Kalabalığı karşıla', giver: 'muhtar', text: '60 müşteriye servis yap.', goal: { t: 'stat', k: 'served', n: 60 }, start: 'Öğle olunca promenat dolar Sabri, hazır ol!', done: 'Aferin! İskelede kimse aç kalmadı.' },
     ],
     finale: { id: 'final-iskele', title: 'İskelenin Yıldızı', kind: 'finale', icon: 'radyo', lines: [
       ['radyo', "Martı FM'den canlı yayın! İskelenin yeni yıldızı Sabri'nin büfesindeyiz!"],
@@ -136,7 +136,7 @@ export const CHAPTERS: readonly ChapterDef[] = [
     id: 'sahil', n: 5, place: 'Sahil Yolu', title: 'Gökyüzünde Paketler', blurb: 'Uçan Paket dronları sahile iner. Martılar bunu kişisel algılar.', rewardMin: 7, gold: 2,
     quests: [
       { id: 'sahil-1', title: 'Üçüncü aşama', giver: 'muhtar', text: 'Büfeyi 3. aşamaya büyüt.', goal: { t: 'stage', n: 3 }, start: 'Sahil Yolu fotoğraf karesi ister. Büfe büyüsün!', done: 'Vay! Turistler artık büfenin önünde poz veriyor.' },
-      { id: 'sahil-2', title: 'Pencere ustası', giver: 'kaptan', text: 'Vapur penceresinden 25 satış yap.', goal: { t: 'stat', k: 'windowSales', n: 25 }, start: 'Düüüt! Pencereden uzat, yolcu kapsın!', done: 'Düüt! (Paltonun içinden alkış sesi geldi. Çok fazla el var gibi.)' },
+      { id: 'sahil-2', title: 'Tezgâh ustası', giver: 'zeki', text: '400 müşteriye servis yap.', goal: { t: 'stat', k: 'served', n: 400 }, start: 'Sahil kalabalık, tezgâh hiç boş kalmasın!', done: 'Dört yüz! Leblebi tezgâhım kıskandı.' },
       { id: 'sahil-3', title: 'Ekip büyüsün', giver: 'sevket', text: '3 işçin olsun.', goal: { t: 'workers', n: 3 }, start: 'Kalabalık ekip, bol sohbet. Benim dükkan gibi.', done: 'Maşallah, takım tamam! Hepsine tıraş benden.' },
     ],
     finale: { id: 'final-sahil', title: 'Martılar Dronlara Karşı', kind: 'finale', icon: 'dron', lines: [
@@ -152,23 +152,21 @@ export const CHAPTERS: readonly ChapterDef[] = [
     ] },
   },
   {
-    id: 'vapur', n: 6, place: 'Vapur Büfesi', title: 'Kaptanın Sırrı', blurb: 'Vapurun içinde ikinci bir büfe! Ama kaptan neden hiç konuşmuyor?', rewardMin: 8, gold: 2,
+    // 2026-11-25: vapur kavramı kalktı; bölüm kimlikleri kayıt uyumu için aynı (vapur, vapur-1..3, final-vapur), içerik Sabri'nin Sofrası
+    id: 'vapur', n: 6, place: 'Sabri\'nin Sofrası', title: 'Sofra Kuruluyor', blurb: 'Büfe büyüdü, iskeleye koca bir restoran sığdı. Ama aşçı neden hep fısıldıyor?', rewardMin: 8, gold: 2,
     quests: [
-      { id: 'vapur-1', title: 'Esnaf Seviyesi 10', giver: 'kaptan', text: 'Esnaf Seviyesi 10 ol.', goal: { t: 'level', n: 10 }, start: 'Düüüt. (Kaptan sana bir kağıt uzattı: "Usta ol, sonra konuşuruz.")', done: 'Düüüt! (Kağıtta artık "Tamam" yazıyor. El yazısı tavuk ayağı gibi. Martı ayağı.)' },
-      { id: 'vapur-2', title: 'Sefer sefer', giver: 'kemal', text: '30 vapur yanaşsın.', goal: { t: 'stat', k: 'ferries', n: 30 }, start: 'Her sefer bir hikaye Sabri. 30 hikaye biriktir.', done: 'Otuz sefer! Artık iskelenin efsanesisin.' },
+      { id: 'vapur-1', title: 'Esnaf Seviyesi 10', giver: 'kemal', text: 'Esnaf Seviyesi 10 ol.', goal: { t: 'level', n: 10 }, start: 'Usta ol Sabri, sonra sofrayı birlikte kurarız.', done: 'Ustalık kâğıdın hazır. Artık sofra senin.' },
+      { id: 'vapur-2', title: 'Restoran açılsın', giver: 'muhtar', text: 'Büfeyi 6. aşamaya büyüt.', goal: { t: 'stage', n: 6 }, start: 'İskeleye restoran yakışır. Kurdeleyi ben keserim!', done: 'Kurdele kesildi! Mahallenin yeni sofrası hayırlı olsun.' },
       { id: 'vapur-3', title: 'Büyük kasa', giver: 'zeki', text: '25.000 ₺ kazan.', goal: { t: 'earned', n: 25000 }, start: 'Büyük kasa, büyük leblebi çuvalı gibidir.', done: 'Çuval doldu! Ben de bir çuval leblebi ısmarlarım.' },
     ],
-    finale: { id: 'final-vapur', title: 'Paltodaki Martılar', kind: 'finale', icon: 'vapur', lines: [
-      ['sabri', 'Kaptanım, aylardır tek kelime etmediniz. Bir derdiniz mi var?'],
-      ['kaptan', 'Düüüt.'],
-      ['pamuk', 'Hhhh! (Pamuk paltoya tısladı. Palto da ona tısladı.)'],
-      ['kaptan', 'Gaak! Gaak gaak!'],
-      ['sabri', 'Bir dakika... Bu palto... *Yedi martı*?!'],
-      ['kaptan', 'Gaak. (Tercüme: Evet. Vapur ehliyetini birlikte aldık.)'],
-      ['kemal', 'Ben yıllardır biliyordum. Kimseye söylemedim, kimse sormadı.'],
-      ['sabri', 'Peki... vapuru güzel kullanıyorsunuz, devam edin.'],
-      ['kaptan', 'Gaak! (Tercüme: Ücretimiz simit. Sabah ikişer tane.)'],
-      ['sabri', 'Anlaştık. Yedi kere iki, on dört simit. Tablaya ekliyorum.'],
+    finale: { id: 'final-vapur', title: 'Fısıldayan Aşçı', kind: 'finale', icon: 'kalp', lines: [
+      ['sabri', 'Usta, aylardır mutfakta fısıldıyorsun. Bir derdin mi var?'],
+      ['kemal', 'Şşş! Tencere uyuyor. Uyanırsa yemek yanar.'],
+      ['pamuk', 'Hhhh! (Pamuk tencereye tısladı. Tencere fokurdadı.)'],
+      ['sabri', 'Bir dakika... Tencere mi uyuyor?'],
+      ['kemal', 'Otuz yıllık tencere bu. Huyu var. Ninni de severmiş.'],
+      ['sabri', 'Peki... yemekler çok güzel, ninniye devam.'],
+      ['zeki', 'Ben de bir leblebi ninnisi bilirim. Kısa ama etkili.'],
     ] },
   },
   {
@@ -204,7 +202,7 @@ export const CHAPTERS: readonly ChapterDef[] = [
       ['sabri', 'Burada çay nasıl demleniyor? Su havada uçuyor!'],
       ['pamuk', 'Mrrr! (Pamuk ağırlıksız ortamda süzülüyor. Çok memnun.)'],
       ['uzayli', 'Bu tost... bu *tost*! Antenlerim düğüm oldu!'],
-      ['kaptan', 'Gaak gaak! (Yedi martı Ay\'da da uçabildiklerini keşfetti.)'],
+      ['kemal', 'Tencereyi de getirdim. Ay\'da daha derin uyuyor.'],
       ['plaza', 'Çay bahçemizin Ay şubesini açtık bile! Sabri Bey\'in tavsiyesi.'],
       ['radyo', 'Martı FM, Ay\'dan canlı! Kutlama havai fişeklerle sürüyor!'],
       ['sabri', 'Arkadaşlar, çok güzel ama... Martıköy\'ü özledim.'],
@@ -219,7 +217,7 @@ export const CHAPTERS: readonly ChapterDef[] = [
 export const NEW_SEASON: readonly SceneDef[] = [
   { id: 'sezon-1', title: 'İskelenin Altındaki Ses', kind: 'ara', lines: [['sabri', 'İskelenin altından bir ses geliyor...'], ['kemal', 'Bir ahtapot. Tost istiyor. Sekiz tane.']] },
   { id: 'sezon-2', title: 'Kedilerin Seçimi', kind: 'ara', lines: [['muhtar', 'Mahalle kedileri kendi muhtarlarını seçmiş.'], ['pamuk', 'Miyav. (Tercüme: Oyların hepsi bana. Mama vaat ettim.)']] },
-  { id: 'sezon-3', title: 'Ters Dönen Vapur', kind: 'ara', lines: [['kaptan', 'Gaak! (Vapur bugün geri geri geldi.)'], ['sabri', 'Yolcular memnun ama, manzarayı iki kez gördüler.']] },
+  { id: 'sezon-3', title: 'Ters Dönen Masa', kind: 'ara', lines: [['kemal', 'Salondaki masalar bu sabah ters dönmüş.'], ['sabri', 'Müşteriler memnun ama, manzarayı iki kez gördüler.']] },
   { id: 'sezon-4', title: 'Zıppo\'nun Akrabaları', kind: 'ara', lines: [['uzayli', 'Bzzt. Kuzenlerim geliyor. 400 kişiler.'], ['sabri', 'Tost makinesini ısıtın arkadaşlar!']] },
 ];
 
@@ -230,11 +228,6 @@ export const ABSURD: readonly AbsurdDef[] = [
     ['sabri', 'Bir dakika... Büfe dün akşam burada değil miydi? *Üç metre* yürümüş!'],
     ['pamuk', 'Miyav. (Tercüme: Gece sıkıldı, biraz gezdi. Ben de bindim.)'],
     ['zeki', 'Benim tezgah da geçen yıl yürümüştü. Sonra geri geldi. Özlemiş.'],
-  ] } },
-  { id: 'kaptan-marti', day: 5, at: 60, scene: { id: 'absurt-kaptan', title: 'Kaptanın Paltosu', kind: 'absurt', icon: 'vapur', lines: [
-    ['kaptan', 'Düüüt.'],
-    ['sabri', 'Kaptanım, paltonuzun cebinden bir kanat çıktı sanki?'],
-    ['kaptan', 'Gaak. Ehem. Düüüt! (Kanat hızla içeri girdi.)'],
   ] } },
   { id: 'simit-sinyal', day: 7, at: 40, scene: { id: 'absurt-sinyal', title: 'Simit Tablası Sinyal Alıyor', kind: 'absurt', icon: 'simit', lines: [
     ['huesnu', 'Sabri! Simit tablası bip bip ediyor!'],
@@ -347,11 +340,6 @@ export const TUTORS: readonly TutorDef[] = [
     ['sevket', 'İş panosu kuruldu! Kartlara bak, her adayın bir *huyu* var.'],
     ['sevket', 'Kartın altındaki iyi yanı ve kusuru oku. Sonra "İşe al" de, gerisi kolay.'],
     ['sevket', 'Uykucu olanı da al, uyanınca iki kat çalışır. Benim çırak öyle.'],
-  ]),
-  tut('pencere', 'Vapur Penceresi', { t: 'owned', k: 'pencere' }, 'vapur', [
-    ['kaptan', 'Düüüt! Vapur yanaşınca pencere açılır.'],
-    ['kaptan', 'Gaak! (Tercüme: Ürünü kap, pencereye koş, yolcuya uzat. *Hızlı* ol!)'],
-    ['sabri', 'Kaptan bugün çok konuşkan. Gaak dedi, değil mi?'],
   ]),
   tut('komsu', 'Komşu Defteri', { t: 'level', n: 2 }, 'kalp', [
     ['huesnu', 'Çarşıya hoş geldin! İskelenin ucundan yürü, bizi bulursun.'],

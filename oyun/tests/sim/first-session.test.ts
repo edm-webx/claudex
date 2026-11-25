@@ -80,11 +80,13 @@ describe('economy parity with the v2 bot curve', () => {
       // hedef ödülleri günlük 250 ₺ tavandan çıktı. Gün 1/3/5: 7077/18192/33838 -> 10047/30263/48501 (hesap değişikliği + hedef ödülü; EKO-05 dengeyi ayrıca ayarlar).
       // 2026-11-21 EKO-05 re-baseline: 1. aşama küçük hedef ödülü tavanı x16 -> x6, sipariş ödülü 0,6/1,2 -> 0,4/0,8 dk gelir (30/60/90. dk toplamı
       // 6 tohumda 76k/207k/355k hedefine indi). Gün 1/3/5: 10047/30263/48501 -> 7223/19456/36916.
+      // 2026-11-25 vapur kalktı: kalabalık dalgası (KALABALIK_PAY 0.4) + tepsi1 pencerenin açılış koşulunu aldı; ölçüm 6401/19347/41690 (önce 6281/20705/42192), referans aynı.
       const FAZ2_CUM: Record<number, number> = { 1: 7223, 3: 19456, 5: 36916 };
       const ref = FAZ2_CUM[d];
       expect(Math.abs(at[d] - ref) / ref, `day ${d}: ${at[d]} vs v2 ${ref}`).toBeLessThanOrEqual(0.15);
     }
     for (const [key, tv2] of Object.entries(fx.firstUnlock as Record<string, number>)) {
+      if (key === 'pencere') continue;   // 2026-11-25: vapur penceresi oyundan kalktı (sahibi kararı)
       const e = r.events.find((x: any) => x.ev === 'unlock' && x.key === key);
       expect(e, `unlock ${key}`).toBeTruthy();
       expect(Math.abs(e.t - tv2) / tv2, `unlock ${key}: ${e.t} vs ${tv2}`).toBeLessThanOrEqual(0.2);

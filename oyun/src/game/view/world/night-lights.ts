@@ -193,6 +193,13 @@ export function createNightLights(o: { scene: T.Scene; zones: ZoneManager | null
   const vitrin = vitrinLambalari(IC_MEKANLAR);   // GRS-02: warm pools in front of the far-shore shop doors
   api.addSource('vitrin', () => vitrin);
   api.addSource('bufe-floresan', () => [{ ...floresanNoktasi(stageFn ? stageFn() : 2), flo: true }]);
+  // 2026-11-25 (sahibi: "balıkçının sağ alt tarafı karanlıkta kalıyor"): ters U restoranın kanat salonlarında tavan lambaları yoktu,
+  // akşam yalnız revak direkleri yanıyordu; batı kanadı aşama 6, doğu (balık lokantası) 7'den itibaren 2x3 lamba (havuzdan, yeni ışık yok)
+  api.addSource('restoran-kanat', () => {
+    const st = stageFn ? stageFn() : 1, out: LampDef[] = [];
+    for (const [x0, x1, from] of [[-23.2, -10.05, 6], [8.0, 21.8, 7]] as const) if (st >= from) for (const u of [0.28, 0.72]) for (const v of [-14.2, -6.4, 1.4]) out.push({ x: x0 + (x1 - x0) * u, y: 3.0, z: v });
+    return out;
+  });
   if (o.zones) o.zones.onState((_id, s) => { if (s === 'warm' || s === 'hot') dirty = true; });
   resize(o.tier?.lights ?? tune.pool);
   rebuild();

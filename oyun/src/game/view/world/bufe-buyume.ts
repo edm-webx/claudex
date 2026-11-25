@@ -18,7 +18,7 @@
  */
 import * as T from 'three';
 import { IC_BY_ID, icColliders, icIcinde, mutfakOda, MUTFAK_YER } from '../../../content/ic-mekan';
-import { kanatDik, kanatKapi, kanatAcikMi, revakDirek, onDolgu, mutfakUc, restoranDuvar, restoranAlani, sefKatGizli, terasGizli, saksiYer, RES_H, TERAS_Y, TERAS_Z, VAPUR_GECIT, KANAT_W, KOSK, KOSK_KAPI, KOSK_KAPI_W, KOSK_STAGE, SEF_KAT_STAGE, SOV, FISKIYE } from '../../../content/restoran-plan';
+import { kanatDik, kanatKapi, kanatAcikMi, revakDirek, onDolgu, mutfakUc, restoranDuvar, restoranAlani, sefKatGizli, terasGizli, saksiYer, RES_H, TERAS_Y, TERAS_Z, KANAT_W, KOSK, KOSK_KAPI, KOSK_KAPI_W, KOSK_STAGE, SEF_KAT_STAGE, SOV, FISKIYE } from '../../../content/restoran-plan';
 import { KIOSK_STAGES } from '../../../content/stages';
 import { WB, WT, EB, ET, insaatAlani } from '../../../content/insaat';
 import { Batch } from '../../../engine/prefab/batch';
@@ -301,7 +301,7 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
       const k = kanatDik(s), kx = kanatKapi(s), ic = s === 'W' ? k.x1 : k.x0, q = s === 'W' ? 1 : -1, fz = stage >= 8 ? TERAS_Z : k.z1;
       zemin(k.x0, k.x1, k.z0, k.z1);
       duvar(k.x0, k.x1, k.z0, k.z0 + 0.25, true);
-      if (s === 'W') duvar(k.x0, k.x0 + 0.25, k.z0, k.z1); else { duvar(k.x1 - 0.25, k.x1, k.z0, VAPUR_GECIT[0]); duvar(k.x1 - 0.25, k.x1, VAPUR_GECIT[1], k.z1); }
+      if (s === 'W') duvar(k.x0, k.x0 + 0.25, k.z0, k.z1); else duvar(k.x1 - 0.25, k.x1, k.z0, k.z1);
       duvar(k.x0, kx - 1, k.z1 - 0.25, k.z1); duvar(kx + 1, k.x1, k.z1 - 0.25, k.z1);
       for (const x of [kx - 1, kx + 1]) b.box(0.2, 2.7, 0.2, GOLD, x, 1.35, k.z1 - 0.12); b.box(2.2, 0.22, 0.22, GOLD, kx, 2.75, k.z1 - 0.12);   // promenad kapısı
       for (const z of revakDirek(s)) { b.box(0.2, 2.8, 0.2, CREAM, ic, 1.4, z); b.box(0.3, 0.16, 0.3, RED, ic, 0.2, z); }
