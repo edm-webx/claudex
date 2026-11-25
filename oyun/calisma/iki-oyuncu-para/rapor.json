@@ -1,0 +1,77 @@
+{
+  "adimlar": [
+    {
+      "ad": "başlangıç",
+      "ok": true,
+      "evPara0": 2000000,
+      "miPara0": 1000
+    },
+    {
+      "ad": "oda kuruldu",
+      "ok": true,
+      "kod": "8E54RV"
+    },
+    {
+      "ad": "misafir ev sahibinin büfesinde, kendi cüzdanıyla",
+      "ok": true,
+      "stage": 5,
+      "money": 1000,
+      "pill": "🟢 Özel oda 8E54RV · 🏠 Sabri'nin büfesi · 👛 kazancın +0 ₺ · 2 kişi"
+    },
+    {
+      "ad": "misafirin sattığı tamamı kendi cebinde, geri düşmüyor",
+      "ok": true,
+      "miPara1": 6000
+    },
+    {
+      "ad": "ev sahibine %25 ortaklık payı, parası azalmadı",
+      "ok": true,
+      "evPara1": 2001250,
+      "fark": 1250
+    },
+    {
+      "ad": "rozetler: misafirde kendi kazancı, ev sahibinde ortaklık; ev sahibinin kasası misafirde yazmıyor",
+      "ok": true,
+      "misafir": "🟢 Özel oda 8E54RV · 🏠 Sabri'nin büfesi · 👛 kazancın +5.000 ₺ · 2 kişi",
+      "ev": "🟢 Özel oda 8E54RV · 🏠 ev sahibi · 🤝 ortaklık +1.250 ₺ · 2 kişi"
+    },
+    {
+      "ad": "misafire ikiz pasif gelir yok, alışveriş kapalı",
+      "ok": true,
+      "pasif": 0,
+      "miPara2": 6000
+    },
+    {
+      "ad": "dünya yenilenince misafirin parası ve yeri durur",
+      "ok": true,
+      "miPara3": 6000,
+      "yer0": {
+        "x": 3,
+        "z": 6
+      },
+      "yer1": {
+        "x": 3,
+        "z": 6
+      }
+    },
+    {
+      "ad": "sekme kapanınca misafirin kazancı kendi kaydında (kendi aşaması)",
+      "ok": true,
+      "miPara4": 6000,
+      "stage": 1
+    },
+    {
+      "ad": "odadan çıkınca parasıyla kendi dükkânında",
+      "ok": true,
+      "stage": 1,
+      "money": 8000
+    },
+    {
+      "ad": "ev sahibinin parası misafir yüzünden hiç azalmadı (kendi aldıkları hariç)",
+      "ok": true,
+      "evPara2": 1991650,
+      "evParaSon": 1992150
+    }
+  ],
+  "hatalar": []
+}

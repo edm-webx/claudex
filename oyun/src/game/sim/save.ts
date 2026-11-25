@@ -59,10 +59,12 @@ export const MIGRATIONS = [{
 }];
 
 export function createGameSave(sim: SimFull, platform: Pick<Platform, 'storage' | 'idb' | 'clock'>, o: { key?: string; log?: Logger } = {}): SaveStore<GameState> {
+  return createStateSave(() => { sim.rules?.snapshot(platform.clock.wall()); snapshotRng(sim); return sim.state; }, platform, o);
+}
+/** Same store over any state getter: odada misafirken oyuncunun KENDİ kaydı (ekrandaki dünya ev sahibininki) bununla yazılır (boot.ts). */
+export function createStateSave(get: () => GameState, platform: Pick<Platform, 'storage' | 'idb' | 'clock'>, o: { key?: string; log?: Logger } = {}): SaveStore<GameState> {
   return createSave<GameState>({
-    key: o.key || SAVE_KEY, version: SAVE_VERSION, defaults: () => defaultState(sim.state.seed || 1), migrations: MIGRATIONS,
-    validate: d => normalizeState(d),
-    get: () => { sim.rules?.snapshot(platform.clock.wall()); snapshotRng(sim); return sim.state; },
-    platform, log: o.log,
+    key: o.key || SAVE_KEY, version: SAVE_VERSION, defaults: () => defaultState(get().seed || 1), migrations: MIGRATIONS,
+    validate: d => normalizeState(d), get, platform, log: o.log,
   });
 }

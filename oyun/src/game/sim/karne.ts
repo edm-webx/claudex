@@ -87,7 +87,9 @@ export function installKarne(K: Kernel) {
     // BUF-10: the waiters' shared tip jar is split at day end (restoran.ts); not player income, one report row
     const bahsis = (rt as unknown as { restoran?: { kumbaraDagit?(day: number): { toplam: number; pay: { wid: number; ad: string; tutar: number }[] } | null } }).restoran?.kumbaraDagit?.(day) ?? null;
     // BUF-26: önce dayEnd (gider.ts kira + faturayı keser), SONRA kart modeli: kartın kasası ve gider satırları aynı sayılardır.
+    const cep0 = S.money;
     K.logEv('dayEnd', { day, customers: T0.customers, earned: Math.round(T0.earned), angry: T0.angry, money: Math.round(S.money) });
+    if ((rt as unknown as { misafir?: boolean }).misafir && S.money < cep0) S.money = cep0;   // misafir: ev sahibinin gün sonu giderleri (kira, uzak dükkân maaşı) cebinden çıkmaz
     const gs = rt.uiLast.giderSon as { day: number; kira: number; fatura: number; birimMaliyet: number; paid: number; due: number; ertelendi: number } | undefined;
     const gider = gs && gs.day === day ? { kira: gs.kira, fatura: gs.fatura, odenen: gs.paid, ertelendi: gs.ertelendi } : undefined;
     const kisiler = ham.map(w => ({ ad: w.ad, maas: Math.round(w.maas), bahsis: bahsis?.pay.find(p => p.wid === w.id)?.tutar || 0 }));

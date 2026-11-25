@@ -12,7 +12,7 @@
  * - Names travel as typed nicknames in presence (display data, untrusted), set with textContent only.
  */
 import { hesap } from './net/supa';
-import { MISAFIR_MAAS } from './net/misafir';
+import { ORTAK_PAY } from './net/misafir';
 import { susturuldu, benSusturuldum, adlar } from './net/admin';
 import { adDogrulayici, etiket } from './net/kimlik';
 import { logYaz } from './net/log';
@@ -67,6 +67,12 @@ function supaLink(name: string, cb: PeersCb, onErr: () => void, onOk: () => void
     leave: () => { clearInterval(beat); try { void ch.send({ type: 'broadcast', event: 'p', payload: { id: me, bye: true } }); } catch { /* */ } setTimeout(() => { void c.removeChannel(ch); }, 200); },
   };
 }
+/** Türkçe tamlayan eki (Sabri'nin, Ali'nin, Can'ın, Ayşe'nin, Oğuz'un): "X'in büfesi" yerine doğru ek */
+export function tamlayan(ad: string): string {
+  const v = [...ad.toLocaleLowerCase('tr')].filter(c => 'aeıioöuü'.includes(c)).pop() || 'e';
+  const u = 'aı'.includes(v) ? 'ın' : 'ei'.includes(v) ? 'in' : 'ou'.includes(v) ? 'un' : 'ün';
+  return ad + "'" + ('aeıioöuü'.includes(ad.slice(-1).toLocaleLowerCase('tr')) ? 'n' : '') + u;
+}
 const CODE_ABC = 'ABCDEFGHJKLMNPRSTUVYZ23456789';
 export const yeniKod = () => Array.from({ length: 6 }, () => CODE_ABC[Math.floor(Math.random() * CODE_ABC.length)]).join('');
 export const kodTemiz = (s: string) => s.toLocaleUpperCase('en').replace(/[^A-Z0-9]/g, '').slice(0, 6);
@@ -76,7 +82,7 @@ export interface OnlineDeps {
   project(p: Vec3, out: ScreenPt): boolean;
   me(): { pos: Vec2; rot: number; speed: number; esnaf: EsnafimSave; region: string; act?: string };
   /** Kahoot-like shared world: the room's host sends its büfe, guests play inside it until they leave */
-  world?: { get(): string; sig(): string; apply(json: string, host: string): void; leave(): void; earned(): number; addKasa(n: number, from: string): void; money(): number; setMoney(n: number): void; maas?(n: number): void };
+  world?: { get(): string; sig(): string; apply(json: string, host: string): void; leave(): void; earned(): number; addKasa(n: number, from: string): number; money(): number; setMoney(n: number): void };
   toast(text: string): void;
 }
 
@@ -136,7 +142,9 @@ export function createOnline(d: OnlineDeps): OnlineView {
   const hist: { who: string; text: string; kind: string; peer: string; t: number }[] = [];
   let hostMissing = 0;
   const kimlik = adDogrulayici(adlar); let kimlikT = 0;   // Martı Kimlik: görünen hesap adı sunucudan (net/kimlik.ts)
-  let retryT = 20, host = false, guestOf = '', guestSig = '', worldT = 0, worldWant = false, worldSig = '', kasaBase = -1, askT = 3, sheetT = 0, hostKasa = -1;
+  let retryT = 20, host = false, guestOf = '', guestSig = '', worldT = 0, worldWant = false, worldSig = '', kasaBase = -1, askT = 3, sheetT = 0;
+  /** net/misafir.ts: misafirin bu odada kazandığı (tamamı kendi cebinde) / ev sahibine gelen ortaklık payı; oda rozetinde yazar */
+  let misafirKazanc = 0, ortakToplam = 0;
   try { const q = new URLSearchParams(location.search).get('oda'); if (q) code = kodTemiz(q); } catch { /* */ }
 
   const w = window as unknown as { claude?: { use?: (n: string) => Promise<unknown> } };
@@ -155,8 +163,10 @@ export function createOnline(d: OnlineDeps): OnlineView {
   if (supaReady()) connect(code);
 
   function connect(c: string, asHost = false) {
+    kasaGonder();   // odadan çıkmadan son satış bildirilir (ev sahibinin ortaklık payı kaybolmasın)
     if (link) { link.leave(); link = null; }
-    if (guestOf) { guestOf = ''; guestSig = ''; hostKasa = -1; try { d.world?.leave(); } catch { /* */ } }
+    if (guestOf) { guestOf = ''; guestSig = ''; try { d.world?.leave(); } catch { /* */ } }
+    misafirKazanc = 0; ortakToplam = 0;
     host = !!c && asHost; worldSig = ''; worldWant = host;
     for (const rm of remotes.values()) drop(rm); remotes.clear();
     code = c; lastSent = '';
@@ -175,9 +185,8 @@ export function createOnline(d: OnlineDeps): OnlineView {
     if (!d.world || !l.on) return;
     l.on('iste', () => { if (host) worldWant = true; });
     l.on('pm', pl => { if (pl.to !== l.id || typeof pl.text !== 'string') return; const rp = remotes.get(String(pl.id || '')), ad = etiket(String(pl.ad || 'Esnaf'), rp ? kimlik.ad(rp.uid) : ''); addLog('🔒 ' + ad + ' → sen', filterChat(pl.text), 'pm', String(pl.id || '')); d.toast('🔒 ' + ad + ' sana yazdı'); });
-    // net/misafir.ts: misafirin cüzdanı kendisinin; ev sahibinin kasası yalnız oda rozetinde yazar
-    l.on('para', pl => { const n = Number(pl.n); if (!host && guestOf && Number.isFinite(n) && n >= 0) { hostKasa = Math.floor(n); ui(); } });
-    l.on('kasa', pl => { const n = Number(pl.n); if (host && n > 0 && n < 1e7) d.world!.addKasa(Math.floor(n), String(pl.ad || 'Bir esnaf').slice(0, 14)); });
+    // net/misafir.ts: misafirin sattığı kendi cebinde; ev sahibine yalnız oyunun bastığı ortaklık payı gelir (kimseden kesilmez)
+    l.on('kasa', pl => { const n = Number(pl.n); if (host && n > 0 && n < 1e7) { ortakToplam += d.world!.addKasa(Math.floor(n), String(pl.ad || 'Bir esnaf').slice(0, 14)) || 0; ui(); } });
     l.on('_ok', () => { if (!host && code) l.emit?.('iste', {}); });
     l.on('dunya', pl => {
       if (host || !code || typeof pl.w !== 'string' || typeof pl.sig !== 'string') return;
@@ -185,10 +194,17 @@ export function createOnline(d: OnlineDeps): OnlineView {
       if (pl.sig === guestSig) return;
       const first = !guestOf;
       guestSig = pl.sig; guestOf = ad;
+      if (!first) kasaGonder();   // dünya yenilenmeden önce bekleyen satış bildirilir (eskiden her yenilemede siliniyordu: ortaklık payı / kazanç 0 kalıyordu)
       try { d.world!.apply(pl.w, ad); kasaBase = d.world!.earned(); } catch { /* bad world: keep own */ }
-      if (first) { d.toast('Ev sahibi ' + ad + '. Onun büfesindesin, beraber çalışın!'); addLog('Martıköy', 'Ev sahibi ' + ad + '. Sattıkların onun kasasına gider, sana da satışın %' + Math.round(MISAFIR_MAAS * 100) + "'i maaş yatar (ondan kesilmez). Para gördüğün kendi cebin. Kareleri ev sahibi açar. Odadan çıkınca kendi dükkanına dönersin."); }
+      if (first) { d.toast(tamlayan(ad) + " büfesindesin. Sattığın senin cebine!"); addLog('Martıköy', tamlayan(ad) + " büfesindesin. Sattığın her kuruş senin cebine girer ve kendi oyununa gelir. " + ad + "'in parası azalmaz, ona da oyundan %" + Math.round(ORTAK_PAY * 100) + ' ortaklık payı gelir. Büfeye alışverişi ve sarı kareleri ' + ad + ' yapar. Odadan çıkınca paranla kendi dükkanına dönersin.', 'sys'); }
       ui();
     });
+  }
+  /** misafirin son bildirimden beri sattığı: cebinde kalır (net/misafir.ts), ev sahibine ortaklık payı için bildirilir */
+  function kasaGonder() {
+    if (host || !guestOf || !d.world || !link?.emit) return;
+    const e = d.world.earned(), n = kasaBase >= 0 ? e - kasaBase : 0;
+    if (n > 0) { kasaBase = e; misafirKazanc += n; link.emit('kasa', { n, ad: d.me().esnaf.ad }); ui(); }
   }
   function setPill(t: string) { if (pill) pill.textContent = t; }
   function addLog(who: string, text: string, kind = '', peer = '') {
@@ -246,7 +262,7 @@ export function createOnline(d: OnlineDeps): OnlineView {
       input.addEventListener('keyup', e => e.stopPropagation());
       addLog('Martıköy', 'Online dünyaya hoş geldin! Bir oyuncunun adına dokun, ona özel mesaj at.', 'sys');
     }
-    setPill('🟢 ' + (code ? 'Özel oda ' + code + (host ? ' · 🏠 ev sahibi' : guestOf ? ' · ev sahibi: ' + guestOf + (hostKasa >= 0 ? ' · 🏪 kasası ' + hostKasa.toLocaleString('tr-TR') + ' ₺' : '') : '') : '') + ' · ' + (remotes.size + 1) + ' kişi');
+    setPill('🟢 ' + (code ? 'Özel oda ' + code + (host ? ' · 🏠 ev sahibi' + (ortakToplam > 0 ? ' · 🤝 ortaklık +' + Math.floor(ortakToplam).toLocaleString('tr-TR') + ' ₺' : '') : guestOf ? ' · 🏠 ' + tamlayan(guestOf) + " büfesi · 👛 kazancın +" + Math.floor(misafirKazanc).toLocaleString('tr-TR') + ' ₺' : '') : '') + ' · ' + (remotes.size + 1) + ' kişi');
     if (odaBtn) odaBtn.textContent = code ? '🔑 Oyun kodu: ' + code : '🔑 Arkadaşını çağır';
   }
   function odaPanel() {
@@ -255,7 +271,7 @@ export function createOnline(d: OnlineDeps): OnlineView {
     const main = (err = '') => {
       bg.innerHTML = `<div class="on-card"><h3>🔑 Oyun kodu</h3><p>Oyunun sadece senin. Arkadaşın gelsin istersen kod oluştur, kodu ona söyle. O da "Katıl"a yazsın, aynı Martıköy'de buluşun.</p>
 ${code ? `<div class="on-big">${code}</div><p>Şu an bu odadasın.</p>` : ''}
-<button class="on-b g" data-a="kur">Yeni oda kur</button><p style="margin:6px 0 0;font-size:12px">Odayı kuran ev sahibi olur: girenler senin büfeni görür, beraber çalışırsınız.</p>
+<button class="on-b g" data-a="kur">Yeni oda kur</button><p style="margin:6px 0 0;font-size:12px">Odayı kuran ev sahibi olur: girenler senin büfende çalışır. Herkes sattığını kendi cebine koyar, kimsenin parası azalmaz; ev sahibine ortaklık payı gelir.</p>
 <div style="margin-top:12px;font:900 15px var(--disp)">Odaya katıl</div>
 <input class="on-code" maxlength="6" placeholder="KOD" autocomplete="off" spellcheck="false">
 <button class="on-b y" data-a="katil">Katıl</button><div class="on-err">${err}</div>
@@ -311,7 +327,7 @@ ${code ? `<div class="on-big">${code}</div><p>Şu an bu odadasın.</p>` : ''}
     if (guestOf) {
       if (peers.some(p => (p.presence as Record<string, unknown>).ev === true)) hostMissing = 0;
       else if (!hostMissing) hostMissing = now;
-      else if (now - hostMissing > 12000) { hostMissing = 0; guestOf = ''; guestSig = ''; hostKasa = -1; try { d.world?.leave(); } catch { /* */ } d.toast('Ev sahibi ayrıldı. Kendi büfene döndün.'); }
+      else if (now - hostMissing > 12000) { hostMissing = 0; guestOf = ''; guestSig = ''; try { d.world?.leave(); } catch { /* */ } d.toast('Ev sahibi ayrıldı. Kazandığın parayla kendi büfene döndün.'); }
     } else hostMissing = 0;
     ui();
   }
@@ -342,9 +358,7 @@ ${code ? `<div class="on-big">${code}</div><p>Şu an bu odadasın.</p>` : ''}
       if (!host && code && !guestOf && d.world && link.emit && (askT -= dt) <= 0) { askT = 4; link.emit('iste', {}); }
       // a guest's sales go to the host's till (every 2 s)
       if (!host && guestOf && d.world && link.emit && (worldT -= dt) <= 0) {
-        worldT = 2;
-        const e = d.world.earned(), n = kasaBase >= 0 ? e - kasaBase : 0;
-        if (n > 0) { kasaBase = e; link.emit('kasa', { n, ad: me.esnaf.ad }); d.world.maas?.(n); }   // satış ev sahibine, cebe maaş (net/misafir.ts)
+        worldT = 2; kasaGonder();
       }
       if (host && d.world && link.emit) {
         worldT -= dt;
@@ -352,7 +366,6 @@ ${code ? `<div class="on-big">${code}</div><p>Şu an bu odadasın.</p>` : ''}
           worldT = 2;
           const sg = d.world.sig();
           if (worldWant || sg !== worldSig) { worldWant = false; worldSig = sg; link.emit('dunya', { w: d.world.get(), sig: sg, ad: me.esnaf.ad }); }
-          else if (remotes.size) link.emit('para', { n: Math.floor(d.world.money()) });
         }
       }
       const now = performance.now(), k = Math.min(1, dt * 10);

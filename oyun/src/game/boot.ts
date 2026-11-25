@@ -81,7 +81,7 @@ import { createContent } from '../content/index';
 import { defaultSign } from '../content/sign-fonts';
 import { createSim, openNav, lerpPose, type SimFull } from './headless';
 import { defaultState, SAVE_KEY, SAVE_VERSION, type GameState, type HeroId } from './sim/schema';
-import { createGameSave } from './sim/save';
+import { createGameSave, createStateSave } from './sim/save';
 import { installBekci, type BekciHandle } from './sim/bekci';
 import { createGunSonu } from './ui/gun-sonu';
 import { createKulis } from './ui/kulis';
@@ -118,7 +118,7 @@ import { createKarsiBina, type BinaView } from './view/world/karsi-bina';
 import { createIsletmeInsaat, type InsaatView } from './view/world/isletme-insaat';
 import { createInsaatSahasi, type InsaatSahasiView } from './view/world/insaat-sahasi';
 import { gecitAcik } from '../content/kilitli-bolge';
-import { misafirDunya, misafirMaas, misafirDonus } from './net/misafir';
+import { misafirDunya, misafirDonus, ortakPay, toplanmamis } from './net/misafir';
 import { createBufeBuyume, mevsimZorla, type BuyumeView } from './view/world/bufe-buyume';
 import { createParkLook, type ParkView } from './view/world/park-look';
 import { createAcilis, type AcilisView } from './view/world/acilis';
@@ -298,6 +298,13 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   // while visiting a room host's büfe (online.ts world) nothing is saved: the own state waits in ownBackup
   let guestWorld = false, ownBackup: string | null = null, kasaToast = 0, kasaFrom = '', kasaT = 0;
   const saveOn = () => !noSave && !guestWorld;
+  // 2026-11-25 (net/misafir.ts): misafirken kazanılan para misafirin KENDİ kaydına yazılır; sekme kapansa da kaybolmaz
+  let misafirSure = 0, misafirKayitT = 10;
+  const misafirKendi = () => misafirDonus(JSON.parse(ownBackup!) as AnyRec, sim.state as unknown as AnyRec, misafirSure) as unknown as GameState;
+  const ownSave: SaveStore<GameState> = createStateSave(misafirKendi, platform, { key: params.save ?? SAVE_KEY, log });
+  /** kayıt yazılabilir mi (kendi oyunu ya da misafirken kendi kaydı) ve hangi depo / durum */
+  const kayitAcik = () => !noSave && (!guestWorld || !!ownBackup);
+  const kaynak = (): { sv: SaveStore<GameState>; st: GameState } => (guestWorld && ownBackup ? { sv: ownSave, st: misafirKendi() } : { sv: save, st: sim.state });
   let loaded: GameState | undefined;
   if (!params.fresh && !params.parity) {
     const r = await save.load();
@@ -515,18 +522,28 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
       get: () => { const o = { ...sim.state } as AnyRec; delete o.settings; delete o.player; delete o.lastSeen; const z = { ...(o.zones as AnyRec) }; delete z.esnafim; o.zones = z; return JSON.stringify(o); },
       sig: () => { const S = sim.state as unknown as AnyRec; return JSON.stringify([S.owned, S.padPaid, S.tiers, S.stage, S.renewed, S.tadilat, S.decorOwned, S.decorSlots, S.sign, (S.workers as unknown[] | undefined)?.length, S.kepenk, (S.zones as AnyRec | undefined)?.restoran]); },
       apply: (json: string) => {
-        if (!ownBackup) { if (saveOn()) void save.save('manual'); ownBackup = JSON.stringify(sim.state); }
+        // kendi kaydı önce EŞZAMANLI alınır: eskiden save.save() asenkron koşup ev sahibinin dünyasını misafirin kendi kaydı diye yazıyordu
+        if (!ownBackup) { try { sim.rules.snapshot(platform.clock.wall()); } catch { /* */ } ownBackup = JSON.stringify(sim.state); misafirSure = 0; misafirKayitT = 10; }
         const own = JSON.parse(ownBackup) as AnyRec, h = JSON.parse(json) as AnyRec;
-        // net/misafir.ts: ev sahibinin büfesi, misafirin kendi cüzdanı (zaten misafirse şu anki cüzdan: maaşı kaybolmasın)
-        const m = misafirDunya(guestWorld ? { ...own, money: sim.state.money, gold: sim.state.gold } : own, h);
+        // net/misafir.ts: ev sahibinin büfesi, misafirin kendi cüzdanı. Zaten misafirse (ev sahibi bir şey aldı, dünya yenilendi):
+        // şu anki cüzdan + toplanmamış kasası cebe, yeri değişmez (eskiden kasa yığını kayboluyor, misafir giriş yerine ışınlanıyordu)
+        const pl = { ...(sim.state.player as unknown as AnyRec), x: walk.pos.x, z: walk.pos.z, kat: (walk as unknown as { kat?: number }).kat || 0 };
+        const m = misafirDunya(guestWorld ? { ...own, money: sim.state.money + toplanmamis(sim.rules.rt as never), gold: sim.state.gold, player: pl } : own, h);
         guestWorld = true; sim.load(m as never); (sim.rules.rt as unknown as { misafir?: boolean }).misafir = true;
+        if (!noSave && !save.readOnly) void ownSave.save('manual');   // kendi kaydı (ev sahibinin dünyası değil)
       },
       earned: () => Number(sim.state.totalEarned) || 0,
       money: () => sim.state.money,
       setMoney: (n: number) => { sim.state.money = n; },
-      maas: (n: number) => { sim.state.money = misafirMaas(sim.state.money, n); },
-      addKasa: (n: number, from: string) => { sim.rules.credit!('diger', n); kasaToast += n; kasaFrom = from; },
-      leave: () => { if (ownBackup) { sim.load(misafirDonus(JSON.parse(ownBackup), sim.state as unknown as AnyRec) as never); ownBackup = null; } guestWorld = false; (sim.rules.rt as unknown as { misafir?: boolean }).misafir = false; },
+      addKasa: (n: number, from: string) => { const pay = ortakPay(n); if (pay > 0) { sim.rules.credit!('diger', pay); kasaToast += pay; kasaFrom = from; } return pay; },
+      leave: () => {
+        if (ownBackup) {
+          const cur = { money: sim.state.money + toplanmamis(sim.rules.rt as never), gold: sim.state.gold };   // toplanmamış kasa da misafirin emeği
+          sim.load(misafirDonus(JSON.parse(ownBackup), cur, misafirSure) as never); ownBackup = null;
+        }
+        guestWorld = false; (sim.rules.rt as unknown as { misafir?: boolean }).misafir = false;
+        if (saveOn()) void save.save('manual').then(bulutPush);   // kazanç hemen kendi kaydına
+      },
     } })) : null;
   // 13:05 user: kullanıcı adı + şifre (giris.ts, net/supa.ts). A login pulls the newer cloud save; while signed in the
   // save goes up every minute and when the tab hides.
@@ -593,10 +610,10 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   // KAL-01: bulut yazımı durum makinesinden geçer (rozet, yeniden deneme, çevrimdışı); sonuç sunucu onayıdır
   const kayitD = createKayitDurum({
     gonder: async () => {
-      if (!hesap() || !saveOn()) return true;
+      if (!hesap() || !kayitAcik()) return true;
       if (kayitKilidi()) { kilitGoster(); return false; }
-      const code = await save.exportCode();
-      const ok = await bulutYaz(code, sim.state.playT || 0, esnafimSave(sim.state), sim.state.level || 1);
+      const k = kaynak(), code = await k.sv.exportCode();
+      const ok = await bulutYaz(code, k.st.playT || 0, esnafimSave(k.st), k.st.level || 1);
       if (!ok && kayitKilidi()) kilitGoster();
       if (ok) { try { const h = hesap(); if (h) localStorage.setItem('martikoy-cloud-synced', h.id); } catch { /* */ } }
       return ok;
@@ -606,18 +623,19 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   });
   if (save.readOnly) kayitD.saltOkunur();   // depoda bu build'den yeni sürüm kaydı var: buluta da yazılmaz (yeni kayıt ezilmesin)
   /** this browser's copy of the active slot (survives an offline refresh/close; slots.ts yerelYedekOku decides at login) */
-  const yedekYaz = (code: string) => { try { yerelYedekYaz(code, sim.state.playT || 0, platform.clock.wall()); } catch { /* */ } };
+  const yedekYaz = (code: string, playT: number) => { try { yerelYedekYaz(code, playT || 0, platform.clock.wall()); } catch { /* */ } };
   const bulutPush = () => {
-    if (!hesap() || !saveOn()) return;
+    if (!hesap() || !kayitAcik()) return;
     if (save.readOnly) { kayitD.saltOkunur(); return; }
     if (kayitKilidi()) { kilitGoster(); return; }
-    void save.exportCode().then(code => { yedekYaz(code); kayitD.istek(); }, () => kayitD.istek());
+    const k = kaynak();
+    void k.sv.exportCode().then(code => { yedekYaz(code, k.st.playT); kayitD.istek(); }, () => kayitD.istek());
   };
   /** sekme kapanırken: asenkron zincire güvenme, keepalive isteği hemen at (gövde 60 KB'ı aşarsa atılmaz, normal yazım dener) */
-  const bulutKapanis = () => { try { if (!hesap() || !saveOn() || save.readOnly || kayitKilidi()) return; void save.exportCode().then(code => { yedekYaz(code); bulutKapanisYaz(code, sim.state.playT || 0, esnafimSave(sim.state), sim.state.level || 1); }); } catch { /* */ } };
+  const bulutKapanis = () => { try { if (!hesap() || !kayitAcik() || save.readOnly || kayitKilidi()) return; const k = kaynak(); void k.sv.exportCode().then(code => { yedekYaz(code, k.st.playT); bulutKapanisYaz(code, k.st.playT || 0, esnafimSave(k.st), k.st.level || 1); }); } catch { /* */ } };
   addEventListener('pagehide', bulutKapanis);
   // unsaved progress (offline / failing): the browser asks before closing (the local copy is kept anyway)
-  addEventListener('beforeunload', e => { try { if (hesap() && saveOn() && !kayitKilidi() && kayitD.bekleyenVar()) { bulutKapanis(); e.preventDefault(); e.returnValue = ''; } } catch { /* */ } });
+  addEventListener('beforeunload', e => { try { if (hesap() && kayitAcik() && !kayitKilidi() && kayitD.bekleyenVar()) { bulutKapanis(); e.preventDefault(); e.returnValue = ''; } } catch { /* */ } });
   addEventListener('online', () => kayitD.baglandi());
   const kayitRozet = playMode && uiReal ? make('kayitRozet', () => createKayitRozet({ root: U.root, durum: kayitD, gorunur: () => !!hesap() && saveOn() })) : null;
   const yetenekBtn = playMode && uiReal ? make('yetenekBtn', () => createYetenekBtn({ root: U.root, rules: () => sim.rules, command: c => command(c as never) })) : null;
@@ -806,7 +824,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (kayitRozet) guard('kayitRozet', () => kayitRozet.guncelle());
     if (online) guard('online', () => online.update(fdt));
     if (adminPanel) guard('adminPanel', () => adminPanel.update(fdt));
-    if (kasaToast > 0 && (kasaT -= fdt) <= 0) { kasaT = 6; U.toast(kasaFrom + ' kasaya +' + Math.floor(kasaToast) + ' ₺ kattı!', 'good'); kasaToast = 0; }
+    if (kasaToast > 0 && (kasaT -= fdt) <= 0) { kasaT = 6; U.toast(kasaFrom + ' senin büfende satıyor: ortaklık payın +' + Math.floor(kasaToast).toLocaleString('tr-TR') + ' ₺ (ondan kesilmedi)', 'good'); kasaToast = 0; }
     if (haliSaha) guard('haliSaha', () => haliSaha.update());
     if (reklam) guard('reklam', () => reklam.update(fdt));
     if (havaLook) guard('havaLook', () => havaLook.update(fdt));
@@ -888,6 +906,11 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
       save.tick(platform.clock.wall());
       if (sim.rules.ext.takeDirty()) void save.save('purchase');
       if ((bulutT -= fdt) <= 0) { bulutT = 60; bulutPush(); }
+    } else if (guestWorld && kayitAcik() && !save.readOnly) {
+      // misafir: kendi kaydı (kazandığı para) 10 sn'de bir yerelde, dakikada bir bulutta
+      misafirSure += fdt;
+      if ((misafirKayitT -= fdt) <= 0) { misafirKayitT = 10; void ownSave.save('manual'); }
+      if ((bulutT -= fdt) <= 0) { bulutT = 60; bulutPush(); }
     }
   };
 
@@ -915,6 +938,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
       pause('hidden');
       bulutKapanis();
       if (saveOn()) void save.save('hidden').then(bulutPush);
+      else if (guestWorld && kayitAcik() && !save.readOnly) void ownSave.save('hidden').then(bulutPush);
       if (audio) make('audio.suspend', () => { audio.suspend(true); return true; });
     } else {
       resume('hidden');
@@ -1060,6 +1084,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     const servis = sim.rules.interactions.all().filter(i => i.id.startsWith('kafeServis.' + room + '.')).map(i => { let ok = false; try { ok = i.canAct(sim.player); } catch { ok = false; } return { id: i.id, x: i.pos.x, z: i.pos.z, ok }; });
     return { tepsi: [...(r.kafeTepsi?.items || [])], siparis: r.agents?.kafe?.siparisOf(room) || [], makine: r.agents?.kafe?.makineler(room) || [], servis, plots: Object.keys(((sim.state.zones as Record<string, { plots?: object }>).arsa?.plots) || {}), bekleyen: { ...(r.kafeHost?.pending || {}) }, saat: +sim.clock.hour.toFixed(2), odalar: (r.agents?.kafe as unknown as { rooms?(): unknown[] })?.rooms?.() || [] };
   });
+  if (hileAcik) reg('kazanc', (kaynak: string, n: number) => sim.rules.credit!(String(kaynak), Number(n) || 0));   // test: tests/browser/iki-oyuncu-para.mjs (misafir parası)
   reg('pads', () => sim.rules.rt.pads.map(q => ({ key: q.key, x: q.pos.x, z: q.pos.z, price: q.price, paid: q.paid })));   // sarı kareler (test / denetim)
   reg('izgara', (on?: boolean) => { if (on !== undefined) izgaraLook?.set(!!on); return izgaraLook?.get() ?? null; });
   reg('hucre', (name: string) => cellRect(name));

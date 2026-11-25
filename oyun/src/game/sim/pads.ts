@@ -151,6 +151,6 @@ export function misafirKare(K: { rt: unknown; state: { playT: number }; toast(t:
   const r = K.rt as { misafir?: boolean; misafirUyari?: number };
   if (!r.misafir) return false;
   const son = r.misafirUyari ?? -99;
-  if (K.state.playT - son > 6 || K.state.playT < son) { r.misafirUyari = K.state.playT; K.toast('Burası ev sahibinin büfesi: sarı kareleri o açar. Sen sat, maaşın cebine yatsın.', 'bad'); }
+  if (K.state.playT - son > 6 || K.state.playT < son) { r.misafirUyari = K.state.playT; K.toast('Burası ev sahibinin büfesi: sarı kareleri o açar. Sen sat, sattığın senin cebine.', 'bad'); }
   return true;
 }

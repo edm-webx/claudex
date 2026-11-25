@@ -18,6 +18,7 @@ import { clamp, r1 } from './util';
 import { streakStep, streakMult } from './streak';
 import { setHit } from './sets';
 import { yatirimFx } from './yatirim';
+import { MISAFIR_KAPALI_KAYNAK } from './misafir-kural';
 
 export function installEconomy(K: Kernel, addMoneyTo: (pile: MoneyStack[], v: number) => void): { sales: SalesApi; settleSale(c: Customer | null, items: Plate[], opts?: { direct?: boolean; at?: Vec2 }): number; tipMult(): number; earn(v: number, at?: Vec2): number; earnTam(v: number, kaynak?: string): void; credit(kaynak: string, tutar: number, o?: { tavanli?: boolean; at?: Vec2 }): number; book(kaynak: string, tutar: number): void; cashIn(tutar: number): void; incomePerMin(): number } {
   const rt = K.rt, S = K.state;
@@ -47,6 +48,7 @@ export function installEconomy(K: Kernel, addMoneyTo: (pile: MoneyStack[], v: nu
   };
   const credit = (kaynak: string, tutar: number, o: { tavanli?: boolean; at?: Vec2 } = {}): number => {
     let v = Math.max(0, Math.round(tutar)); if (!v) return 0;
+    if ((rt as unknown as { misafir?: boolean }).misafir && MISAFIR_KAPALI_KAYNAK.has(kaynak)) return 0;   // ev sahibinin pasif geliri / ödülü misafire ikiz para olmasın
     if (o.tavanli) {
       const t = T(), kalan = Math.max(0, Math.round(bonusTavan() - (t.bonus || 0)));
       if (v > kalan) { v = kalan; if (!t.bonusDoldu) { t.bonusDoldu = true; K.toast('Bugünlük bonus doldu.', 'info'); } }

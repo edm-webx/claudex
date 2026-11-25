@@ -12,6 +12,7 @@ export interface GiderModel { kira: number; fatura: number; birimMaliyet: number
 export function installGider(r: Rules): { last(): GiderModel | null } {
   let last: GiderModel | null = null;
   r.bus.on('dayEnd', () => {
+    if ((r.rt as unknown as { misafir?: boolean }).misafir) return;   // misafir: ev sahibinin kirası misafirin cebinden kesilmez (sim/misafir-kural.ts)
     const S = r.state, t = (S.today || {}) as unknown as { sales?: number; cost?: number };
     const satis = Math.round(t.sales || 0);
     if (satis < GIDER.minSales) return;

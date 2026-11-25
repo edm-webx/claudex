@@ -1,27 +1,34 @@
 /**
- * Odaya misafir olarak girmek (online.ts "dünya"): 2026-11-23 sahip "öğrencilerle girdik, bende ne para varsa onlarda da o görünüyor".
- * Kural (2026-10-25 sahip: "odamda çalışan arkadaşım maaş gibi para alsın ama benim payımdan gitmesin"):
- *  - Misafir ev sahibinin büfesinde çalışır ama CÜZDANI KENDİSİNİNDİR: ekranda kendi parası / altını görünür.
- *  - Sattığı her şey ev sahibinin kasasına gider (online 'kasa'); misafire oyun ayrıca satışın MISAFIR_MAAS payını maaş olarak basar
- *    (ev sahibinden kesilmez).
- *  - Ev sahibinin kasası misafirde yalnız bilgi olarak durur (oda rozeti). Misafir sarı kare açamaz: kareleri ev sahibi açar
- *    (yoksa harcanan para yalnız misafirin ekranında kaybolur, iki dünya kayar).
- *  - Odadan çıkınca kendi kaydına döner; misafirken kazandığı maaş cebinde kalır.
+ * Odaya misafir olarak girmek (online.ts "dünya"). Kural geçmişi:
+ *  - 2026-10-25 sahip: "odamda çalışan arkadaşım maaş gibi para alsın ama benim payımdan gitmesin".
+ *  - 2026-11-23 sahip: "öğrencilerle girdik, bende ne para varsa onlarda da o görünüyor" (misafir ev sahibinin parasını görüyordu).
+ *  - 2026-11-25 sahip: "arkadaşın oyununa katılınca paranın ortak oluşunu dert ediyorlar, öyle bir hal almalı ki dert edilmemeli".
+ * Şimdiki kural (tek cümle: "Sattığın senin, ev sahibinden hiçbir şey eksilmez"):
+ *  - Misafirin cüzdanı kendisinindir: ekranda yalnız kendi parası / altını durur, ev sahibinin kasası hiçbir yerde yazmaz.
+ *  - Misafir ev sahibinin büfesinde ne satarsa TAMAMI kendi cebine girer (kesinti yok, geri düşme yok) ve kendi kaydına taşınır.
+ *  - Ev sahibine misafirin satışının ORTAK_PAY kadarı "ortaklık payı" olarak oyundan basılır (misafirden kesilmez).
+ *  - Ev sahibinin dünyasını değiştiren alışveriş, kira / fatura, pasif gelir misafire kapalı: sim/misafir-kural.ts.
+ *  - Misafirken kazanılan para düzenli olarak misafirin KENDİ kaydına yazılır (sekme kapansa da kaybolmaz, boot.ts).
  * Saf yardımcılar (boot.ts world köprüsü kullanır, tests/sim/misafir-para.test.ts).
  */
 type Rec = Record<string, unknown>;
-export const MISAFIR_MAAS = 0.25;
+/** ev sahibine misafirin satışından oyunun bastığı ortaklık payı */
+export const ORTAK_PAY = 0.25;
 
-/** ev sahibinin dünyası + misafirin kendi kimliği ve cüzdanı */
+/** ev sahibinin dünyası + misafirin kendi kimliği ve cüzdanı. Ev sahibinin toplanmamış kasası misafire geçmez (pile 0). */
 export function misafirDunya(own: Rec, host: Rec): Rec {
-  return { ...host, money: own.money, gold: own.gold, player: own.player, settings: own.settings, hero: own.hero, lastSeen: own.lastSeen, zones: { ...(host.zones as Rec), esnafim: (own.zones as Rec | undefined)?.esnafim } };
+  return { ...host, money: own.money, gold: own.gold, player: own.player, settings: own.settings, hero: own.hero, lastSeen: own.lastSeen, pile: 0, zones: { ...(host.zones as Rec), esnafim: (own.zones as Rec | undefined)?.esnafim } };
 }
-/** misafirin sattığı `satis` ₺ yerelde cebe girdi; ev sahibine gidiyor, cebe yalnız maaş kalır */
-export function misafirMaas(money: number, satis: number): number {
-  if (!(satis > 0)) return money;
-  return Math.max(0, Math.round((money - satis + satis * MISAFIR_MAAS) * 100) / 100);
+/** ev sahibinin aldığı ortaklık payı (misafirin `satis` ₺ satışından) */
+export function ortakPay(satis: number): number {
+  return satis > 0 && satis < 1e7 ? Math.round(satis * ORTAK_PAY) : 0;
 }
-/** odadan çıkış: kendi kaydı, misafirken değişen cüzdanla */
-export function misafirDonus(own: Rec, cur: Rec): Rec {
-  return { ...own, money: cur.money, gold: cur.gold };
+/** misafirin kendi kaydı, misafirken değişen cüzdanla; `sure` sn misafirlik oyun süresine eklenir (bulut kaydı daha yeni sayılsın) */
+export function misafirDonus(own: Rec, cur: Rec, sure = 0): Rec {
+  return { ...own, money: cur.money, gold: cur.gold, playT: (Number(own.playT) || 0) + Math.max(0, sure) };
+}
+/** misafirin yerel dünyasında toplanmamış parası (kasa yığını, masa bahşişi, yerdeki para): dünya yenilenince cebe geçer */
+export function toplanmamis(rt: { kasa?: { value: number }[]; tables?: { pile?: { value: number }[] }[]; floor?: { value: number }[] }): number {
+  const sum = (p?: { value: number }[]) => (p || []).reduce((a, b) => a + (Number(b.value) || 0), 0);
+  return Math.floor(sum(rt.kasa) + (rt.tables || []).reduce((a, t) => a + sum(t.pile), 0) + sum(rt.floor));
 }

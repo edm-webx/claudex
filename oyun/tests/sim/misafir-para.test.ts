@@ -1,24 +1,72 @@
-// 2026-11-23 sahip: "öğrencilerle girdik, katıldılar, bende ne para varsa onlarda da o görünüyor". Kural net/misafir.ts:
-// misafirin cüzdanı kendisinin, satışı ev sahibine gider, oyun misafire %25 maaş basar, misafir sarı kare açamaz.
+// 2026-11-25 sahip: "arkadaşın oyununa katılınca paranın ortak oluşunu dert ediyorlar, öyle bir hal almalı ki dert edilmemeli".
+// Kural net/misafir.ts + sim/misafir-kural.ts: sattığın senin (tamamı, kesintisiz, kalıcı); ev sahibine oyundan ortaklık payı
+// basılır, kimseden kesilmez; misafir ev sahibinin dünyasında para harcayamaz, kirası / pasif geliri misafire dokunmaz.
 import { it, expect } from 'vitest';
 import { played } from './m1-helpers';
-import { misafirDunya, misafirMaas, misafirDonus, MISAFIR_MAAS } from '../../src/game/net/misafir';
+import { createSim } from '../../src/game/headless';
+import { emptyContent } from '../../src/content/index';
+import { misafirDunya, misafirDonus, ortakPay, toplanmamis, ORTAK_PAY } from '../../src/game/net/misafir';
+import { misafirYasak } from '../../src/game/sim/misafir-kural';
+const log = { info() {}, warn() {}, error() {} };
+function misafirSim() {
+  const sim: any = createSim({ seed: 7, content: emptyContent() }, { log });
+  sim.command({ kind: 'play', hero: 'sabri' }); sim.step(0.2);
+  sim.rules.rt.misafir = true;
+  return sim;
+}
+const toasts = (sim: any) => sim.events(0).filter((e: any) => e.name === 'toast').map((e: any) => String(e.data?.text ?? ''));
 
-it('misafir ev sahibinin dünyasına girer ama ekranda kendi parası ve altını durur; çıkınca maaşıyla kendi kaydına döner', () => {
-  const own = { money: 1200, gold: 7, stage: 1, player: { x: 1 }, zones: { esnafim: { ad: 'Ali' } } };
-  const host = { money: 9_000_000, gold: 400, stage: 6, player: { x: 9 }, zones: { esnafim: { ad: 'Hoca' }, arsa: { plots: { k1: {} } } } };
+it('misafir ev sahibinin dünyasına girer ama kendi parası, altını, yeri durur; ev sahibinin toplanmamış kasası geçmez', () => {
+  const own = { money: 1200, gold: 7, stage: 1, playT: 500, player: { x: 1 }, zones: { esnafim: { ad: 'Ali' } } };
+  const host = { money: 9_000_000, gold: 400, stage: 6, pile: 35000, player: { x: 9 }, zones: { esnafim: { ad: 'Hoca' }, arsa: { plots: { k1: {} } } } };
   const m = misafirDunya(own, host) as any;
-  expect(m.money).toBe(1200); expect(m.gold).toBe(7); expect(m.stage).toBe(6);
+  expect(m).toMatchObject({ money: 1200, gold: 7, stage: 6, pile: 0 });
   expect(m.zones.esnafim.ad).toBe('Ali'); expect(m.zones.arsa.plots.k1).toBeDefined(); expect(m.player.x).toBe(1);
-  const geri = misafirDonus(own, { ...m, money: 1500, gold: 9 }) as any;
-  expect(geri).toMatchObject({ money: 1500, gold: 9, stage: 1 });
+  // çıkış: kazandığı para + altın kendi kaydına, misafirlik süresi oyun süresine (bulut kaydı daha yeni sayılır)
+  const geri = misafirDonus(own, { ...m, money: 5400, gold: 9 }, 120) as any;
+  expect(geri).toMatchObject({ money: 5400, gold: 9, stage: 1, playT: 620 });
 });
 
-it('misafirin sattığı ev sahibine gider, cebe yalnız maaş kalır (ev sahibinden kesilmez)', () => {
-  expect(MISAFIR_MAAS).toBe(0.25);
-  expect(misafirMaas(1000 + 400, 400)).toBe(1100);   // 400 ₺ satış yerelde cebe girmişti: 400 gider, 100 maaş kalır
-  expect(misafirMaas(50, 0)).toBe(50);
-  expect(misafirMaas(10, 400)).toBe(0);   // asla eksiye düşmez
+it('ev sahibine misafirin satışının ortaklık payı basılır; misafirin toplanmamış kasası sayılır', () => {
+  expect(ORTAK_PAY).toBe(0.25);
+  expect(ortakPay(400)).toBe(100);
+  expect(ortakPay(0)).toBe(0); expect(ortakPay(-5)).toBe(0); expect(ortakPay(1e9)).toBe(0);   // bozuk / sahte mesaj
+  expect(toplanmamis({ kasa: [{ value: 40 }, { value: 60.5 }], tables: [{ pile: [{ value: 10 }] }, {}], floor: [{ value: 5 }] })).toBe(115);
+});
+
+it('misafirin sattığı tamamı cebinde kalır; ev sahibinin işletme / faiz / hedef geliri misafire ödenmez', () => {
+  const sim = misafirSim(), S = sim.rules.state; S.money = 1000;
+  expect(sim.rules.credit('tezgah', 400)).toBe(400);
+  expect(sim.rules.credit('adisyon', 100)).toBe(100);
+  expect(S.money).toBe(1500);
+  for (const k of ['isletme', 'faiz', 'hedef', 'basarim', 'yildiz', 'tadilat']) expect(sim.rules.credit(k, 5000)).toBe(0);
+  expect(S.money).toBe(1500);
+  sim.rules.rt.misafir = false;
+  expect(sim.rules.credit('isletme', 5000)).toBe(5000);   // kendi oyununda normal
+});
+
+it('misafirin cebinden gün sonu kira / fatura kesilmez (kendi oyununda kesilir)', () => {
+  const sim = misafirSim(), S = sim.rules.state;
+  S.stage = 8; S.today.sales = 200000; S.money = 50000;
+  S.dayT = 1e9; sim.step(0.1);
+  expect(S.money).toBe(50000);
+  const ev: any = createSim({ seed: 7, content: emptyContent() }, { log }); ev.command({ kind: 'play', hero: 'sabri' }); ev.step(0.2);
+  const E = ev.rules.state; E.stage = 8; E.today.sales = 200000; E.money = 50000;
+  E.dayT = 1e9; ev.step(0.1);
+  expect(E.money).toBeLessThan(50000);
+});
+
+it('misafir ev sahibinin büfesine alışveriş yapamaz (para boşa gitmez), kendi işlerini yapabilir', () => {
+  for (const c of [{ kind: 'decorBuy', id: 'x' }, { kind: 'upgradeTier', id: 'cay' }, { kind: 'hireCandidate', id: 'a' }, { kind: 'mulk', op: 'tlYatir', n: 100 },
+    { kind: 'mulk', op: 'arsaAl', id: 'k1' }, { kind: 'disari', op: 'buyShop', id: 's' }, { kind: 'kiyafet', op: 'buy', id: 'k' }, { kind: 'dekor2', arg: 'buyGold:x' }, { kind: 'startTadilat' }])
+    expect(misafirYasak(c)).toBe(true);
+  for (const c of [{ kind: 'teleport', x: 0, z: 0 }, { kind: 'mulk', op: 'bilet' }, { kind: 'disari', op: 'go', id: 'meydan' }, { kind: 'halisaha', op: 'kabul' },
+    { kind: 'kiyafet', op: 'wear', id: 'k' }, { kind: 'openPanel', id: 'dekor' }, { kind: 'esnaf', op: 'claim' }, { kind: 'mini', op: 'play', id: 'a' }])
+    expect(misafirYasak(c)).toBe(false);
+  const sim = misafirSim(), S = sim.rules.state; S.money = 1e6; S.level = 30;
+  sim.command({ kind: 'mulk', op: 'tlYatir', n: 5000 }); sim.step(0.1);
+  expect(S.money).toBe(1e6);
+  expect(toasts(sim).some((t: string) => /ev sahibinin büfesi/.test(t))).toBe(true);
 });
 
 it('misafirken sarı kareler (büfe ve dükkân) para çekmez, uyarı verir; ev sahibi olunca normal', () => {
@@ -33,4 +81,9 @@ it('misafirken sarı kareler (büfe ve dükkân) para çekmez, uyarı verir; ev 
   sim.command({ kind: 'teleport', x: 0, z: 0, kat: 0 }); sim.step(0.5);
   sim.command({ kind: 'teleport', x: p.pos.x, z: p.pos.z, kat: 0 }); for (let i = 0; i < 60; i++) sim.step(0.25);
   expect(S.zones.arsa.plots.k1).toMatchObject({ tur: 'dukkan' });
+});
+
+it('oda rozetinde ev sahibinin adı doğru ekle yazılır', async () => {
+  const { tamlayan } = await import('../../src/game/online');
+  expect(['Sabri', 'Can', 'Ayşe', 'Oğuz', 'Gül', 'Ahmet'].map(tamlayan)).toEqual(["Sabri'nin", "Can'ın", "Ayşe'nin", "Oğuz'un", "Gül'ün", "Ahmet'in"]);
 });

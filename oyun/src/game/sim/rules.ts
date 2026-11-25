@@ -33,6 +33,7 @@ import { stageLayout } from '../../content/prefabs/iskele/layout';
 import { defaultState, type GameState, type ProductId } from './schema';
 import { emptyRuntime, type Kernel, type Rules, type Item, type Order } from './state';
 import type { SimCmd } from './commands';
+import { misafirYasak, MISAFIR_ALIS_UYARI } from './misafir-kural';
 import { installLevels } from './levels';
 import { installAchievements } from './achievements';
 import { installStations, standAt } from './stations';
@@ -307,6 +308,8 @@ export function createRules(d: RulesDeps): RulesFull {
   }
   const closeAllModals = () => { rt.panel = null; rt.boardOpen = false; };
   function handle(c: { kind: string; [k: string]: unknown }): boolean {
+    // odada misafir: ev sahibinin dünyasında para harcayan / dünyayı değiştiren komut kapalı (sim/misafir-kural.ts)
+    if ((rt as unknown as { misafir?: boolean }).misafir && misafirYasak(c)) { K.toast(MISAFIR_ALIS_UYARI, 'bad'); return true; }
     if (c.kind === 'esnaf') return esnafM.handle(c);
     if (c.kind === 'hedef') return hedefM.handle(c);
     if (c.kind === 'restoran') return restoranM.handle(c);
