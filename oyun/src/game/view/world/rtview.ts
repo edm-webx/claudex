@@ -18,6 +18,7 @@ import { padDef, padCost } from '../../../content/pads';
 import { mutfakDunya, mutfakUst } from '../../../content/ic-mekan';
 import { BULASIK } from '../../../content/mutfak';
 import { makeUrunModel } from '../chars/urun-model';
+import { yemekVar, yemekGeo, yemekH } from '../../../content/prefabs/yemek/yemek-geo';
 import { STATION_KINDS, counterSlot } from '../../../content/prefabs/iskele/layout';
 import type { StageLayout } from '../../../content/prefabs/iskele/layout';
 
@@ -29,14 +30,16 @@ export interface RtEnv {
   pose?(): { x: number; z: number; rot: number } | null;
 }
 
-type Pt = { x: number; y: number; z: number };
-interface Entry { key: string; obj: object; x: number; y: number; z: number; rot: number; fly: null | { t: number; dur: number; fx: number; fy: number; fz: number; arc: number }; h: number; seen: number; }
-interface Sink { key: string; x: number; y: number; z: number; rot: number; t: number; dur: number; tx: number; ty: number; tz: number; fx: number; fy: number; fz: number; }
+type Pt = { x: number; y: number; z: number; s?: number };
+interface Entry { s?: number; key: string; obj: object; x: number; y: number; z: number; rot: number; fly: null | { t: number; dur: number; fx: number; fy: number; fz: number; arc: number }; h: number; seen: number; }
+interface Sink { s?: number; key: string; x: number; y: number; z: number; rot: number; t: number; dur: number; tx: number; ty: number; tz: number; fx: number; fy: number; fz: number; }
 
 const CAP = 96, PROD = ['doner', 'cay', 'ayran', 'simit', 'tost', 'gazoz'] as const;
 const hashf = (a: number, b: number) => { let h = (a * 374761393 + b * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
 const easeOut = (k: number) => 1 - (1 - k) * (1 - k);
-const itemH = (it: Item<string>) => { const t = (ITEM_HT as Record<string, number[]>)[it.type]; return t ? t[Math.max(0, Math.min(3, (it.tier || 1) - 1))] : 0.1; };
+const itemH = (it: Item<string>) => { const t = (ITEM_HT as Record<string, number[]>)[it.type]; return t ? t[Math.max(0, Math.min(3, (it.tier || 1) - 1))] : yemekVar(it.type) ? yemekH(it.type) : 0.1; };
+/** 2026-11-25: mutfak yemeği (kendi tabağı / kâsesi modelin içinde): elde üst üste değil, tepside yan yana dizilir */
+const isDish = (it: Item<string>) => !(PROD as readonly string[]).includes(it.type) && yemekVar(it.type);
 
 export interface RtView {
   update(rules: Rules, dt: number): void;
@@ -53,6 +56,7 @@ export function createRtView(env: RtEnv): RtView {
     if (m) return m;
     if (key === 'money') m = new T.InstancedMesh(moneyGeo(), MAT.atlas, CAP);
     else if (key === 'plate') m = new T.InstancedMesh(plateGeo, plateMat, CAP);
+    else if (key.startsWith('y:')) m = new T.InstancedMesh(yemekGeo(key.slice(2)), MAT.atlas, CAP);
     else { const [p, t] = key.split(':'); m = new T.InstancedMesh(itemGeo(p, +t), MAT.atlas, CAP); }
     m.frustumCulled = false; m.castShadow = true; m.count = 0; m.name = 'items-' + key;
     inst.set(key, m); group.add(m); return m;
@@ -109,13 +113,13 @@ export function createRtView(env: RtEnv): RtView {
       if (from) e.fly = { t: 0, dur, fx: from.x, fy: from.y, fz: from.z, arc };
       entries.set(obj, e);
     }
-    e.seen = frame; e.key = key; e.h = h; e.rot = rot;
+    e.seen = frame; e.key = key; e.h = h; e.rot = rot; e.s = to.s;
     const x = to.x, y = to.y, z = to.z;
     e.x = x; e.y = y; e.z = z;
     return e;
   }
 
-  const sinkAt = (e: Entry, t: Pt) => { sinks.push({ key: e.key, x: e.x, y: e.y, z: e.z, rot: e.rot, t: 0, dur: 0.25, tx: t.x, ty: t.y, tz: t.z, fx: e.x, fy: e.y, fz: e.z }); };
+  const sinkAt = (e: Entry, t: Pt) => { sinks.push({ s: e.s, key: e.key, x: e.x, y: e.y, z: e.z, rot: e.rot, t: 0, dur: 0.25, tx: t.x, ty: t.y, tz: t.z, fx: e.x, fy: e.y, fz: e.z }); };
 
   const wob = { lx: NaN, lz: NaN, vx: 0, vz: 0, ox: 0, oz: 0, sx: 0, sz: 0 };
   function update(rules: Rules, dt: number) {
@@ -141,12 +145,13 @@ export function createRtView(env: RtEnv): RtView {
       const want = ktN ? kt!.items.join('|') : '';
       if (want !== tepsiKey) {
         tepsiKey = want; for (const o of tepsiObj) trayG.remove(o); tepsiObj.length = 0;
-        (ktN ? kt!.items : []).forEach((id, i) => { const o = urunPool(id, tepsiObj.filter(x => x.userData.id === id).length); o.position.set((i - (ktN - 1) / 2) * 0.19, 0.02, 0); o.scale.setScalar(1.15); trayG.add(o); tepsiObj.push(o); });
+        (ktN ? kt!.items : []).forEach((id, i) => { const o = urunPool(id, tepsiObj.filter(x => x.userData.id === id).length); o.position.set((i - (ktN - 1) / 2) * 0.2, 0.02, 0); o.scale.setScalar(o instanceof T.Mesh ? 0.95 : 1.15); trayG.add(o); tepsiObj.push(o); });
       }
     }
     const emit = (obj: object, key: string, to: Pt, rot: number, h: number, from: Pt | null, dur?: number, arc?: number) => { place(obj, key, to, rot, h, frame <= 2 ? null : from, dur, arc); };
     // BUF-06: oyuncunun elindeki mutfak tabağı (yemek kimliği) ürün modeli değil, sade tabak olarak çizilir
-    const itemKey = (it: Item<string>) => ((PROD as readonly string[]).includes(it.type) ? it.type + ':' + Math.max(1, Math.min(4, it.tier || 1)) : 'plate');
+    // 2026-11-25 sahip: "tepsiye gelen ürünler hep aynı düz yuvarlak bişey": yemek kimliği artık kendi modeliyle (content/prefabs/yemek)
+    const itemKey = (it: Item<string>) => ((PROD as readonly string[]).includes(it.type) ? it.type + ':' + Math.max(1, Math.min(4, it.tier || 1)) : yemekVar(it.type) ? 'y:' + it.type : 'plate');
 
     // player hands (spawn from the station tray they came from is implicit: the same Item object flies)
     // animasyon-3: the stack sways a little against the hero's acceleration (damped spring, clamped), never falls
@@ -161,7 +166,17 @@ export function createRtView(env: RtEnv): RtView {
       const l = Math.hypot(wob.ox, wob.oz); if (l > 0.05) { wob.ox *= 0.05 / l; wob.oz *= 0.05 / l; }
     }
     wob.lx = pp.x; wob.lz = pp.z;
-    rt.carry.forEach((it, i) => { const p = hand(i, rt.carry), k = Math.min(1, i / 5); p.x += wob.ox * k; p.z += wob.oz * k; emit(it, itemKey(it), p, pp.rot + wob.ox * k * 2, itemH(it), null); });
+    {   // büfe ürünleri elde üst üste (eskisi gibi); yemekler tepside 2x2 yan yana, beşinciden sonra ikinci kat
+      const sc = Math.cos(pp.rot), sn = Math.sin(pp.rot), urunler = rt.carry.filter(it => !isDish(it));
+      let yd = 0, kat = 0;
+      rt.carry.forEach((it) => {
+        if (!isDish(it)) { const i = urunler.indexOf(it), p = hand(i, urunler), k = Math.min(1, i / 5); p.x += wob.ox * k; p.z += wob.oz * k; emit(it, itemKey(it), p, pp.rot + wob.ox * k * 2, itemH(it), null); return; }
+        // dikdörtgen tepsi 0.62x0.4: 2x2, ölçek 0.75; yuvarlak tepsi r 0.27: dört çeyrek, ölçek 0.7 (tabaklar tepsiden taşmaz)
+        const j = yd++ % 4; if (j === 0 && yd > 1) kat += 0.06;
+        const lx = (j % 2 ? 1 : -1) * (master ? 0.105 : 0.14), lz = (j < 2 ? -1 : 1) * (master ? 0.105 : 0.09), ol = master ? 0.7 : 0.72;
+        emit(it, itemKey(it), { x: hx + lx * sc + lz * sn + wob.ox, y: hy + 0.03 + kat, z: hz - lx * sn + lz * sc + wob.oz, s: ol }, pp.rot + wob.ox * 2, itemH(it) * ol, null);
+      });
+    }
     // station trays
     STATION_KINDS.forEach(k => {
       const st = rt.stations[k]; const o = A['stations.' + k + '.out']; if (!st || !o) return;
@@ -230,9 +245,9 @@ export function createRtView(env: RtEnv): RtView {
 
     // advance flights and write instances
     used.clear();
-    const write = (key: string, x: number, y: number, z: number, rot: number) => {
+    const write = (key: string, x: number, y: number, z: number, rot: number, sc = 1) => {
       const m = meshFor(key), n = used.get(key) ?? 0; if (n >= CAP) return;
-      Q.setFromAxisAngle(AX, rot); P.set(x, y, z); M.compose(P, Q, S); m.setMatrixAt(n, M); used.set(key, n + 1);
+      Q.setFromAxisAngle(AX, rot); P.set(x, y, z); S.setScalar(sc); M.compose(P, Q, S); m.setMatrixAt(n, M); used.set(key, n + 1);
     };
     entries.forEach(e => {
       let x = e.x, y = e.y, z = e.z;
@@ -242,11 +257,11 @@ export function createRtView(env: RtEnv): RtView {
         x = e.fly.fx + (x - e.fly.fx) * ea; y = e.fly.fy + (y - e.fly.fy) * ea + Math.sin(kk * Math.PI) * e.fly.arc; z = e.fly.fz + (z - e.fly.fz) * ea;
         if (kk >= 1) e.fly = null;
       }
-      write(e.key, x, y, z, e.rot);
+      write(e.key, x, y, z, e.rot, e.s ?? 1);
     });
     for (let i = sinks.length - 1; i >= 0; i--) {
       const s = sinks[i]; s.t += dt / s.dur; const k = Math.min(1, s.t), ea = easeOut(k);
-      write(s.key, s.fx + (s.tx - s.fx) * ea, s.fy + (s.ty - s.fy) * ea + Math.sin(k * Math.PI) * 0.4, s.fz + (s.tz - s.fz) * ea, s.rot);
+      write(s.key, s.fx + (s.tx - s.fx) * ea, s.fy + (s.ty - s.fy) * ea + Math.sin(k * Math.PI) * 0.4, s.fz + (s.tz - s.fz) * ea, s.rot, s.s ?? 1);
       if (k >= 1) sinks.splice(i, 1);
     }
     inst.forEach((m, key) => { const n = used.get(key) ?? 0; m.count = n; m.instanceMatrix.needsUpdate = true; m.visible = n > 0; });
