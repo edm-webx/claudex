@@ -9,13 +9,17 @@ export interface TrackSpec {
   /** gerçek kayıt/mastering: public/ses altında Opus/OGG dosya adı; yüklenemezse tarif (sentez) yedek çalışır */
   file?: string;
   bpm: number; root: string; scale: number[];
+  /** varyasyon: kökü yarım ton kaydır (render sırasında) */
+  shift?: number;
   /** [chord root in semitones from `root`, chord intervals], one chord per `chordBars` bars */
   chords: [number, number[]][]; chordBars?: number; bars?: number;
   arp?: Inst; arpPattern?: number[]; lead?: Inst; leadBars?: number[]; leadOct?: number;
   pad?: number; bass?: number; perc?: 'darbuka' | 'dum' | 'none'; tef?: boolean;
   lpf?: number; rev?: number; swing?: number; gain?: number; density?: number; note?: string;
 }
-export interface MusicDb { tracks: Record<string, TrackSpec>; map: { phase: Record<string, string | string[]>; weather: Record<string, string>; place?: Record<string, string | string[]>; event?: string } }
+/** Çeşitlilik (müzik sıkıcı geri bildirimi): her parça birden çok VARYANT ile çalınır, kayıt gerekmez. `coklu.on` kapalıyken eski davranış. */
+export interface MusicCoklu { on: boolean; minSn: number; maxSn: number; araMin: number; araMax: number }
+export interface MusicDb { coklu?: MusicCoklu; tracks: Record<string, TrackSpec>; map: { phase: Record<string, string | string[]>; weather: Record<string, string>; place?: Record<string, string | string[]>; event?: string } }
 
 // ───────── instruments (all add into `o` at sample i0) ─────────
 function* padVoice(o: Float32Array, sr: number, i0: number, dur: number, f: number, v: number, rng: Rng, cut: number) {
@@ -95,7 +99,7 @@ export function* renderTrackGen(id: string, T: TrackSpec, sr = SR_LOOP): Generat
   const rng = new Rng(hashSeed('muzik.' + id));
   const beat = 60 / T.bpm, bar = beat * 4, bars = T.bars ?? 16, cb = T.chordBars ?? 2;
   const len = Math.round(bars * bar * sr), tail = Math.round(2.5 * sr), out = new Float32Array(len + tail);
-  const root = Math.round(69 + 12 * Math.log2(noteHz(T.root) / 440));
+  const root = Math.round(69 + 12 * Math.log2(noteHz(T.root) / 440)) + (T.shift ?? 0);
   const at = (sec: number) => Math.round(sec * sr);
   const sw = (eighth: number) => (eighth % 2 ? (T.swing ?? 0.06) * beat : 0);
   const dens = T.density ?? 0.7;
@@ -202,4 +206,30 @@ export function canlilik(prev: 0 | 1, crowd: number): 0 | 1 { return prev ? (cro
 export function canlilikKatman(s: number): { lpf: number; gain: number } {
   const k = Math.max(0, Math.min(1, s));
   return { lpf: 4200 + k * (18000 - 4200), gain: 0.78 + 0.22 * k };
+}
+
+// ───────── varyantlar: aynı parça, farklı tonda / tempoda / çalgıda / melodiyle ─────────
+export const VARYANT_SAYISI = 12;
+const ARP_ALT: Inst[] = ['saz', 'nylon', 'epiano', 'kutu'];
+const LEAD_ALT: Inst[] = ['keman', 'ney', 'klarnet', 'none'];
+const ARP_PAT = [[0, 1, 2, 1, 3, 1, 2, 1], [0, 2, 1, 3, 2, 1, 3, 2], [0, 1, 2, 3, 2, 1, 0, 1], [0, 0, 1, 2, 3, 2, 1, 1], [3, 2, 1, 0, 1, 2, 3, 1]];
+/** Parça anahtarı `taban~v` (v>0 varyant). */
+export const taban = (key: string): string => key.split('~')[0];
+export const varyantNo = (key: string): number => { const i = key.indexOf('~'); return i < 0 ? 0 : Number(key.slice(i + 1)) || 0; };
+/** v=0: özgün. v>=1: sabit tohumlu varyant (aynı v hep aynı müzik). Akor dizisi döndürülür, melodi barları yeniden seçilir. */
+export function varyasyon(id: string, T: TrackSpec, v: number): TrackSpec {
+  if (!v) return T;
+  const r = new Rng(hashSeed('varyant.' + id + '.' + v)), bars = T.bars ?? 16;
+  const rot = T.chords.length > 1 ? r.int(0, T.chords.length - 1) : 0;
+  const chords = T.chords.slice(rot).concat(T.chords.slice(0, rot));
+  const lead: Inst = (T.lead ?? 'none') === 'none' && r.next() < 0.6 ? 'none' : r.pick(LEAD_ALT);
+  const pool: number[] = []; for (let b = 2; b < bars; b++) pool.push(b);
+  for (let i = pool.length - 1; i > 0; i--) { const j = r.int(0, i); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+  const leadBars = pool.slice(0, r.int(5, 9)).sort((a, b) => a - b);
+  const perc = (T.perc ?? 'none') === 'none' ? (r.next() < 0.2 ? 'dum' : 'none') : r.pick<'darbuka' | 'dum' | 'none'>(['darbuka', 'darbuka', 'dum', 'none']);
+  return {
+    ...T, shift: r.pick([-5, -3, -2, 2, 3, 5, 7]), bpm: Math.round(T.bpm * (0.9 + 0.2 * r.next())), chords, lead, leadBars,
+    arp: r.next() < 0.3 ? T.arp : r.pick(ARP_ALT), arpPattern: r.pick(ARP_PAT), perc, tef: r.next() < 0.3 ? !T.tef : T.tef,
+    density: Math.max(0.4, Math.min(0.95, (T.density ?? 0.7) + r.range(-0.15, 0.15))), swing: r.range(0.03, 0.12), pad: (T.pad ?? 0.11) * r.range(0.8, 1.2),
+  };
 }

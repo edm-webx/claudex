@@ -3,7 +3,7 @@
 // handed back by callback when ready. Nothing is ever synthesised per frame.
 import { SR_SFX, SR_LOOP } from './dsp';
 import { renderSfx, renderLoopGen, type SfxDef, type LoopDef, type RenderCtx } from './render';
-import { renderTrackGen, type MusicDb } from './music';
+import { renderTrackGen, varyasyon, taban, varyantNo, type MusicDb } from './music';
 import type { OmniPatch } from './omni';
 import type { VoiceProfile } from './voice';
 
@@ -125,7 +125,12 @@ export function createBank(ac: BaseAudioContext, db: SesDb, budget = STREAM_BUDG
     },
     pitchVar: id => db.sfx[id]?.pitchVar ?? 0,
     loop(id, cb) { const def = db.loops[id]; if (!def) return; if (def.file) { fromFile('L:' + id, loopC, def.file, cb, c => enqueue('L:' + id, loopC, () => renderLoopGen(id, def, rc(SR_LOOP)), SR_LOOP, c, true)); return; } enqueue('L:' + id, loopC, () => renderLoopGen(id, def, rc(SR_LOOP)), SR_LOOP, cb, true); },
-    track(id, cb) { const t = db.music.tracks[id]; if (!t) return; if (t.file) { fromFile('M:' + id, trackC, t.file, cb, c => enqueue('M:' + id, trackC, () => renderTrackGen(id, t, SR_LOOP), SR_LOOP, c)); return; } enqueue('M:' + id, trackC, () => renderTrackGen(id, t, SR_LOOP), SR_LOOP, cb); },
+    track(id, cb) {
+      const b = taban(id), v = varyantNo(id), base = db.music.tracks[b]; if (!base) return;
+      if (base.file && !v) { fromFile('M:' + id, trackC, base.file, cb, c => enqueue('M:' + id, trackC, () => renderTrackGen(id, base, SR_LOOP), SR_LOOP, c)); return; }
+      const t = varyasyon(b, base, v);
+      enqueue('M:' + id, trackC, () => renderTrackGen(id, t, SR_LOOP), SR_LOOP, cb);
+    },
     prewarm() {
       const ids = Object.keys(db.sfx).filter(id => !sfxC.has(id));
       let i = 0;

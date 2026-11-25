@@ -3066,6 +3066,13 @@
   }
  },
  "music": {
+  "coklu": {
+   "on": false,
+   "minSn": 70,
+   "maxSn": 110,
+   "araMin": 35,
+   "araMax": 90
+  },
   "map": {
    "phase": {
     "morning": [
