@@ -263,7 +263,8 @@ function buildVehicles(): { group: T.Group; list: Vehicle[] } {
   const LS = [7, 9, 10, 10, 9, 7], SPACE = 36, COLORS = ['#2f9d59', '#ffd23f', '#3f7fd0', '#e0533c', '#f4f2ec', '#8a5fd0', '#2fb5b0'];
   // Kenney car models replace the box cars once loaded (the box body stays when a file is missing); PRF-15: the box body's merged
   // geometry (its own buffer, already uploaded) is freed when the model takes over
-  const CARS = ['taxi', 'sedan', 'suv', 'hatchback-sports', 'van', 'sedan-sports', 'suv-luxury', 'delivery', 'police'];
+  // 2026-11-25 tek tip görünüm: KayKit City Builder Bits arabaları (CC0, modeller/auto/kk-*); Kenney arabaları yalnız ambulansta kaldı
+  const CARS = ['kk-taxi', 'kk-sedan', 'kk-hatchback', 'kk-stationwagon', 'kk-sedan', 'kk-hatchback', 'kk-taxi', 'kk-stationwagon', 'kk-police'];
   const skin = (g: T.Group, k: number) => { loadGlb('auto/' + CARS[k % CARS.length]).then(src => { if (!src) return; g.traverse(o => { if (o.name.endsWith(':birlesik')) (o as T.Mesh).geometry.dispose(); }); g.clear(); g.add(fitClone(src, 1.6, 4.0, undefined, CAR_YAW)); }); return g; };
   const add = (mesh: T.Object3D, lane: number, off: number, kind: Vehicle['kind']) => { mesh.position.set(X0 - 200, 0, laneZ(lane)); if (lane >= 3) mesh.rotation.y = Math.PI; group.add(mesh); list.push({ mesh, lane, speed: LS[lane], off, dir: lane >= 3 ? -1 : 1, kind }); };
   let ci = 0;
