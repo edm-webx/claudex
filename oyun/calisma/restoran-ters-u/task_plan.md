@@ -14,12 +14,12 @@ Sahibi: "tek dev restoran, ayrı dükkânlar gibi olmayacak", kırmızı çizgi 
 - Salon aletleri: kare aletin yerinde; pişirenler mutfak hattına katılır.
 
 ## Adımlar
-1. [ ] content: ic-mekan, kanat, mutfak
-2. [ ] çarpışma (buyumeEngel)
-3. [ ] sim: garson/aşçı rota, kareler
-4. [ ] görünüm: bufe-buyume, ic-mekan-look, kiosk
-5. [ ] salon aletleri hat üyesi
-6. [ ] testler, ekonomi, ekran görüntüsü
+1. [x] content: ic-mekan, kanat, mutfak
+2. [x] çarpışma (buyumeEngel)
+3. [x] sim: garson/aşçı rota, kareler
+4. [x] görünüm: bufe-buyume, ic-mekan-look, kiosk
+5. [x] salon aletleri hat üyesi
+6. [x] testler, ekonomi, ekran görüntüsü
 
 ## Sonuç (2026-11-25)
 - 1-6. adımlar bitti. Oyuncu mutfakta ve salon aletinde büfe gibi çalışır (OYUNCU_HIZ 0.4, en az 1.2 sn, eller dolana kadar); content/salon-alet.ts.
