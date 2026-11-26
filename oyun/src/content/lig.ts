@@ -18,7 +18,7 @@ export const SEZON_TUR = 5;
 export const bolge = (b: number, i: number, n: number): '' | 'yuksel' | 'dus' => (b === 1 && i === 0 ? 'yuksel' : b === 0 && i === n - 1 ? 'dus' : '');
 export const AI_TAKIMLAR: LigTakim[] = [
   { id: 'lodosspor', ad: 'Lodosspor', renk: ['#2ec4c4', '#ff8a3d'], guc: 66 },
-  { id: 'vapurspor', ad: 'Vapurspor', renk: ['#a990dd', '#b8bec6'], guc: 64 },
+  { id: 'vapurspor', ad: 'Midyespor', renk: ['#a990dd', '#b8bec6'], guc: 64 },
   { id: 'poyrazspor', ad: 'Poyrazspor', renk: ['#3a6fb0', '#e8eef5'], guc: 62 },
   { id: 'hamsispor', ad: 'Hamsispor', renk: ['#c9a227', '#2b2b38'], guc: 60 },
   { id: 'martispor', ad: 'Martıspor', renk: ['#f4f4f4', '#3a8fd6'], guc: 58 },

@@ -114,7 +114,7 @@ it('deniz paneli: tabure ve masa çeşitleri, eklentiler her aşamada alınır v
     }
     for (let i = 0; i < TEZGAH.max; i++) al('tez', '', 'tezgah ' + i, () => z()?.tez || 0);
     for (const p of PIER_EXP) if (asama >= p.minStage) al('pier', p.id, 'iskele ' + p.id, () => z()?.pier?.length || 0);
-    if (asama >= VAPUR_BUFE.minStage) { S.money = 5e9; sim.command({ kind: 'deniz', op: 'bufe' }); sim.step(0.1); if (!z()?.bufe) sorun.push(asama + ' vapur büfesi alınmadı'); }
+    if (asama >= VAPUR_BUFE.minStage) { S.money = 5e9; sim.command({ kind: 'deniz', op: 'bufe' }); sim.step(0.1); if (z()?.bufe) sorun.push(asama + ' vapur büfesi alındı (vapur kalktı, alınmamalı)'); }
     void rt;
   }
   expect(sorun).toEqual([]);

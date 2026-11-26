@@ -244,7 +244,7 @@ export const ISLETME: Record<IsletmeId, Isletme> = {
       A('demleme_bar', 'Demleme barı', '🧪', 34000, 3, { fiyatK: 0.12 }, 'V60, Chemex, laboratuvar havası: fiyatlar +%12'),
       A('kavurucu', 'Kahve kavurma makinesi', '🫘', 55000, 3, { musteri: 0.15 }, 'Taze kavrulmuş kahve kokusu bütün kata yayılır: müşteri +%15'),
       A('falci', 'Falcı köşesi', '🔮', 30000, 4, { musteri: 0.12 }, 'Fincanı kapatan bekler, falcı "yolculuk görüyorum" der: müşteri +%12'),
-      A('latte_sanat', 'Latte sanatı ustası', '🎨', 80000, 5, { fiyatK: 0.2 }, 'Köpükte martı, vapur, Galata: fiyatlar +%20')] },
+      A('latte_sanat', 'Latte sanatı ustası', '🎨', 80000, 5, { fiyatK: 0.2 }, 'Köpükte martı, lale, Galata: fiyatlar +%20')] },
   dondurma: { id: 'dondurma', ad: 'Dondurmacı', ikon: '🍨', mus: 1.45, asama: ['Dondurma arabası', 'Dondurmacı', 'Maraş dondurması', 'Dondurma salonu', 'Maraşlı Martı Sarayı'],
     menu: [Y('kulah', 'Sade külah', '🍦', 28), Y('kaymakli', 'Kaymaklı dondurma', '🍨', 38), Y('sakizli', 'Sakızlı dondurma', '🍧', 40), Y('sorbe', 'Limonlu sorbe', '🍋', 42),
       Y('cikolatali_kup', 'Çikolatalı kup', '🍫', 50), Y('kesme_maras', 'Bıçakla kesme Maraş', '🔪', 72), Y('dondurmali_waffle', 'Dondurmalı waffle', '🧇', 85), Y('dev_kup', 'Martı kupu (7 top)', '🏆', 130)],

@@ -318,7 +318,7 @@ export const TEAMS: { id: string; name: string; colors: [string, string] }[] = [
   },
   {
     "id": "vapurspor",
-    "name": "Vapurspor",
+    "name": "Midyespor",
     "colors": [
       "#a990dd",
       "#b8bec6"
