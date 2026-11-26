@@ -17,6 +17,7 @@ await p.evaluate(() => { const M = window.__marti; M.setTime(13); M.step(2); M.s
   M.command({ kind: 'esnafim', op: 'done' }); M.step(1); M.skipCeremony?.(); M.collectWelcome?.(); M.closeJobBoard?.(); M.closePanel?.();
   for (let i = 0; i < 40; i++) M.step(1); });
 const snap = async n => { await p.evaluate(() => { for (let k = 0; k < 4; k++) { window.__marti.step(0.1); window.__marti.renderFrames(2, 0.1); } }); await p.waitForTimeout(300); await p.screenshot({ path: join(out, n + '.png') }); console.log('ok', n); };
+if (process.env.BAS) await p.evaluate(([x, z]) => { const M = window.__marti; M.teleport(x, z); for (let k = 0; k < 8; k++) { M.step(0.5); M.renderFrames(2, 0.1); } }, JSON.parse(process.env.BAS));   // start spot (e.g. Martı Emlak door)
 await snap('01-hud');
 const bar = await p.evaluate(() => [...document.querySelectorAll('#sbui *')].filter(e => e.offsetParent && e.children.length === 0 && e.textContent.trim()).slice(0, 200).map(e => e.className + ':' + e.textContent.trim().slice(0, 30)).join(' | '));
 console.log('UI', bar);

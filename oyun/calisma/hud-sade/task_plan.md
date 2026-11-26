@@ -12,7 +12,7 @@
 
 ## 2026-11-26 UYGULANDI (karar: B Esnaf telefonu, ofis arsaların yanında)
 - a0775a6: alt bar Çanta + Telefon + mini harita + Büfem; Ajanda'da günlük işler; ATM'ler; kedi listesi + vapur görevleri kalktı; yatay telefon düzeni.
-- Sonraki commit: arsalar Martı Evleri'ne taşındı (x 61.5-79, z 28-59; iskele bounds/realm/region x 80'e), Martı Emlak ofisi (view/mulk/santiye.ts buildEmlakOfis), alım/kurma/büyütme sadece ofiste (sim/mulk.ts nearEmlak), süreli şantiye Plot.insaat + gerçek ustalar (agents/isletme-insaat.ts, content arsaInsaatYer) + evreli makineler (view/mulk/santiye.ts). Görüntü: tests/browser/santiye-shot.mjs -> shots/santiye/.
+- 2026-11-26 karar (kullanıcı): arsalar inşaat thread'inin Martı Konutları mahallesinde (realm 'mahalle', 42B Meydan Çeşmesi). Benim Martı Evleri/şantiye denemem (1d9ae39) geri alındı (8e6f668), arinot b2a9074 merge edildi (0e6794c). Martı Emlak = mahallede eski eczane (view/mahalle/index.ts TABELA[3]), EMLAK kapı (265.6, 14.4); alım/kurma/büyütme sadece orada. Görüntü: shots/emlak, shots/emlak-tel.
 - Kalan / sonra: AVM ATM'si; ofis içi (emlakçı NPC) yok, sadece cephe; eğitici thread'i yeni yerleri bilmeli (Telefon, ofis, ATM).
 
 ## ENVANTER (mevcut alt bar, panels.ts menuItems)

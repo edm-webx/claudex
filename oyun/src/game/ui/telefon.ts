@@ -11,6 +11,7 @@ import { ISKELE_ZONE } from '../../content/zones/iskele';
 import { PIER } from '../../content/prefabs/iskele/layout';
 import { BANKA, ATMLER, EMLAK } from '../../content/esya';
 import { mulkApi } from '../sim/mulk';
+import { realmAt } from '../../content/realm';
 
 type Cmd = { kind: string; [k: string]: unknown };
 interface Deps {
@@ -33,7 +34,7 @@ const CSS = `
 .tf-mini{position:absolute;left:calc(var(--sl,0px) + 12px);bottom:calc(var(--sbm,0px) + 12px);z-index:34;width:132px;height:132px;border-radius:50%;padding:0;border:3px solid rgba(255,255,255,.88);background:#9ccde0;overflow:hidden;box-shadow:0 8px 20px rgba(4,10,24,.4);cursor:pointer;pointer-events:auto}
 .tf-mini canvas{display:block;width:100%;height:100%}
 .tf-mini b{position:absolute;left:50%;bottom:7px;transform:translateX(-50%);font:900 10px/1 var(--body);letter-spacing:.1em;color:#fff;background:rgba(11,19,38,.85);padding:3px 8px;border-radius:6px;pointer-events:none}
-.tf-mini.uzak canvas{display:none}.tf-mini.uzak{background:rgba(11,19,38,.85);display:grid;place-items:center}.tf-mini.uzak:before{content:"";width:46px;height:46px;background:currentColor;color:#fff;-webkit-mask:var(--ic) center/contain no-repeat;mask:var(--ic) center/contain no-repeat}
+.tf-mini.uzak canvas{display:none}.tf-mini.uzak:after{content:attr(data-yer);position:absolute;top:22%;left:8px;right:8px;text-align:center;font:800 12px/1.15 var(--disp,system-ui);color:#fff}.tf-mini.uzak{background:rgba(11,19,38,.85);display:grid;place-items:center}.tf-mini.uzak:before{content:"";width:46px;height:46px;background:currentColor;color:#fff;-webkit-mask:var(--ic) center/contain no-repeat;mask:var(--ic) center/contain no-repeat}
 .tf-ctx{position:absolute;left:50%;bottom:calc(var(--sbm,0px) + 14px);transform:translateX(-50%);z-index:34;display:none;align-items:center;gap:8px;padding:6px 8px 6px 12px;border-radius:999px;background:#fff6e6;color:#3b2a20;border:3px solid #3b2a20;box-shadow:0 4px 0 #3b2a20;font:900 15px var(--disp);pointer-events:auto;white-space:nowrap}
 .tf-ctx.on{display:flex}.tf-ctx svg{width:24px;height:24px}
 .tf-ctx button{min-height:44px;padding:0 14px;border-radius:999px;border:2.5px solid #3b2a20;background:#ffd23f;font:900 14px var(--disp);color:#3b2a20;cursor:pointer}
@@ -110,7 +111,8 @@ export function createTelefon(d: Deps): Telefon {
   const POI = (): { x: number; z: number; c: string }[] => [{ x: 0, z: 0, c: '#ffd23f' }, { x: BANKA.x, z: BANKA.z, c: '#5aa9d6' }, { x: EMLAK.x, z: EMLAK.z, c: '#8fd06b' }, ...ATMLER.map(a => ({ x: a.x, z: a.z, c: '#ffffff' }))];
   function drawMini() {
     const p = d.heroPos(), inZone = p.x >= B.x0 - 4 && p.x <= B.x1 + 4 && p.z >= B.z0 - 4 && p.z <= B.z1 + 4;
-    mini.classList.toggle('uzak', !inZone); if (!inZone || !bake) return;
+    mini.classList.toggle('uzak', !inZone); if (!inZone) { const ad = realmAt(p.x)?.name || ''; if (mini.dataset.yer !== ad) mini.dataset.yer = ad; }
+    if (!inZone || !bake) return;
     const g = cv.getContext('2d')!, R = cv.width, span = 64 * PX;   // 64 m across
     g.fillStyle = '#66acd6'; g.fillRect(0, 0, R, R);
     const sx = (p.x - B.x0) * PX - span / 2, sy = (p.z - B.z0) * PX - span / 2;
