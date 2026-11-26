@@ -238,12 +238,7 @@ export function installDeniz(K: Kernel, cu?: CuLike): DenizApi {
         if (!buyFixed(p.cost, p.name)) return true;
         h.pier.push(p.id); K.toast(p.icon + ' ' + p.line, 'good'); K.stat('iskeleGenis'); KX.logEv('denizBuy', { id: p.id }); KX.saveNow(); return true;
       }
-      case 'bufe': {
-        if (h.bufe) return true;
-        if (S().stage < VAPUR_BUFE.minStage) { K.toast('Vapur Büfesi için büfe ' + VAPUR_BUFE.minStage + '. aşamada olmalı.', 'info'); return true; }
-        if (!buyFixed(VAPUR_BUFE.cost, VAPUR_BUFE.name)) return true;
-        h.bufe = true; K.toast('⛴ Vapur Büfesi açıldı! Vapur yanaşınca "Vapura bin" ile gezebilirsin.', 'good'); KX.saveNow(); return true;
-      }
+      case 'bufe': return true;   // 2026-11-26: vapur kavramı kalktı, 'Vapur Büfesi' satın alınamaz (eski komut sessizce yutulur)
       case 'photo': photo(); return true;
     }
     return true;

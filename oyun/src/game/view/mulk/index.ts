@@ -7,7 +7,7 @@
 import * as T from 'three';
 import type { Rules } from '../../sim/state';
 import { mulkApi } from '../../sim/mulk';
-import { BANKA, ARSALAR, DUKKAN_BY_ID } from '../../../content/esya';
+import { BANKA, ARSALAR, DUKKAN_BY_ID, ATMLER } from '../../../content/esya';
 import { icBina } from '../../../content/ic-mekan';
 import { santiyeKur, type Santiye } from '../world/santiye-kit';
 import { binaKur } from '../world/karsi-bina';
@@ -33,6 +33,16 @@ export function createMulkView(d: MulkViewDeps): MulkView {
   const root = new T.Group(); root.name = 'mulk'; d.scene.add(root);
   const tmp: ScreenPt = { x: 0, y: 0 }, at: Vec3 = { x: 0, y: 0, z: 0 };
   const put = (lb: HtmlLabel, x: number, y: number, z: number, html: string) => { at.x = x; at.y = y; at.z = z; if (d.project(at, tmp)) lb.set(tmp.x, tmp.y, html, 'say'); else lb.hide(); };
+
+  /* ---- ATMs (2026-11-26: cash in/out without the bank tab) ---- */
+  for (const a of ATMLER) {
+    const g = new T.Group(); g.name = a.id; g.position.set(a.x, 0, a.z); g.rotation.y = a.ry; root.add(g);
+    box(g, 0.95, 1.75, 0.6, '#2b3a55', 0, 0.875, 0);                                     // body
+    box(g, 1.05, 0.28, 0.66, '#3aa776', 0, 1.88, 0, { emissive: '#1f6b45', emissiveIntensity: 0.35 });   // green Martı Kasa header
+    box(g, 0.62, 0.42, 0.04, '#7fd0ff', 0, 1.3, 0.31, { emissive: '#3a8fd6', emissiveIntensity: 0.6 });  // screen
+    box(g, 0.7, 0.06, 0.3, '#1b2233', 0, 1.0, 0.42);                                     // keypad shelf
+    box(g, 0.34, 0.04, 0.02, '#111', 0, 0.82, 0.31);                                     // card / cash slot
+  }
 
   /* ---- bank ---- */
   // 2026-11-08: the bank building itself is a detailed model in view/world/karsi-bina.ts; this group stays empty

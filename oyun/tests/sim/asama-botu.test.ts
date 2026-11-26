@@ -10,7 +10,7 @@ import { dirname, resolve } from 'node:path';
 import { played } from './m1-helpers';
 import { restoranApi } from '../../src/game/sim/restoran';
 import { teslimatApi } from '../../src/game/sim/kurye';
-import { MUTFAK_ROL, mutfakSlot, mutfakEsya, mutfakAcik, pisirIstasyonu, PASS_KAP } from '../../src/content/mutfak';
+import { MUTFAK_ROL, mutfakSlot, mutfakEsya, mutfakAcik, pisirIstasyonu, passKap } from '../../src/content/mutfak';
 import { masaCati, kanatAcik } from '../../src/content/kanat';
 import { acikYemekler, yeniYemekler, isProduct } from '../../src/content/yemek-menu';
 import { GAME_DAY_S } from '../../src/engine/api';
@@ -66,7 +66,7 @@ function kos(o: Opts = {}) {
     let i = isler.get(key); if (!i) isler.set(key, i = { yas: 0, bos: 0, rapor: false, yuk: false });
     i.yas = yas ?? i.yas + DT; if (bosta) i.bos += DT;
     enYas[tur] = Math.max(enYas[tur] || 0, i.yas);
-    if (i.yas > ESIK && !i.rapor && (!kadroda || i.bos >= 10)) { i.rapor = true; raporla(tur, ayrinti() + (kadroda ? ' (boşta çalışan varken)' : ' (kadroda yapacak kimse yok)')); if (tur.startsWith('masa-')) { const tb = +key.slice(1, -1); console.log('DBG', tur, key, r1(t), JSON.stringify((globalThis as any).__gv.filter((g: any) => g.table === tb).map((g: any) => ({ tur: g.tur, wid: g.wid, yas: r1(g.yas), claimT: r1(g.claimT), uzakW: g.uzakW }))), JSON.stringify((S.workers as W[]).filter(w => w.role === 'garson').map(w => { const a = [...reg.list].find((x: any) => x.kind === 'worker' && +x.key === w.id); const row = [...wsys.rows()].find((r: any) => r.id === w.id); return [w.id, row?.state, a?.act, r1(a?.x), r1(a?.z), (globalThis as any).__bk(w.id, tb, i!.yas)]; }))); } }
+    if (i.yas > ESIK && !i.rapor && (!kadroda || i.bos >= 10)) { i.rapor = true; raporla(tur, ayrinti() + (kadroda ? ' (boşta çalışan varken)' : ' (kadroda yapacak kimse yok)')); }
     else if (i.yas > ESIK && !i.yuk && !i.rapor) { i.yuk = true; yuk[tur] = (yuk[tur] || 0) + 1; }
     if (i.yas > ASIRI_ESIK && !i.asiri) { i.asiri = true; raporla(tur + '-acliktan', ayrinti() + ` ${r0(i.yas)} sn (herkes meşgul ama iş hiç sıraya girmedi)`); }
   };
@@ -145,13 +145,13 @@ function kos(o: Opts = {}) {
 
     // ── hareketsiz çalışan: boş durumda, yapabileceği iş 30 sn beklediği halde yerinde ──
     const serbest = mutfakEsya(S.stage || 1).filter(i => pisirIstasyonu(i) && !v.ist[i]);
-    const claimable = hd.cooking.length + hd.tepsi.length + hd.elde.length + hd.pass.length < PASS_KAP && serbest.some(i => api.hat!.aday(i));
+    const claimable = hd.cooking.length + hd.tepsi.length + hd.elde.length + hd.pass.length < passKap(S.stage || 1) && serbest.some(i => api.hat!.aday(i));
     const isVar = (w: W): boolean => {
       switch (w.role) {
         case 'garson': return bekleyenMasa.some(m => (m.durum !== 'kirli' || !temizlikler.length || !!masaCati(m.table)) && garsonYetkili(w, m.table));
         case 'temizlik': return bekleyenMasa.some(m => m.durum === 'kirli' && !masaCati(m.table));
         case 'asci': return claimable;
-        case 'komi': return sahipsiz.length > 0 && hd.pass.length < PASS_KAP;
+        case 'komi': return sahipsiz.length > 0 && hd.pass.length < passKap(S.stage || 1);
         case 'bulasikci': return rt.dirtyDishes > 0;
         case 'kurye': return !!tes && tes.hazirVar();
         default: return false;
@@ -302,8 +302,8 @@ describe('BUF-28 aşama botu: 1 -> 10, 14 rol, 30 oyun günü', () => {
     // 2026-11-23 restoran 7-10 yoğunluk kilidi (önce: menü ort ~21 sn / en uzun 66 sn, sipariş en uzun 61 sn, hesabın %30'u 40 sn sınırında)
     for (const a of ast.filter(x => x.asama >= 7)) {
       const b = beklemeOzet(a.bekle), m = `aşama ${a.asama} ` + JSON.stringify(b);
-      expect(b['masa-menu'].ort, m).toBeLessThan(18); expect(b['masa-menu'].max, m).toBeLessThan(50);
-      expect(b['masa-siparis'].max, m).toBeLessThan(25);
+      expect(b['masa-menu'].ort, m).toBeLessThan(18); expect(b['masa-menu'].max, m).toBeLessThan(a.asama >= 9 ? 55 : 50);   // 2026-11-26: 9-10'da Şef salonu (ikinci kat, ön merdiven) ve deniz köşkü uzak; arka merdiven gelince 50'ye dön
+      expect(b['masa-siparis'].max, m).toBeLessThan(30);   // 2026-11-25: deniz köşkü ve ikinci kat uzak, 25 -> 30
       expect(b['masa-hesap'].ort, m).toBeLessThan(20); expect(b['masa-hesap'].ust30, m).toBeLessThan(15);
     }
     // çatı masası: garson ve (2026-11-21) temizlikçi siler; eskiden yoğunlukta 1000-2400 sn kirli kalıyordu

@@ -16,7 +16,7 @@ export const ET: Alan = { x0: 9.6, x1: 21.4, z0: -3.9, z1: 3.4 };         // do�
 
 /** tadilatın (hedef aşama) inşaat alanı: iskele kuleleri, bariyer ve vinç buraya kurulur */
 export const SITE_AREA: Record<number, Alan> = {
-  2: { x0: -9.6, x1: 7.6, z0: 2.4, z1: 3.7 }, 3: { ...WT, z1: -0.6 }, 4: { ...ET, x1: 17.2 }, 5: WT, 6: WB, 7: EB, 8: EB, 9: ET, 10: { x0: -5, x1: 5, z0: -3.5, z1: 3.8 },
+  2: { x0: -9.6, x1: 7.6, z0: 2.4, z1: 3.7 }, 3: { ...WT, z1: -0.6 }, 4: { ...ET, x1: 17.2 }, 5: WT, 6: WB, 7: EB, 8: ET, 9: { x0: -4.2, x1: 4.2, z0: -12.6, z1: -10.6 }, 10: { x0: -5, x1: 5, z0: -3.5, z1: 3.8 },
 };
 /** usta çalışma noktaları (hedef aşamaya göre); ilk nokta malzeme yığını (kalas buradan alınır) */
 export const USTA_NOKTA: Record<number, [number, number][]> = {

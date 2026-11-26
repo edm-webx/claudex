@@ -1,0 +1,19 @@
+# Kaldığım yer (2026-11-25 22:10 TR)
+- İş bitti ve test edildi: 175 ürün modeli + ikon, oyuna bağlı. Dal claude/project-thread-la7184 (restoran-ters-u e3f9887 ile birleştirildi, çakışma yok).
+- Testler: 173 dosya / 1200 test yeşil; perf kapısındaki tek kırmızı (akıcı karşı yaka üçgen 490097/485721) temel dalda da birebir aynı.
+- Çekimler: /mnt/project-files/sosisci-oyun/urun-gorsel-2026-11-25/ (kontak önce/sonra, tepsi, pass, masa, genel).
+
+## Sıradaki adımlar
+0. Yuvarlak (usta) tepside yemekler hâlâ küçük görünüyor (sonra-tepsi.png): rtview.ts ölçek 0.7 kodda ama son çekimde yansımamış görünüyor, yeniden derleyip çekerek doğrula.
+1. Kullanıcı ekran görüntülerine bakıp beğenmediği ürünü söylerse o tarifi yemek-geo.ts'de düzelt.
+2. Ana İş (jo0q11) veya restoran-ters-u bu dalı birleştirmeli.
+3. Grafik thread'i KayKit tarzına geçiyor: Türk yemeklerinin KayKit karşılığı yok, prosedürel kalıyor. İstenirse KayKit gradyan atlasına benzer renk geçişi eklenebilir; burger/çorba gibi birkaç genel üründe KayKit modeli denenebilir.
+
+## Açık karar
+- KayKit karşılığı olan birkaç genel üründe (çorba kasesi, güveç) KayKit modeli mi, prosedürel mi? Önerim: prosedürel kalsın, aynı yemek her yerde aynı görünsün.
+
+
+## 2026-11-26 devam
+- restoran-ters-u (ac63e9f) birleşti. O dal da kısa bir iskele/yemek-geo.ts yazmıştı; tek kaynak yemek/yemek-geo.ts kaldı, eski dosya yeniden dışa aktarım (yemekModeliVar = yemekVar). Kullanılmayan tabakDoldur silindi.
+- Tepsi ölçeği doğrulandı: yuvarlak 0.7 tamam; dikdörtgen 0.8, aralık 0.15x0.085. elTabak hilesine seviye argümanı (dikdörtgen tepsi çekimi için). Çekimler sonra-tepsi(-usta).png.
+- Gözlem (restoran dalının alanı): salon içinde masaya giren sarı şemsiye görünüyor.

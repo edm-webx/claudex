@@ -22,7 +22,7 @@ describe('hat: oyuncu (wid -1)', () => {
     expect(hat.aday('izgara')).toBe('tost');
     expect(hat.claim(OYUNCU, undefined, { ist: 'cay_bar' })).toBeNull();   // çay barında pişecek bilet yok
     expect(hat.claim(OYUNCU, undefined, { ist: 'izgara' })).toBe('tost'); expect(hat.ist(OYUNCU)).toBe('izgara');
-    const sure = hat.sure(OYUNCU); expect(sure).toBeCloseTo(pisirmeSuresi(hazirlikOf('tost'), 0, []), 6);
+    const sure = hat.sure(OYUNCU); expect(sure).toBeCloseTo(Math.max(1.2, pisirmeSuresi(hazirlikOf('tost'), 0, []) * 0.4), 6);   // 2026-11-25: oyuncu büfe hızında
     for (let i = 0; i < 400; i++) hat.update(0.1);   // başında durmadan zaman geçer: ilerleme yok
     expect(hat.durum().cooking.length).toBe(0);   // 25 sn başında durmayınca iş bırakıldı (istasyon boşaldı)
     expect(hat.ist(OYUNCU)).toBeNull();
@@ -96,7 +96,7 @@ describe('tam sim: oyuncu mutfakta', () => {
     const p = stand('izgara'); sim.command({ kind: 'teleport', x: p.x, z: p.z });
     k.step(1);
     expect(api.hat!.ist(-1)).toBe('izgara'); expect(api.view().oyuncu.ist).toBe('izgara');
-    k.step(hazirlikOf('tost') + 2);
+    k.step(hazirlikOf('tost') * 0.4 + 0.4);
     expect(r.carry.length).toBe(1); expect(r.carry[0].type).toBe('tost');
     // masaya götürmek yerine pass'a bırak
     const q = mutfakDunya(MUTFAK_NOKTA.passAsci); sim.command({ kind: 'teleport', x: q.x, z: q.z });
@@ -107,19 +107,19 @@ describe('tam sim: oyuncu mutfakta', () => {
     const k = hazir(), { sim, api, r } = k;
     const c = k.musteri(0, { tost: 1 }); k.step(6);
     const p = stand('izgara'); sim.command({ kind: 'teleport', x: p.x, z: p.z });
-    k.step(hazirlikOf('tost') + 2);
+    k.step(hazirlikOf('tost') * 0.4 + 1.4);
     expect(r.carry.length).toBe(1);
     const tb = r.layout.tables[0]; sim.command({ kind: 'teleport', x: tb.x, z: tb.z });
     k.step(2);
     expect(r.carry.length).toBe(0); expect(api.view().tickets.length).toBe(0); expect(c.state).toBe('eat');
     expect(api.hat!.durum().elde.length).toBe(0);
   });
-  it('bilet yokken istasyon başında hazırlık yapılır (en çok 2 tabak elde, pass\'a bırakılır)', () => {
+  it('bilet yokken istasyon büfe gibi çalışır: eller dolana kadar hazırlanır, pass\'a bırakılır', () => {
     const k = hazir(), { sim, api, r } = k;
     const p = stand('izgara'); sim.command({ kind: 'teleport', x: p.x, z: p.z });
     k.step(1); expect(api.hat!.ist(-1)).toBe('izgara');
     k.step(60);
-    expect(r.carry.length, 'elde en çok 2 hazırlık tabağı').toBe(2);
+    expect(r.carry.length, 'eller dolana kadar').toBe(4);
     const q = mutfakDunya(MUTFAK_NOKTA.passAsci); sim.command({ kind: 'teleport', x: q.x, z: q.z });
     k.step(2); expect(r.carry.length).toBe(0);
   });

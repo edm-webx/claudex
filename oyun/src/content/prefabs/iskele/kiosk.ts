@@ -48,7 +48,7 @@ export function buildKiosk(stage?: any, rn?: any, RS = 0) {
   const s1 = stage === 1, gold = stage >= 5;
   const paintC = RS ? (RS >= 10 ? '#f3e6c8' : '#f4f2ec') : worn('boya') ? (s1 ? '#a9bba8' : '#e2d6bf') : '#f6ecd6';
   const paintO = {};   // 2026-10-24: unpainted walls no longer show peeling stains ("dükkanın içi kirli")
-  const trim = RS ? (RS >= 10 ? K.gold : '#2f7fb3') : gold ? K.gold : worn('boya') ? (s1 ? '#7f8f84' : '#b9ad98') : K.red;
+  const trim = RS ? (RS >= 10 ? K.gold : '#b93a2c') : gold ? K.gold : worn('boya') ? (s1 ? '#7f8f84' : '#b9ad98') : K.red;
   const wall = (x0?: any, x1?: any, y0?: any, y1?: any, z0?: any, z1?: any) => {
     const lx = Math.abs(x1 - x0), lz = Math.abs(z1 - z0), along = lx > lz, L = Math.max(lx, lz), n = Math.max(1, Math.round(L / 1.7));
     for (let i = 0; i < n; i++) {
@@ -132,17 +132,9 @@ export function buildKiosk(stage?: any, rn?: any, RS = 0) {
       tiles(inner, innerB, 0, 1.0, -10.4, -4.6);
       if (sg < 0) { wall(a, c, 0, LOW, -9.0, BUFE.z1); capRail(a, c, LOW, -9.0, BUFE.z1); tiles(a - 0.02, a, 0, LOW, -9.0, BUFE.z1); ob(a, c, BUFE.z0, BUFE.z1); }
       else {
-        wall(a, c, 0, LOW, -9.0, -8.3); wall(a, c, 0, LOW, -5.9, BUFE.z1); capRail(a, c, LOW, -9.0, -8.3); capRail(a, c, LOW, -5.9, BUFE.z1);
-        tiles(c, c + 0.02, 0, LOW, -9.0, -8.3); tiles(c, c + 0.02, 0, LOW, -5.9, BUFE.z1);
-        // ferry window block: jambs, sill, lintel, kepenk box
-        wall(a, c, 0, 2.35, -8.3, -7.9); wall(a, c, 0, 2.35, -6.3, -5.9); wall(a, c, 0, 1.05, -7.9, -6.3); wall(a, c, 2.15, 2.35, -7.9, -6.3);
-        tiles(c, c + 0.02, 0, 1.05, -8.3, -5.9);
-        A.span(a - 0.1, c + 0.3, 1.05, 1.12, -7.95, -6.25, worn('tezgah') ? '#9c9a92' : '#dfe6ea', { r: 0.02, uv: worn('tezgah') ? undefined : R.marble });
-        A.span(c, c + 0.32, 2.17, 2.42, -7.98, -6.22, worn('kepenk') ? '#8d7466' : shade(K.red, -0.1), { r: 0.04, uv: undefined });
-        capRail(a, c + 0.32, 2.42, -8.3, -5.9);
-        K2.shutter = { kind: 'wall', x: c + 0.04, y0: 1.12, y1: 2.15, z0: -7.9, z1: -6.3 };
+        // 2026-11-25: vapur penceresi kalktı (sahibi: "vapur konsepti hiç olmasın"); doğu yanı da batı gibi düz alçak duvar
+        wall(a, c, 0, LOW, -9.0, BUFE.z1); capRail(a, c, LOW, -9.0, BUFE.z1); tiles(c, c + 0.02, 0, LOW, -9.0, BUFE.z1);
         ob(a, c, BUFE.z0, BUFE.z1, 'kiosk');
-        A.label(0.7, 0.18, R.fridgeBogaz, c + 0.33, 2.3, -7.1, { ry: HP });
       }
     });
     // front: west stub, door frame, counter, east low wall with the register
@@ -309,16 +301,6 @@ export function stage1Front(A?: any, BU?: any, K2?: any, worn?: any) {
   ob(-0.5, 2.5, -1.65, -1.05);
   // stool by the counter (cat spot)
   // stool by the counter (cat spot): placed as the editable prefab iskele.tabure-kucuk (zone prop tabure-s1), same geometry
-  // ferry-window stall on the east strip, front faces +X
-  A.push(mtx(5.75, 0, WIN_Z, 0, HP, 0));
-  [-0.85, 0.85].forEach(x => A.box(0.1, 2.35, 0.1, '#8a5d3b', x, 1.17, 0, { r: 0.02, uv: R.grain }));
-  A.box(1.85, 0.06, 0.55, '#c9955c', 0, 1.0, 0.05, { r: 0.015, uv: R.grain });
-  A.box(1.7, 0.95, 0.05, worn('boya') ? '#b49a7a' : '#3fb5b0', 0, 0.5, -0.12, { r: 0.015, uv: worn('boya') ? R.peel : undefined });
-  A.box(1.95, 0.4, 0.1, '#1d5fa8', 0, 2.36, 0, { r: 0.02 }); A.label(1.8, 0.32, R.pencere, 0, 2.36, 0.055);
-  A.box(1.9, 0.18, 0.2, worn('kepenk') ? '#8d7466' : shade(K.red, -0.1), 0, 2.08, 0.08, { r: 0.03 });
-  A.pop();
-  K2.shutter = { kind: 'stall', x: 5.75, z: WIN_Z, rotY: HP, w: 1.6, y0: 1.04, y1: 1.99, off: 0.12 };
-  ob(5.45, 6.05, WIN_Z - 0.95, WIN_Z + 0.95, 'window');
 }
 
 export const FONT_FALLBACK = {

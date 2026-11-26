@@ -32,7 +32,7 @@ export const STAGE_EXTRA_SLOTS: { garson: number; temizlik: number }[] = [
   { garson: 2, temizlik: 1 }, { garson: 3, temizlik: 1 }, { garson: 3, temizlik: 2 }, { garson: 4, temizlik: 2 }, { garson: 5, temizlik: 2 }, { garson: 5, temizlik: 2 },
   // AR-GE 2026-11-22: tablo 6. aşamada bitiyordu, 7-10'da kadro 5 garsonda donuyordu (masa ve menü büyürken menü bekleme 114 sn, aşama botu)
   // 2026-11-23 restoran yoğunluk: garson başına ~3 dolu masa (aşama 5 oranı; 7-10'da 1:4'e düşüp menü 60 sn+ bekliyordu, aşama botu)
-  { garson: 7, temizlik: 2 }, { garson: 9, temizlik: 3 }, { garson: 9, temizlik: 3 }, { garson: 10, temizlik: 3 },
+  { garson: 7, temizlik: 2 }, { garson: 14, temizlik: 3 }, { garson: 23, temizlik: 4 }, { garson: 25, temizlik: 5 },   // 2026-11-25: 46 / 58 / 74 masa
 ];
 
 // ── huy hareketleri (animasyon-8): speech lines the view may pop with the motion ──

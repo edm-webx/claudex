@@ -19,7 +19,6 @@ export function installTutorial(K: Kernel) {
     { id: 'cay', show: () => !!S.owned.cay, done: () => !!S.tut.cayUsed },
     padStep('ayran'), padStep('simit'), padStep('tabure1'), padStep('isbul'),
     { id: 'isbul', show: () => !!S.owned.isbul, done: () => S.workers.length > 0 },
-    padStep('pencere'),
   ];
   return {
     update() {

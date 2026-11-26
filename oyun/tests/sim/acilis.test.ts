@@ -30,13 +30,13 @@ it('oyun başında hiçbir dükkân karesi yok; büfe 2. aşamada yalnız Meydan
   sim.command({ kind: 'mulk', op: 'arsaAl', id: 'k1' }); expect(S.zones.arsa?.plots?.k1).toBeUndefined();   // panelden de alınmaz
   S.stats.served = 500; sim.step(0.6); expect(pad(sim, 'isl.k1').sub).toBe('Dükkânı satın al');
   sim.command({ kind: 'mulk', op: 'arsaAl', id: 'k1' }); expect(S.zones.arsa.plots.k1).toMatchObject({ tur: 'dukkan', lv: 1 });
-  sim.step(0.6); expect(keys(sim)).toEqual(['isl.k2']);   // sıradaki: Sahil Bistro, kilitli (4 yıldız + vapur görevi)
-  expect(pad(sim, 'isl.k2').sub).toMatch(/^🔒 4★ karne \+ 50 vapur/);
-  S.stars = 4; S.stats.ferries = 50; sim.step(0.6); expect(pad(sim, 'isl.k2').sub).toBe('Dükkânı satın al');
+  sim.step(0.6); expect(keys(sim)).toEqual(['isl.k2']);   // sıradaki: Sahil Bistro, kilitli (4 yıldız + 1500 servis; vapur kalktı 2026-11-25)
+  expect(pad(sim, 'isl.k2').sub).toMatch(/^🔒 4★ karne \+ 1500 müşteriye servis/);
+  S.stars = 4; S.stats.served = 1500; sim.step(0.6); expect(pad(sim, 'isl.k2').sub).toBe('Dükkânı satın al');
 });
 
 it('kırtasiye ve kantin büfe 3. aşamadan önce görünmez; AVM dükkânları karşı yaka bitmeden görünmez', () => {
-  const { sim, S } = mk(); S.money = 9e7; S.level = 40; S.stars = 5; S.stats.served = 1e5; S.stats.ferries = 1e3; S.stats.cleaned = 1e4; S.stage = 2;
+  const { sim, S } = mk(); S.money = 9e7; S.level = 40; S.stars = 5; S.stats.served = 1e5; S.stats.tips = 1e3; S.stats.cleaned = 1e4; S.stage = 2;
   for (const id of ['k1', 'k2']) sim.command({ kind: 'mulk', op: 'arsaAl', id });
   sim.step(0.6); expect(keys(sim)).toEqual([]);   // k4 (kantin) 3. aşamayı bekliyor
   S.stage = 3; sim.step(0.6); expect(keys(sim)).toEqual(['isl.k4']);

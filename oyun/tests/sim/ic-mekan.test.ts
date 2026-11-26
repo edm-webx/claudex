@@ -13,6 +13,7 @@ const blocked = (m: (typeof IC_MEKANLAR)[number], p: { x: number; z: number }) =
 
 it('every room: the door is open, the wall beside it blocks, the walk from the door into the room is free', () => {
   for (const m of IC_MEKANLAR) {
+    if (m.salon || m.mutfak) continue;   // 2026-11-25 ters U: duvarlar restoran-plan.ts'te (tests/sim/restoran-ters-u.test.ts)
     const { W, D } = icDim(m);
     for (const v of [D / 2 + 0.3, D / 2 - 0.1, D / 2 - 0.6, D / 2 - 1.0]) expect(blocked(m, icWorld(m, 0, v)), m.id + ' door v=' + v).toBe(false);
     if (!m.acik) expect(blocked(m, icWorld(m, Math.min(W / 2 - 0.3, 1.4), D / 2 - 0.1)), m.id + ' wall').toBe(true);   // açık stant (sinema büfesi) ön duvarsız

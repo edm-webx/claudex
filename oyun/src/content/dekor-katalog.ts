@@ -63,7 +63,6 @@ const R: Row[] = [
   ['zemin_lunapark', 'Damalı lunapark zemini', 'lunapark', 'zemin', 'karo', 1500, 1, 2, 'm', '#e0533c', '#ffd23f', '#e0533c'],
   // ── Duvar süsü ──
   ['duvar_cerceve_aile', 'Aile fotoğrafı çerçevesi', 'nostalji', 'duvar', 'cerceve', 900, 1, 2, 's', '#7d5638', '#f6ead2', '#9c6c46', '', 'Bu fotoğraftaki bıyık kimin? Efsane.'],
-  ['duvar_afis_vapur', 'Eski vapur afişi', 'denizci', 'duvar', 'afis', 1200, 1, 2, 's', '#1d3d6b', '#f6ead2', '#e0533c', 'F'],
   ['duvar_afis_film', 'Yeşilçam film afişi: Martı Kalbim', 'nostalji', 'duvar', 'afis', 1400, 2, 3, 's', '#c23e2c', '#f6ead2', '#3a2a20', 'F', 'Martı Kalbim! Bu filmde ağlamayan yoktu.'],
   ['duvar_takvim', 'Yapraklı duvar takvimi', 'nostalji', 'duvar', 'takvim', 600, 1, 1, 's', '#fbfaf6', '#e0533c', '#3a2a20'],
   ['duvar_takvim_balik', 'Balıkçı takvimi: Hamsi Ayları', 'barinak', 'duvar', 'takvim', 700, 1, 1, 's', '#bfe6e9', '#2f6fb0', '#3a2a20'],
@@ -129,7 +128,6 @@ const R: Row[] = [
   ['tema_oyun_makinesi', 'Arcade oyun makinesi', 'lunapark', 'tema', 'oyun', 4200, 4, 5, 'm', '#3c4146', '#e0533c', '#49e6d8', 'LF', 'Bir jeton daha! Tek bir tur, sonra gidiyorum, söz.'],
   ['tema_kus_kafesi', 'Kuş kafesi', 'nostalji', 'tema', 'kafes', 2600, 3, 3, 'm', '#c9b59a', '#f2b632', '#e0533c', '', 'Cik cik, ötüyor işte.'],
   ['tema_kitaplik', 'Eski kitaplık', 'nostalji', 'tema', 'kitaplik', 2400, 2, 3, 'm', '#9c6c46', '#e0533c', '#3fb5b0', '', 'Her rafta bir roman, hepsi okunmuş gibi duruyor.'],
-  ['tema_vapur_maketi', 'Vapur maketi', 'denizci', 'tema', 'vapur', 3400, 3, 4, 'm', '#33526e', '#fbfaf6', '#e0533c', 'F', 'Kadıköy\'den Eminönü\'ye, cebimde.'],
   ['tema_kaset_kule', 'Kaset kulesi', 'plak', 'tema', 'raf', 1500, 1, 2, 's', '#3c4146', '#f2b632', '#e0533c'],
   ['tema_semsiye_tropik', 'Saçaklı plaj şemsiyesi', 'tropik', 'tema', 'semsiye', 2200, 2, 3, 'l', '#f08a3c', '#fbfaf6', '#e8c27a'],
   ['tema_roket', 'Karton roket', 'ayussu', 'tema', 'roket', 4600, 4, 5, 'm', '#fbfaf6', '#e0533c', '#8c969e', 'F', 'Roket kalkarken simidimi bitirebilir miyim?'],
@@ -148,7 +146,7 @@ const R: Row[] = [
   ['atolye_marti_robot', 'Teneke martı robot', 'ayussu', 'biblo', 'astronot', 0, 3, 4, 's', '#bfc6cc', '#e0533c', '#49e6d8', 'UF', 'Bu robotu sen mi yaptın? Usta adamsın abi!'],
   ['atolye_simit_saat', 'Simit duvar saati', 'genel', 'duvar', 'tabak', 0, 2, 3, 's', '#d8a25a', '#3a2a20', '#fbfaf6', 'U'],
   ['atolye_cay_kulesi', 'Çay bardağı kulesi', 'nostalji', 'biblo', 'kule', 0, 3, 4, 's', '#c23e2c', '#f0e8e0', '#b8862e', 'UF'],
-  ['atolye_sise_gemi', 'Şişede vapur', 'denizci', 'biblo', 'sise', 0, 3, 4, 's', '#bfe6e9', '#fbfaf6', '#9c6c46', 'U'],
+  ['atolye_sise_gemi', 'Şişede gemi', 'denizci', 'biblo', 'sise', 0, 3, 4, 's', '#bfe6e9', '#fbfaf6', '#9c6c46', 'U'],
   // ── Müdavim hediyeleri (sadece set sever müdavimden) ──
   ['hediye_plak_imzali', 'İmzalı Zeki Plakçı plağı', 'plak', 'duvar', 'cerceve', 0, 3, 4, 's', '#20232a', '#f2b632', '#e0533c', 'HF'],
   ['hediye_deniz_kabugu', 'Kocaman deniz kabuğu', 'tropik', 'biblo', 'kabuk', 0, 2, 3, 's', '#f2a2b3', '#fbfaf6', '#f08a3c', 'H'],
@@ -181,8 +179,8 @@ export const SET_NEED = 4;
 export const THEME_SETS: ThemeSet[] = [
   { id: 'nostalji', name: 'Nostalji / Yeşilçam', need: SET_NEED, bonusTip: 0.03, lover: { name: 'Emekli Suflör Nebahat Hanım', job: 'Yeşilçam hayranı', gift: 'atolye_cay_kulesi',
     lines: ['Ahh bu köşe tam 1967! Kalbim pır pır.', 'Bu radyoda eskiden arkasından sufle verirdim, şaka şaka.', 'Bir çay ver evladım, filmin en güzel sahnesi burası.'] } },
-  { id: 'denizci', name: 'Martı / Denizci', need: SET_NEED, bonusTip: 0.03, lover: { name: 'Kaptan Rıfat Dümenci', job: 'emekli vapur kaptanı', gift: 'atolye_sise_gemi',
-    lines: ['Pruva iskeleye! Bu büfe tam bir liman.', 'Kırk yıl vapur sürdüm, böyle can simidi görmedim.', 'Martılar bile selam duruyor, aferin sana.'] } },
+  { id: 'denizci', name: 'Martı / Denizci', need: SET_NEED, bonusTip: 0.03, lover: { name: 'Kaptan Rıfat Dümenci', job: 'emekli kaptan', gift: 'atolye_sise_gemi',
+    lines: ['Pruva iskeleye! Bu büfe tam bir liman.', 'Kırk yıl deniz gördüm, böyle can simidi görmedim.', 'Martılar bile selam duruyor, aferin sana.'] } },
   { id: 'lale', name: 'Lale Devri', need: SET_NEED, bonusTip: 0.03, lover: { name: 'Hattat Lütfiye Abla', job: 'çini ustası', gift: 'biblo_lale_vazo',
     lines: ['Şu çinilerin mavisi var ya, içime işledi.', 'Lale lale lale! Bahar sende başlamış.', 'Semaver kokusu, lale deseni... Bugün buradayım.'] } },
   { id: 'plak', name: 'Retro Plak Köşesi', need: SET_NEED, bonusTip: 0.04, lover: { name: 'Plakçı Zeki Abi', job: 'plak koleksiyoncusu', gift: 'hediye_plak_imzali',
@@ -206,7 +204,7 @@ export const PAINT_MATERIALS: { id: string; name: string; tint: string; k: numbe
 ];
 export const PAINT_COLORS: { id: string; name: string; hex: string }[] = [
   { id: 'yok', name: 'Kendi rengi', hex: '' }, { id: 'kirmizi', name: 'Simit kırmızısı', hex: '#e0533c' }, { id: 'sari', name: 'Limon sarısı', hex: '#ffd23f' },
-  { id: 'turkuaz', name: 'Boğaz turkuazı', hex: '#3fb5b0' }, { id: 'lacivert', name: 'Vapur laciverti', hex: '#2b3a55' }, { id: 'pembe', name: 'Pamuk şeker', hex: '#f2a2b3' },
+  { id: 'turkuaz', name: 'Boğaz turkuazı', hex: '#3fb5b0' }, { id: 'lacivert', name: 'Gece laciverti', hex: '#2b3a55' }, { id: 'pembe', name: 'Pamuk şeker', hex: '#f2a2b3' },
   { id: 'yesil', name: 'Fesleğen yeşili', hex: '#5d8f45' }, { id: 'krem', name: 'Ayran kremi', hex: '#f6ead2' }, { id: 'mor', name: 'Lavanta', hex: '#8a6bbf' },
 ];
 export const PAINT_PATTERNS: { id: string; name: string }[] = [
@@ -226,11 +224,11 @@ export const paintKey = (p?: { material?: string; color?: string; pattern?: stri
 
 /** Sign designer extras (dekor-11). */
 export const SIGN_SLOGANS: string[] = [
-  '', 'Çayımız tavşan kanı, martımız uslu', 'Simit sıcak, kalp sıcak', 'Ayranın köpüğü bizden', 'Boğaz manzaralı lezzet durağı', 'Vapuru kaçıran buraya uğrar',
+  '', 'Çayımız tavşan kanı, martımız uslu', 'Simit sıcak, kalp sıcak', 'Ayranın köpüğü bizden', 'Boğaz manzaralı lezzet durağı', 'Otobüsü kaçıran buraya uğrar',
   'Martılar bile sıraya girer', '1 çay = 1 gülümseme', 'Tostun hası, sohbetin tası', 'Lodosta da açığız', 'Kediler ücretsiz, insanlar da güler',
 ];
 export const SIGN_EMBLEMS: { id: string; name: string }[] = [
-  { id: 'yok', name: 'Yok' }, { id: 'marti', name: 'Martı' }, { id: 'cay', name: 'Çay bardağı' }, { id: 'simit', name: 'Simit' }, { id: 'vapur', name: 'Vapur' }, { id: 'lale', name: 'Lale' },
+  { id: 'yok', name: 'Yok' }, { id: 'marti', name: 'Martı' }, { id: 'cay', name: 'Çay bardağı' }, { id: 'simit', name: 'Simit' }, { id: 'lale', name: 'Lale' },
 ];
 export const SIGN_FRAMES: { id: string; name: string }[] = [
   { id: 'yok', name: 'Sade' }, { id: 'ahsap', name: 'Ahşap' }, { id: 'ampul', name: 'Ampullü' }, { id: 'cini', name: 'Çinili' }, { id: 'neon', name: 'Neon' },
@@ -278,7 +276,7 @@ export const HOME_AREAS: HomeArea[] = [
   { id: 'oda', name: 'Çatı katı odası', price: 0, slots: 5, floor: '#c9955c', wall: '#f3e2c4', desc: 'Büfenin tepesinde, eğik tavanlı, minicik ama senin.' },
   { id: 'mutfak', name: 'Minik mutfak', price: 6000, slots: 4, floor: '#e8e2d4', wall: '#d8efe9', desc: 'Bir ocak, bir demlik, bir de koca bir iştah.' },
   { id: 'balkon', name: 'Boğaz balkonu', price: 12000, slots: 4, floor: '#b98a5e', wall: '#bfe6f2', desc: 'Martılar sabah buradan günaydın der.' },
-  { id: 'teras', name: 'Çatı terası', price: 25000, slots: 5, floor: '#a7a69c', wall: '#cfe3f5', desc: 'Yıldızlar, çay ve uzaktan vapur düdüğü.' },
+  { id: 'teras', name: 'Çatı terası', price: 25000, slots: 5, floor: '#a7a69c', wall: '#cfe3f5', desc: 'Yıldızlar, çay ve uzaktan martı sesi.' },
   { id: 'kedi', name: 'Kedi odası', price: 18000, slots: 4, floor: '#f2d0b8', wall: '#fbe3ec', desc: 'Mahallenin kedileri burayı gizli karargah ilan etti.' },
 ];
 export interface HomeItem { id: string; name: string; area: string | '*'; price: number; gold?: number; rest: number; shape: string; cols: [string, string, string]; desc: string }

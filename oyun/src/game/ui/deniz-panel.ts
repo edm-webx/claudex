@@ -31,18 +31,9 @@ export function renderDeniz(m: any): string {
   if (m.now && (m.now.sight || m.now.boat)) s += `<div class="sb-card dz-now"><p style="font:800 16px/1.3 var(--body);margin:0">${m.now.sight ? '🌊 Şu an denizde: <b>' + esc(m.now.sight) + '</b>. Fotoğrafını çek!' : ''}${m.now.sight && m.now.boat ? '<br>' : ''}${m.now.boat ? '⛵ İskelede: <b>' + esc(m.now.boat) + '</b>' : ''}</p>
     <div class="sb-mrow" style="margin-top:6px">${m.now.sight ? btn('Fotoğraf çek', 'dzPhoto', null, 'blue sm') : ''}${m.now.boat ? btn('Teklife bak', 'dzBoat', null, 'green sm') : ''}</div></div>`;
 
-  // vapur
-  const v = m.vapur || {};
-  s += `<div class="sb-sec">${I('tray')}Vapur ve güverte<span>${v.runs} koşu</span></div><div class="sb-card">
-    <p style="font:700 15px/1.35 var(--body);margin:0 0 6px">Vapur yanaşınca elin doluyken iskele kapısına koş: 10 saniye güvertede satış, fiyatlar %40 fazla!</p>
-    <p style="font:800 15px/1.3 var(--body);margin:0">En iyi koşu: ${v.best} satış · Toplam: ${v.sales} satış, ${tl(v.earned)}${v.vip ? ' · Yat VIP: ' + v.vip : ''}${v.fish ? ' · Balık ekmek: ' + v.fish : ''}</p></div>
-    <div class="sb-card dz-row"><div class="dz-ic">⛴</div><div class="sb-grow"><h3>Vapur Büfesi</h3><p>${esc(v.bufeText)}</p></div>${v.bufe ? own() : btn('Aç', 'dzBufe', null, 'green sm', tl(v.bufeCost), !!v.bufeWhy, v.bufeWhy)}</div>`;
-
   // exterior
   s += `<div class="sb-sec">${I('hammer')}Büfenin dışı<span>Sabah açılır, gece kapanır</span></div>`;
   for (const e of m.exterior) s += `<div class="sb-card dz-row"><div class="dz-ic">${esc(e.icon)}</div><div class="sb-grow"><h3>${esc(e.name)}</h3><p>${esc(e.text)}</p><p>Satış +%${e.bonus}</p></div>${e.owned ? own() : btn('Yap', 'dzExt', e.id, 'green sm', tl(e.cost), !!e.why, e.why)}</div>`;
-  const w = m.pencere || {};
-  s += `<div class="sb-card dz-row"><div class="dz-ic">${esc(w.icon)}</div><div class="sb-grow"><h3>${esc(w.name)}</h3><p>${esc(w.text)}</p></div>${w.owned ? own() : '<span class="sb-chip">Pedden</span>'}</div>`;
 
   // seating
   s += `<div class="sb-sec">${I('people')}Masa ve oturaklar<span>${(m.kinds || []).length - 1} / ${(m.seats || []).length} çeşit</span></div>`;

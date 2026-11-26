@@ -198,7 +198,7 @@ export function createHavaLook(d: HavaLookDeps): HavaLookView {
   // ───────── HUD chip ─────────
   let chip: HTMLDivElement | null = null;
   if (d.uiRoot) {
-    chip = document.createElement('div');
+    chip = document.createElement('div'); chip.className = 'hv-chip';   // ui/telefon.ts hides it on phone screens (the date lives in the phone)
     chip.style.cssText = 'position:absolute;right:calc(var(--sr,0px) + 8px);top:calc(var(--hudb,100px) + 6px);z-index:23;pointer-events:none;background:var(--paper,#fffaf1);color:var(--ink,#3b2a20);border:2.5px solid var(--ink,#3b2a20);border-radius:14px;box-shadow:0 3px 0 rgba(59,42,32,.35);padding:4px 10px;font:800 14px/1.2 system-ui,sans-serif;text-align:right;max-width:52vw;opacity:0;transition:opacity .4s';
     d.uiRoot.appendChild(chip);
   }
@@ -257,7 +257,7 @@ export function createHavaLook(d: HavaLookDeps): HavaLookView {
 
   function light(v: HavaView): void {
     const tod = R.tod?.(); if (!tod || !R.sun || !R.hemi) return;
-    const dark = clamp(rainK * 0.55 + flakeK * 0.3 + fogK * 0.35, 0, 0.7);
+    const dark = clamp(rainK * 0.4 + flakeK * 0.25 + fogK * 0.25, 0, 0.45);   // 2026-11-25: kötü havada sahne 'ekran karardı' gibi görünüyordu (tavan 0.7 -> 0.45)
     C1.copy(tod.sun).multiply(TINT[v.season] || TINT.yaz).lerp(GREY, dark * 0.6);
     R.sun.color.copy(C1); R.sun.intensity = tod.si * (1 - dark * 0.5) * (heatK > 0 ? 1 + heatK * 0.08 : 1);
     R.hemi.color.copy(tod.hs).lerp(GREY, dark * 0.4);

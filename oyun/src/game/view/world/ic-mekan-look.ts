@@ -9,12 +9,18 @@
 import { katY, avmIcinde } from '../../../content/avm-kat';
 import { KAFE_TEMA, type TemaId } from '../../../content/kafe-tema';
 import * as T from 'three';
-import { mutfakEsya, mutfakCelik, pisirIstasyonu, PASS_KAP } from '../../../content/mutfak';
+import { mutfakEsya, mutfakAcik, mutfakCelik, pisirIstasyonu, MUTFAK_IST_BY_ID, PASS_KAP } from '../../../content/mutfak';
+import { SALON_ESYA_BY_ID } from '../../../content/esya';
+import { SALON_ALET } from '../../../content/salon-alet';
 import { yemekRenk } from '../../../content/yemek-menu';
+import { yemekVar, yemekGeo } from '../../../content/prefabs/yemek/yemek-geo';
+import { itemGeo } from '../../../content/prefabs/iskele/props';
+import { MAT } from '../../../content/prefabs/common/v2kit';
 import { Batch, mtx } from '../../../engine/prefab/batch';
 import { icMasaKurulu } from '../../../content/ic-mekan';
 import { kanatKurulu } from '../../../content/kanat';
-import { IC_CANLI, IC_MEKANLAR, icLayout, icDim, icYaw, icIcinde, mutfakUst, mutfakOda, mutfakVitrin, MUTFAK_YER, passAcik, SERVIS_KAPI_V, type IcMekan, type IcItem } from '../../../content/ic-mekan';
+import { IC_CANLI, IC_MEKANLAR, icLayout, icDim, icYaw, icIcinde, mutfakUst, mutfakOda, mutfakVitrin, KANAT_ODA_Z, MUTFAK_YER, type IcMekan, type IcItem } from '../../../content/ic-mekan';
+import { restoranAlani } from '../../../content/restoran-plan';
 import { useSkyEnv } from './glb';
 import { createFx, fanlar, asiliTavalar, biletRayi, menuPanosu, tabakYigini, islakTabela, FX_GEOS, type MutfakFx, type BiletRayi, type TabakYigini, type BiletVeri } from './mutfak-canli';
 
@@ -44,15 +50,16 @@ const WALL: Record<string, [string, string]> = { kafe: ['#f3e3c8', '#7a4a2a'], b
   sekerci: ['#fff3f5', '#c94f6d'], kahveci: ['#efe2cf', '#5a3a22'], dondurma: ['#fbf7f0', '#e0533c'], baklava: ['#f6edd8', '#2f6b3a'], kuruyemis: ['#f3e6cf', '#8a5a3c'],
   donerci: ['#f4ece0', '#a2472f'], kumpir: ['#fff4dc', '#e8892b'], midye: ['#eef5f7', '#1d4f86'], avmLokanta: ['#f2efe9', '#a2472f'], sinema: ['#f6ece6', '#b3122e'] };
 
-let solid: T.MeshStandardMaterial | null = null, glass: T.MeshStandardMaterial | null = null, glow: T.MeshBasicMaterial | null = null, wallM: T.MeshStandardMaterial | null = null;
+let solid: T.MeshStandardMaterial | null = null, glass: T.MeshStandardMaterial | null = null, glow: T.MeshBasicMaterial | null = null, wallM: T.MeshStandardMaterial | null = null, ghostM: T.MeshBasicMaterial | null = null;
 function mats() {
   if (!solid) {
     solid = new T.MeshStandardMaterial({ vertexColors: true, roughness: 0.78, metalness: 0.04 }); useSkyEnv(solid, 'matte');
     wallM = new T.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0 });
     glass = new T.MeshStandardMaterial({ vertexColors: true, roughness: 0.05, metalness: 0.4, transparent: true, opacity: 0.45, depthWrite: false }); useSkyEnv(glass, 'glass');
     glow = new T.MeshBasicMaterial({ vertexColors: true });
+    ghostM = new T.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.22, depthWrite: false });
   }
-  return { solid: solid!, glass: glass!, glow: glow!, wall: wallM! };
+  return { solid: solid!, glass: glass!, glow: glow!, wall: wallM!, ghost: ghostM! };
 }
 const LM = new Map<string, T.MeshLambertMaterial>();
 const lm = (c: string) => { let m = LM.get(c); if (!m) { m = new T.MeshLambertMaterial({ color: c }); LM.set(c, m); } return m; };
@@ -61,7 +68,18 @@ const TABAK = new T.CylinderGeometry(0.14, 0.12, 0.025, 14), YEMEK = new T.Spher
 /** one plate (shared geometry, cached materials), hidden until the sim puts food on it */
 function tabak(): { g: T.Group; food: T.Mesh } {
   const g = new T.Group(), p = new T.Mesh(TABAK, lm('#fbfaf6')), food = new T.Mesh(YEMEK, lm('#e8e2d4'));
-  food.scale.set(0.085, 0.04, 0.085); food.position.y = 0.035; g.add(p, food); g.visible = false; return { g, food };
+  food.scale.set(0.085, 0.04, 0.085); food.position.y = 0.035; food.userData.tabak = p; g.add(p, food); g.visible = false; return { g, food };
+}
+const URUN6 = new Set(['doner', 'cay', 'ayran', 'simit', 'tost', 'gazoz']);
+/**
+ * 2026-11-25 sahip: "her ürünün kendine has görseli olmak zorunda": pass rafında / istasyon tepsisinde yemeğin kendi modeli
+ * (kendi tabağı, kâsesi, sahanı içinde; content/prefabs/yemek). Büfe ürünü ise büfe modeli; tarifi yoksa eski tabak + renk.
+ */
+function yemekKoy(food: T.Mesh, f: string, olcek = 0.8): void {
+  if (food.userData.f === f) return; food.userData.f = f;
+  const geo = URUN6.has(f) ? itemGeo(f, 1) : yemekVar(f) ? yemekGeo(f) : null, p = food.userData.tabak as T.Mesh | undefined;
+  if (geo) { food.geometry = geo; food.material = MAT.atlas; food.scale.setScalar(olcek); food.position.y = -0.012; food.castShadow = true; if (p) p.visible = false; }
+  else { food.geometry = YEMEK; food.material = lm(yemekRenk(f)); food.scale.set(0.085, 0.04, 0.085); food.position.y = 0.035; if (p) p.visible = true; }
 }
 function part(g: T.Object3D, geo: T.BufferGeometry, c: string, x: number, y: number, z: number, sx: number, sy: number, sz: number) { const m = new T.Mesh(geo, lm(c)); m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.castShadow = true; g.add(m); return m; }
 
@@ -393,10 +411,9 @@ const F: Record<string, Fn> = {
   izgaraK: (c, it) => { const { b, l } = c; b.box(it.w, 0.9, it.d, celik(c, '#a5532f', '#8a9098'), 0, 0.45, 0); if (c.esnaf) for (let r = 0; r < 4; r++) b.box(it.w + 0.01, 0.015, it.d + 0.01, '#d9c8a8', 0, 0.2 + r * 0.2, 0); /* esnaf: tuğla ocakbaşı */ b.box(it.w - 0.08, 0.06, it.d - 0.08, '#1d1d1d', 0, 0.93, 0); for (let i = 0; i < 7; i++) b.box(it.w - 0.2, 0.02, 0.025, '#5b6068', 0, 0.97, -it.d / 2 + 0.12 + i * (it.d - 0.24) / 6); l.box(it.w - 0.3, 0.02, 0.06, '#ff6a2a', 0, 0.9, it.d / 2 - 0.02); for (let i = 0; i < 3; i++) b.box(0.3, 0.05, 0.18, ['#8a3a2a', '#9a5a2a', '#7a2a1d'][i], -0.4 + i * 0.4, 0.99, 0.05); },
   fritoz: (c, it) => { const { b } = c; b.box(it.w, 0.9, it.d, celik(c, '#c0392b', '#aab3bb'), 0, 0.45, 0); for (const s of [-1, 1]) { b.box(it.w / 2 - 0.12, 0.06, it.d - 0.2, '#33373b', s * it.w / 4, 0.93, 0); b.box(it.w / 2 - 0.2, 0.02, it.d - 0.3, '#e9b84a', s * it.w / 4, 0.97, 0); b.box(0.04, 0.04, 0.34, '#1d1d1d', s * it.w / 4, 1.04, it.d / 2 - 0.05); } },
   /** 2026-11-21 salon pass penceresi (mutfak servis koridoruna açılan duvar boşluğu): koyu boşluk, ısı lambası, çelik raf, zil; tabaklar sim'den (an.pasTabak) */
-  salonPass: (c, it) => { const { b, l } = c, fn = c.fine; b.box(it.w + 0.2, 1.3, 0.06, '#26292e', 0, 0.55, -it.d / 2 + 0.02); l.plane(it.w - 0.1, 1.0, '#ffcf8a', 0, 0.55, -it.d / 2 + 0.06);
-    b.box(it.w + 0.1, 0.06, it.d + 0.1, fn ? '#c9a24a' : '#e9eef2', 0, 0, 0.02); for (const s2 of [-1, 1]) b.box(0.08, 1.4, 0.12, fn ? '#c9a24a' : '#9aa2ab', s2 * (it.w / 2 + 0.1), 0.6, -it.d / 2 + 0.05);
-    b.box(it.w + 0.3, 0.1, 0.16, fn ? '#c9a24a' : '#9aa2ab', 0, 1.27, -it.d / 2 + 0.08); l.box(it.w - 0.2, 0.04, 0.12, '#ff9a4a', 0, 1.18, -it.d / 2 + 0.15);
-    b.cyl(0.05, 0.06, 0.05, '#c9a24a', it.w / 2 - 0.12, 0.05, 0.05, { seg: 8 }); },
+  salonPass: (c, it) => { const { b, l } = c, fn = c.fine;   // 2026-11-25: U tezgâhın köşesindeki pass (duvar penceresi değil, tezgâh)
+    b.box(it.w, 0.98, it.d + 0.2, '#8a5a3a', 0, -0.51, 0); b.box(it.w + 0.1, 0.07, it.d + 0.3, fn ? '#c9a24a' : '#f3e6c8', 0, 0.02, 0); for (const s2 of [-1, 1]) b.box(0.07, 1.0, 0.07, fn ? '#c9a24a' : '#b8733d', s2 * (it.w / 2 - 0.05), 0.5, 0);
+    b.box(it.w, 0.08, 0.3, fn ? '#c9a24a' : '#b8733d', 0, 1.0, 0); l.box(it.w - 0.2, 0.03, 0.2, '#ff9a4a', 0, 0.95, 0); b.cyl(0.05, 0.06, 0.05, '#c9a24a', it.w / 2 - 0.12, 0.08, 0.05, { seg: 8 }); },
   pass: (c, it) => { const { b, l } = c; b.box(it.w, 0.95, it.d, celik(c, '#8a5a3a', '#9aa5b0'), 0, 0.475, 0); b.box(it.w + 0.06, 0.06, it.d + 0.08, celik(c, '#d6aa78', '#e9eef2'), 0, 0.98, 0.02); for (let i = 0; i < 3; i++) { const x = -it.w / 2 + 0.4 + i * (it.w - 0.8) / 2; b.cyl(0.02, 0.02, 0.55, '#c9ced6', x, 1.3, -0.2, { seg: 5 }); l.box(0.5, 0.05, 0.3, '#ff9a4a', x, 1.58, -0.12); }   // tabaklar sabit yığın değil: sim'in pass rafı (BUF-05, buildRoom an.pasTabak)
     b.cyl(0.07, 0.08, 0.05, '#c9a24a', it.w / 2 - 0.25, 1.04, 0.3, { seg: 8 }); b.cyl(0.02, 0.02, 0.05, '#c9a24a', it.w / 2 - 0.25, 1.09, 0.3, { seg: 5 }); },
   bulasik: (c, it) => { const { b } = c; b.box(it.w, 0.9, it.d, celik(c, '#7a4a2a', '#9aa5b0'), 0, 0.45, 0); b.box(it.w + 0.04, 0.05, it.d + 0.04, celik(c, '#f4f2ec', '#e9eef2'), 0, 0.93, 0); for (const s of [-1, 1]) b.box(0.7, 0.04, it.d - 0.3, '#33373b', s * (it.w / 4 + 0.05), 0.96, 0); b.cyl(0.02, 0.02, 0.4, '#c9ced6', 0, 1.15, -it.d / 2 + 0.15, { seg: 5 }); b.cyl(0.015, 0.015, 0.2, '#c9ced6', 0, 1.35, -it.d / 2 + 0.25, { rx: HP, seg: 5 }); b.box(0.5, 0.35, 0.4, '#5b6068', -it.w / 2 + 0.3, 1.1, -it.d / 2 + 0.3); },
@@ -494,6 +511,14 @@ const F: Record<string, Fn> = {
   hediye: (c) => { const { b } = c; for (const [x, z, s, col] of [[-0.1, -0.05, 0.18, '#e0533c'], [0.1, 0.05, 0.14, '#2f6fdb'], [-0.05, 0.05, 0.1, '#ffd23f']] as [number, number, number, string][]) { const y = col === '#ffd23f' ? 0.23 : s / 2; b.box(s, s, s, col, x, y, z); b.box(s + 0.005, s + 0.005, 0.02, '#f4f2ec', x, y, z); b.box(0.02, s + 0.005, s + 0.005, '#f4f2ec', x, y, z); b.tor(0.03, 0.008, '#f4f2ec', x, y + s / 2 + 0.02, z, { ts: 8 }); } },
 };
 
+function etiketTex(ad: string, is: string): T.CanvasTexture {
+  const c = document.createElement('canvas'); c.width = 448; c.height = 120; const g = c.getContext('2d')!;
+  g.fillStyle = '#8a2219'; g.beginPath(); g.roundRect(4, 4, 440, 112, 22); g.fill(); g.strokeStyle = '#f3e6c8'; g.lineWidth = 6; g.stroke();
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  const yaz = (t: string, f: string, y: number, r: string) => { g.font = f; g.fillStyle = r; const w = g.measureText(t).width; g.save(); g.translate(224, y); if (w > 410) g.scale(410 / w, 1); g.fillText(t, 0, 0); g.restore(); };
+  if (is) { yaz(ad, '800 46px system-ui,"Segoe UI",sans-serif', 42, '#fff3dc'); yaz(is, '600 32px system-ui,"Segoe UI",sans-serif', 87, '#ffcf8a'); } else yaz(ad, '800 54px system-ui,"Segoe UI",sans-serif', 62, '#fff3dc');
+  const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace; t.anisotropy = 4; return t;
+}
 const _cam = new T.Vector3();
 /* ---------- one room ---------- */
 function buildRoom(m: IcMekan, own: { lv: number; isci: number; esya: string[]; tema?: string } | null, salonEsya: string[], fine: boolean, stage = 1, ekip: { rol: string; rank: number }[] = []): { g: T.Group; an: Anim } {
@@ -529,25 +554,37 @@ function buildRoom(m: IcMekan, own: { lv: number; isci: number; esya: string[]; 
       for (const [a, c2] of segs) { const L = c2 - a, cx = (a + c2) / 2; wb.plane(L, h, w1, cx, h / 2, 0); wb.plane(L, 1.0, w2, cx, 0.5, 0.01); tr.box(L, 0.1, 0.03, '#3a2416', cx, 0.05, 0.02); tr.box(L, 0.05, 0.03, w2, cx, 1.0, 0.02); tr.box(L, 0.08, t, '#e9e4da', cx, h + 0.04, -t / 2); }
       wb.pop(); tr.pop();
     };
-    // 2026-11-21: mutfağın yan duvarlarında servis koridoru kapısı (batı aşama 6, doğu aşama 7; v = KAPI_V)
-    const kg = (y: 'W' | 'E'): number | [number, number] => (m.mutfak && passAcik(y, stage) ? (y === 'W' ? [-SERVIS_KAPI_V[1], -SERVIS_KAPI_V[0]] : [SERVIS_KAPI_V[0], SERVIS_KAPI_V[1]]) : 0);
-    wall(W, 0, -D / 2 + 0.25, 0); if (!m.acik) { wall(D, -W / 2 + 0.25, 0, HP, kg('W')); wall(D, W / 2 - 0.25, 0, -HP, kg('E')); wall(W, 0, D / 2 - 0.25, Math.PI, 1.7); }   // açık stand: yalnız arka duvar
+    const acikPlan = !!m.mutfak && stage >= 6;   // 2026-11-25 ters U: mutfağın duvarı yok (arka duvar restoranın)
+    if (!acikPlan) wall(W, 0, -D / 2 + 0.25, 0); if (!m.acik && !acikPlan) { wall(D, -W / 2 + 0.25, 0, HP); wall(D, W / 2 - 0.25, 0, -HP); wall(W, 0, D / 2 - 0.25, Math.PI, 1.7); }   // açık stand: yalnız arka duvar
     if (!m.mutfak) for (const [x, z, ry, len] of (m.bina === 'avm' ? [] : [[-W / 2 + 0.26, 0, HP, D], [W / 2 - 0.26, 0, -HP, D]]) as [number, number, number, number][]) {   // side-wall windows (none inside the mall: shared walls; BUF-22: none in the kitchen, the menu board hangs there)
       const n = Math.max(1, Math.floor((len - 1) / 2.4));
       for (let i = 0; i < n; i++) { const u = -len / 2 + (i + 0.5) * len / n, tr = trimOf(ry, x, z); tr.push(mtx(x, 0, z, 0, ry, 0)); tr.box(1.1, 1.2, 0.04, '#fbfaf6', u, 1.75, 0.02); tr.pop(); l.push(mtx(x, 0, z, 0, ry, 0)); l.plane(0.95, 1.05, '#bfe3f5', u, 1.75, 0.045); l.pop(); }
     }
-    if (!m.acik) { const kp = trimOf(Math.PI, 0, D / 2 - 0.25); for (const s of [-1, 1]) kp.box(0.12, 2.4, 0.3, w2, s * 0.92, 1.2, D / 2 - 0.15); kp.box(1.96, 0.16, 0.3, w2, 0, 2.45, D / 2 - 0.15); b.box(1.2, 0.02, 0.8, '#9a1f2a', 0, 0.003, D / 2 - 0.8); }   // door frame, door mat
+    if (!m.acik && !acikPlan) { const kp = trimOf(Math.PI, 0, D / 2 - 0.25); for (const s of [-1, 1]) kp.box(0.12, 2.4, 0.3, w2, s * 0.92, 1.2, D / 2 - 0.15); kp.box(1.96, 0.16, 0.3, w2, 0, 2.45, D / 2 - 0.15); b.box(1.2, 0.02, 0.8, '#9a1f2a', 0, 0.003, D / 2 - 0.8); }   // door frame, door mat
   } else {
-    // rug (2026-11-21: own identity per hall, chairs must read on it): kahvaltı warm wood / cream, balık sea blue / white; fine adds a gold edge
-    const [r1, r2, r3] = m.tur === 'balik' ? [fine ? '#c9a24a' : '#1d4f86', '#f4f7fa', '#9cc7dd'] : [fine ? '#c9a24a' : '#b08860', '#f3e3c8', '#e2c99c'];
-    b.box(W - 0.6, 0.012, D - 0.8, r1, 0, 0.006, 0.1); b.box(W - 0.75, 0.014, D - 0.95, r2, 0, 0.008, 0.1); b.box(W - 0.9, 0.016, D - 1.1, r3, 0, 0.01, 0.1);
-    if (m.tur === 'balik') for (let i = 1; i < 6; i++) b.box(W - 0.95, 0.004, 0.06, '#f4f7fa', 0, 0.019, -D / 2 + 0.65 + i * (D - 1.1) / 6);   // wave stripes
+    // 2026-11-25 ters U: tek ahşap zemin (bufe-buyume); kanadın kimliği yalnız salon masalarının altındaki kilim
+    const [r1, r2] = m.tur === 'balik' ? [fine ? '#c9a24a' : '#1d4f86', '#cfe0ea'] : [fine ? '#c9a24a' : '#b8412f', '#f0dcb8'], kz = -4.75;
+    b.box(11.2, 0.012, 4.3, r1, 0, 0.006, kz); b.box(10.9, 0.014, 4.0, r2, 0, 0.008, kz); for (const q of [-1, 1]) b.box(10.5, 0.016, 0.07, r1, 0, 0.01, kz + q * 1.8);
   }
   const has = new Set(m.salon ? salonEsya : m.mutfak ? mutfakEsya(stage) : own?.esya || []);
   const items = icLayout(m, stage), occ = own ? Math.min(0.9, 0.35 + 0.12 * own.lv) : m.salon ? (fine ? 0.85 : 0.65) : 0.4;
   let ti = 0;
   const live = !!own && !!m.arsa && IC_CANLI.includes(m.arsa), empty = !!m.arsa && !own; grp.userData.live = live || empty;   // owned: real actors; unsold: an empty shop, no statues   // café/bistro: guests and staff are real actors (agents/kafe.ts), not props
+  // 2026-11-25 (sahibi: "hepsini aldım ama nerde oldu bu güncelleme, anlaşılmıyor"): alınmamış alet yerinde soluk gölgesiyle durur,
+  // alınınca aynı yerde gerçek olur ve üstünde adı ile ne işe yaradığı yazar
+  const gb = new Batch();
+  const gitan = (id: string) => (m.salon ? (SALON_ESYA_BY_ID[id]?.asama ?? 99) <= stage : m.mutfak ? mutfakAcik(stage).includes(id) : false);
+  const etiket: { it: IcItem; ad: string; is: string }[] = [], etiketli = new Set<string>();
   for (const it of items) {
+    if (it.esya && (m.salon || m.mutfak) && !etiketli.has(it.esya) && has.has(it.esya) && (it.asama ?? 0) <= stage) {
+      const s = SALON_ESYA_BY_ID[it.esya], k = MUTFAK_IST_BY_ID[it.esya];
+      if (m.salon && s) { etiketli.add(it.esya); etiket.push({ it, ad: s.ad, is: SALON_ALET[it.esya]?.is || '' }); } else if (m.mutfak && k && MUTFAK_YER[it.esya]?.k === it.k) { etiketli.add(it.esya); etiket.push({ it, ad: k.ad.split(' (')[0], is: '' }); }
+    }
+    if (it.esya && !has.has(it.esya) && gitan(it.esya) && F[it.k] && it.k !== 'davlumbaz') {
+      const tut = [grp.userData.cur, grp.userData.curItem]; grp.userData.cur = new T.Group(); grp.userData.curItem = grp.userData.cur;
+      gb.push(mtx(it.u, it.y || 0, it.v, 0, (it.ry || 0) * HP, 0)); F[it.k]!({ ...ctx, b: gb, g: gb, l: gb, an: { spin: [], fire: [], fish: [], screens: [], flick: [], bob: [], lamps: null } }, it); gb.pop();
+      [grp.userData.cur, grp.userData.curItem] = tut;
+    }
     if (it.esya && !has.has(it.esya)) continue;
     if ((it.asama ?? 0) > stage) continue;   // BUF-20: aşama 10 fine dining masaları
     if (!icMasaKurulu(it, stage)) continue;   // 2026-11-22: salon tables are bought one by one (yellow pads)
@@ -564,8 +601,8 @@ function buildRoom(m: IcMekan, own: { lv: number; isci: number; esya: string[]; 
   }
   if (m.salon) {   // 2026-11-21: salon pass penceresinin tabak yuvaları (sim view passYer.W / .E)
     const sp = items.find(i => i.k === 'salonPass');
-    if (sp) { an.pasTabak = []; an.passYer = m.salon; const yon = (sp.ry || 0) === 3 ? 1 : -1;
-      for (let i = 0; i < PASS_KAP; i++) { const t = tabak(), row = i % 2, col = Math.floor(i / 2); t.g.position.set(sp.u - yon * (0.02 + row * 0.12), (sp.y || 1) + 0.04, sp.v - sp.w / 2 + 0.25 + col * (sp.w - 0.5) / 3); grp.add(t.g); an.pasTabak.push(t); } }
+    if (sp) { an.pasTabak = []; an.passYer = m.salon; 
+      for (let i = 0; i < PASS_KAP; i++) { const t = tabak(), row = i % 2, col = Math.floor(i / 2); t.g.position.set(sp.u - sp.w / 2 + 0.25 + col * (sp.w - 0.5) / 3, (sp.y || 1) + 0.06, sp.v + (row ? 0.1 : -0.1)); grp.add(t.g); an.pasTabak.push(t); } }
   }
   if (m.mutfak) {   // BUF-05: dynamic plates (pass rack slots + one per cooking station), shown from the sim view in update()
     const D2 = icDim(m).D / 2, py = 1.03;
@@ -588,6 +625,11 @@ function buildRoom(m: IcMekan, own: { lv: number; isci: number; esya: string[]; 
   }
   if (m.tur === 'morg') an.flick.push(grp);
   const M = mats();
+  if (!gb.empty) { const gm2 = gb.mesh(M.ghost, false, false); gm2.renderOrder = 2; grp.add(gm2); }
+  for (const e of etiket) {   // aletin üstündeki küçük pano: adı + ne işe yarar
+    const mt = new T.MeshBasicMaterial({ map: etiketTex(e.ad, e.is), transparent: true }), w = e.is ? 1.95 : 1.4, p = new T.Mesh(new T.PlaneGeometry(w, w * 0.27), mt);
+    const [pu, pv] = m.mutfak && e.it.esya ? mutfakUst(e.it.esya) : [e.it.u, e.it.v]; const arka = m.mutfak && e.it.esya && MUTFAK_YER[e.it.esya]?.sira === 'arka', yr = e.it.ry || 0; p.position.set(pu + (m.salon ? (yr === 3 ? -0.5 : yr === 1 ? 0.5 : 0) : 0), arka ? 1.25 : e.it.k === 'buzdolap' ? 2.4 : 1.7, pv + (arka ? 0.75 : 0)); p.rotation.x = -0.75; p.rotation.order = 'YXZ'; p.renderOrder = 3; grp.add(p);
+  }
   if (!wb.empty) { const wm = wb.mesh(M.wall, false, true); grp.add(wm); }
   const trimM: T.Mesh[] = [];
   for (const e of trims.values()) if (!e.b.empty) { const tm = e.b.mesh(M.wall, false, true); tm.userData.duvar = [e.x, e.z, Math.sin(e.ry), Math.cos(e.ry)]; grp.add(tm); trimM.push(tm); }
@@ -607,8 +649,9 @@ export function createIcMekan(d: IcDeps): IcView {
   const keep = new Set<unknown>([BOX, SPH, TABAK, YEMEK, ...FX_GEOS]);
   const kill = (id: string) => {
     const r = rooms.get(id); if (!r) return; r.g.removeFromParent();
-    const M = mats(), shared = new Set<unknown>([M.solid, M.glass, M.glow, M.wall, ...LM.values()]);
-    r.g.traverse(o => { const mm = o as T.Mesh; if (!mm.isMesh) return; if (!keep.has(mm.geometry)) mm.geometry.dispose(); const mt = mm.material as T.MeshBasicMaterial; if (!shared.has(mt)) { mt.map?.dispose(); mt.dispose(); } });
+    const M = mats(), shared = new Set<unknown>([M.solid, M.glass, M.glow, M.wall, M.ghost, ...LM.values()]);
+    r.g.traverse(o => { const mm = o as T.Mesh; if (!mm.isMesh || mm.userData.f !== undefined) return;   // yemek modeli: paylaşılan geometri + MAT.atlas, dokunma
+    if (!keep.has(mm.geometry)) mm.geometry.dispose(); const mt = mm.material as T.MeshBasicMaterial; if (!shared.has(mt)) { mt.map?.dispose(); mt.dispose(); } });
     rooms.delete(id);
   };
   return {
@@ -620,7 +663,7 @@ export function createIcMekan(d: IcDeps): IcView {
       t += dt; acc += dt;
       const hp = d.hero(); inside = null;
       const st0 = d.salon().stage, odaOf = (m: IcMekan) => (m.mutfak ? mutfakOda(st0) : m);   // BUF-22: the kitchen grows with the stage
-      for (const m0 of IC_MEKANLAR) if (icIcinde(odaOf(m0), hp, -0.1)) { inside = m0.id; break; }
+      for (const m0 of IC_MEKANLAR) if (icIcinde(odaOf(m0), hp, -0.1) && !(m0.salon && hp.z > KANAT_ODA_Z)) { inside = m0.id; break; }
       const bina = (inside ? IC_MEKANLAR.find(x => x.id === inside)!.bina : IC_MEKANLAR.find(x => x.bina && icIcinde(x, hp, 0.5))?.bina) || null;
       if (acc >= 0.3) {   // (re)build what is near, drop what is far
         acc = 0;
@@ -639,7 +682,7 @@ export function createIcMekan(d: IcDeps): IcView {
       for (const [id, r] of rooms) {
         const m = odaOf(IC_MEKANLAR.find(x => x.id === id)!);
         r.g.visible = m.bina === 'avm' ? avmIcinde(hp, 2) && (m.kat || 0) === ((hp as { kat?: number }).kat || 0)   // AVM: only the hero's floor (upper floors cut away, lower rooms sit under this floor's slab)
-          : !!m.salon || icIcinde(m, hp, 0.5) || (!!bina && m.bina === bina) || (!!m.mutfak && mutfakVitrin(hp));   // AVM: whole mall shows inside; BUF-22: kitchen shows from the büfe / walkway
+          : !!m.salon || icIcinde(m, hp, 0.5) || (!!bina && m.bina === bina) || (!!m.mutfak && (mutfakVitrin(hp) || (st0 >= 6 && restoranAlani(hp))));   // AVM: whole mall shows inside; BUF-22: kitchen shows from the büfe / walkway
         if (!r.g.visible) continue;
         const a = r.an;
         for (const s of a.spin) s.rotation.y += dt * 2.2;
@@ -652,8 +695,8 @@ export function createIcMekan(d: IcDeps): IcView {
           if (a.yigin) a.yigin.set(mk.kirliTabak ?? 0);   // 2026-11-21: tek kaynak rtview (BUF-13 rt.dirtyDishes); sabit 4'lük yığın onunla üst üste çiziliyordu if (a.tabela) a.tabela.visible = (mk.zeminKir ?? 0) >= ZEMIN_ISLAK;
           // BUF-05: pass rack plates (oldest first) and station trays/pans from the sim, colour = the food on it
           const pl = mk.passYer ? mk.passYer[a.passYer || 'on'] : mk.pass;   // 2026-11-21: her pencere kendi tabaklarını gösterir
-          if (a.pasTabak) a.pasTabak.forEach((t, i) => { const f = pl?.[i]; t.g.visible = !!f; if (f) t.food.material = lm(yemekRenk(f)); });
-          if (a.istTabak) { a.pisiyor!.length = 0; for (const [id, t] of a.istTabak) { const s = mk.ist?.[id]; t.g.visible = s?.d === 'hazir'; t.buhar.visible = s?.d === 'pisiyor'; if (s) t.food.material = lm(yemekRenk(s.p)); if (t.buhar.visible) a.pisiyor!.push(t.buhar); }
+          if (a.pasTabak) a.pasTabak.forEach((t, i) => { const f = pl?.[i]; t.g.visible = !!f; if (f) yemekKoy(t.food, f, 0.72); });
+          if (a.istTabak) { a.pisiyor!.length = 0; for (const [id, t] of a.istTabak) { const s = mk.ist?.[id]; t.g.visible = s?.d === 'hazir'; t.buhar.visible = s?.d === 'pisiyor'; if (s) yemekKoy(t.food, s.p, 0.85); if (t.buhar.visible) a.pisiyor!.push(t.buhar); }
             a.fxEm = [...a.istTabak].filter(([, t]) => t.buhar.visible).map(([id, t]) => ({ id, u: t.buhar.position.x, v: t.buhar.position.z })); }
         }
         if (a.pisiyor) for (const b of a.pisiyor) { const k = (t * 1.6 + b.userData.ph) % 1; b.position.y = 1.15 + k * 0.5; b.scale.setScalar(0.05 + k * 0.08); }   // pişiyor: tencereden yükselen buhar topu

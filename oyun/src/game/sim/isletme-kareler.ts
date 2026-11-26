@@ -17,7 +17,7 @@
  */
 import type { Vec2 } from '../../engine/api';
 import { ARSALAR, ISLETME, ARSA_ISLETME, SALON_ESYA, DUKKAN_MAX_SEVIYE, type Arsa } from '../../content/esya';
-import { icOfArsa, icWorld, icDim, icLayout, icItemRect, icZeminEngeli, IC_DUVAR, IC_BY_ID, mutfakDunya, mutfakStand, type IcMekan } from '../../content/ic-mekan';
+import { icOfArsa, icWorld, icDim, icLayout, icItemRect, icZeminEngeli, IC_DUVAR, IC_BY_ID, mutfakDunya, mutfakStand, icItemOn, type IcMekan } from '../../content/ic-mekan';
 import { mutfakAcik, istasyonFiyat, MUTFAK_HAZIR, MUTFAK_IST_BY_ID, MUTFAK_YER_SIRA } from '../../content/mutfak';
 import { kanatAcik, kanatOf, masaHediye, masaFiyat, catiAyak, BOLGE_AD } from '../../content/kanat';
 import { HOL, katY } from '../../content/avm-kat';
@@ -62,8 +62,6 @@ export const SOKAK_Y = 0.11;
 const DIS_YER: Record<string, Vec2[]> = {
   kafe1: [{ x: -13.0, z: 37.9 }, { x: -9.8, z: 36.0 }, { x: -9.8, z: 39.8 }],
   kafe2: [{ x: -13.0, z: 51.5 }, { x: -9.8, z: 49.6 }, { x: -9.8, z: 53.4 }],
-  salonW: [{ x: -21.4, z: -6.2 }, { x: -22.0, z: 4.7 }, { x: -17.4, z: 4.7 }],
-  salonE: [{ x: 21.4, z: -6.2 }, { x: 11.8, z: -7.9 }, { x: 11.8, z: -6.1 }],
 };
 /**
  * 2026-11-23: sokak dükkânının alet kareleri dükkânın içinde, müşteri tarafında (AVM'deki gibi). Kare hiçbir zemin eşyasına (alınmamış
@@ -148,13 +146,13 @@ export function installIsletmeKareler(K: Kernel, api: IsletmeKareApi): { sync():
         out.push({ key: pre + '.tadilat', pos: avm ? satisKaresi(a) : yer![0], kat, label: '🔨 Tadilat: ' + sonraki, sub: kilit || ad + ' büyür, yeni aletler açılır', price: api.yukFiyat(a.id), kilit, y, done: () => api.yukselt!(a.id) });
       }
     }
-    // büfe salonları (iskele): kurulu salonun sıradaki iki aleti, salon kapısının önünde
+    // ters U kanatları (iskele): açık kanadın sıradaki iki aleti, aletin duracağı yerin önünde
     if (api.salonEsya && api.salonVar) {
       const own = new Set(api.salonVar()), st = S.stage || 1;
       for (const [k, room, asama] of [['W', 'salonW', 6], ['E', 'salonE', 7]] as const) {
         if (st < asama) continue; const m = IC_BY_ID[room]; if (!m) continue;
-        const sira = SALON_ESYA.filter(e => e.salon === k && !own.has(e.id) && e.asama <= st).sort((x, y) => x.fiyat - y.fiyat).slice(0, 2), yer = yerler(m);
-        sira.forEach((e, i) => out.push({ key: 'salon.' + e.id, pos: yer[1 + i], y: k === 'W' ? SOKAK_Y + 0.05 : undefined, label: e.ikon + ' ' + e.ad, sub: e.desc, price: e.fiyat, kilit: '', done: () => api.salonEsya!(e.id) }));
+        const sira = SALON_ESYA.filter(e => e.salon === k && !own.has(e.id) && e.asama <= st).sort((x, y) => x.fiyat - y.fiyat).slice(0, 2), lay = icLayout(m, st);
+        for (const e of sira) { const it = lay.find(q => q.esya === e.id); if (it) out.push({ key: 'salon.' + e.id, pos: icItemOn(m, it), y: SOKAK_Y + 0.05, label: e.ikon + ' ' + e.ad, sub: e.desc, price: e.fiyat, kilit: '', done: () => api.salonEsya!(e.id) }); }   // 2026-11-25: kare aletin kendi yerinde
       }
     }
     // 2026-11-22 restoran mutfağı (sahibi: "karelerle tek tek açılan istasyonlar yok"): aşamanın açtığı istasyonlar mutfağın içinde,
@@ -176,8 +174,9 @@ export function installIsletmeKareler(K: Kernel, api: IsletmeKareApi): { sync():
       for (const i of kanatAcik(st)) {
         const m = kanatOf(i)!; if (own.has(i) || masaHediye(i) || bolgeler.has(m.bolge)) continue;
         bolgeler.add(m.bolge);
-        const pos = m.cati ? { x: catiAyak(m.cati).x, z: catiAyak(m.cati).z + 0.9 } : { x: m.x, z: m.z };
-        out.push({ key: 'masa.' + i, pos, y: m.bolge === 'salonW' ? SOKAK_Y + 0.05 : undefined, label: m.cati ? '🪑 ÇATI MASASI' : '🪑 MASA', sub: m.cati ? 'Çatı terası masası: burada al' : BOLGE_AD[m.bolge], price: masaFiyat(i), kilit: '', done: () => api.masaAl!(i) });
+        const sef = m.bolge === 'sefW' || m.bolge === 'sefE';   // Şef salonunun karesi terasınkiyle üst üste binmez
+        const pos = m.cati ? { x: catiAyak(m.cati).x + (sef ? (m.cati === 'W' ? -2.4 : 2.0) : 0), z: catiAyak(m.cati).z + (sef ? (m.cati === 'W' ? -0.6 : 0.4) : 0.9) } : { x: m.x, z: m.z };
+        out.push({ key: 'masa.' + i, pos, y: m.bolge === 'salonW' ? SOKAK_Y + 0.05 : undefined, label: sef ? '🪑 ŞEF SALONU MASASI' : m.bolge === 'kosk' ? '🪑 KÖŞK MASASI' : m.cati ? '🪑 TERAS MASASI' : '🪑 MASA', sub: sef ? 'İkinci kattaki Şef salonuna: burada al' : m.cati ? 'Terasa: burada al' : BOLGE_AD[m.bolge], price: masaFiyat(i), kilit: '', done: () => api.masaAl!(i) });
       }
     }
     return out;
