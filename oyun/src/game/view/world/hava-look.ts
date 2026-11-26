@@ -261,7 +261,7 @@ export function createHavaLook(d: HavaLookDeps): HavaLookView {
   function light(v: HavaView): void {
     const tod = R.tod?.(); if (!tod || !R.sun || !R.hemi) return;
     // ZMN-02: the sky greys a little ahead of the rain (bulutK), the full darkening still comes with the rain itself
-    const dark = clamp(Math.max(rainK * 0.55 + flakeK * 0.3 + fogK * 0.35, bulutK * 0.22), 0, 0.7);
+    const dark = clamp(Math.max(rainK * 0.55 + flakeK * 0.48 + fogK * 0.35, bulutK * 0.22), 0, 0.7);   // ZMN-02: snow is an overcast day (0.3 -> 0.48: softer shadows, greyer sky)
     C1.copy(tod.sun).multiply(TINT[v.season] || TINT.yaz).lerp(GREY, dark * 0.6);
     R.sun.color.copy(C1); R.sun.intensity = tod.si * (1 - dark * 0.5) * (heatK > 0 ? 1 + heatK * 0.08 : 1);
     R.hemi.color.copy(tod.hs).lerp(GREY, dark * 0.4);
