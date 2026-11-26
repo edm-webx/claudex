@@ -5,6 +5,7 @@
 // - Overlays are shown once per model object identity found in `rt.uiLast[id]` (the sim replaces the object to re-show).
 // - Menu bar items follow v2 menuBarSync() unlock rules, computed from GameState.
 // - Ayarlar actions that are pure view/engine settings (volume, quality, perf) are handled here, the rest become setSetting.
+import { egiticiApi } from './egitici';
 import { TABELA, TABELA_RENK, tabelaSave } from '../sim/tabela';
 import type { Ui, Audio } from '../../engine/api';
 import { createV2Ui, type V2UiApi } from './v2ui';
@@ -88,6 +89,8 @@ export function createPanels(deps: PanelsDeps): Panels {
       out.setCb = b => { set('colorBlindIcons', !!b); setTimeout(() => { if (rt().panel === 'ayarlar') renderPanel('ayarlar'); }, 0); };
       out.setHero = h => send({ kind: 'setHero', hero: h });
       out.reset = () => send({ kind: 'resetSave' });
+      { const eg = egiticiApi(); const again = () => setTimeout(() => { if (rt().panel === 'ayarlar') renderPanel('ayarlar'); }, 0);
+        if (eg) { out.setEgt = b => { eg.setAcik(!!b); again(); }; out.egtSifirla = () => { eg.sifirla(); ui.toast('Eğitici kartları baştan gösterilecek.', 'info'); again(); }; out.egtTekrar = k => eg.tekrar(String(k)); } }
       out.karakterDegis = () => { window.dispatchEvent(new CustomEvent('martikoy:karakter')); };
       if (deps.perf) {
         const pf = deps.perf;
@@ -134,6 +137,7 @@ export function createPanels(deps: PanelsDeps): Panels {
       const st = S().settings || {};
       model = { ...model, vol: deps.audio ? { music: deps.audio.buses.music.volume, sfx: deps.audio.buses.sfx.volume, voice: deps.audio.buses.voice.volume } : null, ownMusic: !!st.ownMusic, haptic: ui.settings.haptics !== false, hand: (st.hand || ui.settings.hand) === 'left' ? 'sol' : 'sag', textScale: st.textScale || 1, cb: !!st.colorBlindIcons, perf: deps.perf ? deps.perf.visible() : undefined, tierNow: deps.quality?.current().label ?? null };
     }
+    if (id === 'ayarlar') { const eg = egiticiApi(); if (eg) model = { ...model, egt: { acik: eg.acik(), gorulen: eg.gorulenler() } }; }
     v2.open(id, model, actionsFor(id));
   }
 

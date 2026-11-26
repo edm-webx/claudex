@@ -7,6 +7,7 @@ import type { Rules } from './sim/state';
 import type { Vec2 } from '../engine/api';
 import { IC_MEKANLAR, type IcMekan } from '../content/ic-mekan';
 import { regionAt } from '../content/disari/martikoy';
+import { egtIpucuKapsar, EGT_KAPALI } from '../content/egitici';
 
 export interface TutStep { id: string; urgent?: boolean; rush?: boolean; repeat?: boolean; hand?: boolean; y?: number; show(v: any): boolean; done(v: any): boolean; at?(v: any): Vec2 | null | undefined; }
 export interface TutCurrent { id: string; hand: boolean; at: Vec2 | null; y: number | null; }
@@ -94,7 +95,9 @@ export function installTutorial(rules: Rules): Tutorial {
       if (st.playT - ipLast < IPUCU_ARALIK_S) return;
       const h = ipucuFor(rules.playerPos, id => !!st.tut['ip_' + id]);
       if (!h) return;
-      st.tut['ip_' + h.id] = Math.round(st.playT); ipLast = st.playT;
+      st.tut['ip_' + h.id] = Math.round(st.playT);
+      if (egtIpucuKapsar(h.id) && !st.tut[EGT_KAPALI]) return;   // eğitici kartı anlatıyor (content/egitici.ts), çip tekrar etmesin
+      ipLast = st.playT;
       try { (rules.bus as any).emit('toast', { text: '💡 ' + h.text, kind: 'info' }); } catch { /* bus optional */ }
     },
   });
