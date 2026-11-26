@@ -11,6 +11,7 @@
  *   stadyum (near the gate): bilet | takim name
  */
 import { installIsletmeKareler, satisKaresi } from './isletme-kareler';
+import { SALON_ALET } from '../../content/salon-alet';
 import { stadSave, tahminDoluluk, fiyatAyarla, FORMASYONLAR, KAPASITE, FIYAT_MIN, FIYAT_MAX } from './stadyum';
 import { odulluMacKaldi, ODULLU_MAC_GUNLUK } from './halisaha';
 import type { Kernel } from './state';
@@ -446,7 +447,7 @@ export function installMulk(K: Kernel) {
     if (z.esya.includes(e)) { K.toast('Salonda zaten var.', 'info'); return; }
     if ((S.stage || 1) < d.asama) { K.toast(d.ad + ' için büfe ' + d.asama + '. aşamada olmalı.', 'info'); return; }
     if (S.money < d.fiyat) { K.toast(d.ad + ' ' + fmtMoney(d.fiyat) + '.', 'bad'); return; }
-    K.spend(d.fiyat); z.esya.push(e); K.toast(d.ikon + ' ' + d.ad + ' salona kuruldu: ' + d.desc, 'good'); K.addXP(20); K.saveNow();
+    K.spend(d.fiyat); z.esya.push(e); K.toast(d.ikon + ' ' + d.ad + ' kuruldu. ' + (SALON_ALET[d.id]?.yemek.length ? 'Önüne git: ' + SALON_ALET[d.id].is.toLocaleLowerCase('tr') + '. ' : '') + d.desc, 'good'); K.addXP(20); K.saveNow();
   }
   /** 2026-11-22 restoran mutfağı: S.zones.mutfak.alinan (sarı kareyle alınan istasyonlar). Eski kayıt (v yok): o aşamaya kadarki bütün
    *  istasyonlar alınmış sayılır; yeni oyun (aşama < 3) boş başlar, pass ve ocak her zaman hazır (content/mutfak.ts MUTFAK_HAZIR) */

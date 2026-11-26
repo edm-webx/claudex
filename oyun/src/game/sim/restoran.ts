@@ -18,12 +18,15 @@
  * bahşiş ortak kumbarada birikir (oyuncuya gelir değil), gün sonunda (karne.ts) garsonlara eşit paylaşılır.
  */
 import { RESTORAN_ASAMA } from '../../content/prefabs/iskele/layout';
-import { mutfakEtki, sefHizi, mutfakEsya, MUTFAK_IST_BY_ID, PASS_KAP } from '../../content/mutfak';
+import { mutfakEtki, sefHizi, mutfakEsya, MUTFAK_IST_BY_ID, passKap } from '../../content/mutfak';
 import { ADISYON, ADISYON_LINES, SERVIS, FAZ2_UI, type GarsonTur } from '../../content/restoran';
 import { bolgeleriKur, bolgeAtamasi, devriyeNoktalari, type Bolge } from './garson-bolge';
 import { YEMEK } from '../../content/ekonomi2';
 import { DISH_BY_ID, acikYemekler, menuPano, yemekAgirlik, yemekAd, isProduct, type DishId, type FoodId, type MenuAsama } from '../../content/yemek-menu';
-import { icIcinde, mutfakDunya, mutfakStand, mutfakOda, passAcik, passAsciUV, passGarsonNokta, type PassYer } from '../../content/ic-mekan';
+import { IC_BY_ID, icIcinde, icItemOn, icLayout, mutfakDunya, mutfakStand, mutfakOda, passAcik, passAsciUV, passGarsonNokta, type PassYer } from '../../content/ic-mekan';
+import { SALON_ALET, SOV_YEMEK } from '../../content/salon-alet';
+import { SEF_KAT_STAGE, SOV } from '../../content/restoran-plan';
+import { SALON_ESYA_BY_ID } from '../../content/esya';
 import { installMutfakHat, OYUNCU, type IstDurum, type MutfakHatApi, type OyuncuIs } from './mutfak-hat';
 import { DWELL_DEFAULTS, type Vec2 } from '../../engine/api';
 import type { ProductId } from './schema';
@@ -334,41 +337,53 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
   const bosAsci = () => asciler().find(w => !hat.devirIst(w.id)) ?? null;
   function asciler() { return S.workers.filter(w => w.role === 'asci'); }
   const pisirIstler = () => mutfakEsya(S.stage || 1).filter(i => MUTFAK_IST_BY_ID[i]?.islev === 'pisir');
-  function pisirKur(ist: string) {
-    const id = 'mutfak.' + ist;
+  /** istasyonun hareketi: sıvı doldurulan yerde dök, gerisinde kes / çevir */
+  const IST_ACT: Record<string, 'cut' | 'pour'> = { cay_bar: 'pour', icecek_dolap: 'pour', ocak: 'pour', ocak2: 'pour' };
+  /**
+   * 2026-11-25 (sahibi: "dönerin önüne gidip kesiyor eline döner geliyor, çaya gidince dolduruyor tepsiye geliyor; mutfakta böyle
+   * etkileşimler asla yok"): mutfak istasyonu büfe istasyonu gibi çalışır. Önünde dur: aşçının bitirip bıraktığı tabak varsa eline
+   * gelir; yoksa hazırlarsın (bekleyen sipariş varsa onu, yoksa o istasyonun çeşitlerini sırayla), tabak eline gelir, eller dolana kadar sürer.
+   */
+  function istasyonKur(id: string, at: { x: number; z: number }, o: { acik: () => boolean; act: 'cut' | 'pour'; ist: string; var_: () => boolean; tepsi?: string; basla: () => FoodId | null; devir?: string }) {
     if (K.interactions.get(id)) return;
-    const at = mutfakDunya(mutfakStand(ist));
     K.interactions.register({
-      id, pos: { x: at.x, z: at.z }, radius: 0.6, kind: 'station', dwell: DWELL_DEFAULTS.station, interval: 0.1,
+      id, pos: { x: at.x, z: at.z }, radius: 0.75, kind: 'station', dwell: DWELL_DEFAULTS.station, interval: 0.1,
       canAct: () => {
-        if (!pisirIstler().includes(ist)) return false;
-        if (hat.ist(OYUNCU) === ist) return true;
-        if (elleriDolu()) return false;
-        if (hat.aday(ist)) return true;
-        if (hat.devirOf(ist) != null) return rt.carry.length === 0;   // aşçıdan geri al
-        // 2026-11-25 sahip: bilet yokken de istasyonda hazırlık yapılabilsin (en çok 2 tabak elde); devir yalnız hazırlanacak yemek kalmayınca
-        return (rt.carry.length < 2 && !!hat.hazirAday(ist)) || (rt.carry.length === 0 && !!bosAsci());
+        if (!o.acik() || elleriDolu()) return false;
+        if (hat.ist(OYUNCU) === o.ist) return true;
+        return o.var_() || (!!o.devir && hat.devirOf(o.devir) != null && rt.carry.length === 0);
       },
       act: (_a, ctx) => {
-        let cur = hat.ist(OYUNCU);
-        if (cur !== ist) {
-          if (elleriDolu()) { if (ctx.t - pStat.fullT > 3) { pStat.fullT = ctx.t; K.toast('Eller dolu!', 'info'); } return 'continue'; }
-          if (cur) hat.pBirak();   // başka bilete geçti
-          const f = hat.claim(OYUNCU, undefined, { ist, hazir: hat.devirOf(ist) == null });
-          if (!f) return devirDeneme(ist, ctx.t);
-          pStat.last = -99; cur = ist; K.stat('oyuncuPisirme');
-          K.toast(yemekAd(f) + ' pişiyor, başında dur.', 'info');
+        if (elleriDolu()) { if (ctx.t - pStat.fullT > 3) { pStat.fullT = ctx.t; K.toast('Eller dolu: pass\'a bırak ya da masaya götür.', 'info'); } return 'continue'; }
+        if (o.devir && hat.devirOf(o.devir) != null && !hat.aday(o.devir) && rt.carry.length === 0) return devirDeneme(o.devir, ctx.t);
+        if (hat.ist(OYUNCU) !== o.ist) {
+          if (hat.ist(OYUNCU)) hat.pBirak();   // başka istasyona geçti
+          const hz = o.tepsi ? hat.pTepsi(o.tepsi) : null;
+          if (hz) { eline(hz); return 'continue'; }
+          if (!o.basla()) return 'continue';
+          pStat.last = -99; K.stat('oyuncuPisirme');
         }
         const el = ctx.t - pStat.last < 0.5 ? ctx.t - pStat.last : DWELL_DEFAULTS.station + 0.1;   // dwell süresi yapılmış iş sayılır
-        pStat.last = ctx.t;
-        rt.act = ist === 'cay_bar' || ist === 'icecek_dolap' ? 'pour' : 'cut'; rt.actT = 0.4;
-        const pl = hat.pTik(el);
-        if (pl) {
-          rt.carry.push(pl as Item); K.stat('oyuncuTabak');
-          K.toast(yemekAd(pl.type) + ' hazır: pass\'a bırak ya da masaya götür.', 'good');
-        }
+        pStat.last = ctx.t; rt.act = o.act; rt.actT = 0.4;
+        const pl = hat.pTik(el); if (pl) eline(pl);
         return 'continue';
       },
+    });
+  }
+  function eline(pl: Plate) { rt.carry.push(pl as Item); K.stat('oyuncuTabak'); K.logEv('pick', { type: pl.type }); }
+  function pisirKur(ist: string) {
+    istasyonKur('mutfak.' + ist, mutfakDunya(mutfakStand(ist)), {
+      acik: () => pisirIstler().includes(ist), act: IST_ACT[ist] || 'cut', ist, tepsi: ist, devir: ist, var_: () => !!hat.aday(ist) || !!hat.hazirAday(ist),
+      basla: () => hat.claim(OYUNCU, undefined, { ist, hazir: true }),
+    });
+  }
+  /** salon aletleri (content/salon-alet.ts): alınan alet kanattaki yerinde bir istasyondur */
+  const aletler = () => salonEsya().filter(e => SALON_ALET[e]?.yemek.length && (S.stage || 1) >= (SALON_ESYA_BY_ID[e]?.salon === 'W' ? 6 : 7));
+  function aletKur(e: string) {
+    const d = SALON_ESYA_BY_ID[e], A = SALON_ALET[e], m = IC_BY_ID[d.salon === 'W' ? 'salonW' : 'salonE'], it = icLayout(m).find(i => i.esya === e); if (!it) return;
+    istasyonKur('alet.' + e, icItemOn(m, it), {
+      acik: () => salonEsya().includes(e), act: A.act, ist: 'alet.' + e, var_: () => A.yemek.some(f => (DISH_BY_ID[f] ? DISH_BY_ID[f].asama <= (S.stage || 1) : true)),
+      basla: () => hat.claim(OYUNCU, undefined, { alet: { id: e, yemek: A.yemek } }),
     });
   }
   /** bilet yokken istasyonda durmak: devret ya da (devredilmişse) geri al; tek seferlik */
@@ -390,7 +405,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     const at = mutfakDunya(passAsciUV('on'));
     K.interactions.register({
       id, pos: { x: at.x, z: at.z }, radius: 0.9, kind: 'counter', dwell: DWELL_DEFAULTS.counter, interval: 0.16,
-      canAct: () => rt.carry.some(it => hat.mutfakTabagi(it)) && hat.passCount() < PASS_KAP,
+      canAct: () => rt.carry.some(it => hat.mutfakTabagi(it)) && hat.passCount() < passKap(S.stage || 1),
       act: () => {
         const k = rt.carry.findIndex(it => hat.mutfakTabagi(it)); if (k < 0) return 'done';
         const it = rt.carry[k] as unknown as Plate;
@@ -430,7 +445,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
   /** mutfak büyüdükçe (aşama) istasyon etkileşimleri eklenir; mutfak yoksa (aşama < 3, yeni oyun) kaldırılır */
   function mutfakKayit(): void {
     if (!FAZ2_UI) return;
-    const ist = pisirIstler(), yerler = (['on', 'W', 'E'] as const).filter(y => passAcik(y, S.stage || 1)), key = ist.join(',') + '|' + yerler.join(',');
+    const ist = pisirIstler(), al = aletler(), yerler = (['on', 'W', 'E'] as const).filter(y => passAcik(y, S.stage || 1)), key = ist.join(',') + '|' + yerler.join(',') + '|' + al.join(',') + '|' + ((S.stage || 1) >= SEF_KAT_STAGE);
     if (key === kayitKey) return;
     kayitKey = key;
     for (const y of ['on', 'W', 'E'] as const) { if (!(ist.length && yerler.includes(y)) && K.interactions.get('pass.al.' + y)) K.interactions.unregister('pass.al.' + y); }
@@ -438,6 +453,10 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     for (const i of Object.keys(MUTFAK_IST_BY_ID)) { if (!ist.includes(i) && K.interactions.get('mutfak.' + i)) K.interactions.unregister('mutfak.' + i); }
     if (!ist.length) { if (K.interactions.get('mutfak.pass')) K.interactions.unregister('mutfak.pass'); return; }
     ist.forEach(pisirKur); passKur();
+    for (const e of Object.keys(SALON_ALET)) if (!al.includes(e) && K.interactions.get('alet.' + e)) K.interactions.unregister('alet.' + e);
+    al.forEach(aletKur);
+    if ((S.stage || 1) >= SEF_KAT_STAGE) istasyonKur('alet.sov', { x: SOV.x, z: SOV.z + SOV.r + 0.5 }, { acik: () => (S.stage || 1) >= SEF_KAT_STAGE, act: 'cut', ist: 'alet.sov', var_: () => true, basla: () => hat.claim(OYUNCU, undefined, { alet: { id: 'sov', yemek: SOV_YEMEK } }) });
+    else if (K.interactions.get('alet.sov')) K.interactions.unregister('alet.sov');
   }
 
   // ───────── BUF-10 bölgeler (çalışma anı) ─────────
@@ -450,7 +469,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     if (key === bolgeKey) return;
     bolgeKey = key;
     // çatı masaları salonun tam üstünde: kümelemede ayrı dursunlar diye denize doğru kaydırılmış konumla (yalnız bölge hesabı)
-    bolgeList = bolgeleriKur(rt.layout.tables.map((tb, i) => (masaCati(i) ? { x: tb.x, z: tb.z - 12 } : tb)), built, ws.length);
+    bolgeList = bolgeleriKur(rt.layout.tables.map((tb, i) => (masaCati(i) ? { x: tb.x, z: tb.z - 40 } : tb)), built, ws.length);
     atama = bolgeAtamasi(ws, bolgeList, elle);
   }
   const masaBolgesi = (table: number) => bolgeList.find(b => b.masalar.includes(table))?.id ?? null;
@@ -477,6 +496,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     const gN = garsonlar().length;
     bolgeYenile();
     mutfakKayit();
+    (rt as unknown as { mutfakOyuncu?: unknown }).mutfakOyuncu = hat.pDurum();   // görünüm: oyuncunun hazırlama halkası
     if (icIcinde(mutfakOda(S.stage || 1), K.playerPos, 0)) oyuncuMutfakT = saat;
     for (const c of rt.customers.slice()) {
       if (c.kind !== 'masa' || !c.seat || c.state === 'leave') continue;
@@ -574,6 +594,8 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
   const MENU_ACIL_S = 25;
   /** garsonun son aldığı iş yaşlanma kuralıyla mı alındı: art arda iki acil iş yok (aşağıda) */
   const acilSon = new Set<number>();
+  /** 2026-11-26: Şef salonu / deniz köşkü uzak; 20 sn'dir yolda olan garsonun masa işi boştaki yetkili garsona geçer (aşama botu aşama 9, masa 59 menü) */
+  const DEVIR_S = 20;
   function isAl(wid: number, o: { cap: number; at?: Vec2 }): IsAlSonuc | null {
     const mine = gorevler.find(g => g.wid === wid); if (mine) return sonuc(mine);
     if (!garsonlar().some(w => w.id === wid)) return null;
@@ -582,7 +604,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     // bölge) boşa çıkan garsona geçer: haritanın öbür ucundan yürüyen garson varmadan yakındaki boş garson masayı 30 sn+ seyrediyordu
     // (aşama botu aşama 8, masa 44 hesap). Eski garson masaya varınca isTamam 'yok' der ve sıradaki işe döner.
     {
-      const dev = gorevler.filter(g => g.uzakW && g.wid && g.wid !== wid && (g.tur === 'menu' || g.tur === 'siparis' || g.tur === 'hesap')).map(g => ({ g, r: bolgeKurali(wid, g.table, g.yas, false) })).filter(x => x.r.ok);
+      const dev = gorevler.filter(g => (g.uzakW || (g.tur === 'menu' && saat - g.claimT > DEVIR_S)) && g.wid && g.wid !== wid && (g.tur === 'menu' || g.tur === 'siparis' || g.tur === 'hesap')).map(g => ({ g, r: bolgeKurali(wid, g.table, g.yas, false) })).filter(x => x.r.ok);
       if (dev.length) { dev.sort((a, b) => (a.r.ic === b.r.ic ? 0 : a.r.ic ? -1 : 1) || a.g.claimT - b.g.claimT || a.g.id - b.g.id); const g = dev[0].g; g.wid = wid; g.claimT = saat; g.uzakW = false; acilSon.delete(wid); return sonuc(g); }
     }
     // 2026-11-22: iki tur. Önce kendi / sahipsiz / komşu bölgenin işleri (öncelik sırasıyla), uzak bölge yardımı yalnız bunlar boşsa.

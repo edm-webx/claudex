@@ -30,8 +30,8 @@ describe('mutfak istasyonları sarı karelerle', () => {
   });
   it('mutfağın her istasyonu ve salon eşyaları gövdeleriyle katı (alınmışsa)', () => {
     setMutfakAlinan(null);
-    const say = (s: number) => icColliders(IC_BY_ID.mutfak, s).length;
-    expect(say(10) - say(3)).toBeGreaterThanOrEqual(mutfakAcik(10).length - mutfakAcik(3).length);
+    const say = (s: number) => icColliders(IC_BY_ID.mutfak, s).length;   // aşama 6+ mutfağın kendi duvarı yok (5 duvar parçası düşer)
+    expect(say(10) - (say(3) - 5)).toBeGreaterThanOrEqual(mutfakAcik(10).length - mutfakAcik(3).length);
     const W = IC_BY_ID.salonW; expect(icColliders(W, 10, ['semaver_dev', 'tas_firin']).length).toBe(icColliders(W, 10, []).length + 2);
   });
 });

@@ -1445,66 +1445,66 @@
   },
   {
    "id": "salonW",
-   "ad": "Kahvaltı salonu",
+   "ad": "Kahvaltı kanadı",
    "tur": "kahvalti",
    "canli": false,
    "arsa": null,
    "bina": null,
    "merkez": {
-    "x": -17.6,
-    "z": -13.9
+    "x": -16.62,
+    "z": -6.6
    },
    "boy": {
-    "wx": 10.8,
-    "wz": 6.6
+    "wx": 13.149999999999999,
+    "wz": 21.599999999999998
    },
    "kapiDis": {
-    "x": -17.6,
-    "z": -9
+    "x": -16.62,
+    "z": 5.8
    },
    "kapi": {
-    "x": -17.6,
-    "z": -10.6
+    "x": -16.62,
+    "z": 4.2
    },
    "kapiIc": {
-    "x": -17.6,
-    "z": -11.9
+    "x": -16.62,
+    "z": 2.9
    },
    "noktalar": [
     {
      "ad": "kapı içi",
-     "x": -17.6,
-     "z": -11.9
+     "x": -16.62,
+     "z": 2.9
     },
     {
      "ad": "orta",
-     "x": -17.6,
-     "z": -13.9
-    },
-    {
-     "ad": "semaverDev:semaver_dev",
-     "x": -22.35,
-     "z": -15.55
+     "x": -16.62,
+     "z": -6.6
     },
     {
      "ad": "tasFirin:tas_firin",
-     "x": -14.75,
-     "z": -15.4
+     "x": -14.42,
+     "z": -15.55
     },
     {
      "ad": "gozleme:gozleme",
-     "x": -16.6,
-     "z": -15.45
+     "x": -12.12,
+     "z": -15.55
+    },
+    {
+     "ad": "semaverDev:semaver_dev",
+     "x": -10.7,
+     "z": -10
     },
     {
      "ad": "balKaymak:bal_kaymak",
-     "x": -22.45,
-     "z": -14.15
+     "x": -10.65,
+     "z": -8.3
     },
     {
      "ad": "sarkuteri:sarkuteri",
-     "x": -12.8,
-     "z": -14.05
+     "x": -10.7,
+     "z": -6.4
     }
    ],
    "ebeveyn": null
@@ -1582,66 +1582,66 @@
   },
   {
    "id": "salonE",
-   "ad": "Balık lokantası",
+   "ad": "Balık kanadı",
    "tur": "balik",
    "canli": false,
    "arsa": null,
    "bina": null,
    "merkez": {
-    "x": 15.6,
-    "z": -13.9
+    "x": 14.9,
+    "z": -6.6
    },
    "boy": {
-    "wx": 12,
-    "wz": 6.6
+    "wx": 13.8,
+    "wz": 21.599999999999998
    },
    "kapiDis": {
-    "x": 15.6,
-    "z": -9
+    "x": 14.9,
+    "z": 5.8
    },
    "kapi": {
-    "x": 15.6,
-    "z": -10.6
+    "x": 14.9,
+    "z": 4.2
    },
    "kapiIc": {
-    "x": 15.6,
-    "z": -11.9
+    "x": 14.9,
+    "z": 2.9
    },
    "noktalar": [
     {
      "ad": "kapı içi",
-     "x": 15.6,
-     "z": -11.9
+     "x": 14.9,
+     "z": 2.9
     },
     {
      "ad": "orta",
-     "x": 15.6,
-     "z": -13.9
-    },
-    {
-     "ad": "buzTezgah:buz_tezgah",
-     "x": 17.55,
-     "z": -15.4
+     "x": 14.9,
+     "z": -6.6
     },
     {
      "ad": "mangal:mangal_e",
-     "x": 20.2,
-     "z": -15.55
+     "x": 12.3,
+     "z": -15.65
     },
     {
-     "ad": "akvaryum:akvaryum_e",
-     "x": 10.07,
-     "z": -14.4
+     "ad": "buzTezgah:buz_tezgah",
+     "x": 8.75,
+     "z": -9.7
     },
     {
      "ad": "mezeDolap:meze_dolap",
-     "x": 21.05,
-     "z": -13.2
+     "x": 8.65,
+     "z": -4.1
+    },
+    {
+     "ad": "akvaryum:akvaryum_e",
+     "x": 21.3,
+     "z": 0.7
     },
     {
      "ad": "piyano:piyano_s",
-     "x": 20,
-     "z": -14.35
+     "x": 19.3,
+     "z": 1.5
     }
    ],
    "ebeveyn": null

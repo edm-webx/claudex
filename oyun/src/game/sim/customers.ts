@@ -32,6 +32,9 @@ const A_IDLE = ACT_ORDER.indexOf('idle'), A_WALK = ACT_ORDER.indexOf('walk'), A_
 
 /** BUF-25: how far (m) a hungry citizen may be and still come to the büfe on its own */
 const HUNGRY_M = 45;
+/** 2026-11-25: 8-10. aşamanın müşterisi farklı (sahibi: "8 9 10 hiç fark yok") */
+const TURIST = { kruvaziyer: 2.5, gezgin: 2.5, turgrubu: 2.5, balayi: 3 }, IS = { isinsani: 3, plaza: 2.5 };
+const ASAMA_MUSTERI: Record<number, Record<string, number>> = { 8: TURIST, 9: { ...TURIST, ...IS }, 10: { ...TURIST, ...IS, vlogcu: 4, balayi: 4 } };
 export interface SpawnOpts { type?: CitizenTypeDef; n?: number; order?: Order; set?: string | null; from?: Vec2; near?: Vec2; kind?: 'q' | 'win' | 'masa'; patienceX?: number; say?: string; follower?: boolean; tag?: string; body?: number }
 
 export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (p: { value: number }[], v: number) => void, settle: (c: Customer, items: import('./state').Plate[]) => number) {
@@ -64,6 +67,7 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
       if (t.scenery || t.ferry || (t.months && !t.months.includes(month())) || (!inHours(t.hours, h) && !fanHere)) continue;
       let x = t.w * (inHours(t.peak, h) ? 2 : 1);
       if (t.id === 'taraftar' && (rt as unknown as { macGunu?: unknown }).macGunu) x *= 9;   // maç günü: fans everywhere
+      x *= ASAMA_MUSTERI[Math.min(10, S.stage || 1)]?.[t.id] ?? 1;   // 8 turist ve sevgililer, 9 gurme ve iş yemeği, 10 ünlü ve kutlama
       const pref = Object.keys(t.prefer).filter(p => open.includes(p as ProductId));
       x *= 0.35 + 0.65 * pref.length / Object.keys(t.prefer).length;
       if (x > 0) w[t.id] = x;

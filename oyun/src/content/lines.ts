@@ -67,7 +67,7 @@ export const LINES = {
   "angry": [
     "Hıh! Gidiyorum.",
     "Bu ne yavaşlık be!",
-    "Vapuru kaçıracağım, yandım!",
+    "Otobüsü kaçıracağım, yandım!",
     "Çay soğudu be!",
     "Sırada beklerken emekli oldum be!"
   ],
@@ -144,8 +144,8 @@ export const LINES = {
       "Kartla ödüyorum, hızlı lütfen."
     ],
     "vapuryolcusu": [
-      "Kardeşim çabuk, vapur kalkıyor, vapuuur!",
-      "Vapuru kaçırırsam yandım!"
+      "Kardeşim çabuk, otobüs kalkıyor!",
+      "Otobüsü kaçırırsam yandım!"
     ],
     "bebekarabali": [
       "Bir ayran, bir simit; bebek uyumadan!"

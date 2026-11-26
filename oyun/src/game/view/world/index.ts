@@ -375,7 +375,7 @@ export function createWorldView(deps: WorldViewDeps): WorldView {
   const ferrySubs = new Set<(e: 'horn' | 'dock' | 'leave') => void>();
   const fire = (e: 'horn' | 'dock' | 'leave') => ferrySubs.forEach(cb => { try { cb(e); } catch { /* ignore */ } });
   const ferry: WorldView['ferry'] = {
-    state: 'away', t: 0, auto: true, doorPos: { x: 22.4, z: -7.1 },
+    state: 'away', t: 0, auto: false, doorPos: { x: 22.4, z: -7.1 },
     arrive() { if (ferry.state !== 'away') return false; ferry.state = 'arriving'; ferry.t = 0; if (h.ferry) h.ferry.visible = true; placeFerry(0, false); fire('horn'); return true; },
     onEvent(cb) { ferrySubs.add(cb); return () => { ferrySubs.delete(cb); }; },
   };

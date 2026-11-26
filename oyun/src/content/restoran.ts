@@ -58,7 +58,7 @@ export const BOLGE = { bagM: 3.8, komsuM: 8 };
 export const ADISYON_LINES = {
   call: ['Bakar mısınız!', 'Garson bey!', 'Pardon, sipariş verebilir miyiz?', 'Usta, buraya!'],
   served: ['Ellerine sağlık!', 'Maşallah, sıcacık.', 'İşte bu!', 'Kokusu bile yetti.'],
-  late: ['Biz gidiyoruz, afiyet olsun size.', 'Bu adisyon yazılırken emekli oldum.', 'Vapuru kaçırdık, sağ olun.'],
+  late: ['Biz gidiyoruz, afiyet olsun size.', 'Bu adisyon yazılırken emekli oldum.', 'Dizimiz başlıyor, sağ olun.'],
   menu: ['Teşekkürler, bakalım...', 'Ne güzel menü!', 'Hmm, ne yesek?'],
   siparis: ['Buyurun, ne alırdınız?', 'Hemen not alıyorum.', 'Siparişiniz mutfağa gidiyor.'],
   hesap: ['Hesap tamam, eline sağlık!', 'Üstü kalsın!', 'Çok iyiydi.'],

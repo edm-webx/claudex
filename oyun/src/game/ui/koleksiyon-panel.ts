@@ -10,7 +10,7 @@ const btn = (label: string, act: string, id: string | null, cls: string, sub?: s
   `<button class="sb-btn ${cls}${off ? ' off' : ''}" data-a="${act}"${id != null ? ` data-id="${esc(id)}"` : ''}${why ? ` data-why="${esc(why)}"` : ''}><span class="sb-bl">${esc(label)}${sub ? `<small>${esc(sub)}</small>` : ''}</span></button>`;
 
 const TABS: [string, string, string][] = [
-  ['album', 'Çıkartmalar', 'sparkle'], ['balik', 'Balıklar', 'ferry'], ['kapak', 'Kapaklar', 'gazoz'], ['kartpostal', 'Kartpostal', 'camera'],
+  ['album', 'Çıkartmalar', 'sparkle'], ['balik', 'Balıklar', 'star'], ['kapak', 'Kapaklar', 'gazoz'], ['kartpostal', 'Kartpostal', 'camera'],
   ['hikaye', 'Hikayeler', 'newspaper'], ['vitrin', 'Vitrin', 'medal'], ['firin', 'Altın Fırın', 'gold'],
 ];
 
@@ -92,8 +92,8 @@ function tabAlbum(m: any): string {
   return s;
 }
 function tabBalik(m: any): string {
-  let s = `<div class="sb-card"><div class="kl-top"><span class="sb-chip gold">${I('ferry')} Olta hakkı: ${m.casts} / ${m.castCap}</span><span class="sb-chip">${esc(m.season)}</span></div>`;
-  s += btn(m.casts > 0 ? 'Oltayı at!' : 'Olta dinleniyor', 'kolCast', null, 'blue wide', m.casts > 0 ? 'İskelenin ucundan' : 'Her gün 3 hak, her vapurda +1', m.casts <= 0, 'Vapur yanaşınca bir hak daha gelir.');
+  let s = `<div class="sb-card"><div class="kl-top"><span class="sb-chip gold">${I('star')} Olta hakkı: ${m.casts} / ${m.castCap}</span><span class="sb-chip">${esc(m.season)}</span></div>`;
+  s += btn(m.casts > 0 ? 'Oltayı at!' : 'Olta dinleniyor', 'kolCast', null, 'blue wide', m.casts > 0 ? 'İskelenin ucundan' : 'Her gün 3 hak', m.casts <= 0, 'Yarın yeni haklar gelir.');
   s += `<p style="font:700 13px/1.3 var(--body);margin:6px 0 0">Bazı balıklar sadece kendi mevsiminde gelir. Altın Hamsi çok nadir, ama en geç ${m.pity} atışta bir garanti (şimdi ${Math.max(1, m.pityLeft.fish)} kaldı).</p></div>`;
   s += revealCard(m.reveal && m.reveal.kind === 'cast' ? m.reveal : null);
   for (const p of m.balik) {

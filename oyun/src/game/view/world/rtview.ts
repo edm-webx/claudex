@@ -18,6 +18,7 @@ import { padDef, padCost } from '../../../content/pads';
 import { mutfakDunya, mutfakUst } from '../../../content/ic-mekan';
 import { BULASIK } from '../../../content/mutfak';
 import { makeUrunModel } from '../chars/urun-model';
+import { yemekGeo, yemekH, yemekModeliVar } from '../../../content/prefabs/iskele/yemek-geo';
 import { STATION_KINDS, counterSlot } from '../../../content/prefabs/iskele/layout';
 import type { StageLayout } from '../../../content/prefabs/iskele/layout';
 
@@ -36,7 +37,7 @@ interface Sink { key: string; x: number; y: number; z: number; rot: number; t: n
 const CAP = 96, PROD = ['doner', 'cay', 'ayran', 'simit', 'tost', 'gazoz'] as const;
 const hashf = (a: number, b: number) => { let h = (a * 374761393 + b * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
 const easeOut = (k: number) => 1 - (1 - k) * (1 - k);
-const itemH = (it: Item<string>) => { const t = (ITEM_HT as Record<string, number[]>)[it.type]; return t ? t[Math.max(0, Math.min(3, (it.tier || 1) - 1))] : 0.1; };
+const itemH = (it: Item<string>) => { if (yemekModeliVar(it.type)) return yemekH(it.type); const t = (ITEM_HT as Record<string, number[]>)[it.type]; return t ? t[Math.max(0, Math.min(3, (it.tier || 1) - 1))] : 0.1; };
 
 export interface RtView {
   update(rules: Rules, dt: number): void;
@@ -53,6 +54,7 @@ export function createRtView(env: RtEnv): RtView {
     if (m) return m;
     if (key === 'money') m = new T.InstancedMesh(moneyGeo(), MAT.atlas, CAP);
     else if (key === 'plate') m = new T.InstancedMesh(plateGeo, plateMat, CAP);
+    else if (key.startsWith('dish:')) m = new T.InstancedMesh(yemekGeo(key.slice(5)), MAT.atlas, CAP);   // 2026-11-25: her yemeğin kendi modeli
     else { const [p, t] = key.split(':'); m = new T.InstancedMesh(itemGeo(p, +t), MAT.atlas, CAP); }
     m.frustumCulled = false; m.castShadow = true; m.count = 0; m.name = 'items-' + key;
     inst.set(key, m); group.add(m); return m;
@@ -145,8 +147,8 @@ export function createRtView(env: RtEnv): RtView {
       }
     }
     const emit = (obj: object, key: string, to: Pt, rot: number, h: number, from: Pt | null, dur?: number, arc?: number) => { place(obj, key, to, rot, h, frame <= 2 ? null : from, dur, arc); };
-    // BUF-06: oyuncunun elindeki mutfak tabağı (yemek kimliği) ürün modeli değil, sade tabak olarak çizilir
-    const itemKey = (it: Item<string>) => ((PROD as readonly string[]).includes(it.type) ? it.type + ':' + Math.max(1, Math.min(4, it.tier || 1)) : 'plate');
+    // 2026-11-25: mutfak yemeği elde / tepside kendi modeliyle (yemek-geo.ts); tanımsız kimlik sade tabak
+    const itemKey = (it: Item<string>) => ((PROD as readonly string[]).includes(it.type) ? it.type + ':' + Math.max(1, Math.min(4, it.tier || 1)) : yemekModeliVar(it.type) ? 'dish:' + it.type : 'plate');
 
     // player hands (spawn from the station tray they came from is implicit: the same Item object flies)
     // animasyon-3: the stack sways a little against the hero's acceleration (damped spring, clamped), never falls
@@ -308,7 +310,17 @@ export function createRtView(env: RtEnv): RtView {
       }
       dwellMat.color.set(ds.transferring ? '#7bd88f' : '#ffd23f');
       dwell.g.scale.set(1, 1, 1);   // steady ring: no per-frame pulse (it read as jitter on phones)
-    } else { dwell.g.visible = false; dwell.last = -1; }
+    } else {
+      // 2026-11-25: mutfakta hazırlarken oyuncunun çevresinde dolan halka (büfedeki gibi ne kadar kaldığı görünür)
+      const mo = (rules.rt as unknown as { mutfakOyuncu?: { ist: string | null; frac: number } }).mutfakOyuncu, pk = rules.playerPos as { x: number; z: number };
+      if (mo?.ist && rt.act !== 'idle' && rt.actT > 0) {
+        if (dwell.g.parent !== group) group.add(dwell.g);
+        dwell.g.visible = true; dwell.g.position.set(pk.x, 0.16, pk.z);
+        const step = Math.max(1, Math.round(mo.frac * 48));
+        if (step !== dwell.last) { dwell.last = step; let g = dwellGeos.get(step); if (!g) { g = new T.RingGeometry(0.46, 0.62, 40, 1, Math.PI / 2, -(step / 48) * Math.PI * 2 - 1e-3); dwellGeos.set(step, g); } dwell.ring!.geometry = g; }
+        dwellMat.color.set('#ff9a3d');
+      } else { dwell.g.visible = false; dwell.last = -1; }
+    }
   }
   const plateObjs = new Map<string, object>();
 

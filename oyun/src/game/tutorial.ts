@@ -35,7 +35,6 @@ export const TUT: readonly TutStep[] = [
   padStep('isbul'),
   { id: 'isbul', show: v => v.owned.includes('isbul'), done: v => v.workers.length > 0, at: v => v.anchors.job },
   padStep('ayran'), padStep('simit'), padStep('tabure1'),
-  padStep('pencere'),
 ];
 
 /** UX-06: tek seferlik sakin ipuçları (kayıt: st.tut['ip_<id>']). Bir yere ilk girişte tek satır; sahip: "binaya ilk girişte ipucu çipi olsun". */
@@ -59,9 +58,9 @@ const BINA_IPUCU: Record<string, string> = {
   avm_midye: 'Midyeci Mido: ' + AVM_IPUCU,
   avm_sinema: 'Martı Sinema Büfesi: mısır makinesi kendi patlatır, içecekler dolapta. ' + AVM_IPUCU,
   tesis: 'Halı Saha Tesisleri: sahibi olduğun işletmeler Mülk düğmesinde.',
-  salonW: 'Kahvaltı salonu: ekipmanı Mülk düğmesinde, Salonlar sekmesinde.',
-  salonE: 'Balık lokantası: ekipmanı Mülk düğmesinde, Salonlar sekmesinde.',
-  mutfak: 'Sabri Mutfağı: istasyonlar büfe aşamasıyla açılır, ekibi işçi bulma panosundan alırsın.',
+  salonW: 'Kahvaltı kanadı: soluk duran aletin önündeki kareyi al, sonra aletin başında dur, ürün eline gelir.',
+  salonE: 'Balık kanadı: soluk duran aletin önündeki kareyi al, sonra aletin başında dur, ürün eline gelir.',
+  mutfak: 'Mutfak büfe gibi: istasyonun önünde dur, yemek eline gelir. Pass tezgâhına bırak ya da masaya götür.',
   banka: 'Banka içindesin. Para ve eşya işleri alttaki Mülk düğmesinde, Banka sekmesinde.',
   kirtasiye: 'Kırtasiye bir işletme. Sahibiysen tezgaha geçip kendin satabilirsin.',
   okul: 'Martıköy İlkokulu: dersler ve sınavlar burada.',

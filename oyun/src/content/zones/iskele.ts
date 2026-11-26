@@ -31,7 +31,7 @@ export function iskeleZone(): ZoneDef {
   return {
     id: 'iskele',
     name: 'İskele',
-    bounds: { x0: -62, z0: -19, x1: 62, z1: 59 },
+    bounds: { x0: -62, z0: -28, x1: 62, z1: 59 },
     walk: { cell: 0.5, bake: true },
     props: [
       { id: 'sea', prefab: 'iskele.sea', pos: { x: 0, z: 0 } },
@@ -39,8 +39,7 @@ export function iskeleZone(): ZoneDef {
       { id: 'boats', prefab: 'iskele.boats', pos: { x: 0, z: 0 } },
       { id: 'pier', prefab: 'iskele.pier', pos: { x: 0, z: 0 } },
       { id: 'kiosk', prefab: 'iskele.kiosk', pos: { x: 0, z: BUFE_DZ }, overrides: { stage: 1, renewed: '' } },
-      { id: 'ferry', prefab: 'iskele.ferry', pos: { x: 0, z: 0 } },
-      { id: 'ferryFar', prefab: 'iskele.ferryFar', pos: { x: 0, z: 0 } },
+      // 2026-11-25: vapur ve uzak vapur kalktı (vapur kavramı yok)
       // 2026-11-21: the pier-end apartments are gone; both promenade ends are locked municipal construction sites
       // (content/kilitli-bolge.ts, view/world/insaat-sahasi.ts) that will open as new neighbourhoods when the iskele grows
       ...karsiProps(),
