@@ -25,3 +25,14 @@ Dal: claude/project-thread-arinot (taban jo0q11 fef56d9). Ana dala birleştirme 
 ## Kalan
 - Kullanıcı denemesi ve "tamam"ı. Sonra Ana İş jo0q11'e birleştirir (b1jn50 ile birlikte; çakışma yok, b1jn50 benim b2a9074'ümü içeriyor).
 - Bug avı thread'inin inşaat projeksiyon düzeltmesi dalı bulunamadı; birleştirmede kontrol.
+
+## Ses için şantiye koordinatları (müzik thread'i, dal o1d81t: cekic, matkap, el_arabasi, mala, geri_bip, zincir, santiye_orta, santiye_buyuk)
+- Büfe tadilatı: alan content/insaat.ts insaatAlani(to) (SITE_AREA), boyut bufeBoyut(to): 2 küçük, 3-5 orta, 6-8 büyük (santiye_buyuk), 9-10 dev.
+- Karşı yaka işletme tadilatı: merkez content/isletme-insaat.ts insaatYer(id) {ox, oz}; boyut isletmeBoyut(lv) (lv 1 küçük, 2 orta, 3 büyük, 4 dev).
+- Martı Konutları (realm 'mahalle', x 244..292):
+  - Apartman şantiyesi x 267..280, z 15..22 (büyük: mobil vinç -> santiye_buyuk, zincir, geri_bip).
+  - Belediye altyapı kazısı x 283.6..291.6, z -5.4..4.8 (orta: santiye_orta, çöp kamyonu).
+  - Arsalar (ev/dükkân yapımı, orta): a1 (259.5,0.4), a2 (266.2,0.4), a3 (272.9,0.4), a4 (279.6,0.4), a5 (284.5,18.2); yalnız plot.insa != null iken.
+  - Park (çocuk, salıncak): x 244.6..256, z -5.6..4.9; salıncak ~(247.1,-3.9).
+- Usta hareketleri: act 'cut' -> cekic, 'sweep' -> mala (view/mahalle/index.ts stepActors, sim/agents ustalar/isletme-insaat).
+  Konumlu sfx çağrısı o1d81t ana dala girince bağlanacak (bu dalda ses id'leri yok).
