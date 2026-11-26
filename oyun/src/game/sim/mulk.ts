@@ -592,7 +592,9 @@ export function installMulk(K: Kernel) {
       bankaYakin: nearBank(), atmYakin: !nearBank() && nearAtm(), kapiYakin: yakinArsa(1.5, true)?.id || null,
       arsaYakin: yakinArsa(1.5)?.id || null, okulYakin: okulYakin(), avmYakin: avmYakin(), ktYakin: ktYakin() && ktSahip() && !kt.on,
       kirtasiye: kt.on ? { mus: kt.mus ? { ad: kt.mus.ad, istek: { ...kt.mus.istek }, kalan: Math.max(0, 1 - kt.mus.t / KT_SABIR) } : null, sepet: { ...kt.sepet }, ciro: kt.ciro, sat: kt.sat, kacan: kt.kacan, son: kt.son, urun: KT_URUN } : null, salonYakin: salonYakin(), stadyumYakin: nearGate(), ipucuYakin: (rt.gizem as { view(): { yakin: string | null } } | undefined)?.view().yakin ?? null,
-      plots: ARSALAR.map(x => ({ id: x.id, x: x.x, z: x.z, rotY: x.rotY, sabit: x.sabit || '', tur: a.plots[x.id]?.tur ?? null, tip: a.plots[x.id]?.tip || '', lv: a.plots[x.id]?.lv || 0, owned: !!a.plots[x.id], till: Math.floor(a.plots[x.id]?.till || 0), isci: flo(a.plots[x.id]?.isci), esya: a.plots[x.id]?.esya || [], tema: a.plots[x.id]?.tema || '' })),
+      plots: ARSALAR.map(x => ({ id: x.id, x: x.x, z: x.z, rotY: x.rotY, sabit: x.sabit || '', tur: a.plots[x.id]?.tur ?? null, tip: a.plots[x.id]?.tip || '', lv: a.plots[x.id]?.lv || 0, owned: !!a.plots[x.id], till: Math.floor(a.plots[x.id]?.till || 0), isci: flo(a.plots[x.id]?.isci), esya: a.plots[x.id]?.esya || [], tema: a.plots[x.id]?.tema || '',
+        // 2026-11-26: işletme tadilatı da görünüme (boot -> view/world/isletme-insaat iskelesi bunu okur; eskiden yoktu, iskele hiç kurulmuyordu, sadece ustalar geliyordu)
+        tadilat: a.plots[x.id]?.tadilat ? { left: a.plots[x.id]!.tadilat!.left, total: a.plots[x.id]!.tadilat!.total } : null })),
     };
   }
   function model() {

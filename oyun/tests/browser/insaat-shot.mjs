@@ -23,6 +23,7 @@ await p.evaluate((STAGE) => { const M = window.__marti; M.setTime(Number(new URL
   M.command({ kind: 'esnafim', op: 'done' }); M.step(1); M.skipCeremony?.(); M.collectWelcome?.(); M.closeJobBoard?.(); M.closePanel?.(); for (const id of ['sb-vig']) { const v = document.getElementById(id); if (v) v.style.display = 'none'; }
   M.setTime(Number(new URLSearchParams(location.search).get('saat')||12.3)); for (let i = 0; i < 90; i++) M.step(1);
   if (!new URLSearchParams(location.search).get('ui')) { const st = document.createElement('style'); st.textContent = '#sbui{visibility:hidden!important}'; document.head.appendChild(st); } }, STAGE);
+if (process.env.PRE) await p.evaluate(process.env.PRE);   // isteğe bağlı kurulum betiği (ör. arsa al + kur)
 const SPOTS = JSON.parse(process.env.SPOTS);
 const ids = (process.argv[3] || Object.keys(SPOTS).join(',')).split(',');
 for (const id of ids) {
