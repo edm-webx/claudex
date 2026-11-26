@@ -17,8 +17,11 @@ Dal: claude/project-thread-arinot (taban jo0q11 fef56d9). Ana dala birleştirme 
   `PRE="$(cat pre.js)" SPOTS='{"genel2":[268,9,268,8,3.0,0,0.6],"egik2":[266,9,266,2,1.3,0,-0.3]}' node tests/browser/insaat-shot.mjs out`
   (PRE = arsaAl a1..a3 + arsaKur farklı zamanlarda; ARSA_HAK 3 olduğundan a4 boş arsa kalır).
 
-## Sıradaki adımlar
-1. Büfe buildSite (bufe-buyume.ts) setini bufeBoyut ile kur: vinç sadece büyük/dev (restoran thread'i de bu dosyada: küçük ve ayrık değişiklik).
-2. Karşı yaka işletme tadilat görünümü (view isletme-insaat) isletmeBoyut ile: küçük işte kule vinç yok; boot lv geçirmeli.
-3. Ses thread'ine not: matkap, çekiç, betoniyer, vinç, geri vites bip, mahalle ambiyansı (çocuk sesi, kuş, trafik).
-4. Bug avı thread'inin inşaat sahası projeksiyon düzeltmesi dalı bulunamadı; birleştirmeden önce kontrol et.
+- 8f6d43d: büfe buildSite + karşı yaka işletme tadilatı SETLER boyutuna bağlı (vinç sadece büyük/dev). Hata düzeltmesi: mulk view().plots'ta
+  `tadilat` yoktu, karşı yaka iskelesi hiç kurulmuyordu. Görseller calisma/santiye/shot/tadilat/.
+- HUD/emlak thread'i (dal b1jn50) b2a9074'ü birleştirdi; ECZANE dükkânı MARTI EMLAK oldu (kapı 265.6, 14.4), arsa alma/kurma sadece orada.
+- Ses thread'ine not gönderildi.
+
+## Kalan
+- Kullanıcı denemesi ve "tamam"ı. Sonra Ana İş jo0q11'e birleştirir (b1jn50 ile birlikte; çakışma yok, b1jn50 benim b2a9074'ümü içeriyor).
+- Bug avı thread'inin inşaat projeksiyon düzeltmesi dalı bulunamadı; birleştirmede kontrol.
