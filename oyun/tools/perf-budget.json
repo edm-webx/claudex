@@ -32,9 +32,9 @@
     }
   },
   "boyut": {
-    "_not": "2026-11-26 sahip kararı: game.js için gerçek bir boyut tavanı yok (yaklaşık 1 GB yer var). gameJsMB yalnız kaçak büyümeyi (yanlışlıkla paketlenen büyük veri) yakalayan geniş bir emniyet sınırıdır; yeni özellik eklemeyi engellemez, gerekirse yükseltilir. Asıl ölçüler kare süresi, üçgen sayısı, çağrı sayısı ve bellektir.",
+    "_not": "2026-11-26 sahip kararı: game.js için gerçek bir boyut tavanı yok (yaklaşık 1 GB yer var). gameJsMB yalnız kaçak büyümeyi (yanlışlıkla paketlenen büyük veri) yakalayan geniş bir emniyet sınırıdır; yeni özellik eklemeyi engellemez, gerekirse yükseltilir. distMB (tüm dist) için de aynı mantık: 60 MB emniyet sınırı. Asıl ölçüler kare süresi, üçgen sayısı, çağrı sayısı ve bellektir.",
     "gameJsMB": 8,
-    "distMB": 5.9
+    "distMB": 60
   },
   "sahibinGpu": {
     "_not": "PRF-01 perfRecord kayıtlarından sahibin PC/telefonunda doldurulur. SwiftShader süresinden ASLA türetilmez.",
