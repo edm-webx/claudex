@@ -2,7 +2,7 @@
 // mutfak ve salon aletleri büfe istasyonu gibi çalışır (önüne git, hazırla, ürün eline gelsin).
 import { describe, it, expect } from 'vitest';
 import { kur } from './garson-yardimci';
-import { KANAT_W, KANAT_E, VAPUR_GECIT, kanatKapi, restoranDuvar } from '../../src/content/restoran-plan';
+import { KANAT_W, KANAT_E, kanatKapi, restoranDuvar } from '../../src/content/restoran-plan';
 import { KANAT_MASALAR } from '../../src/content/kanat';
 import { IC_BY_ID, icItemOn, icLayout, mutfakDunya, mutfakStand } from '../../src/content/ic-mekan';
 import { SALON_ESYA } from '../../src/content/esya';
@@ -18,7 +18,7 @@ describe('ters U plan', () => {
     for (const s of [7, 8, 10]) {
       expect(dolu(s, -18, -17.3)).toBe(true); expect(dolu(s, 0, -17.3)).toBe(true); expect(dolu(s, 15, -17.3)).toBe(true);
       expect(dolu(s, KANAT_W.x0 + 0.1, -8)).toBe(true); expect(dolu(s, KANAT_E.x1 - 0.1, -12)).toBe(true);
-      expect(dolu(s, KANAT_E.x1 - 0.1, (VAPUR_GECIT[0] + VAPUR_GECIT[1]) / 2)).toBe(false);
+      expect(dolu(s, KANAT_E.x1 - 0.1, -7)).toBe(true);   // vapur kalktı: geçit kapalı
       for (const y of ['W', 'E'] as const) { expect(dolu(s, kanatKapi(y), 4.1)).toBe(false); expect(dolu(s, kanatKapi(y) + 3, 4.1)).toBe(true); }
       for (const z of [-11.5, -6.0, -3.0, 1.0]) { expect(dolu(s, KANAT_W.x1, z)).toBe(false); expect(dolu(s, KANAT_E.x0, z)).toBe(false); }
     }

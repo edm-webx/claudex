@@ -31,3 +31,18 @@ Sahibi: "tek dev restoran, ayrı dükkânlar gibi olmayacak", kırmızı çizgi 
 - Masa 46 / 58 / 74. Garson 14 / 19 / 25. Pass rafı aşamayla büyür (passKap 13 / 18 / 22): darboğaz buydu.
 - Bot (asama-botu): gelir/gün 6: 257b, 7: 720b, 8: 1,50M, 9: 3,32M, 10: 7,01M. Bekleme: menü ort 15-18 sn, en uzun 48 sn; sipariş ort 8-10 sn.
 - Vapur geçidi: vapurun kalktığı dal birleşince VAPUR_GECIT kapanacak (bu dalda vapur müşterisi hâlâ oradan giriyor).
+
+## Kaldığım yer (2026-11-26 00:10, sahibi: "yarın devam edelim")
+Durum: WIP. tz1bfz (hata avı, vapur kalktı; a91000a) birleştirildi, VAPUR_GECIT silindi ve doğu duvarı kapatıldı. tsc temiz; tam vitest paketi birleşmeden sonra KOŞULMADI.
+Gönderilen deneme sürümü (2026-11-26 klasörü/zip) birleşme ve müşteri çeşidinden ÖNCEKİ derlemedir (gelir 8: 1,50M, 9: 3,32M, 10: 7,01M).
+
+Sıradaki adımlar
+1. tests/sim/kanat-masalar, asama10, restoran-ters-u üçlüsünde 1 kırmızı var ("expected true to be false", büyük olasılıkla doğu duvarının kapanması ya da asama10'daki vapur koridoru beklentisi): düzelt.
+2. Doğu kanadının eski vapur aletleri: turkuaz kutu (yaklaşık x 19.5, z -11.5: gişe; x 21, z -2) ve korkuluk kaldır; boşalan yeri masa alanına kat.
+3. Müşteri çeşidi (customers.ts ASAMA_MUSTERI) + garson 9: 21 sonrası bot dengesi: son ölçüm 8 1,58M / 9 3,15M / 10 7,51M, 9'da menü ort 19 sn > 18 sınırı (garson 21 yapıldı, yeniden ölçülmedi). asama-botu-rapor.json'ı yeniden üret. tz1bfz vapur dalgası dengesi de gelire etki edebilir.
+4. Akıcı perf bütçesi: karşı yaka 490083 / 485721 üçgen (taban f194f9f'de de kırmızı), BÜTÇE GEVŞETİLMEYECEK. perf-gate Windows'ta playwright + swiftshader ister; ölçüm henüz yapılmadı. Aday: karşı yakadayken restoranın çizilmemesi (cull), asma küreleri / tente / korkuluk üçgenlerini azaltma, instancing.
+5. Tam vitest (Windows'ta 8 eski kırmızı normal: kirmizi-cizgi 5, baglilik 2, ekonomi-kapi 1), ekran görüntüleri, yeni deneme sürümü, sahibine rapor.
+
+Açık kararlar: yok (aşama 6-10 "tamamdır" ile onaylı). Ana hatta birleşme sahibi denemeyi onayladıktan sonra.
+Eksik söz: 10'da düğün/ünlü için ayrı müşteri tipi yok (balayı + vlogcu ağırlığı artırıldı); menü en uzun bekleme 48-54 sn (hedef 35); arka köşe kuleleri oyun kamerasında görünmüyor, ön kuleler görünüyor.
+Araçlar: kullanıcı klasörü restoran-konsept/araclar (ekran görüntüsü, ölçüm, fps betikleri).

@@ -290,7 +290,6 @@ export function installKoleksiyon(K: Kernel): KolApi {
   K.bus.on('orderClaim', () => { if (!KOLEKSIYON_ON) return; save().packs++; });
   K.bus.on('level', () => { if (!KOLEKSIYON_ON) return; save().packs++; K.toast('Seviye hediyesi: bir çıkartma paketi!', 'good'); });
   K.bus.on('regularOk', () => { if (!KOLEKSIYON_ON) return; const m = save(); if (++m.regN % 3 === 0) m.packs++; checkPages(); });
-  K.bus.on('ferryDock', () => { if (!KOLEKSIYON_ON) return; const m = save(); if (m.casts < CAST_CAP) m.casts++; });
 
   // postcards + page checks for book chapters (visits change outside this module)
   let pageT = 0;

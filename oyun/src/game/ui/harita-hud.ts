@@ -28,8 +28,8 @@ const CSS = `
 @keyframes mk-nudge{50%{transform:translateX(6px)}}
 .mk-arrow.w i{animation-name:mk-nudgew}@keyframes mk-nudgew{50%{transform:translateX(-6px)}}
 `;
-const ICON: Record<string, string> = { dolmus: '🚐', vapur: '⛴', bisiklet: '🚲', motor: '🛵', kayik: '🚣', yaya: '🚶' };
-const SAY: Record<string, string> = { dolmus: 'Martıköy Dolmuşu', vapur: 'Vapur', bisiklet: 'Zırr zırr!', motor: 'Vızvız!', kayik: 'Kürek, kürek!', yaya: 'Yürüyoruz' };
+const ICON: Record<string, string> = { dolmus: '🚐', vapur: '🚤', bisiklet: '🚲', motor: '🛵', kayik: '🚣', yaya: '🚶' };
+const SAY: Record<string, string> = { dolmus: 'Martıköy Dolmuşu', vapur: 'Deniz taksisi', bisiklet: 'Zırr zırr!', motor: 'Vızvız!', kayik: 'Kürek, kürek!', yaya: 'Yürüyoruz' };
 const X0 = -62, X1 = 344;
 
 export function createHaritaHud(d: HaritaHudDeps): HaritaHud {
@@ -94,7 +94,7 @@ export function createHaritaHud(d: HaritaHudDeps): HaritaHud {
           veh.textContent = ICON[t.mode] || '🚐';
           cap.innerHTML = `${SAY[t.mode] || ''}<small>${t.from ? t.from + ' → ' : ''}${t.to}</small>`;
           requestAnimationFrame(() => trav.classList.add('on'));
-          try { d.sfx?.(t.mode === 'vapur' ? 'ferryHorn' : 'pick'); } catch { /* */ }
+          try { d.sfx?.('pick'); } catch { /* */ }
         }
         const k = Math.min(1, t.t / t.dur), w = d.root.clientWidth || 390;
         const bob = Math.sin(t.t * (t.mode === 'vapur' ? 4 : 14)) * (t.mode === 'vapur' ? 5 : 3);

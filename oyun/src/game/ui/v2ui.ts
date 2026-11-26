@@ -522,7 +522,7 @@ const PANELS = {
   esnaf: { t: 'Komşu Defteri', s: 'Çarşı Sokağı esnafı', ic: 'heart', acc: 'var(--pink)' },
   mini: { t: 'Mini Oyunlar', s: 'Lunapark Martı: Büfe Köşesi', ic: 'play', acc: 'var(--yellow)' },
   hava: { t: 'Takvim ve Hava', s: 'Mevsimler, şenlikler, Gece Pazarı', ic: 'sun', acc: 'var(--yellow)' },
-  deniz: { t: 'İskele ve Deniz', s: 'Vapur, tekneler, deniz canlıları, iskele büyümesi', ic: 'sun', acc: 'var(--blue)' },
+  deniz: { t: 'İskele ve Deniz', s: 'Tekneler, deniz canlıları, iskele büyümesi', ic: 'sun', acc: 'var(--blue)' },
   kurye: { t: 'Kuryeler', s: 'PaketMartı teslimat hattı', ic: 'stopwatch', acc: 'var(--yellow)' },
   koleksiyon: { t: 'Koleksiyon', s: 'Albümler, kapaklar ve Altın Fırın', ic: 'sparkle', acc: '#e8a92a' },
   harita: { t: 'İstanbul Haritası', s: 'Semtler: dokun, ışınlan', ic: 'map', acc: '#5aa0c8' },
@@ -651,11 +651,10 @@ function renderIsciler(m, A) {
         ${t.name ? `<div class="sb-trait"><b>${esc(t.name)}</b>${t.effect ? ': ' + esc(t.effect) : ''}</div>` : ''}
       </div>
       <div class="wb"><span class="sb-muted">${w.wage != null ? 'Maaş payı: <b>' + esc(wageTxt(w.wage)) + '</b>' : ''}${w.station ? '<br>İstasyon: <b>' + esc(w.station) + '</b>' : ''}</span>
-        ${A.train ? btn('Kurs', 'train', w.id, 'blue sm', null, { icon: 'karne' }) : ''}${A.pencere && num(m.pencere) && m.pencere >= 0 ? btn(m.pencere === w.id ? 'Pencerede ✓' : 'Pencereye', 'pencere', w.id, m.pencere === w.id ? 'green sm' : 'cream sm', null, { icon: 'ferry' }) : ''}${A.fire ? btn('Çıkar', 'fire', w.id, 'cream sm') : ''}</div>
+        ${A.train ? btn('Kurs', 'train', w.id, 'blue sm', null, { icon: 'karne' }) : ''}${A.fire ? btn('Çıkar', 'fire', w.id, 'cream sm') : ''}</div>
     </div>`;
   });
   if (A.board) s += btn('Yeni işçi bul', 'board', null, 'wide', null, { icon: 'newspaper' });
-  if (A.pencereHire && num(m.pencere) && m.pencere >= 0) s += btn('Vapur penceresi için eleman al', 'pencereHire', null, 'wide', null, { icon: 'ferry' });
   try { s += renderCalisanSection(m.calisan, porTag); } catch (e) { console.error('[SB.ui] calisan', e); }
   return s;
 }
@@ -978,7 +977,7 @@ U.pickHero = function () {
 
 /* ---------- simulated rewarded ad ---------- */
 const ADS = [
-  { brand: 'Boğaz Gazozu', slogan: 'Köpüğü vapurdan büyük!', bg: 'linear-gradient(160deg,#3fb5b0,#1f6f8f)', icon: 'gazoz' },
+  { brand: 'Boğaz Gazozu', slogan: 'Köpüğü dalgadan büyük!', bg: 'linear-gradient(160deg,#3fb5b0,#1f6f8f)', icon: 'gazoz' },
   { brand: 'Ayranbey', slogan: 'Bir ayran, bin ferahlık.', bg: 'linear-gradient(160deg,#5aa9d6,#2e4f9a)', icon: 'ayran' },
   { brand: 'Kolaz', slogan: 'Buz gibi, fıkır fıkır.', bg: 'linear-gradient(160deg,#e0533c,#8f2a1c)', icon: 'gazoz' },
   { brand: 'Martı Su', slogan: 'Martılar bile kıskanıyor.', bg: 'linear-gradient(160deg,#9fd3f5,#3f8fc9)', icon: 'gull' }
@@ -1057,7 +1056,7 @@ U.kasaSayimi = function (o) {
     let notes = '';
     for (let i = 0; i < N; i++) {
       const k = i % 3, rot = ((i * 37) % 9) - 4, dx = ((i * 53) % 9) - 4;
-      notes += `<div class="sb-note ${['', 'b', 'c'][k]}" style="transform:translate(${dx}px,${-i * 2.4}px) rotate(${rot}deg)"><span class="ne">${ICONS.ferry}</span><span class="nv">${vals[k]}</span><span class="nm">MARTIKÖY</span><span class="nl">${LIRA_SVG}</span></div>`;
+      notes += `<div class="sb-note ${['', 'b', 'c'][k]}" style="transform:translate(${dx}px,${-i * 2.4}px) rotate(${rot}deg)"><span class="ne">${ICONS.gull || ICONS.star}</span><span class="nv">${vals[k]}</span><span class="nm">MARTIKÖY</span><span class="nl">${LIRA_SVG}</span></div>`;
     }
     m.innerHTML = `<div class="rays"></div><button class="skip" data-k="skip">Atla${ICONS.skip}</button>
       <div class="kh"><small>${esc(o.week != null ? o.week : 1)}. HAFTA</small><h2>Kasa Sayımı</h2></div>
@@ -1124,7 +1123,7 @@ const LIRA_SVG = svg(LIRA('currentColor'));
 /* ---------- sign editor ---------- */
 const FONT_FALLBACK = [
   { id: 'yesilcam', name: 'Yeşilçam El Yazısı', color: '#f6ead2', css: 'italic 700 1em "Brush Script MT","Segoe Script","Snell Roundhand","URW Chancery L",cursive' },
-  { id: 'vapur', name: 'Vapur Şablonu', color: '#f2b632', css: '900 1em "Arial Black","Impact","Helvetica Neue",sans-serif' },
+  { id: 'vapur', name: 'İskele Şablonu', color: '#f2b632', css: '900 1em "Arial Black","Impact","Helvetica Neue",sans-serif' },
   { id: 'neon', name: 'Neon', color: '#ff5fa2', css: '400 1em "Trebuchet MS",ui-rounded,"Verdana",sans-serif' },
   { id: 'lale', name: 'Lale Süslü', color: '#f2a2b3', css: 'italic 700 1em Georgia,"Palatino Linotype","Book Antiqua",serif' },
   { id: 'plaza', name: 'Plaza Düz', color: '#ffffff', css: '500 1em "Helvetica Neue",Arial,"Liberation Sans",sans-serif' },

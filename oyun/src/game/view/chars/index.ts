@@ -172,7 +172,7 @@ export function createChars(deps: CharsDeps): MotorChars {
   const CAP = 120;
   const v2crowd = CH.makeCrowd(null, CAP);
   dyn(v2crowd.group); scene.add(v2crowd.group);
-  const slotId = new Int32Array(256).fill(-1), slotType = new Int16Array(256).fill(-1), slotSeed = new Float64Array(256).fill(NaN), seen = new Uint8Array(256);
+  const slotId = new Int32Array(256).fill(-1), slotType = new Int16Array(256).fill(-1), slotCust = new Uint8Array(256), slotSeed = new Float64Array(256).fill(NaN), seen = new Uint8Array(256);
   const pick = new Int32Array(256);
   let budget = deps.quality.current().crowd, shown = 0;
   const set: Record<string, unknown> = {};
@@ -202,10 +202,14 @@ export function createChars(deps: CharsDeps): MotorChars {
       for (let k = 0; k < n; k++) {
         const i = pick[k]; seen[i] = 1;
         const ty = typ[i] % CITIZENS.length;
-        if (slotId[i] < 0 || slotType[i] !== ty) {
+        // 2026-11-25 (sahibi: "içeride arabayla yürüyen adamlar var"): müşteri olan vatandaş bebek arabası / pazar arabasını sokakta bırakır
+        const cust = (flags[i] & (AGENT_FLAG.customer | AGENT_FLAG.queued | AGENT_FLAG.seated)) !== 0 ? 1 : 0;
+        if (slotId[i] < 0 || slotType[i] !== ty || slotCust[i] !== cust) {
           if (slotId[i] >= 0) v2crowd.remove(slotId[i]);
           const seed = slotSeed[i] === slotSeed[i] ? slotSeed[i] : (i + 1) * 7919 + ty * 104729;
-          slotId[i] = v2crowd.add(CH.randomLook(CITIZENS[ty].id, K.rng(seed))); slotType[i] = ty;
+          const L = CH.randomLook(CITIZENS[ty].id, K.rng(seed));
+          if (cust) { if (L.mobility === 'stroller') L.mobility = null; L.mobilityProp = null; }
+          slotId[i] = v2crowd.add(L); slotType[i] = ty; slotCust[i] = cust;
           if (slotId[i] < 0) continue;
         }
         const a = ACT_ORDER[act[i]] as ActId, m = MOOD_ORDER[mood[i]], e = expr[i];

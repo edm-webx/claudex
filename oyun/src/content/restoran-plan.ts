@@ -21,8 +21,6 @@ export const SOV = { x: 0, z: -7.4, r: 1.0 };
 export const FISKIYE: [number, number][] = [[-7.0, 5.7], [7.0, 5.7]];
 /** kat yüksekliği ve teras döşemesi */
 export const RES_H = 3.4, TERAS_Y = RES_H + 0.36;
-/** vapur yolcusunun doğu kanadından geçtiği açık bant (z) */
-export const VAPUR_GECIT: [number, number] = [-9.2, -4.8];
 export const DUVAR_T = 0.25;
 /** kanat ucundaki promenad kapısı (genişlik 2 m) */
 export const kanatKapi = (s: 'W' | 'E'): number => { const k = kanatDik(s); return (k.x0 + k.x1) / 2; };
@@ -46,7 +44,7 @@ export function restoranDuvar(stage: number): Dik[] {
     if (!kanatAcikMi(s, stage)) continue; const k = kanatDik(s), kx = kanatKapi(s);
     { const kap = stage >= KOSK_STAGE ? KOSK_KAPI[s === 'W' ? 0 : 1] : null; if (kap == null) o.push({ x0: k.x0, x1: k.x1, z0: k.z0, z1: k.z0 + t }); else o.push({ x0: k.x0, x1: kap - KOSK_KAPI_W / 2, z0: k.z0, z1: k.z0 + t }, { x0: kap + KOSK_KAPI_W / 2, x1: k.x1, z0: k.z0, z1: k.z0 + t }); }
     const yan = s === 'W' ? { x0: k.x0, x1: k.x0 + t } : { x0: k.x1 - t, x1: k.x1 };
-    if (s === 'W') o.push({ ...yan, z0: k.z0, z1: k.z1 }); else o.push({ ...yan, z0: k.z0, z1: VAPUR_GECIT[0] }, { ...yan, z0: VAPUR_GECIT[1], z1: k.z1 });
+    o.push({ ...yan, z0: k.z0, z1: k.z1 });   // 2026-11-26: vapur kalktı, doğu duvarındaki geçit de kapandı
     o.push({ x0: k.x0, x1: kx - 1, z0: k.z1 - t, z1: k.z1 }, { x0: kx + 1, x1: k.x1, z0: k.z1 - t, z1: k.z1 });
     for (const [x, z] of saksiYer(s, stage)) o.push({ x0: x - 0.28, x1: x + 0.28, z0: z - 0.28, z1: z + 0.28 });
     for (const z of revakDirek(s)) { const x = s === 'W' ? k.x1 : k.x0; o.push({ x0: x - 0.12, x1: x + 0.12, z0: z - 0.12, z1: z + 0.12 }); }
