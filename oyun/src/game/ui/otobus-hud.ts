@@ -29,7 +29,7 @@ export function createOtobusHud(d: Deps): OtobusHud {
   cut.append(cv, cap); d.root.appendChild(cut);
   let mode = '';
   btn.onclick = () => { if (mode === 'bekle') d.command({ kind: 'disari', op: 'otobusBekle' }); };
-  let cutOn = false, toForest = true, lastPhase = '', curTo = '';
+  let cutOn = false, toForest = true, toKonut = false, lastPhase = '', curTo = '';
   // scenery seeds
   const R = (i: number) => { const x = Math.sin(i * 127.1) * 43758.5453; return x - Math.floor(x); };
 
@@ -39,7 +39,7 @@ export function createOtobusHud(d: Deps): OtobusHud {
     const g = cv.getContext('2d')!; g.setTransform(dpr, 0, 0, dpr, 0, 0);
     const hr = d.hour(), night = hr >= 20 || hr < 6, dusk = hr >= 18 && hr < 20;
     // how "forest" the view is: city at the start, forest at the end (reverse on the way back)
-    const f = toForest ? Math.min(1, Math.max(0, (k - 0.25) / 0.5)) : 0;
+    const f = toForest || toKonut ? Math.min(1, Math.max(0, (k - 0.25) / 0.5)) : 0;
     const sky = g.createLinearGradient(0, 0, 0, h * 0.7);
     if (night) { sky.addColorStop(0, '#0d1630'); sky.addColorStop(1, '#2a3a5a'); } else if (dusk) { sky.addColorStop(0, '#3a4a8a'); sky.addColorStop(1, '#f2a65a'); } else { sky.addColorStop(0, '#6fb6e8'); sky.addColorStop(1, '#cfe9f5'); }
     g.fillStyle = sky; g.fillRect(0, 0, w, h);
@@ -64,6 +64,22 @@ export function createOtobusHud(d: Deps): OtobusHud {
         g.fillStyle = night ? '#ffd97a' : '#8fb8cc';
         for (let wy = ground - bh + 12; wy < ground - 16; wy += 22) for (let wx = x + 10; wx < x + bw - 12; wx += 18) if (!night || R(wx + wy) > 0.4) g.fillRect(wx, wy, 9, 12);
         g.fillStyle = '#a8553d'; g.fillRect(x - 3, ground - bh - 6, bw + 6, 8);
+      } else if (toKonut) {
+        // 2026-11-26 Martı Konutları: sıra apartmanlar (balkonlu, saksılı), arada kule vinç ve kıyıda park ağaçları
+        if (seed % 5 === 0) {   // inşaat: yükselen karkas + sarı kule vinç
+          g.fillStyle = '#b9b3a6'; for (let fl = 0; fl < 4; fl++) { g.fillRect(x + 6, ground - 26 - fl * 28, 64, 5); for (const cx of [x + 8, x + 36, x + 64]) g.fillRect(cx, ground - 26 - fl * 28, 5, 28); }
+          g.fillStyle = '#ffd23f'; g.fillRect(x + 78, ground - 190, 6, 190); g.fillRect(x + 20, ground - 190, 120, 6); g.fillRect(x + 76, ground - 200, 10, 10);
+          g.strokeStyle = '#333'; g.lineWidth = 1.5; const hx = x + 40 + Math.sin(tt * 0.8 + seed) * 18; g.beginPath(); g.moveTo(hx, ground - 184); g.lineTo(hx, ground - 120); g.stroke(); g.fillStyle = '#a8794e'; g.fillRect(hx - 12, ground - 120, 24, 6);
+        } else {
+          const kat = 4 + Math.floor(R(seed + 3) * 3), bh = kat * 24 + 10, bw = 74;
+          g.fillStyle = ['#f1e4c8', '#cfdcc6', '#ecc9b6', '#d9d6e4', '#e9d7b9'][Math.floor(R(seed + 7) * 5)]; g.fillRect(x, ground - bh, bw, bh);
+          g.fillStyle = '#fbf5e8'; g.fillRect(x - 3, ground - bh - 5, bw + 6, 6);
+          for (let fl = 0; fl < kat; fl++) { const wy = ground - bh + 12 + fl * 24;
+            for (let wx = x + 8; wx < x + bw - 12; wx += 21) { g.fillStyle = night ? (R(wx + wy) > 0.45 ? '#ffd97a' : '#2a3a52') : '#2f4d66'; g.fillRect(wx, wy, 11, 13); }
+            if (fl > 0) { g.fillStyle = '#3c4146'; g.fillRect(x + 4, wy + 13, bw - 8, 2); if (!night) { g.fillStyle = ['#e0533c', '#ffd23f', '#6f9e4f'][fl % 3]; g.fillRect(x + 10 + (fl * 13) % 40, wy + 9, 6, 4); } }
+          }
+          if (R(seed + 9) > 0.5) { const aw = ['#e0533c', '#2f8a4a', '#2f6fdb'][Math.floor(R(seed + 11) * 3)]; for (let i = 0; i < 6; i++) { g.fillStyle = i % 2 ? aw : '#fbfaf6'; g.fillRect(x + 4 + i * 11, ground - 22, 11, 7); } }
+        }
       } else {
         for (let j = 0; j < 2; j++) {
           const px = x + j * 45 + R(seed + j) * 20, ph = 90 + R(seed + j * 3) * 60;
@@ -75,14 +91,15 @@ export function createOtobusHud(d: Deps): OtobusHud {
     }
     // road
     g.fillStyle = '#4a4d52'; g.fillRect(0, ground, w, h - ground);
-    g.fillStyle = f > 0.5 ? '#6f9e55' : '#cfc6b6'; g.fillRect(0, ground - 6, w, 8);
+    g.fillStyle = f > 0.5 && !toKonut ? '#6f9e55' : '#cfc6b6'; g.fillRect(0, ground - 6, w, 8);
     g.fillStyle = '#f2f0e6'; const dash = 70, doff = (tt * 420) % dash;
     for (let x = -dash; x < w + dash; x += dash) g.fillRect(x - doff, ground + (h - ground) * 0.5, 36, 5);
     // near bushes / lamp posts whizzing by
     const nspan = 260, noff = (tt * 420) % nspan;
     for (let i = -1; i < w / nspan + 2; i++) {
       const x = i * nspan - noff;
-      if (f > 0.5) { g.fillStyle = night ? '#173022' : '#3f7a3a'; g.beginPath(); g.arc(x, h - 6, 40, Math.PI, 0); g.fill(); }
+      if (f > 0.5 && toKonut) { g.fillStyle = '#6b4a2e'; g.fillRect(x - 4, h - 110, 8, 110); g.fillStyle = night ? '#1f3d2c' : '#5f9e4a'; g.beginPath(); g.arc(x, h - 120, 34, 0, Math.PI * 2); g.fill(); g.fillStyle = night ? '#2a4a36' : '#86b65e'; g.beginPath(); g.arc(x + 14, h - 132, 22, 0, Math.PI * 2); g.fill(); }   // kaldırım ağaçları
+      else if (f > 0.5) { g.fillStyle = night ? '#173022' : '#3f7a3a'; g.beginPath(); g.arc(x, h - 6, 40, Math.PI, 0); g.fill(); }
       else { g.fillStyle = '#5a5f66'; g.fillRect(x, h - 150, 7, 150); g.fillStyle = night ? '#ffe9a8' : '#cfd6dc'; g.fillRect(x - 14, h - 154, 30, 8); }
     }
     // the bus (side view), bouncing
@@ -119,7 +136,7 @@ export function createOtobusHud(d: Deps): OtobusHud {
       // cutscene
       const tr = v.travel;
       if (tr && tr.mode === 'otobus') {
-        if (!cutOn) { cutOn = true; toForest = tr.to === 'Orman'; curTo = tr.to; cut.style.display = 'block'; cap.innerHTML = `${OTOBUS.line} · ${tr.from ? tr.from + ' → ' : ''}${tr.to}<small>${OTOBUS.driver}: "Arkaya ilerleyelim, kapı önünü boşaltalım!"</small>`; try { d.sfx?.('busStart', OTOBUS.stop); } catch { /* */ } }
+        if (!cutOn) { cutOn = true; toForest = tr.to === 'Orman'; toKonut = tr.to === 'Konutlar'; curTo = tr.to; cut.style.display = 'block'; cap.innerHTML = `${OTOBUS.line} · ${tr.from ? tr.from + ' → ' : ''}${toKonut ? 'Martı Konutları' : tr.to}<small>${OTOBUS.driver}: "Arkaya ilerleyelim, kapı önünü boşaltalım!"</small>`; try { d.sfx?.('busStart', OTOBUS.stop); } catch { /* */ } }
         drawCut(Math.min(1, tr.t / tr.dur), performance.now());
       } else if (cutOn) { cutOn = false; cut.style.display = 'none'; }
       // stop button

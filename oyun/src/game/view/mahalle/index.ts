@@ -81,7 +81,7 @@ const BINALAR: BinaSpec[] = [
 ];
 
 /* ---------- statik dünya ---------- */
-function build(b: Batch, sign: (i: number, x: number, y: number, z: number, w: number, h: number, ry?: number) => void, solid: Rect[]) {
+function build(b: Batch, sign: (i: number, x: number, y: number, z: number, w: number, h: number, ry?: number) => void, solid: Rect[], nb: Batch) {
   const sol = (x0: number, x1: number, z0: number, z1: number) => solid.push({ x0, x1, z0, z1 });
   // zemin: mahalle ve çevresi (boşluk görünmesin)
   b.box(110, 0.1, 70, '#b9b09a', 268, -0.06, 9);
@@ -151,14 +151,14 @@ function build(b: Batch, sign: (i: number, x: number, y: number, z: number, w: n
   // ── kuzey sıra: alçak dükkânlar (kameraya yakın) ──
   const dukkan = (x0: number, x1: number, i: number, renk: string) => {
     const w = x1 - x0, cx = (x0 + x1) / 2, z0 = 15.2, d = 6.4, H = 3.3;
-    b.box(w, H, d, renk, cx, H / 2, z0 + d / 2, { world: 2 } as never); b.box(w + 0.2, 0.22, d + 0.2, '#8f8a82', cx, H + 0.1, z0 + d / 2);
-    b.box(w - 0.3, 0.04, d - 0.3, ['#9a6b4a', '#7d8a94', '#a5845e', '#8c7f73', '#6f8a6a'][i % 5], cx, H + 0.23, z0 + d / 2);   // çatı kaplaması
-    for (const s2 of [-1, 1]) b.box(w + 0.2, 0.45, 0.14, renk, cx, H + 0.4, z0 + d / 2 + s2 * (d / 2 + 0.03));   // korkuluk duvarı
-    b.box(0.9, 0.55, 0.7, '#dfe3e6', cx - w / 4, H + 0.5, z0 + d * 0.6); b.box(0.6, 0.06, 0.5, '#5b6068', cx - w / 4, H + 0.79, z0 + d * 0.6);   // klima dış ünitesi
-    b.cyl(0.4, 0.4, 0.9, '#c9ced6', cx + w / 4, H + 0.65, z0 + d * 0.7, { seg: 10 });   // su deposu
-    b.box(w - 1.6, 1.8, 0.06, '#2b3f52', cx - 0.5, 1.5, z0 - 0.01); b.box(0.9, 2.2, 0.06, '#3a2a20', x1 - 0.8, 1.1, z0 - 0.01);   // vitrin, kapı
+    nb.box(w, H, d, renk, cx, H / 2, z0 + d / 2, { world: 2 } as never); nb.box(w + 0.2, 0.22, d + 0.2, '#8f8a82', cx, H + 0.1, z0 + d / 2);
+    nb.box(w - 0.3, 0.04, d - 0.3, ['#9a6b4a', '#7d8a94', '#a5845e', '#8c7f73', '#6f8a6a'][i % 5], cx, H + 0.23, z0 + d / 2);   // çatı kaplaması
+    for (const s2 of [-1, 1]) nb.box(w + 0.2, 0.45, 0.14, renk, cx, H + 0.4, z0 + d / 2 + s2 * (d / 2 + 0.03));   // korkuluk duvarı
+    nb.box(0.9, 0.55, 0.7, '#dfe3e6', cx - w / 4, H + 0.5, z0 + d * 0.6); nb.box(0.6, 0.06, 0.5, '#5b6068', cx - w / 4, H + 0.79, z0 + d * 0.6);   // klima dış ünitesi
+    nb.cyl(0.4, 0.4, 0.9, '#c9ced6', cx + w / 4, H + 0.65, z0 + d * 0.7, { seg: 10 });   // su deposu
+    nb.box(w - 1.6, 1.8, 0.06, '#2b3f52', cx - 0.5, 1.5, z0 - 0.01); nb.box(0.9, 2.2, 0.06, '#3a2a20', x1 - 0.8, 1.1, z0 - 0.01);   // vitrin, kapı
     const n = Math.max(4, Math.round(w / 0.6)), sw = w / n;
-    for (let k = 0; k < n; k++) b.box(sw, 0.06, 1.2, k % 2 ? '#fbfaf6' : TABELA[i].bg === '#ffffff' ? '#2f8a4a' : TABELA[i].bg, x0 + sw * (k + 0.5), 2.65, z0 - 0.55, { rx: -0.3 });   // tente
+    for (let k = 0; k < n; k++) nb.box(sw, 0.06, 1.2, k % 2 ? '#fbfaf6' : TABELA[i].bg === '#ffffff' ? '#2f8a4a' : TABELA[i].bg, x0 + sw * (k + 0.5), 2.65, z0 - 0.55, { rx: -0.3 });   // tente
     sign(i, cx, 3.0, z0 - 0.04, Math.min(w - 0.6, 3.4), 0.42, Math.PI);
     sol(x0, x1, z0, z0 + d);
   };
@@ -198,6 +198,7 @@ export function createMahalle(d: MahalleDeps): MahalleView {
   const actors: Actor[] = [];
   const cars: { g: T.Object3D; lane: number; x: number; v: number }[] = [];
 
+  let kuzeyMat: T.MeshStandardMaterial | null = null, kuzeyOp = 1;
   function make() {
     built = true;
     const b = new Batch(), sb = new Batch(), tx = atlas();
@@ -208,7 +209,9 @@ export function createMahalle(d: MahalleDeps): MahalleView {
       const m = new T.Mesh(g, sm); m.position.set(x, y, z); m.rotation.y = ry; geos.push(g); root.add(m);
       sb.box(w + 0.12, h + 0.12, 0.06, '#3a3d42', x, y, z + (ry ? 0.04 : -0.04));
     };
-    build(b, sign, solid); altyapi(b, sign, solid);
+    const nb = new Batch(); build(b, sign, solid, nb); altyapi(b, sign, solid);
+    // kuzey dükkân sırası kameraya yakın: oyuncu kuzey kaldırımdayken (durak dahil) saydamlaşır, karakter görünür kalır
+    kuzeyMat = solidMat().clone(); mats.push(kuzeyMat); { const m = nb.mesh(kuzeyMat, true, true); geos.push(m.geometry); root.add(m); }
     for (const bb of [b, sb]) { const m = bb.mesh(solidMat(), true, true); geos.push(m.geometry); root.add(m); }
     for (const sp of BINALAR) { const g = binaKur(sp); g.traverse(o => { const m = o as T.Mesh; if (m.isMesh) geos.push(m.geometry); }); root.add(g); }
     // salıncak koltukları (hareketli)
@@ -343,6 +346,7 @@ export function createMahalle(d: MahalleDeps): MahalleView {
   return {
     update(dt) {
       const p = d.hero(), on = p.x > X0 - 30 && p.x < X1 + 30;
+      if (kuzeyMat) { const want = on && p.z > 10.8 && p.z < 22 ? 0.2 : 1; kuzeyOp += (want - kuzeyOp) * Math.min(1, dt * 8); if (Math.abs(kuzeyOp - want) < 0.02) kuzeyOp = want; const tr = kuzeyOp < 0.99; if (kuzeyMat.transparent !== tr) { kuzeyMat.transparent = tr; kuzeyMat.depthWrite = !tr; kuzeyMat.needsUpdate = true; } kuzeyMat.opacity = kuzeyOp; }
       if (on !== inside) { inside = on; root.visible = on; }
       if (!on) return;
       if (!built) make();
