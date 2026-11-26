@@ -10,12 +10,10 @@
 - BÜYÜK BULGU: A1-A5 arsaları (content/esya.ts ARSALAR x 259-285) eski açık dünyadan kalma, harita dışı boşlukta. Oyuncu hiç görmüyor. Öneri: okul+hastane doğusundaki boş çimen (x~60-80, z~30-58) "Martı Evleri", ofis girişte.
 - Kullanıcıdan beklenen: HUD yönü (A/B/C, öneri B telefon) + ofis yeri (arsaların yanı / meydan).
 
-## SIRADAKİ ADIMLAR
-1. 3 HUD yönü maketi (UI'sız oyun görüntüsü üstüne HTML/CSS bindir, playwright ile PNG): A Sade Dock, B Esnaf Telefonu, C Köşe HUD (aşağıda).
-2. Emlak ajansı konsepti: yer adayı (Mahalle Meydanı bankanın yanı / hastane yanındaki boş taş meydan = açık tasarım sorusuydu), dış görünüş, iç (masa, emlakçı NPC, vitrinde ilanlar).
-3. Arsa şantiyesi konsepti: arsa alınca/ev-dükkân kurulunca anında bitmesin; süreli inşaat + projeye göre usta sayısı + iş makinesi (view/world/isletme-insaat.ts + sim/agents/isletme-insaat.ts zaten var, karşı yaka dükkân tadilatı için; arsalara genişlet).
-4. Hepsini bir artifact'te kullanıcıya göster, onay al, sonra uygula.
-5. Uygulama: menuItems (src/game/ui/panels.ts), mulk-panel TABS (src/game/ui/mulk-panel.ts), GUNLUK_HAVUZ (src/content/esya.ts), view/mulk/index.ts build() (anında ev), yeni ajans binası. Kayıt uyumu (rt.mulk/plots şeması) bozulmasın; perf bütçesi.
+## 2026-11-26 UYGULANDI (karar: B Esnaf telefonu, ofis arsaların yanında)
+- a0775a6: alt bar Çanta + Telefon + mini harita + Büfem; Ajanda'da günlük işler; ATM'ler; kedi listesi + vapur görevleri kalktı; yatay telefon düzeni.
+- Sonraki commit: arsalar Martı Evleri'ne taşındı (x 61.5-79, z 28-59; iskele bounds/realm/region x 80'e), Martı Emlak ofisi (view/mulk/santiye.ts buildEmlakOfis), alım/kurma/büyütme sadece ofiste (sim/mulk.ts nearEmlak), süreli şantiye Plot.insaat + gerçek ustalar (agents/isletme-insaat.ts, content arsaInsaatYer) + evreli makineler (view/mulk/santiye.ts). Görüntü: tests/browser/santiye-shot.mjs -> shots/santiye/.
+- Kalan / sonra: AVM ATM'si; ofis içi (emlakçı NPC) yok, sadece cephe; eğitici thread'i yeni yerleri bilmeli (Telefon, ofis, ATM).
 
 ## ENVANTER (mevcut alt bar, panels.ts menuItems)
 Harita, Karakter, Envanter, Mülk (her zaman) + Menü (lv2), Ekip (işçi/lv3), Karne (lv4), Görevler (gün2), Kediler (kedi varsa), Tadilat (yıldız/aşama) = en fazla 10 düğme.

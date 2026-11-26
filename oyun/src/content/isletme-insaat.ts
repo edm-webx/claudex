@@ -32,3 +32,20 @@ export function insaatYer(arsaId: string): InsaatYer | null {
   };
   cache.set(arsaId, y); return y;
 }
+
+/** 2026-11-26 user: "inşaat sürecinde olan her yerde çalışan makineler, araçlar, ustalar olmalı, büyüklüğüne göre projenin".
+ *  Martı Evleri lots (plain ARSALAR, 6.2 x 4.6 fenced): the site lives inside the fence. Local frame = the plot group
+ *  (u = plot local x, v = plot local z, +v towards the street door). Crew size follows the project:
+ *  ev 2 ustalar, dükkân 4, büyütme 3 (4 from level 3 up). Same InsaatYer contract as the far-shore renovations. */
+export type ArsaProje = 'ev' | 'dukkan' | 'yuk';
+export const arsaUstaSayisi = (tur: ArsaProje, lv = 1) => (tur === 'ev' ? 2 : tur === 'dukkan' ? 4 : lv >= 3 ? 4 : 3);
+export function arsaInsaatYer(arsaId: string, tur: ArsaProje, lv = 1): InsaatYer | null {
+  const a = ARSALAR.find(x => x.id === arsaId); if (!a || a.sabit) return null;
+  const dx = Math.sin(a.rotY), dz = Math.cos(a.rotY), px = Math.cos(a.rotY), pz = -Math.sin(a.rotY), ox = a.x, oz = a.z;
+  const n = arsaUstaSayisi(tur, lv), POST = [{ u: -1.2, v: 1.55 }, { u: 1.2, v: 1.55 }, { u: 0, v: 1.6 }, { u: 2.5, v: 0.2 }];
+  return {
+    id: arsaId, ox, oz, dx, dz, yaw: a.rotY, S: 5.2,
+    w: (u, v) => ({ x: ox + px * u + dx * v, z: oz + pz * u + dz * v }),
+    pile: { u: -2.45, v: 1.75 }, posts: POST.slice(0, n),
+  };
+}

@@ -11,7 +11,7 @@ const pads = (sim: any): Pad[] => [...sim.rules.rt.pads];
 function tara(stage: number, gorevler = false) {
   const sim = played(7) as any, S = sim.state; sim.step(1);
   S.stage = stage; S.level = 3 + stage * 3; S.stars = 5;
-  if (gorevler) for (const k of ['served', 'ferries', 'sinav', 'cleaned', 'macOyun', 'miniPlay', 'turistFoto', 'paketTeslim']) S.stats[k] = 1e6;
+  if (gorevler) for (const k of ['served', 'ferries', 'sinav', 'cleaned', 'macOyun', 'miniPlay', 'turistFoto', 'paketTeslim', 'tips']) S.stats[k] = 1e6;
   sim.step(0.6);
   const olu: string[] = [], seen = new Set<string>(), kilitli: string[] = []; let alindi = 0;
   for (let tur = 0; tur < 400; tur++) {

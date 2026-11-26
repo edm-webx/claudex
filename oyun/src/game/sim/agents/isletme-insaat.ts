@@ -6,17 +6,17 @@
  */
 import type { System, SimCtx, Vec2 } from '../../../engine/api';
 import { ARSALAR } from '../../../content/esya';
-import { insaatYer, USTA_SAYISI, type InsaatYer } from '../../../content/isletme-insaat';
+import { insaatYer, arsaInsaatYer, type InsaatYer } from '../../../content/isletme-insaat';
 import type { AgentEnv } from './env';
 import type { Actor } from './types';
 import { icOfArsa, icWorld, icDim } from '../../../content/ic-mekan';
 import { avmGelis, avmGidis, katY } from '../../../content/avm-kat';
 
-const ISIM = ['Usta Recep', 'Usta Selim', 'Usta Cemal'];
+const ISIM = ['Usta Recep', 'Usta Selim', 'Usta Cemal', 'Usta Hayri'];
 const SP = 1.3;
 type Pt = Vec2 & { y?: number };
 interface Usta { a: Actor; i: number; st: 'gel' | 'pile' | 'toPost' | 'work' | 'toPile' | 'cik'; t: number; dur: number; path: Pt[] }
-interface Site { id: string; y: InsaatYer; ustalar: Usta[]; avm?: { y: number; giris: Pt[]; cikis: Pt[] } }
+interface Site { id: string; key: string; y: InsaatYer; ustalar: Usta[]; avm?: { y: number; giris: Pt[]; cikis: Pt[] } }
 
 /** 2026-11-21: Martı AVM dükkânları holün içinde, sokak cephesi yok: şantiye dükkânın içinde kurulur (malzeme yığını yan duvarda,
  *  biri arka duvarda biri yan duvarda çalışır). Ustalar AVM girişinden yürüyen merdivenle gelir, iş bitince aynı yoldan çıkar. */
@@ -36,6 +36,8 @@ export function createInsaat(env: AgentEnv, rt: Record<string, unknown>): Insaat
   const rng = env.rng('insaat');
   const sites = new Map<string, Site>();
   const info = (id: string) => (rt.kafeHost as { info(id: string): { tadilat?: boolean } | null } | undefined)?.info(id) ?? null;
+  const plotOf = (id: string) => (rt.mulk as { plot?(id: string): { insaat?: { tur: 'ev' | 'dukkan' | 'yuk' }; lv: number } | undefined } | undefined)?.plot?.(id);
+  const arsaIds = ARSALAR.filter(a => !a.sabit).map(a => a.id);
   const ids = ARSALAR.filter(a => a.sabit).map(a => a.id), avmIds = new Set(ids.filter(id => icOfArsa(id)?.bina === 'avm'));
 
   const route = (y: InsaatYer, from: Vec2, to: { u: number; v: number }): Vec2[] => {
@@ -51,10 +53,10 @@ export function createInsaat(env: AgentEnv, rt: Record<string, unknown>): Insaat
   };
   const face = (y: InsaatYer): number => Math.atan2(-y.dx, -y.dz);   // towards the wall
 
-  function open(id: string): Site | null {
-    const av = avmYer(id), y = av?.y ?? insaatYer(id); if (!y) return null;
-    const s: Site = { id, y, ustalar: [], avm: av?.avm };
-    for (let i = 0; i < USTA_SAYISI; i++) {
+  function open(id: string, yer?: InsaatYer, key = ''): Site | null {
+    const av = yer ? null : avmYer(id), y = yer ?? av?.y ?? insaatYer(id); if (!y) return null;
+    const s: Site = { id, key, y, ustalar: [], avm: av?.avm };
+    for (let i = 0; i < y.posts.length; i++) {
       const seed = 7001 + id.charCodeAt(1) * 31 + i * 17, at = s.avm ? s.avm.giris[0] : y.w(y.pile.u + i * 0.6, y.pile.v + (i ? 0.5 : -0.5));
       const a = env.reg.add('worker', 'insaat-' + id + '-' + i, { kind: 'worker', role: 'usta', seed }, at, { role: 'usta', name: ISIM[i % ISIM.length] });
       // AVM: girişten yürüyerek gelir (ikincisi biraz geriden)
@@ -95,6 +97,13 @@ export function createInsaat(env: AgentEnv, rt: Record<string, unknown>): Insaat
         if (on && !s) { const n = open(id); if (n) sites.set(id, n); }
         else if (!on && s) { if (close(s)) sites.delete(id); else tick(s, dt); }
         else if (s) tick(s, dt);
+      }
+      // 2026-11-26: Martı Evleri lots under construction (Plot.insaat): crew size by project (content/isletme-insaat.ts)
+      for (const id of arsaIds) {
+        const p = plotOf(id), ins = p?.insaat, key = ins ? ins.tur + (ins.tur === 'yuk' ? p!.lv : '') : '', s = sites.get(id);
+        if (s && s.key !== key) { close(s); sites.delete(id); }
+        if (key && !sites.has(id)) { const n = open(id, arsaInsaatYer(id, ins!.tur, p!.lv) || undefined, key); if (n) sites.set(id, n); }
+        const c = sites.get(id); if (c) tick(c, dt);
       }
     },
     sites: () => [...sites.values()].map(s => ({ id: s.id, ustalar: s.ustalar.length })),

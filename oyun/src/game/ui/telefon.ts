@@ -3,7 +3,7 @@
 // the phone as apps. Phone-landscape first (owner: "telefonda dopdolu durdu"): the middle of the screen stays empty.
 // Pieces, all view-only (they send commands / ui:open events, never write sim state):
 // - the phone sheet: a slide-up handset with app tiles (Harita, Ajanda, Mülklerim, Martı Kasa, Karne, Karakter, Ayarlar, Arkadaşlar)
-// - Mülklerim / Martı Kasa: read-only screens inside the phone (buying, building, money moves happen at the office / ATM / bank)
+// - Mülklerim opens the bag sheet's read-only 'holding' screen; Martı Kasa is a read-only screen inside the phone (buying, building, money moves happen at the office / ATM / bank)
 // - the mini map: a round schematic of the iskele zone baked once from nav.walkable (no extra render pass), bottom-left
 // - the "Büfem" context pill: shown while Sabri stands on his own pier; chips open Menü / Ekip / Tadilat of the büfe
 import { ICONS } from '../../engine/ui/v2-style';
@@ -71,9 +71,9 @@ const CSS = `
 @media (max-height:460px){.tf-mini{width:96px;height:96px}.tf-mini b{display:none}.tf-ph{width:min(300px,calc(100vw - 24px));border-radius:30px;padding:8px}.tf-scr{border-radius:24px}.tf-clock{font-size:30px}.tf-in{padding-top:30px}.tf-app i{width:50px;height:50px}.tf-apps{gap:8px 4px}.tf-w{margin-bottom:10px}}
 `;
 
-type Screen = 'home' | 'mulk' | 'kasa';
+type Screen = 'home' | 'kasa';
 const APPS: { id: string; ad: string; ic: string; bg: string }[] = [
-  { id: 'harita', ad: 'Harita', ic: 'map', bg: '#3a8fd6' }, { id: 'gorevler', ad: 'Ajanda', ic: 'gorev', bg: '#e0883a' }, { id: 'mulk', ad: 'Mülklerim', ic: 'shop', bg: '#8b5cc4' },
+  { id: 'harita', ad: 'Harita', ic: 'map', bg: '#3a8fd6' }, { id: 'gorevler', ad: 'Ajanda', ic: 'gorev', bg: '#e0883a' }, { id: 'holding', ad: 'Mülklerim', ic: 'shop', bg: '#8b5cc4' },
   { id: 'kasa', ad: 'Martı Kasa', ic: 'coin', bg: '#3aa776' }, { id: 'karne', ad: 'Karne', ic: 'karne', bg: '#c49a2a' }, { id: 'karakter', ad: 'Karakter', ic: 'smile', bg: '#4a5370' },
   { id: 'ayarlar', ad: 'Ayarlar', ic: 'gear', bg: '#6c7488' }, { id: 'arkadas', ad: 'Arkadaşlar', ic: 'people', bg: '#d6513a' },
 ];
@@ -159,17 +159,6 @@ ${gl.length ? `<div class="tf-w"><b>AJANDA · BUGÜN</b>${gl.map((h: any) => `${
 <div class="tf-apps">${APPS.map(a => `<button class="tf-app" data-app="${a.id}"><i style="background:${a.bg}">${I(a.ic)}</i>${esc(a.ad)}${a.id === 'gorevler' && bd.ajanda ? `<em>${bd.ajanda}</em>` : ''}</button>`).join('')}</div>`;
   }
   const top = (h: string) => `<div class="tf-top"><button class="tf-back" data-back="1" aria-label="Geri">‹</button><h3>${esc(h)}</h3></div>`;
-  function mulkScr(): string {
-    const m = mulkApi(d.rules() as never)?.model(); if (!m) return top('Mülklerim');
-    const own = (m.arsa as any[]).filter(a => a.owned);
-    let s = top('Mülklerim') + `<div class="tf-row"><b>${own.length ? own.length + ' mülk' : 'Henüz mülkün yok'}</b><small>Arsa almak, ev ya da dükkân yaptırmak ve büyütmek Martı Emlak ofisinde. Karşı yaka dükkânları kapılarındaki sarı kareden alınır, içeriden yönetilir.</small></div>`;
-    for (const a of own) {
-      const ad = a.sabit ? a.ad : a.tur === 'ev' ? 'Evin (' + a.id.toUpperCase() + ')' : a.tur === 'dukkan' ? 'Dükkânın (' + a.id.toUpperCase() + ')' : 'Arsa ' + a.id.toUpperCase();
-      const durum = a.insaat ? 'Şantiye sürüyor' : a.tadilat ? 'Tadilatta' : !a.tur ? 'Boş arsa: ofisten proje seç' : a.lv ? a.lv + '. seviye' : '';
-      s += `<div class="tf-row"><b>${esc(ad)}</b><small>${esc(durum)}${a.till ? ' · kasada ' + tl(a.till) : ''}</small></div>`;
-    }
-    return s;
-  }
   function kasaScr(): string {
     const m = mulkApi(d.rules() as never)?.model(), s = S() || {};
     const b = m?.banka || { tl: 0, borc: 0 };
@@ -177,7 +166,7 @@ ${gl.length ? `<div class="tf-w"><b>AJANDA · BUGÜN</b>${gl.map((h: any) => `${
 <div class="tf-hint">Para yatırmak ve çekmek için bir ATM'ye ya da Martı Kasası Bankası gişesine git. Kredi yalnızca gişede. ATM'ler: iskele, meydan, AVM önü.</div>`;
   }
   function paint() {
-    const html = scr === 'mulk' ? mulkScr() : scr === 'kasa' ? kasaScr() : home();
+    const html = scr === 'kasa' ? kasaScr() : home();
     if (html === key) return; key = html;
     bg.innerHTML = `<div class="tf-ph" role="dialog" aria-label="Telefon"><div class="tf-scr"><div class="tf-notch"></div><div class="tf-in">${html}</div></div></div>`;
   }
@@ -187,7 +176,7 @@ ${gl.length ? `<div class="tf-w"><b>AJANDA · BUGÜN</b>${gl.map((h: any) => `${
     try { d.sfx?.('pick'); } catch { /* */ }
     if (el.dataset.back) { scr = 'home'; key = ''; paint(); return; }
     const a = el.dataset.app; if (!a) return;
-    if (a === 'mulk' || a === 'kasa') { scr = a; key = ''; paint(); return; }
+    if (a === 'kasa') { scr = a; key = ''; paint(); return; }
     api.close();
     if (a === 'arkadas') { (document.querySelector('.on-oda') as HTMLElement | null)?.click(); return; }
     emit(a);

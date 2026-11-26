@@ -10,7 +10,7 @@ import { ESYALAR, ESYA_BY_ID, SANDIKLAR, DUKKAN_TIPLERI, DUKKAN_BY_ID, dukkanMus
 interface Deps { root: HTMLElement; rules: () => { rt: unknown } | null; command(c: { kind: string; [k: string]: unknown }): void; sfx?(id: string): void }
 const mmss = (sec: number) => { const t = Math.max(0, Math.ceil(sec)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
 export interface MulkPanel { update(dt: number): void; open(tab?: OpenTab): void; close(): void; dispose(): void }
-type Tab = 'envanter' | 'banka' | 'gunluk' | 'mulk' | 'defter' | 'salon' | 'okul' | 'avm';
+type Tab = 'envanter' | 'holding' | 'banka' | 'gunluk' | 'mulk' | 'defter' | 'salon' | 'okul' | 'avm';
 /** open() also accepts the old football tab names and hands them to the coordinator card. */
 type OpenTab = Tab | 'stadyum' | 'lig';
 
@@ -56,13 +56,20 @@ export function createMulkPanel(d: Deps): MulkPanel {
   const itemCard = (id: string, n: number, acts = '') => { const e = ESYA_BY_ID[id]; if (!e) return ''; return `<div class="mp-it r${e.nadir}"><span class="mp-ic">${e.ikon}</span><b>${esc(e.ad)}</b><small>${esc(e.blurb)}</small><span class="mp-n">×${n}</span>${acts}</div>`; };
   const usable = (id: string) => ['bozuk_kese', 'tecrube_simit', 'sans_simidi', 'altin_kupon'].includes(id);
 
-  function envanter(m: M): string {
+  /** 2026-11-26 Mülklerim (phone app): the businesses and the holding path, read-only (buying/building at the office, managing at the door) */
+  function holding(m: M): string {
     let s = '';
-    if (m.son) s += `<div class="mp-son">Son sandık: <b>${esc(m.son.sandik)}</b> · +${tl(m.son.tl)}${m.son.esya.length ? ' · ' + m.son.esya.map((i: string) => (ESYA_BY_ID[i]?.ikon || '') + ' ' + esc(ESYA_BY_ID[i]?.ad || i)).join(', ') : ''}</div>`;
     const own = ((m.arsa || []) as M[]).filter(a => a.owned && (a.sabit || a.tur === 'dukkan'));   // ev ve boş arsa işletme değil
     s += `<div class="mp-row"><span class="mp-ic">🌭</span><div><b>Sabri'nin Büfesi</b><small>${m.salon ? m.salon.stage + '. aşama' : 'İskelede'} · ana işletmen</small></div></div>`;
     if (m.takim) s += `<div class="mp-row"><span class="mp-ic" style="background:${m.takim.renk};border-radius:12px">${m.takim.arma || '🛡️'}</span><div><b>${esc(m.takim.ad)}</b><small>Futbol kulübün · Maç Koordinatöründe</small></div></div>`;
     s += `<div class="mp-sec">İşletmelerin <small>(büfedeki gibi: seviye, işçi, kasa)</small></div>` + (own.length ? own.map(a => { const t = a.sabit ? null : DUKKAN_BY_ID[a.tip]; return `<div class="mp-row"><span class="mp-ic">${a.sabit ? esc(a.ikon || '🏪') : t ? t.ikon : '🏠'}</span><div><b>${esc(a.ad || (t ? t.ad : (a.tur === 'ev' ? 'Ev ' : 'Boş arsa ') + String(a.id).toUpperCase()))}</b><small>${a.lv}. seviye${a.isci ? ' · 👷 ' + a.isci + '/' + a.isciMax + ' işçi' + ((a.kadro || []).length ? ' (' + (a.kadro as { ad: string }[]).map(c => esc(c.ad)).join(', ') + ')' : '') : ''}${a.tadilat ? ' · 🔨 tadilatta' : ''} · kasada ${tl(a.till)}${a.sat ? ' · ' + a.sat + ' satış' : ''}${a.asamaAd ? ' · ' + esc(a.asamaAd) : ''}${a.kesya && a.kesya.length ? ' · ' + a.kesya.length + ' alet' : ''}</small></div><button class="mp-b y" data-a="yonet" data-id="${a.id}">Yönet</button></div>`; }).join('') : '<div class="mp-note">Henüz işletmen yok: dükkânın kapısının yanındaki sarı kareye basıp satın al' + ' (sırayla açılırlar: ilki büfe 2. aşamaya gelince).' + '</div>');
+    // 2026-11-26: Martı Evleri lots (homes, empty lots, sites) with a jump to the office tab
+    const evler = ((m.arsa || []) as M[]).filter(a => a.owned && !a.sabit);
+    s += `<div class="mp-sec">Martı Evleri <small>(${m.sahip}/${m.hak} arsa · işlemler ${esc(m.emlakAd || 'Martı Emlak')} ofisinde)</small></div>` + (evler.length ? evler.map(a => {
+      const ic = a.insaat ? '🏗️' : a.tur === 'ev' ? '🏠' : a.tur === 'dukkan' ? (DUKKAN_BY_ID[a.tip]?.ikon || '🏪') : '🟫';
+      const ne = a.insaat ? 'Şantiye · %' + Math.round((1 - a.insaat.left / a.insaat.total) * 100) + ' · kalan ' + mmss(a.insaat.left) : a.tur === 'ev' ? 'Evin' : a.tur === 'dukkan' ? esc(DUKKAN_BY_ID[a.tip]?.ad || 'Dükkân') + ' · ' + a.lv + '. seviye' : 'Boş arsa: ev ya da dükkân yaptırılabilir';
+      return `<div class="mp-row"><span class="mp-ic">${ic}</span><div><b>Arsa ${a.id.toUpperCase()}</b><small>${ne}</small></div></div>`;
+    }).join('') : `<div class="mp-note">Henüz arsan yok. ${esc(m.emlakAd || 'Martı Emlak')} ofisinden ilk arsanı al.</div>`);
     // holding yolu (content/acilis.ts SIRA): alınanlar ✓, sıradaki öne çıkar (koşulu ya da fiyatı), ötekiler sırasını bekler
     const byId = new Map(((m.arsa || []) as M[]).map(a => [a.id, a])), yol = SIRA.map(id => byId.get(id)).filter(Boolean) as M[];
     const sahipN = yol.filter(a => a.owned).length, sira = yol.find(a => !a.owned && a.gorunur !== false);
@@ -72,6 +79,12 @@ export function createMulkPanel(d: Deps): MulkPanel {
       if (a === sira) return `<div class="mp-yd nx"><span>${esc(a.ikon || '🏪')}</span><b>${i + 1}. ${ad}${avm}</b><small>${a.kilit ? '🔒 ' + esc(a.kilit) : '🟨 Satılık: ' + tl(a.fiyat) + ' · kapısındaki kareye yürü'}</small><button class="mp-b y" data-a="yonet" data-id="${a.id}">Göster</button></div>`;
       return `<div class="mp-yd" title="${ad}"><span>🔒</span><b>${i + 1}. ${ad}${avm}</b><small>${esc(String(a.kilit || '').split(' + ')[0])}</small></div>`;
     }).join('') + '</div>';
+    return s;
+  }
+
+  function envanter(m: M): string {
+    let s = '';
+    if (m.son) s += `<div class="mp-son">Son sandık: <b>${esc(m.son.sandik)}</b> · +${tl(m.son.tl)}${m.son.esya.length ? ' · ' + m.son.esya.map((i: string) => (ESYA_BY_ID[i]?.ikon || '') + ' ' + esc(ESYA_BY_ID[i]?.ad || i)).join(', ') : ''}</div>`;
     s += `<div class="mp-sec">Sandıklar <small>(maç, orman, mülk geliri, günlük tahta ve seviye atlayınca düşer)</small></div>`;
     const ch = SANDIKLAR.filter(x => (m.sandik[x.id] || 0) > 0);
     s += ch.length ? ch.map(x => { const key = x.anahtar ? (m.esya[x.anahtar] || 0) > 0 : true; return `<div class="mp-row"><span class="mp-ic" style="font-size:30px">${x.ikon}</span><div><b>${esc(x.ad)} ×${m.sandik[x.id]}</b><small>${tl(x.tl[0])} - ${tl(x.tl[1])} ve ${x.adet[0]}-${x.adet[1]} eşya${x.anahtar ? ' · 🗝️ Altın Anahtar ister' : ''}</small></div><button class="mp-b g" data-a="sandikAc" data-id="${x.id}"${key ? '' : ' disabled'}>Aç</button></div>`; }).join('') : '<div class="mp-note">Sandığın yok. Maç oyna, ormanda mantar topla, günlük tahtayı bitir.</div>';
@@ -120,21 +133,28 @@ export function createMulkPanel(d: Deps): MulkPanel {
   }
 
   function mulk(m: M): string {
-    let s = `<div class="mp-sec">Arsalar <small>(${m.sahip}/${m.hak} hakkın dolu)</small></div>`;
+    const ofis = !!m.emlakYakin, kapali = ofis ? '' : ' disabled';   // 2026-11-26: lots are bought / built / enlarged only at the office
+    let s = `<div class="mp-sec">Arsalar <small>(${m.sahip}/${m.hak} hakkın dolu)</small></div>`
+      + (ofis ? `<div class="mp-note">🏢 ${esc(m.emlakAd || 'Martı Emlak')} ofisindesin: alım, inşaat ve büyütme burada.</div>` : `<div class="mp-note">🏢 Arsa almak, ev ya da dükkân yaptırmak ve büyütmek için <b>${esc(m.emlakAd || 'Martı Emlak')}</b> ofisine git (Telefon → Harita'da EMLAK). Buradan sadece durumu görürsün.</div>`);
     const list = focus ? [...m.arsa].sort((x: M, y: M) => (y.id === focus ? 1 : 0) - (x.id === focus ? 1 : 0)) : m.arsa;
     for (const a of list) {
       if (!a.owned) { const lock = !!a.kilit; s += a.sabit
         ? `<div class="mp-row"${a.id === focus ? ' style="background:#fff3c4"' : ''}><span class="mp-ic">${a.ikon || '☕'}</span><div><b>${esc(a.ad)} · satılık</b><small>${a.kilit ? '🔒 Önce: ' + esc(a.kilit) + ' · ' : ''}${tl(a.fiyat)} · ${icOfArsa(a.id)?.bina === 'avm' ? 'Martı AVM' : 'karşı yaka'}. İçeri girilir, aletleri ve menüsü kendine has. Arsa hakkından düşmez; işçi tutulur. Satın almak için dükkânın kapısının yanındaki sarı kareye bas.</small></div><span class="mp-chip">🟨 Kapıdaki kare</span></div>`
-        : `<div class="mp-row"><span class="mp-ic">🏗️</span><div><b>Arsa ${a.id.toUpperCase()}</b><small>${lock ? '🔒 Önce: ' + esc(a.kilit) + ' · ' : ''}${tl(a.fiyat)}</small></div><button class="mp-b g" data-a="arsaAl" data-id="${a.id}"${lock || m.sahip >= m.hak || m.money < a.fiyat ? ' disabled' : ''}>Satın al</button></div>`; continue; }
+        : `<div class="mp-row"><span class="mp-ic">🏗️</span><div><b>Arsa ${a.id.toUpperCase()}</b><small>${lock ? '🔒 Önce: ' + esc(a.kilit) + ' · ' : ''}${tl(a.fiyat)}</small></div><button class="mp-b g" data-a="arsaAl" data-id="${a.id}"${!ofis || lock || m.sahip >= m.hak || m.money < a.fiyat ? ' disabled' : ''}>Satın al</button></div>`; continue; }
+      if (a.insaat) {   // şantiye running: progress + gold skip (skip works from anywhere, like the café tadilat)
+        const ins = a.insaat, ne = ins.tur === 'ev' ? '🏠 Ev' : ins.tur === 'dukkan' ? (DUKKAN_BY_ID[ins.tip]?.ikon || '🏪') + ' ' + esc(DUKKAN_BY_ID[ins.tip]?.ad || 'Dükkân') : '⬆ ' + esc(DUKKAN_BY_ID[a.tip]?.ad || 'Dükkân') + ' büyütülüyor → ' + (a.lv + 1) + '. seviye';
+        s += `<div class="mp-row" style="flex-wrap:wrap"><span class="mp-ic">🏗️</span><div><b>${ne} · Arsa ${a.id.toUpperCase()}</b><small>Şantiye: ${ins.tur === 'ev' ? '2 usta, kamyonet, betoniyer' : ins.tur === 'dukkan' ? '4 usta; hafriyatta kepçe, temelde mikser, duvarda vinç' : (a.lv >= 3 ? '4' : '3') + ' usta, iskele ve vinç'} · kalan ${mmss(ins.left)}</small></div><div style="flex-basis:100%"><div class="mp-bar"><i style="width:${Math.round((1 - ins.left / ins.total) * 100)}%"></i></div><button class="mp-b y" data-a="insaatAtla" data-id="${a.id}"${m.gold >= ins.skipGold ? '' : ' disabled'}>⏩ Altın Simitle bitir · ${ins.skipGold}</button></div></div>`;
+        continue;
+      }
       if (!a.tur) {
-        s += `<div class="mp-row"><span class="mp-ic">🏗️</span><div><b>Arsa ${a.id.toUpperCase()} · boş</b><small>Ne kurulsun?</small></div><button class="mp-b y" data-a="kurEv" data-id="${a.id}"${m.money >= 25000 ? '' : ' disabled'}>🏠 Ev · 25.000 ₺</button><button class="mp-b y" data-a="dukPick" data-id="${a.id}">🏪 Dükkân</button></div>`;
-        if (pickPlot === a.id) s += `<div class="mp-grid" style="margin-bottom:8px">${DUKKAN_TIPLERI.map(t => `<div class="mp-it"><span class="mp-ic">${t.ikon}</span><b>${esc(t.ad)}</b><small>Kurulum ${tl(t.kurulum)}${m.level < t.seviye ? ' · 🔒 ' + t.seviye + '. seviye' : ''}</small><button class="mp-b g" data-a="kurDuk" data-id="${a.id}" data-tip="${t.id}"${m.level < t.seviye || m.money < t.kurulum ? ' disabled' : ''}>Kur</button></div>`).join('')}</div>`;
+        s += `<div class="mp-row"><span class="mp-ic">🏗️</span><div><b>Arsa ${a.id.toUpperCase()} · boş</b><small>Ne kurulsun?</small></div><button class="mp-b y" data-a="kurEv" data-id="${a.id}"${ofis && m.money >= 25000 ? '' : ' disabled'}>🏠 Ev · 25.000 ₺</button><button class="mp-b y" data-a="dukPick" data-id="${a.id}"${kapali}>🏪 Dükkân</button></div>`;
+        if (pickPlot === a.id) s += `<div class="mp-grid" style="margin-bottom:8px">${DUKKAN_TIPLERI.map(t => `<div class="mp-it"><span class="mp-ic">${t.ikon}</span><b>${esc(t.ad)}</b><small>Kurulum ${tl(t.kurulum)}${m.level < t.seviye ? ' · 🔒 ' + t.seviye + '. seviye' : ''}</small><button class="mp-b g" data-a="kurDuk" data-id="${a.id}" data-tip="${t.id}"${!ofis || m.level < t.seviye || m.money < t.kurulum ? ' disabled' : ''}>Kur</button></div>`).join('')}</div>`;
         continue;
       }
       if (a.tur === 'ev') { s += `<div class="mp-row"><span class="mp-ic">🏠</span><div><b>Evin (Arsa ${a.id.toUpperCase()})</b><small>Oda, mutfak, balkon, teras, kedi köşesi. Kapıya yaklaşıp gir.</small></div><button class="mp-b g" data-a="evAc" data-id="${a.id}"${a.yakin ? '' : ' disabled'}>${a.yakin ? 'Eve gir' : 'Kapıya git'}</button></div>`; continue; }
       const t = DUKKAN_BY_ID[a.tip], y = a.yukselt;
       s += `<div class="mp-row" style="align-items:flex-start"><span class="mp-ic">${a.sabit ? a.ikon : t.ikon}</span><div><b>${a.sabit ? (a.ikon || '') + ' ' + esc(a.ad) : esc(t.ad)} · ${a.lv}. seviye${a.sabit ? ' · ' + esc(a.asamaAd || '') : '' }${a.sabit ? '' : ' (Arsa ' + a.id.toUpperCase() + ')'}</b><small>~${a.musteriSaat || Math.round(dukkanMusteri(t, a.lv) * (1 + 0.4 * a.isci))} müşteri/saat · ${a.sat} satış · kasada ${tl(a.till)}${a.isci ? ' · 👷 ' + a.isci + ' işçi (maaş gün sonunda: ' + tl(a.maasGun || 0) + ')' : ''}${a.yakin ? '' : ' (kasayı toplamak için içeri gir)'}</small></div>
-${!a.sabit && a.isci < a.isciMax ? `<button class="mp-b" data-a="isciAl" data-id="${a.id}"${m.money >= a.isciFiyat ? '' : ' disabled'}>👷 İşçi tut · ${tl(a.isciFiyat)}</button>` : ''}${a.tadilat ? `<div style="flex-basis:100%"><small>🔨 Tadilat: ${esc(a.sonraki?.ad || '')} · kalan ${mmss(a.tadilat.left)}</small><div class="mp-bar"><i style="width:${Math.round((1 - a.tadilat.left / a.tadilat.total) * 100)}%"></i></div><button class="mp-b y" data-a="tadilatAtla" data-id="${a.id}"${m.gold >= a.tadilat.skipGold ? '' : ' disabled'}>⏩ Altın Simitle bitir · ${a.tadilat.skipGold}</button></div>` : y ? `${a.sabit ? `<small style="flex-basis:100%">🟨 Tadilat ${tl(y.tl)}${a.sonraki ? ' · ' + mmss(a.sonraki.sureS) : ''}: bu seviyenin aletleri bitince dükkânın önünde sarı kare çıkar</small>` : `<button class="mp-b y" data-a="yukselt" data-id="${a.id}"${m.money >= y.tl ? '' : ' disabled'}>⬆ ${tl(y.tl)}</button>`}${a.sonraki ? `<small style="flex-basis:100%">Sonraki: <b>${esc(a.sonraki.ad)}</b>${(a.sonraki.aciklar || []).length ? ' · açılır: ' + (a.sonraki.aciklar as string[]).map(esc).join(', ') : ''}${(a.menuSonraki || []).length ? ' · yeni menü' : ''}</small>` : ''}` : '<span class="mp-chip">En üst seviye</span>'}</div>`;
+${!a.sabit && a.isci < a.isciMax ? `<button class="mp-b" data-a="isciAl" data-id="${a.id}"${m.money >= a.isciFiyat ? '' : ' disabled'}>👷 İşçi tut · ${tl(a.isciFiyat)}</button>` : ''}${a.tadilat ? `<div style="flex-basis:100%"><small>🔨 Tadilat: ${esc(a.sonraki?.ad || '')} · kalan ${mmss(a.tadilat.left)}</small><div class="mp-bar"><i style="width:${Math.round((1 - a.tadilat.left / a.tadilat.total) * 100)}%"></i></div><button class="mp-b y" data-a="tadilatAtla" data-id="${a.id}"${m.gold >= a.tadilat.skipGold ? '' : ' disabled'}>⏩ Altın Simitle bitir · ${a.tadilat.skipGold}</button></div>` : y ? `${a.sabit ? `<small style="flex-basis:100%">🟨 Tadilat ${tl(y.tl)}${a.sonraki ? ' · ' + mmss(a.sonraki.sureS) : ''}: bu seviyenin aletleri bitince dükkânın önünde sarı kare çıkar</small>` : `<button class="mp-b y" data-a="yukselt" data-id="${a.id}"${ofis && m.money >= y.tl ? '' : ' disabled'}>⬆ Büyüt · ${tl(y.tl)}</button>`}${a.sonraki ? `<small style="flex-basis:100%">Sonraki: <b>${esc(a.sonraki.ad)}</b>${(a.sonraki.aciklar || []).length ? ' · açılır: ' + (a.sonraki.aciklar as string[]).map(esc).join(', ') : ''}${(a.menuSonraki || []).length ? ' · yeni menü' : ''}</small>` : ''}` : '<span class="mp-chip">En üst seviye</span>'}</div>`;
       if (a.sabit) {   // 2026-11-08: the café's own menu, next dishes, equipment
         const own = new Set<string>(a.kesya || []);
         s += `<div class="mp-row" style="display:block;margin-top:-4px"><small><b>Menü</b> ${(a.menu || []).map((x: { ikon: string; ad: string; fiyat: number }) => `<span class="mp-chip">${x.ikon} ${esc(x.ad)} ${tl(x.fiyat)}</span>`).join(' ')}</small>
@@ -176,9 +196,9 @@ ${a.isci < a.isciMax ? `<div class="mp-sec" style="margin:8px 0 4px">İlan panos
     if ((o.sinavlar as number[]).length) h += `<small style="display:block;margin-top:6px">Son sınavlar: ${(o.sinavlar as number[]).slice(-6).join(', ')}</small>`;
     return h;
   }
-  const TABS: [Tab, string][] = [['envanter', '🎒 Çanta'], ['banka', '🏦 Banka'], ['gunluk', '📋 Günlük'], ['mulk', '🏠 Mülk'], ['defter', '📓 Defter'], ['salon', '🍽 Salon'], ['okul', '📚 Okul'], ['avm', '🛍 AVM']];
+  const TABS: [Tab, string][] = [['envanter', '🎒 Çanta'], ['holding', '🏢 Mülklerim'], ['banka', '🏦 Banka'], ['gunluk', '📋 Günlük'], ['mulk', '🏠 Mülk'], ['defter', '📓 Defter'], ['salon', '🍽 Salon'], ['okul', '📚 Okul'], ['avm', '🛍 AVM']];
   function paint(m: M) {
-    const body = tab === 'envanter' ? envanter(m) : tab === 'banka' ? banka(m) : tab === 'gunluk' ? gunluk(m) : tab === 'mulk' ? mulk(m) : tab === 'defter' ? defter(m) : tab === 'salon' ? salon(m) : tab === 'okul' ? okul(m) : avm(m);
+    const body = tab === 'envanter' ? envanter(m) : tab === 'holding' ? holding(m) : tab === 'banka' ? banka(m) : tab === 'gunluk' ? gunluk(m) : tab === 'mulk' ? mulk(m) : tab === 'defter' ? defter(m) : tab === 'salon' ? salon(m) : tab === 'okul' ? okul(m) : avm(m);
     const sc = (bg.querySelector('.mp-body') as HTMLElement | null)?.scrollTop || 0, tsc = (bg.querySelector('.mp-tabs') as HTMLElement | null)?.scrollLeft || 0;
     bg.innerHTML = `<div class="mp-card"><div class="mp-top"><h2>${tab === 'banka' && m.banka?.atm ? '🏧 ATM' : TABS.find(x => x[0] === tab)![1]}</h2><span class="mp-chip">${tl(m.money)}</span><span class="mp-chip">🥨 ${m.gold}</span><button class="mp-x" data-a="close">✕</button></div>
 <div class="mp-body">${body}</div></div>`;   // 2026-11-26 owner: no tab strip; each place opens only its own screen (Çanta, gişe/ATM, dükkân kapısı, ofis...)
@@ -202,6 +222,7 @@ ${a.isci < a.isciMax ? `<div class="mp-sec" style="margin:8px 0 4px">İlan panos
     if (a === 'kurDuk') { pickPlot = ''; cmd({ op: 'arsaKur', id, tur: 'dukkan', tip: el.dataset.tip }); return; }
     if (a === 'evAc') { cmd({ op: 'evAc', id }); api.close(); return; }
     if (a === 'tadilatAtla') { cmd({ op: 'tadilatAtla', id }); return; }
+    if (a === 'insaatAtla') { cmd({ op: 'insaatAtla', id }); return; }
     if (a === 'ilanAl') { cmd({ op: 'ilanAl', id, e: el.dataset.e }); return; }
     if (a === 'ilanYenile') { cmd({ op: 'ilanYenile', id }); return; }
     if (a === 'kov') { cmd({ op: 'kov', id, n }); return; }
@@ -224,9 +245,9 @@ ${a.isci < a.isciMax ? `<div class="mp-sec" style="margin:8px 0 4px">İlan panos
       const ktHint = !!(v as { ktYakin?: boolean }).ktYakin;
       // 2026-11-20: every AVM room is a business of its own: an unsold one offers itself first, an owned one the mall shopping
       const avmSatilik = !!v.avmYakin && !!v.arsaYakin && !(m.model().arsa as M[]).find(x => x.id === v.arsaYakin)?.owned;
-      const ht: OpenTab | null = ktHint ? 'mulk' : v.ipucuYakin ? 'defter' : v.okulYakin ? 'okul' : v.avmYakin && !avmSatilik ? 'avm' : v.stadyumYakin ? 'stadyum' : v.bankaYakin || (v as { atmYakin?: boolean }).atmYakin ? 'banka' : v.arsaYakin ? 'mulk' : v.salonYakin ? 'salon' : null;
+      const ht: OpenTab | null = ktHint ? 'mulk' : v.ipucuYakin ? 'defter' : v.okulYakin ? 'okul' : v.avmYakin && !avmSatilik ? 'avm' : v.stadyumYakin ? 'stadyum' : v.bankaYakin || (v as { atmYakin?: boolean }).atmYakin ? 'banka' : (v as { emlakYakin?: boolean }).emlakYakin || v.arsaYakin ? 'mulk' : v.salonYakin ? 'salon' : null;
       const fa = v.arsaYakin ? (m.model().arsa as M[]).find(x => x.id === v.arsaYakin) : null; if (fa) focus = fa.id;
-      const lbl = ktHint ? '✏️ Tezgaha geç (birinci şahıs)' : ht === 'defter' ? '🔍 İncele' : ht === 'stadyum' ? '🧢 Koordinatörle konuş' : ht === 'banka' ? ((v as { atmYakin?: boolean }).atmYakin ? '🏧 ATM: para yatır / çek' : '🏦 Gişe: bankayı aç') : ht === 'salon' ? '🍽 Salon bilgisi' : ht === 'okul' ? '📚 İngilizce dersi / sınav' : ht === 'avm' ? '🛍 AVM: alışveriş, sinema' : ht === 'mulk' ? (fa && fa.sabit ? (fa.ikon || '🏪') + ' ' + fa.ad + (fa.owned ? ': işçi ve bilgi' : ': bilgi (satın almak için sarı kare)') : '🏠 Arsa / Dükkân') : '';
+      const lbl = ktHint ? '✏️ Tezgaha geç (birinci şahıs)' : ht === 'defter' ? '🔍 İncele' : ht === 'stadyum' ? '🧢 Koordinatörle konuş' : ht === 'banka' ? ((v as { atmYakin?: boolean }).atmYakin ? '🏧 ATM: para yatır / çek' : '🏦 Gişe: bankayı aç') : ht === 'salon' ? '🍽 Salon bilgisi' : ht === 'okul' ? '📚 İngilizce dersi / sınav' : ht === 'avm' ? '🛍 AVM: alışveriş, sinema' : ht === 'mulk' && (v as { emlakYakin?: boolean }).emlakYakin && !fa ? '🏢 Martı Emlak: arsa · ev · dükkân' : ht === 'mulk' ? (fa && fa.sabit ? (fa.ikon || '🏪') + ' ' + fa.ad + (fa.owned ? ': işçi ve bilgi' : ': bilgi (satın almak için sarı kare)') : '🏠 Arsa / Dükkân') : '';
       ktMode = ktHint;
       if (ht !== hintTab || hint.textContent !== lbl) { hintTab = ht; hint.style.display = ht && !openNow && !kd.isOpen() ? 'block' : 'none'; hint.textContent = lbl; }
       else if (hintTab) hint.style.display = openNow || kd.isOpen() ? 'none' : 'block';

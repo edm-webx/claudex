@@ -677,11 +677,11 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   // karar paketi G: Envanter / Mülk panel (banka, günlük tahta, arsa, stadyum); the bank mirrors the cloud account record
   const kirtasiyeFp = playMode && uiReal ? make('kirtasiyeFp', () => createKirtasiyeFp({ root: U.root, rules: () => sim.rules, command, sfx: id => { try { audio?.sfx(id); } catch { /* */ } } })) : null;
   const mulkPanel = playMode && uiReal ? make('mulkPanel', () => createMulkPanel({ root: U.root, rules: () => sim.rules, command, sfx: id => { try { audio?.sfx(id); } catch { /* */ } } })) : null;
-  if (mulkPanel) U.root.addEventListener('ui:open', e => { const id = (e as CustomEvent).detail as string; if (id === 'envanter') mulkPanel.open('envanter'); else if (id === 'mulk') mulkPanel.open('mulk'); });
+  if (mulkPanel) U.root.addEventListener('ui:open', e => { const id = (e as CustomEvent).detail as string; if (id === 'envanter') mulkPanel.open('envanter'); else if (id === 'holding') mulkPanel.open('holding'); else if (id === 'mulk') mulkPanel.open('mulk'); });
   // 2026-11-26 Esnaf telefonu HUD: phone sheet, mini map, Büfem context pill (ui/telefon.ts)
   const telefon = playMode && uiReal ? make('telefon', () => createTelefon({ root: U.root, rules: () => sim.rules as never, heroPos: () => pos, walkable: p => nav.walkable(p), command, sfx: id => { try { audio?.sfx(id); } catch { /* */ } } })) : null;
   if (telefon) U.root.addEventListener('ui:open', e => { if ((e as CustomEvent).detail === 'telefon') telefon.toggle(); });
-  const mulkView = ACIK_DUNYA && playMode && labels ? make('mulkView', () => createMulkView({ scene, labels, project, rules: () => sim.rules, hero: () => pos, setSolid: r => nav.setSolids('mulk', r) })) : null;
+  const mulkView = ACIK_DUNYA && playMode && labels ? make('mulkView', () => createMulkView({ scene, labels, project, rules: () => sim.rules, hero: () => pos, setSolid: r => nav.setSolids('mulk', r), night: () => nightK })) : null;
   const stadyumView = ACIK_DUNYA && playMode && labels ? make('stadyumView', () => createStadyumView({ scene, labels, project, rules: () => sim.rules, hero: () => pos, setSolid: r => nav.setSolids('stadyum-kulup', r) })) : null;
   const bankaRt = () => (sim.rules.rt as unknown as { banka?: { tl: number; esya: Record<string, number>; dirty: boolean; faizSaat?: number; saat?: number } }).banka;
   let bankaT = 0;

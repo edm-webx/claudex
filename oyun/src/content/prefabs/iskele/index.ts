@@ -23,7 +23,7 @@ import { buildKiosk, jobBoardInto, drawSign } from './kiosk';
 import { stationBuilt, meatGeo, spinGeo, tableBuilt, decorBuild, makeFerryMesh, FOOT, DECOR_SIZE } from './props';
 import { rectAABB } from './layout';
 
-export const ISKELE_BOUNDS: Rect = { x0: -62, z0: -19, x1: 62, z1: 59 };
+export const ISKELE_BOUNDS: Rect = { x0: -62, z0: -19, x1: 79, z1: 59 }   /* x1 62 -> 79 (2026-11-26): Martı Evleri lawn east of the hospital */;
 
 /** Pilings of the pier (same loops as buildPier), for the sea foam mask without building the pier. */
 export function pilingList(): { x: number; z: number }[] {
@@ -43,6 +43,8 @@ export function waterColliders(): Rect[] {
     // the 6-lane road: closed everywhere except the footbridge corridor
     { x0: b.x0, x1: UG.x - UG.hw, z0: pr.z1, z1: 28.4 },
     { x0: UG.x + UG.hw, x1: b.x1, z0: pr.z1, z1: 28.4 },
+    // 2026-11-26: the iskele side past the promenade end stays closed (only the karşı yaka lawn, Martı Evleri, opened with x1 79)
+    { x0: pr.x1, x1: b.x1, z0: pr.z0, z1: pr.z1 },
   ];
 }
 

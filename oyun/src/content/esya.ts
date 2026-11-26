@@ -67,16 +67,22 @@ export const ATMLER: { id: string; x: number; z: number; ry: number; ad: string 
 ];
 export const ATM_MENZIL = 1.6;
 /** Martı Emlak (2026-11-26): the only place where plots are bought, built on and enlarged. kapi = interaction point. */
-export const EMLAK = { x: 62.5, z: 33.5, kapi: { x: 62.5, z: 36.6 }, w: 6.4, d: 5.2, ad: 'Martı Emlak' };
+export const EMLAK = { x: 66.0, z: 34.6, kapi: { x: 66.0, z: 31.4 }, w: 6.4, d: 5.2, ad: 'Martı Emlak' };
+export const EMLAK_MENZIL = 2.6;
+/** Martı Evleri: the lawn the lots stand on (zone bounds reach x 79 for it) */
+export const MARTI_EVLERI = { x0: 61.5, x1: 79, z0: 28.4, z1: 59 };
 /** sabit: a fixed building on the map (karşı yaka kafeler): buying the plot opens that shop at once; kapi = interaction point. */
 /** kat: Martı AVM katı (content/avm-kat.ts); kapı o katın holünde, oyuncu aynı katta olmalı */
 export interface Arsa { id: string; x: number; z: number; fiyat: number; seviye: number; rotY: number; sabit?: string; kapi?: { x: number; z: number }; ad?: string; kat?: number }
 export const ARSALAR: Arsa[] = [
-  { id: 'a1', x: 259.5, z: 0.4, fiyat: 60000, seviye: 3, rotY: 0 },
-  { id: 'a2', x: 266.2, z: 0.4, fiyat: 150000, seviye: 5, rotY: 0 },
-  { id: 'a3', x: 272.9, z: 0.4, fiyat: 350000, seviye: 8, rotY: 0 },
-  { id: 'a4', x: 279.6, z: 0.4, fiyat: 800000, seviye: 11, rotY: 0 },
-  { id: 'a5', x: 284.5, z: 18.2, fiyat: 1800000, seviye: 14, rotY: Math.PI },
+  // 2026-11-26 owner: "arsa var, alıyosun, arsa nerde?": a1..a5 stood at x 259-285, a leftover of the old open world, out of every map.
+  // They now form "Martı Evleri", the empty lawn east of the school and the hospital (x 62..79, karşı yaka), around Martı Emlak.
+  // West row faces the lane (+x, rotY +90°), east row faces it (-x, rotY -90°); kapi = in front of the lot on the lane.
+  { id: 'a1', x: 65.6, z: 42.0, fiyat: 60000, seviye: 3, rotY: Math.PI / 2, kapi: { x: 69.2, z: 42.0 } },
+  { id: 'a2', x: 65.6, z: 50.0, fiyat: 150000, seviye: 5, rotY: Math.PI / 2, kapi: { x: 69.2, z: 50.0 } },
+  { id: 'a3', x: 75.0, z: 36.0, fiyat: 350000, seviye: 8, rotY: -Math.PI / 2, kapi: { x: 71.4, z: 36.0 } },
+  { id: 'a4', x: 75.0, z: 44.0, fiyat: 800000, seviye: 11, rotY: -Math.PI / 2, kapi: { x: 71.4, z: 44.0 } },
+  { id: 'a5', x: 75.0, z: 52.0, fiyat: 1800000, seviye: 14, rotY: -Math.PI / 2, kapi: { x: 71.4, z: 52.0 } },
   // karşı yaka kafeler (Kenney building-c at these spots, karsi-look.ts); door faces the square (+x)
   { id: 'k1', x: -17.5, z: 37.9, fiyat: 90000, seviye: 3, rotY: Math.PI / 2, sabit: 'kafe', kapi: { x: -11.8, z: 37.9 }, ad: 'Meydan Kafe' },
   { id: 'k2', x: -17.5, z: 51.5, fiyat: 120000, seviye: 3, rotY: Math.PI / 2, sabit: 'kafe', kapi: { x: -11.8, z: 51.5 }, ad: 'Sahil Bistro' },
