@@ -66,9 +66,6 @@ export const ATMLER: { id: string; x: number; z: number; ry: number; ad: string 
   { id: 'atm-banka', x: 7.6, z: 41.25, ry: 0, ad: 'Banka önü ATM' },
 ];
 export const ATM_MENZIL = 1.6;
-/** Martı Emlak (2026-11-26): the only place where plots are bought, built on and enlarged. kapi = interaction point. */
-export const EMLAK = { x: 263.5, z: 18.4, kapi: { x: 265.6, z: 14.4 }, w: 5.8, d: 6.4, ad: 'Martı Emlak' };   // Martı Konutları, north row (the old eczane), across a1-a2, 17 m from the 42B stop
-export const EMLAK_MENZIL = 2.6;
 /** sabit: a fixed building on the map (karşı yaka kafeler): buying the plot opens that shop at once; kapi = interaction point. */
 /** kat: Martı AVM katı (content/avm-kat.ts); kapı o katın holünde, oyuncu aynı katta olmalı */
 export interface Arsa { id: string; x: number; z: number; fiyat: number; seviye: number; rotY: number; sabit?: string; kapi?: { x: number; z: number }; ad?: string; kat?: number }

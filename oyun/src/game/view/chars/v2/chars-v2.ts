@@ -796,7 +796,7 @@ const STYLE: any = { sabri: { rate: 8.6, sway: 0.05, bob: 1 }, sabriye: { rate: 
 
 function Hero(this: any, opts?: any) {
   opts = opts || {};
-  this.kind = opts.kind || 'worker'; this.role = opts.role; this.segK = opts.seg; this.seed = opts.seed == null ? Math.floor(vrand() * 1e6) : opts.seed;
+  this.kind = opts.kind || 'worker'; this.role = opts.role; this.seed = opts.seed == null ? Math.floor(vrand() * 1e6) : opts.seed;
   this.group = new T.Group(); this.group.name = 'hero-' + this.kind;
   this.rig = new T.Group(); this.group.add(this.rig);
   this.hand = new T.Object3D(); this.hand.name = 'hand';
@@ -815,7 +815,7 @@ Hero.prototype.setLook = function (this: any, look?: any) {
   const L = this.look = normLook(base, this.preset ? 'custom' : this.kind, this.role, this.seed);
   this.style = STYLE[L.style] || STYLE.def;
   if (this.mesh) { this.rig.remove(this.mesh); this.mesh.geometry.dispose(); this.mesh.material.dispose(); if (this.akis) { this.akis.birak(); this.akis = null; } else if (this.tex) this.tex.dispose(); }
-  const H = withSeg(this.segK ? Math.min(this.segK, SEG.hero) : SEG.hero, () => buildHeroMesh(L));   // segK: uzaktan görülen arka plan NPC'si (view/mahalle)
+  const H = withSeg(SEG.hero, () => buildHeroMesh(L));
   const mat = new T.MeshLambertMaterial({ vertexColors: true, alphaTest: 0.5 });
   // PRF-15: NPC atlases (1024x512, 2.7 MB GPU each; 40+ on screen in the forest / across the road) stream their top level:
   // half scale until the camera is close enough for it to show, the player's own heroes always full

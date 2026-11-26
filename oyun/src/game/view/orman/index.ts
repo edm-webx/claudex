@@ -43,7 +43,6 @@ export function createOrmanView(d: OrmanViewDeps): OrmanView {
   const os = REGION_BY_ID.orman.stop, ss = REALM_BY_ID.stadyum.stop;
   stop(os.x, os.z, 'Martıköy İskele', 'ORMAN DURAĞI · 42B DÖNÜŞ');
   stop(ss.x, ss.z, 'Stadyum · İskele · Orman', 'STADYUM KAPISI · 42B');
-  { const ms = REALM_BY_ID.mahalle.stop; stop(ms.x, ms.z, 'İskele · Stadyum · Orman', 'MARTI KONUTLARI · 42B'); }   // 2026-11-26 arsaların mahallesi
   const bus = buildBus(kit); bus.object.visible = false; root.add(bus.object);
   let busX = 0, busKey = '', busT0 = 0, busP0 = 0, solidT = 0, solidOn = false;
   // forest sign text

@@ -35,7 +35,6 @@ export const SAHNELER = [
   { ad: 'karsi-yaka-bati', stage: 10, tp: [-30, 45] },
   { ad: 'hali-saha', stage: 10, tp: [399, 12.2] },
   { ad: 'orman', stage: 10, tp: [806, 9] },
-  { ad: 'mahalle', stage: 10, tp: [268, 9.5] },   // Martı Konutları (2026-11-26): park, arsalar, apartman şantiyesi, altyapı
 ].filter(s => !sahneSec || sahneSec.includes(s.ad));
 
 const globalRoot = (() => { try { return execSync('npm root -g').toString().trim(); } catch { return ''; } })();

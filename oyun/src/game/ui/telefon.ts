@@ -3,13 +3,13 @@
 // the phone as apps. Phone-landscape first (owner: "telefonda dopdolu durdu"): the middle of the screen stays empty.
 // Pieces, all view-only (they send commands / ui:open events, never write sim state):
 // - the phone sheet: a slide-up handset with app tiles (Harita, Ajanda, Mülklerim, Martı Kasa, Karne, Karakter, Ayarlar, Arkadaşlar)
-// - Mülklerim opens the bag sheet's read-only 'holding' screen; Martı Kasa is a read-only screen inside the phone (buying, building, money moves happen at the office / ATM / bank)
+// - Mülklerim opens the bag sheet's read-only 'holding' screen; Martı Kasa is a read-only screen inside the phone (money moves happen at the ATM / bank)
 // - the mini map: a round schematic of the iskele zone baked once from nav.walkable (no extra render pass), bottom-left
 // - the "Büfem" context pill: shown while Sabri stands on his own pier; chips open Menü / Ekip / Tadilat of the büfe
 import { ICONS } from '../../engine/ui/v2-style';
 import { ISKELE_ZONE } from '../../content/zones/iskele';
 import { PIER } from '../../content/prefabs/iskele/layout';
-import { BANKA, ATMLER, EMLAK } from '../../content/esya';
+import { BANKA, ATMLER } from '../../content/esya';
 import { mulkApi } from '../sim/mulk';
 import { realmAt } from '../../content/realm';
 
@@ -108,7 +108,7 @@ export function createTelefon(d: Deps): Telefon {
     }
     g.putImageData(img, 0, 0); bake = c;
   }
-  const POI = (): { x: number; z: number; c: string }[] => [{ x: 0, z: 0, c: '#ffd23f' }, { x: BANKA.x, z: BANKA.z, c: '#5aa9d6' }, { x: EMLAK.x, z: EMLAK.z, c: '#8fd06b' }, ...ATMLER.map(a => ({ x: a.x, z: a.z, c: '#ffffff' }))];
+  const POI = (): { x: number; z: number; c: string }[] => [{ x: 0, z: 0, c: '#ffd23f' }, { x: BANKA.x, z: BANKA.z, c: '#5aa9d6' }, ...ATMLER.map(a => ({ x: a.x, z: a.z, c: '#ffffff' }))];
   function drawMini() {
     const p = d.heroPos(), inZone = p.x >= B.x0 - 4 && p.x <= B.x1 + 4 && p.z >= B.z0 - 4 && p.z <= B.z1 + 4;
     mini.classList.toggle('uzak', !inZone); if (!inZone) { const ad = realmAt(p.x)?.name || ''; if (mini.dataset.yer !== ad) mini.dataset.yer = ad; }
@@ -165,7 +165,7 @@ ${gl.length ? `<div class="tf-w"><b>AJANDA · BUGÜN</b>${gl.map((h: any) => `${
     const m = mulkApi(d.rules() as never)?.model(), s = S() || {};
     const b = m?.banka || { tl: 0, borc: 0 };
     return top('Martı Kasa') + `<div class="tf-row"><small>Cebinde</small><div class="tf-big">${tl(s.money)}</div></div><div class="tf-row"><small>Bankada</small><div class="tf-big" style="color:#2a6fb8">${tl(b.tl)}</div>${b.borc >= 1 ? `<small>Kredi borcun: ${tl(b.borc)}</small>` : ''}</div>
-<div class="tf-hint">Para yatırmak ve çekmek için bir ATM'ye ya da Martı Kasası Bankası gişesine git. Kredi yalnızca gişede. ATM'ler: iskele, meydan, AVM önü.</div>`;
+<div class="tf-hint">Para yatırmak ve çekmek için bir ATM'ye ya da Martı Kasası Bankası gişesine git. Kredi yalnızca gişede. ATM'ler: iskele ve banka önü.</div>`;
   }
   function paint() {
     const html = scr === 'kasa' ? kasaScr() : home();

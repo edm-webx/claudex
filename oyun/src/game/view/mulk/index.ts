@@ -9,8 +9,6 @@ import type { Rules } from '../../sim/state';
 import { mulkApi } from '../../sim/mulk';
 import { BANKA, ARSALAR, DUKKAN_BY_ID, ATMLER } from '../../../content/esya';
 import { icBina } from '../../../content/ic-mekan';
-import { santiyeKur, type Santiye } from '../world/santiye-kit';
-import { SETLER } from '../../../content/santiye';
 const AVM_ARSA = icBina('avm').map(m => m.arsa || '').sort((x, y) => (ARSALAR.find(a => a.id === x)?.x || 0) - (ARSALAR.find(a => a.id === y)?.x || 0));
 import type { Vec3, ScreenPt } from '../../../engine/api';
 import type { HtmlLabels, HtmlLabel } from '../../ui/labels';
@@ -64,7 +62,7 @@ export function createMulkView(d: MulkViewDeps): MulkView {
   const bankL = d.labels.label();
 
   /* ---- plots ---- */
-  interface PlotG { g: T.Group; dyn: T.Group; key: string; label: HtmlLabel; sign: string; santiye?: Santiye | null }
+  interface PlotG { g: T.Group; dyn: T.Group; key: string; label: HtmlLabel; sign: string }
   const plots = new Map<string, PlotG>();
   for (const a of ARSALAR) {
     const g = new T.Group(); g.position.set(a.x, 0, a.z); g.rotation.y = a.rotY; root.add(g);
@@ -77,17 +75,9 @@ export function createMulkView(d: MulkViewDeps): MulkView {
     plots.set(a.id, { g, dyn, key: '#', label: d.labels.label(), sign: '' });
   }
   const awning = (p: T.Object3D, w: number, c1: string, c2: string, z: number, y: number) => { const n = 8, sw = w / n; for (let i = 0; i < n; i++) { const o = box(p, sw, 0.1, 1.5, i % 2 ? c1 : c2, -w / 2 + sw * (i + 0.5), y, z); o.rotation.x = 0.28; } };
-  function build(p: PlotG, v: { tur: string | null; tip: string; lv: number; owned: boolean; insa?: number | null }) {
-    p.dyn.clear(); if (p.santiye) { p.santiye.dispose(); p.santiye = null; }
+  function build(p: PlotG, v: { tur: string | null; tip: string; lv: number; owned: boolean }) {
+    p.dyn.clear();
     const g = p.dyn;
-    // 2026-11-26: arsada yapım sürüyor: hafriyat/temel, karkas, duvar, çatı+sıva aşamaları; betoniyer, el arabası, kum, tuğla, merdiven (ustalar view/mahalle'de yürür)
-    if (v.owned && v.tur && v.insa != null) {
-      const ev = v.tur === 'ev', t = ev ? null : DUKKAN_BY_ID[v.tip];
-      const s = santiyeKur({ w: 6.0, d: 4.4, sikisik: true, plan: { ...SETLER.orta, cit: false, toz: 10 }, kabuk: ev ? { w: 4.4, d: 3.0, h: 2.7, cati: 'kirma' } : { w: 4.6, d: 3.0, h: 2.9, cati: 'duz', duvar: '#efe6d2' }, iskeleYer: 'yok', cit: false, serit: false,
-        pano: { baslik: ev ? 'EV YAPIMI' : (t ? t.ad.toLocaleUpperCase('tr-TR') : 'DÜKKÂN') + ' İNŞAATI', alt: 'Sahibi: Sabri · Martı Konutları' } });
-      s.g.position.set(0, 0.1, 0); g.add(s.g); p.santiye = s; s.update(0, v.insa, 0);
-      return;
-    }
     if (!v.owned) { cyl(g, 0.05, 1.9, '#7d5638', 2.4, 1.0, 1.7, 6); box(g, 1.4, 0.7, 0.08, '#ffd23f', 2.4, 1.9, 1.7, { emissive: '#4a3d08', emissiveIntensity: 0.3 }); return; }
     if (!v.tur) { box(g, 3.2, 0.5, 2.2, '#b09878', 0, 0.35, 0); box(g, 1.0, 0.5, 0.9, '#c8b08a', 1.4, 0.85, 0.4); return; }
     if (v.tur === 'ev') {
@@ -134,9 +124,8 @@ export function createMulkView(d: MulkViewDeps): MulkView {
       const v = m.view(), md = m.model();
       for (const pv of v.plots) {
         const p = plots.get(pv.id)!, mp = md.arsa.find(x => x.id === pv.id)!;
-        const k = [pv.owned, pv.tur, pv.tip, pv.lv, pv.insa != null, 12].join('|');
+        const k = [pv.owned, pv.tur, pv.tip, pv.lv, 12].join('|');
         if (k !== p.key) { p.key = k; if (!pv.sabit) build(p, pv); }
-        if (p.santiye && pv.insa != null && Math.hypot(d.hero().x - pv.x, d.hero().z - pv.z) < 60) p.santiye.update(dt, pv.insa, 0);
       }
       if (Math.hypot(d.hero().x - BANKA.x, d.hero().z - BANKA.z) < 26) put(bankL, BANKA.x, 4.8, BANKA.z + BANKA.d / 2 + 0.7, '🏦 ' + esc(BANKA.ad)); else bankL.hide();
       for (const pv of v.plots) {

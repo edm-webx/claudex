@@ -10,6 +10,9 @@
 - BÜYÜK BULGU: A1-A5 arsaları (content/esya.ts ARSALAR x 259-285) eski açık dünyadan kalma, harita dışı boşlukta. Oyuncu hiç görmüyor. Öneri: okul+hastane doğusundaki boş çimen (x~60-80, z~30-58) "Martı Evleri", ofis girişte.
 - Kullanıcıdan beklenen: HUD yönü (A/B/C, öneri B telefon) + ofis yeri (arsaların yanı / meydan).
 
+## 2026-11-26 GECE: ARSA/MAHALLE/EMLAK DONDURULDU (kullanıcı: "yeni arsalar mahalle gibi ayrı yerde olacak, sonraya attık")
+- Dalın ucu yalnız HUD işi (alt bar, telefon, ATM, günlük işler, kedi listesi ve vapur temizliği, Mülklerim ekranı). Mahalle merge'ü ve Martı Emlak ofisi geri alındı ama geçmişte duruyor: emlak+mahalle hâli commit 9634861 (geri getirmek için o commit'ten dosyaları al). Arsa ve inşaatın asıl sahibi inşaat thread'i (arinot).
+
 ## 2026-11-26 UYGULANDI (karar: B Esnaf telefonu, ofis arsaların yanında)
 - a0775a6: alt bar Çanta + Telefon + mini harita + Büfem; Ajanda'da günlük işler; ATM'ler; kedi listesi + vapur görevleri kalktı; yatay telefon düzeni.
 - 2026-11-26 karar (kullanıcı): arsalar inşaat thread'inin Martı Konutları mahallesinde (realm 'mahalle', 42B Meydan Çeşmesi). Benim Martı Evleri/şantiye denemem (1d9ae39) geri alındı (8e6f668), arinot b2a9074 merge edildi (0e6794c). Martı Emlak = mahallede eski eczane (view/mahalle/index.ts TABELA[3]), EMLAK kapı (265.6, 14.4); alım/kurma/büyütme sadece orada. Görüntü: shots/emlak, shots/emlak-tel.

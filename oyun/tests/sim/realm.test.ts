@@ -4,7 +4,7 @@ import { played } from './m1-helpers';
 import { disariApi } from '../../src/game/sim/disari';
 import { REALM_BY_ID, realmSpawn } from '../../src/content/realm';
 
-const ride = (sim: ReturnType<typeof played>, from: 'iskele' | 'stadyum' | 'belgrad' | 'mahalle', to: string) => {
+const ride = (sim: ReturnType<typeof played>, from: 'iskele' | 'stadyum' | 'belgrad', to: string) => {
   const st = REALM_BY_ID[from].stop;
   sim.command({ kind: 'teleport', x: st.x, z: st.z });
   sim.step(0.5);
@@ -25,14 +25,6 @@ describe('realm + 42B', () => {
     expect(api.view().realm).toBe('iskele');
     ride(sim, 'iskele', 'stadyum');
     expect(api.view().realm).toBe('stadyum');
-  });
-  it('Martı Konutları (arsalar) is its own realm: 42B goes there and back (2026-11-26)', () => {
-    const sim = played(1), api = disariApi(sim.rules)!;
-    ride(sim, 'iskele', 'meydan');
-    expect(api.view().realm).toBe('mahalle');
-    expect(Math.abs(sim.rules.playerPos.x - realmSpawn(REALM_BY_ID.mahalle).x)).toBeLessThan(3);
-    ride(sim, 'mahalle', 'iskele');
-    expect(api.view().realm).toBe('iskele');
   });
   it('walking into the stadium is pushed back at the realm wall', () => {
     const sim = played(1), api = disariApi(sim.rules)!;
