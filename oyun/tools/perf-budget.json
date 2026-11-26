@@ -106,8 +106,8 @@
     "varlik": {
       "dokuKenarMax": 2048,
       "dokuHucre": 512,
-      "_doku": "Kenar 2 üstel ya da 512'lik atlas hücresinin katı (zemin atlası 3x2 hücre = 1536x1024): mip zinciri temiz iner. Her yüklenen dokuda mipmap + LinearMipmapLinear. KTX2/Basis yok: Basis çözücüsü WebAssembly ister, check-dist WebAssembly'yi yasaklar; çizim dokuları (karakter, tabela) zaten çalışma anında tuvalde üretilir.",
-      "dokuToplamMB": 1,
+      "_doku": "2026-11-26 sahip kararı: boyut tavanları (dokuToplamMB dahil) geniş emniyet sınırıdır, yeni içeriği engellemez; kenar kuralı (2 üstel/512 katı) ve mipmap şartı durur. Kenar 2 üstel ya da 512'lik atlas hücresinin katı (zemin atlası 3x2 hücre = 1536x1024): mip zinciri temiz iner. Her yüklenen dokuda mipmap + LinearMipmapLinear. KTX2/Basis yok: Basis çözücüsü WebAssembly ister, check-dist WebAssembly'yi yasaklar; çizim dokuları (karakter, tabela) zaten çalışma anında tuvalde üretilir.",
+      "dokuToplamMB": 40,
       "glbToplamMB": 40,
       "glbTekMB": 2,
       "_glb": "2026-11-26 sahip kararı: GLB boyut tavanları (toplam 40 MB, tek dosya 2 MB) kaçak büyümeyi yakalayan geniş emniyet sınırıdır, yeni model eklemeyi engellemez; nicemleme (KHR_mesh_quantization) zorunluluğu aynen durur. Tüm GLB'ler tools/glb-sikistir.mjs ile KHR_mesh_quantization (normal int8, uv uint16, teğet atılır; three yerleşik okur, çözücü yok). Draco/meshopt yok: ikisi de WebAssembly çözücü ister. Yeni model eklenince: node tools/glb-sikistir.mjs, sonra node tests/browser/glb-ab.mjs önce sonra (piksel farkı)."
