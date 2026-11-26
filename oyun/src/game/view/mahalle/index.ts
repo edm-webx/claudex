@@ -54,7 +54,7 @@ function atlas(): T.CanvasTexture {
 }
 
 /* ---------- statik dünya ---------- */
-function build(b: Batch, sign: (i: number, x: number, y: number, z: number, w: number, h: number, ry?: number) => void, solid: Rect[]) {
+function build(b: Batch, sign: (i: number, x: number, y: number, z: number, w: number, h: number, ry?: number, rx?: number) => void, solid: Rect[]) {
   const sol = (x0: number, x1: number, z0: number, z1: number) => solid.push({ x0, x1, z0, z1 });
   // zemin: mahalle ve çevresi (boşluk görünmesin)
   b.box(110, 0.1, 70, '#b9b09a', 268, -0.06, 9);
@@ -155,6 +155,11 @@ function build(b: Batch, sign: (i: number, x: number, y: number, z: number, w: n
   dukkan(288.0, 291.8, 4, '#e8dcc0');
   // 2026-11-26 Martı Emlak (eski eczane): arsa alımı, ev / dükkân yaptırma ve büyütme yalnız burada (content/esya.ts EMLAK). Vitrinde ilan kartları, kapıda ayaklı pano.
   for (let k = 0; k < 8; k++) { const cx = 261.5 + (k % 4) * 0.95, cy = 1.95 - Math.floor(k / 4) * 0.75; b.box(0.62, 0.56, 0.02, '#fffdf6', cx, cy, 15.16); b.box(0.62, 0.13, 0.025, ['#d9473a', '#1f5f5b', '#e0a32e', '#d9473a'][(k + Math.floor(k / 4)) % 4], cx, cy + 0.21, 15.15); b.box(0.46, 0.2, 0.025, '#b7c9b0', cx, cy - 0.02, 15.15); }
+  // çatı tabelası: varsayılan kamera bu sıraya arkadan (+z) baktığı için cephe tabelası görünmüyor; çatıda kameraya dönük büyük tabela (İstanbul'daki emlakçı çatı panoları gibi)
+  // kamera yukarıdan baktığı için pano geriye yatık (yukarı ve kameraya dönük), ayaklar çatıya oturur
+  for (const x of [261.2, 265.8]) { b.box(0.12, 1.1, 0.12, '#3a3d42', x, 4.1, 16.4); b.box(0.12, 1.1, 0.12, '#3a3d42', x, 4.1, 17.6); b.box(0.1, 0.1, 1.3, '#3a3d42', x, 4.6, 17.0); }
+  sign(3, 263.5, 4.9, 17.0, 5.6, 1.1, 0, -0.95);
+  for (let k = 0; k < 3; k++) b.box(0.22, 0.1, 0.22, '#ffe9a8', 261.6 + k * 1.9, 5.32, 16.45);   // tabela lambaları
   b.box(0.7, 0.95, 0.05, '#1f5f5b', 264.2, 0.55, 14.45, { rx: -0.2 }); b.box(0.7, 0.95, 0.05, '#1f5f5b', 264.2, 0.55, 14.75, { rx: 0.2 }); b.box(0.55, 0.28, 0.06, '#fbf6ea', 264.2, 0.75, 14.4, { rx: -0.2 });
   // bakkal önü sergi, fırın önü ekmek sepeti, manav kasaları
   for (let i = 0; i < 3; i++) { b.box(0.8, 0.35, 0.5, '#b07a48', 246.0 + i * 0.9, 0.35, 14.6); b.sph(0.12, ['#e0533c', '#ffd23f', '#86b65e'][i], 246.0 + i * 0.9, 0.62, 14.6); }
@@ -194,11 +199,11 @@ export function createMahalle(d: MahalleDeps): MahalleView {
     built = true;
     const b = new Batch(), sb = new Batch(), tx = atlas();
     const sm = new T.MeshBasicMaterial({ map: tx }); mats.push(sm); const n = TABELA.length;
-    const sign = (i: number, x: number, y: number, z: number, w: number, h: number, ry = 0) => {
+    const sign = (i: number, x: number, y: number, z: number, w: number, h: number, ry = 0, rx = 0) => {
       const g = new T.PlaneGeometry(w, h), uv = g.attributes.uv as T.BufferAttribute, v0 = 1 - (i + 1) / n, v1 = 1 - i / n;
       for (let k = 0; k < uv.count; k++) uv.setY(k, uv.getY(k) > 0.5 ? v1 : v0);
-      const m = new T.Mesh(g, sm); m.position.set(x, y, z); m.rotation.y = ry; geos.push(g); root.add(m);
-      sb.box(w + 0.12, h + 0.12, 0.06, '#3a3d42', x, y, z + (ry ? 0.04 : -0.04));
+      const m = new T.Mesh(g, sm); m.position.set(x, y, z); m.rotation.set(rx, ry, 0, 'YXZ'); geos.push(g); root.add(m);
+      sb.box(w + 0.12, h + 0.12, 0.06, '#3a3d42', x, y - (rx ? Math.sin(-rx) * 0.04 : 0), z + (ry ? 0.04 : -0.04) * Math.cos(rx), rx ? { rx } : {});
     };
     build(b, sign, solid); altyapi(b, sign, solid);
     for (const bb of [b, sb]) { const m = bb.mesh(solidMat(), true, true); geos.push(m.geometry); root.add(m); }
