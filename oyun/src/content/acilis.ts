@@ -25,7 +25,7 @@ const servis = (n: number) => g('served', n, n + ' müşteriye servis');
 export const ACILIS: Record<string, AcilisKosul> = {
   // karşı yaka (üst geçit esnaf seviyesi 3'te açılır: Arsa.seviye). Büfe 3. aşaması 500 bin ₺ ister ve geç gelir: ilk ikisi 2. aşamada, görevle sıralı
   k1: { asama: 2, gorev: [servis(500)] },
-  k2: { asama: 2, once: 'k1', yildiz: 4, gorev: [g('ferries', 50, '50 vapur karşıla')] },   // sahil: vapurcuların gözdesi ol
+  k2: { asama: 2, once: 'k1', yildiz: 4, gorev: [g('tips', 60, '60 bahşiş topla')] },   // sahil bistro: masa servisi ustası ol (2026-11-26: vapur görevi kalktı)
   k4: { asama: 3, once: 'k2', gorev: [g('sinav', 3, 'okulda 3 sınav ver'), servis(3000)] },   // okulu tanımadan kantin olmaz
   k3: { asama: 3, once: 'k4', gorev: [g('sinav', 8, 'okulda 8 sınav ver'), g('cleaned', 1500, '1500 masa temizle')] },
   k6: { asama: 4, once: 'k3', yildiz: 5, gorev: [g('macOyun', 3, 'halı sahada 3 maç oyna')] },   // tesis: sahayı bilen kafeteryayı işletir

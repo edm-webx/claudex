@@ -10,7 +10,6 @@ export const ACHIEVEMENTS: Ach[] = [
   { id: 'uyandim', title: 'Uyandım!', text: 'Rıza\'yı 10 kez uyandır', stat: 'wakes', goal: 10 },
   { id: 'martidusmani', title: 'Martı Düşmanı Değilim', text: '25 martıyı kovala (*)', stat: 'gullsChased', goal: 25 },
   { id: 'hoppaa', title: 'Hoppaa!', text: 'Bir martı simit kapsın (kimse bir şey kaybetmez)', stat: 'gullSnatch', goal: 1 },
-  { id: 'pencere', title: 'Vapur Penceresi Kurdu', text: 'Tek pencerede 12 satış yap (*)', stat: 'windowBest', goal: 12 },
   { id: 'kapkac1', title: 'Yakaladım!', text: 'Kapkaççıyı yakala', stat: 'kapkacCaught', goal: 1 },
   { id: 'kapkac10', title: 'Kapkaç Olimpiyatı', text: 'Kapkaççıyı 10 kez yakala', stat: 'kapkacCaught', goal: 10 },
   { id: 'karamel', title: 'Karamel Nöbette', text: 'Karamel 5 kapkaççıyı tek havlamayla geri çevirsin (*)', stat: 'karamelTurned', goal: 5 },

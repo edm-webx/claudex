@@ -5,17 +5,13 @@ const base = () => ({ level: 1, day: 1, stars: 0, stage: 1, tadilat: false, work
 // Sözleşme: menü listesini değiştirebilecek her durum değişikliği imzayı da değiştirmeli (yoksa arayüz güncellenmez).
 describe('PRF-05 menü imzası', () => {
   it('değişmeyen durumda imza sabit', () => { expect(barSignature(base())).toBe(barSignature(base())); });
-  it('menüyü değiştiren her değişiklik imzayı da değiştirir', () => {
-    const cases: Array<[number, (s: ReturnType<typeof base>) => void]> = [
-      [1, s => { s.level = 2; }], [1, s => { s.level = 3; }], [1, s => { s.level = 4; }], [1, s => { s.workers.push({}); }], [1, s => { s.day = 2; }],
-      [1, s => { s.ach.x = 1; }], [1, s => { s.cats.push({}); }], [1, s => { s.stars = 1; }], [1, s => { s.stage = 2; }], [1, s => { s.tadilat = true; }],
-      [2, s => { s.orders.list.push({ done: true, claimed: false }); }],
-    ];
-    for (const [day, c] of cases) {
-      const a = base(), b = base(); a.day = b.day = day; c(b);
-      expect(JSON.stringify(menuItems(b))).not.toBe(JSON.stringify(menuItems(a)));
-      expect(barSignature(b)).not.toBe(barSignature(a));
-    }
+  // 2026-11-26 Esnaf telefonu HUD: the bar is only Çanta + Telefon; the only thing that changes it is the Ajanda badge
+  it('bar sabit: Çanta + Telefon, yalnız rozet değişir', () => {
+    const a = base(); a.day = 2; a.level = 9; a.workers.push({}); a.stars = 3;
+    expect(menuItems(a).map((x: { id: string }) => x.id)).toEqual(['envanter', 'telefon']);
+    const b = base(); b.day = 2; b.orders.list.push({ done: true, claimed: false });
+    expect(JSON.stringify(menuItems(b))).not.toBe(JSON.stringify(menuItems(base())));
+    expect(barSignature(b)).not.toBe(barSignature(base()));
   });
   it('imza aynıysa menü aynı: rastgele durumlarda sözleşme', () => {
     const seen = new Map<number, string>();

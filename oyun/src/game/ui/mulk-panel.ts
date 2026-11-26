@@ -83,6 +83,12 @@ export function createMulkPanel(d: Deps): MulkPanel {
 
   function banka(m: M): string {
     const b = m.banka;
+    if (b.atm) {   // 2026-11-26: ATM = cash only
+      const cash = [1000, 10000, 100000];
+      return `<div class="mp-sec">Bankada ${tl(b.tl)} · cebinde ${tl(m.money)}</div><div class="mp-row">${cash.map(n => `<button class="mp-b" data-a="tlYatir" data-n="${n}"${m.money >= n ? '' : ' disabled'}>Yatır ${n / 1000}K</button>`).join('')}<button class="mp-b g" data-a="tlYatir" data-n="${Math.floor(m.money)}"${m.money >= 1 ? '' : ' disabled'}>Hepsini yatır</button></div>
+<div class="mp-row">${cash.map(n => `<button class="mp-b" data-a="tlCek" data-n="${n}"${b.tl >= n ? '' : ' disabled'}>Çek ${n / 1000}K</button>`).join('')}<button class="mp-b y" data-a="tlCek" data-n="${b.tl}"${b.tl >= 1 ? '' : ' disabled'}>Hepsini çek</button></div>
+<div class="mp-note">Kredi ve eşya kasası için ${esc(BANKA.ad)} gişesine git (karşı yaka, meydanın doğusu).</div>`;
+    }
     let s = `<div class="mp-row"><span class="mp-ic" style="font-size:34px">🏦</span><div><b>${esc(BANKA.ad)}</b><small>Hesabına bağlı ortak kasa: 4 karakterin de aynı parayı ve eşyayı görür. Kredi borcu ise yalnız bu karakterin.</small></div></div>`;
     if (!b.yakin) return s + `<div class="mp-note">Bankaya erişmek için binanın önüne git.<br><b>Karşı yaka</b>, meydanın doğusu: üst geçitten karşıya geç.<br>Bankadaki mal: <b>${tl(b.tl)}</b> · ${Object.values(b.esya).reduce((a: number, n: any) => a + n, 0)} eşya${(b.borc || 0) >= 1 ? `<br>Kredi borcun: <b>${tl(b.borc)}</b> / limit ${tl(b.limit || 0)} (günlük faiz %${Math.round((b.faiz || 0) * 100)} işliyor)` : ''}</div>`;
     s += `<div class="mp-sec">Para · bankada ${tl(b.tl)} · cebinde ${tl(m.money)}</div><div class="mp-row">${[1000, 10000, 100000].map(n => `<button class="mp-b" data-a="tlYatir" data-n="${n}"${m.money >= n ? '' : ' disabled'}>Yatır ${n / 1000}K</button>`).join('')}<button class="mp-b g" data-a="tlYatir" data-n="${Math.floor(m.money)}"${m.money >= 1 ? '' : ' disabled'}>Hepsini yatır</button></div>`;
@@ -170,19 +176,15 @@ ${a.isci < a.isciMax ? `<div class="mp-sec" style="margin:8px 0 4px">İlan panos
     if ((o.sinavlar as number[]).length) h += `<small style="display:block;margin-top:6px">Son sınavlar: ${(o.sinavlar as number[]).slice(-6).join(', ')}</small>`;
     return h;
   }
-  const TABS: [Tab, string][] = [['envanter', '🎒 Envanter'], ['banka', '🏦 Banka'], ['gunluk', '📋 Günlük'], ['mulk', '🏠 Mülk'], ['defter', '📓 Defter'], ['salon', '🍽 Salon'], ['okul', '📚 Okul'], ['avm', '🛍 AVM']];
+  const TABS: [Tab, string][] = [['envanter', '🎒 Çanta'], ['banka', '🏦 Banka'], ['gunluk', '📋 Günlük'], ['mulk', '🏠 Mülk'], ['defter', '📓 Defter'], ['salon', '🍽 Salon'], ['okul', '📚 Okul'], ['avm', '🛍 AVM']];
   function paint(m: M) {
     const body = tab === 'envanter' ? envanter(m) : tab === 'banka' ? banka(m) : tab === 'gunluk' ? gunluk(m) : tab === 'mulk' ? mulk(m) : tab === 'defter' ? defter(m) : tab === 'salon' ? salon(m) : tab === 'okul' ? okul(m) : avm(m);
     const sc = (bg.querySelector('.mp-body') as HTMLElement | null)?.scrollTop || 0, tsc = (bg.querySelector('.mp-tabs') as HTMLElement | null)?.scrollLeft || 0;
-    bg.innerHTML = `<div class="mp-card"><div class="mp-top"><h2>${TABS.find(x => x[0] === tab)![1]}</h2><span class="mp-chip">${tl(m.money)}</span><span class="mp-chip">🥨 ${m.gold}</span><button class="mp-x" data-a="close">✕</button></div>
-<div class="mp-tabs">${TABS.map(([k, l]) => `<button class="mp-t${tab === k ? ' on' : ''}" data-tab="${k}">${l}</button>`).join('')}</div><div class="mp-body">${body}</div></div>`;
+    bg.innerHTML = `<div class="mp-card"><div class="mp-top"><h2>${tab === 'banka' && m.banka?.atm ? '🏧 ATM' : TABS.find(x => x[0] === tab)![1]}</h2><span class="mp-chip">${tl(m.money)}</span><span class="mp-chip">🥨 ${m.gold}</span><button class="mp-x" data-a="close">✕</button></div>
+<div class="mp-body">${body}</div></div>`;   // 2026-11-26 owner: no tab strip; each place opens only its own screen (Çanta, gişe/ATM, dükkân kapısı, ofis...)
     (bg.querySelector('.mp-body') as HTMLElement).scrollTop = sc;
     // etkin sekme şeritte görünür kalsın, taşma ipucu (solma) çıksın
-    const tb = bg.querySelector('.mp-tabs') as HTMLElement; tb.scrollLeft = tsc;
-    const on = tb.querySelector('.mp-t.on') as HTMLElement | null;
-    if (on && (on.offsetLeft < tb.scrollLeft || on.offsetLeft + on.offsetWidth > tb.scrollLeft + tb.clientWidth)) tb.scrollLeft = Math.max(0, on.offsetLeft - (tb.clientWidth - on.offsetWidth) / 2);
-    const fade = () => { tb.classList.toggle('ml', tb.scrollLeft > 2); tb.classList.toggle('mr', tb.scrollLeft + tb.clientWidth < tb.scrollWidth - 2); };
-    tb.addEventListener('scroll', fade, { passive: true }); fade();
+    void tsc;
   }
 
   bg.addEventListener('pointerdown', e => e.stopPropagation());
@@ -222,9 +224,9 @@ ${a.isci < a.isciMax ? `<div class="mp-sec" style="margin:8px 0 4px">İlan panos
       const ktHint = !!(v as { ktYakin?: boolean }).ktYakin;
       // 2026-11-20: every AVM room is a business of its own: an unsold one offers itself first, an owned one the mall shopping
       const avmSatilik = !!v.avmYakin && !!v.arsaYakin && !(m.model().arsa as M[]).find(x => x.id === v.arsaYakin)?.owned;
-      const ht: OpenTab | null = ktHint ? 'mulk' : v.ipucuYakin ? 'defter' : v.okulYakin ? 'okul' : v.avmYakin && !avmSatilik ? 'avm' : v.stadyumYakin ? 'stadyum' : v.bankaYakin ? 'banka' : v.arsaYakin ? 'mulk' : v.salonYakin ? 'salon' : null;
+      const ht: OpenTab | null = ktHint ? 'mulk' : v.ipucuYakin ? 'defter' : v.okulYakin ? 'okul' : v.avmYakin && !avmSatilik ? 'avm' : v.stadyumYakin ? 'stadyum' : v.bankaYakin || (v as { atmYakin?: boolean }).atmYakin ? 'banka' : v.arsaYakin ? 'mulk' : v.salonYakin ? 'salon' : null;
       const fa = v.arsaYakin ? (m.model().arsa as M[]).find(x => x.id === v.arsaYakin) : null; if (fa) focus = fa.id;
-      const lbl = ktHint ? '✏️ Tezgaha geç (birinci şahıs)' : ht === 'defter' ? '🔍 İncele' : ht === 'stadyum' ? '🧢 Koordinatörle konuş' : ht === 'banka' ? '🏦 Gişe: bankayı aç' : ht === 'salon' ? '🍽 Salon bilgisi' : ht === 'okul' ? '📚 İngilizce dersi / sınav' : ht === 'avm' ? '🛍 AVM: alışveriş, sinema' : ht === 'mulk' ? (fa && fa.sabit ? (fa.ikon || '🏪') + ' ' + fa.ad + (fa.owned ? ': işçi ve bilgi' : ': bilgi (satın almak için sarı kare)') : '🏠 Arsa / Dükkân') : '';
+      const lbl = ktHint ? '✏️ Tezgaha geç (birinci şahıs)' : ht === 'defter' ? '🔍 İncele' : ht === 'stadyum' ? '🧢 Koordinatörle konuş' : ht === 'banka' ? ((v as { atmYakin?: boolean }).atmYakin ? '🏧 ATM: para yatır / çek' : '🏦 Gişe: bankayı aç') : ht === 'salon' ? '🍽 Salon bilgisi' : ht === 'okul' ? '📚 İngilizce dersi / sınav' : ht === 'avm' ? '🛍 AVM: alışveriş, sinema' : ht === 'mulk' ? (fa && fa.sabit ? (fa.ikon || '🏪') + ' ' + fa.ad + (fa.owned ? ': işçi ve bilgi' : ': bilgi (satın almak için sarı kare)') : '🏠 Arsa / Dükkân') : '';
       ktMode = ktHint;
       if (ht !== hintTab || hint.textContent !== lbl) { hintTab = ht; hint.style.display = ht && !openNow && !kd.isOpen() ? 'block' : 'none'; hint.textContent = lbl; }
       else if (hintTab) hint.style.display = openNow || kd.isOpen() ? 'none' : 'block';

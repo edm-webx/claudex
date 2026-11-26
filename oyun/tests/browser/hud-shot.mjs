@@ -7,7 +7,7 @@ const TYPES = { png: 'image/png', jpg: 'image/jpeg', glb: 'model/gltf-binary', w
 const srv = createServer((req, res) => { const p = decodeURIComponent(new URL(req.url, 'http://x').pathname); const f = join(DIST, p === "/" ? "index.html" : p); if (!existsSync(f) || statSync(f).isDirectory()) { res.writeHead(404); return res.end(); } res.writeHead(200, { 'content-type': p === '/' ? 'text/html' : TYPES[f.split('.').pop()] || 'text/javascript' }); res.end(p === '/' ? '<!doctype html><html><head><meta charset="utf-8"></head><body>' + readFileSync(f, 'utf8') + '</body></html>' : readFileSync(f)); });
 await new Promise(r => srv.listen(0, '127.0.0.1', r));
 const b = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
-const p = await (await b.newContext({ viewport: { width: 1280, height: 720 } })).newPage();
+const p = await (await b.newContext({ viewport: { width: Number(process.env.VW || 1280), height: Number(process.env.VH || 720) }, deviceScaleFactor: Number(process.env.DSF || 1), hasTouch: !!process.env.VW })).newPage();
 p.on('pageerror', e => console.log('ERR', e.message));
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengeli&seed=3&stage=${process.env.STAGE || 3}&saat=13`);
 await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 120000 });
@@ -20,7 +20,7 @@ const snap = async n => { await p.evaluate(() => { for (let k = 0; k < 4; k++) {
 await snap('01-hud');
 const bar = await p.evaluate(() => [...document.querySelectorAll('#sbui *')].filter(e => e.offsetParent && e.children.length === 0 && e.textContent.trim()).slice(0, 200).map(e => e.className + ':' + e.textContent.trim().slice(0, 30)).join(' | '));
 console.log('UI', bar);
-for (const t of ['mulk', 'envanter']) { await p.evaluate(t => document.getElementById('sbui')?.dispatchEvent(new CustomEvent('ui:open', { detail: t, bubbles: true })), t); await snap('02-' + t); await p.keyboard.press('Escape'); }
+for (const t of (process.env.ACTS || 'telefon,envanter').split(',')) { await p.evaluate(t => document.getElementById('sbui')?.dispatchEvent(new CustomEvent('ui:open', { detail: t, bubbles: true })), t); await snap('02-' + t); if (t === 'telefon') await p.evaluate(() => document.getElementById('sbui')?.dispatchEvent(new CustomEvent('ui:open', { detail: 'telefon', bubbles: true }))); else await p.keyboard.press('Escape'); }
 // world spots without UI (concept backgrounds)
 if (process.env.YER) { await p.addStyleTag({ content: '#sbui{visibility:hidden!important}' }); await snap('yer-bufe');
   for (const [n, sp] of Object.entries(JSON.parse(process.env.YER))) { await p.evaluate(([x, z, cx, cz, zr, yi, tilt]) => { const M = window.__marti; M.teleport(x, z); for (let k = 0; k < 6; k++) { M.step(0.5); M.renderFrames(3, 0.1); } M.camera({ x: cx, z: cz, zoomRaw: zr, yaw: yi * Math.PI / 2, tilt }); for (let k = 0; k < 16; k++) { M.step(0.1); M.renderFrames(2, 0.1); } }, sp); await p.waitForTimeout(250); await p.screenshot({ path: join(out, 'yer-' + n + '.png'), timeout: 300000 }); console.log('ok', n); } }
