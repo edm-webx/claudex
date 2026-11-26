@@ -32,6 +32,9 @@ const A_IDLE = ACT_ORDER.indexOf('idle'), A_WALK = ACT_ORDER.indexOf('walk'), A_
 
 /** BUF-25: how far (m) a hungry citizen may be and still come to the büfe on its own */
 const HUNGRY_M = 45;
+/** 2026-11-25: 8-10. aşamanın müşterisi farklı (sahibi: "8 9 10 hiç fark yok") */
+const TURIST = { kruvaziyer: 2.5, gezgin: 2.5, turgrubu: 2.5, balayi: 3 }, IS = { isinsani: 3, plaza: 2.5 };
+const ASAMA_MUSTERI: Record<number, Record<string, number>> = { 8: TURIST, 9: { ...TURIST, ...IS }, 10: { ...TURIST, ...IS, vlogcu: 4, balayi: 4 } };
 export interface SpawnOpts { type?: CitizenTypeDef; n?: number; order?: Order; set?: string | null; from?: Vec2; near?: Vec2; kind?: 'q' | 'win' | 'masa'; patienceX?: number; say?: string; follower?: boolean; tag?: string; body?: number }
 
 export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (p: { value: number }[], v: number) => void, settle: (c: Customer, items: import('./state').Plate[]) => number) {
@@ -64,6 +67,7 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
       if (t.scenery || t.ferry || (t.months && !t.months.includes(month())) || (!inHours(t.hours, h) && !fanHere)) continue;
       let x = t.w * (inHours(t.peak, h) ? 2 : 1);
       if (t.id === 'taraftar' && (rt as unknown as { macGunu?: unknown }).macGunu) x *= 9;   // maç günü: fans everywhere
+      x *= ASAMA_MUSTERI[Math.min(10, S.stage || 1)]?.[t.id] ?? 1;   // 8 turist ve sevgililer, 9 gurme ve iş yemeği, 10 ünlü ve kutlama
       const pref = Object.keys(t.prefer).filter(p => open.includes(p as ProductId));
       x *= 0.35 + 0.65 * pref.length / Object.keys(t.prefer).length;
       if (x > 0) w[t.id] = x;
@@ -93,7 +97,9 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
     let k = 4.3 + 1.45 * (open - 1) + (STAGE_ARRIVAL[S.stage - 1] ?? 2.2 * (S.stage - 1)) + 0.45 * K.hiredCount() + 0.35 * K.tablesBuilt();
     // ZMN-01: the day is 24 h (08 -> 08) in the same 480 s, so daytime got 20 % fewer seconds; the night keeps a living pier (night owls,
     // taxi drivers, fishermen, early workers) and the whole-day sum of this curve x seconds equals the old 08-03 day within 1 % (economy unchanged)
-    k *= h < 10 ? 0.85 : h < 12 ? 1.0 : h < 14 ? 1.25 : h < 18 ? 1.0 : h < 21 ? 1.15 : h < 24 ? 0.8 : h < 25 ? 0.7 : h < 26 ? 0.55 : h < 28 ? 0.45 : h < 29 ? 0.45 : h < 30 ? 0.65 : h < 31 ? 0.9 : 1.0;
+    // 2026-11-26 (vapur kalktı + jo0q11): daytime 08-21 a bit busier, 21-08 thinner, whole-day sum still ~equal (21.0 vs 21.2 h-units);
+    // first döner+ayran set seeds 1-12 <= 287 s, day 1/3/5 parity 5570/23246/50726
+    k *= h < 10 ? 0.95 : h < 12 ? 1.1 : h < 14 ? 1.35 : h < 18 ? 1.1 : h < 21 ? 1.2 : h < 24 ? 0.7 : h < 25 ? 0.55 : h < 26 ? 0.4 : h < 29 ? 0.25 : h < 30 ? 0.45 : h < 31 ? 0.7 : 0.9;
     k *= 1 + K.siklikBonus() + yatirimFx(S, 'reklam') + tabelaFx(S as never, h) + yetenekFxOf(rt).arrival;
     // BUF-24: hafta sonu çarpanı x maç günü dalgaları (öncesi / sonrası); birlikte KALABALIK_UST'u geçmez (açık bilet ve sabır payı korunur)
     let crowd = 1;

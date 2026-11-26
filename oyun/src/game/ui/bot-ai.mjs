@@ -159,8 +159,7 @@ export const STEPS = [
   { gdd: '00:20', what: 'Para ok; toplama', ev: 'firstCollect', max: 50 },
   { gdd: '00:30', what: 'İlk sarı kare (çay ocağı) dolar', ev: 'padShown', key: 'cay', max: 55 },
   { gdd: '01:00', what: 'Çay açılır', ev: 'unlock', key: 'cay', max: 100 },
-  { gdd: '02:00', what: 'Vapur düdüğü ve dalga', ev: 'ferryDock', max: 135 },
-  { gdd: '02:00', what: 'İlk "Seri!"', ev: 'firstStreak', max: 200 },
+  { gdd: '02:00', what: 'İlk "Seri!"', ev: 'firstStreak', max: 330 },   // 2026-11-25: vapur dalgası kalktı, ilk art arda satış bazen ilk kalabalık dalgasına (2-5. dk) kalıyor
   { gdd: '02:40', what: 'Pamuk uyanır, bacağa sürtünür', ev: 'catRub', max: 185 },
   { gdd: '02:40', what: 'Sev: Kedi Defteri sayfası', ev: 'catPet', max: 200 },
   { gdd: '03:30', what: 'Ayran açılır', ev: 'unlock', key: 'ayran', max: 260 },
@@ -174,8 +173,6 @@ export const STEPS = [
   { gdd: '08:00', what: 'İş ve İşçi Bulma: 3 kart', ev: 'boardOpen', max: 560 },
   { gdd: '08:00', what: 'Rıza işe başlar', ev: 'hire', name: 'Rıza', max: 570 },
   { gdd: '08:00', what: 'Rıza 3 sn izler, devralır', ev: 'takeover', name: 'Rıza', max: 600 },
-  { gdd: '09:00', what: 'Vapur penceresi kurulur', ev: 'unlock', key: 'pencere', max: 640 },
-  { gdd: '09:00', what: 'İlk 20 sn pencere telaşı', ev: 'firstWindowSale', max: 1000 },
   { gdd: '10:00', what: 'Martı tezgahta bakar', ev: 'gullStare', max: 680 },
   { gdd: '10:00', what: 'Yürü, uçsun (ya da simidi kapar)', ev: ['gullChased', 'gullSnatch'], max: 700 },
   { gdd: '11:00', what: 'Rıza uyur (Zzz)', ev: 'workerSleep', max: 740 },

@@ -161,7 +161,7 @@ export function installDisari(K: Kernel, teleport: (x: number, z: number) => voi
     if (v && v.id !== 'yaya' && (!v.sea || seaPair) && !(isl && !v.sea)) mode = v.id as TravelMode;
     if (mode === 'dolmus' || mode === 'vapur') {
       const fare = FARES[mode];
-      if (S.money >= fare) { K.spend(fare); K.toast((mode === 'vapur' ? 'Vapur bileti ' : DOLMUS.name + ': ') + fmtMoney(fare) + (mode === 'dolmus' ? '. "Arkaya uzatır mısın?"' : '. Düüüt!'), 'info'); }
+      if (S.money >= fare) { K.spend(fare); K.toast((mode === 'vapur' ? 'Deniz taksisi ' : DOLMUS.name + ': ') + fmtMoney(fare) + (mode === 'dolmus' ? '. "Arkaya uzatır mısın?"' : '. Düüüt!'), 'info'); }
       else K.toast(DOLMUS.driver + ': "Bu seferlik benden, sonra ödersin!"', 'good');
     } else K.toast(v!.name + ' ile yola çıktın!', 'good');
     const speed = v && mode === v.id ? v.speed : 1;

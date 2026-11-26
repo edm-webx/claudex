@@ -25,7 +25,7 @@ export interface PanelsDeps {
   /** GRS-17: current tier for the 'Otomatik: Şu an ...' line */
   quality?: { current(): { label: string } };
 }
-export interface Panels { update(): void; v2: V2UiApi; open(id: string): void; dispose(): void; }
+export interface Panels { update(): void; v2: V2UiApi; open(id: string): void; dispose(): void; /** ana menü ayarları (menu-stil): ayarlar panelinin eylemleri */ ayarEylem(): Record<string, (a?: any, b?: any) => void>; }
 
 const PANEL_IDS = ['isciler', 'menu', 'dekor', 'gorevler', 'kedi', 'karne', 'tadilat', 'ayarlar'];
 
@@ -40,22 +40,11 @@ export function barSignature(s: any): number {
 }
 
 export function menuItems(s: any): any[] {
-  const items: any[] = [];
-  // 2026-10-24 açık dünya: the İstanbul map is always first on the bar (travel between districts)
-  items.push({ id: 'harita', label: 'Harita', icon: 'map' });
-  items.push({ id: 'karakter', label: 'Karakter', icon: 'smile' });
-  // karar paketi G: Envanter and Mülk (bank, plots, stadium) sit on the bar; ui/mulk-panel.ts opens them
-  items.push({ id: 'envanter', label: 'Envanter', icon: 'tray' });
-  items.push({ id: 'mulk', label: 'Mülk', icon: 'shop' });
-  if (s.level >= 2) items.push({ id: 'menu', label: 'Menü', icon: 'menu' });
-  if ((s.workers && s.workers.length) || s.level >= 3) items.push({ id: 'isciler', label: 'Ekip', icon: 'people' });
-  if (s.level >= 4) items.push({ id: 'karne', label: 'Karne', icon: 'karne' });
-  // 2026-10-25 user: decor is switched off for now (comes back later)
+  // 2026-11-26 owner picked the "Esnaf telefonu" HUD: the bar holds only Çanta and Telefon. Harita = mini map (ui/telefon.ts),
+  // Ajanda / Karne / Karakter / Ayarlar / Mülklerim / Martı Kasa = phone apps, Menü / Ekip / Tadilat = the "Büfem" context pill.
   const orders = s.orders && s.orders.list ? s.orders.list : [];
-  if (s.day >= 2 || Object.keys(s.ach || {}).length) items.push({ id: 'gorevler', label: 'Görevler', icon: 'gorev', badge: orders.filter((o: any) => o.done && !o.claimed).length || 0 });
-  if (s.cats && s.cats.length) items.push({ id: 'kedi', label: 'Kediler', icon: 'cat' });
-  if (s.stars >= 1 || s.stage > 1 || s.tadilat) items.push({ id: 'tadilat', label: 'Tadilat', icon: 'hammer' });
-  return items;
+  const badge = orders.filter((o: any) => o.done && !o.claimed).length || 0;
+  return [{ id: 'envanter', label: 'Çanta', icon: 'tray' }, { id: 'telefon', label: 'Telefon', icon: 'phone', badge }];
 }
 
 export function createPanels(deps: PanelsDeps): Panels {
@@ -168,6 +157,7 @@ export function createPanels(deps: PanelsDeps): Panels {
 
   return {
     v2,
+    ayarEylem: () => actionsFor('ayarlar'),
     open(id) { send({ kind: 'openPanel', id } as Cmd); },
     update() {
       const r = rt();

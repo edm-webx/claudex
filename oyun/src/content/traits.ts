@@ -154,7 +154,7 @@ export const TRAITS: Record<string, TraitDef> = {
     "name": "Aceleci",
     "effect": "%25 hızlı",
     "flaw": "20 üründe 1'ini düşürür, yeniden yapar",
-    "line": "Çabuk çabuk, vapur kaçıyor!",
+    "line": "Çabuk çabuk, müşteri bekliyor!",
     "fx": {
       "speed": 0.25,
       "dropEvery": 20
@@ -318,7 +318,7 @@ export const TEAMS: { id: string; name: string; colors: [string, string] }[] = [
   },
   {
     "id": "vapurspor",
-    "name": "Vapurspor",
+    "name": "Midyespor",
     "colors": [
       "#a990dd",
       "#b8bec6"

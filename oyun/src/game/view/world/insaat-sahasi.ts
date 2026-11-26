@@ -329,9 +329,19 @@ function statik(site: Site, b: Batch, L: Batch) {
   }
 }
 
+/** 2026-11-25 (sahibi: "inşaatın projeksiyonları yanlış duruyor"): projektör başlığı gökyüzüne bakıyordu, hüzme kuleden 3.5 m kopuktu.
+ *  Artık her kule sahaya nişan alır: başlık yüzü hedefe döner, hüzme konisinin tepesi başlıkta, tabanı hedefte, parıltı hedefte. */
+function projHedef(s: number, p: { u: number; z: number }) {
+  const yol = p.z > 8, L = new T.Vector3(s * p.u, 6.85, p.z), H = new T.Vector3(s * (p.u + (yol ? -4 : 3)), 0, p.z + (yol ? -7 : -4.5));
+  const d = H.clone().sub(L), yaw = Math.atan2(d.x, d.z), pitch = Math.atan2(-d.y, Math.hypot(d.x, d.z));
+  return { L, H, d, q: new T.Quaternion().setFromEuler(new T.Euler(pitch, yaw, 0, 'YXZ')) };
+}
 function lambaKafa(site: Site): T.Mesh {
   const S = site.b, s = S.taraf, b = new Batch();
-  for (const p of S.projektor) for (const d of [-0.55, 0.55]) b.box(0.5, 0.36, 0.14, '#ffffff', s * (p.u + d), 6.85, p.z, { rx: -0.5, ry: s * (p.z > 8 ? Math.PI : 0) } as never);
+  for (const p of S.projektor) {
+    const { L, q } = projHedef(s, p);
+    for (const d of [-0.55, 0.55]) { b.push(new T.Matrix4().compose(L, q, new T.Vector3(1, 1, 1))); b.box(0.5, 0.36, 0.14, '#ffffff', d, 0, 0.05); b.pop(); }
+  }
   return b.mesh(site.lamba, false, false);
 }
 
@@ -372,10 +382,10 @@ function build(b: KilitliBolge): Site {
   const huzmeMat = new T.MeshBasicMaterial({ color: '#ffe7b8', transparent: true, opacity: 0, depthWrite: false, blending: T.AdditiveBlending, side: T.DoubleSide });
   const glowMat = new T.MeshBasicMaterial({ map: getGlow(), transparent: true, opacity: 0, depthWrite: false, blending: T.AdditiveBlending });
   for (const p of b.projektor) {
-    const ic = p.z > 8 ? -1 : 1;   // yol tarafındaki kule sahaya (−z), dolgudaki kule dolguya (−z, +u) bakar
-    const hz = new T.Mesh(new T.ConeGeometry(3.6, 6.4, 18, 1, true), huzmeMat);
-    hz.position.set(s * (p.u + (ic > 0 ? 2.2 : -1.2)), 3.4, p.z - 2.2); hz.rotation.set(-0.42, 0, s * (ic > 0 ? -0.35 : 0.2)); hz.visible = false; g.add(hz); site.huzme.push(hz);
-    const gl = new T.Mesh(new T.PlaneGeometry(9, 9), glowMat); gl.rotation.x = -Math.PI / 2; gl.position.set(s * (p.u + (ic > 0 ? 3.8 : -2.4)), 0.09, p.z - 3.8); gl.visible = false; g.add(gl); site.parilti.push(gl);
+    const { L, H, d } = projHedef(s, p), len = d.length();
+    const cone = new T.ConeGeometry(2.6, len, 18, 1, true); cone.translate(0, -len / 2, 0);   // tepe başlıkta, taban hedefte
+    const hz = new T.Mesh(cone, huzmeMat); hz.position.copy(L); hz.quaternion.setFromUnitVectors(new T.Vector3(0, -1, 0), d.clone().normalize()); hz.visible = false; g.add(hz); site.huzme.push(hz);
+    const gl = new T.Mesh(new T.PlaneGeometry(9, 9), glowMat); gl.rotation.x = -Math.PI / 2; gl.position.set(H.x, 0.09, H.z); gl.visible = false; g.add(gl); site.parilti.push(gl);
   }
   return site;
 }
@@ -452,7 +462,7 @@ export function createInsaatSahasi(d: InsaatSahasiDeps): InsaatSahasiView {
     },
     lambalar() {
       const out: { x: number; y: number; z: number; color: string; i: number }[] = [];
-      for (const b of kilitliler()) for (const p of b.projektor) out.push({ x: b.taraf * (p.u + (p.z > 8 ? -4.2 : 2.5)), y: 6.2, z: p.z - (p.z > 8 ? 3.6 : 2.5), color: '#ffe2b0', i: 1.25 });
+      for (const b of kilitliler()) for (const p of b.projektor) { const { L, d } = projHedef(b.taraf, p), m = L.clone().addScaledVector(d, 0.45); out.push({ x: m.x, y: m.y, z: m.z, color: '#ffe2b0', i: 1.25 }); }   // ışık hüzmenin üstünde, hedefe doğru
       return out;
     },
     acik: () => KILITLI_BOLGELER.filter(b => !bolgeKilitli(b, d.state())).map(b => b.id),

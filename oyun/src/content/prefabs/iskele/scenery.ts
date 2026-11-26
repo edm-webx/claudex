@@ -216,7 +216,7 @@ export function makeBoats() {
   kayik.box(1.2, 0.08, 3.6, '#b98a5e', 0, 0.32, 0, { r: 0.03 });
   kayik.box(0.9, 0.7, 1.1, '#fbfaf6', 0, 0.7, -0.6, { r: 0.08 }); kayik.box(1.0, 0.08, 1.2, '#e0533c', 0, 1.07, -0.6, { r: 0.04 });
   kayik.box(0.3, 0.5, 0.3, '#3c4146', 0, 0.45, 2.0, { r: 0.05 }); kayik.cyl(0.03, 0.03, 1.8, '#7d5638', 0.4, 1.1, 1.4, { rx: -0.6, seg: 5 });
-  const k1 = kayik.mesh(MAT.atlas, true, false); k1.position.set(-15.5, WATER_Y, -21.6); k1.rotation.y = 0.7; g.add(k1);   // 2026-11-23: -19'da burnu batı salonun güvertesinin altına giriyordu
+  const k1 = kayik.mesh(MAT.atlas, true, false); k1.position.set(-18.6, WATER_Y, -22); k1.rotation.y = 0.7; g.add(k1);   // 2026-11-23: -19'da burnu batı salonun güvertesinin altına giriyordu
   const sail = new Batch();
   sail.box(1.3, 0.5, 4.6, '#fbfaf6', 0, 0.1, 0, { r: 0.24, s: 2 }); sail.box(1.32, 0.1, 4.62, '#e0533c', 0, 0.28, 0, { r: 0.05 });
   sail.cyl(0.05, 0.05, 6, '#e8e2d8', 0, 3.2, 0.3, { seg: 6 });
@@ -226,6 +226,6 @@ export function makeBoats() {
   const bu = new Batch();
   bu.cyl(0.35, 0.45, 0.6, '#e0533c', 0, 0.1, 0, { seg: 10 }); bu.cyl(0.36, 0.36, 0.14, '#fbfaf6', 0, 0.2, 0, { seg: 10 }); bu.cone(0.25, 0.5, '#e0533c', 0, 0.65, 0, { seg: 8 });
   const bg = bu.geometry(); const buoys: any[] = [];
-  [[-17, -7], [15.5, -21], [-6, -24]].forEach(([x, z]) => { const m = new T.Mesh(bg, MAT.atlas); m.position.set(x, WATER_Y, z); g.add(m); buoys.push(m); });
+  [[-17, -7], [17.5, -22], [-20, -27]].forEach(([x, z]) => { const m = new T.Mesh(bg, MAT.atlas); m.position.set(x, WATER_Y, z); g.add(m); buoys.push(m); });
   return { group: g, kayik: k1, sail: s1, buoys };
 }

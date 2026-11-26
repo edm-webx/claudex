@@ -132,7 +132,7 @@ export const LEGENDS: LegendDef[] = [
 export const ABOUT: string[] = [
   "Dayısı belediyede (öyle diyor).",
   "Kayınvalidesi Kadıköy'de, o yüzden fazla mesaiye hep hazır.",
-  "Üç kere vapur kaçırdı, üçünde de simit yüzünden.",
+  "Üç kere otobüs kaçırdı, üçünde de simit yüzünden.",
   "Telefonunda 4.000 martı fotoğrafı var.",
   "Tavlada onu kimse yenemiyor, kendisi de dahil.",
   "Kedisinin Martıgram hesabı kendisinden popüler.",
@@ -142,7 +142,7 @@ export const ABOUT: string[] = [
   "Bir kere bir yunus görmüş, herkese anlatıyor.",
   "Hayali: kendi büfesi. Sabri'ye söylemeyin.",
   "Bayramda bütün mahalleye şeker dağıttı, kendine kalmadı.",
-  "Vapurda hep aynı koltuğa oturur, kimse ona dokunmaz.",
+  "Otobüste hep aynı koltuğa oturur, kimse ona dokunmaz.",
   "Mahalle maçında üç kez kaleci oldu, üçünde de gol yemedi (öyle diyor).",
   "Sabahları martılara günaydın der, cevap bekler.",
   "Cebinde hep bir paket kesme şeker taşır."

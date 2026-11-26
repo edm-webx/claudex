@@ -30,8 +30,8 @@ it('sokaktaki her dükkânın kapısının yanında bir satın alma karesi var; 
 
 it('Meydan Kafe: kilitliyken kare para almaz; seviye gelince basınca para akar, dolunca dükkân senin; sonra kafenin kendi aletleri kareyle kurulur; aletler bitince tadilat', () => {
   const { sim, S } = mk(false); S.money = 5e6; S.level = 1; S.stage = 2; S.stats.served = 600;   // sıradaki ilk dükkân: büfe 2. aşama + görev tamam, esnaf seviyesi eksik
-  const m0 = S.money; stand(sim, 'isl.k1', 2); expect(S.money).toBe(m0); expect(S.zones.arsa?.plots?.k1).toBeUndefined();
-  S.level = 5; sim.step(0.5);
+  const m00 = S.money; stand(sim, 'isl.k1', 2); expect(S.money).toBeGreaterThanOrEqual(m00); expect(S.zones.arsa?.plots?.k1).toBeUndefined();   // kare para almaz (bir görev ödülü gelebilir)
+  S.level = 5; sim.step(0.5); const m0 = S.money;
   stand(sim, 'isl.k1', 0.3); expect(S.padPaid['isl.k1']).toBeGreaterThan(0);   // yarım kalan para kaydedilir
   stand(sim, 'isl.k1', 3); expect(S.zones.arsa.plots.k1).toMatchObject({ tur: 'dukkan', lv: 1 }); expect(S.padPaid['isl.k1']).toBeUndefined();
   expect(m0 - S.money).toBeCloseTo(ARSALAR.find(a => a.id === 'k1')!.fiyat, 1);

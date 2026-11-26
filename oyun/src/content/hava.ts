@@ -27,8 +27,8 @@ export const HAVA_KINDS: Record<HavaKind, HavaKindDef> = {
   },
   sis: {
     id: 'sis', name: 'Sis', icon: '🌫', arrival: 0.9,
-    start: ['Sis çöktü. Vapur düdüğü uzaktan geliyor.', 'Boğaz pamuk gibi sis oldu, karşı kıyı tatile çıktı.'],
-    line: ['Vapur nerede? Düdüğü var, kendisi yok.', 'Sisin içinde çay daha da güzel.'],
+    start: ['Sis çöktü. Martılar bile yolunu şaşırdı.', 'Boğaz pamuk gibi sis oldu, karşı kıyı tatile çıktı.'],
+    line: ['Karşı kıyı nerede? Dün buradaydı.', 'Sisin içinde çay daha da güzel.'],
   },
   kar: {
     id: 'kar', name: 'Kar', icon: '❄', arrival: 0.85, wet: true,
@@ -52,8 +52,8 @@ export const HAVA_KINDS: Record<HavaKind, HavaKindDef> = {
   },
   firtina: {
     id: 'firtina', name: 'Fırtına', icon: '⛈', arrival: 0.6, wet: true,
-    start: ['Fırtına çıktı! Bir vapur seferi iptal olabilir.', 'Gök gürlüyor, kaptanlar çay molasında.'],
-    line: ['Bu havada vapur gelmez, çay gelir.', 'Gök gürledi, kediler tezgahın altına girdi.'],
+    start: ['Fırtına çıktı! Tenteleri sıkı bağlayın.', 'Gök gürlüyor, balıkçılar çay molasında.'],
+    line: ['Bu havada müşteri gelmez, çay gelir.', 'Gök gürledi, kediler tezgahın altına girdi.'],
   },
 };
 

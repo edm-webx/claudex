@@ -16,6 +16,7 @@ import { Batch, col, geoc, HP } from '../../../engine/prefab/batch';
 import type { Rect } from '../../../engine/api';
 import { ensureKit, MAT, R, K, radialTex, tileNewTex, tileWornTex } from '../common/v2kit';
 import { UG } from '../../ustgecit';
+import { KOSK } from '../../restoran-plan';
 import { PIER, WALKABLE, staticObstacles, stageLayout, PARTS, BUFE_DZ, type Obstacle } from './layout';
 import { makeSea, makeSeaMask, makeSkyline, makeBoats } from './scenery';
 import { buildPier, LAMPS } from './pier';
@@ -23,7 +24,7 @@ import { buildKiosk, jobBoardInto, drawSign } from './kiosk';
 import { stationBuilt, meatGeo, spinGeo, tableBuilt, decorBuild, makeFerryMesh, FOOT, DECOR_SIZE } from './props';
 import { rectAABB } from './layout';
 
-export const ISKELE_BOUNDS: Rect = { x0: -62, z0: -19, x1: 62, z1: 59 };
+export const ISKELE_BOUNDS: Rect = { x0: -62, z0: -28, x1: 62, z1: 59 };   // 2026-11-25: deniz köşkü (aşama 10) z -26.4'e kadar
 
 /** Pilings of the pier (same loops as buildPier), for the sea foam mask without building the pier. */
 export function pilingList(): { x: number; z: number }[] {
@@ -39,7 +40,7 @@ export function waterColliders(): Rect[] {
   return [
     { x0: b.x0, x1: p.x0, z0: b.z0, z1: pr.z0 },
     { x0: p.x1, x1: b.x1, z0: b.z0, z1: pr.z0 },
-    { x0: p.x0, x1: p.x1, z0: b.z0, z1: p.z0 },
+    { x0: p.x0, x1: KOSK.x0 + 0.3, z0: b.z0, z1: p.z0 }, { x0: KOSK.x1 - 0.3, x1: p.x1, z0: b.z0, z1: p.z0 }, { x0: KOSK.x0, x1: KOSK.x1, z0: b.z0, z1: KOSK.z0 + 0.3 },
     // the 6-lane road: closed everywhere except the footbridge corridor
     { x0: b.x0, x1: UG.x - UG.hw, z0: pr.z1, z1: 28.4 },
     { x0: UG.x + UG.hw, x1: b.x1, z0: pr.z1, z1: 28.4 },

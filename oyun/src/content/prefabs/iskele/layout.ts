@@ -1,5 +1,6 @@
 import { UG } from '../../ustgecit';
 import { KANAT_MASALAR, type KanatBolge } from '../../kanat';
+import { KOSK_KAPI, KOSK_KAPI_W } from '../../restoran-plan';
 /**
  * İskele geography and per-stage layout (pure data, no three, no DOM): v2 world.js constants, stageLayout(),
  * staticObstacles(), WALKABLE, benches, lamp posts, trophy spots. Ported 1:1 (numbers kept).
@@ -101,7 +102,7 @@ export const STATION_KINDS = ['doner', 'cay', 'ayran', 'simit', 'tost', 'gazoz']
 export type StationKind = typeof STATION_KINDS[number];
 export const PARTS = ['kepenk', 'tabela', 'fayans', 'floresan', 'tezgah', 'boya'];
 export const TABLE_PADS: Record<string, number> = { tabure1: 0, tabure2: 1, masa1: 2, masa2: 3, masa3: 4, masa4: 5 };
-export const PAD_KEYS_FALLBACK = ['cay', 'ayran', 'simit', 'tabure1', 'tabure2', 'isbul', 'pencere', 'tepsi1', 'masa1', 'gazoz', 'miknatis', 'masa2', 'tost', 'tepsi2', 'tadilat', 'masa3', 'masa4'];
+export const PAD_KEYS_FALLBACK = ['cay', 'ayran', 'simit', 'tabure1', 'tabure2', 'isbul', 'tepsi1', 'masa1', 'gazoz', 'miknatis', 'masa2', 'tost', 'tepsi2', 'tadilat', 'masa3', 'masa4'];
 const V3 = (x = 0, y = 0, z = 0): P3v => ({ x, y, z });
 const P3 = (x: number, z: number, y = 0): P3v => V3(x, y, z);
 export const BENCHES: { pos: P3v; rotY: number }[] = [
@@ -179,7 +180,8 @@ function kioskLayout0(stage: number): StageLayout {   // stages 6-10 grow around
       ? [[-2.0, -1.5, 'x'], [1.6, -1.5, 'x'], [-6.3, -8.8, 'z'], [-8.7, -8.8, 'z'], [-6.3, -5.9, 'z'], [-8.7, -5.9, 'z'], [-6.3, -3.0, 'z'], [-8.7, -3.0, 'z']].map(([x, z, ax]) => ({ x: x as number, z: z as number, ax: ax as 'x' | 'z' }))
       : [[-2.0, -1.5], [1.6, -1.5], [-3.0, 0.9], [2.6, 0.9], [-6.6, -1.4], [6.1, -0.9], [-6.6, 1.4], [-6.6, 3.5]].map(([x, z]) => ({ x, z, ax: 'x' as 'x' | 'z' }));
     L.window = { standAt: P3(3.45, WIN_Z_YEREL), serve: P3(4.32, WIN_Z_YEREL, 1.12), queue: [[4.95, WIN_Z_YEREL], [5.75, WIN_Z_YEREL], [6.55, WIN_Z_YEREL], [6.6, -6.3], [6.6, -5.5], [6.6, -4.7]].map(([x, z]) => P3(x, z)) };
-    L.job = s3 ? { board: [5.6, -5.4, -0.3], pos: P3(5.5, -4.5) } : { board: [-7.4, -4.6, 0], pos: P3(-7.4, -3.75) };
+    // 2026-11-25 (sahibi: "işçi bulma panosu yürüyüş yoluna çıkarılmalı"): aşama 3+ pano promenatta, iskele ağzının doğusunda, yürüyüş şeridinin (z 7.6) önünde
+    L.job = s3 ? { board: [6.6, 5.5, 0], pos: P3(6.6, 6.4) } : { board: [-7.4, -4.6, 0], pos: P3(-7.4, -3.75) };
     L.extraPads = { tepsi1: P3(-0.9, -7.6), tepsi2: P3(1.1, -7.6), miknatis: P3(-1.4, 2.8), tadilat: s3 ? P3(3.0, 1.2) : P3(-7.4, -6.6), pencere: P3(5.6, -5.2) };
     L.cat = { awning: P3(-3.3, -4.0, 3.18), basket: P3(-4.85, -5.3, 0.2), stool: P3(-5.0, -3.55, 0.49), roof: P3(-3.4, -10.5, 2.7) };
     L.perch = [[1.5, 4.04, -10.56, 0.2], [4.1, 2.72, -10.5, 0.5], [2.1, 1.07, -4.45, -0.4], [-3.7, 3.31, -4.47, 0.3]];
@@ -209,8 +211,9 @@ export function staticObstacles(): Obstacle[] {
   const o: Obstacle[] = [];
   const add = (x0: number, x1: number, z0: number, z1: number, tag: string) => o.push({ x0, x1, z0, z1, tag });
   add(PIER.x0 - 0.4, PIER.x0 + 0.2, PIER.z0 - 0.4, PIER.z1, 'rail');
-  add(PIER.x0 - 0.4, PIER.x1 + 0.4, PIER.z0 - 0.4, PIER.z0 + 0.2, 'rail');
-  add(PIER.x1 - 0.2, PIER.x1 + 0.4, PIER.z0 - 0.4, GANG.z0, 'rail'); add(PIER.x1 - 0.2, PIER.x1 + 0.4, GANG.z1, PIER.z1, 'rail');
+  // 2026-11-25: deniz köşkünün iki kapısı (aşama 10); öncesinde buyumeEngel kapatır
+  { let x = PIER.x0 - 0.4; for (const d of KOSK_KAPI) { add(x, d - KOSK_KAPI_W / 2, PIER.z0 - 0.4, PIER.z0 + 0.2, 'rail'); x = d + KOSK_KAPI_W / 2; } add(x, PIER.x1 + 0.4, PIER.z0 - 0.4, PIER.z0 + 0.2, 'rail'); }
+  add(PIER.x1 - 0.2, PIER.x1 + 0.4, PIER.z0 - 0.4, PIER.z1, 'rail');   // vapur kalktı: doğu korkuluğu kesintisiz
   add(-80, PIER.x0, PIER.z1 - 0.4, PIER.z1 + 0.45, 'rail'); add(PIER.x1, 80, PIER.z1 - 0.4, PIER.z1 + 0.45, 'rail');
   // road-side rail along the promenade; the footbridge stairs interrupt it
   add(-80, UG.x - UG.hw, 13.3, 14.2, 'rail'); add(UG.x + UG.hw, 80, 13.3, 14.2, 'rail');

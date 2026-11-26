@@ -29,7 +29,7 @@ export const CITIZENS: CitizenTypeDef[] = [
   { id: 'balayi', name: 'Balayı çifti', patience: 3, tip: 5, w: 0.4, hours: [[15, 22]], peak: [[18, 21]], prefer: { cay: 2, doner: 2, gazoz: 1 }, group: [2, 2], items: [1, 1], sit: 0.95, voice: 220, gait: 'normal' },
   { id: 'turgrubu', name: 'Yaşlı tur grubu', patience: 5, tip: 3, w: 0.35, hours: [[9, 16]], peak: [], prefer: { cay: 3, simit: 3, ayran: 1 }, group: [3, 5], items: [1, 1], sit: 0.9, voice: 140, wave: 2, gait: 'slow' },
   { id: 'isinsani', name: 'Takım elbiseli iş insanı', patience: 1, tip: 4, w: 0.6, hours: [[8, 13], [6.5, 8]], peak: [[8, 10]], prefer: { cay: 2, doner: 2, ayran: 1 }, group: [1, 1], items: [1, 2], sit: 0.2, voice: 130, gait: 'brisk' },
-  { id: 'vapuryolcusu', name: 'Vapur yolcusu', patience: 2, tip: 2, w: 0.6, hours: [[8, 24]], peak: [], prefer: { simit: 3, cay: 3, tost: 2, gazoz: 2 }, group: [1, 1], items: [1, 1], sit: 0, voice: 170, ferry: true, gait: 'brisk' },
+  { id: 'vapuryolcusu', name: 'Sahil yolcusu', patience: 2, tip: 2, w: 0.6, hours: [[8, 24]], peak: [], prefer: { simit: 3, cay: 3, tost: 2, gazoz: 2 }, group: [1, 1], items: [1, 1], sit: 0, voice: 170, ferry: true, gait: 'brisk' },
   { id: 'bebekarabali', name: 'Bebek arabalı aile', patience: 3, tip: 3, w: 0.6, hours: [[10, 19]], peak: [], prefer: { ayran: 3, simit: 3 }, group: [2, 3], items: [1, 1], sit: 0.5, voice: 230, gait: 'normal' },
 ];
 export const CITIZEN_IDS: string[] = CITIZENS.map(t => t.id);

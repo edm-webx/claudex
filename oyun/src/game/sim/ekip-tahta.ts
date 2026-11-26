@@ -5,7 +5,7 @@
  *   ipuclari: önem sırasıyla darboğaz cümleleri (boşsa 'tıkanma yok'); ipucu: ilk cümle ya da null.
  */
 import { ROLES } from '../../content/ranks';
-import { PASS_KAP, BULASIK, MUTFAK_IST_BY_ID, URUN_ISTASYON, calismaIstasyonuOf } from '../../content/mutfak';
+import { passKap, BULASIK, MUTFAK_IST_BY_ID, URUN_ISTASYON, calismaIstasyonuOf } from '../../content/mutfak';
 import { DISH_BY_ID } from '../../content/yemek-menu';
 import type { RestoranView } from './restoran';
 
@@ -34,7 +34,7 @@ export function tahtaOf(g: Girdi): EkipTahtasi {
   const v = g.view, uyanik = (rol: string) => g.rows.filter(r => r.role === rol && r.state !== 'sleep' && r.state !== 'asleep').length;
   const garson = uyanik('garson');
   const tabakVar = !!v && (v.pass.length > 0 || v.masalar.some(m => m.durum === 'tabak' || m.durum === 'siparis' || m.durum === 'hesap' || m.durum === 'menu'));
-  if (v && v.pass.length >= PASS_KAP) ipuclari.push(garson ? 'Pass dolu, garson ekle' : 'Pass dolu, garson yok: garson ekle');
+  if (v && v.pass.length >= passKap(g.stage)) ipuclari.push(garson ? 'Pass dolu, garson ekle' : 'Pass dolu, garson yok: garson ekle');
   else if (v && tabakVar && !garson) ipuclari.push('Garson yok, masalar bekliyor');
   if (g.bulasik >= BULASIK.soft) ipuclari.push(uyanik('bulasikci') ? `Bulaşık yığını ${g.bulasik} tabak, bulaşıkçı yetişemiyor` : `Bulaşık yığını ${g.bulasik} tabak, bulaşıkçı ekle`);
   if (v) {

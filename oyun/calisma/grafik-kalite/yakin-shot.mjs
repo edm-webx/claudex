@@ -29,7 +29,7 @@ await p.evaluate(([STAGE, PADS]) => { const M = window.__marti; M.setTime(13); M
   if (!new URLSearchParams(location.search).get('ui')) { const st = document.createElement('style'); st.textContent = '#sbui{visibility:hidden!important}'; document.head.appendChild(st); } }, [STAGE, PADS]);
 // [id, hero x, z, cam x, z, zoomRaw, yaw (×π/2), tilt]
 const SPOTS = {
-  heroYakin: [0, -2, 0, -3.2, 0.35, 0, 0.35], heroOrta: [0, -2, 0, -4, 0.8, 0, 0.6], ambulans: [35, 50.5, 35.4, 52, 0.6, 2, 0.35], meydanUzak: [0, 30, 0, 38, 4, 0, 0.6], kalabalik: [2, 4, 2, 2, 1.2, 0, 0.5], dukkanKenar: [20, 40, 22, 42, 0.9, 1, 0.4],
+  yolYakin: [0, 30, 0, 21, 1.5, 0, 0.55], heroYakin: [0, -2, 0, -3.2, 0.35, 0, 0.35], heroOrta: [0, -2, 0, -4, 0.8, 0, 0.6], ambulans: [35, 50.5, 35.4, 52, 0.6, 2, 0.35], meydanUzak: [0, 30, 0, 38, 4, 0, 0.6], kalabalik: [2, 4, 2, 2, 1.2, 0, 0.5], dukkanKenar: [20, 40, 22, 42, 0.9, 1, 0.4],
   iskele: [0, -2, 0, -6, 3.6, 0, 0.9], yakindaTabela: [5, -8, 6.3, -12.3, 1.2, 0, -0.45], giseYeni: [17, -9, 19.5, -12, 1.2, 0, -0.45], batiKose: [-8, 0, -10, 3, 1.2, 0, -0.45], bufeAci: [0, 1, 0, -3, 1.8, 0, -0.45], garson: [4, 1, 1, -2, 0.9, 0, -0.45], kafe1Yakin: [-16.4, 37.9, -17.5, 37.9, 0.7, 1, 0.3], kirtasiyeYakin: [28.6, 34.6, 28, 35.2, 0.6, 2, 0.3], avmTekno: [1193.5, 54, 1191.5, 54, 0.6, 1, 0.3], avmOyuncak: [1206.5, 49.8, 1208.8, 49.8, 0.6, 3, 0.3], tesisYakin: [-53.3, 44, -54.1, 45.4, 0.8, 1, 0.3], iskeleArka: [0, -11, 0, -12, 2.6, 2, 0.8], bufeOn: [0, -4, 0, -6, 1.5, 0, 0.75], bufeYan: [-6, -8, -2, -10, 1.8, 1, 0.75],
   mutfak: [0, -14.6, 0, -15, 1.2, 0, 0.9], mutfakDis: [0, -9, 0, -13, 1.6, 0, 0.7],
   salonW: [-17.6, -12.0, -17.6, -13.5, 1.6, 0, 0.8], salonE: [15.6, -12.0, 15.6, -13.5, 1.6, 0, 0.8],
@@ -43,8 +43,8 @@ for (const id of ids) {
   const s = SPOTS[id]; if (!s) { console.log('?', id); continue; }
   const [x, z, cx, cz, zr, yi, tilt] = s;
   try {
-    await p.evaluate(([x, z, cx, cz, zr, yi, tilt]) => { const M = window.__marti; M.teleport(x, z); for (let k = 0; k < 6; k++) { M.step(0.5); M.renderFrames(3, 0.1); } M.camera({ x: cx, z: cz, zoomRaw: zr, yaw: yi * Math.PI / 2, tilt }); for (let k = 0; k < 16; k++) { M.step(0.1); M.renderFrames(2, 0.1); } }, [x, z, cx, cz, zr, yi, tilt]);
-    await p.waitForTimeout(250); await p.screenshot({ path: join(out, `${process.env.TIER || 'dengeli'}-${id}.png`), timeout: 300000 }); console.log('ok', id, JSON.stringify(await p.evaluate(() => { const i = window.__marti.info(); return { calls: i.calls, tris: i.tris }; })));
+    await p.evaluate(([x, z, cx, cz, zr, yi, tilt]) => { const M = window.__marti; M.setTime(12.5); M.teleport(x, z); for (let k = 0; k < 6; k++) { M.step(0.5); M.renderFrames(3, 0.1); } M.camera({ x: cx, z: cz, zoomRaw: zr, yaw: yi * Math.PI / 2, tilt }); for (let k = 0; k < 16; k++) { M.step(0.1); M.renderFrames(2, 0.1); } }, [x, z, cx, cz, zr, yi, tilt]);
+    await p.waitForTimeout(250); await p.screenshot({ path: join(out, `${process.env.TIER || 'dengeli'}-${id}.png`), timeout: 300000 }); console.log('ok', id, JSON.stringify(await p.evaluate(() => { const i = window.__marti.info(); let hv=null; try{hv=window.__marti.havaZorla('');}catch{} const el=document.elementsFromPoint(640,360).slice(0,4).map(e=>e.tagName+'#'+e.id+'.'+String(e.className).slice(0,20)+'@'+getComputedStyle(e).opacity); return { calls: i.calls, tris: i.tris, hv, el }; })));
   } catch (e) { console.log('ERR', id, e.message.slice(0, 200)); }
 }
 writeFileSync(join(out, `hatalar-${STAGE}.txt`), errs.join('\n'));

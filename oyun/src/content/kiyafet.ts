@@ -16,7 +16,7 @@ export const KIYAFET_ZINCIRLER: KiyafetZincir[] = [
   { id: 'zarra', name: 'Zarra', tagline: 'Vitrinde gördüğün gibi, dolapta da' },
   { id: 'manggo', name: 'Manggo', tagline: 'Gençlerin kombin dükkanı' },
   { id: 'defakto', name: 'Defakto', tagline: 'Yakın zamanın en yakın fiyatı' },
-  { id: 'bozkurt_spor', name: 'Bozkurt Spor', tagline: 'Halı sahadan vapura' },
+  { id: 'bozkurt_spor', name: 'Bozkurt Spor', tagline: 'Halı sahadan iskeleye' },
 ];
 
 export const KIYAFET_URUNLER: KiyafetUrun[] = [

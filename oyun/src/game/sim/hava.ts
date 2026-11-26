@@ -227,7 +227,7 @@ export function installHava(K: Kernel): HavaApi {
     skipFerry() {
       const h = H();
       if (kind() !== 'firtina' || h.skipDay === S().day) return false;
-      h.skipDay = S().day; K.toast('Fırtına! Bu vapur seferi iptal, kaptan çay içiyor.', 'info'); K.logEv('havaFerrySkip', {});
+      h.skipDay = S().day; K.toast('Fırtına! Sahil bir süre boşaldı, herkes çay içiyor.', 'info'); K.logEv('havaFerrySkip', {});
       return true;
     },
   };
@@ -345,9 +345,9 @@ export function installHava(K: Kernel): HavaApi {
   function effectText(k: HavaKind): string {
     switch (k) {
       case 'saganak': case 'kar': return 'Masalar ıslak: müşteri sadece şemsiye altına oturur. Sıcak içecek talebi artar.';
-      case 'firtina': return 'Bir vapur seferi iptal olur. Az müşteri, bol çay.';
+      case 'firtina': return 'Sahil bir süre boşalır. Az müşteri, bol çay.';
       case 'lodos': return 'Şapkalar uçar, şemsiyeler de! Uçan şemsiyeyi yakala, bonus kap.';
-      case 'sis': return 'Vapur düdüğü uzaktan gelir. Çay ve simit daha çok gider.';
+      case 'sis': return 'Boğaz pus içinde. Çay ve simit daha çok gider.';
       case 'sicak': return 'Herkes gölgede. Ayran ve gazoz uçar, şemsiye altında uzun oturulur.';
       case 'gokkusagi': return 'Herkes fotoğraf için dışarıda, müşteri bol!';
       default: return 'Güzel hava, keyifli iskele.';
