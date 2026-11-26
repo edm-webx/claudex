@@ -24,3 +24,9 @@
 5. KARAR (koordinatör, 2026-11-25): uzak süs vapuru (ferryFar, ferry) oyundan TAMAMEN kalksın. Önce tz1bfz dalındaki vapur kaldırma işiyle çakışmayı kontrol et.
 ## Açık sorular
 - Yapımcılar'da "Kod ve tasarım ortağı: Claude (Anthropic)" satırı: kullanıcıya sorulacak. Cevaba kadar satır KALDIRILDI.
+
+## 2026-11-26
+- SCENE SVG vapur grubu silindi (14e8a27). Oyundaki vapur kaldırma tz1bfz dalında; burada tekrar edilmedi.
+- Beyaz iskele zemini: lampGlow DEĞİL. Headless swiftshader'da normal oyunda öğlen 12'de de rastgele çıkıyor (zemin dokusu + bazı nesneler çizilmiyor); telefon ilk karede düzgün. Menüyle ilgisi yok, kod değişmedi. Gerçek GPU'da kullanıcı bakacak: C:\Users\emirh\Desktop\Oyun\giris-deneme\index.html
+- Önce/sonra: /mnt/project-files/sosisci-oyun/giris-aaa-2026-11-25/once-sonra-masaustu.png, sonra-telefon.png, son-hal/
+- Bekleyen: kullanıcı "tamam" (birleştirme yok), Claude yapımcı satırı kararı.
