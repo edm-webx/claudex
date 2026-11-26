@@ -15,3 +15,8 @@
 ## Açık kararlar
 - Akıcı kademe üçgen aşımını kim kapatacak (restoran thread'i mi, bütçe güncellemesi mi)?
 - Müzik/hava döngüsü/gün hızı bu thread'e verilmedi.
+
+## 2026-11-26
+- restoran-ters-u (ac63e9f) birleşti; kalan vapur metinleri temizlendi; asama10 vapur koridoru denetimi kalktı.
+- Öğlen sağanak, pano (3/8/10), mutfak, aşama 10 kareleri doğrulandı. Not: gez.mjs'de saati geri almak bir sonraki güne sarar, ilk kare karanlık çıkar (ısınma karesi kullan).
+- Açık: asama-botu kırmızı (masa 59 menü, aşama 9) restoran dalında da var → restoran thread'i.
