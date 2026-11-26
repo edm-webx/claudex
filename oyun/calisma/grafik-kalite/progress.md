@@ -12,3 +12,9 @@
 2. Sokak eşyaları (bank, lamba) prosedürel ve oturma noktalarına/çarpışmaya bağlı (pier.ts bench, layout.ts benchSeats): değiştirmek riskli, yapılmadı.
 3. Kenney/Quaternius indirme buluttan engelli: kullanıcının PC'sinde uzak oturum gerekir (izin istenecek).
 4. Yemek/mutfak modelleri: "Her ürüne kendine has görsel yap" thread'inde; KayKit Restaurant Bits bilgisi oraya iletildi, karar onda.
+
+
+## 2026-11-26
+- Önce/sonra araba çekimi tamam: sonra-yol.png koyuluğu rastgele bulutlu havadan geliyordu (çekimde havaZorla('') -> 'acik', örtü yok). KayKit arabalar sahneyi karartmıyor; ortalama parlaklık farkı sadece araba renklerinden.
+- yakin-shot.mjs: yolYakin noktası + çekim anında hava/örtü kontrolü loglanıyor.
+- Kullanıcı onayı bekleniyor ("tamam" gelmeden jo0q11'e birleştirme yok).
