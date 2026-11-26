@@ -130,6 +130,7 @@ import { restoranApi } from './sim/restoran';
 import { MUTFAK_ROL_BY_ID } from '../content/mutfak';
 import { SES_ISTASYON } from '../content/mutfak-ses';
 import { mutfakDunya, mutfakStand } from '../content/ic-mekan';
+import { ustKatGizli } from '../content/restoran-plan';
 import { rankOf } from '../content/ranks';
 import { createIzgaraLook, type IzgaraLookView } from './view/world/izgara-look';
 import { cellRect } from '../content/izgara';
@@ -461,7 +462,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
       return hit ? Math.max(0, hit.distance / len) : 1;
     });
   }
-  const salonUstGizli = (x: number, z: number) => { for (const m of [KT_IC.salonW, KT_IC.salonE]) if (ktIcinde(m, pos, 0.2) && pos.z > -8.4 && ktIcinde(m, { x, z }, 0.4)) return true; return false; };   // terasın altındayken (teras-W / teras-E kalkınca)
+  const salonUstGizli = (x: number, z: number) => ustKatGizli(pos, { x, z });   // terasın / Şef salonunun altındayken üst kattakiler çizilmez
   const agentsOf = (): AgentsHandle | null => (sim.rules.rt as unknown as { agents?: AgentsHandle }).agents ?? null;
   const agentsView: AgentsView | null = playMode && chars ? make('agentsView', () => createAgentsView({
     chars: chars as MotorChars, quality, agents: agentsOf,

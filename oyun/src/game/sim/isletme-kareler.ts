@@ -174,8 +174,9 @@ export function installIsletmeKareler(K: Kernel, api: IsletmeKareApi): { sync():
       for (const i of kanatAcik(st)) {
         const m = kanatOf(i)!; if (own.has(i) || masaHediye(i) || bolgeler.has(m.bolge)) continue;
         bolgeler.add(m.bolge);
-        const pos = m.cati ? { x: catiAyak(m.cati).x, z: catiAyak(m.cati).z + 0.9 } : { x: m.x, z: m.z };
-        out.push({ key: 'masa.' + i, pos, y: m.bolge === 'salonW' ? SOKAK_Y + 0.05 : undefined, label: '🪑 MASA', sub: BOLGE_AD[m.bolge] + (m.cati ? ' (çatıya)' : ''), price: masaFiyat(i), kilit: '', done: () => api.masaAl!(i) });
+        const sef = m.bolge === 'sefW' || m.bolge === 'sefE';   // Şef salonunun karesi terasınkiyle üst üste binmez
+        const pos = m.cati ? { x: catiAyak(m.cati).x + (sef ? (m.cati === 'W' ? -2.4 : 2.0) : 0), z: catiAyak(m.cati).z + (sef ? (m.cati === 'W' ? -0.6 : 0.4) : 0.9) } : { x: m.x, z: m.z };
+        out.push({ key: 'masa.' + i, pos, y: m.bolge === 'salonW' ? SOKAK_Y + 0.05 : undefined, label: sef ? '🪑 ŞEF SALONU MASASI' : m.bolge === 'kosk' ? '🪑 KÖŞK MASASI' : m.cati ? '🪑 TERAS MASASI' : '🪑 MASA', sub: sef ? 'İkinci kattaki Şef salonuna: burada al' : m.cati ? 'Terasa: burada al' : BOLGE_AD[m.bolge], price: masaFiyat(i), kilit: '', done: () => api.masaAl!(i) });
       }
     }
     return out;

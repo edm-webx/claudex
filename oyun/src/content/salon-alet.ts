@@ -19,3 +19,9 @@ export const SALON_ALET: Record<string, SalonAlet> = {
 };
 /** alınmış bir alet bu yemeği hızlandırıyor mu */
 export const aletHiz = (yemek: string, sahip: readonly string[] | undefined): number => ((sahip || []).some(e => SALON_ALET[e]?.yemek.includes(yemek)) ? ALET_HIZ : 1);
+
+/** 9. aşamayla gelen yuvarlak şov ızgarası (büfe holünün ortasında): oyuncu ve şef önünde pişirir */
+export const SOV_YEMEK = ['tavuk_sis', 'izgara_kofte', 'adana', 'biftek'];
+/** 8. aşamanın teras barı: içecekler çabuk hazırlanır */
+export const TERAS_BAR_STAGE = 8, TERAS_BAR_YEMEK = ['cay', 'demlik_cay', 'limonata', 'ayran', 'kola', 'soda', 'gazoz', 'gazoz_cesit'];
+export const asamaHiz = (yemek: string, stage: number): number => (stage >= 9 && SOV_YEMEK.includes(yemek)) || (stage >= TERAS_BAR_STAGE && TERAS_BAR_YEMEK.includes(yemek)) ? ALET_HIZ : 1;

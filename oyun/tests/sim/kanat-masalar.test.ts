@@ -37,12 +37,13 @@ function masaMusterisi(k: ReturnType<typeof kur>, order: Record<string, number>)
 const stokla = (k: ReturnType<typeof kur>) => { for (const p of ['cay', 'ayran', 'simit', 'tost', 'gazoz', 'doner']) { const b = (k.r.counter[p] ||= []); while (b.length < 6) b.push({ type: p, tier: 1 }); } };
 
 describe('BUF-19/20 kanat masaları', () => {
-  it('masa sayısı aşamadan türer: çay bahçesi 4 -> 8, dondurma 4 -> 6, salonlar 6 (+2 aşama 10), çatılar 4+4 (aşama 8)', () => {
+  it('masa sayısı aşamadan türer: çay bahçesi 4 -> 8, dondurma 4 -> 6, salonlar 6 (+2 aşama 10), çatılar 10+10 (aşama 8), Şef salonu 12 (9), köşk 8 (10)', () => {
     expect(kanatSay(2, 'cay')).toBe(0); expect(kanatSay(3, 'cay')).toBe(4); expect(kanatSay(5, 'cay')).toBe(8);
     expect(kanatSay(3, 'dondurma')).toBe(0); expect(kanatSay(4, 'dondurma')).toBe(4); expect(kanatSay(7, 'dondurma')).toBe(6); expect(kanatSay(10, 'dondurma')).toBe(6);
     expect(kanatSay(5, 'salonW')).toBe(0); expect(kanatSay(6, 'salonW')).toBe(6); expect(kanatSay(10, 'salonW')).toBe(8);
     expect(kanatSay(7, 'salonE')).toBe(6); expect(kanatSay(10, 'salonE')).toBe(8);
-    expect(kanatSay(7, 'catiW') + kanatSay(7, 'catiE')).toBe(0); expect(kanatSay(8, 'catiW') + kanatSay(8, 'catiE')).toBe(8);
+    expect(kanatSay(7, 'catiW') + kanatSay(7, 'catiE')).toBe(0); expect(kanatSay(8, 'catiW') + kanatSay(8, 'catiE')).toBe(20); expect(kanatSay(10, 'catiW') + kanatSay(10, 'catiE')).toBe(24);
+    expect(kanatSay(9, 'sefW') + kanatSay(9, 'sefE')).toBe(12); expect(kanatSay(9, 'kosk')).toBe(0); expect(kanatSay(10, 'kosk')).toBe(8);
     for (let s = 3; s <= 10; s++) expect(kanatKurulu(s).length).toBeGreaterThanOrEqual(kanatKurulu(s - 1).length);
 
     const k = kur();
