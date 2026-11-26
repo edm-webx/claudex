@@ -26,7 +26,7 @@ export const BAND = { z0: 4.85, z1: 13.3, mid: 9 } as const;
 
 export const REGIONS: Region[] = [
   { id: 'iskele', zone: 'iskele', name: 'Martıköy İskelesi', short: 'İskele', x0: -62, x1: 62, level: 1, color: '#7cc4e4',
-    blurb: 'Büfenin evi. Vapur, martı, çay.', lockLine: '', map: [30, 58], stop: { name: 'İskele Durağı', x: 48, z: 11.8 }, vapur: true },
+    blurb: 'Büfenin evi. Deniz, martı, çay.', lockLine: '', map: [30, 58], stop: { name: 'İskele Durağı', x: 48, z: 11.8 }, vapur: true },
   { id: 'carsi', zone: 'test-sokak', name: 'Çarşı Sokağı', short: 'Çarşı', x0: 62, x1: 132, level: 1, color: '#f0b45a',
     blurb: 'Fırın, manav, berber ve dedikodu merkezi.', lockLine: '', map: [40, 46], stop: { name: 'Çarşı Başı', x: 68, z: 12.2 } },
   { id: 'sahil', zone: 'sahil', name: 'Sahil Yolu ve Park', short: 'Sahil', x0: 132, x1: 196, level: 1, color: '#8fd06b',
@@ -58,7 +58,7 @@ export const REGIONS: Region[] = [
     blurb: 'Çam korusu, seyir terası ve bütün şehrin manzarası.', lockLine: 'Koruda piknik var!', map: [30, 20],
     stop: { name: 'Koru Girişi', x: 552, z: 12.2 } },
   { id: 'adalar', zone: 'adalar', name: 'Adalar', short: 'Adalar', x0: 700, x1: 760, level: 1, color: '#e6b45a',
-    blurb: 'Faytonsuz sokaklar, bisikletler, köşkler ve çam kokusu. Sadece vapurla.', lockLine: 'Vapur kalkmak üzere!', map: [58, 90],
+    blurb: 'Faytonsuz sokaklar, bisikletler, köşkler ve çam kokusu. Sadece deniz taksisiyle.', lockLine: 'Deniz taksisi kalkmak üzere!', map: [58, 90],
     stop: { name: 'Ada İskelesi', x: 714, z: 3.2 }, vapur: true, island: true },
   // 16:52 user: a bus from the stop across the büfe to Belgrad Ormanı: mushrooms, mangal, the fountain
   { id: 'orman', zone: 'orman', name: 'Belgrad Ormanı', short: 'Orman', x0: 800, x1: 880, level: 1, color: '#3f8a4a',
