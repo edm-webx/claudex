@@ -70,7 +70,7 @@ export const ARSALAR: Arsa[] = [
   { id: 'k1', x: -17.5, z: 37.9, fiyat: 90000, seviye: 3, rotY: Math.PI / 2, sabit: 'kafe', kapi: { x: -11.8, z: 37.9 }, ad: 'Meydan Kafe' },
   { id: 'k2', x: -17.5, z: 51.5, fiyat: 120000, seviye: 3, rotY: Math.PI / 2, sabit: 'kafe', kapi: { x: -11.8, z: 51.5 }, ad: 'Sahil Bistro' },
   // 2026-11-09: every business building can be bought from a level and run (interiors: content/ic-mekan.ts)
-  { id: 'k3', x: 28, z: 35.2, fiyat: 140000, seviye: 4, rotY: Math.PI, sabit: 'kafe', kapi: { x: 28, z: 32.6 }, ad: 'Martı Kırtasiye' },
+  { id: 'k3', x: 29.7, z: 35.2, fiyat: 140000, seviye: 4, rotY: Math.PI, sabit: 'kafe', kapi: { x: 29.7, z: 32.6 }, ad: 'Martı Kırtasiye' },
   { id: 'k4', x: 48.85, z: 37.25, fiyat: 110000, seviye: 3, rotY: Math.PI, sabit: 'kafe', kapi: { x: 48.85, z: 32.6 }, ad: 'Okul Kantini' },
   { id: 'k6', x: -54.1, z: 45.4, fiyat: 260000, seviye: 5, rotY: Math.PI / 2, sabit: 'kafe', kapi: { x: -51.0, z: 45.4 }, ad: 'Tesis Kafeteryası' },
   // 2026-11-20 owner: Martı AVM is split into separate businesses. 2026-11-21 owner: "her katında mağaza olsun, satın alıp işletelim, zamanla her

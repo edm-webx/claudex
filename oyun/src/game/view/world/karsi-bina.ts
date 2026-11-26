@@ -195,7 +195,7 @@ const SPECS: Spec[] = [
     sign: { text: '☕ MEYDAN KAFE', bg: '#7a3b1c', fg: '#ffe9c4' }, win: { w: 1.1, h: 1.45, gap: 1.0, frame: '#fbf3e4', shutter: '#3f7d5a', flower: true }, extra: cafeTerrace },
   { id: 'kafe2', x: -17.5, z: 51.5, wx: 7, wz: 9.4, front: '+x', floors: 2, fh: 3.1, wall: '#cfe3ea', trim: '#fbfaf6', accent: '#2f6fdb', ground: 'shop', lit: 0.7, roof: 'flat',
     sign: { text: '⚓ SAHİL KAFE', bg: '#1d4f86', fg: '#ffffff' }, win: { w: 1.1, h: 1.45, gap: 1.0, frame: '#fbfaf6', shutter: '#2b6fb8', flower: true }, extra: cafeTerrace },
-  { id: 'kirtasiye', x: 28, z: 35.2, wx: 7.1, wz: 3.6, front: '-z', floors: 2, fh: 3.0, wall: '#bcd7ea', trim: '#f4f4f0', accent: '#ffd23f', ground: 'shop', lit: 0.6, roof: 'flat',
+  { id: 'kirtasiye', x: 29.7, z: 35.2, wx: 5.0, wz: 3.6, front: '-z', floors: 1, fh: 3.0, wall: '#bcd7ea', trim: '#f4f4f0', accent: '#ffd23f', ground: 'shop', lit: 0.6, roof: 'tile',
     sign: { text: '✏️ KIRTASİYE', bg: '#ffd23f', fg: '#1d3557' }, win: { w: 1.0, h: 1.4, gap: 0.9, frame: '#f4f4f0', balcony: true }, extra: stationeryRack },
   { id: 'okul', x: 48.85, z: 37.25, wx: 18.3, wz: 7.5, front: '+z', floors: 3, fh: 3.2, wall: '#efc98c', trim: '#a2472f', accent: '#a2472f', ground: 'entrance', lit: 0.25, roof: 'flat',
     sign: { text: 'MARTIKÖY İLKOKULU', bg: '#fbf3e4', fg: '#a2472f', w: 8.4 }, win: { w: 1.5, h: 1.7, gap: 0.8, frame: '#fbfaf6' }, extra: schoolExtras },
