@@ -4349,14 +4349,14 @@
  {
   "asama": 8,
   "key": "masa.39",
-  "fiyat": 1500000,
+  "fiyat": 900000,
   "kat": 0,
   "sonuc": "ok"
  },
  {
   "asama": 8,
   "key": "masa.43",
-  "fiyat": 1500000,
+  "fiyat": 900000,
   "kat": 0,
   "sonuc": "ok"
  },
@@ -4566,14 +4566,14 @@
  {
   "asama": 8,
   "key": "masa.40",
-  "fiyat": 1500000,
+  "fiyat": 900000,
   "kat": 0,
   "sonuc": "ok"
  },
  {
   "asama": 8,
   "key": "masa.44",
-  "fiyat": 1500000,
+  "fiyat": 900000,
   "kat": 0,
   "sonuc": "ok"
  },
@@ -4748,14 +4748,14 @@
  {
   "asama": 8,
   "key": "masa.41",
-  "fiyat": 1500000,
+  "fiyat": 900000,
   "kat": 0,
   "sonuc": "ok"
  },
  {
   "asama": 8,
   "key": "masa.45",
-  "fiyat": 1500000,
+  "fiyat": 900000,
   "kat": 0,
   "sonuc": "ok"
  },
@@ -4929,6 +4929,20 @@
  },
  {
   "asama": 8,
+  "key": "masa.46",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 8,
+  "key": "masa.52",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 8,
   "key": "isl.k1.tadilat",
   "fiyat": 40500,
   "kat": 0,
@@ -5097,6 +5111,20 @@
  },
  {
   "asama": 8,
+  "key": "masa.47",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 8,
+  "key": "masa.53",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 8,
   "key": "mutfak.tatli",
   "fiyat": 1200000,
   "kat": 0,
@@ -5111,8 +5139,64 @@
  },
  {
   "asama": 8,
+  "key": "masa.48",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 8,
+  "key": "masa.54",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 8,
   "key": "masa.15",
   "fiyat": 120000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 8,
+  "key": "masa.49",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 8,
+  "key": "masa.55",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 8,
+  "key": "masa.50",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 8,
+  "key": "masa.56",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 8,
+  "key": "masa.51",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 8,
+  "key": "masa.57",
+  "fiyat": 900000,
   "kat": 0,
   "sonuc": "ok"
  },
@@ -5196,14 +5280,28 @@
  {
   "asama": 9,
   "key": "masa.39",
-  "fiyat": 1500000,
+  "fiyat": 900000,
   "kat": 0,
   "sonuc": "ok"
  },
  {
   "asama": 9,
   "key": "masa.43",
-  "fiyat": 1500000,
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "masa.59",
+  "fiyat": 1800000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "masa.65",
+  "fiyat": 1800000,
   "kat": 0,
   "sonuc": "ok"
  },
@@ -5413,14 +5511,28 @@
  {
   "asama": 9,
   "key": "masa.40",
-  "fiyat": 1500000,
+  "fiyat": 900000,
   "kat": 0,
   "sonuc": "ok"
  },
  {
   "asama": 9,
   "key": "masa.44",
-  "fiyat": 1500000,
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "masa.60",
+  "fiyat": 1800000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "masa.66",
+  "fiyat": 1800000,
   "kat": 0,
   "sonuc": "ok"
  },
@@ -5595,14 +5707,28 @@
  {
   "asama": 9,
   "key": "masa.41",
-  "fiyat": 1500000,
+  "fiyat": 900000,
   "kat": 0,
   "sonuc": "ok"
  },
  {
   "asama": 9,
   "key": "masa.45",
-  "fiyat": 1500000,
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "masa.61",
+  "fiyat": 1800000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "masa.67",
+  "fiyat": 1800000,
   "kat": 0,
   "sonuc": "ok"
  },
@@ -5776,6 +5902,34 @@
  },
  {
   "asama": 9,
+  "key": "masa.46",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "masa.52",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "masa.62",
+  "fiyat": 1800000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "masa.68",
+  "fiyat": 1800000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
   "key": "isl.k1.tadilat",
   "fiyat": 40500,
   "kat": 0,
@@ -5939,6 +6093,34 @@
   "asama": 9,
   "key": "masa.37",
   "fiyat": 700000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "masa.47",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "masa.53",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "masa.63",
+  "fiyat": 1800000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "masa.69",
+  "fiyat": 1800000,
   "kat": 0,
   "sonuc": "ok"
  },
@@ -5965,6 +6147,20 @@
  },
  {
   "asama": 9,
+  "key": "masa.48",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "masa.54",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
   "key": "mutfak.izgara2",
   "fiyat": 5000000,
   "kat": 0,
@@ -5975,6 +6171,314 @@
   "key": "masa.15",
   "fiyat": 120000,
   "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "masa.49",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "masa.55",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "masa.50",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "masa.56",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "masa.51",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "isl.k1.isik",
+  "fiyat": 26000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "masa.57",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "isl.k2.waffle_mak",
+  "fiyat": 26000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "isl.k3.laminasyon",
+  "fiyat": 22000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "isl.k1.koltuk",
+  "fiyat": 34000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "isl.k4.semaver_k",
+  "fiyat": 11000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "isl.k6.langirt",
+  "fiyat": 22000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "isl.k2.isik",
+  "fiyat": 26000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "avm.k7.ayna",
+  "fiyat": 18000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "isl.k3.kitap_raf",
+  "fiyat": 40000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "avm.k8.kulaklik_stand",
+  "fiyat": 22000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "isl.k1.vitrin",
+  "fiyat": 45000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "avm.k9.lego_duvar",
+  "fiyat": 36000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "isl.k4.mikrodalga",
+  "fiyat": 22000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "avm.k10.macuncu",
+  "fiyat": 12000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "isl.k6.mac_tv",
+  "fiyat": 30000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "avm.k11.degirmen",
+  "fiyat": 14000,
+  "kat": 1,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "isl.k2.buz_vitrin",
+  "fiyat": 52000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "avm.k13.oklava",
+  "fiyat": 22000,
+  "kat": 1,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "avm.k7.prova",
+  "fiyat": 34000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "avm.k12.sopa_sov",
+  "fiyat": 12000,
+  "kat": 1,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "avm.k14.cam_hazne",
+  "fiyat": 22000,
+  "kat": 1,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "avm.k8.tv_duvar",
+  "fiyat": 60000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "avm.k5.cay_ocak",
+  "fiyat": 15000,
+  "kat": 2,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "avm.k15.tursu",
+  "fiyat": 10000,
+  "kat": 2,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "avm.k9.tren_pist",
+  "fiyat": 40000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "avm.k16.limonata_dispenser",
+  "fiyat": 10000,
+  "kat": 2,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "avm.k17.tava_ocak",
+  "fiyat": 30000,
+  "kat": 2,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "avm.k10.pismaniye_tezgah",
+  "fiyat": 30000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "avm.k18.karamel_kazan",
+  "fiyat": 18000,
+  "kat": 3,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "avm.k11.dibek_havan",
+  "fiyat": 18000,
+  "kat": 1,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "avm.k13.tas_firin_b",
+  "fiyat": 50000,
+  "kat": 1,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "avm.k12.kulah_kalip",
+  "fiyat": 18000,
+  "kat": 1,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "avm.k14.kavurma_kazan",
+  "fiyat": 36000,
+  "kat": 1,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "avm.k5.pide_firin",
+  "fiyat": 75000,
+  "kat": 2,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "avm.k15.ayran_yayik",
+  "fiyat": 12000,
+  "kat": 2,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "avm.k16.fritoz_k",
+  "fiyat": 20000,
+  "kat": 2,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "avm.k17.buz_tezgah_m",
+  "fiyat": 36000,
+  "kat": 2,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 9,
+  "key": "avm.k18.slush_mak",
+  "fiyat": 22000,
+  "kat": 3,
   "sonuc": "ok"
  },
  {
@@ -6057,14 +6561,28 @@
  {
   "asama": 10,
   "key": "masa.39",
-  "fiyat": 1500000,
+  "fiyat": 900000,
   "kat": 0,
   "sonuc": "ok"
  },
  {
   "asama": 10,
   "key": "masa.43",
-  "fiyat": 1500000,
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "masa.59",
+  "fiyat": 1800000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "masa.65",
+  "fiyat": 1800000,
   "kat": 0,
   "sonuc": "ok"
  },
@@ -6196,6 +6714,13 @@
  },
  {
   "asama": 10,
+  "key": "masa.71",
+  "fiyat": 3600000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
   "key": "masa4",
   "fiyat": 9000,
   "kat": 0,
@@ -6274,14 +6799,28 @@
  {
   "asama": 10,
   "key": "masa.40",
-  "fiyat": 1500000,
+  "fiyat": 900000,
   "kat": 0,
   "sonuc": "ok"
  },
  {
   "asama": 10,
   "key": "masa.44",
-  "fiyat": 1500000,
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "masa.60",
+  "fiyat": 1800000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "masa.66",
+  "fiyat": 1800000,
   "kat": 0,
   "sonuc": "ok"
  },
@@ -6409,6 +6948,13 @@
   "key": "avm.k18.icecek_dolap_s",
   "fiyat": 16000,
   "kat": 3,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "masa.72",
+  "fiyat": 3600000,
+  "kat": 0,
   "sonuc": "ok"
  },
  {
@@ -6470,14 +7016,28 @@
  {
   "asama": 10,
   "key": "masa.41",
-  "fiyat": 1500000,
+  "fiyat": 900000,
   "kat": 0,
   "sonuc": "ok"
  },
  {
   "asama": 10,
   "key": "masa.45",
-  "fiyat": 1500000,
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "masa.61",
+  "fiyat": 1800000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "masa.67",
+  "fiyat": 1800000,
   "kat": 0,
   "sonuc": "ok"
  },
@@ -6609,6 +7169,13 @@
  },
  {
   "asama": 10,
+  "key": "masa.73",
+  "fiyat": 3600000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
   "key": "mutfak.doner",
   "fiyat": 450000,
   "kat": 0,
@@ -6646,6 +7213,34 @@
   "asama": 10,
   "key": "masa.34",
   "fiyat": 700000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "masa.46",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "masa.52",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "masa.62",
+  "fiyat": 1800000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "masa.68",
+  "fiyat": 1800000,
   "kat": 0,
   "sonuc": "ok"
  },
@@ -6777,6 +7372,13 @@
  },
  {
   "asama": 10,
+  "key": "masa.74",
+  "fiyat": 3600000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
   "key": "mutfak.meze",
   "fiyat": 1200000,
   "kat": 0,
@@ -6806,14 +7408,49 @@
  {
   "asama": 10,
   "key": "masa.27",
-  "fiyat": 6000000,
+  "fiyat": 3600000,
   "kat": 0,
   "sonuc": "ok"
  },
  {
   "asama": 10,
   "key": "masa.35",
-  "fiyat": 6000000,
+  "fiyat": 3600000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "masa.47",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "masa.53",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "masa.63",
+  "fiyat": 1800000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "masa.69",
+  "fiyat": 1800000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "masa.75",
+  "fiyat": 3600000,
   "kat": 0,
   "sonuc": "ok"
  },
@@ -6841,14 +7478,35 @@
  {
   "asama": 10,
   "key": "masa.28",
-  "fiyat": 6000000,
+  "fiyat": 3600000,
   "kat": 0,
   "sonuc": "ok"
  },
  {
   "asama": 10,
   "key": "masa.36",
-  "fiyat": 6000000,
+  "fiyat": 3600000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "masa.48",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "masa.54",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "masa.76",
+  "fiyat": 3600000,
   "kat": 0,
   "sonuc": "ok"
  },
@@ -6882,8 +7540,351 @@
  },
  {
   "asama": 10,
+  "key": "masa.49",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "masa.55",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "masa.77",
+  "fiyat": 3600000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "isl.k1.isik",
+  "fiyat": 26000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
   "key": "mutfak.sef_masa",
   "fiyat": 10000000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "isl.k2.waffle_mak",
+  "fiyat": 26000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "isl.k3.laminasyon",
+  "fiyat": 22000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "isl.k4.semaver_k",
+  "fiyat": 11000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "isl.k6.langirt",
+  "fiyat": 22000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "masa.50",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "avm.k7.ayna",
+  "fiyat": 18000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "masa.56",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "avm.k8.kulaklik_stand",
+  "fiyat": 22000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "avm.k9.lego_duvar",
+  "fiyat": 36000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "isl.k1.koltuk",
+  "fiyat": 34000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "avm.k10.macuncu",
+  "fiyat": 12000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "avm.k11.degirmen",
+  "fiyat": 14000,
+  "kat": 1,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "isl.k2.isik",
+  "fiyat": 26000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "avm.k13.oklava",
+  "fiyat": 22000,
+  "kat": 1,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "isl.k3.kitap_raf",
+  "fiyat": 40000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "avm.k12.sopa_sov",
+  "fiyat": 12000,
+  "kat": 1,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "isl.k4.mikrodalga",
+  "fiyat": 22000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "avm.k14.cam_hazne",
+  "fiyat": 22000,
+  "kat": 1,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "isl.k6.mac_tv",
+  "fiyat": 30000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "avm.k5.cay_ocak",
+  "fiyat": 15000,
+  "kat": 2,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "masa.51",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "avm.k15.tursu",
+  "fiyat": 10000,
+  "kat": 2,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "avm.k7.prova",
+  "fiyat": 34000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "avm.k16.limonata_dispenser",
+  "fiyat": 10000,
+  "kat": 2,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "masa.57",
+  "fiyat": 900000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "avm.k17.tava_ocak",
+  "fiyat": 30000,
+  "kat": 2,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "avm.k8.tv_duvar",
+  "fiyat": 60000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "avm.k18.karamel_kazan",
+  "fiyat": 18000,
+  "kat": 3,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "avm.k9.tren_pist",
+  "fiyat": 40000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "isl.k1.vitrin",
+  "fiyat": 45000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "avm.k10.pismaniye_tezgah",
+  "fiyat": 30000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "avm.k11.dibek_havan",
+  "fiyat": 18000,
+  "kat": 1,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "isl.k2.buz_vitrin",
+  "fiyat": 52000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "avm.k13.tas_firin_b",
+  "fiyat": 50000,
+  "kat": 1,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "avm.k12.kulah_kalip",
+  "fiyat": 18000,
+  "kat": 1,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "avm.k14.kavurma_kazan",
+  "fiyat": 36000,
+  "kat": 1,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "avm.k5.pide_firin",
+  "fiyat": 75000,
+  "kat": 2,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "masa.78",
+  "fiyat": 3600000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "avm.k15.ayran_yayik",
+  "fiyat": 12000,
+  "kat": 2,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "avm.k16.fritoz_k",
+  "fiyat": 20000,
+  "kat": 2,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "masa.80",
+  "fiyat": 3600000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "avm.k17.buz_tezgah_m",
+  "fiyat": 36000,
+  "kat": 2,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "avm.k18.slush_mak",
+  "fiyat": 22000,
+  "kat": 3,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "masa.79",
+  "fiyat": 3600000,
+  "kat": 0,
+  "sonuc": "ok"
+ },
+ {
+  "asama": 10,
+  "key": "masa.81",
+  "fiyat": 3600000,
   "kat": 0,
   "sonuc": "ok"
  }

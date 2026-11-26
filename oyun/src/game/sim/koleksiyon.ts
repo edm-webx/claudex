@@ -6,7 +6,7 @@
  * - Persistent state lives in GameState.zones.koleksiyon (created with defaults, so old saves load).
  * - Sticker packs are earned by playing: every PACK_EVERY_SALES sales, each Sipariş Panosu claim, every level up,
  *   regulars served (1 in 3), and 6 duplicates. Packs are opened in the panel (never bought, never with Altın Simit).
- * - Olta: CASTS_PER_DAY free casts a game day + 1 per docked ferry (stored up to CAST_CAP).
+ * - Olta: CASTS_PER_DAY free casts a game day (stored up to CAST_CAP).
  * - Caps drop on sales (CAP_CHANCE). Rare (shiny / Altın Hamsi / altın kapak) draws use a pity counter per collection.
  * - Postcards: stand still POST_STILL s at a place inside a time window (sabah / gün batımı / gece).
  * - Martıköy Hikayeleri: pages = REGULARS[].story lines unlocked by GameState.regulars[id].visits.
@@ -190,7 +190,7 @@ export function installKoleksiyon(K: Kernel): KolApi {
   }
   function cast(): void {
     const m = save();
-    if (m.casts <= 0) { K.toast('Olta hakkı bitti. Vapur yanaşınca bir hak daha gelir!', 'info'); return; }
+    if (m.casts <= 0) { K.toast('Olta hakkı bitti. Yarın yeni hak gelir!', 'info'); return; }
     m.casts--;
     const sea = season();
     const pool: CollItem[] = [];

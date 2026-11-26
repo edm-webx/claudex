@@ -10,7 +10,7 @@ export const TABELA = [
   { ad: 'Tahta tabela', fiyat: 0, musteri: 0, gece: 0, desc: 'Elle boyanmış, samimi.' },
   { ad: 'Işıklı tabela', fiyat: 2500, musteri: 0.05, gece: 0.08, desc: 'Akşam yanar, iskeleden görünür.' },
   { ad: 'Neon tabela', fiyat: 9000, musteri: 0.09, gece: 0.18, desc: 'Gece pazarının yıldızı, renkli neon.' },
-  { ad: 'Dev LED pano', fiyat: 30000, musteri: 0.15, gece: 0.25, desc: 'Gündüz de parlar, vapurdan okunur.' },
+  { ad: 'Dev LED pano', fiyat: 30000, musteri: 0.15, gece: 0.25, desc: 'Gündüz de parlar, denizden okunur.' },
 ];
 export const TABELA_RENK = ['#ffe08a', '#ff5a7a', '#5ad1ff', '#7dff8a', '#c58bff', '#ffffff'];
 export interface TabelaSave { tier: number; renk: string }

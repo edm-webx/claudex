@@ -99,7 +99,7 @@ export function renderHarita(m: any): string {
   if (sr) {
     const here = m.here === sr.id, places = (m.places || []).filter((p: any) => p.region === sr.id || p.regionName === sr.name);
     const go = !sr.open ? btn('Kilitli', 'mkGo', sr.id, 'cream', sr.lockLine || 'Henüz açılmadı.', true, sr.lockLine || 'Henüz açılmadı.')
-      : here ? `<span class="sb-chip ok" style="justify-content:center;width:100%">${I('check')} Buradasın</span>` : btn(sr.name + '\'a git ▶', 'mkGo', sr.id, 'green', sr.bus ? 'Önce 42B durağına' : sr.vapur ? 'Vapur ya da dolmuşla' : 'Dolmuşla');
+      : here ? `<span class="sb-chip ok" style="justify-content:center;width:100%">${I('check')} Buradasın</span>` : btn(sr.name + '\'a git ▶', 'mkGo', sr.id, 'green', sr.bus ? 'Önce 42B durağına' : sr.vapur ? 'Deniz taksisi ya da dolmuşla' : 'Dolmuşla');
     s += `<div class="sb-card" style="border-color:${esc(sr.color)};border-width:4px"><div style="display:flex;justify-content:space-between;align-items:center"><h3 style="font:900 20px var(--disp);margin:0">${ICON[sr.id] || '🏘'} ${esc(sr.name)}</h3><button class="sb-btn cream sm" data-mksel-x="1">✕</button></div>
       <p style="font:700 15px/1.35 var(--body);margin:4px 0 6px">${esc(sr.open ? sr.blurb : sr.lockLine)}</p>
       ${places.length ? `<div class="sb-muted" style="font-size:14px;margin-bottom:6px">Burada: ${places.map((p: any) => esc(p.icon + ' ' + p.name)).join(' · ')}</div>` : ''}${go}</div>`;
