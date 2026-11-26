@@ -8,11 +8,13 @@
 import * as T from 'three';
 import { Batch } from '../../../engine/prefab/batch';
 import { insaatYer, type InsaatYer } from '../../../content/isletme-insaat';
+import { SETLER, isletmeBoyut } from '../../../content/santiye';
+import { merdiven, boyaKovasi, elArabasi, kumYigini, tuvalet, jenerator } from './santiye-kit';
 
 export interface InsaatDeps {
   root: () => T.Object3D | null; night: () => number;
   /** every business in tadilat: p = progress 0..1 (1 - left/total) */
-  tadilat: () => { id: string; p: number }[];
+  tadilat: () => { id: string; p: number; lv?: number }[];
 }
 export interface InsaatView { update(dt: number): void; dispose(): void }
 
@@ -20,7 +22,7 @@ const STEEL = '#aeb6c0', YEL = '#ffd23f', RED = '#e0533c', WOOD_A = '#a8794e', W
 let solid: T.MeshStandardMaterial | null = null;
 const solidMat = () => solid || (solid = new T.MeshStandardMaterial({ vertexColors: true, roughness: 0.8, metalness: 0.1 }));
 
-interface Site { id: string; g: T.Group; planks: T.Mesh[]; jib: T.Group; trolley: T.Group; cable: T.Mesh; load: T.Mesh; beacons: T.MeshBasicMaterial[]; sign: T.MeshStandardMaterial; ph: number }
+interface Site { id: string; g: T.Group; planks: T.Mesh[]; jib: T.Group | null; trolley: T.Group; cable: T.Mesh; load: T.Mesh; beacons: T.MeshBasicMaterial[]; sign: T.MeshStandardMaterial; ph: number }
 
 function signTex(): T.CanvasTexture {
   const w = 640, h = 160, c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d')!;
@@ -31,7 +33,9 @@ function signTex(): T.CanvasTexture {
   const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace; t.anisotropy = 4; return t;
 }
 
-function buildSite(y: InsaatYer): Site {
+/** lv = the business's current level (renovation lv -> lv+1): 2026-11-26 sahip, makineler işin büyüklüğüne göre (content/santiye.ts) */
+function buildSite(y: InsaatYer, lv = 1): Site {
+  const set = SETLER[isletmeBoyut(lv)];
   const g = new T.Group(); g.name = 'insaat-' + y.id; g.position.set(y.ox, 0, y.oz); g.rotation.y = y.yaw;
   const b = new Batch(), S = y.S, H = 4.4;
   const planks: T.Mesh[] = [], plankGeo = new T.BoxGeometry(0.4, 0.07, 1.1);
@@ -74,7 +78,15 @@ function buildSite(y: InsaatYer): Site {
   for (let i = 0; i < 4; i++) b.box(1.5, 0.12, 0.5, i % 2 ? WOOD_A : WOOD_B, px, 0.14 + i * 0.12, pv - 0.4);
   b.box(1.1, 0.12, 0.9, '#8a6a4a', px, 0.06, pv + 0.5); for (let i = 0; i < 3; i++) b.box(1.0, 0.18, 0.8, '#b5532f', px, 0.21 + i * 0.18, pv + 0.5);
   for (let i = 0; i < 3; i++) b.box(0.5, 0.18, 0.32, '#c9c4b8', px + 1.1 + (i % 2) * 0.05, 0.1 + i * 0.17, pv - 0.1, { ry: i * 0.2 });
-  // tower crane beside the right wing; the jib swings over the site, the hook sways
+  // hand tools for small and medium jobs on the right side, where big jobs get the crane
+  const rx = S / 2 + 1.0;
+  if (set.boya) { merdiven(b, rx, 1.4, -Math.PI / 2, 1.8); boyaKovasi(b, rx + 0.1, 2.7, '#e0533c'); boyaKovasi(b, rx + 0.5, 2.9); }
+  if (set.elArabasi && !set.kuleVinc && !set.mobilVinc) { elArabasi(b, rx, 1.6, 0.5); kumYigini(b, rx + 0.4, 3.1, 0.7); }
+  if (set.mobilVinc || set.kuleVinc) { if (set.jenerator) jenerator(b, S / 2 + 1.8, 3.5, Math.PI / 2); else tuvalet(b, S / 2 + 1.6, 3.4, -Math.PI / 2); }
+  const trolley = new T.Group(), cable = new T.Mesh(new T.BoxGeometry(0.03, 1, 0.03), new T.MeshLambertMaterial({ color: '#222' })), load = new T.Mesh(new T.BoxGeometry(1.5, 0.28, 0.6), mA);
+  trolley.add(cable, load);
+  if (!set.mobilVinc && !set.kuleVinc) { const m0 = b.mesh(solidMat()); g.add(m0); return { id: y.id, g, planks, jib: null, trolley, cable, load, beacons, sign: signMat, ph: y.ox * 0.37 + y.oz * 0.19 }; }
+  // tower crane beside the right wing (big jobs only); the jib swings over the site, the hook sways
   const cx = S / 2 + 1.6, cz = 1.5, CH = 9.6;
   b.box(1.5, 0.3, 1.5, '#5b6068', cx, 0.15, cz);
   for (let yy = 0; yy < CH; yy += 1.2) { for (const [ox, oz] of [[-0.3, -0.3], [0.3, -0.3], [-0.3, 0.3], [0.3, 0.3]]) b.box(0.07, 1.25, 0.07, YEL, cx + ox, yy + 0.7, cz + oz); b.box(0.66, 0.05, 0.05, YEL, cx, yy + 1.2, cz - 0.3); b.box(0.66, 0.05, 0.05, YEL, cx, yy + 1.2, cz + 0.3); b.box(0.05, 0.05, 0.66, YEL, cx - 0.3, yy + 1.2, cz); b.box(0.05, 0.05, 0.66, YEL, cx + 0.3, yy + 1.2, cz); b.box(0.05, 1.3, 0.05, YEL, cx, yy + 0.7, cz - 0.3, { rz: 0.5 }); }
@@ -83,9 +95,7 @@ function buildSite(y: InsaatYer): Site {
   const jb = new Batch(); jb.box(9.2, 0.3, 0.3, YEL, -4.2, 0.45, 0); jb.box(9.2, 0.05, 0.05, '#c9a02a', -4.2, 0.2, 0.28); jb.box(9.2, 0.05, 0.05, '#c9a02a', -4.2, 0.2, -0.28);
   jb.box(2.6, 0.3, 0.3, YEL, 1.5, 0.45, 0); jb.box(1.0, 0.8, 0.7, '#5b6068', 2.4, 0.35, 0); jb.box(0.3, 1.1, 0.3, YEL, 0, 1.0, 0);
   const jm = jb.mesh(solidMat()); jib.add(jm); g.add(jib);
-  const trolley = new T.Group(); trolley.position.set(-5, 0.2, 0); jib.add(trolley);
-  const cable = new T.Mesh(new T.BoxGeometry(0.03, 1, 0.03), new T.MeshLambertMaterial({ color: '#222' })), load = new T.Mesh(new T.BoxGeometry(1.5, 0.28, 0.6), mA);
-  trolley.add(cable, load);
+  trolley.position.set(-5, 0.2, 0); jib.add(trolley);
   const cb = new T.MeshBasicMaterial({ color: '#ff3b2e' }); beacons.push(cb); const top = new T.Mesh(new T.SphereGeometry(0.14, 8, 6), cb); top.position.set(0, 1.25, 0); jib.add(top);
   const m = b.mesh(solidMat()); g.add(m);
   return { id: y.id, g, planks, jib, trolley, cable, load, beacons, sign: signMat, ph: y.ox * 0.37 + y.oz * 0.19 };
@@ -106,11 +116,11 @@ export function createIsletmeInsaat(d: InsaatDeps): InsaatView {
       const n = d.night();
       for (const w of want) {
         let s = sites.get(w.id);
-        if (!s) { const y = insaatYer(w.id); if (!y) continue; s = buildSite(y); root.add(s.g); sites.set(w.id, s); }
+        if (!s) { const y = insaatYer(w.id); if (!y) continue; s = buildSite(y, w.lv); root.add(s.g); sites.set(w.id, s); }
         const vis = Math.floor(Math.max(0, Math.min(1, w.p)) * s.planks.length);
         for (let i = 0; i < s.planks.length; i++) { const v = i < vis; if (s.planks[i].visible !== v) s.planks[i].visible = v; }
         const k = t + s.ph;
-        s.jib.rotation.y = Math.sin(k * 0.25) * 0.28;
+        if (s.jib) s.jib.rotation.y = Math.sin(k * 0.25) * 0.28;
         s.trolley.position.x = -5.4 + Math.sin(k * 0.4) * 2.2;
         const L = 5.6 + Math.sin(k * 0.55) * 1.1;
         s.cable.scale.y = L; s.cable.position.y = -L / 2; s.load.position.y = -L - 0.15;

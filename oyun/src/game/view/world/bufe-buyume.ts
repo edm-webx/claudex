@@ -21,6 +21,8 @@ import { IC_BY_ID, icColliders, icIcinde, mutfakOda, MUTFAK_YER, passAcik, servi
 import { KIOSK_STAGES } from '../../../content/stages';
 import { WB, WT, EB, ET, insaatAlani } from '../../../content/insaat';
 import { Batch } from '../../../engine/prefab/batch';
+import { SETLER, bufeBoyut } from '../../../content/santiye';
+import { merdiven, boyaKovasi, torba, elArabasi, kumYigini, tuglaPaleti, tuvalet, jenerator } from './santiye-kit';
 import { PIER, BUFE_YEREL as BUFE } from '../../../content/prefabs/iskele/layout';   // every büfe part here is stage 6+: the büfe is then the restaurant's front hall at the v2 spot (layout.ts bufeDz)
 import { KANAT_MASALAR, KANAT_BASE, kanatKurulu, merdivenKutu, type KanatMasa } from '../../../content/kanat';
 import { useSkyEnv } from './glb';
@@ -373,6 +375,7 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
  *  progress (stages 3-5). */
 function buildSite(to: number): { g: T.Group; hook: T.Object3D | null; planks: T.Object3D[]; bar: { set(p: number): void } } {
   const R = insaatAlani(to), X0 = R.x0, X1 = R.x1, Z0 = R.z0, Z1 = R.z1, XC = cx(R), small = to <= 2;
+  const set = SETLER[bufeBoyut(to)];   // 2026-11-26 sahip: makine ve alet işin büyüklüğüne göre (content/santiye.ts)
   const g = new T.Group(); g.name = 'insaat'; const b = new Batch(); const planks: T.Object3D[] = [];
   const towers: [number, number][] = small ? [[X0 + 0.9, Z0 + 0.5], [X1 - 0.9, Z0 + 0.5]] : [[X0 + 0.9, Z0 + 0.9], [X1 - 0.9, Z0 + 0.9], [X0 + 0.9, Z1 - 0.9], [X1 - 0.9, Z1 - 0.9]];
   const th = small ? 2.6 : 4.2;
@@ -382,9 +385,9 @@ function buildSite(to: number): { g: T.Group; hook: T.Object3D | null; planks: T
     for (const s2 of [-1, 1]) b.box(0.04, 1.6, 0.04, '#9aa2ab', x + s2 * 0.6, th * 0.45, z + 0.62, { rz: 0.7 * s2 });
     b.box(1.22, th * 0.7, 0.02, '#4f8f5a', x, th * 0.55, z + 0.64);
   }
-  // tower crane at the sea-side corner of the site (not for the small stage-2 job)
+  // tower crane at the sea-side corner of the site: only big jobs (salon wings, glass roof, palace). Small and medium jobs get hand tools.
   let hook: T.Object3D | null = null;
-  if (!small) {
+  if (set.kuleVinc || set.mobilVinc) {
     const ccx = X0 < 0 ? X0 + 0.6 : X1 - 0.6, ccz = Math.max(PIER.z0 + 0.8, Z0 - 0.2), dir = X0 < 0 ? 1 : -1;
     b.box(0.8, 0.4, 0.8, '#5b6068', ccx, 0.2, ccz); for (let y = 0; y < 11; y += 1) { for (const [ox, oz] of [[-0.3, -0.3], [0.3, -0.3], [-0.3, 0.3], [0.3, 0.3]]) b.box(0.06, 1, 0.06, '#ffd23f', ccx + ox, y + 0.9, ccz + oz); b.box(0.66, 0.05, 0.05, '#ffd23f', ccx, y + 0.5, ccz - 0.3, { rz: 0.8 }); }
     b.box(13, 0.35, 0.5, '#ffd23f', ccx + dir * 5.5, 11.6, ccz); b.box(1.4, 1.0, 1.0, '#e0533c', ccx, 12.2, ccz); b.box(1.5, 0.9, 0.9, '#5b6068', ccx - dir * 2.2, 11.3, ccz);
@@ -394,7 +397,11 @@ function buildSite(to: number): { g: T.Group; hook: T.Object3D | null; planks: T
   // barriers along the open (promenade) side, material pile, cement mixer, site board
   for (let x = X0 + 0.8; x < X1 - 0.6; x += 1.6) { b.box(1.3, 0.8, 0.2, '#f4f2ec', x, 0.4, Z1 + 0.35); b.box(1.32, 0.18, 0.22, '#e0533c', x, 0.55, Z1 + 0.35); }
   for (let i = 0; i < 5; i++) b.box(2.0, 0.08, 0.3, i % 2 ? '#c8955a' : '#b07d48', X1 - 1.6, 0.06 + i * 0.09, Z0 + 1.8 + (i % 2) * 0.05);
-  b.cyl(0.38, 0.3, 0.7, '#e0533c', X0 + 2.2, 0.75, Z1 - 0.8, { seg: 10, rz: 0.5 }); b.box(0.9, 0.35, 0.6, '#5b6068', X0 + 2.2, 0.2, Z1 - 0.8);
+  if (set.betoniyer || set.pompa) { b.cyl(0.38, 0.3, 0.7, '#e0533c', X0 + 2.2, 0.75, Z1 - 0.8, { seg: 10, rz: 0.5 }); b.box(0.9, 0.35, 0.6, '#5b6068', X0 + 2.2, 0.2, Z1 - 0.8); }
+  if (set.boya) { merdiven(b, X0 + 2.0, (Z0 + Z1) / 2, Math.PI / 2, 1.6); boyaKovasi(b, X0 + 3.0, Z1 - 0.4, '#e0533c'); boyaKovasi(b, X0 + 3.4, Z1 - 0.5); torba(b, X1 - 2.6, Z1 - 0.45, 3); }
+  if (set.elArabasi) { elArabasi(b, X0 + 3.4, Z1 - 1.0, 0.6); kumYigini(b, X1 - 1.4, Z1 - 1.2, 0.8); tuglaPaleti(b, X1 - 3.0, Z1 - 1.1, 0.2); }
+  if (set.mobilVinc || set.kuleVinc) tuvalet(b, X1 - 0.8, Z0 + 2.9, -Math.PI / 2);
+  if (set.jenerator) jenerator(b, X0 + 1.4, Z0 + 2.9, Math.PI / 2);
   const bx = XC, bz = Z1 + 0.55, by = small ? 1.2 : 1.45;
   b.box(2.5, 1.5, 0.08, '#ffd23f', bx, by, bz); b.box(0.08, by, 0.08, '#3a3d42', bx - 0.95, by / 2, bz); b.box(0.08, by, 0.08, '#3a3d42', bx + 0.95, by / 2, bz);
   const m = b.mesh(mats().solid, true, true); g.add(m);
