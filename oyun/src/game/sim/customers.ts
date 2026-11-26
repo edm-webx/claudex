@@ -97,7 +97,7 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
     let k = 4.3 + 1.45 * (open - 1) + (STAGE_ARRIVAL[S.stage - 1] ?? 2.2 * (S.stage - 1)) + 0.45 * K.hiredCount() + 0.35 * K.tablesBuilt();
     // ZMN-01: the day is 24 h (08 -> 08) in the same 480 s, so daytime got 20 % fewer seconds; the night keeps a living pier (night owls,
     // taxi drivers, fishermen, early workers) and the whole-day sum of this curve x seconds equals the old 08-03 day within 1 % (economy unchanged)
-    // 2026-11-26 (vapur kalktı + jo0q11): daytime 08-21 a bit busier, 21-08 thinner, whole-day sum still ~equal (21.0 vs 21.2 h-units);
+    // 2026-11-26 (vapur kalktı + jo0q11): daytime 08-21 a bit busier, 21-08 thinner, whole-day sum within 3 % (20.65 vs 21.2 h-units);
     // first döner+ayran set seeds 1-12 <= 287 s, day 1/3/5 parity 5570/23246/50726
     k *= h < 10 ? 0.95 : h < 12 ? 1.1 : h < 14 ? 1.35 : h < 18 ? 1.1 : h < 21 ? 1.2 : h < 24 ? 0.7 : h < 25 ? 0.55 : h < 26 ? 0.4 : h < 29 ? 0.25 : h < 30 ? 0.45 : h < 31 ? 0.7 : 0.9;
     k *= 1 + K.siklikBonus() + yatirimFx(S, 'reklam') + tabelaFx(S as never, h) + yetenekFxOf(rt).arrival;

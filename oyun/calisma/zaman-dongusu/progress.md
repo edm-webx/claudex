@@ -18,3 +18,16 @@ Dal: claude/project-thread-b3u8z9 (taban jo0q11 fef56d9).
 
 ## Açık karar
 - Gün sonu kartı 08:00'de çıkıyor; kalsın mı / kartsız mı (kullanıcıya soruldu).
+
+## 2026-11-26 22:15 TR: jo0q11 (fe795d1) birleştirme + ekonomi ayarı (kullanıcı "kaydet ve dur" dedi)
+- Merge commit 9d7ed2a: çakışmalar çözüldü (citizens: 'Sahil yolcusu' + gece saatleri; hava-look: jo0q11 tavanı 0.45 + bulutK*0.16; first-session ref 6042/22709/45997 korundu, bant gevşetilmedi).
+- customers.ts gündüz eğrisi: 08-21 daha kalabalık (0.95/1.1/1.35/1.1/1.2), 21-08 daha seyrek (0.7/0.55/0.4/0.25/0.45/0.7/0.9; gece satış sürüyor). Gün integrali 20.65 (eski 21.2, -%3).
+  Ölçüm: ilk döner+ayran seti 12 tohumda en geç 287 sn (sınır 480; önce seed 2 484.8). Parite gün 1/3/5 = 5570/23246/50726 (ref içinde, %8/%2/%10).
+  İlk deneme (1.0/1.15/1.4/1.15/1.25) gün 5'i %19 aştı, geri çekildi.
+- Tam test: 1201 yeşil, 1 KIRMIZI: tests/sim/asama-botu.test.ts "her çalışan gerçekten iş yapar" -> ölü kilit denetçisi:
+  aşama 9, gün 27, t=12607, masa 45 'menu' >30 sn ve yetkili garson 10 sn+ boşta. jo0q11'de (fe795d1) aynı test YEŞİL; müşteri akışı değişince ortaya çıkan gerçek garson-AI açığı.
+  Tanı (geçici debug ile): masa 45 bölge b16 (sahibi garson 45, tabak taşıyor). Komşu bölge b23'ün garsonu 52 state 'idle', bolgeKurali(52,45,yas,false) = ok:true
+  olduğu halde yas 10 -> 14 arası (≈4 sn, 0.4 sn'lik isAl yoklamasıyla 10 kez) işi ALMADI, ancak yas 14'te aldı; sonra 15 sn yürüdü -> menü ~31 sn.
+  Sıradaki adım: workers.ts garsonWork 'idle' dalı / garsonIsBul -> restoran.ts isAl içinde 52'yi neyin durdurduğunu bul (acilSon? 'mine' iş? isAl hiç çağrılmıyor mu, yoksa null mı dönüyor?).
+  Debug yaması geri alındı. Test bandına dokunulmadı.
+- Kalan: bu düzeltme, sonra tam test + perf kapısı + TAM bot, sonra Ana İş'e dal/commit.
