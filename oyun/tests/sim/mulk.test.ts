@@ -3,7 +3,7 @@ import { it, expect } from 'vitest';
 import { played, kareyeGit, tepsidenVer } from './m1-helpers';
 import { mulkApi } from '../../src/game/sim/mulk';
 import { IC_BY_ID } from '../../src/content/ic-mekan';
-import { BANKA, ARSALAR, arsaKapi, STADYUM } from '../../src/content/esya';
+import { BANKA, ARSALAR, arsaKapi, STADYUM, EMLAK } from '../../src/content/esya';
 
 const mk = () => { const sim = played(1) as any; sim.rules.rt.acilisSerbest = true; sim.step(1); /* kurulum: sıralı açılma şartı yok (content/acilis.ts, kendi testi acilis.test.ts) */ const m = mulkApi(sim.rules)!; return { sim, m, S: sim.state, rt: sim.rules.rt, c: (x: any) => sim.command({ kind: 'mulk', ...x }) }; };
 
@@ -53,11 +53,27 @@ it('plots: buy needs level + money + the 3 plot limit; a shop sells stock into i
   expect(Object.keys(S.zones.arsa.plots).length).toBe(3);
   c({ op: 'arsaKur', id: 'a1', tur: 'dukkan', tip: 'cay_ocagi' }); expect(S.zones.arsa.plots.a1.tur).toBe('dukkan');
   sim.command({ kind: 'teleport', x: 0, z: -7 });
+  // 2026-11-26: dükkân artık anında açılmaz; ustalar ~6 dk yapar (content/santiye.ts YAPI_SURE), o sürede satış yok
+  expect(S.zones.arsa.plots.a1.insa).toBeTruthy(); sim.step(120); expect(S.zones.arsa.plots.a1.sat).toBe(0);
+  expect(m.view().plots.find((x: any) => x.id === 'a1')!.insa).toBeGreaterThan(0.2);
+  sim.step(250); expect(S.zones.arsa.plots.a1.insa).toBeUndefined();
   sim.step(300);
   const p = S.zones.arsa.plots.a1; expect(p.sat).toBeGreaterThan(0);   // no stock: customers just buy
   const m0 = S.money; sim.command({ kind: 'teleport', x: arsaKapi(a1).x, z: arsaKapi(a1).z }); sim.step(1);
   expect(S.money).toBeGreaterThan(m0);
   void m;
+});
+it('Martı Emlak: lots are bought, built on and enlarged only at the office', () => {
+  const { sim, S, c } = mk(); S.money = 5e6; S.level = 12;
+  sim.rules.rt.acilisSerbest = false; c({ op: 'arsaAl', id: 'a1' }); expect(S.zones.arsa?.plots?.a1).toBeUndefined();   // far from the office
+  sim.command({ kind: 'teleport', x: EMLAK.kapi.x, z: EMLAK.kapi.z }); sim.step(0.5);
+  expect(mulkApi(sim.rules)!.view().emlakYakin).toBe(true);
+  sim.rules.rt.acilisSerbest = true; c({ op: 'arsaAl', id: 'a1' }); sim.rules.rt.acilisSerbest = false;   // opening order is acilis.test's job
+  expect(S.zones.arsa.plots.a1).toBeTruthy();
+  sim.command({ kind: 'teleport', x: 0, z: -7 }); sim.step(0.5);
+  c({ op: 'arsaKur', id: 'a1', tur: 'ev' }); expect(S.zones.arsa.plots.a1.tur).toBe(null);                 // not at the office
+  sim.command({ kind: 'teleport', x: EMLAK.kapi.x, z: EMLAK.kapi.z }); sim.step(0.5);
+  c({ op: 'arsaKur', id: 'a1', tur: 'ev' }); expect(S.zones.arsa.plots.a1.tur).toBe('ev');
 });
 it('stadium: ticket costs 5000 at the gate and starts a match', () => {
   const { sim, S, rt, c } = mk(); S.money = 20000;
