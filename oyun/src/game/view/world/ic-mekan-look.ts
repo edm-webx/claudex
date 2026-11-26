@@ -13,8 +13,8 @@ import { mutfakEsya, mutfakAcik, mutfakCelik, pisirIstasyonu, MUTFAK_IST_BY_ID, 
 import { SALON_ESYA_BY_ID } from '../../../content/esya';
 import { SALON_ALET } from '../../../content/salon-alet';
 import { yemekRenk } from '../../../content/yemek-menu';
-import { yemekGeo, yemekModeliVar } from '../../../content/prefabs/iskele/yemek-geo';
-import { itemGeo, ITEM_HT } from '../../../content/prefabs/iskele/props';
+import { yemekVar, yemekGeo } from '../../../content/prefabs/yemek/yemek-geo';
+import { itemGeo } from '../../../content/prefabs/iskele/props';
 import { MAT } from '../../../content/prefabs/common/v2kit';
 import { Batch, mtx } from '../../../engine/prefab/batch';
 import { icMasaKurulu } from '../../../content/ic-mekan';
@@ -68,13 +68,18 @@ const TABAK = new T.CylinderGeometry(0.14, 0.12, 0.025, 14), YEMEK = new T.Spher
 /** one plate (shared geometry, cached materials), hidden until the sim puts food on it */
 function tabak(): { g: T.Group; food: T.Mesh } {
   const g = new T.Group(), p = new T.Mesh(TABAK, lm('#fbfaf6')), food = new T.Mesh(YEMEK, lm('#e8e2d4'));
-  food.scale.set(0.085, 0.04, 0.085); food.position.y = 0.035; g.add(p, food); g.visible = false; return { g, food };
+  food.scale.set(0.085, 0.04, 0.085); food.position.y = 0.035; food.userData.tabak = p; g.add(p, food); g.visible = false; return { g, food };
 }
-/** 2026-11-25: tabağa sim'in yemeğini koy: yemeğin kendi modeli (kendi tabağıyla, sade tabak gizlenir), tezgâh ürünü kendi modeli, yoksa renkli top */
-function tabakDoldur(t: { g: T.Group; food: T.Mesh }, f: string) {
-  if (t.food.userData.f === f) return; t.food.userData.f = f; const p = t.g.children[0];
-  if (yemekModeliVar(f) || f in ITEM_HT) { t.food.geometry = yemekModeliVar(f) ? yemekGeo(f) : itemGeo(f, 1); t.food.material = MAT.atlas; t.food.scale.setScalar(1); t.food.position.y = 0; p.visible = !yemekModeliVar(f); if (p.visible) t.food.position.y = 0.0125; }
-  else { t.food.geometry = YEMEK; t.food.material = lm(yemekRenk(f)); t.food.scale.set(0.085, 0.04, 0.085); t.food.position.y = 0.035; p.visible = true; }
+const URUN6 = new Set(['doner', 'cay', 'ayran', 'simit', 'tost', 'gazoz']);
+/**
+ * 2026-11-25 sahip: "her ürünün kendine has görseli olmak zorunda": pass rafında / istasyon tepsisinde yemeğin kendi modeli
+ * (kendi tabağı, kâsesi, sahanı içinde; content/prefabs/yemek). Büfe ürünü ise büfe modeli; tarifi yoksa eski tabak + renk.
+ */
+function yemekKoy(food: T.Mesh, f: string, olcek = 0.8): void {
+  if (food.userData.f === f) return; food.userData.f = f;
+  const geo = URUN6.has(f) ? itemGeo(f, 1) : yemekVar(f) ? yemekGeo(f) : null, p = food.userData.tabak as T.Mesh | undefined;
+  if (geo) { food.geometry = geo; food.material = MAT.atlas; food.scale.setScalar(olcek); food.position.y = -0.012; food.castShadow = true; if (p) p.visible = false; }
+  else { food.geometry = YEMEK; food.material = lm(yemekRenk(f)); food.scale.set(0.085, 0.04, 0.085); food.position.y = 0.035; if (p) p.visible = true; }
 }
 function part(g: T.Object3D, geo: T.BufferGeometry, c: string, x: number, y: number, z: number, sx: number, sy: number, sz: number) { const m = new T.Mesh(geo, lm(c)); m.position.set(x, y, z); m.scale.set(sx, sy, sz); m.castShadow = true; g.add(m); return m; }
 
@@ -645,7 +650,8 @@ export function createIcMekan(d: IcDeps): IcView {
   const kill = (id: string) => {
     const r = rooms.get(id); if (!r) return; r.g.removeFromParent();
     const M = mats(), shared = new Set<unknown>([M.solid, M.glass, M.glow, M.wall, M.ghost, ...LM.values()]);
-    r.g.traverse(o => { const mm = o as T.Mesh; if (!mm.isMesh) return; if (!keep.has(mm.geometry)) mm.geometry.dispose(); const mt = mm.material as T.MeshBasicMaterial; if (!shared.has(mt)) { mt.map?.dispose(); mt.dispose(); } });
+    r.g.traverse(o => { const mm = o as T.Mesh; if (!mm.isMesh || mm.userData.f !== undefined) return;   // yemek modeli: paylaşılan geometri + MAT.atlas, dokunma
+    if (!keep.has(mm.geometry)) mm.geometry.dispose(); const mt = mm.material as T.MeshBasicMaterial; if (!shared.has(mt)) { mt.map?.dispose(); mt.dispose(); } });
     rooms.delete(id);
   };
   return {
@@ -689,8 +695,8 @@ export function createIcMekan(d: IcDeps): IcView {
           if (a.yigin) a.yigin.set(mk.kirliTabak ?? 0);   // 2026-11-21: tek kaynak rtview (BUF-13 rt.dirtyDishes); sabit 4'lük yığın onunla üst üste çiziliyordu if (a.tabela) a.tabela.visible = (mk.zeminKir ?? 0) >= ZEMIN_ISLAK;
           // BUF-05: pass rack plates (oldest first) and station trays/pans from the sim, colour = the food on it
           const pl = mk.passYer ? mk.passYer[a.passYer || 'on'] : mk.pass;   // 2026-11-21: her pencere kendi tabaklarını gösterir
-          if (a.pasTabak) a.pasTabak.forEach((t, i) => { const f = pl?.[i]; t.g.visible = !!f; if (f) tabakDoldur(t, f); });
-          if (a.istTabak) { a.pisiyor!.length = 0; for (const [id, t] of a.istTabak) { const s = mk.ist?.[id]; t.g.visible = s?.d === 'hazir'; t.buhar.visible = s?.d === 'pisiyor'; if (s) tabakDoldur(t, s.p); if (t.buhar.visible) a.pisiyor!.push(t.buhar); }
+          if (a.pasTabak) a.pasTabak.forEach((t, i) => { const f = pl?.[i]; t.g.visible = !!f; if (f) yemekKoy(t.food, f, 0.72); });
+          if (a.istTabak) { a.pisiyor!.length = 0; for (const [id, t] of a.istTabak) { const s = mk.ist?.[id]; t.g.visible = s?.d === 'hazir'; t.buhar.visible = s?.d === 'pisiyor'; if (s) yemekKoy(t.food, s.p, 0.85); if (t.buhar.visible) a.pisiyor!.push(t.buhar); }
             a.fxEm = [...a.istTabak].filter(([, t]) => t.buhar.visible).map(([id, t]) => ({ id, u: t.buhar.position.x, v: t.buhar.position.z })); }
         }
         if (a.pisiyor) for (const b of a.pisiyor) { const k = (t * 1.6 + b.userData.ph) % 1; b.position.y = 1.15 + k * 0.5; b.scale.setScalar(0.05 + k * 0.08); }   // pişiyor: tencereden yükselen buhar topu

@@ -5,12 +5,20 @@
 import * as T from 'three';
 import * as K from './v2/kit';
 import { kalemOf, type TasimaKind } from '../../../content/isletme-istasyon';
+import { yemekVar, yemekGeo, yemekH } from '../../../content/prefabs/yemek/yemek-geo';
+import { MAT } from '../../../content/prefabs/common/v2kit';
 
 const cyl = (rt: number, rb: number, h: number, s = 12) => K.geo(`uc${rt}|${rb}|${h}|${s}`, () => new T.CylinderGeometry(rt, rb, h, s));
 const sph = (r: number) => K.geo(`us${r}`, () => new T.SphereGeometry(r, 12, 8));
 const add = (g: T.Group, m: T.Mesh, x: number, y: number, z: number) => { m.position.set(x, y, z); g.add(m); return m; };
 
 export function makeUrunModel(kalemId: string): T.Object3D {
+  // 2026-11-25: her kalemin kendine has modeli (content/prefabs/yemek); aile modeli yalnız tarifi olmayan yeni kalemler için yedek
+  if (yemekVar(kalemId)) { const m = new T.Mesh(yemekGeo(kalemId), MAT.atlas); m.castShadow = true; m.userData.h = yemekH(kalemId); return m; }
+  return makeUrunAile(kalemId);
+}
+/** eski aile modeli (renkli fincan / tabak / kutu): tarifi olmayan kalem için yedek, kontak sayfasında "önce" görünümü */
+export function makeUrunAile(kalemId: string): T.Object3D {
   const kal = kalemOf(kalemId), c = kal.renk, g = new T.Group(), kind: TasimaKind = kal.tasima;
   let h = 0.12;
   switch (kind) {
