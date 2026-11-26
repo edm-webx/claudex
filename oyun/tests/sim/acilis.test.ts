@@ -36,7 +36,7 @@ it('oyun başında hiçbir dükkân karesi yok; büfe 2. aşamada yalnız Meydan
 });
 
 it('kırtasiye ve kantin büfe 3. aşamadan önce görünmez; AVM dükkânları karşı yaka bitmeden görünmez', () => {
-  const { sim, S } = mk(); S.money = 9e7; S.level = 40; S.stars = 5; S.stats.served = 1e5; S.stats.ferries = 1e3; S.stats.cleaned = 1e4; S.stage = 2;
+  const { sim, S } = mk(); S.money = 9e7; S.level = 40; S.stars = 5; S.stats.served = 1e5; S.stats.tips = 1e3; S.stats.cleaned = 1e4; S.stage = 2;
   for (const id of ['k1', 'k2']) sim.command({ kind: 'mulk', op: 'arsaAl', id });
   sim.step(0.6); expect(keys(sim)).toEqual([]);   // k4 (kantin) 3. aşamayı bekliyor
   S.stage = 3; sim.step(0.6); expect(keys(sim)).toEqual(['isl.k4']);

@@ -101,6 +101,7 @@ import { createHaliSaha } from './ui/hali-saha';
 import { createOrmanView } from './view/orman';
 import { createOtobusHud } from './ui/otobus-hud';
 import { createMulkPanel } from './ui/mulk-panel';
+import { createTelefon } from './ui/telefon';
 import { createKirtasiyeFp } from './ui/kirtasiye-fp';
 import { IC_BY_ID as KT_IC, icWorld as ktWorld, icDim as ktDim, icIcinde as ktIcinde } from '../content/ic-mekan';
 import { createMulkView } from './view/mulk';
@@ -681,7 +682,10 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   // karar paketi G: Envanter / Mülk panel (banka, günlük tahta, arsa, stadyum); the bank mirrors the cloud account record
   const kirtasiyeFp = playMode && uiReal ? make('kirtasiyeFp', () => createKirtasiyeFp({ root: U.root, rules: () => sim.rules, command, sfx: id => { try { audio?.sfx(id); } catch { /* */ } } })) : null;
   const mulkPanel = playMode && uiReal ? make('mulkPanel', () => createMulkPanel({ root: U.root, rules: () => sim.rules, command, sfx: id => { try { audio?.sfx(id); } catch { /* */ } } })) : null;
-  if (mulkPanel) U.root.addEventListener('ui:open', e => { const id = (e as CustomEvent).detail as string; if (id === 'envanter') mulkPanel.open('envanter'); else if (id === 'mulk') mulkPanel.open('mulk'); });
+  if (mulkPanel) U.root.addEventListener('ui:open', e => { const id = (e as CustomEvent).detail as string; if (id === 'envanter') mulkPanel.open('envanter'); else if (id === 'holding') mulkPanel.open('holding'); else if (id === 'mulk') mulkPanel.open('mulk'); });
+  // 2026-11-26 Esnaf telefonu HUD: phone sheet, mini map, Büfem context pill (ui/telefon.ts)
+  const telefon = playMode && uiReal ? make('telefon', () => createTelefon({ root: U.root, rules: () => sim.rules as never, heroPos: () => pos, walkable: p => nav.walkable(p), command, sfx: id => { try { audio?.sfx(id); } catch { /* */ } } })) : null;
+  if (telefon) U.root.addEventListener('ui:open', e => { if ((e as CustomEvent).detail === 'telefon') telefon.toggle(); });
   const mulkView = ACIK_DUNYA && playMode && labels ? make('mulkView', () => createMulkView({ scene, labels, project, rules: () => sim.rules, hero: () => pos, setSolid: r => nav.setSolids('mulk', r) })) : null;
   const stadyumView = ACIK_DUNYA && playMode && labels ? make('stadyumView', () => createStadyumView({ scene, labels, project, rules: () => sim.rules, hero: () => pos, setSolid: r => nav.setSolids('stadyum-kulup', r) })) : null;
   const bankaRt = () => (sim.rules.rt as unknown as { banka?: { tl: number; esya: Record<string, number>; dirty: boolean; faizSaat?: number; saat?: number } }).banka;
@@ -856,6 +860,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (disariLook) guard('disariLook', () => disariLook.update(fdt));
     if (ormanView) guard('ormanView', () => ormanView.update(fdt));
     if (mulkPanel) guard('mulkPanel', () => mulkPanel.update(fdt));
+    if (telefon) guard('telefon', () => telefon.update(fdt));
     if (mulkView) guard('mulkView', () => mulkView.update(fdt));
     if (stadyumView) guard('stadyumView', () => stadyumView.update(fdt));
     if ((bankaT -= fdt) <= 0) { bankaT = 2; const b = bankaRt(); if (b && b.saat !== undefined) b.saat = Date.now() / 1000; if (b?.dirty && hesap() && saveOn()) { b.dirty = false; void bankaYaz({ tl: b.tl, esya: b.esya, faizSaat: b.faizSaat }).then(ok => { if (!ok && !kayitKilidi()) b.dirty = true; }); } }   // the sim is pure: the wall clock for the account-level interest stamp comes from here

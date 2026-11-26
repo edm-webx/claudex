@@ -1,7 +1,7 @@
 /** Sipariş Panosu daily tasks (v2 data.js). Owner: Builder A. Pure data. Faz 2: fixed goals (per 0), no day-by-day escalation. */
 export interface DailyTask { id: string; text: string; stat: string; base: number; per: number; needs?: string; minDay?: number; }
 export const DAILY_TASKS: DailyTask[] = [
-  { id: 'cay', text: 'Müşterilere {n} çay sat', stat: 'sold_cay', base: 25, per: 0 },
+  { id: 'cay', text: 'Tezgâhtan {n} çay sat', stat: 'sold_cay', base: 25, per: 0 },
   { id: 'doner', text: 'İskeleye {n} döner yetiştir', stat: 'sold_doner', base: 15, per: 0 },
   { id: 'simit', text: 'Tablaya {n} simit diz', stat: 'sold_simit', base: 20, per: 0, needs: 'simit' },
   { id: 'set', text: '{n} menü seti sat', stat: 'sets', base: 4, per: 0, needs: 'ayran' },

@@ -749,7 +749,15 @@ function renderDekor(m) {
 }
 function renderGorevler(m) {
   const d = m.daily || [], a = m.achievements || [];
-  let s = `<div class="sb-sec">${ICONS.gorev}Sipariş Panosu<span>${d.filter(x => x.done).length} / ${d.length}</span></div>`;
+  // 2026-11-26 Ajanda: bugünün esnaf işleri (eski Çanta > Günlük sekmesi) en üstte
+  const gl = m.gunluk || [];
+  let s = gl.length ? `<div class="sb-sec">${ICONS.gorev}Bugünün işleri<span>${gl.filter(x => x.alindi).length} / ${gl.length}</span></div>` : '';
+  gl.forEach(h => {
+    const ok = h.sayi >= h.hedef, right = h.alindi ? `<span class="sb-chip ok">Alındı</span>` : ok ? btn('Al', 'gunlukAl', h.id, 'green sm glow') : `<span class="sb-chip">${h.sayi}/${h.hedef}</span>`;
+    s += `<div class="sb-card sb-task${h.alindi ? ' claimed' : ''}"><div><p>${esc(h.ad)}</p><div class="tr">${ICONS.coin}${tl(h.odul)}</div></div>${right}<div class="tp">${meter(clamp(h.sayi / (h.hedef || 1), 0, 1), ok ? 'var(--money)' : 'var(--tea)')}</div></div>`;
+  });
+  if (gl.length) s += `<div class="sb-card sb-muted">${m.gunlukSandik ? 'Bugünün Gümüş Sandığı çantanda.' : 'Üçünü bitirince Gümüş Sandık. 7. günde Altın Anahtar.'}</div>`;
+  s += `<div class="sb-sec">${ICONS.gorev}Sipariş Panosu<span>${d.filter(x => x.done).length} / ${d.length}</span></div>`;
   if (!d.length) s += `<div class="sb-card sb-muted">Bugünün siparişleri sabah gelir.</div>`;
   // Faz 2: Görevler = Sipariş Panosu + Başarımlar only (story, neighbours, mini games, sea, map, collections removed)
   d.forEach(t => {

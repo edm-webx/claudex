@@ -32,14 +32,17 @@ export const SANDIKLAR: Sandik[] = [
 export const SANDIK_BY_ID: Record<string, Sandik> = Object.fromEntries(SANDIKLAR.map(s => [s.id, s]));
 
 /** daily board (H5): 3 goals per game day from this pool, counted from K.stat keys; finishing all 3 gives a Gümüş Sandık */
-export interface Gunluk { id: string; ad: string; stat: string; hedef: [number, number]; odul: number }
+/** asama: the büfe stage from which the job can be done at all (no daily job the player cannot do yet) */
+export interface Gunluk { id: string; ad: string; stat: string; hedef: [number, number]; odul: number; asama?: number }
+// 2026-11-26 owner: daily jobs must be a shopkeeper's real work (no "çıt foto", hidden cats, bus rides or lost items).
+// 'sat' used stat 'sale', which nothing fires (economy.ts fires 'sales'): it never progressed before.
 export const GUNLUK_HAVUZ: Gunluk[] = [
-  { id: 'sat', ad: 'Büfeden {n} ürün sat', stat: 'sale', hedef: [20, 40], odul: 1500 },
-  { id: 'mantar', ad: 'Belgrad Ormanı\'ndan {n} mantar topla', stat: 'mantar', hedef: [3, 6], odul: 2000 },
-  { id: 'otobus', ad: '42B ile {n} kez yolculuk yap', stat: 'otobus', hedef: [2, 3], odul: 1200 },
-  { id: 'kedi', ad: '{n} gizli kedi bul', stat: 'gizliKedi', hedef: [1, 2], odul: 1800 },
-  { id: 'foto', ad: '{n} fotoğraf noktasında çıt çek', stat: 'fotoNokta', hedef: [1, 2], odul: 1500 },
-  { id: 'kayip', ad: '{n} kayıp eşyayı sahibine ulaştır', stat: 'kayipEsya', hedef: [1, 2], odul: 2200 },
+  { id: 'sat', ad: 'Büfede {n} müşteriye satış yap', stat: 'sales', hedef: [25, 45], odul: 1500 },
+  { id: 'masa', ad: '{n} kirli masayı temizle', stat: 'cleaned', hedef: [6, 12], odul: 1300, asama: 2 },
+  { id: 'bulasik', ad: '{n} tabak yıka', stat: 'tabakYikandi', hedef: [8, 16], odul: 1300, asama: 5 },
+  { id: 'siparis', ad: 'Restoranda {n} masadan sipariş al', stat: 'siparisAl', hedef: [4, 8], odul: 1800, asama: 6 },
+  { id: 'bahsis', ad: '{n} bahşiş topla', stat: 'tips', hedef: [3, 6], odul: 1600, asama: 2 },
+  { id: 'mantar', ad: 'Belgrad Ormanı\'ndan menü için {n} mantar topla', stat: 'mantar', hedef: [3, 6], odul: 2000 },
   { id: 'mac', ad: 'Stadyumda {n} maç oyna', stat: 'macOyun', hedef: [1, 1], odul: 3000 },
   { id: 'yan', ad: 'Mülklerinden {n} kez kasa topla', stat: 'mulkKasa', hedef: [1, 2], odul: 1500 },
 ];
@@ -57,6 +60,12 @@ export const SANDIK_DUSER: { stat: string; her: number; sandik: string; ad: stri
 /** Halı saha giriş (karşı yaka, tribünlü saha): bilet ve takım kurma burada da yapılır. */
 export const HALI_SAHA_KAPI = { x: -25.2, z: 45 };
 export const BANKA = { x: 11.7, z: 36.8, kapi: { x: 11.7, z: 41.8 }, w: 10, d: 8.4, ad: 'Martı Kasası Bankası' };
+/** 2026-11-26 owner: no bank tab on the HUD. ATMs (para yatır / çek only; kredi and eşya depo stay at the gişe). ry: the screen faces this way. */
+export const ATMLER: { id: string; x: number; z: number; ry: number; ad: string }[] = [
+  { id: 'atm-iskele', x: 9.6, z: 5.3, ry: 0, ad: 'İskele ATM' },
+  { id: 'atm-banka', x: 7.6, z: 41.25, ry: 0, ad: 'Banka önü ATM' },
+];
+export const ATM_MENZIL = 1.6;
 /** sabit: a fixed building on the map (karşı yaka kafeler): buying the plot opens that shop at once; kapi = interaction point. */
 /** kat: Martı AVM katı (content/avm-kat.ts); kapı o katın holünde, oyuncu aynı katta olmalı */
 export interface Arsa { id: string; x: number; z: number; fiyat: number; seviye: number; rotY: number; sabit?: string; kapi?: { x: number; z: number }; ad?: string; kat?: number }

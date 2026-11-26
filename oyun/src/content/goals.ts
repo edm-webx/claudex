@@ -22,6 +22,8 @@ export const SMALL_GOALS: SmallGoalDef[] = [
   { id: 'simit5', text: 'Tablaya 5 simit diz, sat', stat: 'sold_simit', n: 5, reward: 45, min: 0.6, needs: 'simit' },
   { id: 'gazoz3', text: '3 gazoz patlat', stat: 'sold_gazoz', n: 3, reward: 50, min: 0.7, needs: 'gazoz' },
   { id: 'tost3', text: '3 tost bastır', stat: 'sold_tost', n: 3, reward: 60, min: 0.8, needs: 'tost' },
+  // 2026-11-26 owner: no vapur goals (win3 / ferry3 / ferry1 removed)
+  { id: 'sales10', text: 'Kasayı aç: 10 satış yap', stat: 'sales', n: 10, reward: 35, min: 0.5 },
   { id: 'sales15', text: 'Kasayı şenlendir: 15 satış', stat: 'sales', n: 15, reward: 100, min: 1.4, minDay: 2 },
   // DNY-10 Belgrad Ormanı bölge hedefleri (42B ile git, mantar topla, çeşmeyi bul, dönüş otobüsü)
   { id: 'orman42b', text: '42B ile Belgrad Ormanı\'na git (büfe karşısı durak)', stat: 'otobusOrman', n: 1, reward: 30, min: 0.4, minDay: 2, realm: 'iskele' },
