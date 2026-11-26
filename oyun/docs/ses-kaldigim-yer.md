@@ -4,7 +4,7 @@ Dal: claude/project-thread-o1d81t
 
 ## Bitti
 - 25 gerçek Opus ambiyans döngüsü oyun/public/ses altında; 13 döngü ses-db'de `file` ile bağlı (sentez yedek). STREAM_BUDGET 16 MB.
-- Müzik varyantları: music.ts `varyasyon()`, 12 varyant; player.ts çok-varyantlı mod (1-2 tur + sessiz ara). KAPALI: ses-db.json `music.coklu.on=false`. Kullanıcı önizlemeyi onaylayınca true yap.
+- Müzik varyantları: music.ts `varyasyon()`, 12 varyant; player.ts çok-varyantlı mod (1-2 tur + sessiz ara). AÇIK (kullanıcı 26 Kasım "beğendim" dedi): ses-db.json `music.coklu.on=true`.
 - Önizleme: https://claude.ai/artifact/FE2hkPTqSscWjQNvsT1zt4
 - SFX: bank.sfx(id, variant), varsayılan 4 çeşit, perde/seviye oynaması; yeni adim_ahsap/beton/toprak/fayans + kapi_ac/kapa (audio-map.ts adım sayacı + iç mekan geçişi). Testler: tests/unit/audio/varyant.test.ts.
 
