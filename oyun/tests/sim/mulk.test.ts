@@ -3,7 +3,7 @@ import { it, expect } from 'vitest';
 import { played, kareyeGit, tepsidenVer } from './m1-helpers';
 import { mulkApi } from '../../src/game/sim/mulk';
 import { IC_BY_ID } from '../../src/content/ic-mekan';
-import { BANKA, ARSALAR, arsaKapi, STADYUM, EMLAK } from '../../src/content/esya';
+import { BANKA, ARSALAR, arsaKapi, STADYUM } from '../../src/content/esya';
 
 const mk = () => { const sim = played(1) as any; sim.rules.rt.acilisSerbest = true; sim.step(1); /* kurulum: sıralı açılma şartı yok (content/acilis.ts, kendi testi acilis.test.ts) */ const m = mulkApi(sim.rules)!; return { sim, m, S: sim.state, rt: sim.rules.rt, c: (x: any) => sim.command({ kind: 'mulk', ...x }) }; };
 
@@ -51,27 +51,13 @@ it('plots: buy needs level + money + the 3 plot limit; a shop sells stock into i
   const a1 = ARSALAR[0]; S.money = 5e6; S.level = 1; c({ op: 'arsaAl', id: 'a1' }); expect(S.zones.arsa?.plots?.a1).toBeUndefined();
   S.level = 8; c({ op: 'arsaAl', id: 'a1' }); c({ op: 'arsaAl', id: 'a2' }); c({ op: 'arsaAl', id: 'a3' }); c({ op: 'arsaAl', id: 'a4' });
   expect(Object.keys(S.zones.arsa.plots).length).toBe(3);
-  c({ op: 'arsaKur', id: 'a1', tur: 'dukkan', tip: 'cay_ocagi' }); expect(S.zones.arsa.plots.a1.tur).toBe(null); expect(S.zones.arsa.plots.a1.insaat.tur).toBe('dukkan');   // 2026-11-26: timed site
-  sim.step(181); expect(S.zones.arsa.plots.a1.tur).toBe('dukkan'); expect(S.zones.arsa.plots.a1.insaat).toBeUndefined();
+  c({ op: 'arsaKur', id: 'a1', tur: 'dukkan', tip: 'cay_ocagi' }); expect(S.zones.arsa.plots.a1.tur).toBe('dukkan');
   sim.command({ kind: 'teleport', x: 0, z: -7 });
   sim.step(300);
   const p = S.zones.arsa.plots.a1; expect(p.sat).toBeGreaterThan(0);   // no stock: customers just buy
   const m0 = S.money; sim.command({ kind: 'teleport', x: arsaKapi(a1).x, z: arsaKapi(a1).z }); sim.step(1);
   expect(S.money).toBeGreaterThan(m0);
   void m;
-});
-it('Martı Emlak: lots are bought and built only at the office; the site has real ustalar sized to the project', () => {
-  const { sim, S, c } = mk(); sim.rules.rt.acilisSerbest = false; S.money = 5e6; S.level = 12;
-  const usta = (id: string) => sim.rules.rt.agents.registry.list.filter((a: any) => !a.dead && a.info?.role === 'usta' && String(a.key).startsWith('insaat-' + id + '-')).length;
-  c({ op: 'arsaAl', id: 'a1' }); expect(S.zones.arsa?.plots?.a1).toBeUndefined();          // far from the office
-  sim.command({ kind: 'teleport', x: EMLAK.kapi.x, z: EMLAK.kapi.z }); sim.step(0.5);
-  sim.rules.rt.acilisSerbest = true; c({ op: 'arsaAl', id: 'a1' }); c({ op: 'arsaAl', id: 'a3' }); sim.rules.rt.acilisSerbest = false;   // order rule is acilis.test's job
-  expect(S.zones.arsa.plots.a1).toBeTruthy();
-  c({ op: 'arsaKur', id: 'a1', tur: 'ev' }); c({ op: 'arsaKur', id: 'a3', tur: 'dukkan', tip: 'cay_ocagi' }); sim.step(0.5);
-  expect(S.zones.arsa.plots.a1.insaat.tur).toBe('ev'); expect(usta('a1')).toBe(2); expect(usta('a3')).toBe(4);
-  sim.command({ kind: 'teleport', x: 0, z: -7 }); sim.step(185);
-  expect(S.zones.arsa.plots.a1.tur).toBe('ev'); expect(S.zones.arsa.plots.a3.tur).toBe('dukkan'); expect(usta('a1') + usta('a3')).toBe(0);
-  c({ op: 'yukselt', id: 'a3' }); expect(S.zones.arsa.plots.a3.insaat).toBeUndefined();     // enlarging also needs the office
 });
 it('stadium: ticket costs 5000 at the gate and starts a match', () => {
   const { sim, S, rt, c } = mk(); S.money = 20000;

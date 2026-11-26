@@ -13,7 +13,7 @@ export interface Realm {
   bus?: boolean;
 }
 export const REALMS: Realm[] = [
-  { id: 'iskele', name: 'Martıköy İskelesi', x0: -1e9, x1: 80,   /* 62 -> 80 (2026-11-26): Martı Evleri */ stop: { x: 6, z: 12.2, name: 'Büfe Karşısı' },
+  { id: 'iskele', name: 'Martıköy İskelesi', x0: -1e9, x1: 62, stop: { x: 6, z: 12.2, name: 'Büfe Karşısı' },
     regions: ['iskele'] },
   { id: 'stadyum', name: 'Stadyum Mahallesi', x0: 392, x1: 452, stop: { x: 404, z: 12.2, name: 'Stadyum Kapısı' }, regions: ['stadyum'] },
   { id: 'belgrad', name: 'Belgrad Ormanı', x0: 780, x1: 900, stop: { x: 806, z: 9, name: 'Orman Durağı' }, regions: ['orman'] },

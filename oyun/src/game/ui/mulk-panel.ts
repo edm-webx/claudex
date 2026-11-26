@@ -63,11 +63,11 @@ export function createMulkPanel(d: Deps): MulkPanel {
     s += `<div class="mp-row"><span class="mp-ic">🌭</span><div><b>Sabri'nin Büfesi</b><small>${m.salon ? m.salon.stage + '. aşama' : 'İskelede'} · ana işletmen</small></div></div>`;
     if (m.takim) s += `<div class="mp-row"><span class="mp-ic" style="background:${m.takim.renk};border-radius:12px">${m.takim.arma || '🛡️'}</span><div><b>${esc(m.takim.ad)}</b><small>Futbol kulübün · Maç Koordinatöründe</small></div></div>`;
     s += `<div class="mp-sec">İşletmelerin <small>(büfedeki gibi: seviye, işçi, kasa)</small></div>` + (own.length ? own.map(a => { const t = a.sabit ? null : DUKKAN_BY_ID[a.tip]; return `<div class="mp-row"><span class="mp-ic">${a.sabit ? esc(a.ikon || '🏪') : t ? t.ikon : '🏠'}</span><div><b>${esc(a.ad || (t ? t.ad : (a.tur === 'ev' ? 'Ev ' : 'Boş arsa ') + String(a.id).toUpperCase()))}</b><small>${a.lv}. seviye${a.isci ? ' · 👷 ' + a.isci + '/' + a.isciMax + ' işçi' + ((a.kadro || []).length ? ' (' + (a.kadro as { ad: string }[]).map(c => esc(c.ad)).join(', ') + ')' : '') : ''}${a.tadilat ? ' · 🔨 tadilatta' : ''} · kasada ${tl(a.till)}${a.sat ? ' · ' + a.sat + ' satış' : ''}${a.asamaAd ? ' · ' + esc(a.asamaAd) : ''}${a.kesya && a.kesya.length ? ' · ' + a.kesya.length + ' alet' : ''}</small></div><button class="mp-b y" data-a="yonet" data-id="${a.id}">Yönet</button></div>`; }).join('') : '<div class="mp-note">Henüz işletmen yok: dükkânın kapısının yanındaki sarı kareye basıp satın al' + ' (sırayla açılırlar: ilki büfe 2. aşamaya gelince).' + '</div>');
-    // 2026-11-26: Martı Evleri lots (homes, empty lots, sites) with a jump to the office tab
+    // 2026-11-26: Martı Konutları lots (homes, empty lots, sites) with a jump to the office tab
     const evler = ((m.arsa || []) as M[]).filter(a => a.owned && !a.sabit);
-    s += `<div class="mp-sec">Martı Evleri <small>(${m.sahip}/${m.hak} arsa · işlemler ${esc(m.emlakAd || 'Martı Emlak')} ofisinde)</small></div>` + (evler.length ? evler.map(a => {
-      const ic = a.insaat ? '🏗️' : a.tur === 'ev' ? '🏠' : a.tur === 'dukkan' ? (DUKKAN_BY_ID[a.tip]?.ikon || '🏪') : '🟫';
-      const ne = a.insaat ? 'Şantiye · %' + Math.round((1 - a.insaat.left / a.insaat.total) * 100) + ' · kalan ' + mmss(a.insaat.left) : a.tur === 'ev' ? 'Evin' : a.tur === 'dukkan' ? esc(DUKKAN_BY_ID[a.tip]?.ad || 'Dükkân') + ' · ' + a.lv + '. seviye' : 'Boş arsa: ev ya da dükkân yaptırılabilir';
+    s += `<div class="mp-sec">Martı Konutları <small>(${m.sahip}/${m.hak} arsa · işlemler ${esc(m.emlakAd || 'Martı Emlak')} ofisinde)</small></div>` + (evler.length ? evler.map(a => {
+      const ic = a.insa ? '🏗️' : a.tur === 'ev' ? '🏠' : a.tur === 'dukkan' ? (DUKKAN_BY_ID[a.tip]?.ikon || '🏪') : '🟫';
+      const ne = a.insa ? 'Şantiye · %' + Math.round((a.insa.p || 0) * 100) + ' · kalan ' + mmss(a.insa.left || 0) : a.tur === 'ev' ? 'Evin' : a.tur === 'dukkan' ? esc(DUKKAN_BY_ID[a.tip]?.ad || 'Dükkân') + ' · ' + a.lv + '. seviye' : 'Boş arsa: ev ya da dükkân yaptırılabilir';
       return `<div class="mp-row"><span class="mp-ic">${ic}</span><div><b>Arsa ${a.id.toUpperCase()}</b><small>${ne}</small></div></div>`;
     }).join('') : `<div class="mp-note">Henüz arsan yok. ${esc(m.emlakAd || 'Martı Emlak')} ofisinden ilk arsanı al.</div>`);
     // holding yolu (content/acilis.ts SIRA): alınanlar ✓, sıradaki öne çıkar (koşulu ya da fiyatı), ötekiler sırasını bekler
@@ -135,17 +135,12 @@ export function createMulkPanel(d: Deps): MulkPanel {
   function mulk(m: M): string {
     const ofis = !!m.emlakYakin, kapali = ofis ? '' : ' disabled';   // 2026-11-26: lots are bought / built / enlarged only at the office
     let s = `<div class="mp-sec">Arsalar <small>(${m.sahip}/${m.hak} hakkın dolu)</small></div>`
-      + (ofis ? `<div class="mp-note">🏢 ${esc(m.emlakAd || 'Martı Emlak')} ofisindesin: alım, inşaat ve büyütme burada.</div>` : `<div class="mp-note">🏢 Arsa almak, ev ya da dükkân yaptırmak ve büyütmek için <b>${esc(m.emlakAd || 'Martı Emlak')}</b> ofisine git (Telefon → Harita'da EMLAK). Buradan sadece durumu görürsün.</div>`);
+      + (ofis ? `<div class="mp-note">🏢 ${esc(m.emlakAd || 'Martı Emlak')} ofisindesin: alım, inşaat ve büyütme burada.</div>` : `<div class="mp-note">🏢 Arsa almak, ev ya da dükkân yaptırmak ve büyütmek için <b>${esc(m.emlakAd || 'Martı Emlak')}</b> ofisine git (42B ile Martı Konutları, Meydan Çeşmesi durağı). Buradan sadece durumu görürsün.</div>`);
     const list = focus ? [...m.arsa].sort((x: M, y: M) => (y.id === focus ? 1 : 0) - (x.id === focus ? 1 : 0)) : m.arsa;
     for (const a of list) {
       if (!a.owned) { const lock = !!a.kilit; s += a.sabit
         ? `<div class="mp-row"${a.id === focus ? ' style="background:#fff3c4"' : ''}><span class="mp-ic">${a.ikon || '☕'}</span><div><b>${esc(a.ad)} · satılık</b><small>${a.kilit ? '🔒 Önce: ' + esc(a.kilit) + ' · ' : ''}${tl(a.fiyat)} · ${icOfArsa(a.id)?.bina === 'avm' ? 'Martı AVM' : 'karşı yaka'}. İçeri girilir, aletleri ve menüsü kendine has. Arsa hakkından düşmez; işçi tutulur. Satın almak için dükkânın kapısının yanındaki sarı kareye bas.</small></div><span class="mp-chip">🟨 Kapıdaki kare</span></div>`
         : `<div class="mp-row"><span class="mp-ic">🏗️</span><div><b>Arsa ${a.id.toUpperCase()}</b><small>${lock ? '🔒 Önce: ' + esc(a.kilit) + ' · ' : ''}${tl(a.fiyat)}</small></div><button class="mp-b g" data-a="arsaAl" data-id="${a.id}"${!ofis || lock || m.sahip >= m.hak || m.money < a.fiyat ? ' disabled' : ''}>Satın al</button></div>`; continue; }
-      if (a.insaat) {   // şantiye running: progress + gold skip (skip works from anywhere, like the café tadilat)
-        const ins = a.insaat, ne = ins.tur === 'ev' ? '🏠 Ev' : ins.tur === 'dukkan' ? (DUKKAN_BY_ID[ins.tip]?.ikon || '🏪') + ' ' + esc(DUKKAN_BY_ID[ins.tip]?.ad || 'Dükkân') : '⬆ ' + esc(DUKKAN_BY_ID[a.tip]?.ad || 'Dükkân') + ' büyütülüyor → ' + (a.lv + 1) + '. seviye';
-        s += `<div class="mp-row" style="flex-wrap:wrap"><span class="mp-ic">🏗️</span><div><b>${ne} · Arsa ${a.id.toUpperCase()}</b><small>Şantiye: ${ins.tur === 'ev' ? '2 usta, kamyonet, betoniyer' : ins.tur === 'dukkan' ? '4 usta; hafriyatta kepçe, temelde mikser, duvarda vinç' : (a.lv >= 3 ? '4' : '3') + ' usta, iskele ve vinç'} · kalan ${mmss(ins.left)}</small></div><div style="flex-basis:100%"><div class="mp-bar"><i style="width:${Math.round((1 - ins.left / ins.total) * 100)}%"></i></div><button class="mp-b y" data-a="insaatAtla" data-id="${a.id}"${m.gold >= ins.skipGold ? '' : ' disabled'}>⏩ Altın Simitle bitir · ${ins.skipGold}</button></div></div>`;
-        continue;
-      }
       if (!a.tur) {
         s += `<div class="mp-row"><span class="mp-ic">🏗️</span><div><b>Arsa ${a.id.toUpperCase()} · boş</b><small>Ne kurulsun?</small></div><button class="mp-b y" data-a="kurEv" data-id="${a.id}"${ofis && m.money >= 25000 ? '' : ' disabled'}>🏠 Ev · 25.000 ₺</button><button class="mp-b y" data-a="dukPick" data-id="${a.id}"${kapali}>🏪 Dükkân</button></div>`;
         if (pickPlot === a.id) s += `<div class="mp-grid" style="margin-bottom:8px">${DUKKAN_TIPLERI.map(t => `<div class="mp-it"><span class="mp-ic">${t.ikon}</span><b>${esc(t.ad)}</b><small>Kurulum ${tl(t.kurulum)}${m.level < t.seviye ? ' · 🔒 ' + t.seviye + '. seviye' : ''}</small><button class="mp-b g" data-a="kurDuk" data-id="${a.id}" data-tip="${t.id}"${!ofis || m.level < t.seviye || m.money < t.kurulum ? ' disabled' : ''}>Kur</button></div>`).join('')}</div>`;
@@ -222,7 +217,6 @@ ${a.isci < a.isciMax ? `<div class="mp-sec" style="margin:8px 0 4px">İlan panos
     if (a === 'kurDuk') { pickPlot = ''; cmd({ op: 'arsaKur', id, tur: 'dukkan', tip: el.dataset.tip }); return; }
     if (a === 'evAc') { cmd({ op: 'evAc', id }); api.close(); return; }
     if (a === 'tadilatAtla') { cmd({ op: 'tadilatAtla', id }); return; }
-    if (a === 'insaatAtla') { cmd({ op: 'insaatAtla', id }); return; }
     if (a === 'ilanAl') { cmd({ op: 'ilanAl', id, e: el.dataset.e }); return; }
     if (a === 'ilanYenile') { cmd({ op: 'ilanYenile', id }); return; }
     if (a === 'kov') { cmd({ op: 'kov', id, n }); return; }

@@ -7,8 +7,7 @@
 import * as T from 'three';
 import type { Rules } from '../../sim/state';
 import { mulkApi } from '../../sim/mulk';
-import { BANKA, ARSALAR, DUKKAN_BY_ID, ATMLER, EMLAK } from '../../../content/esya';
-import { buildSantiye, buildEmlakOfis, SANTIYE_KATI, type Santiye } from './santiye';
+import { BANKA, ARSALAR, DUKKAN_BY_ID, ATMLER } from '../../../content/esya';
 import { icBina } from '../../../content/ic-mekan';
 const AVM_ARSA = icBina('avm').map(m => m.arsa || '').sort((x, y) => (ARSALAR.find(a => a.id === x)?.x || 0) - (ARSALAR.find(a => a.id === y)?.x || 0));
 import type { Vec3, ScreenPt } from '../../../engine/api';
@@ -17,7 +16,6 @@ import type { HtmlLabels, HtmlLabel } from '../../ui/labels';
 export interface MulkViewDeps {
   scene: T.Scene; labels: HtmlLabels; project(p: Vec3, out: ScreenPt): boolean; rules: () => Rules | null; hero: () => { x: number; z: number };
   setSolid?: (rects: { x0: number; x1: number; z0: number; z1: number }[]) => void;
-  night?: () => number;
 }
 export interface MulkView { update(dt: number): void; dispose(): void }
 
@@ -43,10 +41,6 @@ export function createMulkView(d: MulkViewDeps): MulkView {
     box(g, 0.34, 0.04, 0.02, '#111', 0, 0.82, 0.31);                                     // card / cash slot
   }
 
-  /* ---- Martı Emlak office (2026-11-26): the only place where lots and houses are bought, built and enlarged ---- */
-  const ofis = buildEmlakOfis(EMLAK.ad, EMLAK.w, EMLAK.d); ofis.g.position.set(EMLAK.x, 0, EMLAK.z); ofis.g.rotation.y = EMLAK.kapi.z < EMLAK.z ? Math.PI : 0; root.add(ofis.g);
-  const ofisL = d.labels.label();
-
   /* ---- bank ---- */
   // 2026-11-08: the bank building itself is a detailed model in view/world/karsi-bina.ts; this group stays empty
   const bank = new T.Group(); bank.position.set(BANKA.x, 0, BANKA.z); root.add(bank);
@@ -68,7 +62,7 @@ export function createMulkView(d: MulkViewDeps): MulkView {
   const bankL = d.labels.label();
 
   /* ---- plots ---- */
-  interface PlotG { g: T.Group; dyn: T.Group; key: string; label: HtmlLabel; sign: string; site?: Santiye; siteKey?: string }
+  interface PlotG { g: T.Group; dyn: T.Group; key: string; label: HtmlLabel; sign: string }
   const plots = new Map<string, PlotG>();
   for (const a of ARSALAR) {
     const g = new T.Group(); g.position.set(a.x, 0, a.z); g.rotation.y = a.rotY; root.add(g);
@@ -81,11 +75,10 @@ export function createMulkView(d: MulkViewDeps): MulkView {
     plots.set(a.id, { g, dyn, key: '#', label: d.labels.label(), sign: '' });
   }
   const awning = (p: T.Object3D, w: number, c1: string, c2: string, z: number, y: number) => { const n = 8, sw = w / n; for (let i = 0; i < n; i++) { const o = box(p, sw, 0.1, 1.5, i % 2 ? c1 : c2, -w / 2 + sw * (i + 0.5), y, z); o.rotation.x = 0.28; } };
-  function build(p: PlotG, v: { tur: string | null; tip: string; lv: number; owned: boolean; insaat?: unknown }) {
+  function build(p: PlotG, v: { tur: string | null; tip: string; lv: number; owned: boolean }) {
     p.dyn.clear();
     const g = p.dyn;
     if (!v.owned) { cyl(g, 0.05, 1.9, '#7d5638', 2.4, 1.0, 1.7, 6); box(g, 1.4, 0.7, 0.08, '#ffd23f', 2.4, 1.9, 1.7, { emissive: '#4a3d08', emissiveIntensity: 0.3 }); return; }
-    if (!v.tur && v.insaat) return;   // the şantiye (santiye.ts) draws the rising building
     if (!v.tur) { box(g, 3.2, 0.5, 2.2, '#b09878', 0, 0.35, 0); box(g, 1.0, 0.5, 0.9, '#c8b08a', 1.4, 0.85, 0.4); return; }
     if (v.tur === 'ev') {
       box(g, 4.4, 2.5, 3.2, '#f1e3c4', 0, 1.35, -0.2);
@@ -131,21 +124,15 @@ export function createMulkView(d: MulkViewDeps): MulkView {
       const v = m.view(), md = m.model();
       for (const pv of v.plots) {
         const p = plots.get(pv.id)!, mp = md.arsa.find(x => x.id === pv.id)!;
-        const k = [pv.owned, pv.tur, pv.tip, pv.lv, !!pv.insaat, 12].join('|');
+        const k = [pv.owned, pv.tur, pv.tip, pv.lv, 12].join('|');
         if (k !== p.key) { p.key = k; if (!pv.sabit) build(p, pv); }
-        const ins = pv.insaat, sk = ins ? ins.tur + ':' + (ins.tur === 'yuk' ? pv.lv : 0) : '';
-        if (p.site && p.siteKey !== sk) { p.site.dispose(); p.site = undefined; }
-        if (ins && !p.site) { p.site = buildSantiye(ins.tur, pv.lv, DUKKAN_BY_ID[ins.tip || pv.tip]?.renk); p.siteKey = sk; p.g.add(p.site.g); }
-        if (ins && p.site) p.site.update(ins.k, tt);
       }
-      ofis.night(d.night?.() ?? 0);
-      if (Math.hypot(d.hero().x - EMLAK.x, d.hero().z - EMLAK.z) < 24) put(ofisL, EMLAK.kapi.x, 4.9, EMLAK.kapi.z + 0.6, '🏢 ' + esc(EMLAK.ad) + ' · arsa · ev · dükkân'); else ofisL.hide();
       if (Math.hypot(d.hero().x - BANKA.x, d.hero().z - BANKA.z) < 26) put(bankL, BANKA.x, 4.8, BANKA.z + BANKA.d / 2 + 0.7, '🏦 ' + esc(BANKA.ad)); else bankL.hide();
       for (const pv of v.plots) {
         const p = plots.get(pv.id)!, a = ARSALAR.find(x => x.id === pv.id)!, mp = md.arsa.find(x => x.id === pv.id)!;
         if (Math.hypot(d.hero().x - a.x, d.hero().z - a.z) > 20) { p.label.hide(); continue; }
         const t = pv.tur === 'dukkan' ? DUKKAN_BY_ID[pv.tip] : null;
-        const ik = (mp as { ikon?: string }).ikon || '☕', txt = pv.insaat ? '🏗️ ' + (pv.insaat.tur === 'ev' ? 'Ev yapılıyor' : pv.insaat.tur === 'dukkan' ? (DUKKAN_BY_ID[pv.insaat.tip]?.ad || 'Dükkân') + ' yapılıyor' : 'Büyütülüyor → Sv.' + (pv.lv + 1)) + ' · %' + Math.floor(pv.insaat.k * 100) : !pv.owned ? (a.sabit ? ik + ' ' + (a.ad || 'Kafe') + ' · SATILIK · ' : '🏗️ SATILIK · ') + Math.round(mp.fiyat / 1000) + 'K ₺' + ((mp as { kilit?: string }).kilit ? ' · 🔒' : '') : !pv.tur ? 'Boş arsa' : pv.tur === 'ev' ? '🏠 Evin' : (a.sabit ? ik + ' ' + (a.ad || '') : (t ? t.ikon + ' ' + t.tabela : '')) + (pv.isci ? ' · 👷 ' + pv.isci : '') + (pv.till > 0 ? ' · 💰 ' + pv.till : '');
+        const ik = (mp as { ikon?: string }).ikon || '☕', txt = !pv.owned ? (a.sabit ? ik + ' ' + (a.ad || 'Kafe') + ' · SATILIK · ' : '🏗️ SATILIK · ') + Math.round(mp.fiyat / 1000) + 'K ₺' + ((mp as { kilit?: string }).kilit ? ' · 🔒' : '') : !pv.tur ? 'Boş arsa' : pv.tur === 'ev' ? '🏠 Evin' : (a.sabit ? ik + ' ' + (a.ad || '') : (t ? t.ikon + ' ' + t.tabela : '')) + (pv.isci ? ' · 👷 ' + pv.isci : '') + (pv.till > 0 ? ' · 💰 ' + pv.till : '');
         const avm = AVM_ARSA.indexOf(a.id);   // 2026-11-20: four AVM doors 3.9 m apart: labels right over each door, staggered in height
         if (a.kapi && avm >= 0) put(p.label, a.kapi.x, 4.4 + (avm % 2) * 0.75, a.kapi.z, esc(txt)); else if (a.kapi) put(p.label, a.kapi.x - 1.2, 4.6, a.kapi.z, esc(txt)); else put(p.label, a.x, 4.2 + (pv.tur ? 0.6 : -1.2), a.z + (a.rotY ? -1.8 : 1.8), esc(txt));
       }
@@ -154,20 +141,10 @@ export function createMulkView(d: MulkViewDeps): MulkView {
         solidT = 0.5;
         // KAL-13: banka gövdesi artık burada tam dikdörtgen duvar OLMAZ; iç mekan duvarları kapı boşluğuyla zone çarpıştırıcılarından gelir (kr.banka, icCollidersLocal). Eski tam gövde kapıyı kapatıyordu, gezgin bot yakaladı.
         const rects: { x0: number; x1: number; z0: number; z1: number }[] = [];
-        const rot = (a: { x: number; z: number; rotY: number }, r: { x0: number; x1: number; z0: number; z1: number }) => {   // plot-local rect -> world AABB (rotY is a multiple of 90°)
-          const c = Math.round(Math.cos(a.rotY)), sn = Math.round(Math.sin(a.rotY)), xs: number[] = [], zs: number[] = [];
-          for (const [lx, lz] of [[r.x0, r.z0], [r.x1, r.z0], [r.x0, r.z1], [r.x1, r.z1]]) { xs.push(a.x + lx * c + lz * sn); zs.push(a.z - lx * sn + lz * c); }
-          return { x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(...zs), z1: Math.max(...zs) };
-        };
-        rects.push({ x0: EMLAK.x - EMLAK.w / 2, x1: EMLAK.x + EMLAK.w / 2, z0: EMLAK.z - EMLAK.d / 2, z1: EMLAK.z + EMLAK.d / 2 });
-        for (const pv of v.plots) {
-          if (pv.sabit) continue; const a = ARSALAR.find(x => x.id === pv.id)!;
-          if (pv.insaat) { rects.push(rot(a, SANTIYE_KATI.lot), rot(a, SANTIYE_KATI.arac)); continue; }   // fenced site + the vehicle at the kerb; ustalar walk straight lines inside
-          if (pv.tur) rects.push(rot(a, { x0: -2.6, x1: 2.6, z0: -2.2, z1: 0.9 }));
-        }
+        for (const pv of v.plots) if (pv.tur && !pv.sabit) { const a = ARSALAR.find(x => x.id === pv.id)!; const s = a.rotY ? -1 : 1; rects.push({ x0: a.x - 2.6, x1: a.x + 2.6, z0: a.z - 2.2 - (s > 0 ? 0 : 0), z1: a.z + 0.9 }); if (a.rotY) { rects[rects.length - 1].z0 = a.z - 0.9; rects[rects.length - 1].z1 = a.z + 2.2; } }
         const k = JSON.stringify(rects); if (k !== solidKey) { solidKey = k; d.setSolid(rects); }
       }
     },
-    dispose() { ofis.dispose(); ofisL.hide(); for (const p of plots.values()) p.site?.dispose(); clueRoot.removeFromParent(); root.removeFromParent(); geos.forEach(g => g.dispose()); mats.forEach(m => m.dispose()); bankL.hide(); },
+    dispose() { clueRoot.removeFromParent(); root.removeFromParent(); geos.forEach(g => g.dispose()); mats.forEach(m => m.dispose()); bankL.hide(); },
   };
 }

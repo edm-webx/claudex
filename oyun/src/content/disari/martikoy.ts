@@ -25,9 +25,9 @@ export interface Region {
 export const BAND = { z0: 4.85, z1: 13.3, mid: 9 } as const;
 
 export const REGIONS: Region[] = [
-  { id: 'iskele', zone: 'iskele', name: 'Martıköy İskelesi', short: 'İskele', x0: -62, x1: 80,   /* 62 -> 80 (2026-11-26): Martı Evleri */ level: 1, color: '#7cc4e4',
+  { id: 'iskele', zone: 'iskele', name: 'Martıköy İskelesi', short: 'İskele', x0: -62, x1: 62, level: 1, color: '#7cc4e4',
     blurb: 'Büfenin evi. Vapur, martı, çay.', lockLine: '', map: [30, 58], stop: { name: 'İskele Durağı', x: 48, z: 11.8 }, vapur: true },
-  { id: 'carsi', zone: 'test-sokak', name: 'Çarşı Sokağı', short: 'Çarşı', x0: 80, x1: 132, level: 1, color: '#f0b45a',
+  { id: 'carsi', zone: 'test-sokak', name: 'Çarşı Sokağı', short: 'Çarşı', x0: 62, x1: 132, level: 1, color: '#f0b45a',
     blurb: 'Fırın, manav, berber ve dedikodu merkezi.', lockLine: '', map: [40, 46], stop: { name: 'Çarşı Başı', x: 68, z: 12.2 } },
   { id: 'sahil', zone: 'sahil', name: 'Sahil Yolu ve Park', short: 'Sahil', x0: 132, x1: 196, level: 1, color: '#8fd06b',
     blurb: 'Denize bakan banklar, Lunapark Martı ve açık hava sineması.', lockLine: 'Belediye bankları boyuyor. Islak boya!',
