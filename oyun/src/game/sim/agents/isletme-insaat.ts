@@ -6,13 +6,14 @@
  */
 import type { System, SimCtx, Vec2 } from '../../../engine/api';
 import { ARSALAR } from '../../../content/esya';
-import { insaatYer, USTA_SAYISI, type InsaatYer } from '../../../content/isletme-insaat';
+import { insaatYer, type InsaatYer } from '../../../content/isletme-insaat';
+import { SETLER, isletmeBoyut } from '../../../content/santiye';
 import type { AgentEnv } from './env';
 import type { Actor } from './types';
 import { icOfArsa, icWorld, icDim } from '../../../content/ic-mekan';
 import { avmGelis, avmGidis, katY } from '../../../content/avm-kat';
 
-const ISIM = ['Usta Recep', 'Usta Selim', 'Usta Cemal'];
+const ISIM = ['Usta Recep', 'Usta Selim', 'Usta Cemal', 'Kalfa Erdem', 'Çırak Mert'];
 const SP = 1.3;
 type Pt = Vec2 & { y?: number };
 interface Usta { a: Actor; i: number; st: 'gel' | 'pile' | 'toPost' | 'work' | 'toPile' | 'cik'; t: number; dur: number; path: Pt[] }
@@ -25,7 +26,7 @@ function avmYer(id: string): { y: InsaatYer; avm: NonNullable<Site['avm']> } | n
   const { W, D } = icDim(m), kat = m.kat || 0, w = (u: number, v: number) => icWorld(m, u, v), kapi = w(0, D / 2 + 0.7), ic = w(0, D / 2 - 0.9);
   const o = w(0, 0), b = w(0, 1), dx = b.x - o.x, dz = b.z - o.z;   // 'dışa' = kapıya doğru; ustalar tersine, arka duvara bakar
   const y: InsaatYer = { id, ox: o.x, oz: o.z, dx, dz, yaw: Math.atan2(dx, dz), S: W - 1.4, w: (u, v) => w(u, -v),
-    pile: { u: -(W / 2 - 0.75), v: -(D / 2 - 1.6) }, posts: [{ u: -0.6, v: D / 2 - 0.85 }, { u: W / 2 - 0.85, v: 0.4 }] };
+    pile: { u: -(W / 2 - 0.75), v: -(D / 2 - 1.6) }, posts: [{ u: -0.6, v: D / 2 - 0.85 }, { u: W / 2 - 0.85, v: 0.4 }, { u: -(W / 2 - 0.85), v: 0.4 }, { u: 0.9, v: D / 2 - 0.85 }, { u: W / 2 - 0.85, v: -0.8 }] };
   const yy = katY(kat);
   return { y, avm: { y: yy, giris: [...avmGelis(kat, kapi), { ...ic, y: yy }], cikis: [{ ...kapi, y: yy }, ...avmGidis(kat, kapi)] } };
 }
@@ -35,7 +36,7 @@ export interface InsaatSystem extends System { sites(): { id: string; ustalar: n
 export function createInsaat(env: AgentEnv, rt: Record<string, unknown>): InsaatSystem {
   const rng = env.rng('insaat');
   const sites = new Map<string, Site>();
-  const info = (id: string) => (rt.kafeHost as { info(id: string): { tadilat?: boolean } | null } | undefined)?.info(id) ?? null;
+  const info = (id: string) => (rt.kafeHost as { info(id: string): { tadilat?: boolean; lv?: number } | null } | undefined)?.info(id) ?? null;
   const ids = ARSALAR.filter(a => a.sabit).map(a => a.id), avmIds = new Set(ids.filter(id => icOfArsa(id)?.bina === 'avm'));
 
   const route = (y: InsaatYer, from: Vec2, to: { u: number; v: number }): Vec2[] => {
@@ -54,7 +55,8 @@ export function createInsaat(env: AgentEnv, rt: Record<string, unknown>): Insaat
   function open(id: string): Site | null {
     const av = avmYer(id), y = av?.y ?? insaatYer(id); if (!y) return null;
     const s: Site = { id, y, ustalar: [], avm: av?.avm };
-    for (let i = 0; i < USTA_SAYISI; i++) {
+    const n = SETLER[isletmeBoyut(info(id)?.lv || 1)].usta;   // 2026-11-25: işin boyutuna göre 2..5 usta
+    for (let i = 0; i < n; i++) {
       const seed = 7001 + id.charCodeAt(1) * 31 + i * 17, at = s.avm ? s.avm.giris[0] : y.w(y.pile.u + i * 0.6, y.pile.v + (i ? 0.5 : -0.5));
       const a = env.reg.add('worker', 'insaat-' + id + '-' + i, { kind: 'worker', role: 'usta', seed }, at, { role: 'usta', name: ISIM[i % ISIM.length] });
       // AVM: girişten yürüyerek gelir (ikincisi biraz geriden)

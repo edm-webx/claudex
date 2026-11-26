@@ -104,6 +104,7 @@ import { createMulkPanel } from './ui/mulk-panel';
 import { createKirtasiyeFp } from './ui/kirtasiye-fp';
 import { IC_BY_ID as KT_IC, icWorld as ktWorld, icDim as ktDim, icIcinde as ktIcinde } from '../content/ic-mekan';
 import { createMulkView } from './view/mulk';
+import { createMahalle } from './view/mahalle';
 import { bankaOku, bankaYaz } from './net/slots';
 import { bulutKapanisYaz, kayitKilidi, kayitKilitle, kodSurumu, yerelYedekYaz, yerelYedekOku, yerelYedekSil, type KayitKilidi } from './net/slots';
 import { createKayitDurum } from './net/kayit-durum';
@@ -678,6 +679,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const mulkPanel = playMode && uiReal ? make('mulkPanel', () => createMulkPanel({ root: U.root, rules: () => sim.rules, command, sfx: id => { try { audio?.sfx(id); } catch { /* */ } } })) : null;
   if (mulkPanel) U.root.addEventListener('ui:open', e => { const id = (e as CustomEvent).detail as string; if (id === 'envanter') mulkPanel.open('envanter'); else if (id === 'mulk') mulkPanel.open('mulk'); });
   const mulkView = ACIK_DUNYA && playMode && labels ? make('mulkView', () => createMulkView({ scene, labels, project, rules: () => sim.rules, hero: () => pos, setSolid: r => nav.setSolids('mulk', r) })) : null;
+  const mahalleView = ACIK_DUNYA && playMode ? make('mahalleView', () => createMahalle({ scene, hero: () => pos, hour: () => sim.clock.hour, night: () => nightK, chars: chars as never, insaatlar: () => { const m = mulkApi(sim.rules); return m ? m.view().plots.filter(p => !p.sabit && p.insa != null).map(p => ({ id: p.id, x: p.x, z: p.z, rotY: p.rotY, p: p.insa as number })) : []; }, setSolid: r => nav.setSolids('mahalle', r) })) : null;   // 2026-11-26 Martı Konutları (arsaların mahallesi)
   const stadyumView = ACIK_DUNYA && playMode && labels ? make('stadyumView', () => createStadyumView({ scene, labels, project, rules: () => sim.rules, hero: () => pos, setSolid: r => nav.setSolids('stadyum-kulup', r) })) : null;
   const bankaRt = () => (sim.rules.rt as unknown as { banka?: { tl: number; esya: Record<string, number>; dirty: boolean; faizSaat?: number; saat?: number } }).banka;
   let bankaT = 0;
@@ -835,6 +837,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (ormanView) guard('ormanView', () => ormanView.update(fdt));
     if (mulkPanel) guard('mulkPanel', () => mulkPanel.update(fdt));
     if (mulkView) guard('mulkView', () => mulkView.update(fdt));
+    if (mahalleView) guard('mahalleView', () => mahalleView.update(fdt));
     if (stadyumView) guard('stadyumView', () => stadyumView.update(fdt));
     if ((bankaT -= fdt) <= 0) { bankaT = 2; const b = bankaRt(); if (b && b.saat !== undefined) b.saat = Date.now() / 1000; if (b?.dirty && hesap() && saveOn()) { b.dirty = false; void bankaYaz({ tl: b.tl, esya: b.esya, faizSaat: b.faizSaat }).then(ok => { if (!ok && !kayitKilidi()) b.dirty = true; }); } }   // the sim is pure: the wall clock for the account-level interest stamp comes from here
     if (otobusHud) guard('otobusHud', () => otobusHud.update(fdt));

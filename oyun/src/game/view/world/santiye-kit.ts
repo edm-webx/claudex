@@ -196,12 +196,12 @@ function betonPompasi(c: Ctx, x: number, z: number, ry: number, hedef: { x: numb
 }
 
 /* ---------------- aşamalı yapı kabuğu (ev / dükkân) ---------------- */
-export interface KabukOpts { w: number; d: number; h: number; cati: 'kirma' | 'duz'; duvar?: string; catiRenk?: string }
+export interface KabukOpts { w: number; d: number; h: number; cati: 'kirma' | 'duz'; duvar?: string; catiRenk?: string; /** üst kat: hafriyat ve temel izi yok, döşeme alttaki katın tavanı */ ustKat?: boolean }
 interface Kabuk { temel: T.Mesh; karkas: T.Mesh; duvar: T.Mesh; bitis: T.Mesh; set(p: number): void }
 function kabuk(c: Ctx, o: KabukOpts): Kabuk {
   const { w, d, h } = o, x0 = -w / 2, z0 = -d / 2, kapiW = 1.3;
   // temel: hafriyat çukuru izi, kalıp tahtası, demir ızgara, sonra beton döşeme
-  const tb = new Batch(); tb.box(w + 0.6, 0.06, d + 0.6, '#7a5e42', 0, 0.03, 0); tb.box(w, 0.28, d, CONC, 0, 0.16, 0);
+  const tb = new Batch(); if (!o.ustKat) { tb.box(w + 0.6, 0.06, d + 0.6, '#7a5e42', 0, 0.03, 0); tb.box(w, 0.28, d, CONC, 0, 0.16, 0); }
   for (const s of [-1, 1]) { tb.box(w + 0.1, 0.35, 0.05, WOOD_A, 0, 0.17, s * (d / 2 + 0.03)); tb.box(0.05, 0.35, d + 0.1, WOOD_B, s * (w / 2 + 0.03), 0.17, 0); }
   for (let x = x0 + 0.5; x < w / 2; x += 0.5) tb.box(0.025, 0.025, d - 0.2, '#6b4a3a', x, 0.32, 0); for (let z = z0 + 0.5; z < d / 2; z += 0.5) tb.box(w - 0.2, 0.025, 0.025, '#6b4a3a', 0, 0.33, z);
   // karkas: kolonlar (köşeler + ~3 m arayla) ve üst kiriş, filizler
@@ -257,9 +257,12 @@ export interface SantiyeOpts {
   /** aşamalı yapı kabuğu (yalnız sıfırdan yapılan bina: arsa evi / dükkânı) */ kabuk?: KabukOpts | null;
   /** iskele: ön cephe boyunca (tadilat) ya da kabuğun etrafında */ iskeleYer?: 'on' | 'cevre' | 'yok';
   /** büyük makinelerin yerleri (yerel), verilmezse sahanın arkası / yanları */
-  yer?: { vinc?: { x: number; z: number }; kamyon?: { x: number; z: number; ry: number }; pompa?: { x: number; z: number; ry: number }; ofis?: { x: number; z: number; ry: number } };
+  yer?: { vinc?: { x: number; z: number; ry?: number }; kamyon?: { x: number; z: number; ry: number }; mikser?: { x: number; z: number; ry: number }; pompa?: { x: number; z: number; ry: number }; ofis?: { x: number; z: number; ry: number } };
   /** çit çizilsin mi (sahayı çevreler, ön ortada kapı boşluğu) */ cit?: boolean;
   /** kule vinç yüksekliği */ vincH?: number;
+  /** küçük işte önde şerit + duba (varsayılan: çit yoksa) */ serit?: boolean;
+  /** dar arsa: malzemeler (betoniyer, el arabası, kum, tuğla) dikdörtgenin içinde köşelere dizilir, dışarı taşmaz */ sikisik?: boolean;
+  /** dışarıdan gelen kule vinç vb. varsa kitin kendi vinci kurulmaz */ vincYok?: boolean;
   /** proje panosu: başlık ('EV YAPIMI'), alt satır ('Arsa A1 · Sabri İnşaat'); ilerleme çubuğu canlı */ pano?: { baslik: string; alt: string } | null;
 }
 /** sarı proje panosu: başlık, alt satır, aşama adı ve canlı % çubuğu (tam yüzdede yeniden çizilir) */
@@ -279,7 +282,7 @@ function panoKur(c: Ctx, x: number, z: number, ry: number, o: { baslik: string; 
     tex.needsUpdate = true;
   };
 }
-export interface Santiye { g: T.Group; update(dt: number, p: number, night: number): void; dispose(): void }
+export interface Santiye { g: T.Group; update(dt: number, p: number, night: number): void; dispose(): void; /** araçların yerel ayak izleri (yürüyüş engeli için) */ engel: { x0: number; x1: number; z0: number; z1: number }[] }
 
 export function santiyeKur(o: SantiyeOpts): Santiye {
   const c: Ctx = { g: new T.Group(), anims: [], beacons: [], geos: [], mats: [] }; c.g.name = 'santiye-' + o.plan.boyut;
@@ -290,31 +293,37 @@ export function santiyeKur(o: SantiyeOpts): Santiye {
   if (isk === 'on') iskele(b, 0, hd - 0.2, 0, Math.max(2.2, w - 1.2), P.iskeleKat, P.iskeleKat > 1);
   else if (isk === 'cevre') { const kw = o.kabuk!.w, kd = o.kabuk!.d, k = Math.max(1, Math.min(P.iskeleKat, Math.ceil(o.kabuk!.h / 1.6))); iskele(b, 0, -kd / 2 - 0.35, Math.PI, kw + 1.4, k); iskele(b, -kw / 2 - 0.35, 0, -Math.PI / 2, kd, k, false); iskele(b, kw / 2 + 0.35, 0, Math.PI / 2, kd, k, false); }
   // küçük set: merdiven, boya, şerit + duba
-  if (P.merdiven) { merdiven(b, -hw * 0.45, hd + 0.8, 0.3); }
+  if (P.merdiven) { if (o.sikisik) merdiven(b, -hw * 0.3, hd - 0.4, 0.3, 1.8); else merdiven(b, -hw * 0.45, hd + 0.8, 0.3); }
   if (P.boya) { boyaKovasi(b, -hw * 0.45 + 0.7, hd + 1.1, '#ffd23f'); boyaKovasi(b, -hw * 0.45 + 0.95, hd + 0.8, '#f4f2ec'); boyaKovasi(b, hw * 0.4, hd + 1.0, '#2f7fb3'); torba(b, hw * 0.4 + 0.6, hd + 0.9, 2); b.box(1.6, 0.02, 1.2, '#d9d4c8', -hw * 0.45 + 0.6, 0.012, hd + 1.0); }
-  if (!P.cit) { for (const s of [-1, 1]) { duba(b, s * (hw + 0.3), hd + 1.8); b.box(hw * 0.9, 0.06, 0.02, RED, s * hw * 0.55, 0.85, hd + 1.8); b.box(hw * 0.9, 0.06, 0.02, WHITE, s * hw * 0.55, 0.85, hd + 1.81); } }
+  if (o.serit ?? !P.cit) { for (const s of [-1, 1]) { duba(b, s * (hw + 0.3), hd + 1.8); b.box(hw * 0.9, 0.06, 0.02, RED, s * hw * 0.55, 0.85, hd + 1.8); b.box(hw * 0.9, 0.06, 0.02, WHITE, s * hw * 0.55, 0.85, hd + 1.81); } }
   // orta: betoniyer, el arabası, kum, tuğla, kalas, torba
+  if (o.sikisik) {
+    if (P.betoniyer) betoniyer(c, b, -hw + 0.45, hd - 0.25, 0.4);
+    if (P.elArabasi) { elArabasi(b, hw - 0.5, hd - 0.15, -0.5); kumYigini(b, -hw + 0.4, -hd + 0.5, 0.55); tuglaPaleti(b, hw - 0.35, -hd + 0.6, Math.PI / 2, 3); torba(b, hw - 0.35, 0.2, 2); }
+  } else {
   if (P.betoniyer) betoniyer(c, b, -hw - 1.4, hd - 1.6, 0.6);
   if (P.elArabasi) { elArabasi(b, -hw - 0.6, hd - 0.2, 1.1); kumYigini(b, -hw - 1.8, -hd + 1.6, 1.1); tuglaPaleti(b, hw + 1.3, -hd + 1.2, 0.2, 4); tuglaPaleti(b, hw + 1.3, -hd + 2.5, -0.1, 2); kalas(b, hw + 1.4, hd - 1.4, Math.PI / 2); torba(b, -hw - 0.8, -hd + 0.4, 3); }
+  }
   // çit: sahayı çevreler, önde 3 m kapı
   const citOn = o.cit ?? P.cit, m = 3.2;
   if (citOn) { const X0 = -hw - m, X1 = hw + m, Z0 = -hd - m, Z1 = hd + m * 0.9; cit(b, X0, Z0, X1, Z0); cit(b, X0, Z0, X0, Z1); cit(b, X1, Z0, X1, Z1); cit(b, X0, Z1, -1.6, Z1); cit(b, 1.6, Z1, X1, Z1); }
   let pano: ((p: number) => void) | null = null;
-  if (o.pano) { const px = citOn ? hw + m - 2.0 : hw + 1.6, pz = citOn ? hd + m * 0.9 + 0.4 : hd + 2.4; tabela(b, px, pz, 0); pano = panoKur(c, px, pz, 0, o.pano, p => (kb ? YAPI_ASAMA[yapiAsama(p)].ad : P.ad)); }
+  if (o.pano) { const px = citOn ? hw + m - 2.0 : o.sikisik ? hw - 1.4 : hw + 1.6, pz = citOn ? hd + m * 0.9 + 0.4 : o.sikisik ? hd + 0.2 : hd + 2.4; tabela(b, px, pz, 0); pano = panoKur(c, px, pz, 0, o.pano, p => (kb ? YAPI_ASAMA[yapiAsama(p)].ad : P.ad)); }
   // büyük / dev araçlar
-  const Y = o.yer || {};
-  if (P.konteyner) { const q = Y.ofis || { x: -hw - m + 1.6, z: -hd - m + 3.2, ry: 0 }; konteyner(b, q.x, q.z, q.ry); tuvalet(b, q.x, q.z + 3.4, q.ry); }
+  const Y = o.yer || {}, engel: Santiye['engel'] = [];
+  const iz = (x: number, z: number, ry: number, w2: number, d2: number) => { const c2 = Math.abs(Math.cos(ry)), s2 = Math.abs(Math.sin(ry)), ex = (w2 * c2 + d2 * s2) / 2, ez = (w2 * s2 + d2 * c2) / 2; engel.push({ x0: x - ex, x1: x + ex, z0: z - ez, z1: z + ez }); };
+  if (P.konteyner) { const q = Y.ofis || { x: -hw - m + 1.6, z: -hd - m + 3.2, ry: 0 }; konteyner(b, q.x, q.z, q.ry); tuvalet(b, q.x, q.z + 3.4, q.ry); iz(q.x, q.z + 0.8, q.ry, 2.6, 7.0); }
   if (P.jenerator) jenerator(b, hw + m - 1.2, -hd - m + 1.4, 0);
-  if (P.kamyon) { const q = Y.kamyon || { x: hw + m + 2.2, z: 0, ry: 0 }; kamyon(c, q.x, q.z, q.ry, 'damperli'); }
-  if (P.mikser) { const q = Y.kamyon || { x: hw + m + 2.2, z: hd - 1, ry: Math.PI }; kamyon(c, q.x, q.z, q.ry, 'mikser'); }
-  if (P.mobilVinc) { const q = Y.vinc || { x: -hw - m - 2.4, z: -hd + 1.0 }; mobilVinc(c, q.x, q.z, 0, { x: 0, z: 0 }); }
-  if (P.kuleVinc) { const q = Y.vinc || { x: -hw - 1.4, z: -hd - 1.4 }; kuleVinc(c, q.x, q.z, o.vincH ?? Math.max(11, (o.kabuk?.h || 4) + 8), Math.max(10, Math.hypot(w, d) * 0.9), Math.atan2(-(0 - q.z), 0 - q.x) - Math.PI / 2 + Math.PI / 2); }
-  if (P.pompa) { const q = Y.pompa || { x: hw + m + 2.4, z: -hd + 2.2, ry: 0 }; betonPompasi(c, q.x, q.z, q.ry, { x: 0, z: 0 }); }
+  if (P.kamyon) { const q = Y.kamyon || { x: hw + m + 2.2, z: 0, ry: 0 }; kamyon(c, q.x, q.z, q.ry, 'damperli'); iz(q.x, q.z, q.ry, 2.6, 7.0); }
+  if (P.mikser) { const q = Y.mikser || { x: hw + m + 2.2, z: hd - 1, ry: Math.PI }; kamyon(c, q.x, q.z, q.ry, 'mikser'); iz(q.x, q.z, q.ry, 2.6, 7.0); }
+  if (P.mobilVinc && !o.vincYok) { const q = Y.vinc || { x: -hw - m - 2.4, z: -hd + 1.0 }; mobilVinc(c, q.x, q.z, q.ry ?? 0, { x: 0, z: 0 }); iz(q.x, q.z, q.ry ?? 0, 4.4, 7.6); }
+  if (P.kuleVinc && !o.vincYok) { const q = Y.vinc || { x: -hw - 1.4, z: -hd - 1.4 }; kuleVinc(c, q.x, q.z, o.vincH ?? Math.max(11, (o.kabuk?.h || 4) + 8), Math.max(10, Math.hypot(w, d) * 0.9), Math.atan2(-(0 - q.z), 0 - q.x) - Math.PI / 2 + Math.PI / 2); }
+  if (P.pompa) { const q = Y.pompa || { x: hw + m + 2.4, z: -hd + 2.2, ry: 0 }; betonPompasi(c, q.x, q.z, q.ry, { x: 0, z: 0 }); iz(q.x, q.z, q.ry, 4.0, 7.4); }
   if (P.toz > 0) toz(c, P.toz, w, d);
   if (!b.empty) part(c, b, c.g);
   let t = Math.random() * 30;
   return {
-    g: c.g,
+    g: c.g, engel,
     update(dt, p, night) {
       t += dt; for (const a of c.anims) a(t, dt); const pp = Math.max(0, Math.min(1, p)); kb?.set(pp); pano?.(pp);
       const on = Math.sin(t * 5) > 0; c.beacons.forEach((m2, i) => m2.color.set((i % 2 ? on : !on) ? '#ffcf5a' : '#6a4a12'));

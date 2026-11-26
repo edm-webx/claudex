@@ -8,6 +8,7 @@ import { ARSALAR, arsaKapi } from './esya';
 /** front-wall depth from the building centre (f) and facade width (w), from the karsi-bina.ts footprints */
 const OLCU: Record<string, { f: number; w: number }> = { k1: { f: 3.5, w: 9.4 }, k2: { f: 3.5, w: 9.4 }, k3: { f: 1.8, w: 7.1 }, k4: { f: 3.75, w: 18.3 }, k6: { f: 1.85, w: 17.8 } };
 /* Martı AVM shops (k5, k7..k17) sit inside the mall off the hall, upper floors too: no street-front site, the renovation runs on its timer */
+/** en küçük tadilat ekibi; asıl sayı content/santiye.ts SETLER[isletmeBoyut(lv)].usta */
 export const USTA_SAYISI = 2;
 export interface InsaatYer {
   id: string;
@@ -28,7 +29,7 @@ export function insaatYer(arsaId: string): InsaatYer | null {
     id: arsaId, ox, oz, dx, dz, yaw: Math.atan2(dx, dz), S,
     w: (u, v) => ({ x: ox + px * u + dx * v, z: oz + pz * u + dz * v }),
     pile: { u: -(S / 2 + 1.7), v: 3.0 },
-    posts: [{ u: -(S / 4 + 0.8), v: 3.2 }, { u: S / 4 + 0.8, v: 3.2 }],
+    posts: [{ u: -(S / 4 + 0.8), v: 3.2 }, { u: S / 4 + 0.8, v: 3.2 }, { u: -(S / 2 - 0.3), v: 3.5 }, { u: S / 2 - 0.3, v: 3.5 }, { u: S / 4 + 0.8, v: 3.9 }],   // büyük ekipte 5 usta
   };
   cache.set(arsaId, y); return y;
 }

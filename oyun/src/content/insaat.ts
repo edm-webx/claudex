@@ -5,6 +5,7 @@
  * büyüyeceği uçlar); kurulu masa tablalarının ve salon duvarlarının dışında.
  */
 import type { Vec2 } from '../engine/api';
+import { SETLER, bufeBoyut } from './santiye';
 
 export interface Alan { x0: number; x1: number; z0: number; z1: number }
 /** iskele kanatlarının ayak izleri (bufe-buyume.ts aynı değerleri kullanır) */
@@ -30,7 +31,7 @@ export const USTA_NOKTA: Record<number, [number, number][]> = {
   10: [[-4.6, 3.0], [-3.2, 2.0], [2.6, 2.0], [4.0, 3.0], [0.0, -12.0]],
 };
 /** o tadilatta gelen usta sayısı (büyük tadilat, kalabalık ekip) */
-export const ustaSayisi = (to: number): number => (to >= 9 ? 5 : to >= 6 ? 4 : 3);
+export const ustaSayisi = (to: number): number => SETLER[bufeBoyut(to)].usta;   // 2026-11-25 şantiye setleri: 2 / 3 / 4 / 5
 export const ustaNoktalari = (to: number): Vec2[] => (USTA_NOKTA[to] || USTA_NOKTA[3]).map(([x, z]) => ({ x, z }));
 export const insaatAlani = (to: number): Alan => SITE_AREA[to] || WT;
 
