@@ -96,7 +96,9 @@ function build(s: Spec): T.Group {
     if (s.floors >= 2 && w * d > 40) { const hx = -w / 2 + 1.6, hz = d / 2 - 1.5; b.box(2.2, 2.3, 2.0, s.wall, hx, H + 1.27, hz, { r: 0, world: 3 }); b.box(2.4, 0.15, 2.2, s.trim, hx, H + 2.45, hz, O); b.box(0.9, 1.8, 0.05, '#4a3a2c', hx, H + 1.02, hz + 1.02, O); }
     b.cyl(0.03, 0.03, 2.4, '#8c969e', w / 2 - 0.6, H + 1.4, d / 2 - 0.6, { seg: 5 });                               // antenna
   } else {
-    const r = Math.hypot(w, d) / 2 + 0.25; b.cone(r, 1.6, '#c8693e', 0, H + 0.9, 0, { seg: 4, ry: Math.PI / 4, sx: (w + 0.6) / (r * 1.414), sz: (d + 0.6) / (r * 1.414) });
+    // kırma çatı: önce 45° döndürülmüş kare piramit, SONRA dikdörtgene ölçek (compose ölçeği dönmeden önce uyguladığı için eskiden eşkenar dörtgen, eğri çatı oluyordu)
+    const r = 1, rh = Math.min(1.6, 0.45 * Math.min(w, d) + 0.3); b.push(mtx(0, H + 0.1 + rh / 2, 0, 0, 0, 0, (w + 0.6) / 1.414, 1, (d + 0.6) / 1.414)); b.cone(r, rh, '#c8693e', 0, 0, 0, { seg: 4, ry: Math.PI / 4 }); b.pop();
+    b.box(w + 0.62, 0.08, d + 0.62, '#9a4a2a', 0, H + 0.1, 0, O);   // saçak altı
   }
   // downpipes on the back corners
   for (const sg of [-1, 1]) b.cyl(0.06, 0.06, H, '#8c969e', sg * (w / 2 - 0.05), H / 2, -d / 2 - 0.09, { seg: 6 });
@@ -188,6 +190,11 @@ function build(s: Spec): T.Group {
   grp.position.set(s.x, 0.12, s.z); grp.rotation.y = YAW[s.front];
   return grp;
 }
+
+/** 2026-11-26: aynı bina üreticisi Martı Konutları apartmanları ve arsada biten ev / dükkân için (view/mahalle, view/mulk): tek tarz, yama yok.
+ *  Pencere ışığı ve tabela parlaklığı bu dosyanın paylaşılan malzemeleriyle gece güncellenir (createKarsiBina.update). */
+export type BinaSpec = Spec;
+export const binaKur = (s: BinaSpec): T.Group => build(s);
 
 /* ---------- the far side ---------- */
 const SPECS: Spec[] = [

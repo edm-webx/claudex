@@ -87,7 +87,7 @@ export function konteyner(b: Batch, x: number, z: number, ry = 0) {
 }
 export function tuvalet(b: Batch, x: number, z: number, ry = 0) { b.at(x, 0, z, ry); b.box(1.1, 2.2, 1.1, BLUE, 0, 1.1, 0); b.box(1.2, 0.1, 1.2, '#e9eef3', 0, 2.25, 0); b.box(0.04, 1.8, 0.8, '#2a5b93', 0.56, 1.0, 0); b.box(0.02, 0.14, 0.14, WHITE, 0.58, 1.9, 0); b.pop(); }
 export function jenerator(b: Batch, x: number, z: number, ry = 0) { b.at(x, 0, z, ry); b.box(1.6, 1.0, 0.9, '#2f8a4a', 0, 0.62, 0); b.box(1.62, 0.1, 0.92, DARK, 0, 1.15, 0); b.box(0.3, 0.5, 0.05, '#1c1f24', -0.4, 0.7, 0.46); for (const s of [-1, 1]) b.cyl(0.13, 0.13, 0.12, '#1f2023', s * 0.6, 0.13, 0.45, { rx: Math.PI / 2, seg: 8 }); b.cyl(0.05, 0.05, 0.4, '#5b6068', 0.6, 1.35, -0.2, { seg: 6 }); b.pop(); }
-export function tabela(b: Batch, x: number, z: number, ry = 0) { b.at(x, 0, z, ry); for (const s of [-1, 1]) b.box(0.08, 2.3, 0.08, '#3a3d42', s * 1.1, 1.15, 0); b.box(2.6, 1.5, 0.06, YEL, 0, 1.9, 0); b.pop(); }
+export function tabela(b: Batch, x: number, z: number, ry = 0, k = 1) { b.at(x, 0, z, ry); for (const s of [-1, 1]) b.box(0.08, 2.3 * k, 0.08, '#3a3d42', s * 1.1 * k, 1.15 * k, 0); b.box(2.6 * k, 1.5 * k, 0.06, YEL, 0, 1.9 * k, 0); b.pop(); }
 
 function wheels(b: Batch, xs: number, zs: number[], r: number, w: number, y = r) {
   for (const z of zs) for (const s of [-1, 1]) { b.cyl(r, r, w, '#1f2023', s * xs, y, z, { rz: Math.PI / 2, seg: 12 }); b.cyl(r * 0.5, r * 0.5, w + 0.02, '#9aa0a8', s * xs, y, z, { rz: Math.PI / 2, seg: 8 }); }
@@ -266,10 +266,10 @@ export interface SantiyeOpts {
   /** proje panosu: başlık ('EV YAPIMI'), alt satır ('Arsa A1 · Sabri İnşaat'); ilerleme çubuğu canlı */ pano?: { baslik: string; alt: string } | null;
 }
 /** sarı proje panosu: başlık, alt satır, aşama adı ve canlı % çubuğu (tam yüzdede yeniden çizilir) */
-function panoKur(c: Ctx, x: number, z: number, ry: number, o: { baslik: string; alt: string }, asamaAd: (p: number) => string) {
+function panoKur(c: Ctx, x: number, z: number, ry: number, o: { baslik: string; alt: string }, asamaAd: (p: number) => string, k = 1) {
   const cv = document.createElement('canvas'); cv.width = 512; cv.height = 300; const g = cv.getContext('2d')!, tex = new T.CanvasTexture(cv); tex.colorSpace = T.SRGBColorSpace;
-  const mat = new T.MeshBasicMaterial({ map: tex }); c.mats.push(mat); const geo = new T.PlaneGeometry(2.5, 1.45); c.geos.push(geo);
-  const m = new T.Mesh(geo, mat); m.position.set(x, 1.9, z + 0.04); m.rotation.y = ry; c.g.add(m);
+  const mat = new T.MeshBasicMaterial({ map: tex }); c.mats.push(mat); const geo = new T.PlaneGeometry(2.5 * k, 1.45 * k); c.geos.push(geo);
+  const m = new T.Mesh(geo, mat); m.position.set(x, 1.9 * k, z + 0.04); m.rotation.y = ry; c.g.add(m);
   let last = -1;
   return (p: number) => {
     const pc = Math.max(0, Math.min(100, Math.floor(p * 100))); if (pc === last) return; last = pc;
@@ -308,7 +308,7 @@ export function santiyeKur(o: SantiyeOpts): Santiye {
   const citOn = o.cit ?? P.cit, m = 3.2;
   if (citOn) { const X0 = -hw - m, X1 = hw + m, Z0 = -hd - m, Z1 = hd + m * 0.9; cit(b, X0, Z0, X1, Z0); cit(b, X0, Z0, X0, Z1); cit(b, X1, Z0, X1, Z1); cit(b, X0, Z1, -1.6, Z1); cit(b, 1.6, Z1, X1, Z1); }
   let pano: ((p: number) => void) | null = null;
-  if (o.pano) { const px = citOn ? hw + m - 2.0 : o.sikisik ? hw - 1.4 : hw + 1.6, pz = citOn ? hd + m * 0.9 + 0.4 : o.sikisik ? hd + 0.2 : hd + 2.4; tabela(b, px, pz, 0); pano = panoKur(c, px, pz, 0, o.pano, p => (kb ? YAPI_ASAMA[yapiAsama(p)].ad : P.ad)); }
+  if (o.pano) { const px = citOn ? hw + m - 2.0 : o.sikisik ? hw - 1.4 : hw + 1.6, pz = citOn ? hd + m * 0.9 + 0.4 : o.sikisik ? hd + 0.2 : hd + 2.4; const pk = o.sikisik ? 0.62 : 1; tabela(b, px + (o.sikisik ? 0.4 : 0), pz, 0, pk); pano = panoKur(c, px + (o.sikisik ? 0.4 : 0), pz, 0, o.pano, p => (kb ? YAPI_ASAMA[yapiAsama(p)].ad : P.ad), pk); }   // dar arsada küçük pano: binayı kapatmasın
   // büyük / dev araçlar
   const Y = o.yer || {}, engel: Santiye['engel'] = [];
   const iz = (x: number, z: number, ry: number, w2: number, d2: number) => { const c2 = Math.abs(Math.cos(ry)), s2 = Math.abs(Math.sin(ry)), ex = (w2 * c2 + d2 * s2) / 2, ez = (w2 * s2 + d2 * c2) / 2; engel.push({ x0: x - ex, x1: x + ex, z0: z - ez, z1: z + ez }); };

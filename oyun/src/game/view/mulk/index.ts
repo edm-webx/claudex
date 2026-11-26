@@ -10,6 +10,7 @@ import { mulkApi } from '../../sim/mulk';
 import { BANKA, ARSALAR, DUKKAN_BY_ID } from '../../../content/esya';
 import { icBina } from '../../../content/ic-mekan';
 import { santiyeKur, type Santiye } from '../world/santiye-kit';
+import { binaKur } from '../world/karsi-bina';
 import { SETLER } from '../../../content/santiye';
 const AVM_ARSA = icBina('avm').map(m => m.arsa || '').sort((x, y) => (ARSALAR.find(a => a.id === x)?.x || 0) - (ARSALAR.find(a => a.id === y)?.x || 0));
 import type { Vec3, ScreenPt } from '../../../engine/api';
@@ -59,7 +60,7 @@ export function createMulkView(d: MulkViewDeps): MulkView {
   for (const a of ARSALAR) {
     const g = new T.Group(); g.position.set(a.x, 0, a.z); g.rotation.y = a.rotY; root.add(g);
     if (a.sabit) { const dyn = new T.Group(); g.add(dyn); plots.set(a.id, { g, dyn, key: '#', label: d.labels.label(), sign: '' }); continue; }
-    box(g, 6.2, 0.1, 4.6, '#cfc4a8', 0, 0.05, 0);
+    box(g, 6.2, 0.1, 4.6, '#7fa456', 0, 0.05, 0);   // 2026-11-26: boş arsa çimenli (eskiden düz bej kutu); yapımda üstüne toprak gelir
     for (const [x, z] of [[-3.1, -2.3], [3.1, -2.3], [-3.1, 2.3], [3.1, 2.3], [0, -2.3], [-3.1, 0], [3.1, 0]]) box(g, 0.14, 0.9, 0.14, '#7d5638', x, 0.5, z);
     for (const z of [-2.3, 2.3]) for (const y of [0.45, 0.75]) box(g, 6.2, 0.07, 0.07, '#9a6a42', 0, y, z);
     for (const x of [-3.1, 3.1]) for (const y of [0.45, 0.75]) box(g, 0.07, 0.07, 4.6, '#9a6a42', x, y, 0);
@@ -75,30 +76,27 @@ export function createMulkView(d: MulkViewDeps): MulkView {
       const ev = v.tur === 'ev', t = ev ? null : DUKKAN_BY_ID[v.tip];
       const s = santiyeKur({ w: 6.0, d: 4.4, sikisik: true, plan: { ...SETLER.orta, cit: false, toz: 10 }, kabuk: ev ? { w: 4.4, d: 3.0, h: 2.7, cati: 'kirma' } : { w: 4.6, d: 3.0, h: 2.9, cati: 'duz', duvar: '#efe6d2' }, iskeleYer: 'yok', cit: false, serit: false,
         pano: { baslik: ev ? 'EV YAPIMI' : (t ? t.ad.toLocaleUpperCase('tr-TR') : 'DÜKKÂN') + ' İNŞAATI', alt: 'Sahibi: Sabri · Martı Konutları' } });
+      box(g, 6.0, 0.03, 4.4, '#8a6c4c', 0, 0.115, 0);   // kazılmış toprak
       s.g.position.set(0, 0.1, 0); g.add(s.g); p.santiye = s; s.update(0, v.insa, 0);
       return;
     }
     if (!v.owned) { cyl(g, 0.05, 1.9, '#7d5638', 2.4, 1.0, 1.7, 6); box(g, 1.4, 0.7, 0.08, '#ffd23f', 2.4, 1.9, 1.7, { emissive: '#4a3d08', emissiveIntensity: 0.3 }); return; }
     if (!v.tur) { box(g, 3.2, 0.5, 2.2, '#b09878', 0, 0.35, 0); box(g, 1.0, 0.5, 0.9, '#c8b08a', 1.4, 0.85, 0.4); return; }
+    // 2026-11-26 sahip "güzellik şart": biten ev / dükkân karşı yakadaki binalarla aynı üreticiden (sıva, çerçeveli pencere, panjur, saksı, gece ışığı).
+    // Ölçüler şantiye kabuğuyla aynı (ev 4.4 x 3.0, dükkân 4.6 x 3.0): ustaların ördüğü duvar, biten binanın kendisi.
+    const bahce = (c: string) => { box(g, 6.0, 0.03, 4.4, c, 0, 0.115, 0); box(g, 1.0, 0.035, 1.3, '#d8cbb0', 0, 0.12, 1.55); };   // bahçe + kapıya taş yol
     if (v.tur === 'ev') {
-      box(g, 4.4, 2.5, 3.2, '#f1e3c4', 0, 1.35, -0.2);
-      const roof = new T.Mesh(G(new T.ConeGeometry(3.6, 1.5, 4)), M('#b8553a')); roof.rotation.y = Math.PI / 4; roof.scale.set(1, 1, 0.78); roof.position.set(0, 3.35, -0.2); roof.castShadow = true; g.add(roof);
-      box(g, 0.5, 1.2, 0.5, '#8a5a40', 1.3, 4.0, -0.6);
-      box(g, 0.9, 1.7, 0.12, '#6b4a2e', -0.9, 0.95, 1.43); box(g, 0.1, 0.1, 0.1, '#e8c860', -0.6, 0.95, 1.5);
-      for (const x of [0.9, 1.7]) { box(g, 0.7, 0.8, 0.1, '#8fb8cc', x, 1.6, 1.42); box(g, 0.85, 0.08, 0.2, '#fbfaf6', x, 1.15, 1.45); }
-      box(g, 1.4, 0.15, 0.7, '#fbfaf6', -0.9, 0.08, 1.9);
+      bahce('#86b65e');
+      const ev = binaKur({ id: 'arsa-ev-' + v.lv, x: 0, z: -0.3, wx: 4.4, wz: 3.0, front: '+z', floors: 1, fh: 2.7, wall: '#f1e3c4', trim: '#fbf6ea', accent: '#b8553a', ground: 'plain', lit: 0.6, roof: 'tile', win: { w: 0.9, h: 1.1, gap: 0.9, frame: '#fbf6ea', shutter: '#6f8f5a', flower: true } });
+      ev.position.y = 0.1; g.add(ev);
+      for (const x of [-2.4, 2.4]) { box(g, 0.6, 0.5, 0.6, '#6d9a4c', x, 0.4, 1.6); box(g, 0.35, 0.3, 0.35, '#e0533c', x, 0.75, 1.6); }   // bahçe çalıları, çiçek
       return;
     }
     const t = DUKKAN_BY_ID[v.tip]; if (!t) return;
-    const h = 2.6 + (v.lv >= 4 ? 0.4 : 0);
-    box(g, 5.2, h, 3.4, '#efe6d2', 0, h / 2 + 0.1, -0.5);
-    box(g, 5.4, 0.2, 3.6, t.renk, 0, h + 0.2, -0.5);
-    box(g, 3.4, 1.5, 0.1, '#2b3a4a', 0, 1.4, 1.2, { transparent: true, opacity: 0.75 });             // show window
-    box(g, 3.6, 0.9, 0.5, '#b07a48', 0, 0.55, 1.45);                                                    // counter
-    awning(g, 5.0, t.renk, '#fbfaf6', 1.7, 2.55 + (v.lv >= 3 ? 0.1 : 0));
-    box(g, 2.6, 0.55, 0.1, t.renk, 0, h - 0.1, 1.28, { emissive: t.renk, emissiveIntensity: 0.15 });  // sign plate
-    box(g, 0.9, 1.9, 0.1, '#6b4a2e', 2.0, 1.0, 1.22);                                                   // door
-    for (let i = 0; i < v.lv - 1; i++) box(g, 0.3, 0.3, 0.3, '#ffd23f', -2.3 + i * 0.5, h + 0.55, -0.5);   // level pips on the roof
+    bahce('#c9c2b2');
+    const dk = binaKur({ id: 'arsa-dk-' + v.tip + '-' + v.lv, x: 0, z: -0.3, wx: 4.6, wz: 3.0, front: '+z', floors: v.lv >= 3 ? 2 : 1, fh: 2.9, wall: '#efe6d2', trim: '#fbfaf6', accent: t.renk, ground: 'shop', lit: 0.7, roof: 'flat',
+      sign: { text: t.ikon + ' ' + t.tabela, bg: t.renk, fg: '#ffffff', w: 3.6 }, win: { w: 0.9, h: 1.2, gap: 0.8, frame: '#fbfaf6', flower: true } });
+    dk.position.y = 0.1; g.add(dk);
   }
 
   // story clue markers: a bobbing paper with a glow ring at every clue that can be read now (sim/gizem.ts)

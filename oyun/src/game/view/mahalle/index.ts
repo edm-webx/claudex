@@ -16,6 +16,7 @@ import * as T from 'three';
 import { Batch } from '../../../engine/prefab/batch';
 import { useSkyEnv, loadGlb, fitClone } from '../world/glb';
 import { santiyeKur, cit, duba, type Santiye } from '../world/santiye-kit';
+import { binaKur, type BinaSpec } from '../world/karsi-bina';
 import { SETLER } from '../../../content/santiye';
 import * as K from '../chars/v2/kit';
 import type { Chars } from '../../../engine/api';
@@ -53,6 +54,32 @@ function atlas(): T.CanvasTexture {
   const tx = new T.CanvasTexture(c); tx.colorSpace = T.SRGBColorSpace; tx.anisotropy = 4; return tx;
 }
 
+/* ---------- binalar: karşı yakayla aynı üretici (sıva dokusu, çerçeveli pencere, panjur, balkon, saksı, gece ışığı) ---------- */
+const WIN_BALKON = (frame: string) => ({ w: 1.15, h: 1.45, gap: 0.95, frame, balcony: true });
+const WIN_PANJUR = (frame: string, shutter: string) => ({ w: 1.05, h: 1.4, gap: 1.0, frame, shutter, flower: true });
+const BINALAR: BinaSpec[] = [
+  // güney arka sıra apartmanlar (ön cephe yola, kameraya bakar)
+  { id: 'mk-a0', x: 239.6, z: -12, wx: 7, wz: 9, front: '+z', floors: 4, fh: 2.9, wall: '#e9d7b9', trim: '#fbf5e8', accent: '#b8553a', ground: 'entrance', lit: 0.5, roof: 'flat', win: WIN_PANJUR('#fbf5e8', '#6f8f5a') },
+  { id: 'mk-a1', x: 247.8, z: -12, wx: 8.4, wz: 9, front: '+z', floors: 5, fh: 3.3, wall: '#f1e4c8', trim: '#ffffff', accent: '#e0533c', ground: 'shop', lit: 0.55, roof: 'flat',
+    sign: { text: 'MARTI MARKET', bg: '#e0533c', fg: '#ffffff', w: 4.2 }, win: WIN_PANJUR('#ffffff', '#c0392b') },
+  { id: 'mk-a2', x: 257.2, z: -11.6, wx: 8.8, wz: 8, front: '+z', floors: 6, fh: 2.9, wall: '#d8c3a0', trim: '#f4ece0', accent: '#8a5a40', ground: 'entrance', lit: 0.45, roof: 'flat', win: WIN_BALKON('#f4ece0') },
+  { id: 'mk-a3', x: 267, z: -12, wx: 9, wz: 9, front: '+z', floors: 4, fh: 3.3, wall: '#cfdcc6', trim: '#fbfaf6', accent: '#2f8a4a', ground: 'shop', lit: 0.5, roof: 'flat',
+    sign: { text: 'KUAFÖR SEVGİ', bg: '#c94f8a', fg: '#ffffff', w: 4.2 }, win: WIN_PANJUR('#fbfaf6', '#3f7d5a') },
+  { id: 'mk-a4', x: 276.6, z: -11.8, wx: 8.6, wz: 8.6, front: '+z', floors: 5, fh: 2.9, wall: '#ecc9b6', trim: '#fbf3ec', accent: '#b8553a', ground: 'entrance', lit: 0.5, roof: 'flat', win: WIN_BALKON('#fbf3ec') },
+  { id: 'mk-a5', x: 286, z: -12, wx: 9, wz: 9, front: '+z', floors: 6, fh: 3.3, wall: '#d9d6e4', trim: '#ffffff', accent: '#3f5f8a', ground: 'shop', lit: 0.55, roof: 'flat',
+    sign: { text: 'LOKANTA ANADOLU', bg: '#7a2e1c', fg: '#ffe7b0', w: 4.6 }, win: WIN_PANJUR('#ffffff', '#7a2e1c') },
+  { id: 'mk-a6', x: 295, z: -12, wx: 7, wz: 9, front: '+z', floors: 4, fh: 2.9, wall: '#e9d7b9', trim: '#fbf5e8', accent: '#b8553a', ground: 'entrance', lit: 0.5, roof: 'tile', win: WIN_PANJUR('#fbf5e8', '#8a5a40') },
+  // köşe blokları (köprü başları): cephe mahalleye
+  { id: 'mk-kb0', x: X0 - 4.6, z: -0.5, wx: 8, wz: 12.6, front: '+x', floors: 3, fh: 3.3, wall: '#e3d3b4', trim: '#fbf5e8', accent: '#2f6fdb', ground: 'shop', lit: 0.5, roof: 'flat',
+    sign: { text: 'ÇAY OCAĞI', bg: '#2f5f3a', fg: '#ffe9b0', w: 4.2 }, win: WIN_PANJUR('#fbf5e8', '#3f6f9a') },
+  { id: 'mk-kb1', x: X0 - 4.6, z: 19.2, wx: 8, wz: 10.6, front: '+x', floors: 3, fh: 3.0, wall: '#d6cbb2', trim: '#f4ece0', accent: '#b8553a', ground: 'entrance', lit: 0.45, roof: 'flat', win: WIN_BALKON('#f4ece0') },
+  { id: 'mk-kb2', x: X1 + 4.6, z: -0.5, wx: 8, wz: 12.6, front: '-x', floors: 3, fh: 3.3, wall: '#ead9c4', trim: '#ffffff', accent: '#e8892b', ground: 'shop', lit: 0.5, roof: 'flat',
+    sign: { text: 'TEKEL BÜFE', bg: '#1f3a5f', fg: '#ffd23f', w: 4.2 }, win: WIN_PANJUR('#ffffff', '#1f3a5f') },
+  { id: 'mk-kb3', x: X1 + 4.6, z: 19.2, wx: 8, wz: 10.6, front: '-x', floors: 3, fh: 3.0, wall: '#d8d0c0', trim: '#fbfaf6', accent: '#6f8f5a', ground: 'entrance', lit: 0.45, roof: 'flat', win: WIN_PANJUR('#fbfaf6', '#6f8f5a') },
+  // kuzey arka sıra: tek katlı kiremit çatılı evler (kameranın arkası, alçak kalır)
+  ...[240, 247.5, 255, 262.5, 270, 277.5, 285, 292.5].map((x, i): BinaSpec => ({ id: 'mk-ev' + i, x, z: 27.6, wx: 6.6, wz: 5, front: '-z', floors: 1, fh: 2.6, wall: ['#efe1c4', '#e6d3b0', '#f2ece2', '#e8dcc0'][i % 4], trim: '#fbf6ea', accent: '#b8553a', ground: 'plain', lit: 0.4, roof: 'tile', win: WIN_PANJUR('#fbf6ea', ['#6f8f5a', '#3f6f9a', '#8a5a40'][i % 3]) })),
+];
+
 /* ---------- statik dünya ---------- */
 function build(b: Batch, sign: (i: number, x: number, y: number, z: number, w: number, h: number, ry?: number) => void, solid: Rect[]) {
   const sol = (x0: number, x1: number, z0: number, z1: number) => solid.push({ x0, x1, z0, z1 });
@@ -61,6 +88,11 @@ function build(b: Batch, sign: (i: number, x: number, y: number, z: number, w: n
   b.box(X1 - X0 + 40, 0.04, YZ1 - YZ0, ASF, 268, 0.02, (YZ0 + YZ1) / 2);
   for (let x = X0 - 20; x < X1 + 20; x += 4) b.box(2.0, 0.012, 0.14, '#f1efe9', x + 1, 0.045, (YZ0 + YZ1) / 2);   // şerit çizgisi
   for (let i = 0; i < 7; i++) b.box(0.5, 0.012, YZ1 - YZ0 - 0.4, '#f1efe9', 252.2 + i * 0.9, 0.046, (YZ0 + YZ1) / 2);   // yaya geçidi (durak önü)
+  // asfaltın yaşanmışlığı: rögar kapakları, yama izleri, bordür dibinde ızgaralar, kenar çizgisi
+  for (const x of [249.5, 261.5, 273.5, 287.5]) { b.cyl(0.34, 0.34, 0.014, '#33363b', x, 0.047, 9.5 + (x % 2 ? 0.6 : -0.6), { seg: 16 }); b.cyl(0.26, 0.26, 0.016, '#2a2c30', x, 0.048, 9.5 + (x % 2 ? 0.6 : -0.6), { seg: 16 }); }
+  for (const [x, z, w, d] of [[258.0, 8.3, 2.6, 1.0], [268.8, 10.6, 1.8, 0.8], [283.4, 8.6, 3.2, 1.2], [246.6, 10.4, 1.5, 0.9]] as const) b.box(w, 0.008, d, '#3e4146', x, 0.041, z);
+  for (let x = X0 + 3; x < X1; x += 9) { b.box(0.7, 0.01, 0.26, '#25272b', x, 0.046, YZ0 + 0.22); b.box(0.7, 0.01, 0.26, '#25272b', x + 4.5, 0.046, YZ1 - 0.22); }
+  b.box(X1 - X0 + 40, 0.01, 0.1, '#e8e2d4', 268, 0.044, YZ0 + 0.45); b.box(X1 - X0 + 40, 0.01, 0.1, '#e8e2d4', 268, 0.044, YZ1 - 0.45);
   for (let i = 0; i < 7; i++) b.box(0.5, 0.012, YZ1 - YZ0 - 0.4, '#f1efe9', 279.2 + i * 0.9, 0.046, (YZ0 + YZ1) / 2);
   b.box(X1 - X0 + 40, 0.14, KS - (-6.4), KALD, 268, 0.07, (KS + -6.4) / 2, { world: 1.2 } as never);      // güney kaldırım + ön bahçe zemini
   b.box(X1 - X0 + 40, 0.14, 24.4 - KN, KALD, 268, 0.07, (KN + 24.4) / 2, { world: 1.2 } as never);       // kuzey
@@ -100,37 +132,16 @@ function build(b: Batch, sign: (i: number, x: number, y: number, z: number, w: n
   // ── güney arka: arsaların arkası çit + bahçe, sonra apartman sırası (z < -6.4) ──
   for (let x = 256.2; x < 283.4; x += 0.5) b.box(0.4, 1.1, 0.35, '#5f8f46', x, 0.7, -6.0);   // çit (ligustrum)
   sol(256.0, 283.4, -6.25, -5.75);
-  const apt = (x: number, z: number, w: number, d: number, kat: number, renk: string, ry = 0, dukkan = -1) => {
-    const H = kat * 2.9 + 0.6;
-    b.at(x, 0, z, ry);
-    b.box(w, H, d, renk, 0, H / 2, 0, { world: 2 } as never);
-    b.box(w + 0.3, 0.25, d + 0.3, '#8f8a82', 0, H + 0.1, 0);                                  // saçak
-    for (let k = 0; k < kat; k++) {
-      const y = 0.6 + k * 2.9;
-      if (k === 0 && dukkan >= 0) continue;
-      const nw = Math.max(2, Math.floor(w / 2.2));
-      for (let i = 0; i < nw; i++) { const u = -w / 2 + (i + 0.5) * w / nw; b.box(1.1, 1.3, 0.06, '#2b3f52', u, y + 1.35, d / 2 + 0.01); b.box(1.3, 0.1, 0.18, '#ece7dc', u, y + 0.68, d / 2 + 0.06); }
-      if (k > 0) for (const u of [-w / 4, w / 4]) { b.box(w / 2 - 0.6, 0.12, 0.9, '#ece7dc', u, y + 0.05, d / 2 + 0.45); b.box(w / 2 - 0.6, 0.7, 0.04, '#5b6068', u, y + 0.45, d / 2 + 0.88); }   // balkonlar
-    }
-    // çatı: su deposu, uydu çanağı, baca
-    b.cyl(0.5, 0.5, 1.1, '#dfe3e6', -w / 4, H + 0.8, -d / 4, { seg: 10 }); b.cyl(0.32, 0.05, 0.12, '#c9ced6', w / 4, H + 0.6, d / 4, { seg: 10, rx: -0.6 } as never); b.box(0.5, 1.0, 0.5, '#8a5a40', w / 3, H + 0.6, -d / 3);
-    // giriş kapısı
-    b.box(1.3, 2.2, 0.08, '#5a3b2a', dukkan >= 0 ? w / 2 - 1.0 : 0, 1.2, d / 2 + 0.02); b.box(1.6, 0.12, 0.9, '#ece7dc', dukkan >= 0 ? w / 2 - 1.0 : 0, 2.4, d / 2 + 0.45);
-    b.pop();
-    return H;
-  };
-  // arka plan apartmanları (yürünmez, mahallenin dışında)
-  [[248, -12, 8, 9, 5, '#e8d6b8'], [257.4, -11.6, 8.6, 8, 6, '#d9c7a6'], [267, -12, 9, 9, 4, '#cfd8c4'], [276.6, -11.8, 8.4, 8.6, 5, '#e6c8b8'], [286, -12, 9, 9, 6, '#d6d3e0'], [295, -12, 7, 9, 4, '#e8d6b8'], [240, -12, 7, 9, 4, '#d9c7a6']]
-    .forEach(([x, z, w, d, k, c]) => apt(x as number, z as number, w as number, d as number, k as number, c as string));
-  // kuzey arka plan (kameranın arkası, alçak: görüşü kapatmasın)
-  for (let x = 240; x < 298; x += 7.5) { b.box(7.0, 2.2, 5, ['#e0cfb0', '#d3c4a8', '#e6d8c0'][Math.round(x) % 3], x, 1.1, 27.6); b.box(7.2, 0.2, 5.2, '#a0552f', x, 2.3, 27.6); }
+  // apartmanlar, köşe blokları ve arka sıra evler: BINALAR (karsi-bina üreticisi, createMahalle'de kurulur)
 
   // ── uçlar: köprü (yol altından çıkar) ve kapatan bloklar ──
   for (const s of [-1, 1]) {
     const ex = s < 0 ? X0 - 0.6 : X1 + 0.6, bx = s < 0 ? X0 - 4.6 : X1 + 4.6;
-    b.box(8, 9, 12.6, '#d4c6aa', bx, 4.5, -0.5); b.box(8, 9, 10.6, '#cbbfa5', bx, 4.5, 19.2);                    // köşe blokları
     b.box(8, 1.3, YZ1 - YZ0 + 4.6, '#8f8a82', bx, 5.6, (YZ0 + YZ1) / 2); b.box(8, 0.5, YZ1 - YZ0 + 4.8, '#6b6862', bx, 6.5, (YZ0 + YZ1) / 2);   // köprü tabliyesi
-    b.box(8, 4.95, YZ1 - YZ0 + 4.0, '#1d1f22', bx + s * 0.9, 2.47, (YZ0 + YZ1) / 2);                           // köprü altı karanlığı
+    b.box(8, 4.95, YZ1 - YZ0 + 4.0, '#9d978a', bx + s * 1.6, 2.47, (YZ0 + YZ1) / 2, { world: 2 } as never);    // köprü ayağı: beton istinat bloğu
+    b.box(0.08, 4.3, YZ1 - YZ0 + 0.4, '#16181b', bx + s * 1.6 - s * 4.02, 2.15, (YZ0 + YZ1) / 2);                    // yolun girdiği tünel ağzı (yalnız yol genişliğinde karanlık)
+    for (const z of [YZ0 - 0.25, YZ1 + 0.25]) b.box(0.3, 4.4, 0.3, '#b9b3a6', bx + s * 1.6 - s * 4.0, 2.2, z);   // ağız pervazı
+    b.box(0.6, 0.5, YZ1 - YZ0 + 4.6, '#a39c8e', ex + s * 0.3, 5.1, (YZ0 + YZ1) / 2);   // köprü kirişi alın yüzü
     for (const z of [YZ0 - 1.9, YZ1 + 1.9]) b.box(0.8, 5.0, 0.8, '#b9b09a', ex + s * 0.4, 2.5, z);
     sol(Math.min(ex, bx - 4), Math.max(ex, bx + 4), -7, YZ0 - 1.2); sol(Math.min(ex, bx - 4), Math.max(ex, bx + 4), YZ1 + 1.2, 25);
   }
@@ -199,6 +210,7 @@ export function createMahalle(d: MahalleDeps): MahalleView {
     };
     build(b, sign, solid); altyapi(b, sign, solid);
     for (const bb of [b, sb]) { const m = bb.mesh(solidMat(), true, true); geos.push(m.geometry); root.add(m); }
+    for (const sp of BINALAR) { const g = binaKur(sp); g.traverse(o => { const m = o as T.Mesh; if (m.isMesh) geos.push(m.geometry); }); root.add(g); }
     // salıncak koltukları (hareketli)
     for (const z of [-3.9, -2.9]) { const g = new T.Group(); g.position.set(247.1, 2.2, z); const sbb = new Batch(); sbb.box(0.02, 1.6, 0.02, '#9aa0a8', -0.25, -0.8, 0); sbb.box(0.02, 1.6, 0.02, '#9aa0a8', 0.25, -0.8, 0); sbb.box(0.6, 0.05, 0.3, '#ffd23f', 0, -1.62, 0); const m = sbb.mesh(solidMat()); geos.push(m.geometry); g.add(m); root.add(g); swings.push(g); }
     // inşaat halindeki apartman (kuzey, x 267.4..280): alt iki kat karkası bitmiş, üçüncü kat örülüyor; mobil vinç ve kamyon sokakta değil sahada
