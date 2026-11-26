@@ -1,0 +1,203 @@
+<title>Sade HUD ve Emlak Ajansı</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@600;700;800;900&display=swap">
+<style>
+/* Layout: tek sütun okuma akışı, görseller tam genişlik, karar kartları ızgara */
+:root{--bg:#f3efe6;--paper:#fffdf8;--fg:#24202a;--mut:#6c6472;--line:#ddd3c4;--gold:#e0a21f;--navy:#1d2340;--ok:#2f9a5a;--bad:#c9473a;
+--disp:"Baloo 2","Nunito",system-ui,sans-serif;--body:"Nunito",system-ui,sans-serif}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15172a;--paper:#1e2138;--fg:#efeae0;--mut:#a6a2b4;--line:#33375a;--gold:#f2b632;--navy:#0d1022;--ok:#55c483;--bad:#ee6c5c;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#15172a;--paper:#1e2138;--fg:#efeae0;--mut:#a6a2b4;--line:#33375a;--gold:#f2b632;--navy:#0d1022;--ok:#55c483;--bad:#ee6c5c;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:600 16px/1.55 var(--body)}
+.w{max-width:1020px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 60px;display:grid;gap:44px}
+h1{font:800 clamp(30px,5vw,46px)/1.05 var(--disp);margin:0;text-wrap:balance}
+h2{font:800 28px/1.1 var(--disp);margin:0 0 10px;text-wrap:balance}
+h3{font:800 20px/1.15 var(--disp);margin:0}
+p{margin:0;max-width:68ch}.mut{color:var(--mut)}
+.eyebrow{font:900 12px var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--gold)}
+section{display:grid;gap:14px}
+figure{margin:0;display:grid;gap:6px}figure img{width:100%;border-radius:14px;border:1px solid var(--line);display:block}
+figcaption{font:700 14px var(--body);color:var(--mut)}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--paper)}
+table{border-collapse:collapse;width:100%;min-width:620px}th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:900 12px var(--body);letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}tr:last-child td{border-bottom:0}
+td b{font-weight:900}
+.tag{display:inline-block;font:900 11px var(--body);letter-spacing:.06em;padding:2px 9px;border-radius:999px;border:1.5px solid currentColor;white-space:nowrap}
+.k{color:var(--ok)}.x{color:var(--bad)}.m{color:var(--gold)}
+.opts{display:grid;gap:26px}
+.opt{display:grid;gap:10px;background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:16px}
+.opt.rec{border:2px solid var(--gold)}
+.opt header{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px}
+.pc{display:grid;grid-template-columns:1fr 1fr;gap:14px}.pc ul{margin:4px 0 0;padding-left:18px}.pc li{margin:2px 0}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.map{position:relative;border-radius:14px;overflow:hidden;border:1px solid var(--line)}
+.map img{display:block;width:100%;filter:brightness(1.55) saturate(1.1)}
+.pin{position:absolute;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center;font:900 12px var(--body);color:#fff;white-space:nowrap}
+.pin span{background:var(--navy);padding:3px 9px;border-radius:8px;border:2px solid #fff}
+.pin i{width:3px;height:14px;background:#fff}
+.pin.g span{background:#c48a10}.pin.b span{background:#2a6fb8}.pin.a span{background:#3c8f5c}
+.zone{position:absolute;border:3px dashed #ffd23f;background:rgba(255,210,63,.18);border-radius:8px}
+.facade{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:10px}
+.facade svg{width:100%;height:auto;display:block}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.step{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:12px;display:grid;gap:4px;align-content:start}
+.step b{font:800 17px var(--disp)}.step small{color:var(--mut);font-weight:700}
+.ask{background:var(--navy);color:#f4f1ea;border-radius:18px;padding:20px;display:grid;gap:8px}
+.ask ol{margin:0;padding-left:20px}.ask li{margin:4px 0}
+@media (max-width:700px){.pc,.pair{grid-template-columns:1fr}.steps{grid-template-columns:1fr 1fr}}
+</style>
+
+<div class="w">
+<header style="display:grid;gap:10px">
+  <span class="eyebrow">Sabri'nin Büfesi · arayüz konsepti · 26 Kasım</span>
+  <h1>Alt bar sadeleşiyor, mülk işleri emlakçıya taşınıyor</h1>
+  <p class="mut">Şu an alt barda 8 ile 10 arası düğme var, Mülk penceresinde de 8 sekme daha. Aşağıda her şeyin nereye taşınacağı, 3 farklı ekran yönü, emlak ajansı ve arsa şantiyesi var. Kod henüz değişmedi: senin seçimini bekliyor.</p>
+</header>
+
+<section>
+  <span class="eyebrow">Bugünkü hâl</span>
+  <figure><img src="img/01-hud.jpg" alt="Oyunun şu anki ekranı: altta 8 düğmeli bar, solda hedefler kartı"><figcaption>Seviye 12'de alt bar: Harita, Karakter, Envanter, Mülk, Menü, Ekip, Karne, Tadilat. Kedi varken Kediler, 2. günden sonra Görevler de ekleniyor.</figcaption></figure>
+</section>
+
+<section>
+  <h2>Ne nereye gidiyor</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Şu anki yer</th><th>Karar</th><th>Yeni yeri</th></tr></thead>
+    <tbody>
+      <tr><td><b>Harita</b></td><td><span class="tag k">KALIR</span></td><td>Her yönde ekranda kalıyor (düğme ya da köşede mini harita)</td></tr>
+      <tr><td><b>Envanter</b></td><td><span class="tag k">KALIR</span></td><td>"Çanta" adıyla. İçinde sadece eşya ve sandıklar kalıyor</td></tr>
+      <tr><td><b>Görevler + Günlük + Karne</b></td><td><span class="tag m">BİRLEŞİR</span></td><td>Tek "Ajanda": bugünün işleri, hedefler, karne notları</td></tr>
+      <tr><td><b>Menü, Ekip, Tadilat</b></td><td><span class="tag m">BAĞLAMA GEÇER</span></td><td>Kendi dükkânının yanındayken çıkan tek "Büfem / Dükkânım" düğmesi. O dükkânın menüsü, ekibi, tadilatı açılır</td></tr>
+      <tr><td><b>Mülk</b></td><td><span class="tag x">BARDAN ÇIKAR</span></td><td>Arsa almak, ev/dükkân yaptırmak, tadilat: <b>sadece Martı Emlak ofisinde</b>. Telefonda/menüde sadece okunur "Mülklerim" listesi</td></tr>
+      <tr><td><b>Banka sekmesi</b></td><td><span class="tag x">KALKAR</span></td><td>Martı Kasası Bankası gişesi (binası zaten var) + iskele, meydan ve AVM'ye ATM. Para yatır/çek ATM'de, kredi sadece gişede</td></tr>
+      <tr><td><b>Kediler</b></td><td><span class="tag x">KALKAR</span></td><td>Liste tamamen gidiyor. Kediler dünyada gezmeye devam (iç içe gezme hatası ayrı işte düzeltiliyor)</td></tr>
+      <tr><td><b>Karakter</b></td><td><span class="tag m">TAŞINIR</span></td><td>Menünün içine + evdeki aynaya</td></tr>
+      <tr><td><b>Defter, Salon, Okul, AVM sekmeleri</b></td><td><span class="tag x">SEKMEDEN ÇIKAR</span></td><td>Zaten yerinde beliren düğmeyle açılıyorlar (okulda ders, AVM'de alışveriş)</td></tr>
+    </tbody></table></div>
+</section>
+
+<section>
+  <h2>Günlük işler: çıt foto yerine esnaflık</h2>
+  <p>Şu anki günlük listede "fotoğraf noktasında çıt çek", "gizli kedi bul", "42B ile yolculuk yap", "kayıp eşya ulaştır" var. Bunlar oyunun işiyle ilgisiz, kalkıyor. Yerine bir esnafın gerçekten yapacağı işler geliyor:</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Yeni günlük iş</th><th>Neden mantıklı</th></tr></thead>
+    <tbody>
+      <tr><td>Sabah 10'a kadar 15 çay sat</td><td>Sabah kalabalığı, büfenin asıl işi</td></tr>
+      <tr><td>Öğle yoğunluğunda kuyruğu 5 kişinin altında tut</td><td>Hizmet hızı, işçi yerleşimi</td></tr>
+      <tr><td>Bir işçine eğitim aldır</td><td>Ekip büyütme</td></tr>
+      <tr><td>Dükkânlarından kasa topla</td><td>Holding yönetimi (mevcut "mulkKasa")</td></tr>
+      <tr><td>Maç günü stadyumda 20 ürün sat</td><td>Mevcut maç sistemine bağlı</td></tr>
+      <tr><td>Hijyen puanını gün sonuna kadar 90 üstü tut</td><td>Mevcut hijyen sistemine bağlı</td></tr>
+      <tr><td>Belgrad Ormanı'ndan mantar topla</td><td>Kalıyor: mantar menüde kullanılıyor</td></tr>
+    </tbody></table></div>
+</section>
+
+<section>
+  <h2>3 ekran yönü</h2>
+  <p class="mut">Üçünde de sol üst (seviye, para, saat) ve sıradaki hedef aynı kalıyor. Fark, düğmelerin nerede durduğu.</p>
+  <div class="opts">
+    <article class="opt">
+      <header><h3>A · Sade şerit</h3><span class="tag m">EN AZ DEĞİŞİKLİK</span></header>
+      <figure><img src="img/out-A.jpg" alt="A yönü: altta 4 düğmeli kısa bar, üstünde Büfem bağlam şeridi"></figure>
+      <div class="pc"><div><b class="k">Artısı</b><ul><li>Oyuncu barı zaten tanıyor, sadece kısalıyor</li><li>Kodlaması en hızlı</li></ul></div><div><b class="x">Eksisi</b><ul><li>Hâlâ ekranın altında bir bar var</li><li>"Gerçek hayat" hissi en zayıf</li></ul></div></div>
+    </article>
+    <article class="opt rec">
+      <header><h3>B · Esnaf telefonu</h3><span class="tag k">ÖNERİM</span></header>
+      <div class="pair">
+        <figure><img src="img/out-B1.jpg" alt="B yönü kapalı: sağ altta Telefon ve Çanta, sağ üstte mini harita"><figcaption>Kapalıyken: sağ üstte mini harita, sağ altta Çanta ve Telefon</figcaption></figure>
+        <figure><img src="img/out-B2.jpg" alt="B yönü açık: telefon ekranında uygulamalar"><figcaption>Telefon açık: Harita, Ajanda, Mülklerim, Martı Kasa, Arkadaşlar, Karne, Karakter, Ayarlar, Müzik</figcaption></figure>
+      </div>
+      <div class="pc"><div><b class="k">Artısı</b><ul><li>Gerçek hayat simülasyonuna en uygun: insan her şeye telefondan bakar</li><li>Yeni özellik eklenince ekrana düğme değil telefona uygulama eklenir, ekran hep temiz kalır</li><li>Martı Kasa uygulaması sadece bakiye gösterir, para işi yine ATM/gişede</li></ul></div><div><b class="x">Eksisi</b><ul><li>Ajanda ve Harita bir dokunuş daha uzak (mini harita ve Ajanda bildirimi bunu kapatıyor)</li><li>En çok iş isteyen yön</li></ul></div></div>
+    </article>
+    <article class="opt">
+      <header><h3>C · Köşe HUD</h3><span class="tag m">BAR YOK</span></header>
+      <figure><img src="img/out-C.jpg" alt="C yönü: sol altta yuvarlak mini harita, sağ altta büyük Büfem düğmesi"></figure>
+      <div class="pc"><div><b class="k">Artısı</b><ul><li>Aksiyon oyunlarındaki gibi, ekranın ortası tamamen boş</li><li>Büyük bağlam düğmesi her yerde değişir: Büfem, Gişe, Emlakçı</li></ul></div><div><b class="x">Eksisi</b><ul><li>Mini harita sol alttaki yürüme joystick'iyle telefonda çakışır</li><li>Menüdeki şeyler gözden kaybolabilir</li></ul></div></div>
+    </article>
+  </div>
+</section>
+
+<section>
+  <h2>Arsa sorunu: arsalar haritanın dışında</h2>
+  <p>"Arsayı alıyorum, arsa nerede?" sorusunun cevabı çıktı. A1–A5 arsaları eski açık dünyadan kalma bir koordinatta (x 260) duruyor. Orası artık boş bir karanlık. Oyuncu hiçbir zaman göremiyor. Üstüne ev yaptırınca da ev anında beliriyor, ne usta var ne inşaat.</p>
+  <figure><img src="img/yer-arsa.jpg" alt="Haritanın dışında boşlukta duran dört arsa çiti"><figcaption>Oyunun kendi kamerasıyla A1–A4 arsaları: etrafta hiçbir şey yok.</figcaption></figure>
+</section>
+
+<section>
+  <h2>Martı Emlak ve yeni arsalar</h2>
+  <p>Karşı yakada okulun ve hastanenin doğusunda kullanılmayan büyük bir çimen alan var. Öneri: arsalar buraya taşınıyor ("Martı Evleri"), emlak ofisi de tam bu alanın girişine konuyor. Böylece emlakçıdan çıkınca aldığın arsayı karşında görüyorsun.</p>
+  <div class="map">
+    <img src="img/genel.jpg" alt="Karşı yaka kuşbakışı, önerilen yerler işaretli">
+    <div class="zone" style="left:88%;top:30%;width:9%;height:36%"></div>
+    <div class="pin g" style="left:92.5%;top:30%"><span>Martı Emlak (öneri)</span><i></i></div>
+    <div class="pin a" style="left:92.5%;top:62%"><span>Yeni arsalar</span><i></i></div>
+    <div class="pin b" style="left:54.5%;top:35%"><span>Banka (var)</span><i></i></div>
+    <div class="pin" style="left:44%;top:46%"><span>ATM · meydan</span><i></i></div>
+    <div class="pin" style="left:61%;top:56%"><span>ATM · AVM</span><i></i></div>
+    <div class="pin" style="left:50%;top:6%"><span>ATM · iskele</span><i></i></div>
+  </div>
+  <p class="mut">Alternatif yer: meydanın güneyi, bankanın çaprazı. Şehir merkezinde durur ama arsalardan uzak kalır.</p>
+
+  <div class="facade">
+  <svg viewBox="0 0 900 420" role="img" aria-label="Martı Emlak ofisi ön cephe çizimi">
+    <rect x="0" y="380" width="900" height="40" fill="#c9b48e"/>
+    <rect x="150" y="70" width="600" height="312" fill="#f4ede0" stroke="#3b2a20" stroke-width="4"/>
+    <rect x="140" y="52" width="620" height="24" fill="#2a4f7a" stroke="#3b2a20" stroke-width="4"/>
+    <rect x="210" y="92" width="480" height="56" rx="8" fill="#1d2340" stroke="#e0a21f" stroke-width="4"/>
+    <text x="450" y="132" text-anchor="middle" font-family="Baloo 2, Nunito, sans-serif" font-weight="800" font-size="38" fill="#ffd23f">MARTI EMLAK</text>
+    <g fill="#2a6fb8"><path d="M150 168h600l-20 42H170z"/></g>
+    <g fill="#fff"><path d="M210 168h40l-6 42h-40zM330 168h40l-4 42h-40zM450 168h40l-2 42h-40zM570 168h40l0 42h-40zM690 168h40l2 42h-40z"/></g>
+    <rect x="180" y="222" width="230" height="140" fill="#9cc3d6" stroke="#3b2a20" stroke-width="4"/>
+    <rect x="490" y="222" width="230" height="140" fill="#9cc3d6" stroke="#3b2a20" stroke-width="4"/>
+    <g stroke="#3b2a20" stroke-width="2">
+      <rect x="196" y="236" width="56" height="44" fill="#fff"/><rect x="262" y="236" width="56" height="44" fill="#fff"/><rect x="328" y="236" width="56" height="44" fill="#fff"/>
+      <rect x="196" y="292" width="56" height="44" fill="#fff"/><rect x="262" y="292" width="56" height="44" fill="#ffd23f"/><rect x="328" y="292" width="56" height="44" fill="#fff"/>
+      <rect x="506" y="236" width="56" height="44" fill="#fff"/><rect x="572" y="236" width="56" height="44" fill="#ffd23f"/><rect x="638" y="236" width="56" height="44" fill="#fff"/>
+      <rect x="506" y="292" width="56" height="44" fill="#fff"/><rect x="572" y="292" width="56" height="44" fill="#fff"/><rect x="638" y="292" width="56" height="44" fill="#fff"/>
+    </g>
+    <g fill="#c9473a" font-family="Nunito, sans-serif" font-weight="900" font-size="9" text-anchor="middle">
+      <text x="224" y="252">SATILIK</text><text x="290" y="252">KİRALIK</text><text x="356" y="252">SATILIK</text><text x="224" y="308">ARSA</text><text x="290" y="308">FIRSAT</text><text x="356" y="308">SATILIK</text>
+      <text x="534" y="252">ARSA</text><text x="600" y="252">FIRSAT</text><text x="666" y="252">SATILIK</text><text x="534" y="308">KİRALIK</text><text x="600" y="308">ARSA</text><text x="666" y="308">SATILIK</text>
+    </g>
+    <rect x="420" y="232" width="60" height="150" fill="#5a4030" stroke="#3b2a20" stroke-width="4"/><circle cx="468" cy="310" r="4" fill="#e0a21f"/>
+    <g transform="translate(790,250)"><rect x="-4" y="0" width="8" height="132" fill="#7d5638"/><rect x="-46" y="10" width="92" height="56" fill="#fff" stroke="#c9473a" stroke-width="5"/><text x="0" y="38" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="900" font-size="15" fill="#c9473a">SATILIK</text><text x="0" y="56" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="800" font-size="10" fill="#3b2a20">MARTI EMLAK</text></g>
+    <g transform="translate(95,300)"><rect x="-20" y="0" width="40" height="82" rx="18" fill="#3c8f5c"/><rect x="-3" y="60" width="6" height="22" fill="#6b4a2e"/></g>
+  </svg>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>Ofiste ne yapılır</th><th>Nasıl</th></tr></thead>
+    <tbody>
+      <tr><td><b>Arsa almak</b></td><td>Emlakçı (gerçek yürüyen NPC, masasında oturur) vitrin ilanlarını gösterir. Fiyat, büyüklük, hangi aşamada açılacağı yazar</td></tr>
+      <tr><td><b>Proje seçmek</b></td><td>Aldığın arsaya ev, dükkân ya da büyük dükkân projesi. Para ödenir, şantiye kurulur</td></tr>
+      <tr><td><b>Tadilat / büyütme</b></td><td>Arsadaki yapıyı büyütmek de buradan, yine şantiyeyle</td></tr>
+      <tr><td><b>Karşı yaka ve AVM dükkânları</b></td><td>Bunlar zaten kapısındaki sarı kareden alınıyor, orası aynı kalıyor. Emlakçı sadece "şu dükkân satılık" diye bilgi verir</td></tr>
+    </tbody></table></div>
+</section>
+
+<section>
+  <h2>Şantiye: hiçbir yapı bir anda çıkmıyor</h2>
+  <p>Arsaya proje başlayınca gerçek bir şantiye kuruluyor. Ustalar dükkân tadilatındaki gibi gerçek yürüyen karakterler, makineler de çalışıyor (kepçe kazıyor, mikser dönüyor, vinç yük taşıyor). Ekip projenin büyüklüğüne göre değişiyor.</p>
+  <div class="steps">
+    <div class="step"><span class="eyebrow">1 · Temel</span><b>Kazı</b><small>Kepçe, çit, kum yığını</small></div>
+    <div class="step"><span class="eyebrow">2 · Kaba inşaat</span><b>Duvar ve kolon</b><small>Beton mikseri, iskele, yükselen duvarlar</small></div>
+    <div class="step"><span class="eyebrow">3 · İnce iş</span><b>Çatı, sıva, boya</b><small>İskelede boyacılar, çatı ustası</small></div>
+    <div class="step"><span class="eyebrow">4 · Teslim</span><b>Anahtar</b><small>İskele söner, kurdele, ilk giriş</small></div>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>Proje</th><th>Usta</th><th>Makine</th><th>Süre (oyun içi)</th></tr></thead>
+    <tbody>
+      <tr><td><b>Küçük ev</b></td><td>2</td><td>Kamyonet, el arabası</td><td>yaklaşık 1 gün</td></tr>
+      <tr><td><b>Dükkân</b></td><td>4</td><td>Kepçe, beton mikseri</td><td>yaklaşık 2 gün</td></tr>
+      <tr><td><b>Büyük dükkân / tadilat 4+</b></td><td>6</td><td>Kule vinç, mikser, kamyon</td><td>yaklaşık 3 gün</td></tr>
+    </tbody></table></div>
+  <p class="mut">Süreler başlangıç tahmini, denedikten sonra ayarlanır. Altın verip hızlandırma (mevcut "tadilatı atla") kalabilir.</p>
+</section>
+
+<section class="ask">
+  <h2 style="color:#ffd23f">Senden iki karar</h2>
+  <ol>
+    <li><b>Hangi ekran yönü:</b> A, B ya da C? Ben B'yi (telefon) öneriyorum.</li>
+    <li><b>Emlak ofisi nerede:</b> yeni arsaların yanında (öneri) mı, meydanda bankanın çaprazında mı?</li>
+  </ol>
+  <p style="opacity:.8">Tablodaki taşımalar, günlük işler ve şantiye için ayrıca onay beklemiyorum, ekran yönü seçilince hepsini birlikte yapıyorum. Eğiticiler (pop-up) başka bir işte yapılıyor, bu yeni yerleri onlara bildireceğim.</p>
+</section>
+</div>

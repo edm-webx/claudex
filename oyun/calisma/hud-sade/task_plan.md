@@ -5,6 +5,11 @@
 - Ekran görüntüleri: shots/01-hud.png (mevcut HUD), 02-mulk.png, 02-envanter.png, yer-banka/hastane/arsa/meydan.png (UI'sız arka planlar).
 - Görüntü aracı: tests/browser/hud-shot.mjs (DIST=<vite build + build-artifact çıktısı> node tests/browser/hud-shot.mjs <çıktı>; YER='{"ad":[x,z,cx,cz,zoom,yaw,tilt]}' ile UI'sız yer çekimi).
 
+## 2026-11-26 DURUM
+- Konsept artifact yayınlandı: https://claude.ai/artifact/SgLFgzQ46Ce1fXk8zvpq59 (kaynak konsept/hud-konsept.html, maket konsept/hud.html ?v=A|B1|B2|C).
+- BÜYÜK BULGU: A1-A5 arsaları (content/esya.ts ARSALAR x 259-285) eski açık dünyadan kalma, harita dışı boşlukta. Oyuncu hiç görmüyor. Öneri: okul+hastane doğusundaki boş çimen (x~60-80, z~30-58) "Martı Evleri", ofis girişte.
+- Kullanıcıdan beklenen: HUD yönü (A/B/C, öneri B telefon) + ofis yeri (arsaların yanı / meydan).
+
 ## SIRADAKİ ADIMLAR
 1. 3 HUD yönü maketi (UI'sız oyun görüntüsü üstüne HTML/CSS bindir, playwright ile PNG): A Sade Dock, B Esnaf Telefonu, C Köşe HUD (aşağıda).
 2. Emlak ajansı konsepti: yer adayı (Mahalle Meydanı bankanın yanı / hastane yanındaki boş taş meydan = açık tasarım sorusuydu), dış görünüş, iç (masa, emlakçı NPC, vitrinde ilanlar).

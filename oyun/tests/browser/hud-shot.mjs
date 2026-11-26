@@ -22,6 +22,6 @@ const bar = await p.evaluate(() => [...document.querySelectorAll('#sbui *')].fil
 console.log('UI', bar);
 for (const t of ['mulk', 'envanter']) { await p.evaluate(t => document.getElementById('sbui')?.dispatchEvent(new CustomEvent('ui:open', { detail: t, bubbles: true })), t); await snap('02-' + t); await p.keyboard.press('Escape'); }
 // world spots without UI (concept backgrounds)
-if (process.env.YER) { await p.addStyleTag({ content: '#sbui{visibility:hidden!important}' });
+if (process.env.YER) { await p.addStyleTag({ content: '#sbui{visibility:hidden!important}' }); await snap('yer-bufe');
   for (const [n, sp] of Object.entries(JSON.parse(process.env.YER))) { await p.evaluate(([x, z, cx, cz, zr, yi, tilt]) => { const M = window.__marti; M.teleport(x, z); for (let k = 0; k < 6; k++) { M.step(0.5); M.renderFrames(3, 0.1); } M.camera({ x: cx, z: cz, zoomRaw: zr, yaw: yi * Math.PI / 2, tilt }); for (let k = 0; k < 16; k++) { M.step(0.1); M.renderFrames(2, 0.1); } }, sp); await p.waitForTimeout(250); await p.screenshot({ path: join(out, 'yer-' + n + '.png'), timeout: 300000 }); console.log('ok', n); } }
 await b.close(); srv.close(); process.exit(0);
