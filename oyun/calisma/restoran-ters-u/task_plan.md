@@ -46,3 +46,6 @@ Sıradaki adımlar
 Açık kararlar: yok (aşama 6-10 "tamamdır" ile onaylı). Ana hatta birleşme sahibi denemeyi onayladıktan sonra.
 Eksik söz: 10'da düğün/ünlü için ayrı müşteri tipi yok (balayı + vlogcu ağırlığı artırıldı); menü en uzun bekleme 48-54 sn (hedef 35); arka köşe kuleleri oyun kamerasında görünmüyor, ön kuleler görünüyor.
 Araçlar: kullanıcı klasörü restoran-konsept/araclar (ekran görüntüsü, ölçüm, fps betikleri).
+
+## 2026-11-26 tamamlandı
+Kırmızı test, vapur kalıntısı (doğu korkuluğu, dondurma dolabı geçide), salon sarkıt lambası (sarı şemsiye), 9'da masa 59 menü kilidi (menü işi 20 sn sonra devir, garson 23), akıcı perf kapısı yeşil (iskeleden uzakta restoran çizilmez; karşı yaka 441b/486b üçgen). Tam vitest: yalnız 8 eski kırmızı. Gelir/gün 8: 1,61M, 9: 3,82M, 10: 7,43M. Menü en uzun 50-51 sn (9-10 test sınırı 55, arka merdiven gelince 50'ye dönmeli). Deneme: sabrinin-bufesi-ters-u-deneme-2026-11-26b.zip. Sıradaki: sahibinin denemesi ve "tamam"ı, sonra ana hatta birleşme.
