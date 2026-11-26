@@ -49,7 +49,7 @@ export const REGIONS: Region[] = [
     blurb: 'Martı Arena ve üç halı saha. Turnuvalar, taraftar, tezahürat.', lockLine: 'Çimler sulanıyor!', map: [86, 34],
     stop: { name: 'Stadyum Kapısı', x: 396, z: 12.2 } },
   { id: 'tersane', zone: 'tersane', name: 'Liman ve Tersane', short: 'Tersane', x0: 452, x1: 508, level: 1, color: '#d9a05b',
-    blurb: 'Vinçler, konteynerler, kızakta bekleyen vapur. Tamirciler burada.', lockLine: 'Vinç yük indiriyor!', map: [62, 79],
+    blurb: 'Vinçler, konteynerler, kızakta bekleyen tekne. Tamirciler burada.', lockLine: 'Vinç yük indiriyor!', map: [62, 79],
     stop: { name: 'Tersane Kapısı', x: 456, z: 12.2 }, vapur: true },
   { id: 'metro', zone: 'metro', name: 'Metro Altı', short: 'Metro', x0: 508, x1: 548, level: 1, color: '#7a8ca6',
     blurb: 'Çini duvarlar, sokak müzisyenleri, yeraltı çarşısı.', lockLine: 'Yürüyen merdiven bakımda!', map: [46, 28],

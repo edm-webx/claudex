@@ -45,7 +45,7 @@ export const SOHBET: Record<string, [string, string][]> = {
   mektup: [['Fırıncı Hüsnü', 'Sabri\'nin kepengi bu sabah açık ama kendisi yok. Tezgaha bir bak, kağıt gördüm.'], ['Manav Hayriye Abla', 'Sabri bu hafta hep telaşlıydı, cebinde bir harita vardı.']],
   izle: [['Berber Şevket', 'Plaza\'nın adamları iskele arsasını ölçüyormuş. Yazık, güzel yerdi.'], ['Balıkçı Kemal', 'Gevrek Express\'in kuryesini Sabri\'nin peşinde gördüm, bence o bir şeyler biliyor.'], ['Kuruyemişçi Zeki', 'Muhtar oy gününü öne almış, cebinde fotokopi var diyorlar.']],
   barinak: [['Balıkçı Kemal', 'Kayığın burnuna biri bir şey bıraktı. Ben dokunmadım, Plaza\'dan değilim.'], ['Bisikletçi Ayten', 'Şüpheli bir müşteri bu aralar kimseye bakmadan çay içiyor, kendi kendine konuşuyor.']],
-  belgrad: [['Vapur Kaptanı', 'Belgrad\'a 42B gidiyor evlat. Çeşmeden mangallara doğru yürü.'], ['Muhtar Rüstem', 'Belge ibraz edilmezse arsa satılır. Bir mucize olsa...']],
+  belgrad: [['Kaptan Rıfat', 'Belgrad\'a 42B gidiyor evlat. Çeşmeden mangallara doğru yürü.'], ['Muhtar Rüstem', 'Belge ibraz edilmezse arsa satılır. Bir mucize olsa...']],
   kulube: [['Muhtar Rüstem', 'Oy günü yaklaşıyor, kapak çürükmüş diyorlar, dikkat et.']],
   muhtar: [['Muhtar Rüstem', 'Sabri\'yi gördün mü? Belge yanındaysa panoma uğrayın, oylama bekliyor.']],
   bitti: [['Fırıncı Hüsnü', 'Plaza\'nın AVM planı çöktü. Bu simidi mahalle ısmarlıyor.'], ['Manav Hayriye Abla', 'Sabri Abi güldü, ilk kez böyle güldüğünü gördüm.'], ['Balıkçı Kemal', 'Gevrek Express\'ten özür diledim. Kurye gerçekten sadece kaybolmuş.']],

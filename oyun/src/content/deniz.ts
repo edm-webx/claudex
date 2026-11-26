@@ -76,7 +76,7 @@ export const SEA_EVERY: [number, number] = [70, 140];
 
 /* ───────── yasam-2: yeni hayvanlar ───────── */
 export const ANIMALS = [
-  { id: 'vapurkedisi', name: 'Vapur kedisi Kaptan', icon: '🐈', text: 'Her seferde vapurla gelir, iskelede bir tur atar, vapur kalkmadan geri atlar. Bileti yok, kimse sormaz.' },
+  { id: 'vapurkedisi', name: 'İskele kedisi Kaptan', icon: '🐈', text: 'Her sabah bir tekneyle gelir, iskelede bir tur atar, akşam geri atlar. Bileti yok, kimse sormaz.' },
   { id: 'martiyuvasi', name: 'Çatıdaki martı yuvası', icon: '🪺', text: 'Çatıda bir martı ailesi. Yavrular her gün biraz büyüyor ve her gün biraz daha gürültücü.' },
   { id: 'karabatak', name: 'Direkteki karabatak', icon: '🐦‍⬛', text: 'İskele direğinde kanatlarını açıp kurutuyor. Dünyanın en sabırlı modeli.' },
   { id: 'kirpi', name: 'Gece kirpisi Dikendiken', icon: '🦔', text: 'Gece olunca çalının dibinden çıkar, düşen simit kırıntılarını toplar.' },

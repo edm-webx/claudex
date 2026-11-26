@@ -33,7 +33,7 @@ export const GAMES: MiniGameDef[] = [
   {
     id: 'durum', name: 'Dürüm Sarma Ritmi', level: 2, secs: 30, stars: [35, 65, 88], color: '#e0533c',
     how: 'Halka içteki çizgiye oturunca dokun. Ritmi tutan lavaşı sarar!',
-    fails: ['Dürüm açıldı, domatesler martıya gitti. Martı teşekkür etti.', 'Lavaş uçtu, vapurun bacasına bayrak oldu.', 'Sardın sardın, sonunda kendi parmağını sardın.'],
+    fails: ['Dürüm açıldı, domatesler martıya gitti. Martı teşekkür etti.', 'Lavaş uçtu, martının kafasına bayrak oldu.', 'Sardın sardın, sonunda kendi parmağını sardın.'],
     cheers: ['Usta işi! Dürüm kendi kendine alkışladı.', 'Ritim sende, lavaş sende, tebrikler!'],
   },
   {
@@ -106,7 +106,7 @@ export const COLLECTIBLES: CollectDef[] = [
   { id: 'b7', kind: 'balik', name: 'Şarkıcı Çipura', color: '#c9d3d8' },
   { id: 'b8', kind: 'balik', name: 'Altın Kefal', color: '#e8b23a' },
   { id: 'k1', kind: 'kartpostal', name: 'Martıköy İskelesi Gün Batımı', color: '#f39c5a' },
-  { id: 'k2', kind: 'kartpostal', name: 'Sisli Sabah Vapuru', color: '#a9c3d6' },
+  { id: 'k2', kind: 'kartpostal', name: 'Sisli Sabah İskelesi', color: '#a9c3d6' },
   { id: 'k3', kind: 'kartpostal', name: 'Simitçi Martı Portresi', color: '#f2d39b' },
   { id: 'k4', kind: 'kartpostal', name: 'Kız Kulesi\'nin Kuzeni', color: '#e57a8a' },
   { id: 'k5', kind: 'kartpostal', name: 'Çarşı Sokağı Kedileri', color: '#c9a46a' },
