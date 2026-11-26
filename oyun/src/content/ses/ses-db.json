@@ -1994,6 +1994,462 @@
      }
     }
    ]
+  },
+  "adim_ahsap": {
+   "pitchVar": 0.1,
+   "cooldown": 150,
+   "gain": 0.5,
+   "variants": 5,
+   "note": "Iskele tahtasi: yumusak tok adim.",
+   "layers": [
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 650
+     },
+     "a": 0.002,
+     "d": 0.07,
+     "v": 0.32
+    },
+    {
+     "k": "tone",
+     "f": 120,
+     "a": 0.001,
+     "d": 0.07,
+     "v": 0.3,
+     "f1": 80
+    },
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 1800,
+      "q": 1.2
+     },
+     "a": 0.002,
+     "d": 0.03,
+     "v": 0.06,
+     "at": 0.004
+    }
+   ]
+  },
+  "adim_beton": {
+   "pitchVar": 0.1,
+   "cooldown": 150,
+   "gain": 0.45,
+   "variants": 5,
+   "note": "Beton/kaldirim adimi.",
+   "layers": [
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 2400,
+      "q": 1.2
+     },
+     "a": 0.002,
+     "d": 0.045,
+     "v": 0.3
+    },
+    {
+     "k": "tone",
+     "f": 190,
+     "a": 0.001,
+     "d": 0.05,
+     "v": 0.18,
+     "f1": 130
+    },
+    {
+     "k": "noise",
+     "color": "white",
+     "filter": {
+      "type": "hp",
+      "f": 5000
+     },
+     "a": 0.002,
+     "d": 0.02,
+     "v": 0.05,
+     "at": 0.003
+    }
+   ]
+  },
+  "adim_toprak": {
+   "pitchVar": 0.1,
+   "cooldown": 150,
+   "gain": 0.45,
+   "variants": 5,
+   "note": "Orman yolu: toprak + kuru yaprak.",
+   "layers": [
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 900
+     },
+     "a": 0.002,
+     "d": 0.1,
+     "v": 0.32
+    },
+    {
+     "k": "noise",
+     "color": "white",
+     "filter": {
+      "type": "bp",
+      "f": 3600,
+      "q": 1.5
+     },
+     "a": 0.002,
+     "d": 0.04,
+     "v": 0.09,
+     "at": 0.01
+    },
+    {
+     "k": "tone",
+     "f": 95,
+     "a": 0.001,
+     "d": 0.08,
+     "v": 0.16,
+     "f1": 70
+    }
+   ]
+  },
+  "adim_fayans": {
+   "pitchVar": 0.08,
+   "cooldown": 150,
+   "gain": 0.4,
+   "variants": 5,
+   "note": "Ic mekan zemin: sert tok tak.",
+   "layers": [
+    {
+     "k": "tone",
+     "f": 900,
+     "a": 0.001,
+     "d": 0.035,
+     "v": 0.12,
+     "f1": 600
+    },
+    {
+     "k": "noise",
+     "color": "white",
+     "filter": {
+      "type": "bp",
+      "f": 4200,
+      "q": 2
+     },
+     "a": 0.002,
+     "d": 0.03,
+     "v": 0.2
+    },
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 500
+     },
+     "a": 0.002,
+     "d": 0.06,
+     "v": 0.15
+    }
+   ]
+  },
+  "kapi_ac": {
+   "pitchVar": 0.06,
+   "cooldown": 400,
+   "gain": 0.5,
+   "rev": 0.15,
+   "note": "Kapi acilisi: mandal tik + ahsap gicirti + zil.",
+   "layers": [
+    {
+     "k": "tone",
+     "f": 1800,
+     "a": 0.001,
+     "d": 0.02,
+     "v": 0.15
+    },
+    {
+     "k": "tone",
+     "f": 160,
+     "a": 0.001,
+     "d": 0.18,
+     "v": 0.07,
+     "f1": 200,
+     "at": 0.03,
+     "wave": "sawtooth"
+    },
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 1100,
+      "q": 2
+     },
+     "a": 0.01,
+     "d": 0.14,
+     "v": 0.12,
+     "at": 0.03
+    },
+    {
+     "k": "tone",
+     "f": 2600,
+     "a": 0.001,
+     "d": 0.4,
+     "v": 0.03,
+     "at": 0.08
+    }
+   ]
+  },
+  "kapi_kapa": {
+   "pitchVar": 0.06,
+   "cooldown": 400,
+   "gain": 0.55,
+   "rev": 0.15,
+   "note": "Kapi kapanisi: tok carpma + mandal.",
+   "layers": [
+    {
+     "k": "tone",
+     "f": 75,
+     "a": 0.001,
+     "d": 0.2,
+     "v": 0.5,
+     "f1": 50
+    },
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 600
+     },
+     "a": 0.002,
+     "d": 0.16,
+     "v": 0.3
+    },
+    {
+     "k": "tone",
+     "f": 1600,
+     "a": 0.001,
+     "d": 0.02,
+     "v": 0.1,
+     "at": 0.05
+    }
+   ]
+  },
+  "cekic": {
+   "pitchVar": 0.08,
+   "cooldown": 120,
+   "gain": 0.6,
+   "variants": 5,
+   "rev": 0.1,
+   "note": "Santiye: civiye cekic vurusu (metal tik + ahsap tok).",
+   "layers": [
+    {
+     "k": "tone",
+     "f": 2100,
+     "a": 0.001,
+     "d": 0.05,
+     "v": 0.25,
+     "f1": 1700
+    },
+    {
+     "k": "tone",
+     "f": 190,
+     "a": 0.001,
+     "d": 0.08,
+     "v": 0.4,
+     "f1": 120
+    },
+    {
+     "k": "noise",
+     "color": "white",
+     "filter": {
+      "type": "bp",
+      "f": 3500,
+      "q": 2
+     },
+     "a": 0.002,
+     "d": 0.025,
+     "v": 0.15
+    }
+   ]
+  },
+  "matkap": {
+   "pitchVar": 0.06,
+   "cooldown": 900,
+   "gain": 0.45,
+   "len": 1.6,
+   "note": "Elektrikli matkap: yukselen vizilti + dis.",
+   "layers": [
+    {
+     "k": "tone",
+     "f": 320,
+     "a": 0.08,
+     "d": 1.2,
+     "v": 0.12,
+     "f1": 520,
+     "at": 0,
+     "wave": "sawtooth",
+     "filter": {
+      "type": "bp",
+      "f": 1400,
+      "q": 1.5
+     }
+    },
+    {
+     "k": "noise",
+     "color": "white",
+     "filter": {
+      "type": "bp",
+      "f": 3200,
+      "q": 1.2
+     },
+     "a": 0.1,
+     "d": 1.2,
+     "v": 0.08,
+     "at": 0.05
+    }
+   ]
+  },
+  "el_arabasi": {
+   "pitchVar": 0.1,
+   "cooldown": 600,
+   "gain": 0.4,
+   "len": 1.2,
+   "note": "El arabasi: sallanan tekerlek + sac tangirtisi.",
+   "layers": [
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 500
+     },
+     "a": 0.05,
+     "d": 1.0,
+     "v": 0.25,
+     "at": 0
+    },
+    {
+     "k": "burst",
+     "n": 5,
+     "every": [
+      0.12,
+      0.2
+     ],
+     "fJit": 0.1,
+     "vJit": 0.3,
+     "layer": {
+      "k": "tone",
+      "f": 700,
+      "a": 0.001,
+      "d": 0.05,
+      "v": 0.12,
+      "f1": 500
+     }
+    }
+   ]
+  },
+  "mala": {
+   "pitchVar": 0.1,
+   "cooldown": 300,
+   "gain": 0.35,
+   "variants": 4,
+   "note": "Mala/supurge: surtunme.",
+   "layers": [
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 2600,
+      "q": 1
+     },
+     "a": 0.06,
+     "d": 0.35,
+     "v": 0.2,
+     "at": 0
+    },
+    {
+     "k": "noise",
+     "color": "white",
+     "filter": {
+      "type": "hp",
+      "f": 6000
+     },
+     "a": 0.05,
+     "d": 0.25,
+     "v": 0.05,
+     "at": 0.05
+    }
+   ]
+  },
+  "geri_bip": {
+   "pitchVar": 0,
+   "cooldown": 2600,
+   "gain": 0.35,
+   "len": 2.4,
+   "note": "Kamyon geri vites uyarisi: 3 bip.",
+   "layers": [
+    {
+     "k": "burst",
+     "n": 3,
+     "every": [
+      0.7,
+      0.7
+     ],
+     "layer": {
+      "k": "tone",
+      "f": 1000,
+      "a": 0.004,
+      "d": 0.28,
+      "v": 0.2
+     }
+    }
+   ]
+  },
+  "zincir": {
+   "pitchVar": 0.08,
+   "cooldown": 500,
+   "gain": 0.45,
+   "variants": 4,
+   "note": "Vinc zinciri: tangir tungur.",
+   "layers": [
+    {
+     "k": "burst",
+     "n": 4,
+     "every": [
+      0.05,
+      0.11
+     ],
+     "fJit": 0.15,
+     "vJit": 0.3,
+     "layer": {
+      "k": "tone",
+      "f": 1800,
+      "a": 0.001,
+      "d": 0.06,
+      "v": 0.14,
+      "f1": 1300
+     }
+    },
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 900
+     },
+     "a": 0.002,
+     "d": 0.3,
+     "v": 0.1
+    }
+   ]
   }
  },
  "loops": {
@@ -2055,7 +2511,8 @@
       "v": 0.22
      }
     }
-   ]
+   ],
+   "file": "deniz.opus"
   },
   "yagmur": {
    "dur": 12,
@@ -2110,7 +2567,8 @@
       "v": 0.08
      }
     }
-   ]
+   ],
+   "file": "yagmur.opus"
   },
   "ruzgar": {
    "dur": 16,
@@ -2147,7 +2605,8 @@
       "rand": 0.5
      }
     }
-   ]
+   ],
+   "file": "ruzgar.opus"
   },
   "izgara": {
    "dur": 8,
@@ -2315,7 +2774,8 @@
       "v": 0.05
      }
     }
-   ]
+   ],
+   "file": "orman_gunduz.opus"
   },
   "orman_gece": {
    "dur": 14,
@@ -2367,7 +2827,8 @@
       }
      }
     }
-   ]
+   ],
+   "file": "orman_gece.opus"
   },
   "karsi_sokak": {
    "dur": 16,
@@ -2429,7 +2890,8 @@
       "v": 0.14
      }
     }
-   ]
+   ],
+   "file": "karsi_sokak.opus"
   },
   "fiskiye": {
    "dur": 10,
@@ -2478,7 +2940,8 @@
       "v": 0.025
      }
     }
-   ]
+   ],
+   "file": "fiskiye.opus"
   },
   "ic_mirilti": {"dur": 14, "gain": 0.3, "rev": 0.18, "note": "Lokanta/kafe iç mekan: kısık masa mırıltısı, ara sıra uzak çatal-tabak ve fincan.", "layers": [{"k": "noise", "color": "pink", "filter": {"type": "bp", "f": 520, "q": 0.6}, "v": 0.22, "swell": {"rate": 0.11, "depth": 0.35, "rand": 0.7}}, {"k": "noise", "color": "brown", "filter": {"type": "lp", "f": 240, "q": 0.6}, "v": 0.12}], "events": [{"every": [2.5, 6], "layer": {"k": "tone", "f": 2300, "f1": 2050, "a": 0.002, "d": 0.09, "v": 0.018}}, {"every": [3, 8], "layer": {"k": "noise", "color": "pink", "filter": {"type": "bp", "f": 800, "f1": 500, "q": 0.9}, "a": 0.25, "d": 0.5, "v": 0.07}}]},
   "mutfak_oda": {"dur": 12, "gain": 0.25, "rev": 0.1, "note": "Mutfak oda tonu: kısık davlumbaz uğultusu; pişirme cızırtısı istasyon bazlı ayrı.", "layers": [{"k": "noise", "color": "brown", "filter": {"type": "lp", "f": 160, "q": 0.7}, "v": 0.3, "swell": {"rate": 0.06, "depth": 0.15, "rand": 0.5}}, {"k": "noise", "color": "pink", "filter": {"type": "bp", "f": 900, "q": 0.4}, "v": 0.05, "swell": {"rate": 0.17, "depth": 0.3, "rand": 0.7}}], "events": []},
@@ -2534,7 +2997,8 @@
       "v": 0.12
      }
     }
-   ]
+   ],
+   "file": "kalabalik.opus"
   },
   "ic_kafe": {
    "dur": 14,
@@ -2623,7 +3087,8 @@
       "v": 0.04
      }
     }
-   ]
+   ],
+   "file": "ic_kalabalik.opus"
   },
   "ic_lokanta": {
    "dur": 16,
@@ -2727,7 +3192,8 @@
       "v": 0.06
      }
     }
-   ]
+   ],
+   "file": "ic_kalabalik.opus"
   },
   "ic_avm": {
    "dur": 16,
@@ -2814,7 +3280,8 @@
       "v": 0.05
      }
     }
-   ]
+   ],
+   "file": "ic_avm.opus"
   },
   "ic_hastane": {
    "dur": 16,
@@ -3016,7 +3483,8 @@
       "v": 0.03
      }
     }
-   ]
+   ],
+   "file": "ic_oda.opus"
   },
   "ic_mutfak": {
    "dur": 12,
@@ -3098,10 +3566,201 @@
       "v": 0.035
      }
     }
+   ],
+   "file": "ic_mutfak.opus"
+  },
+  "santiye_orta": {
+   "dur": 12,
+   "gain": 0.3,
+   "rev": 0.12,
+   "note": "Orta santiye: betoniyer donusu, uzaktan cekic ve matkap.",
+   "layers": [
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 200,
+      "q": 0.6
+     },
+     "v": 0.22,
+     "swell": {
+      "rate": 0.5,
+      "depth": 0.2
+     }
+    },
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 700,
+      "q": 0.8
+     },
+     "v": 0.05,
+     "swell": {
+      "rate": 0.8,
+      "depth": 0.4
+     }
+    }
+   ],
+   "events": [
+    {
+     "every": [
+      1.2,
+      2.8
+     ],
+     "layer": {
+      "k": "tone",
+      "f": 2000,
+      "a": 0.001,
+      "d": 0.05,
+      "v": 0.07,
+      "f1": 1600
+     }
+    },
+    {
+     "every": [
+      1.5,
+      3.5
+     ],
+     "layer": {
+      "k": "tone",
+      "f": 170,
+      "a": 0.001,
+      "d": 0.08,
+      "v": 0.1,
+      "f1": 110
+     }
+    },
+    {
+     "every": [
+      7,
+      11
+     ],
+     "layer": {
+      "k": "tone",
+      "f": 380,
+      "a": 0.05,
+      "d": 0.8,
+      "v": 0.05,
+      "f1": 560,
+      "wave": "sawtooth",
+      "filter": {
+       "type": "bp",
+       "f": 1500,
+       "q": 1.5
+      }
+     }
+    }
+   ]
+  },
+  "santiye_buyuk": {
+   "dur": 14,
+   "gain": 0.34,
+   "rev": 0.15,
+   "note": "Buyuk santiye: jenerator, vinc motoru, beton mikseri, geri vites bipi.",
+   "layers": [
+    {
+     "k": "tone",
+     "f": 55,
+     "v": 0.1
+    },
+    {
+     "k": "tone",
+     "f": 110,
+     "v": 0.05,
+     "swell": {
+      "rate": 0.4,
+      "depth": 0.2
+     }
+    },
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 260,
+      "q": 0.7
+     },
+     "v": 0.26,
+     "swell": {
+      "rate": 0.35,
+      "depth": 0.25
+     }
+    },
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 900,
+      "q": 0.7
+     },
+     "v": 0.06,
+     "swell": {
+      "rate": 0.6,
+      "depth": 0.4
+     }
+    }
+   ],
+   "events": [
+    {
+     "every": [
+      1.0,
+      2.4
+     ],
+     "layer": {
+      "k": "tone",
+      "f": 2000,
+      "a": 0.001,
+      "d": 0.05,
+      "v": 0.07,
+      "f1": 1600
+     }
+    },
+    {
+     "every": [
+      5,
+      9
+     ],
+     "layer": {
+      "k": "tone",
+      "f": 1000,
+      "a": 0.001,
+      "d": 0.25,
+      "v": 0.06
+     }
+    },
+    {
+     "every": [
+      6,
+      12
+     ],
+     "layer": {
+      "k": "noise",
+      "color": "white",
+      "filter": {
+       "type": "bp",
+       "f": 1800,
+       "q": 2
+      },
+      "a": 0.01,
+      "d": 0.4,
+      "v": 0.05
+     }
+    }
    ]
   }
  },
  "music": {
+  "coklu": {
+   "on": true,
+   "minSn": 70,
+   "maxSn": 110,
+   "araMin": 35,
+   "araMax": 90
+  },
   "map": {
    "phase": {
     "morning": [

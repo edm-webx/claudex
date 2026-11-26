@@ -72,6 +72,17 @@ export function createAudioMap(deps: AudioMapDeps): AudioMap {
   const onRadio = () => { try { ma.jingle?.(); setTimeout(() => { try { audio.voice('radyo'); } catch { /* */ } }, 900); } catch { /* */ } };
   if (deps.root) { deps.root.addEventListener('sb:radio', onRadio); offs.push(() => deps.root?.removeEventListener('sb:radio', onRadio)); }
   let lastInterior: string | null | undefined;
+  // adim sesleri: katedilen yola gore (her ~1.15 birimde bir), zemin bolgeden: iskele=ahsap, orman=toprak, ic mekan=fayans, digeri=beton
+  let stepX = NaN, stepZ = NaN, stepD = 0, stepFoot = 0;
+  const surfaceOf = (z: string) => z.startsWith('ic.') ? 'adim_fayans' : z === 'orman' ? 'adim_toprak' : z === 'iskele' || z === 'ev' ? 'adim_ahsap' : 'adim_beton';
+  const footsteps = (p: { x: number; z: number }) => {
+    if (Number.isFinite(stepX)) {
+      const d = Math.hypot(p.x - stepX, p.z - stepZ);
+      if (d < 3) { stepD += d; if (stepD >= 1.15) { stepD = 0; stepFoot ^= 1; const zz = deps.zone?.() ?? 'iskele'; try { audio.sfx(surfaceOf(zz), { vol: stepFoot ? 0.85 : 1 }); } catch { /* optional */ } } }
+      else stepD = 0;   // isinlanma (otobus, kapi): sayac sifirlanir
+    }
+    stepX = p.x; stepZ = p.z;
+  };
   let lastZone = '', lastPhase = '', lastEvent: string | null | undefined, lastWeather = '', crowdS = 0.5, slowT = 0;
   return {
     update() {
@@ -87,9 +98,9 @@ export function createAudioMap(deps: AudioMapDeps): AudioMap {
           if (ma.ambience?.setHeat) { const hs = [...(deps.kitchen?.() ?? [])]; const g = deps.grill?.(); if (g && clockNow() - lastDonerT < 600) hs.push({ x: g.x, z: g.z, w: 1 }); ma.ambience.setHeat(hs); }
         } catch { /* optional */ }
       }
-      const p = deps.playerPos?.(); if (p) audio.ambience.setListener({ x: p.x, z: p.z });
+      const p = deps.playerPos?.(); if (p) { audio.ambience.setListener({ x: p.x, z: p.z }); footsteps(p); }
       const z = deps.zone?.(); if (z && z !== lastZone) { lastZone = z; audio.music.setZone(z); }
-      if (deps.interior && ma.atmosphere) { const i = deps.interior() ?? null; if (i !== lastInterior) { lastInterior = i; ma.atmosphere.setInterior(i); } }
+      if (deps.interior && ma.atmosphere) { const i = deps.interior() ?? null; if (i !== lastInterior) { if (lastInterior !== undefined) { try { audio.sfx(i ? 'kapi_ac' : 'kapi_kapa'); } catch { /* optional */ } } lastInterior = i; ma.atmosphere.setInterior(i); } }
       const ph = deps.phase?.(); if (ph && ph !== lastPhase) { lastPhase = ph; audio.music.setPhase(ph); }
     },
     dispose() { offs.forEach(o => { try { o(); } catch { /* */ } }); offs.length = 0; },

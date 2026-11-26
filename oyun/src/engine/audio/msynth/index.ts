@@ -3,7 +3,7 @@
 // handed back by callback when ready. Nothing is ever synthesised per frame.
 import { SR_SFX, SR_LOOP } from './dsp';
 import { renderSfx, renderLoopGen, type SfxDef, type LoopDef, type RenderCtx } from './render';
-import { renderTrackGen, type MusicDb } from './music';
+import { renderTrackGen, varyasyon, taban, varyantNo, type MusicDb } from './music';
 import type { OmniPatch } from './omni';
 import type { VoiceProfile } from './voice';
 
@@ -19,7 +19,9 @@ export interface Bank {
   readonly db: SesDb;
   hasSfx(id: string): boolean;
   /** Rendered buffer for a one-shot (renders now if needed); null if unknown. */
-  sfx(id: string): AudioBuffer | null;
+  sfx(id: string, variant?: number): AudioBuffer | null;
+  /** Kac ses cesidi var (seed farkli render): varsayilan 4. */
+  variantCount(id: string): number;
   /** Per-sound cooldown gate; returns false if `id` played too recently. */
   gate(id: string, nowMs: number): boolean;
   pitchVar(id: string): number;
@@ -39,8 +41,8 @@ const idle = (fn: () => void) => {
   if (w.requestIdleCallback) w.requestIdleCallback(fn, { timeout: 400 }); else setTimeout(fn, 16);
 };
 
-/** Döngü + parça önbellek tavanı (mono float32 bayt). Ölçülen: sfx (72 adet, 32 kHz) ~8,7 MB; masaüstü toplam ~21 MB, mobilde bütçe 7 MB (index.ts). */
-export const STREAM_BUDGET = 12 * 1024 * 1024;
+/** Döngü + parça önbellek tavanı (mono float32 bayt). PS3 ruhu: toplam ses belleği < 20 MB (sfx ~3 MB + bu). */
+export const STREAM_BUDGET = 16 * 1024 * 1024;
 
 export function createBank(ac: BaseAudioContext, db: SesDb, budget = STREAM_BUDGET): Bank {
   const rc = (sr: number): RenderCtx => ({ sr, patches: db.patches || {} });
@@ -110,14 +112,16 @@ export function createBank(ac: BaseAudioContext, db: SesDb, budget = STREAM_BUDG
   const bank: Bank = {
     db,
     hasSfx: id => !!db.sfx[id],
-    sfx(id) {
-      const hit = sfxC.get(id); if (hit) return hit;
+    sfx(id, variant = 0) {
+      const key = variant ? id + '#' + variant : id;
+      const hit = sfxC.get(key); if (hit) return hit;
       const def = db.sfx[id]; if (!def) return null;
       let b: AudioBuffer | null = null;
-      try { b = toBuf(renderSfx(id, def, rc(SR_SFX)), SR_SFX); } catch { b = null; }
-      if (b) sfxC.set(id, b);
+      try { b = toBuf(renderSfx(key, def, rc(SR_SFX)), SR_SFX); } catch { b = null; }
+      if (b) sfxC.set(key, b);
       return b;
     },
+    variantCount: id => Math.max(1, db.sfx[id]?.variants ?? 4),
     gate(id, now) {
       const cd = db.sfx[id]?.cooldown ?? 30, l = last.get(id) ?? -1e9;
       if (now - l < cd) return false;
@@ -125,7 +129,12 @@ export function createBank(ac: BaseAudioContext, db: SesDb, budget = STREAM_BUDG
     },
     pitchVar: id => db.sfx[id]?.pitchVar ?? 0,
     loop(id, cb) { const def = db.loops[id]; if (!def) return; if (def.file) { fromFile('L:' + id, loopC, def.file, cb, c => enqueue('L:' + id, loopC, () => renderLoopGen(id, def, rc(SR_LOOP)), SR_LOOP, c, true)); return; } enqueue('L:' + id, loopC, () => renderLoopGen(id, def, rc(SR_LOOP)), SR_LOOP, cb, true); },
-    track(id, cb) { const t = db.music.tracks[id]; if (!t) return; if (t.file) { fromFile('M:' + id, trackC, t.file, cb, c => enqueue('M:' + id, trackC, () => renderTrackGen(id, t, SR_LOOP), SR_LOOP, c)); return; } enqueue('M:' + id, trackC, () => renderTrackGen(id, t, SR_LOOP), SR_LOOP, cb); },
+    track(id, cb) {
+      const b = taban(id), v = varyantNo(id), base = db.music.tracks[b]; if (!base) return;
+      if (base.file && !v) { fromFile('M:' + id, trackC, base.file, cb, c => enqueue('M:' + id, trackC, () => renderTrackGen(id, base, SR_LOOP), SR_LOOP, c)); return; }
+      const t = varyasyon(b, base, v);
+      enqueue('M:' + id, trackC, () => renderTrackGen(id, t, SR_LOOP), SR_LOOP, cb);
+    },
     prewarm() {
       const ids = Object.keys(db.sfx).filter(id => !sfxC.has(id));
       let i = 0;

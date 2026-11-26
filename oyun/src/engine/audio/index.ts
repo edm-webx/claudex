@@ -462,13 +462,17 @@ export function createAudio(deps: AudioDeps): MotorAudio {
     for (const n of ambNodes) { try { n.stop(); } catch { /* already */ } }
     ambNodes = [];
   }
+  const lastVar = new Map<string, number>();
   /** Play a database sound (cached buffer) into `out`; false if the id isn't in the database or is cooling down. */
   function playId(id: string, out: AudioNode, pitch = 1): boolean {
     if (!bank || !bank.hasSfx(id) || !ac) return false;
     if (!bank.gate(id, deps.platform.clock.now())) return true;
-    const buf = bank.sfx(id); if (!buf) return false;
-    const pv = bank.pitchVar(id);
-    playBuffer(buf, out, 1, pitch * (1 + (Math.random() * 2 - 1) * pv));
+    const n = bank.variantCount(id); let v = n > 1 ? Math.floor(Math.random() * n) : 0;
+    if (n > 1 && v === lastVar.get(id)) v = (v + 1) % n;      // art arda ayni cesit calmasin
+    lastVar.set(id, v);
+    const buf = bank.sfx(id, v) ?? bank.sfx(id); if (!buf) return false;
+    const pv = bank.pitchVar(id) || (isMoney(id) ? 0 : 0.045);                       // her ses hafif perde degisir (tekrar hissi azalir)
+    playBuffer(buf, out, 1 - Math.random() * 0.14, pitch * (1 + (Math.random() * 2 - 1) * pv));
     return true;
   }
 

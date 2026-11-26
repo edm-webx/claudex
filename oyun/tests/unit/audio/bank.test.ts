@@ -15,11 +15,11 @@ describe('bank LRU', () => {
     const s = b.stats();
     expect(s.loops).toBe(2); expect(s.bytes).toBeLessThanOrEqual(one * 2.5);
   }, 20000);
-  it('drop() önbellekten bırakır; varsayılan bütçe 12 MB (toplam ses belleği < 20 MB ruhu)', async () => {
+  it('drop() önbellekten bırakır; varsayılan bütçe 16 MB (48 kHz Opus çözülmüş) (toplam ses belleği < 20 MB ruhu)', async () => {
     const b = createBank(fakeAc, db(1));
     b.loop('l0', () => {}); await flush(); expect(b.stats().loops).toBe(1);
     b.drop('loop', 'l0'); expect(b.stats().loops).toBe(0); expect(b.stats().bytes).toBe(0);
-    expect(STREAM_BUDGET).toBeLessThanOrEqual(12 * 1024 * 1024);
+    expect(STREAM_BUDGET).toBeLessThanOrEqual(16 * 1024 * 1024);
   }, 10000);
 });
 void vi;
