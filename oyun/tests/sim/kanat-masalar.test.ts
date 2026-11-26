@@ -133,7 +133,7 @@ describe('BUF-19/20 kanat masaları', () => {
     const m0 = k.S.money;
     k.step(80);
     expect(k.S.today.salonGelir || 0).toBe(0);
-    expect(k.S.money).toBeLessThanOrEqual(m0);
+    expect(k.S.money - ((k.S.today.src as Record<string, number> | undefined)?.basarim || 0)).toBeLessThanOrEqual(m0);   // başarım ödülü (ör. Kedi Defteri) pasif gelir değil
     const src = readFileSync('src/game/sim/salon.ts', 'utf8');
     expect(src).not.toMatch(/S\.money\s*\+=/);
   });

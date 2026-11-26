@@ -34,10 +34,10 @@ export function createCats(env: AgentEnv): CatsSystem {
   /** Low anchor spots first (basket, stool, bench), then floor spots on rings around them, so 6+ cats each get their own place. */
   function restSpots(): { x: number; z: number; y: number; base: boolean }[] {
     const base = env.book.catSpots().filter((s) => s.a.y < 1.2).map((s) => ({ x: s.a.x, z: s.a.z, y: s.a.y, base: true }));
-    const out = [...base];
+    const out = [...base], pl = env.player();   // floor spots never right at Sabri's feet
     for (const b of base) for (const r of [0.8, 1.4]) for (let k = 0; k < 8; k++) {
       const ang = k * TAU / 8 + b.x, p = { x: b.x + Math.cos(ang) * r, z: b.z + Math.sin(ang) * r };
-      if (env.nav.walkable(p)) out.push({ x: p.x, z: p.z, y: 0, base: false });
+      if (env.nav.walkable(p) && Math.hypot(p.x - pl.x, p.z - pl.z) > 2.5) out.push({ x: p.x, z: p.z, y: 0, base: false });
     }
     return out;
   }
