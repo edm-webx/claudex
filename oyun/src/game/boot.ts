@@ -1089,7 +1089,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     return { tepsi: [...(r.kafeTepsi?.items || [])], siparis: r.agents?.kafe?.siparisOf(room) || [], makine: r.agents?.kafe?.makineler(room) || [], servis, plots: Object.keys(((sim.state.zones as Record<string, { plots?: object }>).arsa?.plots) || {}), bekleyen: { ...(r.kafeHost?.pending || {}) }, saat: +sim.clock.hour.toFixed(2), odalar: (r.agents?.kafe as unknown as { rooms?(): unknown[] })?.rooms?.() || [] };
   });
   // 2026-11-25 ürün görseli çekimi (tests/browser/urun-tepsi.mjs): oyuncunun tepsisine verilen yemekleri koyar (yalnız görünüm denemesi)
-  if (hileAcik) reg('elTabak', (ids: string[]) => { const c = sim.rules.rt.carry as unknown as { type: string; tier: number }[]; c.length = 0; for (const t of ids || []) c.push({ type: String(t), tier: 1 }); return c.length; });
+  if (hileAcik) reg('elTabak', (ids: string[], seviye?: number) => { if (seviye) sim.rules.state.level = seviye; const c = sim.rules.rt.carry as unknown as { type: string; tier: number }[]; c.length = 0; for (const t of ids || []) c.push({ type: String(t), tier: 1 }); return c.length; });
   if (hileAcik) reg('kazanc', (kaynak: string, n: number) => sim.rules.credit!(String(kaynak), Number(n) || 0));   // test: tests/browser/iki-oyuncu-para.mjs (misafir parası)
   reg('pads', () => sim.rules.rt.pads.map(q => ({ key: q.key, x: q.pos.x, z: q.pos.z, price: q.price, paid: q.paid })));   // sarı kareler (test / denetim)
   reg('izgara', (on?: boolean) => { if (on !== undefined) izgaraLook?.set(!!on); return izgaraLook?.get() ?? null; });

@@ -22,11 +22,11 @@ const shot = async (id) => { await p.waitForTimeout(250); await p.screenshot({ p
 const cam = (o) => p.evaluate((o) => { const M = window.__marti; M.camera(o); for (let k = 0; k < 5; k++) M.renderFrames(3, 0.1); }, o);
 // 1) tepsi: oyuncunun elinde 4 yemek (dikdörtgen tepsi için seviye 1, yuvarlak için seviye 40)
 for (const [lv, ad] of [[1, 'tepsi'], [40, 'tepsi-usta']]) {
-  await p.evaluate(([lv]) => { const M = window.__marti; M.simCmd('level', lv); M.teleport(-17.6, -11.0); for (let k = 0; k < 4; k++) { M.step(0.2); M.renderFrames(2, 0.1); } if (M.elTabak) M.elTabak(['iskender', 'lahmacun', 'mercimek_corbasi', 'kunefe']); }, [lv]);
-  await cam({ x: -17.6, z: -11.0, zoomRaw: 0.22, yaw: Math.PI, tilt: 0.65 }); await shot(ad);
+  await p.evaluate(([lv]) => { const M = window.__marti; M.simCmd('level', lv); M.teleport(-17.6, -11.0); for (let k = 0; k < 4; k++) { M.step(0.2); M.renderFrames(2, 0.1); } if (M.elTabak) M.elTabak(['iskender', 'lahmacun', 'mercimek_corbasi', 'kunefe'], lv); }, [lv]);
+  await cam({ x: -17.6, z: -11.0, zoomRaw: 0.26, yaw: Math.PI, tilt: 0.65 }); await shot(ad);
 }
 if (process.env.SADECE_TEPSI) { await b.close(); srv.close(); process.exit(0); }
-await p.evaluate(() => { const M = window.__marti; M.elTabak?.([]); M.simCmd('level', 40); });
+await p.evaluate(() => { const M = window.__marti; M.elTabak?.([], 40); });
 // 2) pass: mutfak pass rafında en az 3 tabak birikene kadar ilerlet
 await p.evaluate(() => { const M = window.__marti; M.teleport(-2.9, -12.4); for (let i = 0; i < 240; i++) { M.step(0.5); const o = M.restoranGozlem?.(); if (o && o.passYer && o.passYer.on.length >= 3) break; } for (let k = 0; k < 4; k++) M.renderFrames(2, 0.1); });
 await cam({ x: -2.9, z: -13.6, zoomRaw: 0.32, yaw: 0, tilt: 0.85 }); await shot('pass');

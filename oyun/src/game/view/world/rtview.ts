@@ -173,7 +173,7 @@ export function createRtView(env: RtEnv): RtView {
         if (!isDish(it)) { const i = urunler.indexOf(it), p = hand(i, urunler), k = Math.min(1, i / 5); p.x += wob.ox * k; p.z += wob.oz * k; emit(it, itemKey(it), p, pp.rot + wob.ox * k * 2, itemH(it), null); return; }
         // dikdörtgen tepsi 0.62x0.4: 2x2, ölçek 0.75; yuvarlak tepsi r 0.27: dört çeyrek, ölçek 0.7 (tabaklar tepsiden taşmaz)
         const j = yd++ % 4; if (j === 0 && yd > 1) kat += 0.06;
-        const lx = (j % 2 ? 1 : -1) * (master ? 0.105 : 0.14), lz = (j < 2 ? -1 : 1) * (master ? 0.105 : 0.09), ol = master ? 0.7 : 0.72;
+        const lx = (j % 2 ? 1 : -1) * (master ? 0.105 : 0.15), lz = (j < 2 ? -1 : 1) * (master ? 0.105 : 0.085), ol = master ? 0.7 : 0.8;
         emit(it, itemKey(it), { x: hx + lx * sc + lz * sn + wob.ox, y: hy + 0.03 + kat, z: hz - lx * sn + lz * sc + wob.oz, s: ol }, pp.rot + wob.ox * 2, itemH(it) * ol, null);
       });
     }
