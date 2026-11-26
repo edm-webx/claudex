@@ -915,7 +915,7 @@ const SCENE = `<svg class="sb-scene" viewBox="0 0 400 860" preserveAspectRatio="
 <path d="M118 470V408h4l5-18 5 18h4v62z"/><path d="M262 470v-30a16 16 0 0 1 32 0v30z"/></g>
 <rect y="480" width="400" height="380" fill="url(#sbsea)"/>
 <g class="wv" fill="none" stroke="#e8f7fb" stroke-width="3" stroke-linecap="round" opacity=".7"><path d="M20 540q15-8 30 0t30 0"/><path d="M230 520q15-8 30 0t30 0"/><path d="M120 600q15-8 30 0t30 0"/><path d="M290 640q15-8 30 0t30 0"/><path d="M30 680q15-8 30 0t30 0"/></g>
-<g class="fer"><g transform="translate(70 528)"><path d="M0 18h120l-12 16H10z" fill="#fff" stroke="#3b2a20" stroke-width="3" stroke-linejoin="round"/><rect x="18" y="4" width="78" height="14" rx="3" fill="#fff6e6" stroke="#3b2a20" stroke-width="3"/><rect x="48" y="-12" width="12" height="16" fill="#e0533c" stroke="#3b2a20" stroke-width="3"/><path d="M26 11h8M40 11h8M64 11h8M78 11h8" stroke="#2f7fb3" stroke-width="4" stroke-linecap="round"/><path d="M8 26h104" stroke="#2f7fb3" stroke-width="3"/></g></g>
+
 <g class="gl"><path d="M60 250q14-14 28 0 14-14 28 0-14-6-28 6-14-12-28-6z" fill="#fff" stroke="#3b2a20" stroke-width="2.6" stroke-linejoin="round"/><path d="M60 250l6-3M116 250l-6-3" stroke="#3b2a20" stroke-width="4" stroke-linecap="round"/></g>
 <g class="gl2"><path d="M300 190q10-10 20 0 10-10 20 0-10-4-20 4-10-8-20-4z" fill="#fff" stroke="#3b2a20" stroke-width="2.2" stroke-linejoin="round"/></g>
 <g class="gl"><path d="M250 300q8-8 16 0 8-8 16 0-8-3-16 3-8-6-16-3z" fill="#fff" stroke="#3b2a20" stroke-width="2" stroke-linejoin="round"/></g>
