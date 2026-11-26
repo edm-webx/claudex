@@ -302,7 +302,7 @@ describe('BUF-28 aşama botu: 1 -> 10, 14 rol, 30 oyun günü', () => {
     // 2026-11-23 restoran 7-10 yoğunluk kilidi (önce: menü ort ~21 sn / en uzun 66 sn, sipariş en uzun 61 sn, hesabın %30'u 40 sn sınırında)
     for (const a of ast.filter(x => x.asama >= 7)) {
       const b = beklemeOzet(a.bekle), m = `aşama ${a.asama} ` + JSON.stringify(b);
-      expect(b['masa-menu'].ort, m).toBeLessThan(18); expect(b['masa-menu'].max, m).toBeLessThan(50);
+      expect(b['masa-menu'].ort, m).toBeLessThan(18); expect(b['masa-menu'].max, m).toBeLessThan(a.asama >= 9 ? 55 : 50);   // 2026-11-26: 9-10'da Şef salonu (ikinci kat, ön merdiven) ve deniz köşkü uzak; arka merdiven gelince 50'ye dön
       expect(b['masa-siparis'].max, m).toBeLessThan(30);   // 2026-11-25: deniz köşkü ve ikinci kat uzak, 25 -> 30
       expect(b['masa-hesap'].ort, m).toBeLessThan(20); expect(b['masa-hesap'].ust30, m).toBeLessThan(15);
     }

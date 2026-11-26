@@ -594,6 +594,8 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
   const MENU_ACIL_S = 25;
   /** garsonun son aldığı iş yaşlanma kuralıyla mı alındı: art arda iki acil iş yok (aşağıda) */
   const acilSon = new Set<number>();
+  /** 2026-11-26: Şef salonu / deniz köşkü uzak; 20 sn'dir yolda olan garsonun masa işi boştaki yetkili garsona geçer (aşama botu aşama 9, masa 59 menü) */
+  const DEVIR_S = 20;
   function isAl(wid: number, o: { cap: number; at?: Vec2 }): IsAlSonuc | null {
     const mine = gorevler.find(g => g.wid === wid); if (mine) return sonuc(mine);
     if (!garsonlar().some(w => w.id === wid)) return null;
@@ -602,7 +604,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     // bölge) boşa çıkan garsona geçer: haritanın öbür ucundan yürüyen garson varmadan yakındaki boş garson masayı 30 sn+ seyrediyordu
     // (aşama botu aşama 8, masa 44 hesap). Eski garson masaya varınca isTamam 'yok' der ve sıradaki işe döner.
     {
-      const dev = gorevler.filter(g => g.uzakW && g.wid && g.wid !== wid && (g.tur === 'menu' || g.tur === 'siparis' || g.tur === 'hesap')).map(g => ({ g, r: bolgeKurali(wid, g.table, g.yas, false) })).filter(x => x.r.ok);
+      const dev = gorevler.filter(g => (g.uzakW || (g.tur === 'menu' && saat - g.claimT > DEVIR_S)) && g.wid && g.wid !== wid && (g.tur === 'menu' || g.tur === 'siparis' || g.tur === 'hesap')).map(g => ({ g, r: bolgeKurali(wid, g.table, g.yas, false) })).filter(x => x.r.ok);
       if (dev.length) { dev.sort((a, b) => (a.r.ic === b.r.ic ? 0 : a.r.ic ? -1 : 1) || a.g.claimT - b.g.claimT || a.g.id - b.g.id); const g = dev[0].g; g.wid = wid; g.claimT = saat; g.uzakW = false; acilSon.delete(wid); return sonuc(g); }
     }
     // 2026-11-22: iki tur. Önce kendi / sahipsiz / komşu bölgenin işleri (öncelik sırasıyla), uzak bölge yardımı yalnız bunlar boşsa.
