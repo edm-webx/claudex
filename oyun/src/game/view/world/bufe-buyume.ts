@@ -53,13 +53,15 @@ export function gecitDuvar(): { x0: number; x1: number; z0: number; z1: number }
   return [{ x0: G.x0, x1: G.x0 + t, z0: G.z0, z1: G.kz0 }, { x0: G.x0, x1: G.x0 + t, z0: G.kz1, z1: G.z1 }, { x0: G.x1 - t, x1: G.x1, z0: G.z0, z1: G.z1 }];
 }
 /** Solid parts of the growth for the walk grid (halls, counters, kitchen, tables). */
+/** dondurma dolabı: 7'den itibaren doğu kanadının kapanan eski vapur geçidine, duvara yaslı (önceden salonun ortasında kalıyordu) */
+const dolapZ = (stage: number): number => (stage >= 7 ? -7.0 : ET.z0 + 1.15);
 export function buyumeEngel(stage: number, salonSahip?: readonly string[]): { x0: number; x1: number; z0: number; z1: number; tag: string }[] {
   const o: { x0: number; x1: number; z0: number; z1: number; tag: string }[] = [];
   const add = (x0: number, x1: number, z0: number, z1: number, tag = 'buyume') => o.push({ x0, x1, z0, z1, tag });
   // table top only (as the kiosk tables, view/world/index.ts): the seats (±0.78 on the seat axis) and the garson spot stay walkable
   for (const m of [...acikMasalar(stage, 'cay'), ...acikMasalar(stage, 'dondurma')]) add(m.x - 0.45, m.x + 0.45, m.z - 0.45, m.z + 0.45, 'buyume-masa');
   if (stage >= 3) add(WT.x0 + 0.2, WT.x0 + 1.4, -9.0, -6.4, 'buyume-ocak');
-  if (stage >= 4) add(ET.x1 - 1.3, ET.x1 - 0.1, ET.z0 + 0.3, ET.z0 + 2.0, 'buyume-dolap');
+  if (stage >= 4) { const dz = dolapZ(stage); add(ET.x1 - 1.3, ET.x1 - 0.1, dz - 0.85, dz + 0.85, 'buyume-dolap'); }
   // 2026-11-09 "her yere girilebilmeli": the halls are rooms with a door on the promenade side (content/ic-mekan.ts)
   for (const r of restoranDuvar(stage)) add(r.x0, r.x1, r.z0, r.z1, 'buyume-duvar');   // 2026-11-25 ters U: dış duvar + revak direkleri + ön tezgâh
   // 2026-11-25: 9 şov ızgarası, 10 deniz köşkü (öncesinde kapalı) ve fıskiyeler
@@ -162,9 +164,9 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
     const r = stage >= 7 ? ET : { ...ET, x1: 17.2 };
     if (stage < 7) deck(r);
     acikMasalar(stage, 'dondurma').forEach((m, i) => table(m.x, m.z, m.ax, fine ? '#f4f2ec' : UMB[(i + 3) % UMB.length], stage < 7, fine));
-    const dx = ET.x1 - 0.7; b.box(1.2, 1.5, 1.7, fine ? '#1f2a44' : '#3fb5b0', dx, 0.87, ET.z0 + 1.15); gl.box(0.04, 1.0, 1.4, '#cfeaf5', dx - 0.62, 1.0, ET.z0 + 1.15);
-    for (let i = 0; i < 4; i++) for (let j = 0; j < 3; j++) b.box(0.12, 0.2, 0.12, ['#e0533c', '#ffd23f', '#7ed957', '#f2a2b3'][(i + j) % 4], dx - 0.5, 0.6 + j * 0.3, ET.z0 + 0.6 + i * 0.32);
-    sign('DONDURMA · GAZOZ', dx - 0.2, 1.95, ET.z0 + 1.15, 1.9, -HP);
+    const dx = ET.x1 - 0.7; const dz = dolapZ(stage); b.box(1.2, 1.5, 1.7, fine ? '#1f2a44' : '#3fb5b0', dx, 0.87, dz); gl.box(0.04, 1.0, 1.4, '#cfeaf5', dx - 0.62, 1.0, dz);
+    for (let i = 0; i < 4; i++) for (let j = 0; j < 3; j++) b.box(0.12, 0.2, 0.12, ['#e0533c', '#ffd23f', '#7ed957', '#f2a2b3'][(i + j) % 4], dx - 0.5, 0.6 + j * 0.3, dz - 0.55 + i * 0.32);
+    sign('DONDURMA · GAZOZ', dx - 0.2, 1.95, dz, 1.9, -HP);
     if (stage < 7) planter(cx(r), ET.z1 + 0.3, Math.min(6.5, r.x1 - r.x0 - 1), 0.5);
   }
   /* 5: pergola with vines over the west deck, string lights over the pier mouth */
@@ -307,7 +309,7 @@ function build(stage: number, signMats: T.MeshStandardMaterial[], flames: T.Obje
       for (const z of revakDirek(s)) { b.box(0.2, 2.8, 0.2, CREAM, ic, 1.4, z); b.box(0.3, 0.16, 0.3, RED, ic, 0.2, z); }
       b.box(0.24, 0.26, k.z1 + 13.2, RED, ic, 2.85, (k.z1 - 13.2) / 2);   // revak kirişi
       for (const [x, z] of saksiYer(s, stage)) { b.cyl(0.3, 0.24, 0.55, fine ? '#c9a24a' : '#b5562f', x, 0.41, z, { seg: 10 }); b.sph(0.42, '#3f7a34', x, 1.05, z, { ws: 8, hs: 6 }); b.sph(0.3, '#4f8f3a', x + 0.12, 1.38, z - 0.05, { ws: 7, hs: 5 }); }
-      for (const lx of [k.x0 + 2.6, kx, k.x1 - 2.6]) for (const lz of stage >= 8 ? [-12.4, -10.4, -7.0] : [-12.4, -10.4, -7.0, -2.4, 1.2]) { b.cyl(0.012, 0.012, 0.5, '#3a2a20', lx, 2.95, lz, { seg: 4 }); b.cone(0.2, 0.2, fine ? '#c9a24a' : '#b8733d', lx, 2.62, lz, { seg: 10 }); lit.sph(0.08, '#ffe6b0', lx, 2.5, lz, { ws: 6, hs: 4 }); glowAt(lx, lz, 1.5); }   // bakır sarkıtlar
+      for (const lx of [k.x0 + 2.6, kx, k.x1 - 2.6]) for (const lz of stage >= 8 ? [-12.4, -10.4, -7.0] : [-12.4, -10.4, -7.0, -2.4, 1.2]) { R.b.cyl(0.012, 0.012, 0.5, '#3a2a20', lx, 2.95, lz, { seg: 4 }); R.b.cone(0.2, 0.2, fine ? '#c9a24a' : '#b8733d', lx, 2.62, lz, { seg: 10 }); R.lit.sph(0.08, '#ffe6b0', lx, 2.5, lz, { ws: 6, hs: 4 }); glowAt(lx, lz, 1.5); }   // bakır sarkıtlar: çatıyla kalkar (2026-11-26: içeriden yakın kamerada masanın üstüne şemsiye gibi biniyordu)
       for (let z = -12.4; z < 3.8; z += 1.1) lit.sph(0.06, '#ffd890', ic + q * 0.16, 2.6, z, { ws: 6, hs: 4 });
       tente(k.x0, k.x1, -12.6, 3.9, s === 'W' ? 'x+' : 'x-'); tente(k.x0 + 0.2, k.x1 - 0.2, k.z1, k.z1, 'z+');
       if (stage < 8) kiremit(k.x0 - 0.3, k.x1 + 0.3, -13.6, fz + 0.35, RES_H, 2.2, 'z');   // 8+: kanadın önü baştan sona teras

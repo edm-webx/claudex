@@ -213,7 +213,7 @@ export function staticObstacles(): Obstacle[] {
   add(PIER.x0 - 0.4, PIER.x0 + 0.2, PIER.z0 - 0.4, PIER.z1, 'rail');
   // 2026-11-25: deniz köşkünün iki kapısı (aşama 10); öncesinde buyumeEngel kapatır
   { let x = PIER.x0 - 0.4; for (const d of KOSK_KAPI) { add(x, d - KOSK_KAPI_W / 2, PIER.z0 - 0.4, PIER.z0 + 0.2, 'rail'); x = d + KOSK_KAPI_W / 2; } add(x, PIER.x1 + 0.4, PIER.z0 - 0.4, PIER.z0 + 0.2, 'rail'); }
-  add(PIER.x1 - 0.2, PIER.x1 + 0.4, PIER.z0 - 0.4, GANG.z0, 'rail'); add(PIER.x1 - 0.2, PIER.x1 + 0.4, GANG.z1, PIER.z1, 'rail');
+  add(PIER.x1 - 0.2, PIER.x1 + 0.4, PIER.z0 - 0.4, PIER.z1, 'rail');   // vapur kalktı: doğu korkuluğu kesintisiz
   add(-80, PIER.x0, PIER.z1 - 0.4, PIER.z1 + 0.45, 'rail'); add(PIER.x1, 80, PIER.z1 - 0.4, PIER.z1 + 0.45, 'rail');
   // road-side rail along the promenade; the footbridge stairs interrupt it
   add(-80, UG.x - UG.hw, 13.3, 14.2, 'rail'); add(UG.x + UG.hw, 80, 13.3, 14.2, 'rail');

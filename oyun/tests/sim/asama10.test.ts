@@ -24,7 +24,6 @@ it('pier wings: salon income and staff grow every stage from 3; growth stays on 
   for (let s = 2; s <= 10; s++) for (const r of buyumeEngel(s)) {
     if (/^kosk|^fiskiye|^buyume-sov/.test(r.tag || '')) continue;   // 2026-11-25: deniz köşkü (arkada), fıskiyeler (promenad) ve hol ortasındaki şov ızgarası bilerek buranın dışında
     expect(r.x0).toBeGreaterThan(-24); expect(r.x1).toBeLessThan(22.7); expect(r.z0).toBeGreaterThan(-18); expect(r.z1).toBeLessThan(4.4);
-    const ferry = r.x1 > 8.6 && r.z1 > -9.2 && r.z0 < -4.8; expect(ferry).toBe(false);
     if (r.tag === 'buyume-bufemutfak') expect(r.z1).toBeLessThanOrEqual(-12.9);   // 2026-11-09 büfe mutfağı sits behind the covered walkway
     else if (r.tag === 'buyume-bufe-ic') { expect(r.x0).toBeGreaterThan(3.4); expect(r.x1).toBeLessThan(4.2); expect(r.z1).toBeLessThan(WIN_Z - 0.7); }   // 2026-11-21 büfe vitrini on the east wall, clear of the window post
     else if (r.tag === 'buyume-duvar' || r.tag === 'buyume-salon') { const avlu = r.x1 > -9.6 && r.x0 < 7.8 && r.z1 > -12.9; expect(avlu).toBe(false); }   // 2026-11-25 ters U: avlu boş kalır

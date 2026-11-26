@@ -61,7 +61,7 @@ export function buildPier() {
   // railings (gap for the ferry gangway on the east side)
   railLine(A, PIER.x0 + 0.1, PIER.z1 - 0.2, PIER.x0 + 0.1, PIER.z0 + 0.1);
   railLine(A, PIER.x0 + 0.1, PIER.z0 + 0.1, PIER.x1 - 0.1, PIER.z0 + 0.1);
-  railLine(A, PIER.x1 - 0.1, PIER.z0 + 0.1, PIER.x1 - 0.1, PIER.z1 - 0.2, (x: number, z: number) => z > GANG.z0 && z < GANG.z1);
+  railLine(A, PIER.x1 - 0.1, PIER.z0 + 0.1, PIER.x1 - 0.1, PIER.z1 - 0.2);   // 2026-11-26: vapur kalktı, iskele boşluğu da kapandı
   // bollards (babalar) and rope coils
   const bollard = (x?: any, z?: any) => { A.lathe([[0, 0], [0.22, 0], [0.2, 0.08], [0.14, 0.14], [0.13, 0.38], [0.21, 0.44], [0.22, 0.5], [0.14, 0.56], [0, 0.57]], '#33373b', x, 0, z, { seg: 12 }); };
   [[22.05, -8.55], [22.05, -5.65], [21.9, -12.85], [-23.45, -17.5]].forEach(([x, z]) => bollard(x, z));
