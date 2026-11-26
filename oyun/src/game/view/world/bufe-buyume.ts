@@ -564,7 +564,9 @@ export function createBufeBuyume(deps: BuyumeDeps): BuyumeView {
       if (mk !== mevKey || (mev && mev.parent !== root)) { if (mev) { mev.removeFromParent(); mev = null; } mevKey = mk; if (mk) { mev = buildMevsim(mk as 'bayrak'); root.add(mev); } }
       if (!grp) return;
       const hp = deps.hero?.();
-      if (hp) {
+      // 2026-11-26 perf (akıcı kademe karşı yaka 501b üçgen): iskeleden uzaktayken (karşı yaka, orman, saha) restoran hiç çizilmez
+      if (hp) grp.visible = hp.z < 28 && Math.abs(hp.x) < 75;
+      if (hp && grp.visible) {
         const inK = st < 6 && icIcinde(mutfakOda(st), hp, 0.2), inR = st >= 6 && restoranAlani(hp);
         for (const nm of ['duvar-K', 'cati-K']) { const o = grp.getObjectByName(nm); if (o) o.visible = !inK; }
         const cR = grp.getObjectByName('cati-R'); if (cR) cR.visible = !inR;
