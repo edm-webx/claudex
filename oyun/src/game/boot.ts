@@ -71,6 +71,7 @@ import { esnafApi } from './sim/esnaf';
 import { createMomentsView, type MomentsView } from './view/moments';
 import { createMiniGames, type MiniGamesView } from './ui/mini-games';
 import { createHikayeScene, type HikayeSceneView } from './ui/hikaye-scene';
+import { createEgitici, type EgiticiView } from './ui/egitici';
 import { createAudioMap, type AudioMap } from './audio-map';
 import { createJuice, type JuiceView } from './view/juice';
 import { havaApi } from './sim/hava';
@@ -589,6 +590,10 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
       if ((foreign || wiped) && !(c && c.code)) void save.save('manual');
     } })) : null;
   let adminEditor: () => void = () => { /* set below once the editor deps exist */ };
+  // Eğitici kartları (2026-11-26 sahip: Tente): ilk kez olan şeyde oyunu durdurur, kamerayı hedefe götürür (ui/egitici.ts, content/egitici.ts)
+  const egitici: EgiticiView | null = panels ? make('egitici', () => createEgitici({ root: U.root, rules: () => sim.rules, project,
+    mesgul: () => !!acilis?.kamera(), digerOyuncu: () => (online ? online.peers().length : 0),
+    sfx: id => { try { audio?.sfx(id); } catch { /* */ } }, toast: t => U.toast(t, 'info') })) : null;
   const adminPanel = playMode && uiReal && online ? make('adminPanel', () => createAdminPanel({ root: U.root, peers: () => online.peers(), toast: t => U.toast(t, 'info'), sfx: id => { try { audio?.sfx(id); } catch { /* */ } },
     teleport: (x, z, kat?: number) => { sim.command({ kind: 'teleport', x, z, kat }); camHold = null; cam.snap(walk.pos); }, myPos: () => ({ x: walk.pos.x, z: walk.pos.z }),
     addMoney: n => { sim.state.money = Math.max(0, sim.state.money + n); }, addGold: n => { sim.state.gold = Math.max(0, (sim.state.gold || 0) + n); },
@@ -825,7 +830,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     const BUFE = bufeKutu(sim.state.stage || 1);   // 2026-11-22: the büfe sits against the kitchen from stage 6
     const inBufe = pos.x > BUFE.x0 && pos.x < BUFE.x1 && pos.z > BUFE.z0 && pos.z < BUFE.z1;   // Faz 2 (38): inside the büfe the camera centres on it
     const bufeFocus = { x: (BUFE.x0 + BUFE.x1) / 2, z: (BUFE.z0 + BUFE.z1) / 2 };
-    guard('camera.follow', () => cam.follow((t => onUg(t.x, t.z) ? { x: t.x, z: t.z, y: ugY(t.x, t.z) } : t === pos && pose.y ? { x: t.x, z: t.z, y: pose.y } : t)(acilis?.kamera() ?? (df && sim.state.playT <= df.until ? df : camHold ?? (inBufe ? { x: pos.x + (bufeFocus.x - pos.x) * 0.25, z: pos.z + (bufeFocus.z - pos.z) * 0.25 } : pos))), fdt));
+    guard('camera.follow', () => cam.follow((t => onUg(t.x, t.z) ? { x: t.x, z: t.z, y: ugY(t.x, t.z) } : t === pos && pose.y ? { x: t.x, z: t.z, y: pose.y } : t)(acilis?.kamera() ?? egitici?.kamera() ?? (df && sim.state.playT <= df.until ? df : camHold ?? (inBufe ? { x: pos.x + (bufeFocus.x - pos.x) * 0.25, z: pos.z + (bufeFocus.z - pos.z) * 0.25 } : pos))), fdt));
     if (playMode) guard('sign', syncSign);
     guard('world', () => W.update(sim.state, fdt, alpha));
     if (ferryLook) guard('ferryLook', () => ferryLook.update(fdt));
@@ -889,6 +894,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (evRoom) guard('evRoom', () => evRoom.update(fdt));
     if (miniGames) guard('miniGames', () => miniGames.update(fdt));
     if (hikayeScene) guard('hikayeScene', () => hikayeScene.update(fdt));
+    if (egitici) guard('egitici', () => egitici.update(fdt));
     if (denizUi) guard('denizUi', () => denizUi.update(fdt));
     if (fx) guard('fx', () => fx.update(fdt));
     if (anim) guard('anim', () => anim.update(fdt));
@@ -1144,6 +1150,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   reg('hucre', (name: string) => cellRect(name));
   reg('acilis', (to: number) => acilis?.baslat(Number(to)));   // dev: BUF-30 açılış anını yeniden oynat
   reg('teleport', (x: number, z: number, kat?: number) => { sim.command({ kind: 'teleport', x, z, kat }); camHold = null; cam.snap(walk.pos); });
+  reg('egitici', () => egitici);   // QA: __marti.egitici()?.goster('arsa_alindi') / aktif() / kapat()
   reg('camera', (o: { x?: number; z?: number; zoom?: number; zoomRaw?: number; yaw?: number; tilt?: number } = {}) => {
     if (o.zoom !== undefined) cam.zoom = o.zoom;
     const cr = cam as unknown as { zoomRaw?: (z: number) => void; turn(d: number): void; tilt(d: number): void; yaw: number };
