@@ -23,7 +23,7 @@ export interface Rect { x0: number; x1: number; z0: number; z1: number }
 export const IC_MEKANLAR: IcMekan[] = [
   { id: 'kafe1', ad: 'Meydan Kafe', tur: 'kafe', x: -17.5, z: 37.9, wx: 7, wz: 9.4, kapi: '+x', arsa: 'k1', bina: 'kafe1', h: 3.1 },
   { id: 'kafe2', ad: 'Sahil Bistro', tur: 'bistro', x: -17.5, z: 51.5, wx: 7, wz: 9.4, kapi: '+x', arsa: 'k2', bina: 'kafe2', h: 3.1 },
-  { id: 'kirtasiye', ad: 'Martı Kırtasiye', tur: 'kirtasiye', x: 28, z: 35.2, wx: 7.1, wz: 3.6, kapi: '-z', arsa: 'k3', bina: 'kirtasiye', h: 3.0 },
+  { id: 'kirtasiye', ad: 'Martı Kırtasiye', tur: 'kirtasiye', x: 29.7, z: 35.2, wx: 5.0, wz: 3.6, kapi: '-z', arsa: 'k3', bina: 'kirtasiye', h: 3.0 },
   { id: 'okul', ad: 'Martıköy İlkokulu', tur: 'okul', x: 48.85, z: 37.25, wx: 18.3, wz: 7.5, kapi: '-z', arsa: 'k4', bina: 'okul', h: 3.2 },
   // 2026-11-20 owner: "AVM içindeki mağazalar ayrı, satın alınıp işletilebilen işletmeler olsun". 2026-11-21 owner: "merdiven var ama
   // işlevsiz, her katında mağaza olsun": three floors (content/avm-kat.ts), each with four shops either side of the central hall
@@ -110,14 +110,15 @@ function kafeLayout(W: number, D: number, bistro: boolean): IcItem[] {
   return o;
 }
 function kirtasiyeLayout(W: number, D: number): IcItem[] {
-  // 2026-11-21 denetim: tezgâh doğu duvarından 0.9 m içeride (kasiyer arkada sıkışmıyor), okuma köşesi kapı yolundan alındı
+  // 2026-11-26 sahip: "kırtasiye merdivenin önünü kesiyor, küçük kulübe yap": 5.0 x 3.6 m kulübe (eskiden 7.1). Arka duvarda raf + vitrin + fotokopi,
+  // batı duvarda kitaplık, tezgâh doğu ucunda (kasiyer arkada), okuma köşesi ve stand kapı yolunun batısında; oyuncak batı ön köşede (doğu ön köşe boş: personel tezgâhın ucundan dolaşır).
   return [
-    it('rafArka', -0.9, -D / 2 + 0.45, W - 2.8, 0.5, { solid: true, c: 'kirtasiye' }), it('tezgah', W / 2 - 1.55, 0.0, 1.8, 0.7, { solid: true, ry: 1, c: '#2b6fb8' }), it('kasa', W / 2 - 1.55, 0.5, 0.4, 0.4, { y: 1.05 }),
-    it('stand', -1.6, 0.5, 1.3, 0.55, { solid: true }), it('lamba', 0, 0, W, D),
+    it('rafArka', -W / 2 + 1.25, -D / 2 + 0.45, 2.0, 0.5, { solid: true, c: 'kirtasiye' }), it('tezgah', W / 2 - 1.55, 0.0, 1.8, 0.7, { solid: true, ry: 1, c: '#2b6fb8' }), it('kasa', W / 2 - 1.55, 0.5, 0.4, 0.4, { y: 1.05 }),
+    it('stand', -1.2, 0.55, 1.3, 0.55, { solid: true }), it('lamba', 0, 0, W, D),
     it('fotokopi', W / 2 - 0.6, -D / 2 + 0.6, 0.9, 0.7, { esya: 'fotokopi' }), it('pos', W / 2 - 1.55, -0.4, 0.3, 0.3, { esya: 'pos', y: 1.05 }),
-    it('laminasyon', W / 2 - 1.55, 0.15, 0.5, 0.4, { esya: 'laminasyon', y: 1.05 }), it('kitaplik', -W / 2 + 0.3, 0.1, 2.6, 0.4, { esya: 'kitap_raf', ry: 1 }),
-    it('kalemVitrin', 1.2, -D / 2 + 0.55, 1.2, 0.6, { esya: 'vitrin_k' }), it('oyuncak', -W / 2 + 1.3, D / 2 - 0.6, 1.2, 0.7, { esya: 'oyuncak' }),
-    it('yazici3d', -2.9 + 0.2, -D / 2 + 0.45, 0.6, 0.5, { esya: 'yazici3d', y: 1.25 }), it('okuma', -1.9, -0.5, 1.1, 0.9, { esya: 'okuma' }),
+    it('laminasyon', W / 2 - 1.55, 0.15, 0.5, 0.4, { esya: 'laminasyon', y: 1.05 }), it('kitaplik', -W / 2 + 0.3, 0.05, 1.8, 0.4, { esya: 'kitap_raf', ry: 1 }),
+    it('kalemVitrin', 0.45, -D / 2 + 0.55, 1.0, 0.6, { esya: 'vitrin_k' }), it('oyuncak', -W / 2 + 0.65, D / 2 - 0.4, 0.8, 0.6, { esya: 'oyuncak' }),
+    it('yazici3d', -W / 2 + 0.6, -D / 2 + 0.45, 0.6, 0.5, { esya: 'yazici3d', y: 1.25 }), it('okuma', -1.2, -0.45, 1.1, 0.9, { esya: 'okuma' }),
   ];
 }
 function okulLayout(W: number, D: number): IcItem[] {

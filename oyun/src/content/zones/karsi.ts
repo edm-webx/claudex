@@ -82,7 +82,7 @@ export function karsiPrefabs(): PrefabDef[] {
   // buildings
   defs.push(bld('kr.kafe1', 7, 9.4, 3.8, '#f1d9b4', '#c2551f', '+x', [], true, 'kafe1'), bld('kr.kafe2', 7, 9.4, 3.8, '#f1d9b4', '#c2551f', '+x', [], true, 'kafe2'));
   defs.push(bld('kr.banka', 10, 8.4, 6.6, '#e9dfc8', '#fbf6ea', '+z', [], true, 'banka'));
-  defs.push(bld('kr.kirtasiye', 7.1, 3.6, 3.6, '#bfd8e8', '#2b6fb8', '+z', [], true, 'kirtasiye'));
+  defs.push(bld('kr.kirtasiye', 5.0, 3.6, 3.0, '#bfd8e8', '#2b6fb8', '+z', [], true, 'kirtasiye'));
   defs.push(bld('kr.okul', 18.3, 7.5, 8.0, '#e9c98f', '#a2472f', '+z', [], true, 'okul'));
   defs.push(bld('kr.kantin', 3.7, 2.8, 3.0, '#f6efe1', '#e0533c', '-x', [box(3.6, 0.15, 1.2, 0, 2.4, 1.9, '#e0533c')], true));
   defs.push(bld('kr.avm', 16.9, 10.6, 9.5, '#cfd6e6', '#3f4a6b', '-z', [], true));   // 2026-11-21 owner: the inside is its own map (content/avm-kat.ts, sim/avm-gecis.ts): here a closed shell, the door at its front moves you in
@@ -126,7 +126,7 @@ export function karsiProps(): PrefabPlacement[] {
   out.push(P('kr-kafe1', 'kr.kafe1', -17.5, 37.9), P('kr-kafe2', 'kr.kafe2', -17.5, 51.5), P('kr-banka', 'kr.banka', 11.7, 36.8));
   out.push(P('kr-fiskiye', 'kr.fiskiye', -3.9, 45));
   for (let i = 0; i < 6; i++) { out.push(P('kr-bt' + i, 'kr.bench', -10.6 + i * 2.8, 34.8), P('kr-bb' + i, 'kr.bench', -10.6 + i * 2.8, 55.3, Math.PI)); }
-  out.push(P('kr-kirtasiye', 'kr.kirtasiye', 28, 35.2));
+  out.push(P('kr-kirtasiye', 'kr.kirtasiye', 29.7, 35.2));
   out.push(P('kr-basket', 'kr.basket', 36, 38.9));
   out.push(P('kr-okul', 'kr.okul', 48.85, 37.25), P('kr-kantin', 'kr.kantin', 56.15, 42.8));
   out.push(P('kr-fence-sc1', 'kr.cit.x10', 37.5, 44.4), P('kr-fence-sc2', 'kr.cit.x10', 52.5, 44.4), P('kr-fence-sc3', 'kr.cit.z11', 58.2, 38.9), P('kr-fence-gate', 'kr.cit.x5', 45, 44.4), P('kr-fence-sc4', 'kr.cit.z11', 32.5, 38.9), P('kr-fence-sc5', 'kr.cit.x8', 36.1, 33.4));

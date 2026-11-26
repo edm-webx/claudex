@@ -14,7 +14,7 @@ const BUILDINGS: [string, number, number, number, number, number | undefined, nu
   ['bina/building-e', 20.15, 51.8, 16.9, 10.6, 9.5, 0, '#ffe2bc'],      // AVM
   ['bina/building-k', 46.95, 53.55, 16.9, 6.7, 12.0, 0, '#fff0f0'],     // hastane
   ['bina/building-k', 48.85, 37.25, 18.3, 7.5, 7.8, 0, '#ffd4a8'],
-  ['bina/building-a', 28, 35.2, 7.1, 3.6, 3.6, 0, '#c4deff'],     // kırtasiye
+  ['bina/building-a', 29.7, 35.2, 5.0, 3.6, 3.0, 0, '#c4deff'],     // kırtasiye
   ['bina/building-a', 56.15, 42.8, 3.7, 2.8, 3.0, Math.PI / 2, '#ffb894'],   // kantin      // okul
   ['bina/building-c', -17.5, 37.9, 7.0, 9.4, 4.6, Math.PI / 2, '#ffcfa8'],   // kafe 1 (front towards the square, +x)
   ['bina/building-c', -17.5, 51.5, 7.0, 9.4, 4.6, Math.PI / 2, '#ffc0a0'],   // kafe 2
