@@ -36,3 +36,11 @@ describe('ses efekti çeşitleri', () => {
     }
   });
 });
+
+describe('şantiye sesleri', () => {
+  const S = db.sfx as unknown as Record<string, import('../../../src/engine/audio/msynth/render').SfxDef>;
+  it('çekiç, matkap, el arabası, mala, geri bip, zincir sonlu render olur', () => {
+    for (const id of ['cekic', 'matkap', 'el_arabasi', 'mala', 'geri_bip', 'zincir']) { const a = renderSfx(id, S[id], { sr: SR_SFX, patches: {} }); expect(a.length).toBeGreaterThan(500); expect(a.every(Number.isFinite)).toBe(true); }
+  });
+  it('şantiye döngüleri tanımlı', () => { const l = db.loops as Record<string, unknown>; expect(l.santiye_orta).toBeTruthy(); expect(l.santiye_buyuk).toBeTruthy(); });
+});

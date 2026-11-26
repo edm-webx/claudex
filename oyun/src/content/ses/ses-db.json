@@ -2194,6 +2194,216 @@
      "at": 0.05
     }
    ]
+  },
+  "cekic": {
+   "pitchVar": 0.08,
+   "cooldown": 120,
+   "gain": 0.6,
+   "variants": 5,
+   "rev": 0.1,
+   "note": "Santiye: civiye cekic vurusu (metal tik + ahsap tok).",
+   "layers": [
+    {
+     "k": "tone",
+     "f": 2100,
+     "a": 0.001,
+     "d": 0.05,
+     "v": 0.25,
+     "f1": 1700
+    },
+    {
+     "k": "tone",
+     "f": 190,
+     "a": 0.001,
+     "d": 0.08,
+     "v": 0.4,
+     "f1": 120
+    },
+    {
+     "k": "noise",
+     "color": "white",
+     "filter": {
+      "type": "bp",
+      "f": 3500,
+      "q": 2
+     },
+     "a": 0.002,
+     "d": 0.025,
+     "v": 0.15
+    }
+   ]
+  },
+  "matkap": {
+   "pitchVar": 0.06,
+   "cooldown": 900,
+   "gain": 0.45,
+   "len": 1.6,
+   "note": "Elektrikli matkap: yukselen vizilti + dis.",
+   "layers": [
+    {
+     "k": "tone",
+     "f": 320,
+     "a": 0.08,
+     "d": 1.2,
+     "v": 0.12,
+     "f1": 520,
+     "at": 0,
+     "wave": "sawtooth",
+     "filter": {
+      "type": "bp",
+      "f": 1400,
+      "q": 1.5
+     }
+    },
+    {
+     "k": "noise",
+     "color": "white",
+     "filter": {
+      "type": "bp",
+      "f": 3200,
+      "q": 1.2
+     },
+     "a": 0.1,
+     "d": 1.2,
+     "v": 0.08,
+     "at": 0.05
+    }
+   ]
+  },
+  "el_arabasi": {
+   "pitchVar": 0.1,
+   "cooldown": 600,
+   "gain": 0.4,
+   "len": 1.2,
+   "note": "El arabasi: sallanan tekerlek + sac tangirtisi.",
+   "layers": [
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 500
+     },
+     "a": 0.05,
+     "d": 1.0,
+     "v": 0.25,
+     "at": 0
+    },
+    {
+     "k": "burst",
+     "n": 5,
+     "every": [
+      0.12,
+      0.2
+     ],
+     "fJit": 0.1,
+     "vJit": 0.3,
+     "layer": {
+      "k": "tone",
+      "f": 700,
+      "a": 0.001,
+      "d": 0.05,
+      "v": 0.12,
+      "f1": 500
+     }
+    }
+   ]
+  },
+  "mala": {
+   "pitchVar": 0.1,
+   "cooldown": 300,
+   "gain": 0.35,
+   "variants": 4,
+   "note": "Mala/supurge: surtunme.",
+   "layers": [
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 2600,
+      "q": 1
+     },
+     "a": 0.06,
+     "d": 0.35,
+     "v": 0.2,
+     "at": 0
+    },
+    {
+     "k": "noise",
+     "color": "white",
+     "filter": {
+      "type": "hp",
+      "f": 6000
+     },
+     "a": 0.05,
+     "d": 0.25,
+     "v": 0.05,
+     "at": 0.05
+    }
+   ]
+  },
+  "geri_bip": {
+   "pitchVar": 0,
+   "cooldown": 2600,
+   "gain": 0.35,
+   "len": 2.4,
+   "note": "Kamyon geri vites uyarisi: 3 bip.",
+   "layers": [
+    {
+     "k": "burst",
+     "n": 3,
+     "every": [
+      0.7,
+      0.7
+     ],
+     "layer": {
+      "k": "tone",
+      "f": 1000,
+      "a": 0.004,
+      "d": 0.28,
+      "v": 0.2
+     }
+    }
+   ]
+  },
+  "zincir": {
+   "pitchVar": 0.08,
+   "cooldown": 500,
+   "gain": 0.45,
+   "variants": 4,
+   "note": "Vinc zinciri: tangir tungur.",
+   "layers": [
+    {
+     "k": "burst",
+     "n": 4,
+     "every": [
+      0.05,
+      0.11
+     ],
+     "fJit": 0.15,
+     "vJit": 0.3,
+     "layer": {
+      "k": "tone",
+      "f": 1800,
+      "a": 0.001,
+      "d": 0.06,
+      "v": 0.14,
+      "f1": 1300
+     }
+    },
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 900
+     },
+     "a": 0.002,
+     "d": 0.3,
+     "v": 0.1
+    }
+   ]
   }
  },
  "loops": {
@@ -3309,6 +3519,189 @@
     }
    ],
    "file": "ic_mutfak.opus"
+  },
+  "santiye_orta": {
+   "dur": 12,
+   "gain": 0.3,
+   "rev": 0.12,
+   "note": "Orta santiye: betoniyer donusu, uzaktan cekic ve matkap.",
+   "layers": [
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 200,
+      "q": 0.6
+     },
+     "v": 0.22,
+     "swell": {
+      "rate": 0.5,
+      "depth": 0.2
+     }
+    },
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 700,
+      "q": 0.8
+     },
+     "v": 0.05,
+     "swell": {
+      "rate": 0.8,
+      "depth": 0.4
+     }
+    }
+   ],
+   "events": [
+    {
+     "every": [
+      1.2,
+      2.8
+     ],
+     "layer": {
+      "k": "tone",
+      "f": 2000,
+      "a": 0.001,
+      "d": 0.05,
+      "v": 0.07,
+      "f1": 1600
+     }
+    },
+    {
+     "every": [
+      1.5,
+      3.5
+     ],
+     "layer": {
+      "k": "tone",
+      "f": 170,
+      "a": 0.001,
+      "d": 0.08,
+      "v": 0.1,
+      "f1": 110
+     }
+    },
+    {
+     "every": [
+      7,
+      11
+     ],
+     "layer": {
+      "k": "tone",
+      "f": 380,
+      "a": 0.05,
+      "d": 0.8,
+      "v": 0.05,
+      "f1": 560,
+      "wave": "sawtooth",
+      "filter": {
+       "type": "bp",
+       "f": 1500,
+       "q": 1.5
+      }
+     }
+    }
+   ]
+  },
+  "santiye_buyuk": {
+   "dur": 14,
+   "gain": 0.34,
+   "rev": 0.15,
+   "note": "Buyuk santiye: jenerator, vinc motoru, beton mikseri, geri vites bipi.",
+   "layers": [
+    {
+     "k": "tone",
+     "f": 55,
+     "v": 0.1
+    },
+    {
+     "k": "tone",
+     "f": 110,
+     "v": 0.05,
+     "swell": {
+      "rate": 0.4,
+      "depth": 0.2
+     }
+    },
+    {
+     "k": "noise",
+     "color": "brown",
+     "filter": {
+      "type": "lp",
+      "f": 260,
+      "q": 0.7
+     },
+     "v": 0.26,
+     "swell": {
+      "rate": 0.35,
+      "depth": 0.25
+     }
+    },
+    {
+     "k": "noise",
+     "color": "pink",
+     "filter": {
+      "type": "bp",
+      "f": 900,
+      "q": 0.7
+     },
+     "v": 0.06,
+     "swell": {
+      "rate": 0.6,
+      "depth": 0.4
+     }
+    }
+   ],
+   "events": [
+    {
+     "every": [
+      1.0,
+      2.4
+     ],
+     "layer": {
+      "k": "tone",
+      "f": 2000,
+      "a": 0.001,
+      "d": 0.05,
+      "v": 0.07,
+      "f1": 1600
+     }
+    },
+    {
+     "every": [
+      5,
+      9
+     ],
+     "layer": {
+      "k": "tone",
+      "f": 1000,
+      "a": 0.001,
+      "d": 0.25,
+      "v": 0.06
+     }
+    },
+    {
+     "every": [
+      6,
+      12
+     ],
+     "layer": {
+      "k": "noise",
+      "color": "white",
+      "filter": {
+       "type": "bp",
+       "f": 1800,
+       "q": 2
+      },
+      "a": 0.01,
+      "d": 0.4,
+      "v": 0.05
+     }
+    }
+   ]
   }
  },
  "music": {
