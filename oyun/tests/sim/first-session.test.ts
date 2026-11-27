@@ -52,7 +52,7 @@ describe('first session (v2 STEPS table)', () => {
       const r = runBot(seed, 1700);
       const ev = evaluate(r.events, { catAsleep: r.catAsleep });
       const failed = ev.rows.filter((x: any) => !x.ok).map((x: any) => `${x.st.gdd} ${x.st.what} (t=${x.t}, max=${x.st.max})`);
-      expect(failed, 'failed steps').toEqual([]);
+      expect(failed.join(' | '), 'failed steps').toBe('');
       expect(ev.pass).toBe(STEPS.length);
     }, 300000);
   }
@@ -80,8 +80,10 @@ describe('economy parity with the v2 bot curve', () => {
       // hedef ödülleri günlük 250 ₺ tavandan çıktı. Gün 1/3/5: 7077/18192/33838 -> 10047/30263/48501 (hesap değişikliği + hedef ödülü; EKO-05 dengeyi ayrıca ayarlar).
       // 2026-11-21 EKO-05 re-baseline: 1. aşama küçük hedef ödülü tavanı x16 -> x6, sipariş ödülü 0,6/1,2 -> 0,4/0,8 dk gelir (30/60/90. dk toplamı
       // 6 tohumda 76k/207k/355k hedefine indi). Gün 1/3/5: 10047/30263/48501 -> 7223/19456/36916.
-      // 2026-11-25 vapur kalktı: kalabalık dalgası (KALABALIK_PAY 0.4) + tepsi1 pencerenin açılış koşulunu aldı; ölçüm 6401/19347/41690 (önce 6281/20705/42192), referans aynı.
-      const FAZ2_CUM: Record<number, number> = { 1: 7223, 3: 19456, 5: 36916 };
+      // 2026-11-25 ZMN-01 re-baseline: the game day is 24 h (08 -> 08) in the same 480 s, so these 240 s marks fall at 20:00 instead of
+      // 17:30 (the curve moves inside the day: more of the day's money now comes at night). Whole-day totals (480 s marks, seeds 1-3, days 1-4) stay level:
+      // day 4 sum 249963 old / 249436 new. Gün 1/3/5: 7223/19456/36916 -> 6042/22709/45997. (vapur kalktı: KALABALIK_PAY 0.4 dalgası jo0q11'de.)
+      const FAZ2_CUM: Record<number, number> = { 1: 6042, 3: 22709, 5: 45997 };
       const ref = FAZ2_CUM[d];
       expect(Math.abs(at[d] - ref) / ref, `day ${d}: ${at[d]} vs v2 ${ref}`).toBeLessThanOrEqual(0.15);
     }

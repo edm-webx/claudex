@@ -23,6 +23,7 @@ import {
   HOME_AREAS, HOME_ITEMS, HOME_THEMES, HOME_REST, HOME_LINES, homeItemById, type DecorX,
 } from '../../content/dekor-katalog';
 import { fmtMoney } from './util';
+import { oyunTakvim } from './hava';
 
 export interface DekorData {
   season: boolean; layouts: (DecorSlotSave[] | null)[]; parca: number; lovers: Record<string, number>; photos: number;
@@ -280,7 +281,7 @@ export function installDekorEv(K: Kernel): DekorEvApi {
       if (favs.length && c) say(c, rng.pick(favs).line!, 3.2);
     }
     // lights at night draw passers-by
-    if (h >= 19 || h < 5) {
+    if (h % 24 >= 19 || h % 24 < 5) {
       timers.light -= dt;
       if (timers.light <= 0) {
         timers.light = rng.range(60, 120);
@@ -306,7 +307,7 @@ export function installDekorEv(K: Kernel): DekorEvApi {
     const nset: Record<string, number> = {};
     for (const id of placedIds()) { const d = decorById(id); if (d) nset[d.set] = (nset[d.set] || 0) + 1; }
     const sel = ui.sel >= 0 ? slotEntry(ui.sel) : null;
-    const season = seasonFor(st.calendar);
+    const season = seasonFor(oyunTakvim(st));   // ZMN-02: game calendar
     return {
       tab: ui.tab, cat: ui.cat, setFilter: ui.set, sel: ui.sel, cats: DEKOR_CATS,
       catOf: Object.fromEntries(st.decorOwned.concat(DECOR_EXTRA.map(d => d.id)).map(id => [id, catOf(id)])),

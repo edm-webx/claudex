@@ -6,7 +6,8 @@ export const lerp = (a: number, b: number, t: number): number => a + (b - a) * t
 export const near2 = (a: Vec2, b: Vec2, r: number): boolean => (a.x - b.x) ** 2 + (a.z - b.z) ** 2 <= r * r;
 export const dist2d = (a: Vec2, b: Vec2): number => Math.hypot(a.x - b.x, a.z - b.z);
 export const hourOf = (dayT: number): number => DAY_START_H + (DAY_END_H - DAY_START_H) * clamp(dayT / GAME_DAY_S, 0, 1);
-export const inHours = (hrs: [number, number][] | undefined, h: number): boolean => (hrs || []).some(([a, b]) => h >= a && h < b);
+/** content hours are 0..24, the game clock 8..32 (ZMN-01): after midnight a span is also matched at h - 24 (so [5, 8] means 05:00-08:00) */
+export const inHours = (hrs: [number, number][] | undefined, h: number): boolean => (hrs || []).some(([a, b]) => (h >= a && h < b) || (h >= 24 && h - 24 >= a && h - 24 < b));
 export const r1 = (v: number): number => Math.round(v * 10) / 10;
 export const compactNum = (v: number): string => {
   const a = Math.abs(v);

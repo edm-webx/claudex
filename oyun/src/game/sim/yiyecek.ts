@@ -29,6 +29,7 @@ import {
   MARKALAR, MARKA_BY_ID, MASKOTLAR, KAT_NAMES, DEAL_KATS, dealBrands, DEAL_LEVEL, DEAL_TOAST, LOYAL_CHANCE, LOYAL_KATS, LOYAL_TIP, LOYAL_ASK, LOYAL_YES, LOYAL_NO,
   AD_BRANDS, PANKART, type MarkaKat,
 } from '../../content/markalar';
+import { oyunTakvim } from './hava';
 
 export const YIYECEK_ZONE = 'yiyecek';
 
@@ -88,7 +89,7 @@ export function installYiyecek(K: Kernel): YiyecekApi {
   }
 
   // ───────── helpers ─────────
-  const month = () => Number((K.state.calendar || '').slice(5, 7)) || 6;
+  const month = () => Number(oyunTakvim(K.state).slice(5, 7)) || 6;   // ZMN-02: game calendar
   const inSeason = (d: TarifDef) => !d.months || d.months.includes(month());
   const built = (p: ProductId) => !!rt.stations[p]?.built;
   const unitPrice = (p: ProductId) => price(p, K.state.tiers[p] || 1) * K.venueMult();

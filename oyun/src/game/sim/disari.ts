@@ -409,7 +409,7 @@ export function installDisari(K: Kernel, teleport: (x: number, z: number) => voi
         realm: realmOfRegion(r.id)?.id || null, bus: (realmOfRegion(r.id)?.id || null) !== curRealm(),
         stop: r.stop.name, stopKnown: knownStop(d, r.id), vapur: !!r.vapur, map: r.map, island: !!r.island, lockLine: realmOfRegion(r.id) ? r.lockLine : 'Şimdilik kapalı. Yakında açılacak!' })),
       places: PLACES.map(pl => {
-        const op = h >= pl.open && h < pl.close, night = h >= 19;
+        const op = h >= pl.open && h < pl.close, night = h % 24 >= 19 || h % 24 < 6;
         return { id: pl.id, name: pl.name, icon: pl.icon, kind: pl.kind, region: pl.region, regionName: REGION_BY_ID[pl.region].short, x: pl.x, open: op, hours: pl.open + ':00-' + (pl.close === 24 ? '24:00' : pl.close + ':00'),
           line: op ? (night && pl.night ? '🌙 ' + pl.night : pl.day || pl.night) : pl.closed, blurb: pl.blurb, reachable: isOpen(REGION_BY_ID[pl.region]) };
       }),

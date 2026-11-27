@@ -20,6 +20,7 @@ const R = (i: number) => fr(Math.sin(i * 91.7 + 3.1) * 43758.5453);
 const smooth = (a: number, b: number, x: number) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
 /** 0..1 bands of the day used by the whole forest */
 export function gunBandi(h: number) {
+  h = ((h % 24) + 24) % 24;   // ZMN-01: the game clock runs 8..32
   const night = h >= 21 || h < 5 ? 1 : h >= 19.5 ? smooth(19.5, 21, h) : h < 6.5 ? 1 - smooth(5, 6.5, h) : 0;
   const morning = h >= 5.5 && h < 10 ? Math.min(smooth(5.5, 7, h), 1 - smooth(8.5, 10, h)) : 0;
   const golden = h >= 16 && h < 20.5 ? Math.min(smooth(16, 17.5, h), 1 - smooth(19.3, 20.5, h)) : 0;

@@ -1,11 +1,11 @@
 /**
- * GRS-02 visual clock (owner H-080 "pat diye gündüz oluyor"): the sim ends the day (03:00 = DAY_END_H) and starts the next one at 08:00
- * in the same tick, while the gün sonu card is still fading in. Drawing the sim hour made the world jump to daylight behind the card.
- * - On a day change the visual hour stays where the old day ended (night) as long as the gün sonu card is open.
- * - When the card closes ("Yeni güne başla"; headless runs have no card) a short dawn runs in real time: the visual hour eases from the
- *   held hour to 32 (render tod: 27..32 dawn corridor, 32 is an exact copy of 08:00), then hands over to the sim hour with no step.
- * - Same-day jumps (admin saat, hooks) are drawn at once, no dawn. The closing hour is whatever the old day ended at (works for any
- *   DAY_END_H). Pure: boot feeds sim hour, day, card state and frame dt; tests drive it directly.
+ * GRS-02 visual clock (owner H-080 "pat diye gündüz oluyor"): the sim ends the day (DAY_END_H) and starts the next one at 08:00 in the
+ * same tick, while the gün sonu card is still fading in.
+ * - On a day change the visual hour stays where the old day ended as long as the gün sonu card is open.
+ * - ZMN-01 (2026-11-25): the day is 24 h now and ends at 32 = 08:00 next morning, an exact copy of 08:00, so the old 5-second dawn
+ *   corridor (27 -> 32 in 5 real seconds: the "sun races at dawn" bug) is gone; dawn is played at the normal speed. The ease below only
+ *   runs if a day ever ends before 32 (it closes the small gap, never more).
+ * - Same-day jumps (admin saat, hooks) are drawn at once. Pure: boot feeds sim hour, day, card state and frame dt; tests drive it directly.
  */
 import { DAY_END_H } from '../engine/api';
 import { DAWN_EXTRA } from '../engine/render/tod';

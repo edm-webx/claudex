@@ -290,7 +290,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
         const need = garsonPick(rt);
         if (full || (a.carry.length && (rt.t > 1.6 || (need !== p && rt.t > 0.6))) || rt.t > 5) {
           if (a.carry.length) { rt.state = 'toCounter'; rt.wk.goTo(side(book.get('counter.standAt'), 0.5, 0)); }
-          else rt.state = 'idle';
+          else { rt.state = 'idle'; rt.loadT = 0.3; }   // 2026-11-27: loadT tezgâhta bekledikçe büyüyordu (~5 sn); boş dönen garson idle'da 5 sn donup bekleyen menüyü görmüyordu (aşama botu aşama 9, masa 45)
         }
         return;
       }

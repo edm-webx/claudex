@@ -93,12 +93,13 @@ const lerpTab = (tab: [number, number][], h: number): number => {
   for (let i = 1; i < tab.length; i++) if (h <= tab[i][0]) { const [a, va] = tab[i - 1], [b, vb] = tab[i]; return va + (vb - va) * (h - a) / (b - a); }
   return tab[tab.length - 1][1];
 };
-/** content hours use 0..24; the game clock runs 8..27 (24+ after midnight): until-midnight types fade on after 24 */
+/** content hours use 0..24; the game clock runs 8..32 (24+ after midnight, ZMN-01): a span also matches at h - 24, and
+ *  until-midnight types fade on until 03:00 */
 const inSpans = (spans: [number, number][], h: number): number => {
-  for (const [a, b] of spans) { if (h >= a && h < b) return 1; if (b >= 24 && h >= 24 && h < 27) return 0.5; }
+  for (const [a, b] of spans) { if ((h >= a && h < b) || (h >= 24 && h - 24 >= a && h - 24 < b)) return 1; if (b >= 24 && h >= 24 && h < 27) return 0.5; }
   return 0;
 };
-const inRol = (spans: [number, number][], h: number) => spans.some(([a, b]) => h >= a && h < b);
+const inRol = (spans: [number, number][], h: number) => spans.some(([a, b]) => (h >= a && h < b) || (h >= 24 && h - 24 >= a && h - 24 < b));
 const yakaOf = (p: Vec2): Yaka => (p.z > 20 ? 'k' : 'i');
 
 export function createAmbient(deps: AmbientDeps): AmbientSystem {

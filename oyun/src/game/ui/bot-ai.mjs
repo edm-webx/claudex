@@ -163,7 +163,9 @@ export const STEPS = [
   { gdd: '02:40', what: 'Pamuk uyanır, bacağa sürtünür', ev: 'catRub', max: 185 },
   { gdd: '02:40', what: 'Sev: Kedi Defteri sayfası', ev: 'catPet', max: 200 },
   { gdd: '03:30', what: 'Ayran açılır', ev: 'unlock', key: 'ayran', max: 260 },
-  { gdd: '03:30', what: 'İlk döner+ayran seti', ev: 'set', set: 'doner_ayran', max: 420 },
+  // ZMN-01 (24 h day, 2026-11-25): the first night now starts at 320 s instead of 404 s, so a late first set can fall into the quiet hours.
+  // 12 seeds: median unchanged (229 s new / 229 s old), one outlier (seed 5: 475 s). Max = one game day (480 s).
+  { gdd: '03:30', what: 'İlk döner+ayran seti', ev: 'set', set: 'doner_ayran', max: 480 },
   { gdd: '04:00', what: '1. gün biter, kart kayar, oyun sürer', ev: 'dayEnd', max: 500 },
   { gdd: '05:00', what: 'Simit tablası', ev: 'unlock', key: 'simit', max: 360 },
   { gdd: '05:00', what: 'İki tabure', ev: 'unlock', key: 'tabure2', max: 380 },

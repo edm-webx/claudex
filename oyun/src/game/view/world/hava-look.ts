@@ -214,7 +214,7 @@ export function createHavaLook(d: HavaLookDeps): HavaLookView {
   };
 
   // ───────── state ─────────
-  let t = 0, wetK = 0, snowK = 0, fogK = 0, rainK = 0, flakeK = 0, lodosK = 0, heatK = 0, rainbowK = 0, lightT = 0, hornT = 15, seaOff = 0;
+  let t = 0, bulutK = 0, wetK = 0, snowK = 0, fogK = 0, rainK = 0, flakeK = 0, lodosK = 0, heatK = 0, rainbowK = 0, lightT = 0, hornT = 15, seaOff = 0;
   let sea: T.Mesh | null = null, seaParent: T.Object3D | null = null;
   const C1 = new T.Color(), C2 = new T.Color(), GREY = new T.Color('#8f9ba6'), FOGC = new T.Color('#c9d1d8');
   const TINT: Record<string, T.Color> = { ilkbahar: new T.Color('#fff2f5'), yaz: new T.Color('#fff6df'), sonbahar: new T.Color('#ffe7c9'), kis: new T.Color('#e4edff') };
@@ -237,7 +237,10 @@ export function createHavaLook(d: HavaLookDeps): HavaLookView {
     const key = kiosk ? (kiosk as T.Object3D).uuid + ':' + (kiosk as T.Object3D).children.length : 'none';
     if (key === roofKey) return; roofKey = key;
     const box = new T.Box3();
-    if (kiosk) box.setFromObject(kiosk); else box.set(new T.Vector3(BUFE.x0, 0, BUFE.z0), new T.Vector3(BUFE.x1, 3, BUFE.z1));
+    // ZMN-02: fit the cap to the roof mesh itself; the whole kiosk group also holds the job board, the light pool and the counter
+    // (its box ran 1-2 m past the roof onto the promenade)
+    const roofMesh = kiosk ? (kiosk as T.Object3D).getObjectByName('kioskRoof') : undefined;
+    if (roofMesh) box.setFromObject(roofMesh); else if (kiosk) box.setFromObject(kiosk); else box.set(new T.Vector3(BUFE.x0, 0, BUFE.z0), new T.Vector3(BUFE.x1, 3, BUFE.z1));
     if (!isFinite(box.max.y) || box.max.y < 1) box.set(new T.Vector3(BUFE.x0, 0, BUFE.z0), new T.Vector3(BUFE.x1, 3, BUFE.z1));
     const sx = Math.min(box.max.x - box.min.x, BUFE.x1 - BUFE.x0 + 1.4), sz = Math.min(box.max.z - box.min.z, BUFE.z1 - BUFE.z0 + 1.4);
     roof.scale.set(sx * 0.92, 0.14, sz * 0.92); roof.position.set((box.min.x + box.max.x) / 2, box.max.y + 0.03, (box.min.z + box.max.z) / 2);
@@ -257,7 +260,8 @@ export function createHavaLook(d: HavaLookDeps): HavaLookView {
 
   function light(v: HavaView): void {
     const tod = R.tod?.(); if (!tod || !R.sun || !R.hemi) return;
-    const dark = clamp(rainK * 0.4 + flakeK * 0.25 + fogK * 0.25, 0, 0.45);   // 2026-11-25: kötü havada sahne 'ekran karardı' gibi görünüyordu (tavan 0.7 -> 0.45)
+    // 2026-11-25: kötü havada sahne 'ekran karardı' gibi görünüyordu (tavan 0.7 -> 0.45). ZMN-02: yağmurdan önce gökyüzü biraz grileşir (bulutK).
+    const dark = clamp(Math.max(rainK * 0.4 + flakeK * 0.25 + fogK * 0.25, bulutK * 0.16), 0, 0.45);
     C1.copy(tod.sun).multiply(TINT[v.season] || TINT.yaz).lerp(GREY, dark * 0.6);
     R.sun.color.copy(C1); R.sun.intensity = tod.si * (1 - dark * 0.5) * (heatK > 0 ? 1 + heatK * 0.08 : 1);
     R.hemi.color.copy(tod.hs).lerp(GREY, dark * 0.4);
@@ -266,7 +270,7 @@ export function createHavaLook(d: HavaLookDeps): HavaLookView {
     const su = (R.sky?.material as T.ShaderMaterial | undefined)?.uniforms;
     // GRS-02: grey weather washes the colours a little (at most -21 % saturation) and fills the sky with clouds
     if (R.weatherSat !== undefined) R.weatherSat = 1 - dark * 0.3;
-    if (su && su.uCloud) su.uCloud.value = BULUT_TEMEL + (0.85 - BULUT_TEMEL) * clamp(dark / 0.55, 0, 1);
+    if (su && su.uCloud) su.uCloud.value = BULUT_TEMEL + (0.85 - BULUT_TEMEL) * clamp(Math.max(dark / 0.55, bulutK * 0.75), 0, 1);
     if (su && su.uTop && su.uHor) { su.uTop.value.copy(tod.top).lerp(GREY, dark * (1 - tod.n * 0.7)); su.uHor.value.copy(tod.hor).lerp(FOGC, dark * (1 - tod.n * 0.7)); if (su.uLow) su.uLow.value.copy(tod.low).lerp(GREY, dark * 0.8 * (1 - tod.n * 0.7)); }
     const fog = d.scene.fog as T.Fog | null;
     if (fog) {
@@ -472,6 +476,7 @@ export function createHavaLook(d: HavaLookDeps): HavaLookView {
       attachPier();
       const v = api.view(); lastV = v;
       const k = v.k, kd = v.kind;
+      bulutK = damp(bulutK, v.bulut ?? 0, 0.6, dt);
       rainK = damp(rainK, HAVA_ZORLA.yagmur >= 0 ? HAVA_ZORLA.yagmur : (kd === 'saganak' ? 1 : kd === 'firtina' ? 1 : 0) * k, 1.5, dt);
       flakeK = damp(flakeK, (kd === 'kar' ? 1 : 0) * k, 1.2, dt);
       fogK = damp(fogK, (kd === 'sis' ? 1 : 0) * k, 0.8, dt);
@@ -499,8 +504,8 @@ export function createHavaLook(d: HavaLookDeps): HavaLookView {
         const key = v.icon + v.name + v.dateText + (v.market.open ? 'm' : '');
         if (key !== chipKey) {
           chipKey = key;
-          const sub = v.market.open ? 'Gece Pazarı açık' : v.kind === 'acik' ? v.dateText.split(' ').slice(2).join(' ') : v.dateText;   // gün adı: ay+gün zaten üst satırda
-          chip.innerHTML = `<div style="font-size:16px">${v.icon} ${v.kind === 'acik' ? v.dateText.split(' ').slice(0, 2).join(' ') : v.name}</div><div style="font-size:13px;opacity:.8">${sub.replace(/[<>&]/g, '')}</div>`;
+          const sub = v.market.open ? 'Gece Pazarı açık' : v.kind === 'acik' ? v.gunText : v.dateText;   // ZMN-02: "Kasım 2. hafta" üstte, gün adı altta
+          chip.innerHTML = `<div style="font-size:16px">${v.icon} ${v.kind === 'acik' ? v.ayText : v.name}</div><div style="font-size:13px;opacity:.8">${sub.replace(/[<>&]/g, '')}</div>`;
         }
         chip.style.opacity = r.rt.panel || document.querySelector('.kl-p') ? '0' : '1';
       }

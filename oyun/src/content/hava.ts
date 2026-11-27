@@ -64,9 +64,10 @@ export const HAVA_WEIGHTS: Record<HavaSeason, Partial<Record<HavaKind, number>>>
   sonbahar: { acik: 3.5, lodos: 3, sis: 2, saganak: 2.5, firtina: 1 },
   kis: { acik: 2.5, kar: 3, lodos: 2.5, sis: 1.5, saganak: 1.5, firtina: 1 },
 };
-/** Weather window (game hours) per kind: [earliest start, latest start, min length, max length]; 'acik' has none. */
+/** Weather window (game hours, 8..32 = 08:00 -> 08:00 next morning) per kind: [earliest start, latest start, min length, max length];
+ *  'acik' has none. ZMN-02: the day is 24 h, so rain and snow can also come in the evening or at night, fog is a dawn fog. */
 export const HAVA_WINDOW: Partial<Record<HavaKind, [number, number, number, number]>> = {
-  lodos: [8, 13, 5, 11], sis: [8, 9, 3, 5], kar: [8, 12, 5, 12], saganak: [9, 17, 1.5, 3], sicak: [10, 12, 5, 8], firtina: [11, 17, 2, 4],
+  lodos: [8, 18, 5, 11], sis: [25.5, 28.5, 3, 5], kar: [8, 22, 5, 10], saganak: [9, 27, 1.5, 3], sicak: [10, 12, 5, 8], firtina: [11, 25, 2, 4],
 };
 export const RAINBOW_H = 1.3;
 
