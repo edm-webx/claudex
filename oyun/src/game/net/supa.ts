@@ -13,13 +13,29 @@ export const SUPABASE_URL = 'https://fxvbtfkvpnrnhyuntcgj.supabase.co';
 export const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ4dmJ0Zmt2cG5ybmh5dW50Y2dqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI4MjI2MDUsImV4cCI6MjEwODM5ODYwNX0.kXYXHCNg3xOIaBp0E3i3EOBofZQe01aeTpMDJWrwDVM';  // anon (public)
 
 let client: SupabaseClient | null = null;
+/** QA 2026-11-27: yanıtsız istek "Bekle..." ekranını sonsuza dek kilitliyordu. Her REST/Auth isteği bu sürede kesilir (Realtime ayrı) */
+export const ISTEK_ZAMAN_ASIMI_MS = 20000;
+export const SUNUCU_YAVAS = 'Sunucu çok yavaş yanıt veriyor. İnternetini kontrol edip tekrar dene.';
+/** fetch + zaman aşımı (çağıranın kendi sinyali de geçerli kalır) */
+export function zamanliFetch(ms = ISTEK_ZAMAN_ASIMI_MS, f: typeof fetch = (...a) => fetch(...a)): typeof fetch {
+  return (input, init = {}) => {
+    const ac = new AbortController(), t = setTimeout(() => ac.abort(new DOMException('timeout', 'TimeoutError')), ms);
+    const dis = init.signal; if (dis) { if (dis.aborted) ac.abort(dis.reason); else dis.addEventListener('abort', () => ac.abort(dis.reason), { once: true }); }
+    return f(input, { ...init, signal: ac.signal }).finally(() => clearTimeout(t));
+  };
+}
+/** söz + zaman aşımı: süre dolunca `yedek` döner (arayüz düğmesi kilitli kalmasın) */
+export function zamanAsimi<T>(p: Promise<T>, ms: number, yedek: T): Promise<T> {
+  let t: ReturnType<typeof setTimeout> | undefined;
+  return Promise.race([p, new Promise<T>(res => { t = setTimeout(() => res(yedek), ms); })]).finally(() => clearTimeout(t));
+}
 let jeton = '';
 export const supaReady = () => !!(SUPABASE_URL && SUPABASE_KEY);
 export function supa(): SupabaseClient | null {
   if (!supaReady()) return null;
   if (!client) {
     try {
-      client = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false, storageKey: 'martikoy-giris' }, realtime: { params: { eventsPerSecond: 12 } } });
+      client = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false, storageKey: 'martikoy-giris' }, realtime: { params: { eventsPerSecond: 12 } }, global: { fetch: zamanliFetch() } });
       // KAL-01: kapanış yazımı (keepalive fetch) asenkron getSession bekleyemez; güncel erişim jetonunu burada tut (yenilenince de güncellenir)
       client.auth.onAuthStateChange((_e, s) => { jeton = s?.access_token || ''; });
     } catch { client = null; }
@@ -47,7 +63,8 @@ const trErr = (m: string) =>
   : /signups not allowed|Signups/i.test(m) ? 'Kayıtlar şu an kapalı, biraz sonra tekrar dene.'
   : /Email address .* is invalid/i.test(m) ? 'Bu kullanıcı adıyla kayıt olmadı, başka bir ad dene.'
   : /Email not confirmed/i.test(m) ? 'Hesap onay bekliyor, admine yaz.'
-  : m;
+  : /[çğıöşüÇĞİÖŞÜ]/.test(m) ? m   // zaten Türkçe (oyunun kendi mesajı)
+  : (console.warn('[giris] sunucu hatası:', m), 'Bir şeyler ters gitti, birazdan tekrar dene.');   // ham İngilizce sunucu metni gösterilmez
 
 export interface Hesap { id: string; ad: string }
 let me: Hesap | null = null;

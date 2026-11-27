@@ -67,6 +67,19 @@ describe('loop pacing', () => {
     expect(b.renders).toBe(Math.floor(a.renders / 2));
     expect(a.alpha).toBeGreaterThanOrEqual(0); expect(a.alpha).toBeLessThanOrEqual(1);
   });
+  // QA 2026-11-27: 60 fps kademesi de tavanlı; 144/240 Hz ekranda saniyede 144/240 kare çiziliyordu
+  for (const hz of [120, 144, 240]) it(`60 fps tavanı: ${hz} Hz ekranda saniyede en çok ~72 kare, sim aynı`, () => {
+    const a = mk(60), ref = mk(60);
+    for (let k = 0; k <= hz; k++) a.loop.frame(k * 1000 / hz);
+    for (let k = 0; k <= 60; k++) ref.loop.frame(k * 1000 / 60);
+    expect(a.renders).toBeLessThanOrEqual(73); expect(a.renders).toBeGreaterThanOrEqual(59);
+    expect(Math.abs(a.steps - ref.steps)).toBeLessThanOrEqual(1);
+  });
+  it('60 Hz ekranda (titreşimli vsync dahil) her kare çizilir', () => {
+    const a = mk(60); let t = 0;
+    for (let k = 0; k < 60; k++) { a.loop.frame(t); t += k % 2 ? 15.2 : 18.1; }
+    expect(a.renders).toBe(59);
+  });
   it('caps steps per frame and drops excess; pause stops everything; advance runs whole ticks', () => {
     const a = mk(60);
     a.loop.frame(0); a.loop.frame(2000); // 2 s hitch, clamped 250 ms -> max 5 steps

@@ -67,7 +67,8 @@ export function createLoop(o: LoopOpts): Loop {
       pendingRenderDt += fms / 1000;
       // 30 fps mode is time based, not "every second rAF": a 120 Hz screen still renders ~30/s and a device whose rAF
       // is already ~30/s renders every frame (counting rAFs halved it to 15 fps). 0.8 of a period absorbs vsync jitter.
-      if (o.targetFps() === 30 && pendingRenderDt < 0.8 / 30) return;
+      // QA 2026-11-27: 60 fps kademesi de tavanlı (144 Hz ekranda saniyede 144 kare çiziliyordu; sim 30 Hz, fazla kare bilgi katmıyor, pil/ısı yiyordu)
+      { const fps = o.targetFps(); if (fps > 0 && fps <= 60 && pendingRenderDt < 0.8 / fps) return; }
       const fdt = pendingRenderDt; pendingRenderDt = 0;
       doRender(fdt, Math.min(1, acc / dtMs));
     },

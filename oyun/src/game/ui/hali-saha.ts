@@ -11,6 +11,7 @@
 import { createHaliSaha3D, type HS3 } from './hali-saha-3d';
 import { createMatch, FORMATIONS } from '../sim/macmotor';
 import { ADIM, createGirdi, dugmeBul, dugmeYerlesimi, nisanYazi, pasHedefi, sabitAdim, yardimSatirlari, type PadBenzeri } from './hali-saha-girdi';
+import { tusAdi } from '../../engine/input';
 import { olayBanner, restartBanner, restartIpucu, sesler, type MacOlay } from './hali-saha-olay';
 
 type Cmd = { kind: string; [k: string]: unknown };
@@ -94,7 +95,7 @@ export function createHaliSaha(deps: HaliSahaDeps): HaliSahaView {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (on && !e.repeat && e.key.toLowerCase() === 'h' && !iz) { if (help) hideHelp(); else showHelp(); return; }
       if (M.over || iz) return;
-      if (girdi.tus(e.key, on, e.repeat)) e.preventDefault();
+      if (girdi.tus(tusAdi(e), on, e.repeat)) e.preventDefault();
     };
     const kd = (e: KeyboardEvent) => onKey(e, true), ku = (e: KeyboardEvent) => onKey(e, false), blur = () => girdi.birakHepsi();
     window.addEventListener('keydown', kd); window.addEventListener('keyup', ku); window.addEventListener('blur', blur);

@@ -76,3 +76,12 @@ Kalan: saç/sakal mesh'leri (7 sakal etiketi 4 mesh, chars-v2.ts, SANAT rolü), 
 
 ## 2026-11-21 sıra (ana şantiye)
 - Sona eklendi (AR-GE öncesi): EKO-05 turu: çok tohumlu ölçüm + büfe tezgâhı / sipariş fiyat ayarı, eğri hedefe ±%10 (şimdi 30/60/90. dk +%36/+%19/+%15).
+
+## 2026-11-23 Zayıf laptop kasması (thread "Zayıf laptopta kasmayı gider")
+Spec: entegre GPU'lu iş laptopunda beta 9 aşırı kasıyor. Hedef: A2 görselini bozmadan akıcı oynanış, otomatik kalite + elle seçim.
+- [ ] Ölç: perf-gate (çizim çağrısı/üçgen/kademe), kademe tahmini ve otomatik izleme mantığını oku
+- [ ] Kademe tahmini ekran kartını da okusun (Intel UHD/HD, yazılım GL -> Akıcı; Iris/AMD APU/Apple -> Dengeli)
+- [ ] Açılış sınaması: oyunun ilk saniyelerinde FPS ölçülür, yavaşsa kademe hemen düşer (ertelenmez)
+- [ ] Örtü (karakter/halı saha/ev) açıkken kare süresi otomatik izlemeye girmez (yanlış "sakin" sayımı Şahane'ye çıkarıyordu)
+- [ ] Ayarlar satırı: otomatiğin seçtiği kademe + neden
+- [ ] Testler (vitest, typecheck, perf-gate), beta 10 zip, PC kopyası

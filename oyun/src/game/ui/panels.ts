@@ -24,7 +24,7 @@ export interface PanelsDeps {
   perf?: { visible(): boolean; show(on: boolean): void; copy(): void };
   fonts?: unknown[];
   /** GRS-17: current tier for the 'Otomatik: Şu an ...' line */
-  quality?: { current(): { label: string } };
+  quality?: { current(): { label: string }; neden?(): string };
 }
 export interface Panels { update(): void; v2: V2UiApi; open(id: string): void; dispose(): void; /** ana menü ayarları (menu-stil): ayarlar panelinin eylemleri */ ayarEylem(): Record<string, (a?: any, b?: any) => void>; }
 
@@ -124,7 +124,7 @@ export function createPanels(deps: PanelsDeps): Panels {
     let model = models.panelModel(id, rules());
     if (id === 'ayarlar') {
       const st = S().settings || {};
-      model = { ...model, vol: deps.audio ? { music: deps.audio.buses.music.volume, sfx: deps.audio.buses.sfx.volume, voice: deps.audio.buses.voice.volume } : null, ownMusic: !!st.ownMusic, haptic: ui.settings.haptics !== false, hand: (st.hand || ui.settings.hand) === 'left' ? 'sol' : 'sag', textScale: st.textScale || 1, cb: !!st.colorBlindIcons, perf: deps.perf ? deps.perf.visible() : undefined, tierNow: deps.quality?.current().label ?? null };
+      model = { ...model, vol: deps.audio ? { music: deps.audio.buses.music.volume, sfx: deps.audio.buses.sfx.volume, voice: deps.audio.buses.voice.volume } : null, ownMusic: !!st.ownMusic, haptic: ui.settings.haptics !== false, hand: (st.hand || ui.settings.hand) === 'left' ? 'sol' : 'sag', textScale: st.textScale || 1, cb: !!st.colorBlindIcons, perf: deps.perf ? deps.perf.visible() : undefined, tierNow: deps.quality?.current().label ?? null, tierWhy: deps.quality?.neden?.() || '' };
     }
     if (id === 'ayarlar') { const eg = egiticiApi(); if (eg) model = { ...model, egt: { acik: eg.acik(), gorulen: eg.gorulenler() } }; }
     v2.open(id, model, actionsFor(id));

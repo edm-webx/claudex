@@ -78,3 +78,28 @@ describe('girdi (PRF-10)', () => {
     input.freeze!(false); input.inject(null); expect(input.poll().move.z).toBe(-1);
   });
 });
+
+// QA 2026-11-27 (teknik rapor 07): harf tuşları fiziksel yerinden (e.code); Space odaktaki düğmeyi tıklasın
+describe('fiziksel tuşlar (AZERTY / Kiril)', () => {
+  it('tusAdi: KeyW her düzende w, harf dışı tuş e.key', async () => {
+    const { tusAdi } = await import('../../../src/engine/input');
+    expect(tusAdi({ key: 'z', code: 'KeyW' })).toBe('w');    // AZERTY fiziksel W
+    expect(tusAdi({ key: 'в', code: 'KeyD' })).toBe('d');    // Kiril fiziksel D
+    expect(tusAdi({ key: 'w', code: 'KeyZ' })).toBe('z');    // AZERTY'de w yazan tuş fiziksel Z: yürümez
+    expect(tusAdi({ key: 'ArrowUp', code: 'ArrowUp' })).toBe('arrowup');
+    expect(tusAdi({ key: ' ', code: 'Space' })).toBe(' ');
+    expect(tusAdi({ key: 'e', code: '' })).toBe('e');         // code yoksa (eski tarayıcı / sentetik) e.key
+  });
+  it('AZERTY fiziksel W ileri yürütür, Space düğmede engellenmez', () => {
+    const { input, key } = fakeDom();
+    key('keydown', { key: 'z', code: 'KeyW' }); expect(input.poll().move.z).toBe(-1);
+    key('keyup', { key: 'z', code: 'KeyW' }); expect(input.poll().moving).toBe(false);
+    key('keydown', { key: 'в', code: 'KeyD' }); expect(input.poll().move.x).toBe(1);
+    key('keyup', { key: 'в', code: 'KeyD' });
+    let engel = 0;
+    key('keydown', { key: ' ', code: 'Space', preventDefault: () => { engel++; }, target: { closest: (q: string) => q.includes('button') ? {} : null } });
+    expect(engel).toBe(0);
+    key('keydown', { key: ' ', code: 'Space', preventDefault: () => { engel++; }, target: { closest: () => null } });
+    expect(engel).toBe(1);
+  });
+});
