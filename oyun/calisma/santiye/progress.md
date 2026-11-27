@@ -17,8 +17,22 @@ Dal: claude/project-thread-arinot (taban jo0q11 fef56d9). Ana dala birleştirme 
   `PRE="$(cat pre.js)" SPOTS='{"genel2":[268,9,268,8,3.0,0,0.6],"egik2":[266,9,266,2,1.3,0,-0.3]}' node tests/browser/insaat-shot.mjs out`
   (PRE = arsaAl a1..a3 + arsaKur farklı zamanlarda; ARSA_HAK 3 olduğundan a4 boş arsa kalır).
 
-## Sıradaki adımlar
-1. Büfe buildSite (bufe-buyume.ts) setini bufeBoyut ile kur: vinç sadece büyük/dev (restoran thread'i de bu dosyada: küçük ve ayrık değişiklik).
-2. Karşı yaka işletme tadilat görünümü (view isletme-insaat) isletmeBoyut ile: küçük işte kule vinç yok; boot lv geçirmeli.
-3. Ses thread'ine not: matkap, çekiç, betoniyer, vinç, geri vites bip, mahalle ambiyansı (çocuk sesi, kuş, trafik).
-4. Bug avı thread'inin inşaat sahası projeksiyon düzeltmesi dalı bulunamadı; birleştirmeden önce kontrol et.
+- 8f6d43d: büfe buildSite + karşı yaka işletme tadilatı SETLER boyutuna bağlı (vinç sadece büyük/dev). Hata düzeltmesi: mulk view().plots'ta
+  `tadilat` yoktu, karşı yaka iskelesi hiç kurulmuyordu. Görseller calisma/santiye/shot/tadilat/.
+- HUD/emlak thread'i (dal b1jn50) b2a9074'ü birleştirdi; ECZANE dükkânı MARTI EMLAK oldu (kapı 265.6, 14.4), arsa alma/kurma sadece orada.
+- Ses thread'ine not gönderildi.
+
+## Kalan
+- Kullanıcı denemesi ve "tamam"ı. Sonra Ana İş jo0q11'e birleştirir (b1jn50 ile birlikte; çakışma yok, b1jn50 benim b2a9074'ümü içeriyor).
+- Bug avı thread'inin inşaat projeksiyon düzeltmesi dalı bulunamadı; birleştirmede kontrol.
+
+## Ses için şantiye koordinatları (müzik thread'i, dal o1d81t: cekic, matkap, el_arabasi, mala, geri_bip, zincir, santiye_orta, santiye_buyuk)
+- Büfe tadilatı: alan content/insaat.ts insaatAlani(to) (SITE_AREA), boyut bufeBoyut(to): 2 küçük, 3-5 orta, 6-8 büyük (santiye_buyuk), 9-10 dev.
+- Karşı yaka işletme tadilatı: merkez content/isletme-insaat.ts insaatYer(id) {ox, oz}; boyut isletmeBoyut(lv) (lv 1 küçük, 2 orta, 3 büyük, 4 dev).
+- Martı Konutları (realm 'mahalle', x 244..292):
+  - Apartman şantiyesi x 267..280, z 15..22 (büyük: mobil vinç -> santiye_buyuk, zincir, geri_bip).
+  - Belediye altyapı kazısı x 283.6..291.6, z -5.4..4.8 (orta: santiye_orta, çöp kamyonu).
+  - Arsalar (ev/dükkân yapımı, orta): a1 (259.5,0.4), a2 (266.2,0.4), a3 (272.9,0.4), a4 (279.6,0.4), a5 (284.5,18.2); yalnız plot.insa != null iken.
+  - Park (çocuk, salıncak): x 244.6..256, z -5.6..4.9; salıncak ~(247.1,-3.9).
+- Usta hareketleri: act 'cut' -> cekic, 'sweep' -> mala (view/mahalle/index.ts stepActors, sim/agents ustalar/isletme-insaat).
+  Konumlu sfx çağrısı o1d81t ana dala girince bağlanacak (bu dalda ses id'leri yok).

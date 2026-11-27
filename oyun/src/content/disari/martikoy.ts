@@ -35,8 +35,8 @@ export const REGIONS: Region[] = [
   { id: 'yokus', zone: 'yokus', name: 'Yokuşlu Ara Sokaklar', short: 'Merdivenler', x0: 196, x1: 244, level: 1, color: '#e58f7a',
     blurb: 'Merdivenler, saksılar, kütüphane ve tarihi hamam.', lockLine: 'Merdivenler yeni yıkandı, kayıyor. Biraz bekle!',
     map: [56, 40], stop: { name: 'Merdiven Altı', x: 199, z: 12.4 } },
-  { id: 'meydan', zone: 'meydan', name: 'Mahalle Meydanı ve Çeşme', short: 'Meydan', x0: 244, x1: 292, level: 1, color: '#c6a0e0',
-    blurb: 'Çınar, çeşme, kıraathane ve tavla sesleri.', lockLine: 'Meydanda bayrak asılıyor, merdivenler yolda!',
+  { id: 'meydan', zone: 'meydan', name: 'Martı Konutları', short: 'Konutlar', x0: 244, x1: 292, level: 1, color: '#c6a0e0',   // 2026-11-26: arsaların olduğu mahalle (view/mahalle)
+    blurb: 'Park, esnaf, apartmanlar, arsalar ve inşaatlar.', lockLine: 'Mahallede inşaat sürüyor, yakında açılır!',
     map: [64, 50], stop: { name: 'Meydan Çeşmesi', x: 248, z: 12.2 } },
   { id: 'barinak', zone: 'barinak', name: 'Balıkçı Barınağı', short: 'Barınak', x0: 292, x1: 344, level: 1, color: '#5aa0c8',
     blurb: 'Kayıklar, ağlar, balık hali ve martıların başkenti.', lockLine: 'Balıkçılar ağ seriyor, basma! Biraz sonra.',

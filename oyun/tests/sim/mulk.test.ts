@@ -53,6 +53,10 @@ it('plots: buy needs level + money + the 3 plot limit; a shop sells stock into i
   expect(Object.keys(S.zones.arsa.plots).length).toBe(3);
   c({ op: 'arsaKur', id: 'a1', tur: 'dukkan', tip: 'cay_ocagi' }); expect(S.zones.arsa.plots.a1.tur).toBe('dukkan');
   sim.command({ kind: 'teleport', x: 0, z: -7 });
+  // 2026-11-26: dükkân artık anında açılmaz; ustalar ~6 dk yapar (content/santiye.ts YAPI_SURE), o sürede satış yok
+  expect(S.zones.arsa.plots.a1.insa).toBeTruthy(); sim.step(120); expect(S.zones.arsa.plots.a1.sat).toBe(0);
+  expect(m.view().plots.find((x: any) => x.id === 'a1')!.insa).toBeGreaterThan(0.2);
+  sim.step(250); expect(S.zones.arsa.plots.a1.insa).toBeUndefined();
   sim.step(300);
   const p = S.zones.arsa.plots.a1; expect(p.sat).toBeGreaterThan(0);   // no stock: customers just buy
   const m0 = S.money; sim.command({ kind: 'teleport', x: arsaKapi(a1).x, z: arsaKapi(a1).z }); sim.step(1);

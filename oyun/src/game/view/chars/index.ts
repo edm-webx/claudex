@@ -243,9 +243,9 @@ export function createChars(deps: CharsDeps): MotorChars {
       else {
         const txt = typeof o.apron === 'string' ? (o.apron as string).toLocaleUpperCase('tr-TR') : '';
         const kind = txt === 'SABRİYE' ? 'sabriye' : txt === 'SABRİ' ? 'sabri' : 'worker';
-        const look: Record<string, unknown> = { ...o }; delete look.apron; delete look.seed; delete look.typeId;
+        const look: Record<string, unknown> = { ...o }; delete look.apron; delete look.seed; delete look.typeId; delete look.seg;
         if (kind === 'worker' && txt) look.apronText = txt;
-        v2opts = { kind, seed: o.seed, look: Object.keys(look).length ? look : undefined };
+        v2opts = { kind, seed: o.seed, seg: o.seg, look: Object.keys(look).length ? look : undefined };   // seg: arka plan NPC'si için daha az segment (mahalle kalabalığı)
       }
       const rig = CH.makeHero(v2opts);
       const gait: GaitId = (o.gait as GaitId) || (v2opts.kind === 'sabriye' ? 'brisk' : 'normal');

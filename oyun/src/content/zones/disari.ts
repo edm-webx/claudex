@@ -278,7 +278,7 @@ function base(id: RegionId, z0: number, z1: number, props: PrefabPlacement[], pa
   for (const s of SIDE_SHOPS) if (s.region === id) props.push(P('shop-' + s.id, 'mk.shop.' + s.id, s.kx, s.kz, s.rot));
   for (const sg of SIGNS) if (sg.x >= r.x0 && sg.x < r.x1) props.push(P('sign-' + sg.x, 'mk.sign', sg.x, sg.z));
   // 2026-11-21 mantık denetimi: orman durağının kendi adlı sundurması var (view/orman/index.ts stop()); ikinci bir mk.stop aynı yere biniyordu
-  if (id !== 'orman') props.push(P('stop-' + id, 'mk.stop', r.stop.x, r.stop.z + 1.0));
+  if (id !== 'orman' && id !== 'meydan') props.push(P('stop-' + id, 'mk.stop', r.stop.x, r.stop.z + 1.0));   // meydan: 42B camlı durağı view/orman çizer
   return {
     id: r.zone, name: r.name,
     bounds: { x0: r.x0, z0, x1: r.x1, z1 },
@@ -330,17 +330,12 @@ export function yokusZone(): ZoneDef {
 }
 
 export function meydanZone(): ZoneDef {
-  const x0 = 244, x1 = 292, mx = 268;
-  const props: PrefabPlacement[] = [
-    P('square', 'mk.ground.square', mx, 9), P('cesme', 'mk.cesme', 268, 8.4), P('cinar', 'mk.cinar', 263, 15.8),
-    P('kira', 'mk.kiraathane', 256, 22.2), P('tavla', 'mk.tavla', 256, 18.2), P('simit', 'mk.simitcart', 288, 4.0, Math.PI / 2),
-    P('hn1', 'mk.house.m4', 270, 22.2), P('hn2', 'mk.house.m3', 282, 22.2),
-    P('hs1', 'mk.house.m1', 251, -4.0), P('hs2', 'mk.house.m2', 263, -4.0), P('hs3', 'mk.house.m1', 275, -4.0), P('hs4', 'mk.house.m2', 286, -4.0),
-    P('bayrak', 'mk.bayrak', 276, 15.5), P('benchA', 'mk.bench', 258, 4.0), P('benchB', 'mk.bench', 278, 9.0, Math.PI / 2),
-    P('wallW0', 'mk.wallZ', x0 + 0.3, 0.8), P('wallW1', 'mk.wallZ', x0 + 0.3, 17.3), P('wallE0', 'mk.wallZ', x1 - 0.3, 0.8), P('wallE1', 'mk.wallZ', x1 - 0.3, 17.3),
-  ];
-  [[250, 1.5], [286, 17.5], [250, 17.5], [286, 6]].forEach(([x, z], i) => props.push(P('lamp' + i, 'ts.lamp', x, z)));
-  const paint = [{ rect: { x0, x1, z0: -6, z1: -2 }, cost: 0 }, { rect: { x0, x1, z0: 20, z1: 24 }, cost: 0 }, ...edges(x0, x1, -6, 24)];
+  // 2026-11-26 sahip: arsalar 42B ile gidilen ayrı, canlı bir mahallede ("Martı Konutları"). Binalar, park, cadde, şantiyeler ve
+  // yaşam view/mahalle'de çizilir (çarpışma setSolids 'mahalle'); burada yalnız yürünür alan ve sokak lambaları kalır.
+  const x0 = 244, x1 = 292;
+  const props: PrefabPlacement[] = [];
+  [[251, 13.0], [263, 13.0], [275, 13.0], [287, 13.0], [257, 6.0], [269, 6.0], [281, 6.0]].forEach(([x, z], i) => props.push(P('lamp' + i, 'ts.lamp', x, z)));
+  const paint = [...edges(x0, x1, -6, 24)];
   return base('meydan', -6, 24, props, paint, 'yokus', 'barinak');
 }
 
