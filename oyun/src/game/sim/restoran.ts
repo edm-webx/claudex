@@ -153,7 +153,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
    * garson isAl ile ayırınca doğar (sanal). Tabak satırı `item` tutuyorsa tabak garsonun elinde (tepside) demektir; o ana kadar
    * tabak rafta (pass ya da tezgâh) GÖRÜNÜR durur. Hiçbir yol tabağı masaya kendiliğinden koymaz.
    */
-  interface Gorev { id: number; tur: GorevTur; table: number; cid: number; yas: number; wid: number; claimT: number; ticket?: Ticket; p?: FoodId; src?: 'pass' | 'counter'; /** 2026-11-21: tabağın alındığı / geri konacağı pass */ yer?: PassYer; item?: Plate; geri?: boolean; /** uzak bölgeden yardım olarak alındı (masaya yetkili yakın garson devralabilir) */ uzakW?: boolean }
+  interface Gorev { id: number; tur: GorevTur; table: number; cid: number; yas: number; wid: number; claimT: number; ticket?: Ticket; p?: FoodId; src?: 'pass' | 'counter'; /** 2026-11-21: tabağın alındığı / geri konacağı pass */ yer?: PassYer; item?: Plate; geri?: boolean; /** uzak bölgeden yardım olarak alındı (masaya yetkili yakın garson devralabilir) */ uzakW?: boolean; /** 2026-11-27: işi alan garsonun o anki masaya uzaklığı (m, kuş uçuşu): yakındaki boş garson devralabilsin */ claimD?: number }
   const gorevler: Gorev[] = []; let gid = 1, saat = 0;
   type CF = { tk?: boolean; menuJob?: boolean; menuOk?: boolean; dusunT?: number; siparisJob?: boolean; hesapJob?: boolean; hesapBekle?: boolean; bekleT?: number; hb?: number; garsonlu?: boolean; tipUsed?: number };
   const active = () => (S.stage || 1) >= ADISYON.fromStage;
@@ -596,6 +596,8 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
   const acilSon = new Set<number>();
   /** 2026-11-26: Şef salonu / deniz köşkü uzak; 20 sn'dir yolda olan garsonun masa işi boştaki yetkili garsona geçer (aşama botu aşama 9, masa 59 menü) */
   const DEVIR_S = 20;
+  const GARSON_HIZ = 2.6;   // m/sn, workers.ts garsonWork temel yürüyüş hızı
+  const claimDOf = (table: number, at?: Vec2) => { if (!at) return undefined; const q = masaYan(table); return Math.hypot(q.x - at.x, q.z - at.z); };
   function isAl(wid: number, o: { cap: number; at?: Vec2 }): IsAlSonuc | null {
     const mine = gorevler.find(g => g.wid === wid); if (mine) return sonuc(mine);
     if (!garsonlar().some(w => w.id === wid)) return null;
@@ -604,8 +606,11 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     // bölge) boşa çıkan garsona geçer: haritanın öbür ucundan yürüyen garson varmadan yakındaki boş garson masayı 30 sn+ seyrediyordu
     // (aşama botu aşama 8, masa 44 hesap). Eski garson masaya varınca isTamam 'yok' der ve sıradaki işe döner.
     {
-      const dev = gorevler.filter(g => (g.uzakW || (g.tur === 'menu' && saat - g.claimT > DEVIR_S)) && g.wid && g.wid !== wid && (g.tur === 'menu' || g.tur === 'siparis' || g.tur === 'hesap')).map(g => ({ g, r: bolgeKurali(wid, g.table, g.yas, false) })).filter(x => x.r.ok);
-      if (dev.length) { dev.sort((a, b) => (a.r.ic === b.r.ic ? 0 : a.r.ic ? -1 : 1) || a.g.claimT - b.g.claimT || a.g.id - b.g.id); const g = dev[0].g; g.wid = wid; g.claimT = saat; g.uzakW = false; acilSon.delete(wid); return sonuc(g); }
+      // 2026-11-27: yolda kalan mesafesi (alındığı andaki uzaklık - yürünen) boştaki yetkili garsonunkinden 6 m+ fazlaysa da devir (aşama botu aşama 9, masa 60:
+      // b19'dan yürüyen garson 20 sn yoldayken masanın yanındaki iki garson boş bekliyordu)
+      const yakinDevir = (g: Gorev) => { const ben = claimDOf(g.table, o.at); return ben !== undefined && g.claimD !== undefined && saat - g.claimT > 2 && g.claimD - GARSON_HIZ * (saat - g.claimT) > ben + 6; };
+      const dev = gorevler.filter(g => (g.uzakW || (g.tur === 'menu' && saat - g.claimT > DEVIR_S) || yakinDevir(g)) && g.wid && g.wid !== wid && (g.tur === 'menu' || g.tur === 'siparis' || g.tur === 'hesap')).map(g => ({ g, r: bolgeKurali(wid, g.table, g.yas, false) })).filter(x => x.r.ok);
+      if (dev.length) { dev.sort((a, b) => (a.r.ic === b.r.ic ? 0 : a.r.ic ? -1 : 1) || a.g.claimT - b.g.claimT || a.g.id - b.g.id); const g = dev[0].g; g.wid = wid; g.claimT = saat; g.uzakW = false; g.claimD = claimDOf(g.table, o.at); acilSon.delete(wid); return sonuc(g); }
     }
     // 2026-11-22: iki tur. Önce kendi / sahipsiz / komşu bölgenin işleri (öncelik sırasıyla), uzak bölge yardımı yalnız bunlar boşsa.
     // Tek turda uzak bölgenin 15 sn'lik tabağı kendi bölgesinin menüsünü geçiyordu (tabak > menü): garson haritanın öbür ucuna tabak
@@ -618,7 +623,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
       // 2026-11-23: hesap da yaşlanır (en düşük öncelikte 40 sn'ye kadar bekleyip masayı tutuyordu, yeni misafir oturamıyordu).
       // Acil iş art arda alınmaz: acil bir işten sonraki iş normal öncelikle seçilir (tabak akışı en az yarı yarıya sürer).
       const acil = acilSon.has(wid) ? [] : gorevler.filter(g => (g.tur === 'menu' || g.tur === 'siparis' || g.tur === 'hesap') && !g.wid && g.yas >= MENU_ACIL_S).map(g => ({ g, r: bolgeKurali(wid, g.table, g.yas, uzak) })).filter(x => x.r.ok);
-      if (acil.length) { acil.sort((a, b) => (a.r.ic === b.r.ic ? 0 : a.r.ic ? -1 : 1) || b.g.yas - a.g.yas || a.g.id - b.g.id); const g = acil[0].g; g.wid = wid; g.claimT = saat; g.uzakW = uzak && !bolgeKurali(wid, g.table, g.yas, false).ok; acilSon.add(wid); return sonuc(g); }
+      if (acil.length) { acil.sort((a, b) => (a.r.ic === b.r.ic ? 0 : a.r.ic ? -1 : 1) || b.g.yas - a.g.yas || a.g.id - b.g.id); const g = acil[0].g; g.wid = wid; g.claimT = saat; g.claimD = claimDOf(g.table, o.at); g.uzakW = uzak && !bolgeKurali(wid, g.table, g.yas, false).ok; acilSon.add(wid); return sonuc(g); }
       acilSon.delete(wid);
     for (const tur of ADISYON.oncelik) {
       if (tur === 'tabak') {
@@ -664,7 +669,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
       const cand = gorevler.filter(g => g.tur === tur && !g.wid).map(g => ({ g, r: bolgeKurali(wid, g.table, g.yas, uzak) })).filter(x => x.r.ok);
       if (!cand.length) continue;
       cand.sort((a, b) => (a.r.ic === b.r.ic ? 0 : a.r.ic ? -1 : 1) || b.g.yas - a.g.yas || a.g.id - b.g.id);
-      const g = cand[0].g; g.wid = wid; g.claimT = saat; g.uzakW = uzak && !bolgeKurali(wid, g.table, g.yas, false).ok;   // zaman aşımı garsonun işi aldığı andan sayılır
+      const g = cand[0].g; g.wid = wid; g.claimT = saat; g.claimD = claimDOf(g.table, o.at); g.uzakW = uzak && !bolgeKurali(wid, g.table, g.yas, false).ok;   // zaman aşımı garsonun işi aldığı andan sayılır
       return sonuc(g);
     }
     }
