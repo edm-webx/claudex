@@ -67,8 +67,9 @@ export function createPanels(deps: PanelsDeps): Panels {
     for (const k of Object.keys(acts)) out[k] = (a?: any) => send(acts[k](a));
     if (id === 'ayarlar') {
       const set = (key: string, value: unknown) => { send({ kind: 'setSetting', key, value }); deps.extraSettings?.(key, value); };
-      out.setMuted = b => { const muted = !b; set('muted', muted); if (deps.audio) for (const bus of Object.values(deps.audio.buses)) bus.muted = muted; if (!muted) deps.audio?.unlock(); ui.hud({ muted }); };
-      out.setHaptic = b => { ui.settings.haptics = !!b; set('haptics', !!b); };
+      const redraw = () => setTimeout(() => { if (rt().panel === 'ayarlar') renderPanel('ayarlar'); }, 0);
+      out.setMuted = b => { const muted = !b; set('muted', muted); if (deps.audio) for (const bus of Object.values(deps.audio.buses)) bus.muted = muted; if (!muted) deps.audio?.unlock(); ui.hud({ muted }); redraw(); };
+      out.setHaptic = b => { ui.settings.haptics = !!b; set('haptics', !!b); redraw(); };
       // ses-5: music / sfx / voice sliders (live, no re-render while dragging) + own music mode
       out.setVol = (bus?: any, v?: any) => { const a = deps.audio; const k = String(bus) as 'music' | 'sfx' | 'voice'; if (!a || !a.buses[k]) return; const wasMuted = Object.values(a.buses).some(b => b.muted);
         a.buses[k].volume = +v || 0; send({ kind: 'setSetting', key: k, value: a.buses[k].volume });
@@ -76,10 +77,10 @@ export function createPanels(deps: PanelsDeps): Panels {
         if (a.buses[k].volume > 0 && wasMuted) { for (const bus of Object.values(a.buses)) bus.muted = false; set('muted', false); a.unlock(); ui.hud({ muted: false }); }
       };
       out.setOwnMusic = b => { const on = !!b; deps.audio?.ownMusicMode(on); set('ownMusic', on); setTimeout(() => { if (rt().panel === 'ayarlar') renderPanel('ayarlar'); }, 0); };
-      out.setQuality = q => set('quality', q);
-      out.setHand = h => { set('hand', h === 'sol' ? 'left' : 'right'); };
-      out.setTextScale = v => { set('textScale', +v || 1); };
-      out.setFlas = b => { set('flasAzalt', !!b); setTimeout(() => { if (rt().panel === 'ayarlar') renderPanel('ayarlar'); }, 0); };
+      out.setQuality = q => { set('quality', q); redraw(); };
+      out.setHand = h => { set('hand', h === 'sol' ? 'left' : 'right'); redraw(); };
+      out.setTextScale = v => { set('textScale', +v || 1); redraw(); };
+      out.setFlas = b => { set('flasAzalt', !!b); redraw(); };
       out.setCb = b => { set('colorBlindIcons', !!b); setTimeout(() => { if (rt().panel === 'ayarlar') renderPanel('ayarlar'); }, 0); };
       out.setHero = h => send({ kind: 'setHero', hero: h });
       out.reset = () => send({ kind: 'resetSave' });
@@ -129,7 +130,7 @@ export function createPanels(deps: PanelsDeps): Panels {
     let model = models.panelModel(id, rules());
     if (id === 'ayarlar') {
       const st = S().settings || {};
-      model = { ...model, vol: deps.audio ? { music: deps.audio.buses.music.volume, sfx: deps.audio.buses.sfx.volume, voice: deps.audio.buses.voice.volume } : null, ownMusic: !!st.ownMusic, haptic: ui.settings.haptics !== false, hand: (st.hand || ui.settings.hand) === 'left' ? 'sol' : 'sag', textScale: st.textScale || 1, cb: !!st.colorBlindIcons, flas: st.flasAzalt !== false, perf: deps.perf ? deps.perf.visible() : undefined, tierNow: deps.quality?.current().label ?? null, tierWhy: deps.quality?.neden?.() || '' };
+      model = { ...model, vol: deps.audio ? { music: deps.audio.buses.music.volume, sfx: deps.audio.buses.sfx.volume, voice: deps.audio.buses.voice.volume } : null, ownMusic: !!st.ownMusic, haptic: ui.settings.haptics !== false && st.haptics !== false, hand: (st.hand || ui.settings.hand) === 'left' ? 'sol' : 'sag', textScale: st.textScale || 1, cb: !!st.colorBlindIcons, flas: st.flasAzalt !== false, perf: deps.perf ? deps.perf.visible() : undefined, tierNow: deps.quality?.current().label ?? null, tierWhy: deps.quality?.neden?.() || '' };
     }
     if (id === 'ayarlar') { const eg = egiticiApi(); if (eg) model = { ...model, egt: { acik: eg.acik(), gorulen: eg.gorulenler() } }; }
     v2.open(id, model, actionsFor(id));

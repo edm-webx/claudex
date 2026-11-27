@@ -142,7 +142,7 @@ export const ESNAF_DOST: Record<string, EsnafDost> = {
     story: [
       { title: 'İlk bisiklet', text: 'Ayten ilk bisikletini çöpten bulduğu parçalarla yapmış. Adı "Frankeşteyn Kuzu". Hâlâ çalışıyor, gıcırdayarak.' },
       { title: 'Yokuş rekoru', text: 'Mahallenin en dik yokuşunu pedal çevirerek ilk çıkan o. Zirvede bir simitçi alkışlamış. O simitçi Hüsnü\'ymüş.' },
-      { title: 'Renk kataloğu', text: 'Dükkanın duvarında yüz renk boya var. Her birine bir isim vermiş. En sevdiği "Boğaz Sisi Grisi".' },
+      { title: 'Renk kataloğu', text: 'Dükkânın duvarında yüz renk boya var. Her birine bir isim vermiş. En sevdiği "Boğaz Sisi Grisi".' },
       { title: 'Büyük tur', text: 'Bir gün bütün sahili bisikletle dolaşacakmış. Rotayı çizmiş, ilk durak senin büfen.' },
       { title: 'Aile turu', text: 'Ayten sana bir bisiklet yaptı, rengi büfenle aynı. Selesinde yazıyor: "Komşu değil, aile".' },
     ],

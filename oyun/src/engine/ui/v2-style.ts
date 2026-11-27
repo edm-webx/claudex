@@ -129,6 +129,8 @@ position:fixed;inset:0;pointer-events:none;z-index:10;overflow:hidden;font-famil
 .sb-x:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
 .sb-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 8px 4px;border-radius:999px;background:var(--cream2);border:2px solid var(--ink);font:800 13px/1.1 var(--body);white-space:nowrap}
 .sb-chip svg{width:16px;height:16px}
+/* satır içi ikonlar (kilit vb.) panel metninde yazı boyunda kalsın */
+.sb-card h3 svg,.sb-card h4 svg,.sb-card p svg,.sb-card i svg,.sb-card .kl-note svg,.sb-card .tg svg{width:1.05em;height:1.05em;flex:none;vertical-align:-.15em;display:inline-block}
 .sb-chip.ok{background:var(--money);color:#fff}
 .sb-chip.gold{background:var(--yellow)}
 .sb-chip.soon{background:var(--navy);color:#fff;border-color:var(--navy)}

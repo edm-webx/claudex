@@ -40,7 +40,7 @@ const CSS = `
 .mn-key{display:inline-grid;place-items:center;min-width:24px;height:22px;padding:0 6px;border:1px solid rgba(255,225,170,.45);border-radius:6px;color:#ffe9c4;font-weight:700;margin-right:6px}
 .mn-dokun{display:none}
 @media (hover:none),(max-width:760px){.mn-kb{display:none!important}.mn-dokun{display:inline}}
-@media (max-width:760px),(max-aspect-ratio:1/1){
+@media (max-width:760px),(max-aspect-ratio:1/1),(max-height:480px){
  .mn-grade{background:linear-gradient(180deg,rgba(20,8,4,.82) 0%,rgba(20,8,4,.25) 32%,rgba(0,0,0,0) 48%,rgba(14,6,3,.86) 78%)}
  .mn-logo{left:0;right:0;top:clamp(34px,7vh,64px);text-align:center}
  .mn-logo .k{margin-left:.52em}.mn-logo .b{font-size:clamp(58px,19vw,92px)}
@@ -68,10 +68,17 @@ const CSS = `
 .mn-btn.mn-ikinci{background:rgba(255,245,230,.08);color:#ffe1a8;box-shadow:inset 0 0 0 1px rgba(255,214,160,.3)}
 .mn-geri{position:absolute;top:16px;right:16px;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,214,160,.28);background:rgba(0,0,0,.25);color:#ffe1a8;font:700 18px/1 'SB Govde',system-ui,sans-serif;cursor:pointer;display:grid;place-items:center}
 .mn-geri:hover{background:rgba(255,214,160,.14)}
-@media (max-width:760px),(max-aspect-ratio:1/1){
+@media (max-width:760px),(max-aspect-ratio:1/1),(max-height:480px){
  .mn-panel{left:12px;right:12px;width:auto;top:auto;bottom:calc(clamp(14px,5.2vh,40px) + 10px);transform:none;max-height:calc(100% - 232px);padding:22px 20px 18px;border-radius:20px;animation-name:mn-panel-m}
  @keyframes mn-panel-m{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:none}}
  .mn-panel h2,.mn-h{font-size:27px}
+}
+/* telefon yatay (kısa ve geniş): panel sağda tam boy, içi kaydırılır; alt düğme kaydırmayla her zaman erişilir */
+@media (max-height:480px) and (min-aspect-ratio:1/1){
+ .mn-panel{left:auto;right:max(12px,env(safe-area-inset-right));top:10px;bottom:10px;width:min(440px,calc(100vw - 24px));max-height:none;padding:16px 18px 14px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+ .mn-panel h2,.mn-h{font-size:24px}.mn-sub{margin-bottom:8px;font-size:13px}.mn-pid{margin-bottom:8px}.mn-btn{min-height:44px;margin-top:10px}.mn-geri{top:10px;right:10px}
+ .mn-menu{bottom:calc(clamp(14px,5.2vh,40px) + 48px)}.mn-mi{min-height:40px;padding:2px 0}.mn-mi.ana{font-size:32px}.mn-basla{bottom:calc(clamp(14px,5.2vh,40px) + 58px)}
+ .mn-logo{top:clamp(14px,4vh,28px)}.mn-logo .b{font-size:clamp(44px,15vh,62px)}
 }
 .mn-title{background:transparent!important;animation:mn-in .9s ease both}
 @keyframes mn-in{from{opacity:0}to{opacity:1}}
@@ -101,7 +108,7 @@ const CSS = `
 @keyframes mn-eq{to{height:14px}}
 .mn-foot .sag{display:flex;gap:18px;align-items:center}
 .mn-panelde .mn-foot .sag{visibility:hidden}
-@media (max-width:760px),(max-aspect-ratio:1/1){.mn-panelde .mn-foot,.mn-panelde .mn-menu{visibility:hidden}}
+@media (max-width:760px),(max-aspect-ratio:1/1),(max-height:480px){.mn-panelde .mn-foot,.mn-panelde .mn-menu{visibility:hidden}}
 .mn-ayar-satir{margin:16px 0 0}.mn-ayar-satir label{display:flex;justify-content:space-between;font:700 11.5px/1 'SB Govde',system-ui,sans-serif;letter-spacing:.2em;color:rgba(255,220,170,.75);text-transform:uppercase;margin-bottom:10px}
 .mn-ayar-satir label output{letter-spacing:.04em;color:#ffe1a8}
 .mn-ayar-satir input[type=range]{width:100%;height:28px;margin:0;accent-color:#f6a640;cursor:pointer}
@@ -116,7 +123,7 @@ const CSS = `
 .mn-perde{position:fixed;inset:0;z-index:999;background:#0b0503;pointer-events:none;opacity:0;transition:opacity .35s ease}
 .mn-perde.on{opacity:1}
 .mn-menude>*:not(.mn-title):not(.gr-bg):not(style):not(.sb-toasts){visibility:hidden!important}
-@media (max-width:760px),(max-aspect-ratio:1/1){
+@media (max-width:760px),(max-aspect-ratio:1/1),(max-height:480px){
  .mn-menu{left:0;right:0;top:auto;bottom:calc(clamp(14px,5.2vh,40px) + 64px);align-items:center;gap:0}
  .mn-mi{justify-content:center;padding:6px 0;min-height:48px}.mn-mi:before{display:none}.mn-mi.on{transform:none}.mn-mi small{display:none}
  .mn-mi.ana{font-size:38px;color:#fff6e4;text-shadow:0 0 24px rgba(255,190,90,.6)}

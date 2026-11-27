@@ -41,6 +41,8 @@ const CSS = `
 .gs-h2{font:900 15px/1.2 var(--disp);text-align:left;margin:12px 0 2px;color:#5a4636;text-transform:uppercase;letter-spacing:.04em}
 .gs-not{font:700 14px/1.3 var(--body);color:#5a4636;text-align:left;padding:2px 2px 6px}
 .gs-btn{margin-top:14px;width:100%;min-height:58px;border-radius:16px;border:4px solid #3b2a20;background:#ffd23f;box-shadow:0 5px 0 #3b2a20;font:900 21px/1 var(--disp);color:#3b2a20;cursor:pointer}
+.gs-foot{position:sticky;bottom:-20px;margin:0 -24px -20px;padding:2px 24px 20px;background:linear-gradient(180deg,rgba(253,243,225,0),#fdf3e1 14px)}.gs-foot .gs-btn{margin-top:8px}
+@media (max-height:480px){.gs-card{padding:12px 18px 12px;width:min(460px,calc(100vw - 24px))}.gs-foot{bottom:-12px;margin:0 -18px -12px;padding:2px 18px 12px}.gs-moon{display:none}.gs-h{font-size:21px}.gs-sub{margin-bottom:6px;font-size:13.5px}.gs-ciro{font-size:30px;margin:2px 0}.gs-row{padding:4px 2px;font-size:14.5px}.gs-h2{margin:8px 0 0}.gs-btn{min-height:46px;font-size:18px}}
 .gs-btn:active{transform:translateY(4px);box-shadow:0 1px 0 #3b2a20}
 `;
 
@@ -113,7 +115,7 @@ export function createGunSonu(deps: { root: HTMLElement; rules: () => Rules | nu
     wrap = document.createElement('div'); wrap.className = 'gs-wrap';
     wrap.innerHTML = `<div class="gs-card"><div class="gs-moon">🌙</div><div class="gs-h">Kepenkler indi</div><div class="gs-sub">${m.day}. gün bitti. Saat 08:00, iskele sessiz.</div>
       ${parts.join('\n')}
-      <button class="gs-btn" type="button">Yeni güne başla ☀️</button></div>`;
+      <div class="gs-foot"><button class="gs-btn" type="button">Yeni güne başla ☀️</button></div></div>`;
     deps.root.appendChild(wrap);
     requestAnimationFrame(() => requestAnimationFrame(() => wrap?.classList.add('on')));
     wrap.querySelector('.gs-btn')!.addEventListener('click', () => { deps.sfx?.('pop'); deps.command({ kind: 'yeniGun' }); close(true); });

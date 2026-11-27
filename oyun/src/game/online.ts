@@ -110,7 +110,7 @@ const CSS = `
 .on-tag .n{display:inline-block;background:#3b2a20;color:#fff6e6;border-radius:999px;padding:1px 9px;font:900 13px/1.4 var(--disp)}
 .on-tag .d{display:block;font:800 11px/1.2 var(--body);color:#fff6e6;text-shadow:0 1px 2px #000}
 .on-tag .s{display:block;margin:0 auto 4px;max-width:220px;white-space:normal;background:#fff;border:2px solid #3b2a20;border-radius:12px;padding:3px 9px;font:800 14px/1.25 var(--body);color:#3b2a20}
-.on-oda{position:absolute;left:50%;top:44px;transform:translateX(-50%);z-index:41;min-width:230px;white-space:nowrap;min-height:40px;padding:2px 14px;border-radius:999px;border:3px solid #3b2a20;background:#ffd23f;box-shadow:0 3px 0 #3b2a20;font:900 14px var(--disp);color:#3b2a20;cursor:pointer;pointer-events:auto}
+.on-oda{position:absolute;left:50%;top:44px;transform:translateX(-50%);z-index:33;min-width:230px;white-space:nowrap;min-height:40px;padding:2px 14px;border-radius:999px;border:3px solid #3b2a20;background:#ffd23f;box-shadow:0 3px 0 #3b2a20;font:900 14px var(--disp);color:#3b2a20;cursor:pointer;pointer-events:auto}
 /* AR-GE 2026-11-22: tek başınayken davet düğmesi küçük ve sade (ilk oturumda ekranın ortasını kaplıyordu); oda kurulunca büyük hâl döner */
 .on-oda.kucuk{top:10px;min-width:0;min-height:30px;padding:0 10px;font-size:12px;border-width:2px;background:rgba(255,246,230,.94);box-shadow:0 2px 0 #3b2a20}
 .on-bg{position:fixed;inset:0;pointer-events:auto;z-index:72;display:flex;align-items:center;justify-content:center;background:rgba(40,22,18,.6);padding:16px;font-family:var(--body)}
@@ -121,6 +121,8 @@ const CSS = `
 .on-b.g{background:#8fd06b}.on-b.y{background:#ffd23f}
 .on-code{width:100%;box-sizing:border-box;min-height:56px;border:4px solid #3b2a20;border-radius:14px;text-align:center;font:900 30px var(--disp);letter-spacing:5px;text-transform:uppercase;background:#fff;color:#3b2a20}
 .on-srv{display:grid;grid-template-columns:1fr 1fr;gap:6px}.on-s{min-height:42px;border:3px solid #3b2a20;border-radius:12px;background:#fff6e6;font:900 15px var(--disp);color:#3b2a20;cursor:pointer;text-align:left;padding:2px 8px;display:flex;align-items:center;gap:6px}.on-s.on{background:#ffd23f}.on-s i{width:14px;height:14px;border-radius:50%;border:2px solid #3b2a20;flex:none}
+.on-card{position:relative}.on-x{position:absolute;top:8px;right:8px;width:44px;height:44px;border-radius:50%;border:3px solid #3b2a20;background:#fff6e6;font:900 16px var(--disp);color:#3b2a20;cursor:pointer}
+@media (max-height:480px){.on-bg{padding:8px}.on-card{padding:10px 14px;width:min(520px,100%)}.on-card h3{font-size:19px;margin-right:44px}.on-card p{margin:2px 0 6px;font-size:12.5px}.on-big{font-size:30px;padding:4px;margin:4px 0}.on-b{min-height:42px;margin-top:6px;font-size:16px}.on-code{min-height:44px;font-size:24px}}
 .on-card{max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);overflow:auto}
 .on-err{min-height:18px;color:#b3261e;font:800 13px var(--body);text-align:center;margin-top:6px}
 `;
@@ -284,10 +286,11 @@ export function createOnline(d: OnlineDeps): OnlineView {
   function odaPanel() {
     const bg = document.createElement('div'); bg.className = 'on-bg';
     const close = () => bg.remove();
+    let yeniSor = false;
     const main = (err = '') => {
-      bg.innerHTML = `<div class="on-card"><h3>🔑 Oyun kodu</h3><p>Oyunun sadece senin. Arkadaşın gelsin istersen kod oluştur, kodu ona söyle. O da "Katıl"a yazsın, aynı Martıköy'de buluşun.</p>
-${code ? `<div class="on-big">${code}</div><p>Şu an bu odadasın.</p>` : ''}
-<button class="on-b g" data-a="kur">Yeni oda kur</button><p style="margin:6px 0 0;font-size:12px">Odayı kuran ev sahibi olur: girenler senin büfende çalışır. Sattıkları senin kasana gelir, onlara maaşı oyun öder; kimsenin parası ve seviyesi karışmaz.</p>
+      bg.innerHTML = `<div class="on-card"><button class="on-x" data-a="kapat" aria-label="Kapat">✕</button><h3>🔑 Oyun kodu</h3><p>Oyunun sadece senin. Arkadaşın gelsin istersen kod oluştur, kodu ona söyle. O da "Katıl"a yazsın, aynı Martıköy'de buluşun.</p>
+${code ? `<div class="on-big">${code}</div><button class="on-b y" data-a="kopya">Kodu kopyala</button><p>Şu an bu odadasın.</p>` : ''}
+<button class="on-b g" data-a="kur">${yeniSor ? 'Eski oda kapanır, emin misin?' : 'Yeni oda kur'}</button><p style="margin:6px 0 0;font-size:12px">Odayı kuran ev sahibi olur: girenler senin büfende çalışır. Sattıkları senin kasana gelir, onlara maaşı oyun öder; kimsenin parası ve seviyesi karışmaz.</p>
 <div style="margin-top:12px;font:900 15px var(--disp)">Odaya katıl</div>
 <input class="on-code" maxlength="6" placeholder="KOD" autocomplete="off" spellcheck="false">
 <button class="on-b y" data-a="katil">Katıl</button><div class="on-err">${err}</div>
@@ -298,8 +301,9 @@ ${code ? `<div class="on-big">${code}</div><p>Şu an bu odadasın.</p>` : ''}
       if (e.target === bg) { close(); return; }
       const btn = (e.target as HTMLElement).closest('button') as HTMLButtonElement | null;
       const a = btn?.dataset.a; if (!a) return;
-      if (a === 'kur') { const c = yeniKod(); connect(c, true); main(); d.toast('Oda kuruldu: ' + c + '. Kodu arkadaşına söyle!'); return; }
+      if (a === 'kur') { if (code && !yeniSor) { yeniSor = true; main(); return; } yeniSor = false; const c = yeniKod(); connect(c, true); main(); d.toast('Oda kuruldu: ' + c + '. Kodu arkadaşına söyle!'); return; }
       if (a === 'katil') { const c = kodTemiz((bg.querySelector('.on-code') as HTMLInputElement).value); if (c.length !== 6) { main('Kod 6 harf olmalı.'); return; } connect(c); close(); d.toast(c + ' odasına girdin.'); return; }
+      if (a === 'kopya') { try { void navigator.clipboard?.writeText(code); d.toast('Kod kopyalandı: ' + code); } catch { d.toast('Kopyalanamadı. Kodu elle yaz: ' + code); } return; }
       if (a === 'genel') { connect(''); close(); return; }
       close();
     });

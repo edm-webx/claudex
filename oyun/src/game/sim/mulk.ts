@@ -87,7 +87,7 @@ export function installMulk(K: Kernel) {
   function giveChest(id: string, why: string) {
     const sd = SANDIK_BY_ID[id]; if (!sd) return;
     const e = env(); e.sandik[id] = flo(e.sandik[id]) + 1;
-    K.toast(sd.ikon + ' ' + sd.ad + ' düştü! (' + why + ') Envanterden aç.', 'good'); K.logEv('sandikDustu', { id });
+    K.toast(sd.ikon + ' ' + sd.ad + ' düştü! (' + why + ') Çantandan aç.', 'good'); K.logEv('sandikDustu', { id });
   }
   function pick(h: [string, number][]): string { let t = 0; for (const [, w] of h) t += w; let r = rng.next() * t; for (const [id, w] of h) { r -= w; if (r <= 0) return id; } return h[0][0]; }
   function sandikAc(id: string) {
