@@ -111,7 +111,7 @@ export const EGITICI: readonly EgtKart[] = [
 
   // İşçiler
   { id: 'pano', grup: 'isci', baslik: 'İş ve işçi bulma panosu', etiket: 'İş panosu',
-    metin: 'İşçileri bu panodan tutarsın. Her adayın huyu, kusuru ve maaşı farklıdır. Panoya her sabah yeni adaylar gelir.',
+    metin: 'İşçileri bu panodan tutarsın. Her adayın huyu, kusuru ve maaşı farklıdır. Panoya birkaç dakikada bir yeni adaylar gelir.',
     nasil: 'Panonun önünde dur, aday kartları açılır',
     kosul: c => own(c, 'isbul'), hedef: c => c.v.anchors?.job },
   { id: 'ilk_isci', grup: 'isci', baslik: 'İlk işçin geldi', etiket: 'İşçin',
@@ -140,6 +140,17 @@ export const EGITICI: readonly EgtKart[] = [
   { id: 'tadilat_basladi', grup: 'buyume', baslik: 'Ustalar çalışıyor', etiket: 'Tadilat',
     metin: 'Tadilat sürerken büfe açık kalır, satışa devam edebilirsin. Kalan süre tadilat panelinde yazar. Bitince yeni bölüm ve yeni kareler açılır.',
     kosul: c => !!c.S.tadilat, hedef: c => c.v.anchors?.counter },
+  // 2026-11-27 QA-2: aşama 6'da büfe restorana döner, tezgâh kuyruğu kalkar, herkes masaya oturur; oyuncuya bir kez anlatılır
+  { id: 'restoran', grup: 'buyume', baslik: 'Büfe artık restoran', etiket: 'İş panosu',
+    metin: 'Müşteriler artık masaya oturuyor: menü ister, sipariş verir, yemeği bekler, hesabı ister. Bunları garsonlar yapar. İlk işin panodan garson tutmak.',
+    nasil: 'Panonun önünde dur, garson adayını seç',
+    kosul: c => (c.S.stage || 1) >= 6 && !c.S.tadilat, hedef: c => c.v.anchors?.job,
+    devam: [
+      { baslik: 'Mutfağı kur', etiket: 'Mutfak karesi',
+        metin: 'Yemekler mutfakta pişer. Mutfaktaki sarı karelerden istasyon al, aşçı tutarsan o pişirir. Hazır tabak pass penceresine çıkar, garson oradan alıp masaya götürür.',
+        hedef: c => (c.v.pads || []).find((p: { key: string }) => p.key.startsWith('mutfak.'))?.pos },
+      { baslik: 'Sen ne yaparsın?', metin: 'Garson yetişmezse pass’tan tabağı kendin al, masaya götür. Boş masalar ve salon aletleri de sarı karelerden açılır; masa çoğaldıkça garson da çoğalt.' },
+    ] },
   { id: 'karne', grup: 'buyume', baslik: 'Gün sonu karnesi',
     metin: 'Her gün sonunda karne gelir: hız, lezzet, temizlik ve güler yüz notların. Toplanan yıldızlar yeni dükkânların kilidini açar.',
     kosul: c => c.S.day >= 2 },
@@ -180,7 +191,7 @@ export const EGITICI: readonly EgtKart[] = [
   { id: 'kirtasiye', grup: 'isletme', baslik: 'Kırtasiye', metin: 'Sahibiysen tezgâha geçip kendin satabilirsin. Öğrenciler okul saatlerinde gelir.',
     kosul: c => icTur(c, 'kirtasiye') },
   { id: 'okul', grup: 'isletme', baslik: 'Martıköy İlkokulu', metin: 'Dersler ve sınavlar burada. Sınavı geçen esnaf ödül alır.', kosul: c => icTur(c, 'okul') },
-  { id: 'mutfak', grup: 'isletme', baslik: 'Sabri Mutfağı', metin: 'Malzemeyi istasyona koy, makine kendi yapar. Hazır olanı sen ya da işçin alıp götürür. İstasyonlar büfe aşamasıyla açılır.',
+  { id: 'mutfak', grup: 'isletme', baslik: 'Sabri Mutfağı', metin: 'Bir istasyonun önünde durursan o yemeği sen pişirirsin, aşçın varsa o pişirir. Hazır tabak pass penceresine çıkar. Yeni istasyonlar mutfaktaki sarı karelerle alınır.',
     kosul: c => icTur(c, 'mutfak') },
   { id: 'salon', grup: 'isletme', baslik: 'Salon', metin: 'Garsonlar masalara servis eder, sen mutfağı ve tezgâhı besle. Salon büfe aşamasıyla büyür, yeni masalar sarı karelerden açılır.',
     kosul: c => icTur(c, 'kahvalti', 'balik') },

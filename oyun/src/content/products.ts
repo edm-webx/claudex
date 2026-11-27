@@ -3,6 +3,8 @@ import type { ProductId } from '../game/sim/schema';
 import type { ProductDef, SetDef, StationDef } from './types';
 import { TIER_PRICE_X, TIER_COST_F } from './ekonomi2';
 
+/** tezgâhta bir üründen en çok kaç tane durur (oyuncu, işçi, iade hepsi aynı sınır; 2026-11-27 QA-11: restoran rafaKoy 8 diyordu) */
+export const TEZGAH_SINIR = 12;
 export const PRODUCT_IDS: readonly ProductId[] = ['doner', 'cay', 'ayran', 'simit', 'tost', 'gazoz'];
 export const PRODUCTS: Record<ProductId, ProductDef> = {
   doner: { id: 'doner', name: 'Döner dürüm', short: 'Döner', base: 160, prep: 1.6, ritual: 'cut', station: 'doner', icon: 'doner', h: 0.2,

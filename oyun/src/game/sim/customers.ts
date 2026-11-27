@@ -8,7 +8,7 @@ import { RESTORAN_ASAMA } from '../../content/prefabs/iskele/layout';
 import type { Vec2 } from '../../engine/api';
 import { angLerp } from '../../engine/core';
 import { CITIZENS } from '../../content/citizens';
-import { PRODUCT_IDS } from '../../content/products';
+import { PRODUCT_IDS, TEZGAH_SINIR } from '../../content/products';
 import { P, PATIENCE_S, decorKeyif } from '../../content/economy';
 import { LINES } from '../../content/lines';
 import { ISKELE_ZONE } from '../../content/zones/iskele';
@@ -251,7 +251,7 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
     goTo(c, angry ? nearestSpawn({ x: c.x, z: c.z }) : spawnPoint());
   }
   const returnItemsToCounter = (c: Customer) => {
-    c.items.splice(0).forEach(it => { if (!isProduct(it.type)) return; const b = rt.counter[it.type]; if (b && b.length < 12) b.push(it as Item); });   // tezgâh sınırı counter.ts ile aynı (12); mutfak tabağı tezgâha stok olarak dönmez (BUF-05)
+    c.items.splice(0).forEach(it => { if (!isProduct(it.type)) return; const b = rt.counter[it.type]; if (b && b.length < TEZGAH_SINIR) b.push(it as Item); });   // tezgâh sınırı counter.ts ile aynı (12); mutfak tabağı tezgâha stok olarak dönmez (BUF-05)
     c.got = {};
   };
   function freeSeat(n: number): { t: number; seat: number } | null {

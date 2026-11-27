@@ -4,7 +4,7 @@
  * Dwell: `counter` interactable at the counter stand-at point (radius 1.0, dwell 0.25 s), one drop per transfer.
  */
 import { DWELL_DEFAULTS } from '../../engine/api';
-import { PRODUCT_IDS } from '../../content/products';
+import { PRODUCT_IDS, TEZGAH_SINIR } from '../../content/products';
 import type { ProductId } from './schema';
 import type { Kernel, CounterApi, CarryApi, Item, Order } from './state';
 
@@ -12,7 +12,7 @@ export function installCounter(K: Kernel, reserved: () => Partial<Record<Product
   const rt = K.rt, S = K.state;
   const counterApi: CounterApi = {
     count: p => rt.counter[p].length,
-    put(it) { const b = rt.counter[it.type]; if (!b || b.length >= 12) return false; b.push(it); return true; },
+    put(it) { const b = rt.counter[it.type]; if (!b || b.length >= TEZGAH_SINIR) return false; b.push(it); return true; },
     take(p, n, who) {
       if (who === 'gull') {
         const b = rt.counter[p];

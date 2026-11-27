@@ -22,6 +22,8 @@ import { SETS } from '../content/products';
 import { LINES } from '../content/lines';
 import { musteriBubble, photoFlash } from './ui/musteri-ui';
 import { restoranApi } from './sim/restoran';
+import { ICONS } from '../engine/ui/v2-style';
+import { yemekIkonImg } from './view/yemek-ikon';
 
 export interface PlayViewDeps {
   ui: Ui;
@@ -59,6 +61,15 @@ function orderIcons(order: Order, left: Order) {
   for (const p in order) { const n = order[p] || 0; if (n <= 0) continue; const l = left[p] || 0; if (l > 0) out.push({ id: p, n: l }); }
   for (const p in order) { const n = order[p] || 0; if (n > 0 && !((left[p] || 0) > 0)) out.push({ id: p, n, done: true }); }
   return out;
+}
+
+/** masa balonu: kalem başına bir ikon (ICONS'ta çizimi olan ürün çizimiyle, yemekler 3D modelin küçük resmiyle), tekrar eden kalem ×n */
+function masaIkonlari(yemek: string[]): { id: string; n: number }[] {
+  const n = new Map<string, number>();
+  for (const f of yemek) n.set(f, (n.get(f) || 0) + 1);
+  const out: { id: string; n: number }[] = [];
+  for (const [f, k] of n) { const html = ICONS[f] || yemekIkonImg(f, 28, 'yk-bi'); if (html) out.push({ id: html, n: k }); }
+  return out.slice(0, 4);
 }
 
 export function createPlayView(d: PlayViewDeps): PlayView {
@@ -134,7 +145,9 @@ export function createPlayView(d: PlayViewDeps): PlayView {
       if (m.durum === 'bos' || m.durum === 'kirli' || m.durum === 'yemek' || m.frac < 0.08) continue;
       const tb = rt.layout.tables[m.table]; if (!tb) continue;
       const k = 1 - m.frac, ad = m.durum === 'menu' ? 'Menü bekliyor' : m.durum === 'siparis' ? 'Sipariş verecek' : m.durum === 'tabak' ? 'Yemek bekliyor' : 'Hesap bekliyor';
-      add({ x: tb.x, y: 1.55, z: tb.z }, v2.bubbleHTML({ text: ad, patience: k }), k < 0.25 ? 'bubble angry' : 'bubble mini', 8 + (k < 0.3 ? 4 : 0), 'm' + m.table);
+      // QA-16: yemek bekleyen masa hangi yemeği beklediğini gösterir (ürünün kendi ikonu; aynı kalem ×n), yazı yalnız ikon yoksa
+      const ik = m.durum === 'tabak' && m.yemek?.length ? masaIkonlari(m.yemek) : [];
+      add({ x: tb.x, y: 1.55, z: tb.z }, v2.bubbleHTML(ik.length ? { icons: ik, patience: k } : { text: ad, patience: k }), k < 0.25 ? 'bubble angry' : 'bubble mini', 8 + (k < 0.3 ? 4 : 0), 'm' + m.table);
     }
     rt.winq.forEach((c, i) => {
       if (c.state !== 'wqueue' || i > 2) return;

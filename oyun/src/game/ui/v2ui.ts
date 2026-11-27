@@ -10,6 +10,7 @@ import { KIOSK_STAGES } from '../../content/stages';
 import { kaliteSatiri } from '../../content/kalite-metin';
 import type { Ui } from '../../engine/api';
 import { ICONS, INK } from '../../engine/ui/v2-style';
+import { yemekIkonImg } from '../view/yemek-ikon';
 import { renderEsnaf, renderKomsuSection } from './esnaf-panel';
 import { renderDekor2 } from './dekor-panel';
 import { renderMini, renderMiniSection } from './mini-panel';
@@ -73,6 +74,7 @@ const I = name => {
   if (ICONS[name]) return ICONS[name];
   const k = String(name).toLowerCase();
   if (ICONS[k]) return ICONS[k];
+  const yk = yemekIkonImg(String(name), 28, 'yk-bi'); if (yk) return yk;   // QA-16: menü yemeği (demlik_cay, gazoz_cesit...) kendi modelinin ikonu; anahtar kelime eşlemesi yanlış ürüne düşüyordu
   for (const p of ['doner', 'cay', 'ayran', 'simit', 'tost', 'gazoz']) if (k.indexOf(p) >= 0) return ICONS[p];
   return ICONS.sparkle;
 };

@@ -149,5 +149,9 @@ export function katY(stage: number, x: number, z: number, yukari: boolean): numb
  */
 export const KANAT_POST: Record<KanatBolge, Vec2> = {
   cay: { x: -20.9, z: -7.9 }, dondurma: { x: 19.6, z: -0.2 }, salonW: { x: SW.x, z: -14.6 }, salonE: { x: SE.x, z: -14.6 },
-  catiW: { x: -11.7, z: 3.4 }, catiE: { x: 9.7, z: 3.4 }, sefW: { x: -12.4, z: 3.4 }, sefE: { x: 10.4, z: 3.4 }, kosk: { x: 9.4, z: -16.2 },
+  // 2026-11-27 QA-1: çatı ve Şef katı garsonları kendi katında bekler (merdiven başı / Şef koridoru omurgası); eskiden merdiven ayağında
+  // (yerde) bekleyip her menü için 20-44 sn merdiven çıkıyordu. Tabak için pass'a iner, yine kendi katına döner.
+  catiW: { x: -11.7, z: -2.0 }, catiE: { x: 9.7, z: -2.0 }, sefW: { x: -11.7, z: -13.1 }, sefE: { x: 9.7, z: -13.1 }, kosk: { x: 9.4, z: -16.2 },
 };
+/** postu üst katta (çatı terası / Şef salonu) olan bölgenin merdiven tarafı, yerdeyse null */
+export const postCati = (b: KanatBolge): 'W' | 'E' | null => (b === 'catiW' || b === 'sefW' ? 'W' : b === 'catiE' || b === 'sefE' ? 'E' : null);

@@ -11,6 +11,8 @@ export class Walker {
   path: Vec2[] = [];
   goal: Vec2 | null = null;
   moving = false;
+  /** Kat yüksekliği (ör. restoran çatı/Şef katı): verilirse zeminY yerine bu kullanılır; önceki y'yi alır ki "üst kattayım" bilgisi kaybolmasın. */
+  yAt: ((x: number, z: number, prevY: number) => number) | null = null;
   constructor(readonly a: Actor, private nav: Nav) {}
   /** v2 goTo: path from the current position (string-pulled by Nav); a missing route falls back to a straight line. */
   goTo(target: Vec2): void {
@@ -42,7 +44,7 @@ export class Walker {
       this.moving = true;
     }
     a.speed = dt > 0 ? moved / dt : 0;
-    if (this.moving) a.y = zeminY(a.x, a.z);   // PRF-09: a walker on the footbridge climbs the same stair ramp as the hero
+    if (this.moving) a.y = this.yAt ? this.yAt(a.x, a.z, a.y || 0) : zeminY(a.x, a.z);   // PRF-09: a walker on the footbridge climbs the same stair ramp as the hero
     return this.path.length > 0;
   }
   stop(): void { this.path.length = 0; this.moving = false; this.a.speed = 0; }

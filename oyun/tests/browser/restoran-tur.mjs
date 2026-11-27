@@ -13,7 +13,7 @@ const b = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftsha
 const p = await (await b.newContext({ viewport: { width: 1280, height: 720 } })).newPage();
 const errs = []; p.on('pageerror', e => errs.push(e.message)); p.on('console', m => { if (m.type() === 'error') errs.push(m.text().slice(0, 300)); });
 await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengeli&seed=3&stage=${STAGES[0]}`);
-await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 120000 });
+await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: Number(process.env.READY_MS || 120000) });   // yüklü makinede READY_MS=540000
 await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
 await kulisKapat(p, 'Gozlem');
 await p.evaluate(() => { const M = window.__marti; try { M.command({ kind: 'esnafim', op: 'done' }); } catch {} M.step(1); M.skipCeremony?.(); M.collectWelcome?.(); M.setTime(13); M.step(2); M.izgara(false); M.simCmd('money', 9e9); M.simCmd('level', 40); M.simCmd('unlock', 'isbul'); M.closeJobBoard?.(); M.closePanel?.();
