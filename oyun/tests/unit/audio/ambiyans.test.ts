@@ -48,7 +48,7 @@ describe('ambiyans tablosu', () => {
     expect(Object.keys(katmanAgirlik('carsi', 'noon', O))).toEqual([]);   // kapsam dışı: deniz çalmasın
     expect(katmanAgirlik('iskele', 'night', O).deniz).toBeLessThan(katmanAgirlik('iskele', 'noon', O).deniz);   // gece dalga yumuşar
   });
-  it('gece martı ve vapur seyrek (sahibe karar: seyrek/kes tek sabitte)', () => {
+  it('gece martı seyrek (sahibe karar: seyrek/kes tek sabitte)', () => {
     const gull = AMBIYANS.iskele.olay.find(o => o.id === 'gull')!;
     expect(gull.evre[3]).toBeLessThan(gull.evre[1] * 0.25);
   });
@@ -137,7 +137,7 @@ describe('morg ve canlı müzik', () => {
 });
 
 describe('MUZ-ic: iç mekan oda tonları (kafede kafe, mutfakta mutfak, dış ses yok)', () => {
-  const KOK = ['iskele', 'deniz', 'gull', 'horn'];
+  const KOK = ['iskele', 'deniz', 'gull'];
   it('her iç mekan kimliğinin bir oda tonu var ve döngü ses-db içinde', async () => {
     const { IC_MEKANLAR } = await import('../../../src/content/ic-mekan');
     const { IC_ODA } = await import('../../../src/content/ses/ambiyans');

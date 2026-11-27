@@ -26,7 +26,7 @@ export interface Lofi {
   setIntensity(v: number): void;
   setEvent(id: string | null): void;
   setWeather(kind: string): void;
-  duck(sec: number): void;
+  duck(sec: number, depth?: number): void;
   /** Active layer names (debug / perf panel). */
   layers(): string[];
 }

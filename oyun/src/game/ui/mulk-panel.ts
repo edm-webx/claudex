@@ -52,7 +52,7 @@ export function createMulkPanel(d: Deps): MulkPanel {
   const hint = document.createElement('button'); hint.className = 'mp-hint'; d.root.appendChild(hint);
   const kd = createKoordinator(d);
   let tab: Tab = 'envanter', key = '', openNow = false, t = 0, hintTab: OpenTab | null = null, pickPlot = '', pickTip = '', focus = '', ktMode = false;
-  const cmd = (c: Record<string, unknown>) => { d.command({ kind: 'mulk', ...c }); try { d.sfx?.('pick'); } catch { /* */ } key = ''; t = 0; };
+  const cmd = (c: Record<string, unknown>) => { d.command({ kind: 'mulk', ...c }); try { d.sfx?.('tik'); } catch { /* */ } key = ''; t = 0; };
 
   const itemCard = (id: string, n: number, acts = '') => { const e = ESYA_BY_ID[id]; if (!e) return ''; return `<div class="mp-it r${e.nadir}"><span class="mp-ic">${e.ikon}</span><b>${esc(e.ad)}</b><small>${esc(e.blurb)}</small><span class="mp-n">×${n}</span>${acts}</div>`; };
   const usable = (id: string) => ['bozuk_kese', 'tecrube_simit', 'sans_simidi', 'altin_kupon'].includes(id);

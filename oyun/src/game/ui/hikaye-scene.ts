@@ -154,7 +154,7 @@ export function createHikayeScene(deps: HikayeSceneDeps): HikayeSceneView {
         if (rv.n !== rvN) {
           rvN = rv.n;
           cardEl.innerHTML = `<div class="hk-card" style="border-color:${esc(rv.color)}"><div class="hd">${portrait(rv.who, 60)}<div><h3>${esc(rv.title)}</h3><div class="rn">${esc(rv.rivalName)}</div></div></div><p>${esc(rv.text)}</p><div class="ch">${rv.choices.map(([l, id], i) => btn(l, 'rival', id, i === 0 ? 'green' : 'cream')).join('')}</div></div>`;
-          try { deps.sfx?.('horn'); } catch { /* */ }
+          try { deps.sfx?.('whistle'); } catch { /* */ }
         }
       } else if (res) {
         if (res.n !== resN) {

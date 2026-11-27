@@ -288,9 +288,11 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   // ── input
   const input: Input = make('input', () => createInput({ canvas, root: app, platform })) ?? nullInput();
   input.setPicker(p => R.pick(p));
-  let unlocked = false;
-  const unlock = () => { if (unlocked) return; unlocked = true; make('audio.unlock', () => { audio?.unlock(); return true; }); };
-  for (const ev of ['pointerdown', 'keydown', 'touchend'] as const) window.addEventListener(ev, unlock, { capture: true, once: true });   // DOM kaplamalar (Oyna/giriş kartı) canvas'ı örter: pencere düzeyinde yakala
+  // iOS: pointerdown tek başına bağlamı açmayabilir (touchend ister); ilk 8 dokunuşta unlock tekrarlanır (idempotent), sonra dinleyiciler kalkar
+  let unlockN = 0;
+  const unlockEvs = ['pointerdown', 'keydown', 'touchend'] as const;
+  const unlock = () => { make('audio.unlock', () => { audio?.unlock(); return true; }); if (++unlockN >= 8) for (const ev of unlockEvs) window.removeEventListener(ev, unlock, true); };
+  for (const ev of unlockEvs) window.addEventListener(ev, unlock, { capture: true });   // DOM kaplamalar (Oyna/giriş kartı) canvas'ı örter: pencere düzeyinde yakala
 
   // ── save + sim (A's createGameSave over the engine store; the sim ref is late-bound)
   const seed = params.seed ?? (params.parity ? 1 : undefined);
@@ -586,6 +588,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
       if (slotFresh) esnafimSave(sim.state).done = false;
       else if (isNew) esnafimSave(sim.state).done = false;
       { const bk = bankaOku(); (sim.rules.rt as unknown as { banka: unknown }).banka = { tl: bk.tl, esya: bk.esya, dirty: false, faizSaat: bk.faizSaat || 0, saat: Date.now() / 1000 }; }   // the account bank, shared by all 4 slots
+      sesAyariUygula();   // bulut kaydındaki ses ayarları (müzik/efekt/ses/sessiz) bus'lara uygulanır
       try { localStorage.setItem('martikoy-save-owner', me.id); if (c) localStorage.setItem('martikoy-cloud-synced', me.id); } catch { /* */ }
       if (isNew && !foreign) return;
       if ((foreign || wiped) && !(c && c.code)) void save.save('manual');
@@ -712,6 +715,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     weather: () => havaApi(sim.rules)?.view().kind ?? 'acik',
     season: () => havaApi(sim.rules)?.view().season ?? 'sonbahar',
     grill: () => { const a = zones?.anchors('iskele')?.['stations.doner']; return a ? a.pos : null; },
+    santiye: () => { const m = mulkApi(sim.rules); return m ? m.view().plots.filter(p => p.owned && (p.insa != null || (p as { tadilat?: unknown }).tadilat)).map(p => ({ x: p.x, z: p.z })) : []; },
     // BUF-08: mutfakta gerçekten pişiren istasyonlar (sim hattı 'pisiyor' diyorsa), yoksa boş: sessiz
     kitchen: () => {
       const ist = restoranApi(sim.rules)?.view().ist ?? {}, out: { x: number; z: number; w: number }[] = [];
@@ -733,8 +737,15 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   })) : null;
   // HUD speaker + saved mute / hand
   U.root.addEventListener('ui:mute', e => command({ kind: 'setSetting', key: 'muted', value: !!(e as CustomEvent).detail }));
-  if (audio && sim.state.settings.muted) { for (const b of Object.values(audio.buses)) b.muted = true; }
-  if (audio) make('audio.saved', () => { const st = sim.state.settings; audio.buses.music.volume = st.music ?? 0.8; audio.buses.sfx.volume = st.sfx ?? 1; audio.buses.voice.volume = st.voice ?? 1; audio.ownMusicMode(!!st.ownMusic); return true; }); // ses-5 saved sliders + own music
+  // ses-5 saved sliders + own music + mute. Açılışta ve giriş sonrası bulut kaydı yüklenince de çağrılır (kayıt ayarı bus'lara iner)
+  function sesAyariUygula(): void {
+    if (!audio) return;
+    const st = sim.state.settings;
+    audio.buses.music.volume = st.music ?? 0.8; audio.buses.sfx.volume = st.sfx ?? 1; audio.buses.voice.volume = st.voice ?? 1;
+    audio.ownMusicMode(!!st.ownMusic);
+    for (const b of Object.values(audio.buses)) b.muted = !!st.muted;
+  }
+  if (audio) make('audio.saved', () => { sesAyariUygula(); return true; });
   if (sim.state.settings.hand === 'left') extraSettings('hand', 'left');
   if ((sim.state.settings.textScale || 1) !== 1) extraSettings('textScale', sim.state.settings.textScale);
   if (sim.state.settings.colorBlindIcons) extraSettings('colorBlindIcons', true);

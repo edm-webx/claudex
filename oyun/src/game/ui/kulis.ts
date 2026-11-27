@@ -252,7 +252,7 @@ export function createKulis(deps: {
   const thumbs = new Map<string, string>(), queue: { key: string; opts: Record<string, unknown>; mode: 'sac' | 'yuz' }[] = [];
   let thumbScene: T.Scene | null = null, thumbCam: T.PerspectiveCamera | null = null, thumbCv: HTMLCanvasElement | null = null;
 
-  const tap = () => { try { deps.sfx?.('tap'); } catch { /* */ } };
+  const tap = () => { try { deps.sfx?.('tik'); } catch { /* */ } };
   const snap = () => { const c = { ...m } as Record<string, unknown>; delete c.ad; delete c.dukkan; return JSON.stringify(c); };
   const sync = () => {   // the sim validated the change (body rules, ranges): take its record back, keep the typed name
     const w = deps.rules()?.rt.uiLast.esnafim as EsnafimSave | undefined;

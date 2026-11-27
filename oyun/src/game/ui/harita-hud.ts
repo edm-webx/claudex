@@ -94,7 +94,7 @@ export function createHaritaHud(d: HaritaHudDeps): HaritaHud {
           veh.textContent = ICON[t.mode] || '🚐';
           cap.innerHTML = `${SAY[t.mode] || ''}<small>${t.from ? t.from + ' → ' : ''}${t.to}</small>`;
           requestAnimationFrame(() => trav.classList.add('on'));
-          try { d.sfx?.('pick'); } catch { /* */ }
+          try { d.sfx?.('tik'); } catch { /* */ }
         }
         const k = Math.min(1, t.t / t.dur), w = d.root.clientWidth || 390;
         const bob = Math.sin(t.t * (t.mode === 'vapur' ? 4 : 14)) * (t.mode === 'vapur' ? 5 : 3);

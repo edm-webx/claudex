@@ -16,10 +16,14 @@ export const ROT_MS = 150000;
 export const XF_TC = 1.1;   // setTargetAtTime time constant: ~5 s to silence
 
 export interface MusicPlayer extends Lofi { kis(v: number): void; adaylar(): string[] }
+/** duck: derinlik (çarpan) ve bırakma süresi sabit; üst üste gelen duck'lar en derini ve en geç bitişi alır. */
+export const DUCK_DEPTH = 0.35;
 
 export function createMusicPlayer(ac: AudioContext, out: AudioNode, bank: Bank): MusicPlayer {
   let on = false, phase: LofiPhase = 'morning', place = 'iskele', weather = 'acik', event: string | null = null, intensity = 0.5;
   let canli: 0 | 1 = 0, kisV = 1;
+  let icKis = 1;   // iç mekân (müziksiz bölge): parça değişmez/başa sarmaz, yalnız kısılır
+  let duckF = 1, duckEnd = 0, duckT: ReturnType<typeof setTimeout> | null = null;   // tek duck mekanizması: apply() onu hiç ezmez
   let cur: { key: string; src: AudioBufferSourceNode; g: GainNode; t0: number; dur: number } | null = null;
   let want = '', aday: string[] = [], adayKey = '', bag: Canta<string> | null = null;
   // çok-varyantlı mod (db.music.coklu.on): parça = taban~varyant, 1-2 tur çalar, sonra sessizlik/ambiyans arası, sonra yeni parça/varyant
@@ -36,10 +40,11 @@ export function createMusicPlayer(ac: AudioContext, out: AudioNode, bank: Bank):
   const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 20000; lp.Q.value = 0.5;
   const master = ac.createGain(); master.gain.value = 0.9;
   lp.connect(master); master.connect(out);
-  const level = () => (0.75 + 0.25 * intensity) * canlilikKatman(canli).gain * kisV;
-  function apply() {
+  const level = () => (0.75 + 0.25 * intensity) * canlilikKatman(canli).gain * kisV * duckF * icKis;
+  function apply(tc = 0.4) {
     try {
-      master.gain.setTargetAtTime(level(), ac.currentTime, 0.4);
+      if (duckF < 1 && ac.currentTime >= duckEnd) { duckF = 1; tc = 1.2; }   // süre dolmuş (zamanlayıcı kısıtlandıysa da kurtarır): yavaş geri aç
+      master.gain.setTargetAtTime(level(), ac.currentTime, tc);
       const wf = weather === 'sis' ? 1400 : weather === 'saganak' || weather === 'firtina' ? 5000 : 20000;
       lp.frequency.setTargetAtTime(Math.min(wf, canlilikKatman(canli).lpf), ac.currentTime, 2.5);
     } catch { /* closed */ }
@@ -68,7 +73,8 @@ export function createMusicPlayer(ac: AudioContext, out: AudioNode, bank: Bank):
     const l = trackAdaylari(bank.db.music, phase, weather, place, event), k = l.join('|');
     const degisti = k !== adayKey;
     if (degisti) { adayKey = k; aday = l; bag = l.length > 1 ? new Canta(l.map(v => ({ v, w: 1 })), () => rng.next()) : null; }
-    if (!aday.length) { play(''); return; }
+    if (!aday.length) { if (cur) { icKis = 0.1; apply(1.0); } else play(''); return; }   // çalan parçayı bırakma: çıkışta başa sarmasın
+    if (icKis < 1) { icKis = 1; apply(1.0); }
     if (cur && aday.includes(taban(cur.key)) && want === cur.key) return;
     if (want && aday.includes(taban(want))) return;
     if (coklu && !cur && !event && gapUntil > ac.currentTime) { if (degisti) gapUntil = Math.min(gapUntil, ac.currentTime + 6); return; }   // ara: müzik yok, yalnız ambiyans
@@ -105,7 +111,8 @@ export function createMusicPlayer(ac: AudioContext, out: AudioNode, bank: Bank):
       if (rotT) { clearInterval(rotT); rotT = null; }
       if (phraseT) { clearTimeout(phraseT); phraseT = null; }
       if (gapT) { clearInterval(gapT); gapT = null; }
-      gapUntil = 0;
+      if (duckT) { clearTimeout(duckT); duckT = null; }
+      duckF = 1; duckEnd = 0; icKis = 1; gapUntil = 0;
       if (cur) { const c = cur; cur = null; fadeOut(c, 0.3); }
     },
     get playing() { return on; },
@@ -114,7 +121,16 @@ export function createMusicPlayer(ac: AudioContext, out: AudioNode, bank: Bank):
     setIntensity(v) { intensity = Math.max(0, Math.min(1, v)); canli = canlilik(canli, intensity); apply(); },
     setEvent(id) { event = id; sync(); },
     setWeather(k) { weather = k; apply(); sync(); },
-    duck(sec) { try { const t = ac.currentTime; master.gain.cancelScheduledValues(t); master.gain.setTargetAtTime(level() * 0.35, t, 0.15); master.gain.setTargetAtTime(level(), t + sec, 0.6); } catch { /* */ } },
+    duck(sec, depth = DUCK_DEPTH) {
+      try {
+        const t = ac.currentTime, active = duckF < 1 && t < duckEnd;
+        duckF = active ? Math.min(duckF, depth) : depth;
+        duckEnd = Math.max(active ? duckEnd : 0, t + Math.max(0.1, sec));
+        apply(0.15);
+        if (duckT) clearTimeout(duckT);
+        duckT = setTimeout(() => { duckT = null; if (ac.currentTime >= duckEnd - 0.05) apply(); else apply(0.15); }, Math.max(0.1, duckEnd - t) * 1000 + 50);
+      } catch { /* */ }
+    },
     kis(v) { const nv = Math.max(0, Math.min(1, v)); if (Math.abs(nv - kisV) < 0.01) return; kisV = nv; apply(); },
     layers() { return cur ? [cur.key] : []; },
     adaylar() { return aday.slice(); },

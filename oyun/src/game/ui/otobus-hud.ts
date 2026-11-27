@@ -24,7 +24,7 @@ export function createOtobusHud(d: Deps): OtobusHud {
   const st = document.createElement('style'); st.textContent = CSS; d.root.appendChild(st);
   const btn = document.createElement('button'); btn.className = 'ob-btn'; d.root.appendChild(btn);
   const toBox = document.createElement('div'); toBox.className = 'ob-to'; d.root.appendChild(toBox); let toKey = '';
-  toBox.addEventListener('click', e => { const b = (e.target as HTMLElement).closest('button') as HTMLButtonElement | null; if (b?.dataset.to) { d.command({ kind: 'disari', op: 'otobusBin', id: b.dataset.to }); try { d.sfx?.('pick'); } catch { /* */ } } });
+  toBox.addEventListener('click', e => { const b = (e.target as HTMLElement).closest('button') as HTMLButtonElement | null; if (b?.dataset.to) { d.command({ kind: 'disari', op: 'otobusBin', id: b.dataset.to }); try { d.sfx?.('tik'); } catch { /* */ } } });
   const cut = document.createElement('div'); cut.className = 'ob-cut'; const cv = document.createElement('canvas'); const cap = document.createElement('div'); cap.className = 'ob-cap';
   cut.append(cv, cap); d.root.appendChild(cut);
   let mode = '';

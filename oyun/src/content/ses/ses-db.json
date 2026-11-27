@@ -3,27 +3,6 @@
  "engine": "marti-synth",
  "about": "Martı Synth ses veritabanı. Her ses katmanlardan oluşur (tone / noise / pluck / omni / burst). Oyun açılınca bir kez sentezlenip önbelleğe alınır; .mp3/.wav yok. 'patches' içine omni_synth_256_pro sayfasındaki 'JSON olarak kopyala' çıktısı aynen yapıştırılabilir ve bir katmanda { k: 'omni', patch: 'isim' } diye kullanılır.",
  "patches": {
-  "vapur": {
-   "masterVol": -6,
-   "osc1Vol": -60,
-   "osc2Vol": -60,
-   "osc3Vol": -2,
-   "osc3Oct": -3,
-   "noise2Vol": -8,
-   "filtCutoff": 250,
-   "filtRes": 4,
-   "filtEnvAmt": 0,
-   "ampA": 0.5,
-   "ampD": 0.5,
-   "ampS": 1,
-   "ampR": 1,
-   "lfo2Rate": 3.5,
-   "lfo2Dep": 150,
-   "fxDist": 0.3,
-   "fxDistMix": 0.3,
-   "fxRevDec": 6,
-   "fxRevMix": 0.4
-  },
   "laser": {
    "osc1Vol": 0,
    "osc1Oct": 1,
@@ -396,74 +375,6 @@
      "at": 0.42
     }
    ]
-  },
-  "horn": {
-   "cooldown": 4000,
-   "rev": 0.4,
-   "note": "Vapur düdüğü: alçak iki ses (Bb2 + F3), nefesli, boğazda yankılanır; altta omni 'vapur' gövde titreşimi. Yumuşatıldı: tepe < 0.45.",
-   "layers": [
-    {
-     "k": "tone",
-     "wave": "triangle",
-     "f": 116.5,
-     "a": 0.18,
-     "d": 0.4,
-     "s": 0.85,
-     "hold": 1.5,
-     "r": 0.6,
-     "v": 0.256,
-     "detune": 6,
-     "vib": {
-      "rate": 4.2,
-      "depth": 0.004
-     },
-     "filter": {
-      "type": "lp",
-      "f": 500,
-      "q": 0.9
-     }
-    },
-    {
-     "k": "tone",
-     "wave": "triangle",
-     "f": 174.6,
-     "a": 0.2,
-     "d": 0.4,
-     "s": 0.85,
-     "hold": 1.5,
-     "r": 0.6,
-     "v": 0.16,
-     "detune": -5,
-     "filter": {
-      "type": "lp",
-      "f": 500,
-      "q": 0.9
-     }
-    },
-    {
-     "k": "noise",
-     "color": "pink",
-     "filter": {
-      "type": "bp",
-      "f": 420,
-      "q": 1.2
-     },
-     "a": 0.2,
-     "d": 0.3,
-     "s": 0.7,
-     "hold": 1.5,
-     "r": 0.5,
-     "v": 0.096
-    },
-    {
-     "k": "omni",
-     "patch": "vapur",
-     "note": "Bb1",
-     "hold": 1.6,
-     "v": 0.2
-    }
-   ],
-   "gain": 0.55
   },
   "passBell": {"cooldown": 600, "layers": [{"k": "tone", "wave": "sine", "f": 1318, "a": 0.003, "d": 0.9, "v": 0.25, "hold": 0.9, "s": 0.0}, {"k": "tone", "wave": "sine", "f": 2637, "a": 0.003, "d": 0.9, "v": 0.06}]},
   "tavaCarpma": {"cooldown": 400, "layers": [{"k": "tone", "wave": "triangle", "f": 420, "a": 0.003, "d": 0.12, "v": 0.18, "f1": 360}, {"k": "noise", "color": "pink", "filter": {"type": "bp", "f": 1800, "q": 0.8}, "a": 0.002, "d": 0.2, "v": 0.13}]},
@@ -3853,7 +3764,7 @@
   },
   "tracks": {
    "gunduz": {
-    "note": "Nihavend (La), saz arpejleri, keman, hafif darbuka: vapur iskelesinde güneşli öğle.",
+    "note": "Nihavend (La), saz arpejleri, keman, hafif darbuka: iskelede güneşli öğle.",
     "bpm": 86,
     "root": "A3",
     "scale": [
@@ -4365,7 +4276,7 @@
     "density": 0.7
    },
    "sabah": {
-    "note": "Uşşak (La), elektrik piyano ve ney: ilk çay, ilk vapur.",
+    "note": "Uşşak (La), elektrik piyano ve ney: ilk çay, ilk simit.",
     "bpm": 78,
     "root": "A3",
     "scale": [

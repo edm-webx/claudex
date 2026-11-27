@@ -11,7 +11,7 @@ import type { DayPhase, Vec2 } from '../api';
 import type { Bank } from './msynth';
 import {
   ambBolge, katmanAgirlik, kapiTablosu, tabloImza, yaklas, uzaklikKazanc, evreIdx, Canta, canliSeviye, CANLI,
-  EVRE_GECIS_SN, BOLGE_GECIS_SN, IC_ODA, type AmbOlay, type KapiKatman,
+  EVRE_GECIS_SN, BOLGE_GECIS_SN, IC_ODA, KURU_OLAY, ISLAK_HAVA, type AmbOlay, type KapiKatman,
 } from '../../content/ses/ambiyans';
 
 export interface AmbiyansDeps {
@@ -110,6 +110,7 @@ export function createAmbiyans(d: AmbiyansDeps): Ambiyans {
   }
   function fire(o: AmbOlay, _t: number, day: boolean) {
     if (weather !== 'acik' && weather !== 'sis' && (o.id === 'mevsim' || o.id === 'gull')) return;   // yağmurda böcek / martı yok
+    if (ISLAK_HAVA.has(weather) && KURU_OLAY.has(o.id)) return;   // yağmur/kar: kuş, simitçi, çocuk, köpek da yok
     let vol = o.vol, pan = d.rnd() * 1.4 - 0.7;
     if (o.at) {
       const dx = o.at.x - lis.x, dist = Math.hypot(dx, o.at.z - lis.z);

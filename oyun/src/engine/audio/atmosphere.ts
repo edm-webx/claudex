@@ -30,7 +30,7 @@ export const DEFAULT_TABLE: AmbienceTable = {
   '*': [
     { id: 'deniz', loop: 'deniz', gain: 0.42, shots: [
       { id: 'gull', gain: 0.35, minS: 9, maxS: 18, when: 'day' }, { id: 'creak', gain: 0.3, minS: 14, maxS: 30 },
-      { id: 'spoon', gain: 0.3, minS: 20, maxS: 45 }, { id: 'horn', gain: 0.22, minS: 40, maxS: 90 },
+      { id: 'spoon', gain: 0.3, minS: 20, maxS: 45 },
       { id: 'simitci', gain: 0.4, minS: 45, maxS: 100, when: 'day' }, { id: 'seasonCall', gain: 0.4, minS: 30, maxS: 70 },
       { id: 'thunder', gain: 0.7, minS: 12, maxS: 30, weather: ['firtina'] }] },
     { id: 'izgara', loop: 'izgara', gain: 1, dyn: 'grill' },
@@ -54,6 +54,8 @@ for (const id of ['kafe1', 'kafe2', 'avm', 'tesis', 'avm_seker', 'avm_kahve', 'a
 DEFAULT_TABLE.avmHol = [{ id: 'ic_mirilti', loop: 'ic_mirilti', gain: 0.75, shots: [{ id: 'spoon', gain: 0.1, minS: 25, maxS: 50, pan: 0.6 }] }];
 for (const id of ['avm_moda', 'avm_tekno', 'avm_oyuncak']) DEFAULT_TABLE[id] = [{ id: 'ic_mirilti', loop: 'ic_mirilti', gain: 0.45 }];
 DEFAULT_TABLE.stadyum = DEFAULT_TABLE.halisaha;
+
+import { KURU_OLAY, ISLAK_HAVA } from '../../content/ses/ambiyans';
 
 export interface Atmosphere {
   setTable(t: AmbienceTable): void;
@@ -114,6 +116,7 @@ export function createAtmosphere(host: AtmoHost, o: { fadeS?: number; table?: Am
           l.next.set(s, now + (s.minS + rand() * (s.maxS - s.minS)) * 1000);
           if (s.when && (s.when === 'day') !== (ctx.phase === 'morning' || ctx.phase === 'noon')) continue;
           if (s.weather && !s.weather.includes(ctx.weather)) continue;
+          if (ISLAK_HAVA.has(ctx.weather) && KURU_OLAY.has(s.id)) continue;   // yağmurda dış kuru sesler yok
           host.shoot(l.def, s);
         }
       }

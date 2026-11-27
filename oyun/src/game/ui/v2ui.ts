@@ -970,6 +970,7 @@ U.title = function (o) {
   requestAnimationFrame(() => requestAnimationFrame(() => t.classList.add('mn-acik')));
   const yan = t.querySelector('.mn-yan');
   let faz = 'basla', sec = 0, bitti = false, panel = '';
+  let sonMuzik = 0.8;   // menüden kapatılınca eski müzik seviyesi hatırlanır (açınca 0.8'e dönmez)
   const sesAcik = () => { try { const g = o.ayar && o.ayar.get(); return !(g && (g.muted || g.music <= 0)); } catch (e) { return true; } };
   const ayak = () => `<button class="mn-ses${sesAcik() ? '' : ' kapali'}" data-ses aria-label="Müziği aç ya da kapat"><span class="mn-eq"><i></i><i></i><i></i><i></i></span>Müzik: <b>${sesAcik() ? 'açık' : 'kapalı'}</b></button><div class="sag"><span class="mn-kb"><span class="mn-key">↑↓</span>Seç &nbsp; <span class="mn-key">↵</span>Onayla</span><span>${SURUM} · ${STUDYO}</span></div>`;
   const isaretle = (i, ses) => {
@@ -1024,8 +1025,8 @@ ${sl('music', 'Müzik')}${sl('sfx', 'Efekt sesleri')}
     if (b.dataset.kal) { safe(o.ayar && o.ayar.acts.setQuality, b.dataset.kal); yan.querySelectorAll('[data-kal]').forEach(x => x.classList.toggle('on', x === b)); sfx('tik'); return; }
     if (b.dataset.ses !== undefined) {
       const ac = !sesAcik(), g = (o.ayar && o.ayar.get()) || {};
-      if (!ac) safe(o.ayar && o.ayar.acts.setVol, 'music', 0);
-      else { if (g.muted) safe(o.ayar && o.ayar.acts.setMuted, true); if (!(g.music > 0)) safe(o.ayar && o.ayar.acts.setVol, 'music', 0.8); }
+      if (!ac) { if (g.music > 0) sonMuzik = g.music; safe(o.ayar && o.ayar.acts.setVol, 'music', 0); }
+      else { if (g.muted) safe(o.ayar && o.ayar.acts.setMuted, true); if (!(g.music > 0)) safe(o.ayar && o.ayar.acts.setVol, 'music', sonMuzik); }
       const f = t.querySelector('.mn-foot'); if (f) f.innerHTML = ayak(); sfx('tik');
     }
   });

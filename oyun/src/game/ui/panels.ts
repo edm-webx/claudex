@@ -70,7 +70,11 @@ export function createPanels(deps: PanelsDeps): Panels {
       out.setMuted = b => { const muted = !b; set('muted', muted); if (deps.audio) for (const bus of Object.values(deps.audio.buses)) bus.muted = muted; if (!muted) deps.audio?.unlock(); ui.hud({ muted }); };
       out.setHaptic = b => { ui.settings.haptics = !!b; set('haptics', !!b); };
       // ses-5: music / sfx / voice sliders (live, no re-render while dragging) + own music mode
-      out.setVol = (bus?: any, v?: any) => { const a = deps.audio; const k = String(bus) as 'music' | 'sfx' | 'voice'; if (!a || !a.buses[k]) return; a.buses[k].volume = +v || 0; send({ kind: 'setSetting', key: k, value: a.buses[k].volume }); };
+      out.setVol = (bus?: any, v?: any) => { const a = deps.audio; const k = String(bus) as 'music' | 'sfx' | 'voice'; if (!a || !a.buses[k]) return; const wasMuted = Object.values(a.buses).some(b => b.muted);
+        a.buses[k].volume = +v || 0; send({ kind: 'setSetting', key: k, value: a.buses[k].volume });
+        // slider 0'dan çekilince: sessiz modu da kapat (kayıt + HUD + tüm bus'lar tutarlı), yalnız bu bus değil
+        if (a.buses[k].volume > 0 && wasMuted) { for (const bus of Object.values(a.buses)) bus.muted = false; set('muted', false); a.unlock(); ui.hud({ muted: false }); }
+      };
       out.setOwnMusic = b => { const on = !!b; deps.audio?.ownMusicMode(on); set('ownMusic', on); setTimeout(() => { if (rt().panel === 'ayarlar') renderPanel('ayarlar'); }, 0); };
       out.setQuality = q => set('quality', q);
       out.setHand = h => { set('hand', h === 'sol' ? 'left' : 'right'); };
