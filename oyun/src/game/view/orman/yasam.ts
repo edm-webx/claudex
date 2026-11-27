@@ -10,7 +10,7 @@
  */
 import * as T from 'three';
 import { ORMAN } from '../../../content/disari/martikoy';
-import { BUS_REALMS as REALMS } from '../../../content/realm';
+import { BUS_REALMS as REALMS, busLaneAtStop } from '../../../content/realm';
 import type { BusView } from '../../sim/disari';
 
 interface HeroLike { object: T.Object3D; setPose(p: { x: number; z: number }, r: number): void; setInput(i: Record<string, unknown>): void; update(dt: number, a: number): void; dispose(): void }
@@ -91,10 +91,12 @@ export function createYasam(chars: CharsLike | null, parent: T.Group): Yasam {
   const pax: Pax[] = [];
   const waiting = new Map<string, HeroLike[]>(), cool = new Map<string, number>();
   let lastPhase = '';
-  const door = (b: BusView) => ({ x: b.x + 1.5, z: b.z - 1.0 });
+  // the bus's open door in the world, and which way is "away from the bus" (+1 south / -1 north); the iskele 42B runs in the street lane, doors to the promenade
+  const doorOf = (sx: number) => { const ln = busLaneAtStop(sx); return { x: sx + 1.5, z: ln.z + ln.dir * 1.25, away: ln.dir }; };
+  const door = (b: BusView) => doorOf(b.x);
   const alight = (b: BusView, n: number) => {
     const d = door(b);
-    for (let k = 0; k < n; k++) { const h = make({ seed: 500 + ((clock * 10) | 0) % 40 + k }); if (!h) continue; pax.push({ h, x: d.x + k * 0.4, z: d.z, tx: d.x + (k ? 5 : -4), tz: d.z + 4.2 + k * 0.6, t: 0, life: 7.5, act: 'walk' }); }
+    for (let k = 0; k < n; k++) { const h = make({ seed: 500 + ((clock * 10) | 0) % 40 + k }); if (!h) continue; pax.push({ h, x: d.x + k * 0.4, z: d.z, tx: d.x + (k ? 5 : -4), tz: d.z + d.away * (4.2 + k * 0.6), t: 0, life: 7.5, act: 'walk' }); }
   };
   return {
     update(dt, p, h, paused, bus) {
@@ -118,9 +120,9 @@ export function createYasam(chars: CharsLike | null, parent: T.Group): Yasam {
         if (near && !w && cd <= 0 && (!atThis || bus!.phase === 'geliyor')) { const a = make({ seed: 520 + r.id.length * 3 }), b = make({ seed: 527 + r.id.length }); w = [a, b].filter(Boolean) as HeroLike[]; waiting.set(r.id, w); }
         if (!w) continue;
         if (!near) { w.forEach(drop); waiting.delete(r.id); continue; }
-        const boarding = atThis && bus!.phase === 'durakta' && !bus!.drop, k = boarding ? Math.min(1, bus!.t / 2.5) : 0, d = bus ? door(bus) : { x: st.x + 1.5, z: st.z - 1 };
+        const boarding = atThis && bus!.phase === 'durakta' && !bus!.drop, k = boarding ? Math.min(1, bus!.t / 2.5) : 0, d = doorOf(st.x);
         w.forEach((hh, j) => {
-          const sx = st.x - 1.0 + j * 1.8, sz = st.z + 1.25 + j * 0.15, x = sx + (d.x - sx) * k, z = sz + (d.z - sz) * k;
+          const sx = st.x - 1.0 + j * 1.8, sz = d.z + d.away * (2.5 + j * 0.15), x = sx + (d.x - sx) * k, z = sz + (d.z - sz) * k;
           hh.setPose({ x, z }, boarding ? Math.atan2(d.x - sx, d.z - sz) : Math.PI); hh.setInput({ speed: boarding && k < 1 ? 1.2 : 0, act: boarding ? 'walk' : j ? 'sip' : 'phone', mood: 'happy', t: t + j }); hh.update(dt, 1);
         });
         if (boarding && bus!.t > 2.8) { w.forEach(drop); waiting.delete(r.id); cool.set(r.id, 45); }

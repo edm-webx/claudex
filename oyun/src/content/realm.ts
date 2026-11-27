@@ -29,5 +29,19 @@ export function realmAt(x: number): Realm | null { for (const r of REALMS) if (x
 export function realmOfRegion(id: string): Realm | null { return REALMS.find(r => r.regions.includes(id)) || null; }
 /** spawn = where the bus drops you (next to its front door) */
 export function realmSpawn(r: Realm): { x: number; z: number } { return { x: r.stop.x + 1.5, z: r.stop.z + 1.2 }; }
+/**
+ * 42B şeridi (2026-11-27 sahip: "otobüs niye kaldırımdan geliyor, metrobüs gibi ayrı yolu olsun, yürüyüş yoluna paralel, oradan binelim").
+ * z = otobüs gövdesinin orta çizgisi, dir = akış yönü (+1 doğuya, -1 batıya), doorZ = oyuncunun bineceği nokta (yürüyüş yolunun şerit tarafı).
+ * Kapılar otobüsün +z yanında: doğuya giden otobüs kapıyı güneye, batıya giden (dir -1, 180° döner) kuzeye, yürüyüş yoluna çevirir.
+ * İskelede cadde kendi şeridini taşır (view/world/yol-look.ts, aynı sabitler); diğer realm'lerde otobüs zaten kendi yolunda durur.
+ */
+export interface BusLane { z: number; dir: 1 | -1; doorZ: number; /** road surface height (the iskele street sits 0.35 m above the promenade) */ y: number }
+/** the carriageway of the iskele street: the 42B lane is its nearest lane, z 15.0..17.95 (yol-look.ts reads these, nothing else may change them alone) */
+export const ISKELE_BUS_LANE: BusLane = { z: 16.48, dir: -1, doorZ: 12.6, y: 0.35 };
+export function busLaneOf(r: Realm): BusLane { return r.id === 'iskele' ? ISKELE_BUS_LANE : { z: r.stop.z - 2.5, dir: 1, doorZ: r.stop.z - 1.0, y: 0 }; }
+/** lane of the stop at x (a bus view only knows its stop's x); unknown x = the iskele stop */
+export function busLaneAtStop(x: number): BusLane { return busLaneOf(REALMS.find(r => r.bus !== false && Math.abs(r.stop.x - x) < 1) || REALMS[0]); }
+/** where the bus body's centre stands when waiting at the stop (front door at stop.x + 1.5, the bus is 10.5 m long, front door 3.7 m from its centre) */
+export function busBodyX(stopX: number, dir: 1 | -1): number { return dir === 1 ? stopX + 1.5 - 3.7 : stopX + 1.5 + 3.7; }
 /** the realm walls a walker can bump into (inner edges only) */
 export const REALM_WALLS = [244, 292, 392, 452];

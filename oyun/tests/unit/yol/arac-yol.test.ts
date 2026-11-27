@@ -47,7 +47,7 @@ describe('yol araçları (PRF-09)', () => {
       lanes.set(k, (lanes.get(k) ?? b.clone()).union(b));
     }
     const list = [...lanes.entries()].sort((a, b) => +a[0] - +b[0]);
-    expect(list.length).toBe(6);
+    expect(list.length).toBe(5);
     for (let i = 1; i < list.length; i++) expect(list[i][1].min.z, `şerit ${list[i - 1][0]} / ${list[i][0]}`).toBeGreaterThan(list[i - 1][1].max.z);
   });
   it('aynı şeritte araçlar üst üste binmiyor (2 dakika boyunca)', () => {
@@ -62,5 +62,41 @@ describe('yol araçları (PRF-09)', () => {
       }
     }
     expect(worst).toBeGreaterThan(1);
+  });
+});
+
+// 2026-11-27: the 42B has its own lane next to the promenade (content/realm ISKELE_BUS_LANE); the real bus model is swept along it like the traffic above.
+describe('42B şeridi (2026-11-27)', () => {
+  it('otobüs şeridinde hiçbir sabit şeye değmiyor, kapıları yürüyüş yoluna bakıyor', async () => {
+    const { createKit, buildBus } = await import('../../../src/game/view/atolye');
+    const { ISKELE_BUS_LANE, busLaneAtStop, REALM_BY_ID } = await import('../../../src/content/realm');
+    const bus = buildBus(createKit());
+    bus.object.rotation.y = ISKELE_BUS_LANE.dir === 1 ? 0 : Math.PI;
+    bus.object.position.set(0, ISKELE_BUS_LANE.y, ISKELE_BUS_LANE.z);
+    bus.object.updateMatrixWorld(true);
+    const parts = meshesOf(bus.object).map(m => new T.Box3().setFromObject(m, true));
+    const all = new T.Box3(); parts.forEach(b => all.union(b));
+    // body stays inside the lane: past the sidewalk kerb (15.125) and short of the separator (17.95 - 0.07) — mirrors (above 2 m) may overhang
+    const low = parts.filter(b => b.min.y < STREET_Y + 1.6);
+    expect(Math.min(...low.map(b => b.min.z))).toBeGreaterThan(15.125);
+    expect(Math.max(...low.map(b => b.max.z))).toBeLessThan(17.88);
+    // doors on the promenade (north, -z) side of the lane
+    const doorZ = ISKELE_BUS_LANE.z - 1.25;
+    expect(all.min.z).toBeLessThan(doorZ);
+    expect(ISKELE_BUS_LANE.dir).toBe(-1);
+    expect(ISKELE_BUS_LANE.doorZ).toBeLessThan(13.3);            // the boarding spot is on the walkable promenade (z <= 13.3)
+    expect(busLaneAtStop(REALM_BY_ID.iskele.stop.x)).toBe(ISKELE_BUS_LANE);
+    // swept along the whole street: nothing static (kerbs, paint above 9.8 cm, bridge pillars, stairs, tunnel) is touched
+    const statics = [S.road, S.stop, S.bridge, S.tunnel].flatMap(o => trianglesOf(o)).filter(t => Math.min(t.a.x, t.b.x, t.c.x) < REACH && Math.max(t.a.x, t.b.x, t.c.x) > -REACH);
+    const rapor: string[] = [];
+    for (const b0 of parts) {
+      const b = b0.clone(); b.min.x = -REACH; b.max.x = REACH; b.min.y = Math.max(b.min.y, STREET_Y + PAINT); b.expandByScalar(-0.005);
+      if (b.max.y <= b.min.y) continue;
+      for (const t of statics) if (b.intersectsTriangle(t)) { rapor.push(`y ${b.min.y.toFixed(2)}..${b.max.y.toFixed(2)} z ${b.min.z.toFixed(2)}..${b.max.z.toFixed(2)} ↔ (${t.a.x.toFixed(1)}, ${t.a.y.toFixed(2)}, ${t.a.z.toFixed(2)})`); break; }
+    }
+    expect(rapor).toEqual([]);
+  });
+  it('şeritte başka trafik yok (hiçbir araç 42B şeridinde değil)', () => {
+    for (const v of S.vehicles.children) { const b = new T.Box3().setFromObject(v, true); expect(b.min.z, `araç z ${v.position.z}`).toBeGreaterThan(17.95); }
   });
 });

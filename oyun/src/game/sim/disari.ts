@@ -19,7 +19,7 @@ import {
   LOST_ITEMS, VEHICLES, FARES, DOLMUS, TRAVEL_SEC, OTOBUS, NECMI_LINES, ASK_LINES, GUIDE_CAT, AWAY_LINES, BACK_LINE, BAND, type Region, type RegionId,
 } from '../../content/disari/martikoy';
 import { fmtMoney } from './util';
-import { BUS_REALMS, REALM_BY_ID, REALM_WALLS, realmAt, realmOfRegion, realmSpawn, type RealmId } from '../../content/realm';
+import { BUS_REALMS, busLaneAtStop, REALM_BY_ID, REALM_WALLS, realmAt, realmOfRegion, realmSpawn, type RealmId } from '../../content/realm';
 
 interface DSave {
   seen: string[]; stops: string[]; opened: string[];
@@ -66,6 +66,8 @@ export interface DisariApi {
   summary(): Record<string, any>;
 }
 
+/** the 42B pulls out for this long (s): it must be out of the camera's view before the view drops it (it used to vanish 20 m from the stop) */
+const BUS_LEAVE_S = 5;
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
 /** Walkable z range per region (for guide targets and push-backs). */
 function walkZ(id: RegionId | undefined, z: number): number {
@@ -90,7 +92,7 @@ export function installDisari(K: Kernel, teleport: (x: number, z: number) => voi
   // Boarding happens on the road at the bus's front door, not from the shelter.
   const atBusStop = (): RealmId | null => { const p = K.playerPos; const r = BUS_REALMS.find(r => Math.hypot(p.x - r.stop.x, p.z - r.stop.z) < 4.2); return r ? r.id : null; };
   // J1 Belgrad dönüş fix: the door follows the bus (it was pinned to the büfe stop, so nobody could board in the forest)
-  const busDoor = () => { const s = bus || OTOBUS.stop; return { x: s.x + 1.5, z: s.z - 1.0 }; };
+  const busDoor = () => { const s = bus || OTOBUS.stop; return { x: s.x + 1.5, z: busLaneAtStop(s.x).doorZ }; };   // 2026-11-27: iskelede otobüs cadde şeridinde, kapı yürüyüş yoluna bakar
   const realmTarget = (rid: RealmId) => { const r = REALM_BY_ID[rid], reg = REGION_BY_ID[r.regions[0]]; return reg; };
   const atBusDoor = () => { const p = K.playerPos, dd = busDoor(); return Math.hypot(p.x - dd.x, p.z - dd.z) < 1.9; };
   let travel: DisariView['travel'] = null, travelTo: { x: number; z: number; guide?: DSave['guide']; realm?: RealmId } | null = null, jumped = false;
@@ -258,7 +260,7 @@ export function installDisari(K: Kernel, teleport: (x: number, z: number) => voi
         const to = REGION_BY_ID[id];
         const toRealm = to ? realmOfRegion(to.id) : null;
         if (!to || !toRealm || toRealm.id === atBusStop()) { K.toast('42B oraya gitmiyor.', 'info'); return true; }
-        bus = { ...bus, phase: 'gidiyor', t: 0, dur: 2.5 };
+        bus = { ...bus, phase: 'gidiyor', t: 0, dur: BUS_LEAVE_S };
         startTravel(to, null, true);
         return true;
       }
@@ -286,16 +288,18 @@ export function installDisari(K: Kernel, teleport: (x: number, z: number) => voi
           if (travelTo.guide) d.guide = travelTo.guide;
         }
         if (travel.t >= travel.dur) {
-          const to = travel.to, bus42 = travel.mode === 'otobus', rid = travelTo?.realm; travel = null; travelTo = null;
+          const to = travel.to, bus42 = travel.mode === 'otobus', rid = travelTo?.realm, dest = travelTo; travel = null; travelTo = null;
+          // QA dunya #1: input was not locked during the cutscene, the hero could wander 15 m off the stop; pin him back to the bus door when it ends
+          if (bus42 && dest) teleport(dest.x, dest.z);
           // DNY-11: the 42B that brought you pulls away from the stop you are standing at; the toast names the way back
-          if (bus42 && rid) { const st = REALM_BY_ID[rid].stop; bus = { phase: 'gidiyor', t: 0, dur: 3.2, x: st.x, z: st.z, to: '', drop: true }; }
+          if (bus42 && rid) { const st = REALM_BY_ID[rid].stop; bus = { phase: 'gidiyor', t: 0, dur: BUS_LEAVE_S + 0.7, x: st.x, z: st.z, to: '', drop: true }; }
           K.toast(to + ' durağı! ' + (save().guide ? GUIDE_CAT.name + ' seni bekliyor, peşinden git.' : bus42 ? 'Dönüş ' + OTOBUS.line + ' de bu duraktan kalkar.' : 'İyi gezmeler.'), 'good');
         }
       }
       if (bus) {
         bus.t += dt0;
         if (bus.phase === 'geliyor' && bus.t >= bus.dur) { bus = { ...bus, phase: 'durakta', t: 0, dur: 16 }; K.toast(OTOBUS.driver + ': "' + rng.pick(NECMI_LINES) + '" Ön kapıdan bin.', 'good'); }
-        else if (bus.phase === 'durakta' && bus.t >= bus.dur) { bus = { ...bus, phase: 'gidiyor', t: 0, dur: 2.5 }; K.toast(OTOBUS.driver + ': "Bekleyemem abi, tarifem var!"', 'info'); }
+        else if (bus.phase === 'durakta' && bus.t >= bus.dur) { bus = { ...bus, phase: 'gidiyor', t: 0, dur: BUS_LEAVE_S }; K.toast(OTOBUS.driver + ': "Bekleyemem abi, tarifem var!"', 'info'); }
         else if (bus.phase === 'gidiyor' && bus.t >= bus.dur) bus = null;
       }
       if (arrow) { arrow.t -= dt0; if (arrow.t <= 0) arrow = null; }

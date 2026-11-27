@@ -1,7 +1,7 @@
 /**
  * Street in front of the pier (owner list item 23): a sidewalk on the büfe side, a 6-lane carriageway
- * (two car lanes each way, one metrobus lane each way in the middle), a pedestrian overpass above the metrobus,
- * a municipal bus stop with a parody name, and vehicles that loop along the road: buses, metrobus, a metro
+ * (the dedicated 42B bus lane next to the promenade, then one car lane east, a metrobus lane each way in the middle and two car lanes west),
+ * a pedestrian overpass above the metrobus, and vehicles that loop along the road: buses, metrobus, a metro
  * train on a viaduct and a slow ferry on the water line. Pure view: no colliders, not walkable, nav untouched.
  */
 import * as T from 'three';
@@ -18,10 +18,17 @@ const W_UG = UG.hw * 2 + 0.3;
 export interface YolLookDeps { root: () => T.Object3D | null; /** üst geçidin orta açıklığı açık mı (content/kilitli-bolge gecitAcik); yoksa hep açık */ gecitAcik?: () => boolean }
 export interface YolLookView { update(dt: number): void; dispose(): void }
 
-const Z_WALK = 13.3, Z_KERB = 15.0, LANE = 1.9, ROAD_W = LANE * 6;
+import { ISKELE_BUS_LANE, REALM_BY_ID } from '../../../content/realm';
+const ISKELE_BUS_STOP_X = REALM_BY_ID.iskele.stop.x;
+// 2026-11-27 sahip: "42B niye kaldırımdan geliyor, metrobüs gibi ayrı yolu olsun, yürüyüş yoluna paralel". The nearest lane (z 15..17.95) is the 42B's own
+// lane: red surface, a raised separator, "OTOBÜS" lettering, no other traffic. The five other lanes share the rest of the carriageway (1.7 m each, vehicles are <= 1.6 m wide (buses 1.4 + door trim, cars 1.5)).
+const Z_WALK = 13.3, Z_KERB = 15.0, ROAD_END = 26.4, ROAD_W = ROAD_END - Z_KERB;
+const BUS_LANE_W = 2.95, Z_BUS_END = Z_KERB + BUS_LANE_W, LANE = (ROAD_END - Z_BUS_END) / 5;
+/** near edge of lane i (0 = the 42B lane, 1..5 = the others); laneEdge(6) is the far kerb */
+const laneEdge = (i: number) => (i === 0 ? Z_KERB : Z_BUS_END + (i - 1) * LANE);
+const laneZ = (i: number) => (i === 0 ? ISKELE_BUS_LANE.z : (laneEdge(i) + laneEdge(i + 1)) / 2);
 const X0 = -62, X1 = 62;
 const RX = 62;  // road/sidewalk reach well past the pier ends so no vehicle ever pops in or out of view
-const STOP_NAME = 'BETT';
 const STREET_Y = 0.35;
 
 const mats = new Map<string, T.Material>();
@@ -46,15 +53,11 @@ function buildRoad(): T.Group {
   g.add(box(RX * 2, 0.16, 0.25, lam('#8f8778'), 0, 0.06, Z_KERB));
   // carriageway with lane markings
   { const am = new T.MeshLambertMaterial({ color: '#56595f' }); zeminDetay(am, { force: 0, ds: 0.85 }); g.add(box(RX * 2, 0.08, ROAD_W, am, 0, 0.0, zc)); }
-  for (let i = 1; i < 6; i++) {
-    if (i === 2 || i === 4) continue;
-    g.add(box(RX * 2, 0.09, 0.12, lam('#e9e4d4'), 0, 0.05, Z_KERB + i * LANE));
-  }
+  for (const i of [3, 5]) g.add(box(RX * 2, 0.09, 0.12, lam('#e9e4d4'), 0, 0.05, laneEdge(i)));
   // metrobus median: a raised kerb each side with a painted lane
-  g.add(box(RX * 2, 0.14, 0.2, lam('#d9d2bd'), 0, 0.07, Z_KERB + 2 * LANE));
-  g.add(box(RX * 2, 0.14, 0.2, lam('#d9d2bd'), 0, 0.07, Z_KERB + 4 * LANE));
+  for (const i of [2, 4]) g.add(box(RX * 2, 0.14, 0.12, lam('#d9d2bd'), 0, 0.07, laneEdge(i)));
   // far sidewalk
-  g.add(box(RX * 2, 0.12, 2.0, lam('#c9c1b0'), 0, 0.02, Z_KERB + ROAD_W + 1.0));
+  g.add(box(RX * 2, 0.12, 2.0, lam('#c9c1b0'), 0, 0.02, ROAD_END + 1.0));
   return g;
 }
 
@@ -75,14 +78,24 @@ function buildPortals(): T.Group {
   return g;
 }
 
-function buildBusStop(): T.Group {
+/** The 42B's own lane: red surface between the sidewalk kerb and a raised separator, lane lettering, the stop bay, and the kerb-side boarding strip. Flat paint stays under the 9.8 cm vehicle-sweep limit. */
+function buildBusLane(): T.Group {
   const g = new T.Group(); g.name = 'yolDurak';
-  const x = -20, z = Z_WALK + 0.9;
-  [-1.2, 1.2].forEach(dx => g.add(box(0.12, 2.4, 0.12, lam('#5a5f66'), x + dx, 1.2, z)));
-  g.add(box(3.0, 0.14, 1.3, lam('#2b9d6a'), x, 2.45, z));
-  g.add(box(2.6, 0.9, 0.08, lam('#e9f6f0'), x, 1.6, z - 0.66));
-  const sign = new T.Mesh(new T.PlaneGeometry(1.8, 0.45), new T.MeshLambertMaterial({ map: signTex(STOP_NAME + ' DURAĞI', '#2b9d6a', '#fbfaf6') }));
-  sign.position.set(x, 2.8, z + 0.02); sign.rotation.y = Math.PI; g.add(sign);
+  const zc = ISKELE_BUS_LANE.z, x0 = ISKELE_BUS_STOP_X;
+  g.add(box(RX * 2, 0.02, BUS_LANE_W - 0.3, lam('#a8453a'), 0, 0.045, zc));
+  // raised separator (stone kerb, like the metrobus medians) with a red-white warning band on its top
+  g.add(box(RX * 2, 0.14, 0.14, lam("#d9d2bd"), 0, 0.07, Z_BUS_END));
+  for (let x = -RX + 0.5; x < RX - 0.5; x += 1.0) g.add(box(0.5, 0.012, 0.16, lam('#c2392f'), x, 0.147, Z_BUS_END));
+  // lane lettering, readable from the south (camera default): OTOBÜS, 42B, and DURAK just ahead of the stopping spot (the bus drives west)
+  const mark = (text: string, x: number, w: number) => {
+    const m = new T.Mesh(new T.PlaneGeometry(w, w * 0.25), new T.MeshLambertMaterial({ map: signTex(text, '#a8453a', '#f6efe0'), polygonOffset: true, polygonOffsetFactor: -2 }));
+    m.rotation.x = -Math.PI / 2; m.position.set(x, 0.058, zc); g.add(m);
+  };
+  for (const x of [-52, -30, -6, 32, 52]) mark('OTOBÜS 42B', x, 3.2);
+  mark('DURAK', x0 - 3.2, 2.2);
+  // stop bay: a yellow dashed line on the lane for the bus's length, and a tactile strip on the promenade edge at the front door
+  for (let x = x0 - 0.2; x < x0 + 10.6; x += 1.1) g.add(box(0.6, 0.012, 0.1, lam('#f2c230'), x + 0.3, 0.058, Z_KERB + 0.35));
+  g.add(box(3.2, 0.03, 0.4, lam('#f2c230'), x0 + 1.5, 0.07, Z_WALK + 0.2));
   return g;
 }
 
@@ -223,7 +236,7 @@ function wheels(g: T.Group, len: number, wid: number, r: number, xs: number[]) {
 }
 /** City bus (and metrobus when len is long): body, window band with pillars, roof unit, doors, wheels, destination sign. */
 function busBody(c: string, len: number, label: string): T.Group {
-  const b = new T.Group(), wid = 1.7, H = 2.9, r = 0.5;   // 2026-11-09 user: buses still touch: a lane is 1.9 m, so vehicles stay under 1.7 m wide
+  const b = new T.Group(), wid = 1.4, H = 2.9, r = 0.5;   // 2026-11-09 user: buses still touch; 2026-11-27: the lanes are 1.7 m now (the 42B lane took 2.9 m), so buses are 1.4 m wide, cars 1.5
   b.add(box(len, 0.28, wid - 0.1, lam('#2b2d31'), 0, r + 0.1, 0));                       // chassis skirt
   b.add(box(len, H - 0.9, wid, lam(c), 0, 0.9 + (H - 0.9) / 2, 0));                       // body
   b.add(box(len - 0.2, 0.2, wid - 0.15, lam('#f4f2ec'), 0, H + 0.1, 0));                  // roof cap
@@ -245,7 +258,7 @@ function busBody(c: string, len: number, label: string): T.Group {
 }
 /** Small car: lower body, glass cabin, wheels. */
 function carBody(c: string): T.Group {
-  const b = new T.Group(), len = 4.0, wid = 1.6, r = 0.34;
+  const b = new T.Group(), len = 4.0, wid = 1.5, r = 0.34;
   b.add(box(len, 0.6, wid, lam(c), 0, r + 0.3, 0));
   b.add(box(len * 0.5, 0.55, wid - 0.15, lam(c), -0.2, r + 0.85, 0));
   for (const sg of [-1, 1]) b.add(box(len * 0.44, 0.38, 0.04, GLASS(), -0.2, r + 0.88, sg * (wid / 2 - 0.05)));
@@ -258,17 +271,16 @@ function carBody(c: string): T.Group {
 function buildVehicles(): { group: T.Group; list: Vehicle[] } {
   const group = new T.Group(); group.name = 'yolArac';
   const list: Vehicle[] = [];
-  const laneZ = (i: number) => Z_KERB + (i + 0.5) * LANE;
-  // lanes: 0,1 east cars, 2 east metrobus, 3 west metrobus, 4,5 west cars. One constant speed per lane + fixed spacing: nothing overlaps or overtakes.
-  const LS = [7, 9, 10, 10, 9, 7], SPACE = 36, COLORS = ['#2f9d59', '#ffd23f', '#3f7fd0', '#e0533c', '#f4f2ec', '#8a5fd0', '#2fb5b0'];
+  // lanes: 0 = the 42B's own (no ambient traffic, the game's 42B comes in view/orman), 1 east cars, 2 east metrobus, 3 west metrobus, 4,5 west cars. One constant speed per lane + fixed spacing: nothing overlaps or overtakes.
+  const LS = [0, 9, 10, 10, 9, 7], SPACE = 36, LINES = ['36T', '110', '25G'], COLORS = ['#2f9d59', '#ffd23f', '#3f7fd0', '#e0533c', '#f4f2ec', '#8a5fd0', '#2fb5b0'];
   // Kenney car models replace the box cars once loaded (the box body stays when a file is missing); PRF-15: the box body's merged
   // geometry (its own buffer, already uploaded) is freed when the model takes over
   // 2026-11-25 tek tip görünüm: KayKit City Builder Bits arabaları (CC0, modeller/auto/kk-*); Kenney arabaları yalnız ambulansta kaldı
   const CARS = ['kk-taxi', 'kk-sedan', 'kk-hatchback', 'kk-stationwagon', 'kk-sedan', 'kk-hatchback', 'kk-taxi', 'kk-stationwagon', 'kk-police'];
-  const skin = (g: T.Group, k: number) => { loadGlb('auto/' + CARS[k % CARS.length]).then(src => { if (!src) return; g.traverse(o => { if (o.name.endsWith(':birlesik')) (o as T.Mesh).geometry.dispose(); }); g.clear(); g.add(fitClone(src, 1.6, 4.0, undefined, CAR_YAW)); }); return g; };
+  const skin = (g: T.Group, k: number) => { loadGlb('auto/' + CARS[k % CARS.length]).then(src => { if (!src) return; g.traverse(o => { if (o.name.endsWith(':birlesik')) (o as T.Mesh).geometry.dispose(); }); g.clear(); g.add(fitClone(src, 1.5, 4.0, undefined, CAR_YAW)); }); return g; };
   const add = (mesh: T.Object3D, lane: number, off: number, kind: Vehicle['kind']) => { mesh.position.set(X0 - 200, 0, laneZ(lane)); if (lane >= 3) mesh.rotation.y = Math.PI; group.add(mesh); list.push({ mesh, lane, speed: LS[lane], off, dir: lane >= 3 ? -1 : 1, kind }); };
   let ci = 0;
-  for (const lane of [0, 1, 4, 5]) for (let k = 0; k < SPAN_V / SPACE; k++) { const bus = (k + lane) % 3 === 0; add(bus ? busBody(COLORS[ci++ % 3], 8.2, '42B') : skin(carBody(COLORS[ci % COLORS.length]), ci++), lane, k * SPACE + lane * 7, bus ? 'bus' : 'car'); }
+  for (const lane of [1, 4, 5]) for (let k = 0; k < SPAN_V / SPACE; k++) { const bus = (k + lane) % 3 === 0; add(bus ? busBody(COLORS[ci++ % 3], 8.2, LINES[ci % LINES.length]) : skin(carBody(COLORS[ci % COLORS.length]), ci++), lane, k * SPACE + lane * 7, bus ? 'bus' : 'car'); }
   for (const lane of [2, 3]) for (let k = 0; k < 2; k++) add(busBody('#e0533c', 14.5, 'MB'), lane, k * (SPAN_V / 2) + lane * 20, 'metrobus');
   return { group, list };
 }
@@ -276,7 +288,7 @@ const SPAN_V = 144;
 const CAR_YAW = Math.PI / 2;   // Kenney cars face +z, the lane vehicles face +x
 
 export function createYolLook(d: YolLookDeps): YolLookView {
-  const road = buildRoad(), stop = buildBusStop(), bridge = buildOverpass();
+  const road = buildRoad(), stop = buildBusLane(), bridge = buildOverpass();
   const { group: vehicles, list } = buildVehicles();
   // PRF-06: the street parts never move relative to their group: one draw per material (vehicles move as whole groups)
   const portals = buildPortals();

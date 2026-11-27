@@ -13,7 +13,7 @@ import type { Rules } from '../../sim/state';
 import { disariApi } from '../../sim/disari';
 import type { MantarItem } from '../../sim/mantar';
 import { OTOBUS, MANTARLAR, REGION_BY_ID } from '../../../content/disari/martikoy';
-import { REALM_BY_ID } from '../../../content/realm';
+import { REALM_BY_ID, ISKELE_BUS_LANE, busBodyX, busLaneAtStop } from '../../../content/realm';
 import { createKit, buildBus, buildBusStop, buildMushroom } from '../atolye';
 import { createDoga, gunBandi } from './doga';
 import { createYasam, MANGALS, type CharsLike } from './yasam';
@@ -39,7 +39,9 @@ export function createOrmanView(d: OrmanViewDeps): OrmanView {
     if (name) { const m = new T.Mesh(new T.PlaneGeometry(3.6, 0.16), kit.mat('#ffffff', { map: strip(name) })); m.position.set(0, 2.55, 0.962); s.add(m); }
     return s;
   };
-  stop(OTOBUS.stop.x, OTOBUS.stop.z - 0.1, 'Martıköy Hattı', null);
+  // iskele stop: the 42B runs in the street's own lane south of the promenade (content/realm ISKELE_BUS_LANE), so the shelter stands on the promenade
+  // facing the lane, behind the bus's rear door, and the boarding spot at the front door stays free
+  { const s = buildBusStop(kit, OTOBUS.line, 'Martıköy Hattı'); s.position.set(OTOBUS.stop.x + 7.7, 0, ISKELE_BUS_LANE.doorZ - 1.55); root.add(s); }
   const os = REGION_BY_ID.orman.stop, ss = REALM_BY_ID.stadyum.stop;
   stop(os.x, os.z, 'Martıköy İskele', 'ORMAN DURAĞI · 42B DÖNÜŞ');
   stop(ss.x, ss.z, 'Stadyum · İskele · Orman', 'STADYUM KAPISI · 42B');
@@ -95,14 +97,16 @@ export function createOrmanView(d: OrmanViewDeps): OrmanView {
         const now = performance.now() / 1000;
         if (b.phase + b.x !== busKey) { busKey = b.phase + b.x; busT0 = b.t; busP0 = now; }
         const bt = Math.min(b.dur, busT0 + (now - busP0));
-        const sx = b.x - 2.2, z = b.z - 2.5;
+        // 42B lane: the bus runs along its realm's lane (iskele: the street's own bus lane, westbound, doors to the promenade) and always comes from / leaves toward off-screen
+        const ln = busLaneAtStop(b.x), z = ln.z, sx = busBodyX(b.x, ln.dir);
         let x = sx, doors = 0;
-        if (b.phase === 'geliyor') { x = sx - 70 * (1 - ease(bt / b.dur)); }
+        if (b.phase === 'geliyor') { x = sx - ln.dir * 70 * (1 - ease(bt / b.dur)); }
         else if (b.phase === 'durakta') { doors = Math.min(1, bt / 0.8); }
-        else { const hold = b.drop ? 0.9 : 0; doors = b.drop && bt < hold ? 1 : Math.max(0, 1 - (bt - hold) / 0.5); x = sx + Math.pow(Math.max(0, bt - 0.5 - hold), 2) * 6; }
+        else { const hold = b.drop ? 0.9 : 0; doors = b.drop && bt < hold ? 1 : Math.max(0, 1 - (bt - hold) / 0.5); x = sx + ln.dir * Math.pow(Math.max(0, bt - 0.5 - hold), 2) * 6; }
+        bus.object.rotation.y = ln.dir === 1 ? 0 : Math.PI;
         if (d.setSolid && (solidT -= dt) <= 0) { solidT = 0.1; d.setSolid([{ x0: x - 5.3, x1: x + 5.3, z0: z - 1.3, z1: z + 1.3 }]); solidOn = true; }
-        const moved = x - busX; busX = x;
-        bus.object.visible = true; bus.object.position.set(x, 0, z);
+        const moved = (x - busX) * ln.dir; busX = x;
+        bus.object.visible = true; bus.object.position.set(x, ln.y, z);
         bus.set({ doors, lights: h % 24 >= 19 || h % 24 < 7 ? 1 : 0.2, moved });
       } else { bus.object.visible = false; busKey = ''; if (solidOn && d.setSolid) { d.setSolid([]); solidOn = false; } }
       uzak.update(p.x, p.z);

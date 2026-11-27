@@ -103,8 +103,9 @@ export function buildBus(k: Kit, line = '42B', dest = 'MARTIKÖY HATTI') {
   for (const s of [-1, 1]) {
     at(k.rbox(0.08, 0.2, 0.42, 0.04, head), L / 2 + 0.02, 0.85, s * 0.85, g);
     at(k.rbox(0.08, 0.36, 0.2, 0.04, tail), -L / 2 - 0.02, 1.0, s * 1.0, g);
-    const arm = at(k.box(0.5, 0.05, 0.05, dark), L / 2 + 0.05, 2.35, s * (W / 2 + 0.25), g); arm.rotation.y = s * 0.3;
-    at(k.rbox(0.08, 0.38, 0.22, 0.04, dark), L / 2 + 0.25, 2.15, s * (W / 2 + 0.42), g);
+    // 2026-11-27: mirrors tucked in (<= 0.2 m past the body): the 42B now runs in the street lane and passes the footbridge pillars 2 cm clear (tests/unit/yol/arac-yol.test.ts)
+    const arm = at(k.box(0.3, 0.04, 0.04, dark), L / 2 + 0.05, 2.35, s * (W / 2 + 0.1), g); arm.rotation.y = s * 0.3;
+    at(k.rbox(0.08, 0.38, 0.12, 0.03, dark), L / 2 + 0.2, 2.15, s * (W / 2 + 0.13), g);
   }
   at(k.rbox(0.25, 0.32, W + 0.06, 0.1, k.mat('#3a3f48')), L / 2 + 0.05, 0.42, 0, g);
   at(k.rbox(0.25, 0.32, W + 0.06, 0.1, k.mat('#3a3f48')), -L / 2 - 0.05, 0.42, 0, g);
