@@ -196,6 +196,7 @@ export function createAudio(deps: AudioDeps): MotorAudio {
     flash: o => noise(0.12, 0.12, 6000, 1, 0, o),
     clean: o => noise(0.2, 0.08, 2600, 0.7, 0, o),
     gull: o => { tone(1500, 0.14, 'sawtooth', 0.04, -700, 0, o); tone(1650, 0.12, 'sawtooth', 0.035, -800, 0.16, o); },
+    horn: o => { tone(196, 1.1, 'sawtooth', 0.07, -6, 0, o); tone(247, 1.1, 'sawtooth', 0.05, -6, 0, o); },   // yedek (ses-db 'horn' yoksa): vapur düdüğü
     purr: o => { for (let i = 0; i < 6; i++) tone(55 + Math.random() * 8, 0.09, 'sawtooth', 0.05, 0, i * 0.1, o); },
     bark: o => { tone(320, 0.09, 'square', 0.07, -150, 0, o); tone(300, 0.1, 'square', 0.06, -150, 0.16, o); },
     streak: o => [660, 880, 1175].forEach((f, i) => tone(f, 0.12, 'square', 0.06, 0, i * 0.05, o)),

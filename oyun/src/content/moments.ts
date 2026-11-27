@@ -11,7 +11,7 @@ export type ChatLine = readonly [speaker: 'a' | 'b', text: string];
 export interface ChatDef { id: string; lines: readonly ChatLine[] }
 
 export const CHATS: readonly ChatDef[] = [
-  { id: 'vapur-kacti', lines: [['a', 'Dolmuşu kaçırdım yine!'], ['b', 'Dert etme, yarım saate bir tane daha kaçırırsın.']] },
+  { id: 'vapur-kacti', lines: [['a', 'Vapuru kaçırdım yine!'], ['b', 'Dert etme, yarım saate bir tane daha kaçırırsın.']] },
   { id: 'marti-simit', lines: [['a', 'Martı simidimi kaptı!'], ['b', 'Hayırlı olsun, artık akrabasınız.'], ['a', 'Bari çayı bıraksaydı...']] },
   { id: 'hava', lines: [['a', 'Lodos var bugün.'], ['b', 'Ben de saçımı öyle taradım, moda diye.']] },
   { id: 'cay-kac', lines: [['a', 'Kaçıncı çayın bu?'], ['b', 'Saymayı bıraktım, bardak sayıyorum.'], ['a', 'Kaç bardak?'], ['b', 'Onu da bıraktım.']] },
@@ -19,7 +19,7 @@ export const CHATS: readonly ChatDef[] = [
   { id: 'diyet', lines: [['a', 'Diyetteyim, sadece simit.'], ['b', 'Yanında?'], ['a', 'İki simit daha.']] },
   { id: 'sabri', lines: [['a', 'Sabri yine erkenden açmış.'], ['b', 'Adam büfede uyuyor bence.'], ['a', 'Uyusa da tost yapıyor ama.']] },
   { id: 'telefon', lines: [['a', 'Telefonum çekmiyor burada.'], ['b', 'Martılar sinyali yiyor abla.']] },
-  { id: 'emekli', lines: [['a', 'Emekli olunca ne yapacaksın?'], ['b', 'Burada oturup martı sayacağım.'], ['a', 'Ben şimdiden başladım, 14 oldu.']] },
+  { id: 'emekli', lines: [['a', 'Emekli olunca ne yapacaksın?'], ['b', 'Burada oturup vapur sayacağım.'], ['a', 'Ben şimdiden başladım, 14 oldu.']] },
   { id: 'gazoz', lines: [['a', 'Boğaz Gazozu mu Kolaz mı?'], ['b', 'İkisini karıştır, adını Boğolaz koy.']] },
   { id: 'karsi', lines: [['a', 'Karşıya geçmem lazım.'], ['b', "Ben 1998'den beri geçmeyi düşünüyorum."]] },
   { id: 'kedi', lines: [['a', 'Bu kedi her gün burada.'], ['b', 'Kira veriyor mu?'], ['a', 'Bakışıyla ödüyor.']] },
@@ -30,7 +30,7 @@ export const CHATS: readonly ChatDef[] = [
   { id: 'gunes', lines: [['a', 'Güneş çıktı, şemsiyeyi açayım mı?'], ['b', 'Aç aç, martılar gölge sever.']] },
   { id: 'tanidik', lines: [['a', 'Aa merhaba komşu!'], ['b', 'Ooo nerelerdesin, iki gündür yoksun!'], ['a', 'Karşı iskeleye kaçamak yaptım, affet.']] },
   { id: 'tavla', lines: [['a', 'Akşam tavla var mı?'], ['b', 'Var, ama bu sefer zarları ben seçiyorum.']] },
-  { id: 'vapurcu', lines: [['a', 'Bu dolmuş hep 2 dakika geç kalıyor.'], ['b', 'Ona geç değil, Martıköy saati denir.']] },
+  { id: 'vapurcu', lines: [['a', 'Bu vapur hep 2 dakika geç kalıyor.'], ['b', 'Ona geç değil, Martıköy saati denir.']] },
 ];
 
 /** İskele Radyosu: one short announcer line per ~90 s (Martı FM 98.6, invented). */
@@ -38,14 +38,14 @@ export const RADIO_LINES: readonly string[] = [
   "Martı FM'den günaydın İskele! Hava güzel, çaylar demli.",
   'Susadın mı? Boğaz Gazozu: içince martılar bile kıskanır!',
   'Ayranbey: köpüğü bıyığına, serinliği yüreğine.',
-  'Kolaz! Bir yudumda deniz esintisi gibi ferahlık.',
+  'Kolaz! Bir yudumda vapur düdüğü gibi ferahlık.',
   'Martı Su: o kadar saf ki martılar aynası sanıyor.',
   'Narçiçek şerbeti: kırmızısı yanaklarına bulaşır.',
   'Trafik bilgisi: iskelede 3 martı, 1 kedi, akıcı.',
   'Şimdi sırada bir istek parçası: "Simitçi Abi" geliyor.',
   'Demlikhan Çay: demi tam, sohbeti bol.',
   'Hava durumu: öğlene doğru tost kokusu bekleniyor.',
-  'Dolmuş bilgisi: bir sonraki dolmuş birazdan, belki biraz sonra.',
+  'Vapur bilgisi: bir sonraki vapur birazdan, belki biraz sonra.',
   'Lodos Soda: kabarcıkları rüzgara karşı yüzer.',
   'Dinleyicimiz Nebahat Hanım arıyor: "Sabri, simit sıcak mı?"',
   "Martı FM, Martıköy'ün tek ve en tuzlu radyosu.",
@@ -57,7 +57,7 @@ export const EVENT_KINDS: readonly MomentEvent[] = ['simit', 'ball', 'rainbow', 
 
 export const EVENT_LINES: Record<MomentEvent, readonly string[]> = {
   simit: ['Eyvah, simitler kaçtı!', 'Tutun şu simitleri!', 'Simitler yuvarlanıyor, yakala!'],
-  ball: ['Topumuz denize düştü!', 'Abi topu atar mısın?', 'Gol değil, iskele!'],
+  ball: ['Topumuz vapurdan düştü!', 'Abi topu atar mısın?', 'Gol değil, iskele!'],
   rainbow: ['Aa, gökkuşağı!', 'Bak bak, Boğaz renklendi!', 'Dilek tut çabuk!'],
   blackout: ['Elektrik gitti!', 'Kim bastı düğmeye?', 'Tamam geldi, korkmayın.'],
   gullSteal: ['Martı simidi kaptı!', 'Hey! O benim kahvaltımdı!', 'Martı yine kazandı.'],

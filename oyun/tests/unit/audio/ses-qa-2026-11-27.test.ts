@@ -1,7 +1,7 @@
-// 2026-11-27 ses/müzik QA düzeltmeleri: vapur düdüğü hiçbir yerde yok, tek öğeli olay havuzu boş çekmez, yağmur kısık,
+// 2026-11-27 ses/müzik QA düzeltmeleri: vapur düdüğü yalnız vapur yanaşırken, tek öğeli olay havuzu boş çekmez, yağmur kısık,
 // UI 'pick'/'tap' kimlikleri pop'a düşmez, EVENT_SFX'te horn yok.
 import { describe, it, expect } from 'vitest';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import SES_DB from '../../../src/content/ses/ses-db.json';
 import { Canta, YAGMUR_VOL, KURU_OLAY, AMBIYANS } from '../../../src/content/ses/ambiyans';
@@ -9,15 +9,16 @@ import { EVENT_SFX } from '../../../src/content/sfx';
 import { DEFAULT_TABLE } from '../../../src/engine/audio/atmosphere';
 
 const kok = join(__dirname, '../../..');
-describe('vapur düdüğü kalktı', () => {
-  it('ses-db, dosya, tablo ve olay eşlemesinde yok', () => {
+// 2026-11-27 (sonra) sahibi: vapur geri geldi, düdüğü de geri. Düdük YALNIZ gerçek vapur yanaşırken (ferryHorn olayı) çalar:
+// rastgele ambiyans düdüğü yok (vapur yokken düdük duyulmasın).
+describe('vapur düdüğü yalnız vapurla', () => {
+  it('ses-db horn + vapur yaması var; olay eşlemesi ferryHorn -> horn; ambiyansta rastgele düdük yok', () => {
     const db = SES_DB as unknown as { sfx: Record<string, unknown>; patches: Record<string, unknown> };
-    expect(db.sfx.horn).toBeUndefined(); expect(db.patches.vapur).toBeUndefined();
-    expect(existsSync(join(kok, 'public/ses/vapur.opus'))).toBe(false);
+    expect(db.sfx.horn).toBeDefined(); expect(db.patches.vapur).toBeDefined();
     expect(JSON.stringify(DEFAULT_TABLE)).not.toContain('"horn"');
     expect(JSON.stringify(AMBIYANS)).not.toContain('"horn"');
-    expect(Object.values(EVENT_SFX).filter(v => v === 'horn')).toEqual([]);
-    expect(Object.keys(EVENT_SFX)).not.toContain('ferryHorn');
+    expect(EVENT_SFX.ferryHorn).toBe('horn');
+    expect(Object.entries(EVENT_SFX).filter(([, v]) => v === 'horn').map(([k]) => k)).toEqual(['ferryHorn']);
   });
 });
 describe('tek öğeli olay havuzu', () => {

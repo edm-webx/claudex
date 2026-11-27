@@ -3,7 +3,7 @@ export interface AvmUrun { id: string; ad: string; ikon: string; kat: 'giyim' | 
 export const AVM_URUN: AvmUrun[] = [
   { id: 'gomlek_keten', ad: 'Keten gömlek', ikon: '👔', kat: 'giyim', fiyat: 4500, xp: 4, desc: 'Yazlık, Boğaz esintisine birebir.' },
   { id: 'esofman_mart', ad: 'Martıspor eşofman', ikon: '🩳', kat: 'giyim', fiyat: 3800, xp: 4, desc: 'Halı saha sonrası klasiği.' },
-  { id: 'deri_ceket', ad: 'Deri ceket', ikon: '🧥', kat: 'giyim', fiyat: 12500, xp: 8, desc: 'İskelede rüzgârda havalı dur.' },
+  { id: 'deri_ceket', ad: 'Deri ceket', ikon: '🧥', kat: 'giyim', fiyat: 12500, xp: 8, desc: 'Vapurda rüzgârda havalı dur.' },
   { id: 'sapka_kasket', ad: 'Kasket', ikon: '🧢', kat: 'giyim', fiyat: 1900, xp: 2, desc: 'Eski İstanbul havası.' },
   { id: 'spor_ayakkabi', ad: 'Spor ayakkabı', ikon: '👟', kat: 'giyim', fiyat: 6200, xp: 5, desc: 'İskeleden stada koşarken.' },
   { id: 'parfum_lodos', ad: 'Lodos parfüm', ikon: '🧴', kat: 'kozmetik', fiyat: 5400, xp: 4, desc: 'Deniz tuzu ve simit notası.' },

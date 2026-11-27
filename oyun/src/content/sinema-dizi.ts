@@ -4,7 +4,7 @@
  * bölümden bölüme sürer. Bir bölüm: açılış kartı ("önceki bölümde...") + 7 sahne + "devamı bir sonraki seansta". Saf veri:
  * perdeye çizim view/world/sinema-perde.ts. Bütün isimler uydurma (parodi), gerçek marka / kişi yok.
  */
-export type Arka = 'iskele' | 'rihtim' | 'gece' | 'carsi' | 'deniz' | 'firtina' | 'ev' | 'kule' | 'gunbatimi';
+export type Arka = 'iskele' | 'vapur' | 'gece' | 'carsi' | 'deniz' | 'firtina' | 'ev' | 'kule' | 'gunbatimi';
 export type Karakter = 'kaptan' | 'yavru' | 'kedi' | 'simitci' | 'balikci' | 'ayten' | 'kerem' | 'mido' | 'nine' | 'kumpirci';
 export type Hareket = 'dur' | 'yuru' | 'kos' | 'uc' | 'konus' | 'zipla' | 'uzgun' | 'gul' | 'dans';
 /** sahnedeki rol: x (perde genişliğinin oranı, 0..1) -> x2'ye yürür / uçar; yon -1 sola bakar */
@@ -41,16 +41,16 @@ export const DIZILER: Dizi[] = [
         S('kule', [r('balikci', 'konus', 0.3), r('kaptan', 'dur', 0.6, undefined, -1)], 'balikci', 'Gece bir kedi kayıkla geçti, ağzında parlak bir şey vardı!'),
         S('kule', [r('kaptan', 'konus', 0.55, undefined, -1), r('balikci', 'dur', 0.3)], 'kaptan', 'Hangi yöne gitti Hasan Abi?'),
         S('kule', [r('balikci', 'konus', 0.3)], 'balikci', 'Karşı yakaya, balık pazarına doğru.'),
-        S('rihtim', [r('kaptan', 'dur', 0.4), r('yavru', 'uzgun', 0.55)], 'yavru', 'Kaptan... ben deniz tutuyorum galiba.'),
-        S('rihtim', [r('kaptan', 'gul', 0.45), r('yavru', 'uzgun', 0.58)], 'kaptan', 'Martı dediğin deniz tutmaz Cevdet! Dayan!'),
+        S('vapur', [r('kaptan', 'dur', 0.4), r('yavru', 'uzgun', 0.55)], 'yavru', 'Kaptan... ben deniz tutuyorum galiba.'),
+        S('vapur', [r('kaptan', 'gul', 0.45), r('yavru', 'uzgun', 0.58)], 'kaptan', 'Martı dediğin deniz tutmaz Cevdet! Dayan!'),
       ] },
-      { ad: 'Fırtınalı İskele', ozet: 'İz karşı yakadaki balık pazarını gösteriyordu. Kayığa bindiler.', sahneler: [
-        S('firtina', [r('kaptan', 'dur', 0.4), r('yavru', 'uzgun', 0.55)], undefined, '(Boğaz’da fırtına kopar. Kayık sallanır.)'),
+      { ad: 'Fırtınalı Vapur', ozet: 'İz karşı yakadaki balık pazarını gösteriyordu. Vapura bindiler.', sahneler: [
+        S('firtina', [r('kaptan', 'dur', 0.4), r('yavru', 'uzgun', 0.55)], undefined, '(Boğaz’da fırtına kopar. Vapur sallanır.)'),
         S('firtina', [r('yavru', 'kos', 0.5, 0.9)], 'yavru', 'İmdaaat! Rüzgâr beni götürüyor!'),
         S('firtina', [r('kaptan', 'uc', 0.2, 0.75)], 'kaptan', 'Tutun Cevdet! Geliyorum!'),
         S('firtina', [r('kaptan', 'uc', 0.75, 0.45, -1), r('yavru', 'uc', 0.8, 0.5, -1)], 'yavru', 'Kurtardın beni Kaptan!'),
-        S('rihtim', [r('kerem', 'konus', 0.3), r('kaptan', 'dur', 0.6, undefined, -1)], 'kerem', 'Sağ olun kuşlar! Teknenin kaptanı benim, Kerem.'),
-        S('rihtim', [r('kerem', 'konus', 0.3), r('kaptan', 'dur', 0.6, undefined, -1)], 'kerem', 'Kedi Paşa mı? Balık pazarının altında gizli bir mahzeni var!'),
+        S('vapur', [r('kerem', 'konus', 0.3), r('kaptan', 'dur', 0.6, undefined, -1)], 'kerem', 'Sağ olun kuşlar! Teknenin kaptanı benim, Kerem.'),
+        S('vapur', [r('kerem', 'konus', 0.3), r('kaptan', 'dur', 0.6, undefined, -1)], 'kerem', 'Kedi Paşa mı? Balık pazarının altında gizli bir mahzeni var!'),
         S('gunbatimi', [r('kaptan', 'uc', 0.2, 0.7), r('yavru', 'uc', 0.1, 0.6)], 'kaptan', 'Fırtına dindi. Şimdi sıra Kedi Paşa’da.'),
       ] },
       { ad: 'Balık Pazarı', ozet: 'Kaptan Kerem, Kedi Paşa’nın gizli mahzenini söyledi.', sahneler: [
@@ -78,7 +78,7 @@ export const DIZILER: Dizi[] = [
       { ad: 'Limon Kazası', ozet: 'İskelede midye tezgâhı açan Ayten’in ilk günü...', sahneler: [
         S('iskele', [r('ayten', 'konus', 0.35), r('mido', 'zipla', 0.5)], 'ayten', 'Bugün ilk günüm Mido. Ya kimse gelmezse?'),
         S('iskele', [r('mido', 'konus', 0.5), r('ayten', 'dur', 0.3)], 'mido', 'Merak etme abla, ben buranın en yakışıklı midyesiyim.'),
-        S('iskele', [r('kerem', 'kos', 0.0, 0.42)], 'kerem', 'Dolmuş kalkıyor! Yetişmem lazım!'),
+        S('iskele', [r('kerem', 'kos', 0.0, 0.42)], 'kerem', 'Vapur kalkıyor! Yetişmem lazım!'),
         S('iskele', [r('kerem', 'uzgun', 0.42), r('ayten', 'uzgun', 0.6, undefined, -1)], undefined, '(Kerem tezgâha çarpar, limonlar her yere saçılır.)'),
         S('iskele', [r('ayten', 'konus', 0.6, undefined, -1), r('kerem', 'dur', 0.38)], 'ayten', 'Önüne baksana! Bütün limonlarım gitti!'),
         S('iskele', [r('kerem', 'konus', 0.38), r('ayten', 'dur', 0.6, undefined, -1)], 'kerem', 'Çok özür dilerim... yarın telafi ederim, söz!'),
@@ -88,7 +88,7 @@ export const DIZILER: Dizi[] = [
         S('iskele', [r('kerem', 'yuru', 0.0, 0.35)], 'kerem', 'Bir kasa limon getirdim. Umarım affeder.'),
         S('iskele', [r('kumpirci', 'konus', 0.6, undefined, -1), r('ayten', 'gul', 0.75, undefined, -1)], 'kumpirci', 'Ayten Hanım, kumpirime sizin midyeyi koyalım mı?'),
         S('iskele', [r('kerem', 'uzgun', 0.35)], 'kerem', '(Yoksa onlar... birlikte mi?)'),
-        S('rihtim', [r('kerem', 'uzgun', 0.45)], 'kerem', 'Boş ver Kerem. Sen teknene bak.'),
+        S('vapur', [r('kerem', 'uzgun', 0.45)], 'kerem', 'Boş ver Kerem. Sen teknene bak.'),
         S('iskele', [r('ayten', 'konus', 0.4), r('mido', 'dur', 0.55)], 'ayten', 'Dünkü çocuk gelmedi Mido. Söz vermişti...'),
         S('iskele', [r('mido', 'konus', 0.55), r('ayten', 'dur', 0.4)], 'mido', 'Gördüm onu, limonları bırakıp üzgün gitti.'),
         S('iskele', [r('ayten', 'dur', 0.4), r('mido', 'gul', 0.55)], 'mido', 'Bana bir plan lazım. Midye usulü bir plan!'),
@@ -96,19 +96,19 @@ export const DIZILER: Dizi[] = [
       { ad: 'Mido’nun Planı', ozet: 'Kerem, Ayten’i kumpirciyle görüp yanlış anladı. Mido plan yapıyor.', sahneler: [
         S('ev', [r('mido', 'konus', 0.5), r('nine', 'dur', 0.25)], 'mido', 'Nazlı Nine, Kerem’in ninesi sizsiniz değil mi?'),
         S('ev', [r('nine', 'gul', 0.25), r('mido', 'dur', 0.5)], 'nine', 'Konuşan midye! Torunum aşık mı oldu yoksa?'),
-        S('ev', [r('nine', 'konus', 0.25)], 'nine', 'Yarın akşam iskelede çay ikram etsin. Ayten’i de çağırırız.'),
-        S('rihtim', [r('kerem', 'dur', 0.35), r('nine', 'konus', 0.6, undefined, -1)], 'nine', 'Kerem! Akşam güverteye çay ocağı kur, misafir var.'),
-        S('iskele', [r('mido', 'konus', 0.5), r('ayten', 'dur', 0.3)], 'mido', 'Abla, akşam iskelede bedava çay varmış. Gidelim!'),
+        S('ev', [r('nine', 'konus', 0.25)], 'nine', 'Yarın akşam vapurda çay ikram etsin. Ayten’i de çağırırız.'),
+        S('vapur', [r('kerem', 'dur', 0.35), r('nine', 'konus', 0.6, undefined, -1)], 'nine', 'Kerem! Akşam güverteye çay ocağı kur, misafir var.'),
+        S('iskele', [r('mido', 'konus', 0.5), r('ayten', 'dur', 0.3)], 'mido', 'Abla, akşam vapurda bedava çay varmış. Gidelim!'),
         S('iskele', [r('ayten', 'konus', 0.3)], 'ayten', 'Peki ama sadece çay için, tamam mı?'),
         S('gunbatimi', [r('mido', 'dans', 0.5)], 'mido', 'Plan işliyor. Midye zekâsı!'),
       ] },
-      { ad: 'Kumpir Savaşı', ozet: 'Nine ve Mido, Kerem ile Ayten’i iskelede buluşturmak için anlaştı.', sahneler: [
-        S('rihtim', [r('kerem', 'konus', 0.35), r('ayten', 'dur', 0.6, undefined, -1)], 'kerem', 'Hoş geldin... Limonlar için tekrar özür dilerim.'),
-        S('rihtim', [r('ayten', 'gul', 0.6, undefined, -1), r('kerem', 'gul', 0.35)], 'ayten', 'Limonları sen mi getirdin? Kumpirci getirdi sanmıştım!'),
-        S('rihtim', [r('kumpirci', 'kos', 1.0, 0.7, -1)], 'kumpirci', 'Durun! Ayten Hanım’ın gönlü kumpirde!'),
-        S('rihtim', [r('kerem', 'konus', 0.35), r('kumpirci', 'dur', 0.7, undefined, -1)], 'kerem', 'Ayten’in gönlü midyede kardeşim.'),
-        S('rihtim', [r('mido', 'zipla', 0.5), r('kumpirci', 'uzgun', 0.72, undefined, -1)], 'mido', 'Kumpir de güzel ama bu hikâye midyenin!'),
-        S('rihtim', [r('kumpirci', 'gul', 0.7, undefined, -1)], 'kumpirci', 'Peki peki... Ama düğünde kumpirler benden!'),
+      { ad: 'Kumpir Savaşı', ozet: 'Nine ve Mido, Kerem ile Ayten’i vapurda buluşturmak için anlaştı.', sahneler: [
+        S('vapur', [r('kerem', 'konus', 0.35), r('ayten', 'dur', 0.6, undefined, -1)], 'kerem', 'Hoş geldin... Limonlar için tekrar özür dilerim.'),
+        S('vapur', [r('ayten', 'gul', 0.6, undefined, -1), r('kerem', 'gul', 0.35)], 'ayten', 'Limonları sen mi getirdin? Kumpirci getirdi sanmıştım!'),
+        S('vapur', [r('kumpirci', 'kos', 1.0, 0.7, -1)], 'kumpirci', 'Durun! Ayten Hanım’ın gönlü kumpirde!'),
+        S('vapur', [r('kerem', 'konus', 0.35), r('kumpirci', 'dur', 0.7, undefined, -1)], 'kerem', 'Ayten’in gönlü midyede kardeşim.'),
+        S('vapur', [r('mido', 'zipla', 0.5), r('kumpirci', 'uzgun', 0.72, undefined, -1)], 'mido', 'Kumpir de güzel ama bu hikâye midyenin!'),
+        S('vapur', [r('kumpirci', 'gul', 0.7, undefined, -1)], 'kumpirci', 'Peki peki... Ama düğünde kumpirler benden!'),
         S('gunbatimi', [r('ayten', 'dur', 0.42), r('kerem', 'dur', 0.56, undefined, -1)], undefined, '(Gün batarken ikisi ilk kez yan yana susar.)'),
       ] },
       { ad: 'Kız Kulesi’nde Teklif', ozet: 'Kumpirci geri çekildi. Ayten ile Kerem yakınlaştı.', sahneler: [

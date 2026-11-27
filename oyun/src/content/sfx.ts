@@ -1,5 +1,5 @@
 // SFX content table (Builder D, M1): which sound plays on which game event. Ids are the v2 synth recipes in
-// engine/audio (pop drop cut pour fizz coin cash buy bad wake flash clean gull purr bark streak day spoon sizzle creak,
+// engine/audio (pop drop cut pour fizz coin cash buy bad wake flash clean gull horn purr bark streak day spoon sizzle creak,
 // plus the ses polish set: tik steamHiss press blow shutter sparkle confetti feather splash puff jingle simitci).
 // Values: a sound id, or a function of the event payload.
 type Payload = Record<string, unknown> | undefined;
@@ -29,6 +29,7 @@ export const EVENT_SFX: Record<string, SfxRule> = {
   level: 'day', dayEnd: 'day', tadilatDone: 'streak', kasaDone: 'streak',   // 'day' yalnız seviye ve gün sonu (en gürlek ses; dördü birden çalmaz)
   orderClaim: 'cash', welcomeCollect: 'cash',
   windowOpen: 'flash',
+  ferryHorn: 'horn', ferryDock: 'splash',   // 2026-11-27: vapur geri geldi (yalnız gelip gider); düdük iskele kapısından konumlu duyulur
   // ses denetimi 2026-11-27: yayılıp sessiz kalan olaylar (konum taşıyanlar duyulduğu yerden çalar)
   kizginAyril: 'bad', siparisAl: 'ticket', bahsisDagit: 'coin', musteriPhoto: 'shutter', mufettis: 'bildirim', arsaYapildi: 'buy', paketTeslim: 'ok',
   catWake: 'purr', catPet: 'purr', catRub: 'purr',

@@ -77,6 +77,8 @@ export interface Runtime {
   /** BUF-12: kasada sırada bekleyen müşteriler (kasiyer kasa başındayken) */
   kasaQueue: Customer[];
   ferry: { state: FerryPhase; t: number; next: number; arriveAt: number; docked: boolean; /** dock +25 s etc. in sim seconds */ phaseLen: number };
+  /** ferry kinds + timetable (ferry-kinds.ts); set by installFerry */
+  ferryInfo?: import('./ferry-kinds').FerryInfo;
   'window': { open: boolean; t: number; sales: number } | null;
   streak: number; lastSaleT: number; lastSaleProducts: ProductId[];
   siklik: number;

@@ -495,12 +495,13 @@ export function ferryGeos() {
     A.box(3.9, 1.3, 11.6, '#fbfaf6', 0, 1.7, 0, { r: 0.12 });
     [-1, 1].forEach(sg => { [-2.9, 2.9].forEach(z => A.label(5.6, 0.5, R.ferryWin, sg * 1.955, 1.78, z, { ry: sg * HP })); [-1, 1].forEach(e => BU.plane(5.2, 0.3, '#ffe6a0', sg * 1.96, 1.8, e * 2.9, { ry: sg * HP })); });
     [-1, 1].forEach(e => A.box(3.9, 1.3, 0.05, '#fbfaf6', 0, 1.7, e * 5.82, { r: 0 }));
-    A.box(4.2, 0.1, 13.4, '#e8e2d8', 0, 2.38, 0, { r: 0.04 });
+    // 2026-11-27 vapur geri geldi: üst güverte tik tahta (yukarıdan bakan kamerada Boğaz vapuru gibi okunsun), kaptan köşkü çatısı beyaz
+    A.box(4.2, 0.1, 13.4, '#a87b52', 0, 2.38, 0, { r: 0.04, uv: R.grain });
     for (let z = -6.4; z <= 6.4; z += 0.8) [-2.05, 2.05].forEach(x => A.box(0.04, 0.5, 0.04, '#fbfaf6', x, 2.65, z, { r: 0 }));
     [-2.05, 2.05].forEach(x => A.box(0.06, 0.05, 13, '#fbfaf6', x, 2.9, 0, { r: 0.015 }));
     A.box(3.3, 0.9, 7.4, '#fbfaf6', 0, 2.88, 0, { r: 0.1 });
     [-1, 1].forEach(sg => { A.label(6.6, 0.4, R.ferryWin, sg * 1.655, 2.92, 0, { ry: sg * HP }); BU.plane(6.2, 0.25, '#ffe6a0', sg * 1.66, 2.93, 0, { ry: sg * HP }); });
-    A.box(3.5, 0.08, 8.0, '#d8433a', 0, 3.37, 0, { r: 0.03 });
+    A.box(3.5, 0.08, 8.0, '#f4f1ea', 0, 3.37, 0, { r: 0.03 }); A.box(3.54, 0.1, 0.18, '#2b3a55', 0, 3.36, -3.95, { r: 0.02 }); A.box(3.54, 0.1, 0.18, '#2b3a55', 0, 3.36, 3.95, { r: 0.02 });
     [-1, 1].forEach(e => { A.box(2.2, 0.9, 1.5, '#fbfaf6', 0, 3.85, e * 3.4, { r: 0.1 }); A.box(2.24, 0.32, 1.54, '#35507a', 0, 3.98, e * 3.4, { r: 0.04 }); A.box(2.4, 0.08, 1.7, '#e8e2d8', 0, 4.33, e * 3.4, { r: 0.03 }); });
     A.cyl(0.48, 0.52, 1.7, '#f2b632', 0, 4.2, 0, { seg: 16 }); A.cyl(0.49, 0.49, 0.32, '#2b3a55', 0, 4.95, 0, { seg: 16 }); A.cyl(0.4, 0.4, 0.06, '#1a1a1a', 0, 5.12, 0, { seg: 12 });
     [-1, 1].forEach(sg => A.label(0.55, 0.55, R.emblem, sg * 0.5, 4.3, 0, { ry: sg * HP }));

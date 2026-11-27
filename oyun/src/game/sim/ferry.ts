@@ -1,10 +1,17 @@
 /**
- * Kalabalık dalgası. 2026-11-25: gemi/vapur kavramı oyundan kalıcı olarak kalktı; aralıklı olarak promenattan
- * bir müşteri dalgası gelir. rt.ferry yalnız kayıt / görünüm uyumu için hep 'away'. Pure.
+ * Vapur ritmi. 2026-11-27 sahibi kararı (25 Kasım'daki "vapur hiç olmasın" kararının yerine geçer): vapur sürekli gelip gider,
+ * düdüğünü çalar, iskeleye yanaşır ve yalnız vatandaş indirir; inenler potansiyel müşteridir. Oyuncunun vapurla HİÇBİR
+ * etkileşimi yoktur: vapur görevi, binme, bilet, tarife tahtası, vapur penceresi, güverte satışı, duyuru yok.
+ * Evreler sim'de (away -> arriving 10 sn -> docked 25 sn -> leaving 16 sn -> away); görünüm yalnız `rt.ferry`'yi canlandırır.
+ * Ekonomi: dalga anı (yanaşma = eski kalabalık dalgasıyla aynı `next` anı), dalga büyüklüğü (KALABALIK_PAY) ve rng akışları
+ * kalabalık dalgasıyla birebir aynı; yalnız yolcular promenat yerine vapur kapısından iner. Gece (00:30-06:00) seyrek gelir. Pure.
  */
+import { CITIZENS } from '../../content/citizens';
 import { P } from '../../content/economy';
+import { NIGHT_FERRY } from '../../content/ferries';
 import type { Kernel } from './state';
 import { clamp } from './util';
+import { advanceFerry, ferryBuyers, ferryPassenger, isFerryKind, newFerryInfo } from './ferry-kinds';
 import type { installCustomers } from './customers';
 import { havaOf } from './hava';
 
@@ -12,31 +19,58 @@ import { havaOf } from './hava';
 export const ferryGap = (stage: number): [number, number] => (stage <= 1 ? [75, 105] : stage === 2 ? [110, 160] : [150, 230]);
 export const FERRY_T = { arriving: 10, docked: 25, leaving: 16 } as const;
 export const FERRY_DOOR = { x: 22.4, z: -7.1 };
-/** dalga büyüklüğü oranı (gelir dengesi, first-session parity): yolcular yakın promenattan geliyor (gelir dengesi, first-session parity) */
+/** dalga büyüklüğü oranı (gelir dengesi, first-session parity; kalabalık dalgasıyla aynı) */
 export const KALABALIK_PAY = 0.4;
+/** gece seyrek: düdük bu saat aralığına düşerse (oyun saati, 24 = gece yarısı) bir sonraki aralık bu kadar uzar */
+export const GECE_SEYREK = { from: 24.5, to: 30, gapX: 1.8 } as const;
 
 export function installFerry(K: Kernel, cu: ReturnType<typeof installCustomers>, w: { open(): void; close(): void; update(dt: number): void }) {
   const rt = K.rt, S = K.state, f = rt.ferry, rng = K.R.main;
   const wave: (() => void)[] = []; let waveT = 0;
-  // Aynı aralıkla promenattan bir kalabalık dalgası gelir (tekne, korna, duyuru yok); rt.ferry kayıt/görünüm alanı uyumu için hep 'away' kalır.
+  const citizen = (id: string) => CITIZENS.find(t => t.id === id)!;
+  // ferry kinds (ferry-kinds.ts): own rng stream so the boat pick never shifts the main stream
+  const frng = K.rng('sim.ferry');
+  const info = rt.ferryInfo = newFerryInfo();
+  const gece = () => { const h = K.hour(); return h >= GECE_SEYREK.from && h < GECE_SEYREK.to; };
   function onDock() {
-    f.next = S.playT + rng.range(ferryGap(S.stage)[0], ferryGap(S.stage)[1]);
+    f.docked = true;
+    const g = ferryGap(S.stage), x = gece() ? GECE_SEYREK.gapX : 1;
+    f.next = S.playT + rng.range(g[0], g[1]) * x;
+    K.stat('ferries'); K.logEv('ferryDock');
     const open = K.openProducts();
-    const buyers = Math.round(clamp(Math.round(3 + 1.6 * S.stage + open.length * 0.6), 3, 10) * KALABALIK_PAY);
+    const buyers = Math.round(ferryBuyers(clamp(Math.round(3 + 1.6 * S.stage + open.length * 0.6), 3, 10), info.cur, info.curLit) * KALABALIK_PAY);
     for (let i = 0; i < buyers; i++) wave.push(() => {
       if (rt.queue.length < Math.min(P.QUEUE_MAX, rt.layout.queue.length)) {
-        cu.spawnCustomer({ type: undefined, n: 1, patienceX: 1.4 });
+        const pid = ferryPassenger(frng, info.cur, info.curLit);
+        const type = pid && pid !== 'vapuryolcusu' ? citizen(pid) : undefined;
+        const sleepy = info.curLit && frng.chance(NIGHT_FERRY.sleepyChance) ? frng.pick(NIGHT_FERRY.sleepy) : undefined;
+        cu.spawnCustomer({ type, from: FERRY_DOOR, n: 1, patienceX: 1.4, say: sleepy });
       }
     });
     waveT = 0;
   }
   function update(dt: number) {
-    f.state = 'away'; f.docked = false;
-    // eski ritimle aynı an: dalga, eski düdükten (next - 10 sn) 10 sn sonra, yani next'te; uzun bir duraklamadan dönüşte de önce 10 sn bekler
-    if (f.arriveAt < 0 && S.playT >= f.next - FERRY_T.arriving) { if (havaOf(rt)?.skipFerry()) f.next = S.playT + ferryGap(S.stage)[0] + FERRY_T.arriving; else f.arriveAt = S.playT + FERRY_T.arriving; }
-    if (f.arriveAt >= 0 && S.playT >= f.arriveAt) { f.arriveAt = -1; onDock(); }
+    f.t += dt;
+    if (f.state === 'away') {
+      // düdük yanaşmadan 10 sn önce; fırtına bir seferi atlatır (hava.ts)
+      if (f.arriveAt < 0 && S.playT >= f.next - FERRY_T.arriving) {
+        if (havaOf(rt)?.skipFerry()) f.next = S.playT + ferryGap(S.stage)[0] + FERRY_T.arriving;
+        else { f.arriveAt = S.playT + FERRY_T.arriving; f.state = 'arriving'; f.t = 0; f.docked = false; advanceFerry(info, frng, K.hour()); K.logEv('ferryHorn'); }
+      }
+    } else if (f.state === 'arriving') {
+      if (S.playT >= f.arriveAt) { f.arriveAt = -1; f.state = 'docked'; f.t = 0; onDock(); }
+    } else if (f.state === 'docked') {
+      if (f.t >= FERRY_T.docked) { f.state = 'leaving'; f.t = 0; f.docked = false; K.logEv('ferryLeave'); }
+    } else if (f.state === 'leaving') {
+      if (f.t >= FERRY_T.leaving) { f.state = 'away'; f.t = 0; }
+    }
     w.update(dt);
     if (wave.length) { waveT -= dt; if (waveT <= 0) { waveT = 1.4; const fn = wave.shift()!; fn(); } }
   }
-  return { update, force() { f.next = S.playT + 10; f.arriveAt = -1; }, clearWave() { wave.length = 0; } };
+  return {
+    update,
+    // test / geliştirici kancası: bir sonraki vapuru 10 sn sonraya çeker (yolda olan vapur kendi turunu bitirir)
+    force(kind?: unknown) { if (isFerryKind(kind)) info.forced = kind; if (f.state === 'away') { f.next = S.playT + 10; f.arriveAt = -1; } },
+    clearWave() { wave.length = 0; },
+  };
 }

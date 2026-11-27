@@ -32,7 +32,7 @@ export const PRODUCTS: Record<ProductId, ProductDef> = {
   tost: { id: 'tost', name: 'Kaşarlı-sucuklu tost', short: 'Tost', base: 110, prep: 2.0, ritual: 'press', station: 'tost', icon: 'tost', h: 0.08,
     tiers: [
       { name: 'Kaşarlı-sucuklu tost', desc: 'Tost ekmeğinde kaşar ve sucuk' },
-      { name: 'İskele tostu', desc: 'İnce, tereyağında çıtır, bol kaşar' },
+      { name: 'Vapur tostu', desc: 'İnce, tereyağında çıtır, bol kaşar' },
       { name: 'Dolu tost', desc: 'Kaşar, sucuk, salam, turşu, domates, sos' },
       { name: 'Lav Tost', desc: 'Kaşarı bir metre uzar, Sabri ip gibi sarar' }] },
   gazoz: { id: 'gazoz', name: 'Gazoz', short: 'Gazoz', base: 40, prep: 0.6, ritual: 'fizz', station: 'gazoz', icon: 'gazoz', h: 0.22,
@@ -53,10 +53,10 @@ export const tierCost = (product: ProductId, toTier: number): number => { const 
 export const SETS: SetDef[] = [
   { id: 'doner_ayran', items: ['doner', 'ayran'], x: 1.1, name: 'Döner + ayran' },
   { id: 'cay_simit', items: ['cay', 'simit'], x: 1.08, name: 'Simit + çay ikilisi' },
-  { id: 'tost_cay', items: ['tost', 'cay'], x: 1.08, name: 'İskele kahvaltısı' },
+  { id: 'tost_cay', items: ['tost', 'cay'], x: 1.08, name: 'Vapur kahvaltısı' },
   { id: 'tost_gazoz', items: ['tost', 'gazoz'], x: 1.08, name: 'Gece tostu' },
   // survey tarif-2 combos: Vapur Menüsü (hızlı paket), Öğrenci Menüsü (ucuz ve doyurucu)
-  { id: 'vapur_menu', items: ['doner', 'gazoz'], x: 1.085, name: 'İskele Menüsü' },
+  { id: 'vapur_menu', items: ['doner', 'gazoz'], x: 1.085, name: 'Vapur Menüsü' },
   { id: 'ogrenci_menu', items: ['simit', 'ayran'], x: 1.08, name: 'Öğrenci Menüsü' }
 ];
 export const STATIONS: Record<ProductId, StationDef & { grab: boolean }> = {

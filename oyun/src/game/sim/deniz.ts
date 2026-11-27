@@ -134,15 +134,14 @@ export function installDeniz(K: Kernel, cu?: CuLike): DenizApi {
   }
 
   // ───────── ferry hooks ─────────
+  // 2026-11-27 sahibi: vapur gelip gider ama oyuncunun vapurla etkileşimi YOK. Güverte koşusu, güverte büfesi geliri ve
+  // vapur ipuçları kapalı (runDone hep true); yalnız vapur kedisi bazen iskeleye atlar (sessiz, yalnız görsel + Deniz Defteri).
   function onDock(): void {
-    runDone = false;
-    const h = D();
-    if (h.bufe) { const v = Math.round(VAPUR_BUFE.perDock * S().stage * Math.sqrt(scale())); K.earn(v, DOOR); K.toast('Güverte Büfesi sattı: +' + fmtMoney(v), 'good'); }
-    if (hintN < 2 && h.runs < 3) { hintN++; K.toast(DECK_RUN.lines.hint, 'info'); }
-    if (rng.chance(SHIP_CAT.chance)) { shipCat = { t: 0 }; seeAnimal('vapurkedisi'); K.toast(rng.pick(SHIP_CAT.line), 'info'); }
+    runDone = true;
+    if (rng.chance(SHIP_CAT.chance)) { shipCat = { t: 0 }; seeAnimal('vapurkedisi'); }
   }
   function onLeave(): void {
-    if (shipCat) { shipCat = null; K.toast(SHIP_CAT.back, 'info'); }
+    shipCat = null;
   }
 
   // ───────── sea life (vapur-6) ─────────
@@ -185,7 +184,6 @@ export function installDeniz(K: Kernel, cu?: CuLike): DenizApi {
       // ferry transitions
       const fs = rt.ferry.state;
       if (fs !== lastFerry) { if (fs === 'docked') onDock(); else if (lastFerry === 'docked') onLeave(); lastFerry = fs; }
-      if (fs === 'docked' && !run && !runDone && rt.carry.length && S().stage >= DECK_RUN.minStage && near(DOOR, DECK_RUN.radius)) startRun();
       stepRun(dt);
       if (shipCat) shipCat.t += dt;
       // sea life
@@ -251,7 +249,7 @@ export function installDeniz(K: Kernel, cu?: CuLike): DenizApi {
     return {
       run, sight, duel, shipCat, ext: h.ext, seats: h.seats, tez: h.tez, pier: h.pier, bufe: h.bufe,
       chicks: clamp(1 + Math.floor(age / 2), 1, 3), nestAge: age,
-      docked: rt.ferry.state === 'docked', canRun: rt.ferry.state === 'docked' && !run && !runDone && S().stage >= DECK_RUN.minStage,
+      docked: false, canRun: false,   // 2026-11-27: vapurla oyuncu etkileşimi yok (güverte koşusu / vapur içi kartı açılmaz)
       season: season(),
     };
   }
@@ -268,7 +266,7 @@ export function installDeniz(K: Kernel, cu?: CuLike): DenizApi {
       tez: { n: h.tez, max: TEZGAH.max, cost: TEZGAH.cost, name: TEZGAH.name, icon: TEZGAH.icon, text: TEZGAH.text, why: why(1, TEZGAH.cost) },
       pier: PIER_EXP.map((p, i) => ({ id: p.id, name: p.name, icon: p.icon, text: p.text, perk: p.perk, cost: p.cost, bonus: Math.round(p.bonus * 100), owned: has(h.pier, p.id),
         why: i > 0 && !has(h.pier, PIER_EXP[i - 1].id) ? 'Önce ' + PIER_EXP[i - 1].name + '.' : why(p.minStage, p.cost) })),
-      vapur: { runs: h.runs, best: h.runBest, sales: h.deckSales, earned: Math.round(h.deckEarned), bufe: h.bufe, bufeCost: VAPUR_BUFE.cost, bufeText: VAPUR_BUFE.blurb, bufeWhy: why(VAPUR_BUFE.minStage, VAPUR_BUFE.cost), docked: rt.ferry.state === 'docked' },
+      vapur: { runs: h.runs, best: h.runBest, sales: h.deckSales, earned: Math.round(h.deckEarned), bufe: h.bufe, bufeCost: VAPUR_BUFE.cost, bufeText: VAPUR_BUFE.blurb, bufeWhy: why(VAPUR_BUFE.minStage, VAPUR_BUFE.cost), docked: false },
       life: SEA_LIFE.map(s => ({ id: s.id, name: s.name, icon: s.icon, rare: s.rare, n: h.seen[s.id] || 0, when: (s.seasons ? s.seasons.join(', ') : 'her mevsim') + (s.hours ? ' · ' + s.hours[0] + ':00 sonrası' : '') })),
       animals: ANIMALS.map(a => ({ id: a.id, name: a.name, icon: a.icon, text: a.text, seen: a.id === 'martiyuvasi' || a.id === 'karabatak' || a.id === 'kaplumbaga' || has(h.animals, a.id) })),
       duel: h.duel, photos: h.photos,

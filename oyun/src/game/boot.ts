@@ -116,6 +116,7 @@ import { panelModel, panelActions } from './sim/panels';
 import type { AgentsHandle } from './sim/agents';
 import { createYolLook, type YolLookView } from './view/world/yol-look';
 import { ugY, onUg } from '../content/ustgecit';
+import { createFerryLook, type FerryLookView } from './view/world/ferry-look';
 import { createKarsiLook, type KarsiLookView } from './view/world/karsi-look';
 import { createKarsiBina, type BinaView } from './view/world/karsi-bina';
 import { createIsletmeInsaat, type InsaatView } from './view/world/isletme-insaat';
@@ -367,6 +368,9 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
       return true;
     });
   }
+
+  // 2026-11-27: vapur çeşitleri geri (gövde bandı, baca, sabit gece ampulleri); tarife tahtası YOK (oyuncuya dönük vapur arayüzü olmasın)
+  const ferryLook: FerryLookView | null = playMode && zones ? make('ferryLook', () => createFerryLook({ root: () => zones.root('iskele') ?? null, rules: () => sim.rules })) : null;
 
   const karsiLook: KarsiLookView | null = playMode && zones ? make('karsiLook', () => createKarsiLook({ root: () => zones.root('iskele') ?? null })) : null;
   const karsiBina: BinaView | null = playMode && zones ? make('karsiBina', () => createKarsiBina({ root: () => zones.root('iskele') ?? null, night: () => nightK, camera: () => cam.camera, hero: () => walk.pos })) : null;
@@ -853,6 +857,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (playMode) guard('sign', syncSign);
     guard('world', () => W.update(sim.state, fdt, alpha));
     if (yolLook) guard('yolLook', () => yolLook.update(fdt));
+    if (ferryLook) guard('ferryLook', () => ferryLook.update(fdt));
     if (karsiLook) guard('karsiLook', () => karsiLook.update(fdt));
     if (karsiBina) guard('karsiBina', () => karsiBina.update(fdt));
     if (bufeBuyume) guard('bufeBuyume', () => bufeBuyume.update(fdt));
@@ -1086,6 +1091,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
    */
   const hileAcik = import.meta.env.MODE !== 'production' || /^(localhost|127\.0\.0\.1|bufe\.test|)$/.test(location.hostname);
   const HILE_CMD = new Set(['force', 'ordersRefresh', 'setStage']);
+  reg('ferry', () => ({ rt: rt().ferry, info: rt().ferryInfo ?? null, view: ferryLook?.debug() ?? null }));
   reg('step', (sec: number) => loop.advance(Number(sec) || 0));
   reg('render', () => loop.renderNow(1 / 30));
   reg('renderFrames', (n = 1, dt = 1 / 30) => { for (let i = 0; i < (n || 1); i++) renderFrame(dt || 1 / 30, 1); });

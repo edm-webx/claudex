@@ -183,13 +183,15 @@ export function disariPrefabs(): PrefabDef[] {
   for (const [w, d, x, z] of [[14, 0.06, 0, -4.5], [14, 0.06, 0, 4.5], [0.06, 9, -7, 0], [0.06, 9, 7, 0]] as number[][]) cage.push({ ...box(w, 3.2, d, x, 1.6, z, '#9fb4bf'), mat: 'glass' });
   cage.push(box(0.08, 1.8, 3, -6.6, 0.9, 0, '#f6f6f0'), box(0.08, 1.8, 3, 6.6, 0.9, 0, '#f6f6f0'));
   defs.push({ id: 'mk.cage', parts: cage, colliders: [R(14, 0.3, 0, -4.5), R(0.3, 9, -7, 0), R(0.3, 9, 7, 0)] });
-  // tersane: cranes, containers
+  // tersane: cranes, containers, a ferry on the slipway
   defs.push({ id: 'mk.crane', parts: [box(0.5, 12, 0.5, -2, 6, -1.2, '#e0a030'), box(0.5, 12, 0.5, 2, 6, -1.2, '#e0a030'), box(0.5, 12, 0.5, -2, 6, 1.2, '#e0a030'), box(0.5, 12, 0.5, 2, 6, 1.2, '#e0a030'),
     box(4.8, 1.2, 3, 0, 12.4, 0, '#e0a030'), box(1.0, 1.0, 16, 0, 13.4, -5, '#e0a030'), box(1.6, 1.4, 1.6, 0, 12.0, 0.6, '#3b3b3b', 'cab'), cyl(0.04, 5, 0.04, 0, 10.6, -10, '#3b3b3b', 4), box(1.6, 0.4, 1.0, 0, 8.0, -10, '#3b3b3b')], colliders: [R(5, 3)] });
   const cont = (c: string): PartDef[] => [box(6, 2.5, 2.4, 0, 1.25, 0, c), ...[-2, -1, 0, 1, 2].map(i => box(0.06, 2.3, 2.42, i * 1.1, 1.25, 0, '#1a1a1a'))];
   defs.push({ id: 'mk.cont.a', parts: [...cont('#c0392b'), ...cont('#2f6f9a').map(p => ({ ...p, pos: [p.pos![0], p.pos![1] + 2.5, p.pos![2]] as [number, number, number] }))], colliders: [R(6, 2.4)] });
   defs.push({ id: 'mk.cont.b', parts: cont('#3a9a5a'), colliders: [R(6, 2.4)] });
   defs.push({ id: 'mk.cont.c', parts: [...cont('#f2c230'), ...cont('#8c5a9a').map(p => ({ ...p, pos: [p.pos![0], p.pos![1] + 2.5, p.pos![2]] as [number, number, number] }))], colliders: [R(6, 2.4)] });
+  defs.push({ id: 'mk.slipferry', parts: [box(4.4, 2.4, 16, 0, 1.6, 0, '#fbfaf6'), box(4.6, 0.5, 16.2, 0, 0.5, 0, '#c0392b'), box(3.6, 1.6, 9, 0, 3.6, 0.5, '#f6efe1'), box(3.8, 0.2, 9.4, 0, 4.5, 0.5, '#2f6f9a'),
+    cyl(0.5, 2.2, 0.5, 0, 5.6, 2, '#f2c230', 10), box(5, 0.4, 18, 0, 0.1, 0, '#7a6a55', 'slip')], colliders: [R(5, 18)] });
   // metro altı: entrance pavilions, tiled walls, ticket gates, a busker spot
   defs.push({ id: 'mk.metro.gate', parts: [box(6, 0.2, 4, 0, 3.0, 0, '#2b4a7a', 'roof'), box(0.2, 3, 0.2, -2.8, 1.5, -1.8, '#c9d2dc'), box(0.2, 3, 0.2, 2.8, 1.5, -1.8, '#c9d2dc'), box(0.2, 3, 0.2, -2.8, 1.5, 1.8, '#c9d2dc'), box(0.2, 3, 0.2, 2.8, 1.5, 1.8, '#c9d2dc'),
     box(1.2, 1.2, 0.12, 0, 3.8, 1.9, '#e0533c', 'M'), box(5, 0.05, 3.4, 0, -0.4, 0, '#3b3b3b', 'stairs'), ...[0, 1, 2].map(i => box(0.3, 1.0, 0.8, -1.4 + i * 1.4, 0.5, -1.2, '#7a8a90'))], colliders: [R(6, 0.4, 0, -1.9)] });
@@ -383,7 +385,7 @@ export function stadyumZone(): ZoneDef {
 export function tersaneZone(): ZoneDef {
   const x0 = 452, x1 = 508, mx = 480;
   const props: PrefabPlacement[] = [P('water', 'mk.water60', mx, -9), P('yard', 'mk.ground.yard', mx, 9),
-    P('crane0', 'mk.crane', 466, 1.5), P('crane1', 'mk.crane', 494, 1.5),
+    P('crane0', 'mk.crane', 466, 1.5), P('crane1', 'mk.crane', 494, 1.5), P('ferry', 'mk.slipferry', 480, 18, Math.PI / 2),
     P('c0', 'mk.cont.a', 458, 20), P('c1', 'mk.cont.b', 458, 16.6), P('c2', 'mk.cont.c', 502, 20), P('c3', 'mk.cont.b', 502, 16.6), P('crates', 'mk.crates', 470, 13.4), P('net', 'mk.netrack', 490, 13.4)];
   for (const x of [457, 471, 485, 499]) props.push(P('rail' + x, 'mk.rail', x, 0.1), P('lamp' + x, 'ts.lamp', x + 4, 0.6));
   const paint = [{ rect: { x0, x1, z0: -18, z1: 0 }, cost: 0 }, ...frame(x0, x1, 0, 24)];
