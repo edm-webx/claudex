@@ -21,6 +21,14 @@ export const TWIST_DEAD = 0.16, KEY_ORBIT = 1.8;
 const typing = (e: Event) => { const t = e.target as HTMLElement | null; return !!t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable); };
 const JOY_CSS = '.sb-joy{position:fixed;left:0;top:0;width:96px;height:96px;margin:-48px 0 0 -48px;border-radius:50%;background:rgba(255,255,255,.18);border:3px solid rgba(255,255,255,.55);pointer-events:none;z-index:3}.sb-joy[hidden]{display:none}.sb-joy-k{position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;background:rgba(255,255,255,.85);box-shadow:0 2px 6px rgba(0,0,0,.25)}';
 
+/** QA 2026-11-27: harf tuşları FİZİKSEL yerinden okunur (e.code KeyW...): AZERTY / Kiril / Yunan düzenlerinde WASD-QE-R çalışsın.
+ *  Türkçe Q'da değişiklik yok. Harf dışı tuşlar (oklar, boşluk) e.key ile. */
+export function tusAdi(e: Pick<KeyboardEvent, 'key' | 'code'>): string {
+  const c = typeof e.code === 'string' ? /^Key([A-Z])$/.exec(e.code) : null;
+  return c ? c[1].toLowerCase() : String(e.key || '').toLowerCase();
+}
+const etkilesimli = (t: EventTarget | null): boolean => !!(t && (t as Element).closest?.('button,a[href],select,summary,[role="button"],input,textarea'));
+
 export function createInput(deps: InputDeps): Input {
   const { canvas, root, platform } = deps;
   const interactions = createInteractions();
@@ -108,14 +116,17 @@ export function createInput(deps: InputDeps): Input {
   const win = doc.defaultView;
   if (win) {
     on(win, 'keydown', (e: KeyboardEvent) => {
-      const k = e.key.toLowerCase();
+      const k = tusAdi(e);
       if (typing(e)) return;
       keys[k] = true;
       if (k === 'r' && !e.repeat && !e.ctrlKey && !e.metaKey) recenterReq = true;
-      if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(k)) e.preventDefault();
+      // Space odaktaki düğmeyi tıklasın (eskiden koşulsuz engelleniyordu); oklar sayfayı kaydırmasın
+      if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k) || (k === ' ' && !etkilesimli(e.target))) e.preventDefault();
     });
-    on(win, 'keyup', (e: KeyboardEvent) => { keys[e.key.toLowerCase()] = false; });
-    on(win, 'blur', () => { for (const k in keys) keys[k] = false; resetJoy(); pts.clear(); pinchD = 0; });
+    on(win, 'keyup', (e: KeyboardEvent) => { keys[tusAdi(e)] = false; });
+    const birak = () => { for (const k in keys) keys[k] = false; resetJoy(); pts.clear(); pinchD = 0; };
+    on(win, 'blur', birak);
+    if (typeof doc.addEventListener === 'function') on(doc, 'visibilitychange', () => { if (doc.hidden) birak(); });   // iframe / mobil: blur gelmeden gizlenince tuş takılı kalmasın
   }
 
   const compute = () => {

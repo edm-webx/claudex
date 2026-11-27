@@ -24,6 +24,7 @@ async function freshWorld(): Promise<void> {
   } catch { /* storage blocked: the game still starts */ }
 }
 
+(window as unknown as { __martiBasladi?: boolean }).__martiBasladi = true;   // index.html yükleme bekçisi (tools/build-artifact.mjs): game.js indi ve çalıştı
 freshWorld().then(() => boot(document.getElementById('c') as HTMLCanvasElement | null)).catch(err => {
   console.error('[marti] boot failed', err);
   const fail = document.getElementById('fail');

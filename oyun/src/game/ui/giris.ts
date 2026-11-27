@@ -1,7 +1,7 @@
 // Giriş ekranı = MARTI KİMLİK (oyunun hesap sistemi, 2026-11-23). (2026-10-24 13:05 user: "username ve password girişi olsun"). Opens after the title: Giriş yap /
 // Kayıt ol / Misafir oyna. Accounts live on Supabase (net/supa.ts); a remembered session skips the form.
 // After a login the boot merges the cloud save (afterLogin) and then the game starts.
-import { supaReady, girisYap, kayitOl, cikisYap, GIRIS_TUTMADI, PROFIL_YAZILAMADI } from '../net/supa';
+import { supaReady, girisYap, kayitOl, cikisYap, GIRIS_TUTMADI, PROFIL_YAZILAMADI, zamanAsimi, ISTEK_ZAMAN_ASIMI_MS, SUNUCU_YAVAS } from '../net/supa';
 import { girisSonrasi, adminAdiMi, adminDogrula } from '../net/admin';
 import { girisLogu } from '../net/log';
 import { slotlariYukle, slotListesi, slotSec, aktifSlot, slotSil, slotsHazir } from '../net/slots';
@@ -64,15 +64,14 @@ export function createGiris(deps: { root: HTMLElement; afterLogin: (isNew: boole
       let done = false, isNew = false, logged = false, inServers = false;
       // 2026-11-09: no public servers; after the account step comes the character slot, then the game (and the kulis for a new esnaf)
       // after any login: ban check (and the admin role check); a banned or non-admin account is signed out again
-      const finish = (login: boolean) => {
+      const finish = async (login: boolean): Promise<void> => {
         if (done) return;
         if (!login) { logged = false; void enter(); return; }
-        void girisSonrasi().then(async r => {
-          if (r.yasak) { await cikisYap(); paint(r.yasak); return; }
-          logged = true; void girisLogu(isNew);
-          // KAYIT-GUV: a failed read is not "4 empty slots": nothing opens (and nothing is written) until the record was read
-          if (await slotlariYukle()) slotsScreen(); else okumaHatasi();
-        });
+        const r = await girisSonrasi();
+        if (r.yasak) { await cikisYap(); paint(r.yasak); return; }
+        logged = true; void girisLogu(isNew);
+        // KAYIT-GUV: a failed read is not "4 empty slots": nothing opens (and nothing is written) until the record was read
+        if (await slotlariYukle()) slotsScreen(); else okumaHatasi();
       };
       const enter = async () => {
         if (done) return; done = true;
@@ -130,14 +129,25 @@ ${mode === 'giris' ? (unut ? unutKutu() : '<button class="gr-adm" data-unut="1">
 <div class="gr-note">${supaReady() ? 'Martı Kimlik e-posta istemez. Şifren yalnız sende, kimse göremez; unutma.' : 'Hesap sunucusu birazdan bağlanacak, biraz sonra tekrar dene.'}</div></div>`;
       };
       const showKey = () => { const k = bg.querySelector('.gr-key') as HTMLElement | null; if (k) k.style.display = ''; };
+      // QA 2026-11-27: bir tık + iki Enter = üç ayrı giriş isteği gidiyordu. İstek sürerken yeni gönderim yok
+      let mesgul = false;
       const submit = async () => {
+        if (mesgul) return;
+        mesgul = true;
+        try { await submit1(); } finally { mesgul = false; }
+      };
+      const submit1 = async () => {
+        if (!bg.querySelector('input[name="ad"]')) return;   // karakter / hata ekranında Enter giriş formu aramasın
         const ad = (bg.querySelector('input[name="ad"]') as HTMLInputElement).value;
         const sifre = (bg.querySelector('input[name="sifre"]') as HTMLInputElement).value;
         const kod = (bg.querySelector('input[name="kod"]') as HTMLInputElement).value;
         const adm = mode === 'giris' && adminAdiMi(ad);
         if (adm && !kod) { showKey(); (bg.querySelector('input[name="kod"]') as HTMLInputElement).focus(); (bg.querySelector('.gr-err') as HTMLElement).textContent = 'Bu hesap için anahtar kod gerekli.'; return; }
         const b = bg.querySelector('.gr-go') as HTMLButtonElement; b.disabled = true; b.textContent = 'Bekle...';
-        let err = mode === 'giris' ? await girisYap(ad, sifre) : await kayitOl(ad, sifre);
+        const yavas = setTimeout(() => { if (b.isConnected) b.textContent = 'Ağ yavaş, bekliyoruz...'; }, 6000);
+        // fetch'in kendi zaman aşımı var (net/supa.ts); bu ikinci emniyet: ne olursa olsun düğme en geç ~25 sn'de geri gelir
+        let err = await zamanAsimi(mode === 'giris' ? girisYap(ad, sifre) : kayitOl(ad, sifre), ISTEK_ZAMAN_ASIMI_MS + 5000, SUNUCU_YAVAS);
+        clearTimeout(yavas);
         // admin / xynena: the key code is checked on the server (hash in the DB); without it the account never opens
         if (!err && adm) { const k = await adminDogrula(kod); if (k === 'yanlis') { await cikisYap(); err = 'Anahtar kod yanlış.'; } }
         isNew = !err && mode === 'kayit';
@@ -146,7 +156,7 @@ ${mode === 'giris' ? (unut ? unutKutu() : '<button class="gr-adm" data-unut="1">
         if (err === PROFIL_YAZILAMADI) mode = 'giris';
         if (err) { const keepAd = ad; paint(err); (bg.querySelector('input[name="ad"]') as HTMLInputElement).value = keepAd; try { deps.sfx?.('error'); } catch { /* */ } return; }
         try { deps.sfx?.('ok'); } catch { /* */ }
-        finish(true);
+        await finish(true);
       };
       bg.addEventListener('click', e => {
         const el = (e.target as HTMLElement).closest('button') as HTMLButtonElement | null; if (!el) return;
@@ -165,7 +175,7 @@ ${mode === 'giris' ? (unut ? unutKutu() : '<button class="gr-adm" data-unut="1">
         if (el.dataset.unut) { unut = true; const keepAd = (bg.querySelector('input[name="ad"]') as HTMLInputElement).value; paint(); (bg.querySelector('input[name="ad"]') as HTMLInputElement).value = keepAd; return; }
         if (el.dataset.m) { mode = el.dataset.m as 'giris' | 'kayit'; paint(); return; }
         if (el.dataset.go) { void submit(); return; }
-        if (el.dataset.guest) finish(false);
+        if (el.dataset.guest) void finish(false);
       });
       bg.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') { if ((e.target as HTMLInputElement).name === 'onay') { (bg.querySelector('[data-d2]') as HTMLButtonElement | null)?.click(); return; } if (inServers) void enter(); else void submit(); } });
       bg.addEventListener('keyup', e => e.stopPropagation());

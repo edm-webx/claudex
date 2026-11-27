@@ -16,6 +16,7 @@ import { MISAFIR_MAAS } from './net/misafir';
 import { susturuldu, benSusturuldum, adlar } from './net/admin';
 import { adDogrulayici, etiket } from './net/kimlik';
 import { logYaz } from './net/log';
+import { kasaKabul, dunyaKabul, type KasaDefter } from './net/oda-dogrula';
 import type { Object3D, Scene } from 'three';
 import type { Chars, HeroHandle, Vec2, Vec3, ScreenPt } from '../engine/api';
 import { esnafHeroOpts, SINIFLAR, type EsnafimSave } from './sim/esnafim';
@@ -82,7 +83,7 @@ export interface OnlineDeps {
   project(p: Vec3, out: ScreenPt): boolean;
   me(): { pos: Vec2; rot: number; speed: number; esnaf: EsnafimSave; region: string; act?: string };
   /** Kahoot-like shared world: the room's host sends its büfe, guests play inside it until they leave */
-  world?: { get(): string; sig(): string; apply(json: string, host: string): void; leave(): void; earned(): number; addKasa(n: number, from: string): number; money(): number; setMoney(n: number): void };
+  world?: { get(): string; sig(): string; apply(json: string, host: string): void; leave(): void; earned(): number; gelirDk?(): number; addKasa(n: number, from: string): number; money(): number; setMoney(n: number): void };
   toast(text: string): void;
 }
 
@@ -124,9 +125,13 @@ const CSS = `
 .on-err{min-height:18px;color:#b3261e;font:800 13px var(--body);text-align:center;margin-top:6px}
 `;
 
-interface Remote { peer: string; hero: HeroHandle | null; lookKey: string; x: number; z: number; rot: number; tx: number; tz: number; trot: number; speed: number; act: string; tag: HTMLDivElement; sayT: number; sayAt: number; seen: number; uid: string; hn: string; ad: string; dk: string }
+interface Remote { peer: string; hero: HeroHandle | null; lookKey: string; x: number; z: number; rot: number; tx: number; tz: number; trot: number; speed: number; act: string; tag: HTMLDivElement; sayT: number; sayAt: number; seen: number; uid: string; hn: string; ad: string; dk: string; ev: boolean }
 
 /** what other players need to draw my esnaf (kept small: presence is ~4 KiB on claude.ai) */
+/** presence uid'si istemci beyanı: yalnız uuid karakterleri (QA 2026-11-27: yönetici panelinde HTML'e giriyordu) */
+export const uidTemiz = (u: unknown): string => typeof u === 'string' && /^[0-9a-fA-F-]{1,40}$/.test(u) ? u : '';
+/** odada en çok bu kadar başka oyuncu çizilir */
+const MAX_PEER = 8;
 const LOOK_KEYS: (keyof EsnafimSave)[] = ['ad', 'sinif', 'tip', 'vucut', 'boy', 'ten', 'goz', 'gozRenk', 'kas', 'allik', 'cil', 'gamze', 'ruj', 'sac', 'sacRenk', 'biyik', 'sakal',
   'ustStil', 'ust', 'aksan', 'desen', 'altStil', 'alt', 'ayakkabi', 'onluk', 'sapka', 'sapkaRenk', 'gozluk', 'papyon', 'kravat', 'kupe', 'sakalStil', 'ifade', 'gozAra', 'gozY', 'burun', 'agiz', 'kulak'];
 
@@ -145,6 +150,8 @@ export function createOnline(d: OnlineDeps): OnlineView {
   let retryT = 20, host = false, guestOf = '', guestSig = '', worldT = 0, worldWant = false, worldSig = '', kasaBase = -1, askT = 3, sheetT = 0;
   /** net/misafir.ts: misafirin bu odada ev sahibine sattığı (maaşı bunun MISAFIR_MAAS payı) / ev sahibine misafirlerden gelen; oda rozetinde yazar */
   let misafirKazanc = 0, ortakToplam = 0;
+  /** net/oda-dogrula.ts: ev sahibinde misafir başına kasa kovası; misafirde sabitlenen ev sahibi peer id'si */
+  const kasaDefter: KasaDefter = new Map(); let evId = '';
   try { const q = new URLSearchParams(location.search).get('oda'); if (q) code = kodTemiz(q); } catch { /* */ }
 
   const w = window as unknown as { claude?: { use?: (n: string) => Promise<unknown> } };
@@ -166,7 +173,7 @@ export function createOnline(d: OnlineDeps): OnlineView {
     kasaGonder();   // odadan çıkmadan son satış ev sahibinin kasasına bildirilir
     if (link) { link.leave(); link = null; }
     if (guestOf) { guestOf = ''; guestSig = ''; try { d.world?.leave(); } catch { /* */ } }
-    misafirKazanc = 0; ortakToplam = 0;
+    misafirKazanc = 0; ortakToplam = 0; kasaDefter.clear(); evId = '';
     host = !!c && asHost; worldSig = ''; worldWant = host;
     for (const rm of remotes.values()) drop(rm); remotes.clear();
     code = c; lastSent = '';
@@ -186,16 +193,25 @@ export function createOnline(d: OnlineDeps): OnlineView {
     l.on('iste', () => { if (host) worldWant = true; });
     l.on('pm', pl => { if (pl.to !== l.id || typeof pl.text !== 'string') return; const rp = remotes.get(String(pl.id || '')), ad = etiket(String(pl.ad || 'Esnaf'), rp ? kimlik.ad(rp.uid) : ''); addLog('🔒 ' + ad + ' → sen', filterChat(pl.text), 'pm', String(pl.id || '')); d.toast('🔒 ' + ad + ' sana yazdı'); });
     // net/misafir.ts: misafirin sattığı ev sahibinin kasasına; misafirin maaşını oyun basar (kimseden kesilmez)
-    l.on('kasa', pl => { const n = Number(pl.n); if (host && n > 0 && n < 1e7) { ortakToplam += d.world!.addKasa(Math.floor(n), String(pl.ad || 'Bir esnaf').slice(0, 14)) || 0; ui(); } });
+    // QA 2026-11-27: yalnız odadaki ev sahibi olmayan oyuncudan, gerçek sayı, oyuncu başına dakikalık bütçeyle (net/oda-dogrula.ts)
+    l.on('kasa', pl => {
+      if (!host) return;
+      const rm = remotes.get(String(pl.id || ''));
+      const n = kasaKabul(kasaDefter, pl.id, pl.n, !!rm && !rm.ev, performance.now() / 1000, d.world!.gelirDk?.() || 0);
+      if (n > 0) { ortakToplam += d.world!.addKasa(n, filterChat(String(pl.ad || 'Bir esnaf')).slice(0, 14)) || 0; ui(); }
+    });
     l.on('_ok', () => { if (!host && code) l.emit?.('iste', {}); });
     l.on('dunya', pl => {
-      if (host || !code || typeof pl.w !== 'string' || typeof pl.sig !== 'string') return;
-      const ad = String(pl.ad || 'Ev sahibi').slice(0, 14);
+      if (host || !code) return;
+      // QA 2026-11-27: yalnız presence'ta ev sahibi görünen ve ilk kabul edilen ev sahibinden (sahte dünya misafiri ele geçiriyordu)
+      const from = dunyaKabul(pl, evId, id => !!remotes.get(id)?.ev);
+      if (!from || typeof pl.w !== 'string' || typeof pl.sig !== 'string') return;
+      const ad = filterChat(String(pl.ad || 'Ev sahibi')).slice(0, 14) || 'Ev sahibi';
       if (pl.sig === guestSig) return;
       const first = !guestOf;
       guestSig = pl.sig; guestOf = ad;
       if (!first) kasaGonder();   // dünya yenilenmeden önce bekleyen satış bildirilir (eskiden her yenilemede siliniyordu: ev sahibine 0 gidiyordu)
-      try { d.world!.apply(pl.w, ad); kasaBase = d.world!.earned(); } catch { /* bad world: keep own */ }
+      try { d.world!.apply(pl.w, ad); kasaBase = d.world!.earned(); evId = from; } catch { if (first) { guestOf = ''; guestSig = ''; } return; }   // bozuk dünya: kendi dünyan kalır
       if (first) { d.toast(tamlayan(ad) + ' büfesinde yardımdasın. Satış başına maaş alırsın!'); addLog('Martıköy', tamlayan(ad) + ' büfesindesin. Sattıkların onun kasasına gider; sana da her satışın %' + Math.round(MISAFIR_MAAS * 100) + "'i maaş olarak cebine girer (oyun öder, " + ad + "'den kesilmez). Paran, seviyen, XP'n hep senin: kazandıkların kendi oyununa yazılır. Büfeye alışverişi ve sarı kareleri " + ad + ' yapar.', 'sys'); }
       ui();
     });
@@ -298,12 +314,15 @@ ${code ? `<div class="on-big">${code}</div><p>Şu an bu odadasın.</p>` : ''}
       const pr = p.presence as Record<string, unknown>;
       let rm = remotes.get(p.peer);
       if (!rm) {
+        if (remotes.size >= MAX_PEER) continue;   // QA 2026-11-27: sahte id selinde her biri bir karakter + etiket kuruyordu
         const tag = document.createElement('div'); tag.className = 'on-tag'; tag.innerHTML = '<span class="s" style="display:none"></span><span class="n"></span><span class="d"></span>'; d.root.appendChild(tag);
-        rm = { peer: p.peer, hero: null, lookKey: '', x: Number(pr.x) || 0, z: Number(pr.z) || 0, rot: Number(pr.rot) || 0, tx: 0, tz: 0, trot: 0, speed: 0, act: 'idle', tag, sayT: 0, sayAt: 0, seen: now, uid: '', hn: '', ad: '', dk: '' };
+        rm = { peer: p.peer, hero: null, lookKey: '', x: Number(pr.x) || 0, z: Number(pr.z) || 0, rot: Number(pr.rot) || 0, tx: 0, tz: 0, trot: 0, speed: 0, act: 'idle', tag, sayT: 0, sayAt: 0, seen: now, uid: '', hn: '', ad: '', dk: '', ev: false };
         remotes.set(p.peer, rm);
         d.toast((String(pr.ad || 'Bir esnaf')).slice(0, 14) + ' Martıköy\'e geldi!');
       }
-      rm.seen = now; rm.uid = String(pr.uid || '').slice(0, 40); kimlik.iste(rm.uid); rm.hn = kimlik.ad(rm.uid);   // pr.hn istemci metni: gösterilmez rm.ad = String(pr.ad || 'Esnaf').slice(0, 14);
+      rm.ev = pr.ev === true;
+      rm.seen = now; rm.uid = uidTemiz(pr.uid); kimlik.iste(rm.uid); rm.hn = kimlik.ad(rm.uid);   // pr.hn istemci metni: gösterilmez
+      rm.ad = String(pr.ad || 'Esnaf').slice(0, 14);
       rm.tx = Number(pr.x) || 0; rm.tz = Number(pr.z) || 0; rm.trot = Number(pr.rot) || 0; rm.speed = Number(pr.sp) || 0; rm.act = typeof pr.act === 'string' ? String(pr.act).slice(0, 12) : 'idle';
       const sn = SINIFLAR.find(s => s.id === (pr.look as { sinif?: string } | undefined)?.sinif);
       (rm.tag.querySelector('.n') as HTMLElement).textContent = (pr.ev ? '🏠 ' : '') + (sn ? sn.icon + ' ' : '') + String(pr.ad || 'Esnaf').slice(0, 14);
@@ -325,9 +344,9 @@ ${code ? `<div class="on-big">${code}</div><p>Şu an bu odadasın.</p>` : ''}
     for (const [k, rm] of remotes) if (!peers.some(p => p.peer === k)) { drop(rm); remotes.delete(k); }
     // host left the room: after 12 s the guest returns to their own büfe instead of staying frozen in a dead world
     if (guestOf) {
-      if (peers.some(p => (p.presence as Record<string, unknown>).ev === true)) hostMissing = 0;
+      if (peers.some(p => (!evId || p.peer === evId) && (p.presence as Record<string, unknown>).ev === true)) hostMissing = 0;
       else if (!hostMissing) hostMissing = now;
-      else if (now - hostMissing > 12000) { hostMissing = 0; guestOf = ''; guestSig = ''; try { d.world?.leave(); } catch { /* */ } d.toast('Ev sahibi ayrıldı. Kazandığın parayla kendi büfene döndün.'); }
+      else if (now - hostMissing > 12000) { hostMissing = 0; guestOf = ''; guestSig = ''; evId = ''; try { d.world?.leave(); } catch { /* */ } d.toast('Ev sahibi ayrıldı. Kazandığın parayla kendi büfene döndün.'); }
     } else hostMissing = 0;
     ui();
   }

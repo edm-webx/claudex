@@ -4,7 +4,7 @@ export const KALITE_METIN: Readonly<Record<'akici' | 'dengeli' | 'sahane', strin
   dengeli: 'Gölge, parıltı ve gökyüzü yansıması açık.',
   sahane: 'Daha keskin çizim, yüksek çözünürlüklü gölge, kalabalık ve parçacık en çok.',
 };
-export function kaliteSatiri(setting: string, nowLabel: string | null): string {
-  if (setting === 'auto' || setting === 'otomatik') return nowLabel ? 'Şu an: ' + nowLabel : 'Otomatik, telefonuna göre ayarlar.';
+export function kaliteSatiri(setting: string, nowLabel: string | null, neden = ''): string {
+  if (setting === 'auto' || setting === 'otomatik') return nowLabel ? 'Şu an: ' + nowLabel + (neden ? ' (' + neden + ')' : '') : 'Otomatik, cihazına göre ayarlar.';
   return KALITE_METIN[setting as keyof typeof KALITE_METIN] ?? '';
 }

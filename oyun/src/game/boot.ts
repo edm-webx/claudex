@@ -83,6 +83,7 @@ import { defaultSign } from '../content/sign-fonts';
 import { createSim, openNav, lerpPose, type SimFull } from './headless';
 import { defaultState, SAVE_KEY, SAVE_VERSION, type GameState, type HeroId } from './sim/schema';
 import { createGameSave, createStateSave } from './sim/save';
+import { kayitKurtar } from './sim/kayit-kurtar';
 import { installBekci, type BekciHandle } from './sim/bekci';
 import { createGunSonu } from './ui/gun-sonu';
 import { createKulis } from './ui/kulis';
@@ -326,10 +327,18 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     const fromWorld = (W.playerStart as ((s: number) => Vec2 | undefined) | undefined)?.(stage);
     return fromWorld ?? zones?.def('iskele')?.playerStart;
   })();
-  sim = createSim(
-    { seed: seed ?? loaded?.seed ?? 1, content, save: loaded, startClock: params.time !== undefined ? { hour: params.time } : undefined },
-    { nav, anchors: zones ? (id => zones.anchors(id)) : undefined, perf: P, log, startPos: loaded ? undefined : zStart, now: () => platform.clock.now() },
+  const simKur = (sv: GameState | undefined) => createSim(
+    { seed: seed ?? sv?.seed ?? 1, content, save: sv, startClock: params.time !== undefined ? { hour: params.time } : undefined },
+    { nav, anchors: zones ? (id => zones.anchors(id)) : undefined, perf: P, log, startPos: sv ? undefined : zStart, now: () => platform.clock.now() },
   );
+  // QA 2026-11-27: checksum'u geçerli ama oyunu kuramayan kayıt her açılışta #fail veriyordu. Bozuk kayıt kenara yedeklenir,
+  // sırayla eski slotlar / günlük yedekler denenir (son iyi kayıt); hiçbiri olmazsa yeni oyun (sim/kayit-kurtar.ts)
+  try { sim = simKur(loaded); } catch (e) {
+    log.error('save unusable at boot', e);
+    const k = await kayitKurtar(save, loaded, simKur, log);
+    sim = k.sim; loaded = k.loaded;
+    setTimeout(() => { try { U.toast(k.mesaj, 'bad'); } catch { /* */ } }, 1500);
+  }
   // real calendar date (local) for the in-game calendar / seasons (hava.ts, dekor seasons); the sim never reads the wall clock
   if (playMode) make('calendar', () => { const dd = new Date(platform.clock.wall()); sim.state.calendar = dd.getFullYear() + '-' + String(dd.getMonth() + 1).padStart(2, '0') + '-' + String(dd.getDate()).padStart(2, '0'); return true; });
   if (params.stage !== undefined) sim.command({ kind: 'setStage', stage: params.stage });
@@ -540,10 +549,13 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
         // şu anki cüzdan + toplanmamış kasası cebe, yeri değişmez (eskiden kasa yığını kayboluyor, misafir giriş yerine ışınlanıyordu)
         const pl = { ...(sim.state.player as unknown as AnyRec), x: walk.pos.x, z: walk.pos.z, kat: (walk as unknown as { kat?: number }).kat || 0 };
         const m = misafirDunya(guestWorld ? { ...own, money: sim.state.money + toplanmamisMaas(sim.rules.rt as never), gold: sim.state.gold, player: pl } : own, h);
-        guestWorld = true; sim.load(m as never); (sim.rules.rt as unknown as { misafir?: boolean }).misafir = true;
+        // QA 2026-11-27: bozuk / sahte ev sahibi dünyası yüklenemezse sim eski hâlinde kalır (headless.ts load), hata online.ts'e gider
+        try { sim.load(m as never); } catch (e) { if (!guestWorld) ownBackup = null; throw e; }
+        guestWorld = true; (sim.rules.rt as unknown as { misafir?: boolean }).misafir = true;
         if (!noSave && !save.readOnly) void ownSave.save('manual');   // kendi kaydı (ev sahibinin dünyası değil)
       },
-      earned: () => Number(sim.state.totalEarned) || 0,
+      earned: () => Number((sim.rules.rt as unknown as { misafirSatis?: number }).misafirSatis) || 0,   // yalnız misafirin satışı (sim/economy.ts book)
+      gelirDk: () => Number((sim.rules.rt as unknown as { rate?: number }).rate) || 0,   // ev sahibinin dakikalık geliri (kasa bütçesi, net/oda-dogrula.ts)
       money: () => sim.state.money,
       setMoney: (n: number) => { sim.state.money = n; },
       addKasa: (n: number, from: string) => { const v = sim.rules.credit!('diger', n); kasaToast += v; kasaFrom = from; return v; },   // misafirin satışı ev sahibinin kasasına (net/misafir.ts)
@@ -579,10 +591,12 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
       let synced = ''; try { synced = localStorage.getItem('martikoy-cloud-synced') || ''; } catch { /* */ }
       const wiped = !c && synced === me.id;   // it had a cloud save before and an admin deleted it
       let yuklendi = false;
-      if (yedek && await save.importCode(yedek.code)) { const r = await save.load(); sim.load(r.data); yuklendi = true; setTimeout(() => bulutPush(), 0); }
+      // sim.load bozuk durumda eski hâline döner ve hata atar (headless.ts): yerel yedek atlanır, bulut kaydı ise kilitlenir (ezilmez)
+      if (yedek && await save.importCode(yedek.code)) { const r = await save.load(); try { sim.load(r.data); yuklendi = true; setTimeout(() => bulutPush(), 0); } catch (e) { log.error('local backup unusable', e); } }
       if (!yuklendi && c && c.code && (foreign || cloudOnly || c.playT > (sim.state.playT || 0))) {
-        if (await save.importCode(c.code)) { const r = await save.load(); sim.load(r.data); yuklendi = true; }
-        else { bulutKilitle('bozuk'); return; }   // never fall through to a fresh character that would overwrite this slot
+        let ok = await save.importCode(c.code);
+        if (ok) { const r = await save.load(); try { sim.load(r.data); yuklendi = true; } catch (e) { log.error('cloud save unusable', e); ok = false; } }
+        if (!ok) { bulutKilitle('bozuk'); return; }   // never fall through to a fresh character that would overwrite this slot
       }
       if (!yuklendi && (foreign || wiped)) { sim.load(defaultState(seed ?? 1) as never); esnafimSave(sim.state).done = false; }
       if (slotFresh) esnafimSave(sim.state).done = false;
@@ -957,7 +971,9 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     const ms = platform.clock.now() - t0;
     P.frame(fdt * 1000);
     P.count('frameWorkMs', ms);
-    quality.feed(fdt * 1000, fdt, ms);
+    // 2026-11-23: frames under a full-screen overlay draw no world; fed to the auto-watch they read as 'calm' and could lift a weak
+    // laptop to a heavier tier (karakter atölyesi at the start, halı saha, ev)
+    if (!coverOpen()) quality.feed(fdt * 1000, fdt, ms);
     if (saveOn()) {
       save.tick(platform.clock.wall());
       if (sim.rules.ext.takeDirty()) void save.save('purchase');
@@ -1213,7 +1229,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   reg('exportSave', () => save.exportCode());
   reg('kayitDurum', () => kayitD.gorunum());
   reg('kayitIstek', () => { kayitD.istek(); });
-  reg('importSave', async (code: string) => { const ok = await save.importCode(code); if (ok) { const r = await save.load(); sim.load(r.data); } return ok; });
+  reg('importSave', async (code: string) => { const ok = await save.importCode(code); if (!ok) return false; const r = await save.load(); try { sim.load(r.data); return true; } catch { return false; } });
   reg('loop', () => ({ tick: loop.tick, paused: loop.paused, pauseWhy: loop.pauseWhy, simTime: loop.simTime, ...loop.stats(), nav: nav.stats?.() }));
   for (const k of ['select', 'drag', 'save']) if (!(target.editor as AnyRec | undefined)?.[k]) reg(`editor.${k}`, () => { throw new Error('editor not loaded (?edit=1)'); });
 

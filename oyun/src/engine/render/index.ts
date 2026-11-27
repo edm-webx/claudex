@@ -29,7 +29,7 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 import { akisGuncelle } from './doku-akis';
 import { groundRadius, nextShadowExt } from './shadow-fit';
-import { renderScale } from '../quality';
+import { pikselOrani } from '../quality';
 import { createReflector, reflectBudget, REFLECT_LAYER, type Reflector } from './reflect';
 
 export { todAt, phaseAt, TOD } from './tod';
@@ -262,7 +262,7 @@ export function createRender(deps: RenderDeps): MotorRender {
   // smaller and the last full-screen pass (GRADE) stretches it to the full canvas with linear filtering. Resizing the canvas
   // itself is a synchronous drawing-buffer reallocation (1-16 s per step in headless SwiftShader, olcek-gecis.mjs) and it was
   // done twice per step (setPixelRatio + resize). Akıcı has no post chain, so its canvas still follows the scale, once.
-  const basePR = (t: TierDef) => renderScale(t, (typeof window !== 'undefined' && window.devicePixelRatio) || 1);   // GRS-17: tier floor on DPR 1 screens
+  const basePR = (t: TierDef) => { const { w, h } = size(); return pikselOrani(t, (typeof window !== 'undefined' && window.devicePixelRatio) || 1, w, h); };   // GRS-17: tier floor on DPR 1 screens; QA 2026-11-27 piksel tavanı
   // GRS-17: the post chain runs in EVERY tier when the GPU can (WebGL2 + float colour buffer): the same program path in all tiers, so a
   // tier change relinks nothing (screen vs target toneMapping is in every program key). Akıcı only switches the bloom pass off and
   // gets the GRADE look too. Without float targets the old direct path stays (tier changes then relink; logged once).
@@ -554,6 +554,8 @@ export function createRender(deps: RenderDeps): MotorRender {
     resize() {
       const { w, h } = size();
       // a canvas size write reallocates the drawing buffer even when the value is the same: only when something changed
+      // QA 2026-11-27: yakınlaştırma / pencere boyu / ekran değişince oran (ve piksel tavanı) yeniden hesaplanır (eskiden açılıştaki kalıyordu)
+      if (renderer && tier) { const cp = canvasPR(tier); if (renderer.getPixelRatio() !== cp) renderer.setPixelRatio(cp); }
       if (renderer) { const pr = renderer.getPixelRatio(), cv = renderer.domElement; renderer.getSize(_rs); if (_rs.x !== w || _rs.y !== h || cv.width !== Math.floor(w * pr) || cv.height !== Math.floor(h * pr)) renderer.setSize(w, h, false); }
       if (composer && renderer) { composer.setPixelRatio(tier ? basePR(tier) * resScale : renderer.getPixelRatio()); composer.setSize(w, h); fxaaSize(); }
       rig.setAspect(w / h);

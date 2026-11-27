@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createQuality, guessTier, TIER_TABLE, SCALE_MIN } from '../../../src/engine/quality';
+import { createQuality, guessTier, gpuSinif, TIER_TABLE, SCALE_MIN, PROBE_SKIP } from '../../../src/engine/quality';
 import { createPlatform } from '../../../src/engine/platform';
 
 function memLs(): Storage {
@@ -21,18 +21,66 @@ describe('quality', () => {
   });
   it('guess follows v2 guessTier', () => {
     expect(guessTier(2, 8)).toBe('akici'); expect(guessTier(8, 4)).toBe('akici');
-    expect(guessTier(4, 8)).toBe('dengeli'); expect(guessTier(8, 8)).toBe('sahane');
+    expect(guessTier(4, 8)).toBe('dengeli'); expect(guessTier(8, 8)).toBe('dengeli');
     // PRF-13: phone never starts at sahane; dengeli only with 6+ GB and 8+ cores; desktop unchanged
     expect(guessTier(8, 8, true)).toBe('dengeli'); expect(guessTier(8, 6, true)).toBe('akici'); expect(guessTier(4, 8, true)).toBe('akici'); expect(guessTier(16, 16, true)).toBe('dengeli');
-    expect(guessTier(8, 8, false)).toBe('sahane');
+    expect(guessTier(8, 8, false)).toBe('dengeli');   // QA 2026-11-27: kart adı bilinmeyen 8 GB PC Şahane başlamaz
+  });
+  it('2026-11-23: ekran kartı adı ilk tahmine girer (iş laptopu Intel UHD Şahane açılmaz)', () => {
+    expect(gpuSinif('ANGLE (Intel, Intel(R) UHD Graphics 620 Direct3D11 vs_5_0 ps_5_0, D3D11)')).toBe('zayif');
+    expect(gpuSinif('ANGLE (Intel, Intel(R) Iris(R) Xe Graphics Direct3D11 vs_5_0 ps_5_0, D3D11)')).toBe('entegre');
+    expect(gpuSinif('ANGLE (AMD, AMD Radeon(TM) Graphics Direct3D11 vs_5_0 ps_5_0, D3D11)')).toBe('entegre');
+    expect(gpuSinif('ANGLE (NVIDIA, NVIDIA GeForce RTX 3060 Laptop GPU Direct3D11 vs_5_0 ps_5_0, D3D11)')).toBe('harici');
+    expect(gpuSinif('ANGLE (AMD, AMD Radeon RX 6600 Direct3D11 vs_5_0 ps_5_0, D3D11)')).toBe('harici');
+    expect(gpuSinif('ANGLE (Intel, Intel(R) Arc(TM) A770 Graphics Direct3D11 vs_5_0 ps_5_0, D3D11)')).toBe('harici');
+    expect(gpuSinif('ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)')).toBe('yazilim');
+    expect(gpuSinif('ANGLE (Microsoft, Microsoft Basic Render Driver Direct3D11 vs_5_0 ps_5_0, D3D11)')).toBe('yazilim');
+    expect(gpuSinif('')).toBe('');
+    expect(guessTier(8, 8, false, 'ANGLE (Intel, Intel(R) UHD Graphics 620 Direct3D11)')).toBe('akici');
+    expect(guessTier(8, 8, false, 'ANGLE (Intel, Intel(R) Iris(R) Xe Graphics Direct3D11)')).toBe('dengeli');
+    expect(guessTier(8, 8, false, 'ANGLE (NVIDIA, NVIDIA GeForce GTX 1650 Direct3D11)')).toBe('sahane');
+    expect(guessTier(8, 4, false, 'ANGLE (NVIDIA, NVIDIA GeForce GTX 1650 Direct3D11)')).toBe('akici');
+  });
+  it('2026-11-23: açılış sınaması yavaş başlangıçta kademeyi oyun sürerken de hemen düşürür, hızlıda dokunmaz', () => {
+    const ls = memLs();
+    ls.setItem('marti-quality', JSON.stringify({ setting: 'auto', autoTier: 'sahane' }));
+    const q = createQuality({ platform: plat('', ls) });
+    q.deferAuto?.(() => true);   // oyun sürüyor: normal izleme menüyü beklerdi
+    const changes: string[] = [];
+    q.onChange((t, why) => changes.push(`${t.name}:${why}`));
+    for (let i = 0; i < PROBE_SKIP * 60; i++) q.feed(200, 1 / 60);   // ilk saniyeler (shader ısınması) sayılmaz
+    expect(changes).toEqual([]);
+    for (let i = 0; i < 3 * 60 + 2; i++) q.feed(40, 1 / 60);          // 25 FPS
+    expect(changes).toEqual(['dengeli:probe']);
+    expect(q.neden?.()).toMatch(/açılış ölçümü: 25 FPS/);
+    for (let i = 0; i < (PROBE_SKIP + 4) * 60; i++) q.feed(40, 1 / 60);   // Dengeli de yavaş: bir basamak daha
+    expect(changes).toEqual(['dengeli:probe', 'akici:probe']);
+    expect(JSON.parse(ls.getItem('marti-quality')!).autoTier).toBe('akici');
+    // hızlı makine: sınama boyunca hiçbir şey değişmez, ölçek de oynamaz
+    const ls2 = memLs(); ls2.setItem('marti-quality', JSON.stringify({ setting: 'auto', autoTier: 'sahane' }));
+    const q2 = createQuality({ platform: plat('', ls2) }); const c2: string[] = []; q2.onChange(t => c2.push(t.name));
+    for (let i = 0; i < 25 * 60; i++) q2.feed(16.7, 1 / 60, 6);
+    expect(c2).toEqual([]); expect(q2.scale?.()).toBe(1);
+  });
+  it('2026-11-23: oyun içinde 30 FPS altı (2x hedef) menüyü beklemez, hafif yavaşlık bekler', () => {
+    const ls = memLs(); ls.setItem('marti-quality', JSON.stringify({ setting: 'auto', autoTier: 'dengeli' }));
+    const q = createQuality({ platform: plat('', ls), probe: false }); q.deferAuto?.(() => true);
+    const c: string[] = []; q.onChange(t => c.push(t.name));
+    for (let i = 0; i < 40 * 60; i++) q.feed(40, 1 / 60);
+    expect(c).toEqual(['akici']);
+    const ls2 = memLs(); ls2.setItem('marti-quality', JSON.stringify({ setting: 'auto', autoTier: 'dengeli' }));
+    const q2 = createQuality({ platform: plat('', ls2), probe: false }); q2.deferAuto?.(() => true);
+    const c2: string[] = []; q2.onChange(t => c2.push(t.name));
+    for (let i = 0; i < 40 * 60; i++) q2.feed(28, 1 / 60);   // ~36 FPS: düşüş kaydedilir, menüde uygulanır
+    expect(c2).toEqual([]); expect(q2.flushAuto?.()).toBe(true); expect(c2).toEqual(['akici']);
   });
   it('forced slow frames for 10 s drop one tier (auto), then max one change per minute', () => {
     const ls = memLs();
-    const q = createQuality({ platform: plat('', ls) });
+    const q = createQuality({ platform: plat('', ls), probe: false });
     q.set('auto');
     // force start at sahane via stored autoTier
     ls.setItem('marti-quality', JSON.stringify({ setting: 'auto', autoTier: 'sahane' }));
-    const q2 = createQuality({ platform: plat('', ls) });
+    const q2 = createQuality({ platform: plat('', ls), probe: false });
     expect(q2.current().name).toBe('sahane');
     const changes: string[] = [];
     q2.onChange((t, why) => changes.push(`${t.name}:${why}`));
@@ -48,16 +96,16 @@ describe('quality', () => {
   it('rises after 2 min calm', () => {
     const ls = memLs();
     ls.setItem('marti-quality', JSON.stringify({ setting: 'auto', autoTier: 'akici' }));
-    const q = createQuality({ platform: plat('', ls) });
+    const q = createQuality({ platform: plat('', ls), probe: false });
     for (let i = 0; i < 125 * 30; i++) q.feed(10, 1 / 30);
     expect(q.current().name).toBe('dengeli');
   });
   it('manual setting persists and disables auto drops', () => {
     const ls = memLs();
-    const q = createQuality({ platform: plat('', ls) });
+    const q = createQuality({ platform: plat('', ls), probe: false });
     q.set('akici');
     expect(q.current().name).toBe('akici');
-    const again = createQuality({ platform: plat('', ls) });
+    const again = createQuality({ platform: plat('', ls), probe: false });
     expect(again.setting()).toBe('akici'); expect(again.current().name).toBe('akici');
     again.set('sahane');
     for (let i = 0; i < 20 * 60; i++) again.feed(100, 1 / 60);
@@ -68,10 +116,10 @@ describe('quality', () => {
 describe('quality: oyun sırasında otomatik kademe bekler (PRF-03)', () => {
   it('oyun sürerken düşüş kaydedilir ama uygulanmaz; duraklama anında uygulanır', () => {
     const ls = memLs(); ls.setItem('marti-quality', JSON.stringify({ setting: 'auto', autoTier: 'sahane' }));
-    const q = createQuality({ platform: plat('', ls) }); const tiers: string[] = [];
+    const q = createQuality({ platform: plat('', ls), probe: false }); const tiers: string[] = [];
     q.onChange(t => tiers.push(t.name));
     let playing = true; q.deferAuto!(() => playing);
-    for (let i = 0; i < 90 * 60; i++) q.feed(40, 1 / 60);
+    for (let i = 0; i < 90 * 60; i++) q.feed(28, 1 / 60);   // ~36 FPS: hafif yavaşlık (2026-11-23: 2x hedefin üstü artık beklemez)
     expect(tiers).toEqual([]); expect(q.current().name).toBe('sahane');
     expect(q.scale!()).toBe(SCALE_MIN);   // in play the resolution scale carries the load
     expect(JSON.parse(ls.getItem('marti-quality')!).autoTier).toBe('dengeli');   // next load starts lower
@@ -81,11 +129,11 @@ describe('quality: oyun sırasında otomatik kademe bekler (PRF-03)', () => {
   });
   it('duraklamadaysa hemen uygulanır; elle seçilen kademede bekleyen atılır', () => {
     const ls = memLs(); ls.setItem('marti-quality', JSON.stringify({ setting: 'auto', autoTier: 'sahane' }));
-    const q = createQuality({ platform: plat('', ls) }); const tiers: string[] = [];
+    const q = createQuality({ platform: plat('', ls), probe: false }); const tiers: string[] = [];
     q.onChange(t => tiers.push(t.name)); q.deferAuto!(() => false);
     for (let i = 0; i < 90 * 60; i++) q.feed(40, 1 / 60);
     expect(tiers[0]).toBe('dengeli');
-    const q2 = createQuality({ platform: plat('', ls) }); let pl = true; q2.deferAuto!(() => pl);
+    const q2 = createQuality({ platform: plat('', ls), probe: false }); let pl = true; q2.deferAuto!(() => pl);
     for (let i = 0; i < 90 * 60; i++) q2.feed(40, 1 / 60);
     q2.set('sahane'); pl = false;
     expect(q2.flushAuto!()).toBe(false); expect(q2.current().name).toBe('sahane');
@@ -93,7 +141,7 @@ describe('quality: oyun sırasında otomatik kademe bekler (PRF-03)', () => {
 });
 
 describe('quality: dinamik çözünürlük (PRF-12)', () => {
-  const mk = (tier: string) => { const ls = memLs(); ls.setItem('marti-quality', JSON.stringify({ setting: 'auto', autoTier: tier })); return createQuality({ platform: plat('', ls) }); };
+  const mk = (tier: string) => { const ls = memLs(); ls.setItem('marti-quality', JSON.stringify({ setting: 'auto', autoTier: tier })); return createQuality({ platform: plat('', ls), probe: false }); };
   const run = (q: ReturnType<typeof mk>, sec: number, ms: number, work = ms) => { for (let i = 0; i < sec * 60; i++) q.feed(ms, 1 / 60, work); };
   it('yavaş karelerde ölçek adım adım düşer, tabanda durur, kademe hemen düşmez', () => {
     const q = mk('sahane'); const seen: number[] = []; q.onScale!(s => seen.push(s)); const tiers: string[] = [];

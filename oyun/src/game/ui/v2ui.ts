@@ -843,7 +843,7 @@ function renderAyarlar(m, A) {
     s += `<div class="sb-card sb-set">${ICONS.sound}<div class="sb-grow"><h3>Kendi müziğini dinle</h3><p>Oyunun müziği susar, çay kaşığı ve martılar kalır.</p></div><button class="sb-tog${om ? ' on' : ''}" data-a="setOwnMusic" data-id="${om ? 0 : 1}" aria-label="Kendi müziğini dinle" aria-pressed="${om}"></button></div>`;
   }
   if (A.setHaptic) { const hp = m.haptic !== false; s += `<div class="sb-card sb-set">${ICONS.vibrate}<div class="sb-grow"><h3>Titreşim</h3><p>Para toplarken kısa titreşim</p></div><button class="sb-tog${hp ? ' on' : ''}" data-a="setHaptic" data-v="${hp ? 0 : 1}" aria-label="Titreşim" aria-pressed="${hp}"></button></div>`; }
-  s += `<div class="sb-card"><div class="sb-set" style="min-height:0;margin-bottom:8px">${ICONS.quality}<div class="sb-grow"><h3>Görüntü kalitesi</h3><p>Otomatik, telefonuna göre ayarlar.</p></div></div><div class="sb-seg">${QUAL.map(x => `<button class="${q === x[0] ? 'on' : ''}" data-a="setQuality" data-v="${x[0]}">${x[1]}</button>`).join('')}</div><p class="sb-kalite" style="font-size:14px;margin:8px 2px 0">${kaliteSatiri(q, m.tierNow || null)}</p></div>`;
+  s += `<div class="sb-card"><div class="sb-set" style="min-height:0;margin-bottom:8px">${ICONS.quality}<div class="sb-grow"><h3>Görüntü kalitesi</h3><p>Otomatik, cihazına göre ayarlar.</p></div></div><div class="sb-seg">${QUAL.map(x => `<button class="${q === x[0] ? 'on' : ''}" data-a="setQuality" data-v="${x[0]}">${x[1]}</button>`).join('')}</div><p class="sb-kalite" style="font-size:14px;margin:8px 2px 0">${kaliteSatiri(q, m.tierNow || null, m.tierWhy || '')}</p></div>`;
   if (A.setTextScale) { const ts = +m.textScale || 1, on = v => Math.abs(ts - v) < 0.05 ? 'on' : ''; s += `<div class="sb-card"><div class="sb-set" style="min-height:0;margin-bottom:8px"><div class="sb-grow"><h3>Yazı boyutu</h3><p>Arayüzdeki yazılar ve düğmeler büyür.</p></div></div><div class="sb-seg"><button class="${on(1)}" data-a="setTextScale" data-v="1">Normal</button><button class="${on(1.2)}" data-a="setTextScale" data-v="1.2">Büyük</button><button class="${on(1.4)}" data-a="setTextScale" data-v="1.4">Çok büyük</button></div></div>`; }
   if (A.setCb) { const cb = !!m.cb; s += `<div class="sb-card sb-set"><div class="sb-grow"><h3>Renk körü işaretleri</h3><p>Başarı ve hata gibi durumlar renge ek olarak ✔ ✖ işaretiyle de gösterilir.</p></div><button class="sb-tog${cb ? ' on' : ''}" data-a="setCb" data-v="${cb ? 0 : 1}" aria-pressed="${cb}"></button></div>`; }
   if (A.setHand) { const hd = m.hand === 'sol' ? 'sol' : 'sag'; s += `<div class="sb-card"><div class="sb-set" style="min-height:0;margin-bottom:8px">${ICONS.hand}<div class="sb-grow"><h3>El tarafı</h3><p>Düğmeler elinin tarafına geçer.</p></div></div><div class="sb-seg two"><button class="${hd === 'sol' ? 'on' : ''}" data-a="setHand" data-v="sol">Sol el</button><button class="${hd === 'sag' ? 'on' : ''}" data-a="setHand" data-v="sag">Sağ el</button></div></div>`; }
@@ -1043,8 +1043,8 @@ ${sl('music', 'Müzik')}${sl('sfx', 'Efekt sesleri')}
     if (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName) && e.target.type !== 'range') return;
     if (faz === 'basla') { e.preventDefault(); menuyuAc(); return; }
     if (panel) { if (e.key === 'Escape' || e.key === 'Backspace') { e.preventDefault(); kapatPanel(); } return; }
-    if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') { e.preventDefault(); isaretle(sec + 1, true); }
-    else if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') { e.preventDefault(); isaretle(sec - 1, true); }
+    if (e.key === 'ArrowDown' || e.code === 'KeyS') { e.preventDefault(); isaretle(sec + 1, true); }
+    else if (e.key === 'ArrowUp' || e.code === 'KeyW') { e.preventDefault(); isaretle(sec - 1, true); }
     else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); sec_(MENU[sec][0]); }
     else return;
     e.stopPropagation();
