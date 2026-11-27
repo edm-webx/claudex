@@ -234,10 +234,11 @@ export function createMahalle(d: MahalleDeps): MahalleView {
     }
     // belediye altyapı sahası: betoniyer, el arabası, jeneratör (kit), çöp kamyonu park
     { const s = santiyeKur({ w: 4.0, d: 6.0, plan: { ...SETLER.orta, cit: false, toz: 10 }, iskeleYer: 'yok', cit: false, serit: false }); s.g.position.set(288.0, 0.14, -1.2); root.add(s.g); sites.push({ s, p: () => 0.5 }); }
-    loadGlb('auto/garbage-truck').then(src => { if (!src) return; const g = fitClone(src, 2.3, 6.0, undefined, 0); g.position.set(285.0, 0.14, 1.0); g.rotation.y = 0.1; root.add(g); });
-    solid.push({ x0: 283.8, x1: 286.2, z0: -2.0, z1: 4.0 });
+    // 2026-11-27: çöp kamyonu modeli dist'te yoktu (görünmez duvar); yerine KayKit istasyon arabası park, çarpıştırıcı gövdeye uyar
+    loadGlb('auto/kk-stationwagon').then(src => { if (!src) return; const g = fitClone(src, 1.6, 4.0, undefined, Math.PI / 2); g.position.set(285.0, 0.14, 1.0); g.rotation.y = 0.1; root.add(g); });
+    solid.push({ x0: 284.0, x1: 286.0, z0: -1.1, z1: 3.1 });
     // cadde trafiği: iki şerit, karşılıklı; arabalar köprü altından girip çıkar
-    const CARS = ['sedan', 'taxi', 'hatchback-sports', 'van', 'suv', 'delivery'];
+    const CARS = ['kk-sedan', 'kk-taxi', 'kk-hatchback', 'kk-stationwagon', 'kk-police'];
     for (let i = 0; i < 5; i++) {
       const lane = i % 2, g = new T.Group(); root.add(g);
       const body = new Batch(); body.box(4.0, 0.6, 1.6, ['#3f7fd0', '#ffd23f', '#e0533c', '#f4f2ec', '#2f9d59'][i], 0, 0.64, 0); body.box(2.0, 0.55, 1.45, ['#3f7fd0', '#ffd23f', '#e0533c', '#f4f2ec', '#2f9d59'][i], -0.2, 1.2, 0); const bm = body.mesh(solidMat()); geos.push(bm.geometry); g.add(bm);

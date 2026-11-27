@@ -83,12 +83,12 @@ export function karsiPrefabs(): PrefabDef[] {
   defs.push(bld('kr.kafe1', 7, 9.4, 3.8, '#f1d9b4', '#c2551f', '+x', [], true, 'kafe1'), bld('kr.kafe2', 7, 9.4, 3.8, '#f1d9b4', '#c2551f', '+x', [], true, 'kafe2'));
   defs.push(bld('kr.banka', 10, 8.4, 6.6, '#e9dfc8', '#fbf6ea', '+z', [], true, 'banka'));
   defs.push(bld('kr.kirtasiye', 5.0, 3.6, 3.0, '#bfd8e8', '#2b6fb8', '+z', [], true, 'kirtasiye'));
-  defs.push(bld('kr.okul', 18.3, 7.5, 8.0, '#e9c98f', '#a2472f', '+z', [], true, 'okul'));
+  defs.push(bld('kr.okul', 18.3, 7.5, 8.0, '#e9c98f', '#a2472f', '-z', [], true, 'okul'));
   defs.push(bld('kr.kantin', 3.7, 2.8, 3.0, '#f6efe1', '#e0533c', '-x', [box(3.6, 0.15, 1.2, 0, 2.4, 1.9, '#e0533c')], true));
   defs.push(bld('kr.avm', 16.9, 10.6, 9.5, '#cfd6e6', '#3f4a6b', '-z', [], true));   // 2026-11-21 owner: the inside is its own map (content/avm-kat.ts, sim/avm-gecis.ts): here a closed shell, the door at its front moves you in
   defs.push(bld('kr.hastane', 16.9, 6.7, 12.0, '#f2f4f6', '#d93a3a', '-z', [...redCross(0, 10.0, 3.5)], true, 'hastane'));
-  defs.push(bld('kr.acil', 3.3, 3.2, 3.6, '#f2f4f6', '#d93a3a', '-x', [], true, 'acil'));     // walls: view/world/karsi-bina.ts
-  defs.push(bld('kr.morg', 3.3, 3.2, 3.2, '#c9ced6', '#5b6068', '-x', [], true, 'morg'));
+  defs.push(bld('kr.acil', 3.3, 3.2, 3.6, '#f2f4f6', '#d93a3a', '+x', [], true, 'acil'));     // walls: view/world/karsi-bina.ts
+  defs.push(bld('kr.morg', 3.3, 3.2, 3.2, '#c9ced6', '#5b6068', '+x', [], true, 'morg'));
   // metro exit: the model (glass canopy, stairs, totem) is view/world/karsi-bina.ts; colliders stay
   defs.push({ id: 'kr.metro', parts: [box(3.4, 0.12, 6.0, 0, 0.06, 0, '#b9ad99')], colliders: [R(0.3, 5.6, -1.5, 0), R(0.3, 5.6, 1.5, 0), R(3, 0.3, 0, -2.75)] });
   // ambulance park: paved lot with two parked ambulances
@@ -110,7 +110,7 @@ export const KARSI_FOUNTAIN = { x: -3.9, z: 45 };
 export const KARSI_AVM = { x: 20.15, z: 51.8 };
 export const KARSI_PITCH = { x: -39.4, z: 45.4, w: 25.2, d: 17.8 };
 const P = (id: string, prefab: string, x: number, z: number, rotY?: number): PrefabPlacement => ({ id, prefab, pos: { x, z }, ...(rotY ? { rotY } : {}) });
-export const KARSI_TREES: [number, number][] = [[-59.5, 34], [-59.5, 46], [-59.5, 55], [60.2, 36], [60.2, 46], [60.2, 57], [-44, 58.2], [-28, 58.2], [-10, 58.2], [3, 58.2], [18, 58.2], [34, 58.2], [47, 58.2], [-48, 31], [-30, 31], [-8, 31.5], [10, 31], [34, 31], [52, 31.2]];
+export const KARSI_TREES: [number, number][] = [[-59.5, 34], [-59.5, 46], [-59.5, 55], [60.2, 36], [60.2, 46], [60.6, 58.4], [-44, 58.2], [-28, 58.2], [-10, 58.2], [3, 58.2], [18, 58.2], [34, 58.2], [47, 58.2], [-48, 31], [-30, 31], [-8, 31.5], [10, 31], [34, 31], [52, 31.2]];
 
 export function karsiProps(): PrefabPlacement[] {
   const out: PrefabPlacement[] = [];

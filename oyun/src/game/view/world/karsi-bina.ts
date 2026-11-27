@@ -204,19 +204,19 @@ const SPECS: Spec[] = [
     sign: { text: '⚓ SAHİL KAFE', bg: '#1d4f86', fg: '#ffffff' }, win: { w: 1.1, h: 1.45, gap: 1.0, frame: '#fbfaf6', shutter: '#2b6fb8', flower: true }, extra: cafeTerrace },
   { id: 'kirtasiye', x: 29.7, z: 35.2, wx: 5.0, wz: 3.6, front: '-z', floors: 1, fh: 3.0, wall: '#bcd7ea', trim: '#f4f4f0', accent: '#ffd23f', ground: 'shop', lit: 0.6, roof: 'tile',
     sign: { text: '✏️ KIRTASİYE', bg: '#ffd23f', fg: '#1d3557' }, win: { w: 1.0, h: 1.4, gap: 0.9, frame: '#f4f4f0', balcony: true }, extra: stationeryRack },
-  { id: 'okul', x: 48.85, z: 37.25, wx: 18.3, wz: 7.5, front: '+z', floors: 3, fh: 3.2, wall: '#efc98c', trim: '#a2472f', accent: '#a2472f', ground: 'entrance', lit: 0.25, roof: 'flat',
+  { id: 'okul', x: 48.85, z: 37.25, wx: 18.3, wz: 7.5, front: '-z', floors: 3, fh: 3.2, wall: '#efc98c', trim: '#a2472f', accent: '#a2472f', ground: 'entrance', lit: 0.25, roof: 'flat',
     sign: { text: 'MARTIKÖY İLKOKULU', bg: '#fbf3e4', fg: '#a2472f', w: 8.4 }, win: { w: 1.5, h: 1.7, gap: 0.8, frame: '#fbfaf6' }, extra: schoolExtras },
-  { id: 'kantin', x: 56.15, z: 42.8, wx: 3.7, wz: 2.8, front: '-x', floors: 1, fh: 3.0, wall: '#f6efe1', trim: '#e0533c', accent: '#e0533c', ground: 'hatch', lit: 0.5, roof: 'tile',
+  { id: 'kantin', x: 56.15, z: 42.8, wx: 3.7, wz: 2.8, front: '+x', floors: 1, fh: 3.0, wall: '#f6efe1', trim: '#e0533c', accent: '#e0533c', ground: 'hatch', lit: 0.5, roof: 'tile',
     sign: { text: 'KANTİN', bg: '#e0533c', fg: '#ffffff', w: 2.4 }, win: { w: 0.8, h: 0.9, gap: 0.8, frame: '#fbfaf6' } },
   { id: 'avm', x: AVM_BINA.x, z: AVM_BINA.z, wx: AVM_BINA.wx, wz: AVM_BINA.wz, front: '-z', floors: 3, fh: 3.6, wall: '#d7dde8', trim: '#3f4a6b', accent: '#e0533c', ground: 'shop', lit: 0.8, roof: 'flat', curtain: true,
     sign: { text: 'MARTI AVM', bg: '#e0533c', fg: '#ffffff', w: 8.0 }, win: { w: 2.2, h: 2.2, gap: 0.6, frame: '#3f4a6b' }, extra: mallExtras, doors: [-0.62, 0.62] },
   { id: 'hastane', x: 46.95, z: 53.55, wx: 16.9, wz: 6.7, front: '-z', floors: 4, fh: 3.0, wall: '#f2f4f6', trim: '#9aa5b0', accent: '#d93a3a', ground: 'entrance', lit: 0.65, roof: 'flat',
     sign: { text: 'DEVLET HASTANESİ', bg: '#ffffff', fg: '#d93a3a', w: 8.0 }, win: { w: 1.3, h: 1.5, gap: 0.7, frame: '#9fb9d0' }, extra: hospitalExtras },
-  { id: 'acil', x: 57.3, z: 52.0, wx: 3.3, wz: 3.2, front: '-x', floors: 1, fh: 3.3, wall: '#f2f4f6', trim: '#d93a3a', accent: '#d93a3a', ground: 'entrance', lit: 0.9, roof: 'flat',
+  { id: 'acil', x: 57.3, z: 52.0, wx: 3.3, wz: 3.2, front: '+x', floors: 1, fh: 3.3, wall: '#f2f4f6', trim: '#d93a3a', accent: '#d93a3a', ground: 'entrance', lit: 0.9, roof: 'flat',
     sign: { text: 'ACİL', bg: '#d93a3a', fg: '#ffffff', w: 2.4 }, win: { w: 0.8, h: 1.0, gap: 0.7, frame: '#d93a3a' } },
   { id: 'banka', x: 11.7, z: 36.8, wx: 10, wz: 8.4, front: '+z', floors: 2, fh: 3.3, wall: '#e9dfc8', trim: '#fbf6ea', accent: '#c9a23a', ground: 'entrance', lit: 0.35, roof: 'flat',
     sign: { text: 'MARTI KASASI BANKASI', bg: '#1f3a5f', fg: '#f2c230', w: 6.6 }, win: { w: 1.2, h: 1.8, gap: 0.9, frame: '#c9a23a' }, extra: bankExtras },
-  { id: 'morg', x: 57.3, z: 55.5, wx: 3.3, wz: 3.2, front: '-x', floors: 1, fh: 3.1, wall: '#b9bec6', trim: '#5b6068', accent: '#5b6068', ground: 'garage', lit: 0.05, roof: 'flat',
+  { id: 'morg', x: 57.3, z: 55.5, wx: 3.3, wz: 3.2, front: '+x', floors: 1, fh: 3.1, wall: '#b9bec6', trim: '#5b6068', accent: '#5b6068', ground: 'garage', lit: 0.05, roof: 'flat',
     sign: { text: 'MORG', bg: '#3c4146', fg: '#c9ced6', w: 1.8 }, win: { w: 0.5, h: 0.5, gap: 1.6, frame: '#5b6068' } },
   // 2026-11-08: halı saha tesis binası (locker rooms + cafeteria, roof tribune facing the pitch) instead of the west stand
   { id: 'tesis', x: -54.1, z: 45.4, wx: 3.7, wz: 17.8, front: '+x', floors: 2, fh: 2.8, wall: '#eef2f4', trim: '#2f9e5a', accent: '#2f9e5a', ground: 'shop', lit: 0.55, roof: 'flat',
@@ -278,7 +278,7 @@ function schoolExtras(k: Kit, L: Dim) {
   const { b, grp } = k, fz = L.d / 2;
   // clock above the entrance, flag pole in the yard, bike rack
   b.cyl(0.55, 0.55, 0.1, '#fbfaf6', 0, L.H - 1.6, fz + 0.08, { rx: Math.PI / 2, seg: 18 }); b.box(0.04, 0.38, 0.03, '#2a2d33', 0, L.H - 1.48, fz + 0.15, O); b.box(0.28, 0.04, 0.03, '#2a2d33', 0.12, L.H - 1.6, fz + 0.15, O);
-  const px = L.w / 2 - 1.5, pz = fz + 3.0; b.cyl(0.06, 0.08, 9, '#d3d7dc', px, 4.5, pz, { seg: 8 }); b.box(1.2, 0.3, 1.2, '#b9b3a6', px, 0.15, pz, O);
+  const px = L.w / 2 - 1.5, pz = -(fz + 2.2); b.cyl(0.06, 0.08, 9, '#d3d7dc', px, 4.5, pz, { seg: 8 }); b.box(1.2, 0.3, 1.2, '#b9b3a6', px, 0.15, pz, O);
   const flagTex = (() => { const c = document.createElement('canvas'); c.width = 192; c.height = 128; const g = c.getContext('2d')!; g.fillStyle = '#e30a17'; g.fillRect(0, 0, 192, 128); g.fillStyle = '#fff'; g.beginPath(); g.arc(70, 64, 32, 0, Math.PI * 2); g.fill(); g.fillStyle = '#e30a17'; g.beginPath(); g.arc(78, 64, 26, 0, Math.PI * 2); g.fill(); g.fillStyle = '#fff'; g.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 6 : 15; g.lineTo(112 + Math.cos(a) * r, 64 + Math.sin(a) * r); } g.fill(); const t = new T.CanvasTexture(c); t.colorSpace = T.SRGBColorSpace; return t; })();
   const flag = new T.Mesh(new T.PlaneGeometry(1.8, 1.2, 8, 1), new T.MeshLambertMaterial({ map: flagTex, side: T.DoubleSide })); flag.position.set(px + 0.92, 8.3, pz); flag.name = 'bayrak'; grp.add(flag);
   for (let i = 0; i < 5; i++) b.tor(0.32, 0.03, '#5b6068', -L.w / 2 + 2 + i * 0.5, 0.35, fz + 1.2, { ry: Math.PI / 2, rs: 5, ts: 12, arc: Math.PI });

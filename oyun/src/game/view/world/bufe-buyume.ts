@@ -20,7 +20,7 @@ import * as T from 'three';
 import { IC_BY_ID, icColliders, icIcinde, mutfakOda, MUTFAK_YER } from '../../../content/ic-mekan';
 import { kanatDik, kanatKapi, kanatAcikMi, revakDirek, onDolgu, mutfakUc, restoranDuvar, restoranAlani, sefKatGizli, terasGizli, saksiYer, RES_H, TERAS_Y, TERAS_Z, KANAT_W, KOSK, KOSK_KAPI, KOSK_KAPI_W, KOSK_STAGE, SEF_KAT_STAGE, SOV, FISKIYE } from '../../../content/restoran-plan';
 import { KIOSK_STAGES } from '../../../content/stages';
-import { WB, WT, EB, ET, insaatAlani } from '../../../content/insaat';
+import { WB, WT, EB, ET, insaatAlani, kuleKonum, yiginKonum, vincKonum } from '../../../content/insaat';
 import { Batch } from '../../../engine/prefab/batch';
 import { SETLER, bufeBoyut } from '../../../content/santiye';
 import { merdiven, boyaKovasi, torba, elArabasi, kumYigini, tuglaPaleti, tuvalet, jenerator } from './santiye-kit';
@@ -450,7 +450,7 @@ function buildSite(to: number): { g: T.Group; hook: T.Object3D | null; planks: T
   const R = insaatAlani(to), X0 = R.x0, X1 = R.x1, Z0 = R.z0, Z1 = R.z1, XC = cx(R), small = to <= 2;
   const set = SETLER[bufeBoyut(to)];   // 2026-11-26 sahip: makine ve alet işin büyüklüğüne göre (content/santiye.ts)
   const g = new T.Group(); g.name = 'insaat'; const b = new Batch(); const planks: T.Object3D[] = [];
-  const towers: [number, number][] = small ? [[X0 + 0.9, Z0 + 0.5], [X1 - 0.9, Z0 + 0.5]] : [[X0 + 0.9, Z0 + 0.9], [X1 - 0.9, Z0 + 0.9], [X0 + 0.9, Z1 - 0.9], [X1 - 0.9, Z1 - 0.9]];
+  const towers: [number, number][] = kuleKonum(to).map(v => [v.x, v.z]);
   const th = small ? 2.6 : 4.2;
   for (const [x, z] of towers) {   // scaffold towers: tubes, plank decks, toe boards, diagonal braces, green netting
     for (const [dx, dz] of [[-0.6, -0.6], [0.6, -0.6], [-0.6, 0.6], [0.6, 0.6]]) b.box(0.06, th, 0.06, '#c9ced6', x + dx, th / 2, z + dz);
@@ -461,7 +461,7 @@ function buildSite(to: number): { g: T.Group; hook: T.Object3D | null; planks: T
   // tower crane at the sea-side corner of the site: only big jobs (salon wings, glass roof, palace). Small and medium jobs get hand tools.
   let hook: T.Object3D | null = null;
   if (set.kuleVinc || set.mobilVinc) {
-    const ccx = X0 < 0 ? X0 + 0.6 : X1 - 0.6, ccz = Math.max(PIER.z0 + 0.8, Z0 - 0.2), dir = X0 < 0 ? 1 : -1;
+    const vk = vincKonum(to), ccx = vk.x, ccz = vk.z, dir = X0 < 0 ? 1 : -1;
     b.box(0.8, 0.4, 0.8, '#5b6068', ccx, 0.2, ccz); for (let y = 0; y < 11; y += 1) { for (const [ox, oz] of [[-0.3, -0.3], [0.3, -0.3], [-0.3, 0.3], [0.3, 0.3]]) b.box(0.06, 1, 0.06, '#ffd23f', ccx + ox, y + 0.9, ccz + oz); b.box(0.66, 0.05, 0.05, '#ffd23f', ccx, y + 0.5, ccz - 0.3, { rz: 0.8 }); }
     b.box(13, 0.35, 0.5, '#ffd23f', ccx + dir * 5.5, 11.6, ccz); b.box(1.4, 1.0, 1.0, '#e0533c', ccx, 12.2, ccz); b.box(1.5, 0.9, 0.9, '#5b6068', ccx - dir * 2.2, 11.3, ccz);
     hook = new T.Group(); hook.position.set(ccx + dir * 8, 11.4, ccz); const cable = new T.Mesh(new T.BoxGeometry(0.03, 6, 0.03), new T.MeshLambertMaterial({ color: '#222' })); cable.position.y = -3; hook.add(cable);
@@ -469,7 +469,8 @@ function buildSite(to: number): { g: T.Group; hook: T.Object3D | null; planks: T
   }
   // barriers along the open (promenade) side, material pile, cement mixer, site board
   for (let x = X0 + 0.8; x < X1 - 0.6; x += 1.6) { b.box(1.3, 0.8, 0.2, '#f4f2ec', x, 0.4, Z1 + 0.35); b.box(1.32, 0.18, 0.22, '#e0533c', x, 0.55, Z1 + 0.35); }
-  for (let i = 0; i < 5; i++) b.box(2.0, 0.08, 0.3, i % 2 ? '#c8955a' : '#b07d48', X1 - 1.6, 0.06 + i * 0.09, Z0 + 1.8 + (i % 2) * 0.05);
+  const yg = yiginKonum(to);   // kalas yığını: ustaların kalas aldığı nokta (content/insaat.ts)
+  for (let i = 0; i < 5; i++) b.box(2.0, 0.08, 0.3, i % 2 ? '#c8955a' : '#b07d48', yg.x, 0.06 + i * 0.09, yg.z + (i % 2) * 0.05);
   if (set.betoniyer || set.pompa) { b.cyl(0.38, 0.3, 0.7, '#e0533c', X0 + 2.2, 0.75, Z1 - 0.8, { seg: 10, rz: 0.5 }); b.box(0.9, 0.35, 0.6, '#5b6068', X0 + 2.2, 0.2, Z1 - 0.8); }
   if (set.boya) { merdiven(b, X0 + 2.0, (Z0 + Z1) / 2, Math.PI / 2, 1.6); boyaKovasi(b, X0 + 3.0, Z1 - 0.4, '#e0533c'); boyaKovasi(b, X0 + 3.4, Z1 - 0.5); torba(b, X1 - 2.6, Z1 - 0.45, 3); }
   if (set.elArabasi) { elArabasi(b, X0 + 3.4, Z1 - 1.0, 0.6); kumYigini(b, X1 - 1.4, Z1 - 1.2, 0.8); tuglaPaleti(b, X1 - 3.0, Z1 - 1.1, 0.2); }
