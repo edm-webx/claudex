@@ -30,7 +30,7 @@ export const DEFAULT_TABLE: AmbienceTable = {
   '*': [
     { id: 'deniz', loop: 'deniz', gain: 0.42, shots: [
       { id: 'gull', gain: 0.35, minS: 9, maxS: 18, when: 'day' }, { id: 'creak', gain: 0.3, minS: 14, maxS: 30 },
-      { id: 'spoon', gain: 0.3, minS: 20, maxS: 45 }, { id: 'horn', gain: 0.22, minS: 40, maxS: 90 },
+      { id: 'spoon', gain: 0.3, minS: 20, maxS: 45 },
       { id: 'simitci', gain: 0.4, minS: 45, maxS: 100, when: 'day' }, { id: 'seasonCall', gain: 0.4, minS: 30, maxS: 70 },
       { id: 'thunder', gain: 0.7, minS: 12, maxS: 30, weather: ['firtina'] }] },
     { id: 'izgara', loop: 'izgara', gain: 1, dyn: 'grill' },

@@ -15,7 +15,7 @@
 // - ownMusicMode(true): music bus muted, effects stay. suspend(true): context.suspend() (hidden page).
 // - ses builder additions: without a `music.*` sample the procedural lo-fi engine (lofi.ts) plays (place signature,
 //   day-phase variant, crowd layers, event layer, weather muffle). It only runs while the music bus is audible (not
-//   muted, volume > 0, not own-music mode, page visible). Ambience adds a distant vapur düdüğü, the simitçi's
+//   muted, volume > 0, not own-music mode, page visible). Ambience adds the simitçi's
 //   "taze simiiit" call (morning/noon), çay kaşığı, gulls, creaks and a grill sizzle loop whose level follows the
 //   listener's distance to the grill (ambience.setGrill). jingle() = İskele Radyosu jingle (ducks the music).
 //   On iOS the session type is 'ambient' so the phone's silent switch keeps the game quiet (ses-5).

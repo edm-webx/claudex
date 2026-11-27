@@ -12,7 +12,7 @@ describe('ses-db bütçe tablosu', () => {
   it('para sesleri yumuşak: merkez < 1500 Hz, tepe < 0.25 (gerçekte ~0.1)', () => {
     for (const id of SOFT_PARA) { const o = sesOlc(id); expect(o.merkez, id).toBeLessThan(1500); expect(o.tepe, id).toBeLessThan(0.25); }
   });
-  it("vapur düdüğü ve gök gürültüsü alçak ve kısık: merkez < 800 Hz", () => {
+  it("korna ve gök gürültüsü alçak ve kısık: merkez < 800 Hz", () => {
     for (const id of ['horn', 'thunder', 'bad']) expect(sesOlc(id).merkez, id).toBeLessThan(800);
   });
   it('tiz sürtünme sesleri (fizz, buhar) 6 kHz merkez altında', () => {

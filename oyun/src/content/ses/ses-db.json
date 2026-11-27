@@ -3,7 +3,7 @@
  "engine": "marti-synth",
  "about": "Martı Synth ses veritabanı. Her ses katmanlardan oluşur (tone / noise / pluck / omni / burst). Oyun açılınca bir kez sentezlenip önbelleğe alınır; .mp3/.wav yok. 'patches' içine omni_synth_256_pro sayfasındaki 'JSON olarak kopyala' çıktısı aynen yapıştırılabilir ve bir katmanda { k: 'omni', patch: 'isim' } diye kullanılır.",
  "patches": {
-  "vapur": {
+  "korna": {
    "masterVol": -6,
    "osc1Vol": -60,
    "osc2Vol": -60,
@@ -400,7 +400,7 @@
   "horn": {
    "cooldown": 4000,
    "rev": 0.4,
-   "note": "Vapur düdüğü: alçak iki ses (Bb2 + F3), nefesli, boğazda yankılanır; altta omni 'vapur' gövde titreşimi. Yumuşatıldı: tepe < 0.45.",
+   "note": "Korna: alçak iki ses (Bb2 + F3), nefesli, boğazda yankılanır; altta omni 'korna' gövde titreşimi. Yumuşatıldı: tepe < 0.45.",
    "layers": [
     {
      "k": "tone",
@@ -457,7 +457,7 @@
     },
     {
      "k": "omni",
-     "patch": "vapur",
+     "patch": "korna",
      "note": "Bb1",
      "hold": 1.6,
      "v": 0.2
@@ -3853,7 +3853,7 @@
   },
   "tracks": {
    "gunduz": {
-    "note": "Nihavend (La), saz arpejleri, keman, hafif darbuka: vapur iskelesinde güneşli öğle.",
+    "note": "Nihavend (La), saz arpejleri, keman, hafif darbuka: iskelede güneşli öğle.",
     "bpm": 86,
     "root": "A3",
     "scale": [
@@ -4365,7 +4365,7 @@
     "density": 0.7
    },
    "sabah": {
-    "note": "Uşşak (La), elektrik piyano ve ney: ilk çay, ilk vapur.",
+    "note": "Uşşak (La), elektrik piyano ve ney: ilk çay, ilk simit.",
     "bpm": 78,
     "root": "A3",
     "scale": [

@@ -16,7 +16,6 @@ Tüm klipler 16 sn, 48 kHz Opus. Uçlarda 1,5 sn eşit güç çapraz geçişle d
 | orman_kenari.opus | GameAudioBundle3of9 | Pole Position - Ambiences for Atmos Vol 2 Suburb Outskirts | AMB - 7.1.4 - Suburb Outskirts - Forest Edge - Outside Summerhouse - Many Birds - Wind - Atmos - MKH8040 - Ltf_Rtf.wav (stereo çift mono'ya indirildi) | 270,0 sn |
 | deniz (stereo 72k).opus | 2of9 | Nick McMahan - Cascadia Shore Waves | WATRSurf_Ocean Medium to Large Rocks 02 Loop_Cascadia Shore Waves.wav | 98,5 sn |
 | deniz_sakin.opus | 2of9 | Nick McMahan - Cascadia Shore Waves | WATRLap_Lake Small Sandy Beach Loop_Cascadia Shore Waves.wav (göl kıyısı, sakin dalga) | 160,5 sn |
-| vapur.opus | 2of9 | Jake Fielding - Industrial Harbor | BOATMisc_Boats going past, Port_Jake Fielding_Industrial Harbor.wav | 86,5 sn |
 | liman.opus | 2of9 | Jake Fielding - Industrial Harbor | AMBInd_Distant Port Atmos, Dover, Industrial, Vehicles,_Jake Fielding_Industrial Harbor.wav | 41,0 sn |
 | liman_dalga.opus | 2of9 | Jake Fielding - Industrial Harbor | WATRWave_Water Lapping against port_Jake Fielding_Industrial Harbor.wav | 21,0 sn |
 | marina.opus | 6of9 | Rogue Waves - Yacht & Marina | AMBNaut_Atmos, EXT Marina, boats, rope creaking,_RogueWaves_YachtMarina_11.wav | 9,5 sn |

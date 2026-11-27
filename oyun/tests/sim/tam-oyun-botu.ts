@@ -133,8 +133,8 @@ async function kos(o: { tohum?: number; maxDk: number; hedefAsama?: number; tika
       basla({ ad: 'kasa ' + a.id, x: c.x, z: c.z, kat: m.kat || 0, sure: 3, yap: () => (plots(S)[a.id]?.till || 0) < 1 });
       return;
     }
-    // 6) karnede şıklık 4'ün altındaysa dekor: tek renk ailesinden en çok puanlıları al, yerleşimi ona çevir (dekor paneli)
-    if ((S.grades.siklik || 1) < 4 && S.stage >= 2 && dekor()) return;
+    // 6) karnede şıklık 5'in altındaysa dekor (2026-11-27: 5★ için şıklık 5 gerekiyor; <4 iken bot 4'te kalıp aşama 4'te takılıyordu): tek renk ailesinden en çok puanlıları al, yerleşimi ona çevir (dekor paneli)
+    if ((S.grades.siklik || 1) < 5 && S.stage >= 2 && dekor()) return;
     // 7) sıradaki dükkânın görevleri: eksik ne ise onu yap
     const d = durumOf(S), sira = siradaki(d);
     if (sira) {
@@ -272,14 +272,14 @@ async function kos(o: { tohum?: number; maxDk: number; hedefAsama?: number; tika
         if (o.kayit !== false) await kaydetYukle();
         if (S.stage >= hedef) break;
       }
-      if (sn % 600 === 0) o.izle?.(`${r1(S.playT / 60)} dk aşama ${S.stage} sev ${S.level} ★${S.stars} servis ${S.stats?.served | 0} para ${Math.round(S.money)} dükkân ${Object.keys(plots(S)).join(',')} kareler ${(rt.pads as any[]).map(p => p.key + (/🔒/.test(p.sub || '') ? '🔒' : '')).join(' ')}`);
+      if (sn % 600 === 0) o.izle?.(`${r1(S.playT / 60)} dk şıklık ${rt.siklik}/${S.decorSlots.length}/${rt.layout.slots.length} aşama ${S.stage} sev ${S.level} ★${S.stars} servis ${S.stats?.served | 0} para ${Math.round(S.money)} dükkân ${Object.keys(plots(S)).join(',')} kareler ${(rt.pads as any[]).map(p => p.key + (/🔒/.test(p.sub || '') ? '🔒' : '')).join(' ')}`);
       if (S.money > paraTepe * 1.15) { paraTepe = S.money; ilerle(); }   // hedefe para biriktirmek de ilerlemedir (gelir büyümüyorsa tıkanma)
       if (S.playT - sonIlerleme > tikanmaS) { tikanma = teshis(); o.izle?.('TIKANMA ' + tikanma); break; }
     }
   }
   function teshis(): string {
     const d = durumOf(S), sira = siradaki(d), n = KIOSK_STAGES[S.stage];
-    const yil = `[★ rapor: kare ${Object.keys(S.owned).filter(k => S.owned[k]).length}, plaket ${S.plaque || 0}, gurme ${!!S.gurmePass}, notlar ${JSON.stringify(S.grades)}, kademe ${JSON.stringify(S.tiers)}] `;
+    const yil = `[★ rapor: kare ${Object.keys(S.owned).filter(k => S.owned[k]).length}, plaket ${S.plaque || 0}, gurme ${!!S.gurmePass}, notlar ${JSON.stringify(S.grades)}, kademe ${JSON.stringify(S.tiers)}, şıklık ${rt.siklik} (hedef ${siklik(dekorHedef(rt.layout.slots.map((x: any) => x.size), S.stage), S.stage)}, yuva ${rt.layout.slots.length}, dekor ${S.decorSlots.length})] `;
     return yil + `${r1(S.playT / 60)} dk: aşama ${S.stage}, ★${S.stars}, sev ${S.level}, para ${Math.round(S.money)}; sonraki büfe aşaması ${n ? (n.cost + ' ₺, ' + (n.req?.stars || 0) + '★') : 'yok'}${S.tadilat ? ' (tadilat sürüyor)' : ''}; sıradaki dükkân ${sira ? sira.id + ' ' + sira.fiyat + ' ₺ eksik: ' + acilisEksik(sira, d).join(', ') : 'yok'}; kareler: ${(rt.pads as any[]).map(p => p.key + ' ' + Math.round(p.price) + (p.sub && /🔒/.test(p.sub) ? ' ' + p.sub : '')).join(' | ')}`;
   }
   return {

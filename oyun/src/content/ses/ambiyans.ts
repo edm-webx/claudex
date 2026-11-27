@@ -34,7 +34,7 @@ export const BOLGE_GECIS_SN = 3;
 export const HAVA_GECIS_SN = 8;
 /** iç mekanda dış seslerin (hava) kısıklığı */
 export const IC_KISIK = 0.25;
-/** sahibe karar (SNT-07): gece iskelede martı ve vapur 'seyrek' (varsayılan) ya da 'kes'. Tek yer: aşağıdaki gece ağırlıkları. */
+/** sahibe karar (SNT-07): gece iskelede martı 'seyrek' (varsayılan) ya da 'kes'. Tek yer: aşağıdaki gece ağırlıkları. */
 export const GECE_MARTI = 'seyrek' as 'seyrek' | 'kes';
 const geceMarti = GECE_MARTI === 'kes' ? 0 : 0.12;
 
@@ -51,14 +51,13 @@ const TRIBUN_OLAY: AmbOlay[] = [
 ];
 
 export const AMBIYANS: Record<string, AmbBolge> = {
-  // İskele: deniz + iskele tahtası + halat + martı + uzak vapur; gece sakin su, martı seyrek
+  // İskele: deniz + iskele tahtası + halat + martı; gece sakin su, martı seyrek
   iskele: {
     katman: [DENIZ, { loop: 'iskele_gece', vol: 0.36, evre: [0, 0, 0.35, 1] }],
     olay: [
       { id: 'gull', vol: 0.4, evre: [1, 1, 0.55, geceMarti] },
       { id: 'creak', vol: 0.4, evre: [0.8, 0.8, 0.8, 0.6] },
       { id: 'halat', vol: 0.35, evre: [0.8, 1, 0.7, 0.4] },
-      { id: 'horn', vol: 0.22, evre: [1, 1, 0.6, geceMarti] },
       { id: 'simitci', vol: 0.4, evre: [1, 0.6, 0, 0] },
       { id: 'spoon', vol: 0.3, evre: [0.6, 0.8, 1, 0.2] },
       { id: 'mevsim', vol: 0.4, evre: [0.4, 0.4, 0.6, 1] },
