@@ -13,7 +13,8 @@ for (const f of files) {
   const s = statSync(f).size; total += s;
   if (s > 16 * MB) errs.push(`${relative(dist, f)} is ${(s / MB).toFixed(1)} MB (> 16 MB)`);
 }
-if (files.length > 40) errs.push(`${files.length} files (> 40)`);
+// 2026-11-27: 40 -> 120 dosya (yeni müzik sistemi dist/ses altında 26 gerçek Opus kaydı; itch sınırı 1000 dosya). Yapısal sınır, içerik engellemesin.
+if (files.length > 120) errs.push(`${files.length} files (> 120)`);
 if (total > 30 * MB) errs.push(`total ${(total / MB).toFixed(1)} MB (> 30 MB)`);
 
 // page contract
@@ -41,8 +42,8 @@ else {
   // 2026-11-23: game.js boyut tavanı kaldırıldı (kullanıcı kararı: itch'te yer bol, sınır koymadık). Yalnız bilgi.
   if (size > 3 * MB) console.log(`check-dist: bilgi: game.js ${(size / MB).toFixed(2)} MB`);
   // Allowlist: W3C namespace strings for createElementNS (xhtml from three.js, svg from the UI) and three.js's
-  // console-warning link. Nothing is ever fetched from them. Block comments (license banners) are ignored.
-  const ALLOW = [/^https:\/\/fxvbtfkvpnrnhyuntcgj\.supabase\.co$/, /^http:\/\/localhost:9999$/, /^https:\/\/developer\.mozilla\.org\/en-US\/docs\/Web\/API\/LockManager\/request$/, /^http:\/\/www\.w3\.org\/(1999\/xhtml|2000\/svg)$/, /^https:\/\/discourse\.threejs\.org\/t\/updates-to-lighting-in-three-js-r155\/53733\.?$/];
+  // console-warning link; developer.nvidia.com: FXAA shader source comment (inside a template string, never fetched). Nothing is ever fetched from them. Block comments (license banners) are ignored.
+  const ALLOW = [/^http:\/\/developer\.nvidia\.com\/$/, /^https:\/\/fxvbtfkvpnrnhyuntcgj\.supabase\.co$/, /^http:\/\/localhost:9999$/, /^https:\/\/developer\.mozilla\.org\/en-US\/docs\/Web\/API\/LockManager\/request$/, /^http:\/\/www\.w3\.org\/(1999\/xhtml|2000\/svg)$/, /^https:\/\/discourse\.threejs\.org\/t\/updates-to-lighting-in-three-js-r155\/53733\.?$/];
   const code = js.replace(/\/\*[\s\S]*?\*\//g, '');
   for (const m of code.matchAll(/https?:\/\/[^\s"'`)\\]+/g)) if (!ALLOW.some(r => r.test(m[0]))) errs.push(`game.js: external URL ${m[0]}`);
   const banned = [[/\bserviceWorker\b/, 'serviceWorker'], [/\bWebAssembly\b/, 'WebAssembly'], [/(^|[^\w.$])eval\s*\(/, 'eval('], [/new\s+Function\s*\(/, 'new Function(']];
