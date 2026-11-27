@@ -12,7 +12,7 @@ export interface Alan { x0: number; x1: number; z0: number; z1: number }
 export const WB: Alan = { x0: -23.0, x1: -12.2, z0: -17.2, z1: -10.6 };   // batı salonu
 export const WT: Alan = { x0: -23.0, x1: -12.2, z0: -9.4, z1: 3.4 };      // batı terası
 export const EB: Alan = { x0: 9.6, x1: 21.6, z0: -17.2, z1: -10.6 };      // doğu salonu
-export const ET: Alan = { x0: 9.6, x1: 21.4, z0: -3.9, z1: 3.4 };         // doğu terası (kuzeyi vapur koridoru)
+export const ET: Alan = { x0: 9.6, x1: 21.4, z0: -3.9, z1: 3.4 };         // doğu terası (kuzeyi servis koridoru)
 
 /** tadilatın (hedef aşama) inşaat alanı: iskele kuleleri, bariyer ve vinç buraya kurulur */
 export const SITE_AREA: Record<number, Alan> = {
@@ -20,15 +20,26 @@ export const SITE_AREA: Record<number, Alan> = {
 };
 /** usta çalışma noktaları (hedef aşamaya göre); ilk nokta malzeme yığını (kalas buradan alınır) */
 export const USTA_NOKTA: Record<number, [number, number][]> = {
-  2: [[7.2, 3.1], [-8.0, 3.2], [-5.6, 3.3], [5.4, 3.3]],
-  3: [[-13.4, -5.0], [-20.5, -8.2], [-16.8, -8.0], [-20.5, -5.0], [-16.8, -2.0], [-2.2, -15.0], [2.2, -15.0]],
-  4: [[10.4, 2.8], [10.4, -3.0], [12.9, -3.0], [12.9, 0.1], [15.5, 3.0]],
+  2: [[4.0, 3.1], [-7.0, 3.2], [-5.0, 3.3], [-1.5, 3.2], [1.5, 3.2]],
+  3: [[-13.4, -5.0], [-20.5, -8.0], [-16.8, -8.0], [-20.5, -5.0], [-16.8, -2.0], [-2.2, -15.0], [2.2, -15.0]],
+  4: [[13.4, -0.3], [13.4, -2.9], [11.0, 0.0], [15.8, 0.0], [13.4, 2.9]],
   5: [[-13.4, 1.0], [-20.5, 1.0], [-16.8, 1.0], [-20.5, 3.0], [-16.8, -5.0]],
-  6: [[-15.0, -11.8], [-21.0, -15.5], [-17.6, -16.0], [-14.0, -15.0], [-19.0, -12.0], [-5.8, -15.2], [5.8, -15.2]],
-  7: [[13.0, -12.0], [11.5, -15.5], [15.6, -16.0], [19.5, -15.0], [18.0, -11.8]],
-  8: [[-11.0, -10.0], [-20.0, -10.0], [-14.0, -10.0], [12.0, -10.0], [19.0, -10.0]],
-  9: [[18.5, -3.4], [-8.0, -15.2], [8.0, -15.2], [-8.0, -12.0], [4.0, -12.0], [20.6, -1.0]],
-  10: [[-4.6, 3.0], [-3.2, 2.0], [2.6, 2.0], [4.0, 3.0], [0.0, -12.0]],
+  6: [[-15.0, -11.8], [-19.5, -14.0], [-17.6, -16.0], [-14.0, -15.0], [-19.0, -12.0], [-5.8, -15.2], [5.8, -15.2]],
+  7: [[13.0, -12.0], [13.5, -14.5], [15.6, -16.0], [17.0, -13.2], [18.0, -11.8]],
+  8: [[15.5, 0.0], [12.9, -2.8], [17.4, -1.2], [12.9, 1.0], [18.0, 1.0], [15.5, 2.8]],
+  9: [[0.0, -11.9], [1.8, -11.8], [-6.0, -11.5], [4.8, -11.8], [7.2, -11.5]],
+  10: [[-1.0, 3.0], [-2.4, 1.8], [2.6, 2.0], [1.0, 3.0], [0.0, -12.0]],
+};
+/** malzeme yığını: ilk noktanın hemen yanında (bufe-buyume.ts aynı yere çizer, usta oraya gider), 2 m uzunluğunda x doğrultusunda */
+export const yiginKonum = (to: number): Vec2 => { const p = (USTA_NOKTA[to] || USTA_NOKTA[3])[0]; return { x: p[0], z: p[1] - 0.6 }; };
+/** kule vinç ayağı (yalnız büyük işlerde): alanın içinde, kolu sahaya bakar (deniz tarafına taşmaz) */
+export const vincKonum = (to: number): Vec2 => { const R = SITE_AREA[to] || WT; return { x: R.x0 < 0 ? R.x0 + 2.4 : R.x1 - 2.4, z: Math.min(R.z1 - 0.7, R.z0 + 1.5) }; };
+/** iskele kuleleri (bufe-buyume.ts çizer): dar alanda (derinlik < 3 m) yalnız iki uçta, aksi hâlde dört köşede */
+export const kuleKonum = (to: number): Vec2[] => {
+  const R = SITE_AREA[to] || WT, d = R.z1 - R.z0;
+  if (to <= 2) return [{ x: R.x0 + 0.9, z: R.z0 + 0.5 }, { x: R.x1 - 0.9, z: R.z0 + 0.5 }];
+  if (d < 3) { const z = (R.z0 + R.z1) / 2; return [{ x: R.x0 + 0.9, z }, { x: R.x1 - 0.9, z }]; }
+  return [{ x: R.x0 + 0.9, z: R.z0 + 0.9 }, { x: R.x1 - 0.9, z: R.z0 + 0.9 }, { x: R.x0 + 0.9, z: R.z1 - 0.9 }, { x: R.x1 - 0.9, z: R.z1 - 0.9 }];
 };
 /** o tadilatta gelen usta sayısı (büyük tadilat, kalabalık ekip) */
 export const ustaSayisi = (to: number): number => SETLER[bufeBoyut(to)].usta;   // 2026-11-25 şantiye setleri: 2 / 3 / 4 / 5

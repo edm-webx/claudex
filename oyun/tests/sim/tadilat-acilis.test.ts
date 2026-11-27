@@ -3,7 +3,8 @@ import { describe, it, expect } from 'vitest';
 import { played } from './m1-helpers';
 import { KIOSK_STAGES } from '../../src/content/stages';
 import { BUYUME_AD } from '../../src/game/view/world/bufe-buyume';
-import { SITE_AREA, USTA_NOKTA, ustaSayisi, acilisBilgi } from '../../src/content/insaat';
+import { SETLER, bufeBoyut } from '../../src/content/santiye';
+import { SITE_AREA, USTA_NOKTA, ustaSayisi, acilisBilgi, kuleKonum, vincKonum, yiginKonum } from '../../src/content/insaat';
 import { PIER } from '../../src/content/prefabs/iskele/layout';
 
 describe('aşama adları (BUF-21)', () => {
@@ -21,6 +22,17 @@ describe('inşaat sahası ve ustalar', () => {
       const a = SITE_AREA[s]; expect(a, 's' + s).toBeTruthy(); expect(a.x0).toBeGreaterThan(PIER.x0); expect(a.x1).toBeLessThan(PIER.x1);
       expect(USTA_NOKTA[s].length).toBeGreaterThanOrEqual(ustaSayisi(s) - 1);
       for (const [x, z] of USTA_NOKTA[s]) { expect(x).toBeGreaterThan(PIER.x0); expect(x).toBeLessThan(PIER.x1); expect(z).toBeGreaterThan(PIER.z0); expect(z).toBeLessThan(PIER.z1); }
+    }
+  });
+  it('usta noktaları birbirinden, iskele kulelerinden ve vinçten ayrı; yığın çizildiği yerde', () => {
+    for (let s = 2; s <= 10; s++) {
+      const P = USTA_NOKTA[s], set = SETLER[bufeBoyut(s)], T: { x: number; z: number }[] = [...kuleKonum(s)];
+      if (set.kuleVinc || set.mobilVinc) T.push(vincKonum(s));
+      P.forEach(([x, z], i) => {
+        for (const t of T) expect(Math.hypot(t.x - x, t.z - z), `a${s} nokta${i} kule`).toBeGreaterThanOrEqual(1.3);
+        P.forEach(([x2, z2], j) => { if (j > i) expect(Math.hypot(x - x2, z - z2), `a${s} nokta${i}-${j}`).toBeGreaterThanOrEqual(1.2); });
+      });
+      const y = yiginKonum(s); expect(Math.hypot(y.x - P[0][0], y.z - P[0][1]), `a${s} yığın`).toBeLessThan(1);
     }
   });
   it('tadilat sürerken ustalar gelip yürür ve çekiç sallar, bitince gider; çalışan listesine ve kayda girmez', () => {

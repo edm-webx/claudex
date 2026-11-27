@@ -78,7 +78,7 @@ export interface Place {
 }
 /** Hours are game hours (day runs 08..24). `night` shows from 19:00 while open. */
 export const PLACES: Place[] = [
-  { id: 'kiraathane', name: 'Martı Kıraathanesi', kind: 'mekan', region: 'meydan', x: 256, z: 17.2, open: 8, close: 24, icon: '🎲',
+  { id: 'kiraathane', name: 'Martı Kıraathanesi', kind: 'mekan', region: 'meydan', x: 254.0, z: 2.6, open: 8, close: 24, icon: '🎲',
     day: 'Tavla şakırtısı: "Düşeş geldi, çay benden!"', night: 'Gece turnuvası: Şeşbeş Kupası finali!', closed: 'Zarlar uyuyor.',
     blurb: 'Mahallenin meclisi. Burada alınan kararlar kesindir, ertesi gün değişir.' },
   { id: 'hamam', name: 'Köpüklü Kubbe Hamamı', kind: 'mekan', region: 'yokus', x: 229, z: 2.6, open: 9, close: 22, icon: '♨',
@@ -93,7 +93,7 @@ export const PLACES: Place[] = [
   { id: 'sinema', name: 'Yıldızlı Perde Açık Hava Sineması', kind: 'mekan', region: 'sahil', x: 158, z: 20.5, open: 19, close: 24, icon: '🎬',
     day: '', night: 'Bu gece: "Martı ile Simit 2: Kanat Darbesi"', closed: 'Film akşam 19:00\'da. Patlamış mısırlar bekliyor.',
     blurb: 'Perde rüzgarda dalgalanır, film de biraz dalgalanır. Kimse şikayet etmez.' },
-  { id: 'cesme', name: 'Çeşme ve Koca Çınar', kind: 'mekan', region: 'meydan', x: 268, z: 9, open: 0, close: 24, icon: '⛲',
+  { id: 'cesme', name: 'Çeşme ve Koca Çınar', kind: 'mekan', region: 'meydan', x: 247.8, z: 1.9, open: 0, close: 24, icon: '⛲',
     day: 'Çınarın gölgesi bedava, suyu buz gibi.', night: 'Çeşmenin şırıltısı, ağustos böcekleri ve bir kedi.', closed: '',
     blurb: 'Çınar 412 yaşında. Kendisi öyle diyor.' },
   // restaurants (the five lokanta of the survey; fronts live on Çarşı Sokağı)
@@ -124,7 +124,7 @@ export const HIDDEN_CATS = [
   { id: 'minnos', name: 'Minnoş', x: 166, z: 16.2, coat: 'orange', region: 'sahil' as RegionId, line: 'Çalının içinden iki göz: Minnoş!' },
   { id: 'pasa', name: 'Paşa', x: 218, z: 6.0, coat: 'black', region: 'yokus' as RegionId, line: 'Paşa merdivenin tam ortasında, yol vermiyor.' },
   { id: 'fistik', name: 'Fıstık', x: 238, z: 12.6, coat: 'tabby', region: 'yokus' as RegionId, line: 'Fıstık saksının içinde uyuyor. Saksı da memnun.' },
-  { id: 'komur', name: 'Kömür', x: 272.5, z: 12.0, coat: 'black', region: 'meydan' as RegionId, line: 'Kömür çeşmenin arkasında su içiyor, bıyıkları ıslak.' },
+  { id: 'komur', name: 'Kömür', x: 248.8, z: 2.8, coat: 'black', region: 'meydan' as RegionId, line: 'Kömür çeşmenin arkasında su içiyor, bıyıkları ıslak.' },
   { id: 'tekir', name: 'Tekir Hanım', x: 318, z: 2.4, coat: 'tabby', region: 'barinak' as RegionId, line: 'Tekir Hanım kayığın burnunda, kaptan gibi.' },
   { id: 'poncik', name: 'Ponçik', x: 128, z: 12.6, coat: 'white', region: 'carsi' as RegionId, line: 'Ponçik sokağın sonunda kutunun içinde. Kutu onun.' },
 ];
@@ -138,7 +138,7 @@ export const COINS_PER_DAY = 5;
 export const PHOTO_SPOTS = [
   { id: 'gunbatimi', name: 'Sahilde gün batımı', x: 178, z: 3.6, region: 'sahil' as RegionId, line: 'Güneş denize simit gibi batıyor. Çek!' },
   { id: 'merdiven', name: 'Renkli merdivenler', x: 216, z: 9.0, region: 'yokus' as RegionId, line: 'Gökkuşağı merdiven! Çek, çek!' },
-  { id: 'cinar', name: 'Koca Çınar altında', x: 264, z: 13.0, region: 'meydan' as RegionId, line: 'Çınar poz verdi. 412 yaşında ama hep genç.' },
+  { id: 'cinar', name: 'Koca Çınar altında', x: 255.3, z: 2.9, region: 'meydan' as RegionId, line: 'Çınar poz verdi. 412 yaşında ama hep genç.' },
   { id: 'fener', name: 'Mendirek feneri', x: 336, z: 2.4, region: 'barinak' as RegionId, line: 'Kırmızı fener, mavi deniz, beyaz martı. Kartpostal!' },
   { id: 'lunapark', name: 'Dönme dolap önü', x: 180, z: 15.4, region: 'sahil' as RegionId, line: 'Dönme dolap arkada, sen önde. Efsane kare.' },
 ];

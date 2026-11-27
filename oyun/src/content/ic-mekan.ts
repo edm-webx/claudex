@@ -32,8 +32,8 @@ export const IC_MEKANLAR: IcMekan[] = [
   { id: 'tesis', ad: 'Halı Saha Tesisleri', tur: 'kafeterya', x: -54.1, z: 45.4, wx: 3.7, wz: 17.8, kapi: '+x', arsa: 'k6', bina: 'tesis', h: 2.8 },
   { id: 'banka', ad: 'Martı Kasası Bankası', tur: 'banka', x: 11.7, z: 36.8, wx: 10, wz: 8.4, kapi: '+z', bina: 'banka', h: 3.3 },
   { id: 'hastane', ad: 'Devlet Hastanesi', tur: 'hastane', x: 46.95, z: 53.55, wx: 16.9, wz: 6.7, kapi: '-z', bina: 'hastane', h: 3.0 },
-  { id: 'acil', ad: 'Acil', tur: 'acil', x: 57.3, z: 52.0, wx: 3.3, wz: 3.2, kapi: '-x', bina: 'acil', h: 3.3 },
-  { id: 'morg', ad: 'Morg', tur: 'morg', x: 57.3, z: 55.5, wx: 3.3, wz: 3.2, kapi: '-x', bina: 'morg', h: 3.1 },
+  { id: 'acil', ad: 'Acil', tur: 'acil', x: 57.3, z: 52.0, wx: 3.3, wz: 3.2, kapi: '+x', bina: 'acil', h: 3.3 },
+  { id: 'morg', ad: 'Morg', tur: 'morg', x: 57.3, z: 55.5, wx: 3.3, wz: 3.2, kapi: '+x', bina: 'morg', h: 3.1 },
   // büfe salonları on the pier (view/world/bufe-buyume.ts WB / EB), door on the promenade side
   { id: 'salonW', ad: 'Kahvaltı kanadı', tur: 'kahvalti', x: (KANAT_W.x0 + KANAT_W.x1) / 2, z: (KANAT_W.z0 + KANAT_W.z1) / 2, wx: KANAT_W.x1 - KANAT_W.x0, wz: KANAT_W.z1 - KANAT_W.z0, kapi: '+z', salon: 'W', h: 3.4 },
   // Sabri'nin mutfağı: the RESTAURANT's kitchen (2026-11-21 owner: büfe ayrı, restoran + mutfak ayrı). It stands behind the büfe across an open

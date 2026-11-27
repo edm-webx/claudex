@@ -154,9 +154,9 @@ export function createKarsiYasam(d: YasamDeps): YasamView {
     const ctag = textSprite('🧢 Maç Koordinatörü', 3.0); ctag.position.set(gx, 3.5, gz + 0.6); holder.add(ctag);
     const mtag = textSprite('⚽ Bilet · Kulüp · Lig', 2.6); mtag.position.set(gx, 4.0, gz + 0.6); holder.add(mtag);
     // morg: kırmızı titrek ışık + gölge
-    morgLight = bx(0.08, 0.9, 1.1, '#ff2a1a', 55.58, 2.0, 55.5);
-    morgShadow = bx(0.06, 1.6, 0.5, '#07080b', 55.56, 1.3, 55.5); morgShadow.visible = false;
-    const mt = textSprite('MORG', 1.6); mt.position.set(55.4, 3.9, 55.5); holder.add(mt);
+    morgLight = bx(0.08, 0.9, 1.1, '#ff2a1a', 59.02, 2.0, 55.5);
+    morgShadow = bx(0.06, 1.6, 0.5, '#07080b', 59.04, 1.3, 55.5); morgShadow.visible = false;
+    const mt = textSprite('MORG', 1.6); mt.position.set(59.2, 3.9, 55.5); holder.add(mt);
     // tribün seyircisi (instanced)
     crowdGeo(); 
     // insanlar
@@ -167,8 +167,8 @@ export function createKarsiYasam(d: YasamDeps): YasamView {
     const add = (h: H | null, x: number, z: number, o: Partial<Actor> = {}) => { if (!h) return; const a: Actor = { h, x, z, yaw: 0, speed: 0, act: 'idle', pi: 0, wait: 0, sp: 1.1, y: 0, ...o }; actors.push(a); h.setPose({ x, z }, a.yaw); h.object.position.y = a.y; };
     mkH = mk; addA = add;
     // okul: öğrenciler bahçede dolaşır, öğretmenler konuşur
-    const YARD: [number, number][] = [[35, 42.6], [40, 42.2], [46, 42.8], [52, 42.4], [44, 44.0], [36, 38]];
-    for (let i = 0; i < 8; i++) { const p = YARD.slice().sort(() => Math.random() - 0.5); add(mk('okul', 100 + i), p[0][0], p[0][1], { path: p, sp: rnd(0.9, 1.6), act: 'idle' }); }
+    const YARD: [number, number][] = [[35, 42.6], [40, 42.2], [46, 42.8], [52, 42.4], [44, 43.2], [36, 41.6]];
+    for (let i = 0; i < 8; i++) { const p = YARD.slice().sort(() => Math.random() - 0.5), h = mk('okul', 100 + i); add(h, p[0][0], p[0][1], { path: p, sp: rnd(0.9, 1.6), act: 'idle' }); if (h) okulHs.push(h); }
     add(mk('isinsani', 201), 47.5, 41.8, { act: 'perform', yaw: Math.PI }); add(mk('emekli', 202), 49.0, 41.8, { act: 'perform', yaw: Math.PI });
     // basketbol
     for (let i = 0; i < 4; i++) { const p: [number, number][] = [[34 + Math.random() * 4, 36 + Math.random() * 4], [34 + Math.random() * 4, 36 + Math.random() * 6], [35 + Math.random() * 3, 35 + Math.random() * 7]]; add(mk('okul', 300 + i), p[0][0], p[0][1], { path: p, sp: rnd(2.4, 3.4) }); }
@@ -185,7 +185,8 @@ export function createKarsiYasam(d: YasamDeps): YasamView {
     // Maç Koordinatörü
     add(mk('isinsani', 460, { hat: 'cap' }), gx, gz + 0.1, { act: 'perform', yaw: 0 });
     // yaya trafiği
-    const ROUTES: [number, number][][] = [[[-20, 44.5], [-8, 44.5], [-3.9, 40.5], [4, 44], [10, 42.6], [28, 42.6]], [[8.5, 31], [-30, 31], [-48, 31]], [[30.5, 57], [30.5, 40], [18, 42.6]], [[46, 47], [34, 47], [30.5, 47], [18, 42.6]]];
+    // 2026-11-27: rotalar kapalı döngüdür (son noktadan ilkine de düz gidilir); fıskiye, ağaç gövdeleri ve AVM dolanılır (nav ızgarasıyla doğrulandı)
+    const ROUTES: [number, number][][] = [[[-20, 44.5], [-9, 44.5], [-9, 41.2], [4, 41.2], [10, 42.6], [28, 42.6], [28, 44.6], [10, 44.6], [8, 48.6], [-9, 48.6], [-9, 46.0]], [[5.5, 32.2], [-30, 32.2], [-48, 32.2]], [[30.5, 57], [30.5, 41]], [[46, 47], [34, 47], [30.5, 47], [30.5, 44.5], [18, 43.5]]];
     ROUTES.forEach((r, i) => { for (let k = 0; k < 2; k++) { const rr = k ? r.slice().reverse() : r; add(mk(['universiteli', 'plaza', 'gezgin', 'teyze'][(i + k) % 4], 500 + i * 3 + k), rr[0][0], rr[0][1], { path: rr, sp: rnd(1.0, 1.4) }); } });
     // halı saha oyuncuları + top
     const kit = ['#e0533c', '#2f6fdb'];
@@ -211,6 +212,7 @@ export function createKarsiYasam(d: YasamDeps): YasamView {
     holder.add(crowd);
   }
 
+  const okulHs: H[] = [];   // öğrenciler yalnız okul saatlerinde (8-17) bahçede
   /* ---------------- update ---------------- */
   const tmp = new T.Object3D(), pos = new Float32Array(0); void pos;
   function stepActors(dt: number) {
@@ -249,6 +251,7 @@ export function createKarsiYasam(d: YasamDeps): YasamView {
       const root = d.root(); if (!root) return;
       if (holder.parent !== root) root.add(holder);
       const h = d.hero(), near = h.z > 8, hour = d.hour(), night = (hour >= 19.5 && hour < 30.2) || hour < 6.2;
+      { const ok = hour % 24 >= 8 && hour % 24 < 17; for (const o of okulHs) o.object.visible = ok; }
       holder.visible = near; if (!near) return;
       if (!built) build();
       // 2026-11-23: içerideyken o dükkânın cephe süsü (tente, lamba kolları, ampul dizisi) gizlenir; kabuk gibi. Yoksa tente odanın üstünde havada asılı kalıyordu
