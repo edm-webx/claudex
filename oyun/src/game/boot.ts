@@ -741,7 +741,8 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
 
   // ── tier changes
   const applyTier = (t: TierDef) => {
-    make('render.setTier', () => { R.setTier(t); return true; });
+    // 2026-11-27: setTier re-runs setTime (plain, un-weathered lights); re-apply the weather light in the same frame (a few bright frames otherwise)
+    make('render.setTier', () => { R.setTier(t); havaLook?.relight(); return true; });
     setGlbEnvK(t.flags.reflect ? 1 : 0);   // GRS-17: sky reflections only on reflect tiers (uniform; no relink)
     if (chars) make('crowd.setBudget', () => { chars.crowd.setBudget(t.crowd); return true; });
     if (fx) make('fx.setTier', () => { fx.setTier(t); return true; });

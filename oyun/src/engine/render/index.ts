@@ -315,6 +315,11 @@ export function createRender(deps: RenderDeps): MotorRender {
     tuneBloom();
     bloom.enabled = !!t.flags?.bloom && !postCut;
   }
+  // 2026-11-27 epilepsi flaşı: the composer keeps its ping-pong order between frames. With FXAA on (akıcı: no MSAA) a frame had 3
+  // swapping passes (OutputPass, GRADE, FXAA) = odd, so every other frame the scene was drawn into rt1 (no depth buffer): the
+  // picture flipped between two images each frame (30-60 Hz strobe). The scene pass must always start on rt2 (MSAA + depth).
+  const postBufOk = () => { const c = composer as unknown as { readBuffer: T.WebGLRenderTarget; renderTarget2: T.WebGLRenderTarget } | null; return !c || c.readBuffer === c.renderTarget2; };
+  const postBufFix = () => { if (composer && !postBufOk()) composer.swapBuffers(); };
   let look = lookAt(hour, night);
   function tuneBloom() {
     look = lookAt(hour, night);   // colour grade follows the day: warm golden hour, cool blue night (look.ts)
@@ -490,7 +495,7 @@ export function createRender(deps: RenderDeps): MotorRender {
       // PRF-06: casters whose shadow cannot reach the view skip the shadow pass (same picture, fewer draws)
       const draw = () => {
         if (api.shadowCull && tier?.shadows) sCull.begin(sc, cam, sun);
-        try { if (composer && rpass) { rpass.scene = sc; rpass.camera = cam; composer.render(); } else renderer!.render(sc, cam); } finally { sCull.end(); }
+        try { if (composer && rpass) { rpass.scene = sc; rpass.camera = cam; composer.render(); postBufFix(); } else renderer!.render(sc, cam); } finally { sCull.end(); }
       };
       const pf = deps.perf;
       if (pf) {
@@ -536,7 +541,7 @@ export function createRender(deps: RenderDeps): MotorRender {
       const cv = renderer?.domElement, rb = composer ? (composer as unknown as { renderTarget2: T.WebGLRenderTarget }).renderTarget2 : null;
       return { tier: tier?.name ?? null, renderScale: tier ? basePR(tier) : null, pixelRatio: renderer?.getPixelRatio() ?? null, drawingBuffer: { w: cv?.width ?? 0, h: cv?.height ?? 0 },
         shadowMapEnabled: !!renderer?.shadowMap.enabled, castShadow: sun.castShadow, shadowMapSize: sun.shadow.mapSize.x, shadowExt: sun.shadow.camera.right, shadowFar: sun.shadow.camera.far,
-        post: !!composer, bloomEnabled: !!bloom?.enabled, msaa: rb ? rb.samples : 0, toneMapping: renderer?.toneMapping ?? null,
+        post: !!composer, postBufOk: postBufOk(), bloomEnabled: !!bloom?.enabled, msaa: rb ? rb.samples : 0, toneMapping: renderer?.toneMapping ?? null,
         programs: progList().length, flags: { ...(tier?.flags ?? {}) }, reflect: reflector.stats() };
     },
     info() {
