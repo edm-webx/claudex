@@ -31,3 +31,9 @@ Dal: claude/project-thread-b3u8z9 (taban jo0q11 fef56d9).
   Sıradaki adım: workers.ts garsonWork 'idle' dalı / garsonIsBul -> restoran.ts isAl içinde 52'yi neyin durdurduğunu bul (acilSon? 'mine' iş? isAl hiç çağrılmıyor mu, yoksa null mı dönüyor?).
   Debug yaması geri alındı. Test bandına dokunulmadı.
 - Kalan: bu düzeltme, sonra tam test + perf kapısı + TAM bot, sonra Ana İş'e dal/commit.
+
+## 2026-11-27: garson açığı kapandı, dal yeşil
+- Kök neden 1 (workers.ts 'load'): tezgâha taşıma için istasyona giden garson mal bulamayıp 5 sn sonra boş dönünce loadT ~5'te kalıyordu -> idle'da 5 sn donuyor, bekleyen menüyü görmüyordu. loadT = 0.3.
+- Kök neden 2 (restoran.ts isAl devir): uzak bölgeden işi alan garson 20 sn yürürken masanın yanındaki boş garsonlar bekliyordu. Gorev.claimD (alındığı andaki uzaklık) eklendi; kalan yol (claimD - 2.6 m/sn x geçen) boştaki yetkili garsonunkinden 6 m+ fazlaysa (2 sn sonra) iş ona geçer.
+- Commit fd3c2c4. Tam test 1202/1202 yeşil (bant gevşetilmedi), perf kapısı YEŞİL (dengeli 568756 üçgen).
+- TAM bot (TAM=1) kırmızı ama jo0q11 fe795d1'de de AYNI yerde kırmızı: aşama 4, ~1860 dk, karne şıklık 4 -> 5★ yok -> k6 ve 5. aşama kilitli. Bot dekoru yalnız şıklık < 4 iken alıyor (tests/sim/tam-oyun-botu.ts adım 6). Bu dalın değişikliği değil.
