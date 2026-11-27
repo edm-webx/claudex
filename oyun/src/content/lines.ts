@@ -193,7 +193,7 @@ export const LINES = {
   },
   "ferry": {
     "horn": "Vapur geliyor!",
-    "open": "Vapur Penceresi açıldı!",
+    "open": "Pencere açıldı!",
     "close": "Pencere kapandı."
   },
   "tadilat": {

@@ -312,7 +312,7 @@ export function createKulis(deps: {
     const tip = e.tip as Beden;
     switch (cat) {
       case 'kimlik': return `${L('Adın', e.adKilit ? 'bir kez seçildi, değişmez' : 'bir kez seçilir, sonra değişmez')}<input class="ka-in" name="ad" maxlength="14" value="${esc(e.ad)}" placeholder="Adını yaz" autocomplete="off"${e.adKilit ? ' readonly' : ''}>
-${L('Dükkanının adı')}<input class="ka-in" name="dukkan" maxlength="22" value="${esc(e.dukkan)}" autocomplete="off">
+${L('Dükkânının adı')}<input class="ka-in" name="dukkan" maxlength="22" value="${esc(e.dukkan)}" autocomplete="off">
 ${L('Beden', tip === 'b' ? 'Kadın' : 'Erkek')}<div class="ka-row"><button class="ka-ch" data-beden="1">Bedeni değiştir</button></div>
 ${L('Sınıfın', 'her şeyi yaparsın, sınıfın en iyi olduğun iş')}
 <div class="ka-cls">${SINIFLAR.map(s => `<button class="ka-cl${s.id === e.sinif ? ' on' : ''}" data-sinif="${s.id}"><i>${s.icon}</i>${s.ad}<small>${s.desc}</small><b>${s.perk}</b><em>${YETENEK[s.id].icon} ${YETENEK[s.id].ad}</em>${s.id === e.sinif ? `<u data-kit="${s.id}">Sınıf kıyafetini giy</u>` : ''}</button>`).join('')}</div>`;

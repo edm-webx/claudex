@@ -835,7 +835,7 @@ const QUAL = [['auto', 'Otomatik'], ['akici', 'Akıcı'], ['dengeli', 'Dengeli']
 function renderAyarlar(m, A) {
   const q = (m.quality === 'otomatik' || m.quality == null) ? 'auto' : m.quality;
   const sound = !m.muted;
-  let s = `<div class="sb-card sb-set">${sound ? ICONS.sound : ICONS.mute}<div class="sb-grow"><h3>Ses</h3><p>Müzik, cızırtı ve martı çığlıkları</p></div><button class="sb-tog${sound ? ' on' : ''}" data-a="setMuted" data-v="${sound ? 1 : 0}" aria-label="Ses" aria-pressed="${sound}"></button></div>`;
+  let s = `<div class="sb-card sb-set">${sound ? ICONS.sound : ICONS.mute}<div class="sb-grow"><h3>Ses</h3><p>Müzik, cızırtı ve martı çığlıkları</p></div><button class="sb-tog${sound ? ' on' : ''}" data-a="setMuted" data-v="${sound ? 0 : 1}" aria-label="Ses" aria-pressed="${sound}"></button></div>`;
   if (A.setVol && m.vol) { // ses-5: separate sliders + own music mode
     const sl = (bus, label) => `<div class="sb-set" style="min-height:0;gap:10px;margin:4px 0"><span style="flex:0 0 78px;font-weight:800;font-size:16px">${label}</span><input type="range" min="0" max="100" step="5" value="${Math.round((m.vol[bus] ?? 1) * 100)}" data-a="setVol" data-id="${bus}" aria-label="${label}" style="flex:1;pointer-events:auto;height:30px;accent-color:var(--teal,#2fa39d)"></div>`;
     s += `<div class="sb-card">${sl('music', 'Müzik')}${sl('sfx', 'Efekt')}${sl('voice', 'Konuşma')}</div>`;

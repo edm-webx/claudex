@@ -133,7 +133,7 @@ export function installPads(K: Kernel): { update(dt: number): void } {
     K.renewNext();
     const msg: Record<string, string> = {
       station: (d.station ? STATIONS[d.station].name + ' açıldı!' : 'Açıldı!'), table: 'Yeni oturma yeri!', job: 'İş ve İşçi Bulma köşesi açıldı!',
-      'window': 'Vapur Penceresi kuruldu! Vapur gelince sen servis yap.', tray: 'Daha büyük tepsi: +2 taşıma!', magnet: 'Mıknatıslı önlük: para kendiliğinden gelir!',
+      'window': 'Pencere kuruldu! Müşteri gelince servisi sen yaparsın.', tray: 'Daha büyük tepsi: +2 taşıma!', magnet: 'Mıknatıslı önlük: para kendiliğinden gelir!',
     };
     K.toast(msg[d.kind] || 'Açıldı!', 'good');
     K.logEv('unlock', { key, money: Math.round(S.money) });

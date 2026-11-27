@@ -55,6 +55,7 @@ const CSS = `
 .gr-kim b{display:block;font:800 14px/1.1 'SB Govde',system-ui,sans-serif;letter-spacing:.32em;color:#ffe2ac}.gr-kim small{display:block;font:500 12.5px/1.3 'SB Govde',system-ui,sans-serif;color:rgba(255,230,200,.62);margin-top:2px;letter-spacing:.03em}
 .gr-ic{font-size:26px;line-height:1;margin-right:4px;vertical-align:-2px}
 @media (max-height:760px){.gr-kim{margin-bottom:12px}.gr-card .gr-h{font-size:27px}.gr-sub{margin-bottom:12px}.gr-l{margin:11px 0 6px}.gr-in{min-height:46px}.gr-go{min-height:50px;margin-top:16px}.gr-guest{margin-top:10px;padding-top:10px}.gr-note{margin-top:8px}}
+@media (max-height:480px) and (min-aspect-ratio:1/1){.gr-kim{display:none}.gr-card .gr-h{font-size:22px}.gr-sub{display:none}.gr-card .gr-h{margin-bottom:8px}.gr-l{margin:7px 0 3px}.gr-in{min-height:38px}.gr-go{min-height:42px;margin-top:8px}.gr-guest{margin-top:6px;padding-top:6px}.gr-guest small{display:none}.gr-tabs{margin-bottom:2px}.gr-t{min-height:34px;line-height:34px}.gr-err{margin-top:6px;min-height:0}.gr-adm{margin-top:8px}.gr-note{margin-top:6px}}
 `;
 
 export function createGiris(deps: { root: HTMLElement; afterLogin: (isNew: boolean) => Promise<void>; sfx?: (id: string) => void }): GirisView {
