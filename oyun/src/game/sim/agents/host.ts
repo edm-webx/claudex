@@ -14,8 +14,6 @@ export function hostFromRules(r: Rules): AgentHost {
   const laughRng = r.rng('laugh');
   return {
     hour: () => r.hour(),
-    windowPost: () => { const wid = pencereWid(st); return wid && rt.window && rt.window.open ? { wid, at: rt.layout.window.standAt } : null; },
-    setPencereAt: (on) => { (rt as unknown as { pencereAt?: boolean }).pencereAt = on; },
     player: () => ({ x: r.playerPos.x, z: r.playerPos.z, moving: rt.moving }),
     stationBuilt: (p) => !!rt.stations[p]?.built,
     openProducts: () => PRODUCT_IDS.filter((p) => rt.stations[p]?.built),

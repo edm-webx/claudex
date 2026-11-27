@@ -63,7 +63,7 @@ export function installDeniz(K: Kernel, cu?: CuLike): DenizApi {
     let h = st.zones[DENIZ_KEY] as unknown as DenizSave | undefined;
     if (!h || typeof h !== 'object') { h = {} as DenizSave; st.zones[DENIZ_KEY] = h as unknown as Record<string, unknown>; }
     if (!Array.isArray(h.ext)) h.ext = []; if (!Array.isArray(h.seatOwn)) h.seatOwn = []; if (!h.seats || typeof h.seats !== 'object') h.seats = {};
-    h.tez = clamp(Number(h.tez) || 0, 0, TEZGAH.max); if (!Array.isArray(h.pier)) h.pier = []; h.bufe = !!h.bufe;
+    h.tez = clamp(Number(h.tez) || 0, 0, TEZGAH.max); if (!Array.isArray(h.pier)) h.pier = []; h.bufe = false;   // Vapur Büfesi kaldırıldı (eski kayıtta true kalmış olabilir)
     if (!h.seen || typeof h.seen !== 'object') h.seen = {}; if (!h.boats || typeof h.boats !== 'object') h.boats = {}; if (!Array.isArray(h.animals)) h.animals = [];
     h.runs = Number(h.runs) || 0; h.runBest = Number(h.runBest) || 0; h.deckSales = Number(h.deckSales) || 0; h.deckEarned = Number(h.deckEarned) || 0;
     if (!h.duel || typeof h.duel !== 'object') h.duel = { kedi: 0, marti: 0 };
@@ -137,7 +137,6 @@ export function installDeniz(K: Kernel, cu?: CuLike): DenizApi {
   function onDock(): void {
     runDone = false;
     const h = D();
-    if (h.bufe) { const v = Math.round(VAPUR_BUFE.perDock * S().stage * Math.sqrt(scale())); K.earn(v, DOOR); K.toast('Vapur Büfesi seferde sattı: +' + fmtMoney(v), 'good'); }
     if (hintN < 2 && h.runs < 3) { hintN++; K.toast(DECK_RUN.lines.hint, 'info'); }
     if (rng.chance(SHIP_CAT.chance)) { shipCat = { t: 0 }; seeAnimal('vapurkedisi'); K.toast(rng.pick(SHIP_CAT.line), 'info'); }
   }

@@ -9,7 +9,6 @@ export function installTutorial(K: Kernel) {
   const padStep = (key: string) => ({ id: 'pad_' + key, show: () => rt.pads.some(p => p.key === key), done: () => !!S.owned[key], urgent: false });
   const carryN = (p: string) => rt.carry.filter(i => i.type === p).length;
   const steps: { id: string; show(): boolean; done(): boolean; rush?: boolean; repeat?: boolean }[] = [
-    { id: 'window', rush: true, show: () => !!rt.window?.open, done: () => !!S.tut.windowSale },
     { id: 'slow', show: () => !!rt.slow && !S.tut.slowTapped, done: () => !!S.tut.slowTapped },
     { id: 'walk', show: () => S.playT > 3, done: () => rt.movedTotal > 1.5 || !!S.tut.firstCut },
     { id: 'doner', show: () => S.playT > 5 || rt.movedTotal > 1.5, done: () => !!S.tut.firstCut },

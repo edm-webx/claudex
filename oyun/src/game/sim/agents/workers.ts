@@ -648,7 +648,6 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
       default: rt.state = 'idle';
     }
   }
-  const posted = new Set<number>();   // Faz 2: workers currently at the ferry window
   function update(rt: WRt, S: GameState, dt: number, pl: Vec2) {
     const w = rt.w, fx = traitFx(w), a = rt.a;
     if (ROLES[w.role]?.mutfak) { rt.t += dt; kitchenWork(rt, S, dt); return; }
@@ -658,16 +657,6 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
       rt.chatNext = S.playT + rng.range(25, 45);
       if (fx.chat) say(rt, rng.pick(LINES.workers.chat), 2); else if (fx.phone) say(rt, rng.pick(LINES.workers.phone), 2);
     }
-    // Faz 2 (user item 28): the worker posted at the ferry window walks there while it is open, then goes back
-    const post = host.windowPost?.() ?? null;
-    if (post && post.wid === w.id && rt.state !== 'arrive' && rt.state !== 'watch') {
-      if (rt.state === 'sleep') wake(rt, S, false);
-      if (!posted.has(w.id)) { posted.add(w.id); host.isBirak?.(w.id); rt.a.carry.length = 0; rt.job = null; rt.a.info.tasi = ''; rt.wk.goTo(post.at); say(rt, 'Vapur geldi, pencereye!', 2); }
-      if (rt.wk.walk(dt, 2.6)) { a.act = 'walk'; host.setPencereAt?.(false); }
-      else { a.act = 'idle'; a.speed = 0; host.setPencereAt?.(true); }
-      return;
-    }
-    if (posted.has(w.id) && (!post || post.wid !== w.id)) { posted.delete(w.id); host.setPencereAt?.(false); rt.state = rt.st ? 'work' : 'idle'; rt.wk.goTo(home(rt, S)); }
     switch (rt.state) {
       case 'arrive':
         if (!rt.wk.walk(dt, 2.4)) { rt.state = 'watch'; rt.t = 0; say(rt, LINES.workers.watch, 3); emit('workerWatch', { name: w.name }); } else a.act = 'walk';

@@ -596,7 +596,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   let adminEditor: () => void = () => { /* set below once the editor deps exist */ };
   // Eğitici kartları (2026-11-26 sahip: Tente): ilk kez olan şeyde oyunu durdurur, kamerayı hedefe götürür (ui/egitici.ts, content/egitici.ts)
   const egitici: EgiticiView | null = panels ? make('egitici', () => createEgitici({ root: U.root, rules: () => sim.rules, project,
-    mesgul: () => !!acilis?.kamera(), digerOyuncu: () => (online ? online.peers().length : 0),
+    mesgul: () => !!acilis?.kamera(), digerOyuncu: () => (online ? online.peers().length : 0), panelKapat: () => command({ kind: 'closePanel' } as never),
     sfx: id => { try { audio?.sfx(id); } catch { /* */ } }, toast: t => U.toast(t, 'info') })) : null;
   const adminPanel = playMode && uiReal && online ? make('adminPanel', () => createAdminPanel({ root: U.root, peers: () => online.peers(), toast: t => U.toast(t, 'info'), sfx: id => { try { audio?.sfx(id); } catch { /* */ } },
     teleport: (x, z, kat?: number) => { sim.command({ kind: 'teleport', x, z, kat }); camHold = null; cam.snap(walk.pos); }, myPos: () => ({ x: walk.pos.x, z: walk.pos.z }),

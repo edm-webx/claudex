@@ -23,7 +23,6 @@ const padStep = (key: string): TutStep => ({
 export const TUT: readonly TutStep[] = [
   { id: 'cat', urgent: true, y: 0.8, show: v => !!v.cat && v.cat.state === 'rub' && !v.tutFlags.catPet, done: v => !!v.tutFlags.catPet, at: v => v.cat && v.cat.pos },
   { id: 'gull', urgent: true, y: 0.6, show: v => !!v.gull && v.gull.mode === 'stare' && !v.tutFlags.gullFirst, done: v => !!v.tutFlags.gullFirst, at: v => v.gull && v.gull.pos },
-  { id: 'window', urgent: true, rush: true, show: v => !!v.window && v.window.open, done: v => !!v.tutFlags.windowSale, at: v => v.anchors.window },
   { id: 'riza', urgent: true, y: 1.9, show: v => !!v.sleeper && !v.tutFlags.rizaSleep, done: v => !!v.tutFlags.rizaSleep, at: v => v.sleeper },
   { id: 'slow', urgent: true, y: 2.8, show: v => !!v.slow && !v.tutFlags.slowTapped, done: v => !!v.tutFlags.slowTapped, at: v => v.slow && v.slow.at },
   { id: 'walk', hand: true, show: v => v.t > 3, done: v => v.movedTotal > 1.5 || !!v.tutFlags.firstCut },
@@ -94,8 +93,8 @@ export function installTutorial(rules: Rules): Tutorial {
       if (st.playT - ipLast < IPUCU_ARALIK_S) return;
       const h = ipucuFor(rules.playerPos, id => !!st.tut['ip_' + id]);
       if (!h) return;
+      if (egtIpucuKapsar(h.id) && !st.tut[EGT_KAPALI]) return;   // eğitici kartı anlatıyor (content/egitici.ts): çip görüldü yazılmaz, eğitici kapatılırsa yine çıkar
       st.tut['ip_' + h.id] = Math.round(st.playT);
-      if (egtIpucuKapsar(h.id) && !st.tut[EGT_KAPALI]) return;   // eğitici kartı anlatıyor (content/egitici.ts), çip tekrar etmesin
       ipLast = st.playT;
       try { (rules.bus as any).emit('toast', { text: '💡 ' + h.text, kind: 'info' }); } catch { /* bus optional */ }
     },
@@ -114,7 +113,7 @@ export function installTutorial(rules: Rules): Tutorial {
       const st = rules.state, tut = st.tut;
       const v: any = rules.v2State();
       v.tutFlags = tut; v.stats = st.stats; v.movedTotal = rules.rt.movedTotal;
-      const rush = !!(v.window && v.window.open);
+      const rush = false;
       let step: TutStep | null = null;
       for (const s of TUT) {
         const key = 'tut_' + s.id;

@@ -67,9 +67,7 @@ export interface ActorRegistry {
 /** What the agents layer needs from the economy side. `hostFromRules` (host.ts) implements it over A's `Rules`; tests use a stub. */
 export interface AgentHost {
   /** Faz 2: while the ferry window is open and a worker is posted there: who and where (else null). */
-  windowPost?(): { wid: number; at: Vec2 } | null;
   /** Faz 2: the posted worker reached the window (window.ts serves from the counter then). */
-  setPencereAt?(on: boolean): void;
   hour(): number;
   player(): { x: number; z: number; moving: boolean };
   stationBuilt(p: ProductId): boolean;
