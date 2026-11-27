@@ -137,7 +137,7 @@ export function installDeniz(K: Kernel, cu?: CuLike): DenizApi {
   function onDock(): void {
     runDone = false;
     const h = D();
-    if (h.bufe) { const v = Math.round(VAPUR_BUFE.perDock * S().stage * Math.sqrt(scale())); K.earn(v, DOOR); K.toast('Vapur Büfesi seferde sattı: +' + fmtMoney(v), 'good'); }
+    if (h.bufe) { const v = Math.round(VAPUR_BUFE.perDock * S().stage * Math.sqrt(scale())); K.earn(v, DOOR); K.toast('Güverte Büfesi sattı: +' + fmtMoney(v), 'good'); }
     if (hintN < 2 && h.runs < 3) { hintN++; K.toast(DECK_RUN.lines.hint, 'info'); }
     if (rng.chance(SHIP_CAT.chance)) { shipCat = { t: 0 }; seeAnimal('vapurkedisi'); K.toast(rng.pick(SHIP_CAT.line), 'info'); }
   }

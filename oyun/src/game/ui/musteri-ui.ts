@@ -13,7 +13,9 @@ function ensureStyle(): void {
 background:radial-gradient(circle,#fff 0,rgba(255,255,255,.95) 22%,rgba(255,255,255,.4) 48%,rgba(255,255,255,0) 70%);animation:sb-photo .55s ease-out forwards}
 .sb-photo-full{position:fixed;inset:0;background:#fff;pointer-events:none;z-index:59;animation:sb-photo-full .35s ease-out forwards}
 @keyframes sb-photo{0%{transform:scale(.2);opacity:0}15%{transform:scale(1.15);opacity:1}100%{transform:scale(1.6);opacity:0}}
-@keyframes sb-photo-full{0%{opacity:.35}100%{opacity:0}}`;
+@keyframes sb-photo-full{0%{opacity:.35}100%{opacity:0}}
+.sb-photo.soft{animation:sb-photo-soft 1s ease-in-out forwards}
+@keyframes sb-photo-soft{0%{transform:scale(.4);opacity:0}40%{transform:scale(1);opacity:.4}100%{transform:scale(1.4);opacity:0}}`;
   document.head.appendChild(st);
 }
 
@@ -31,11 +33,14 @@ export function musteriBubble(html: string, k: number): string {
 }
 
 /** Small white camera flash at a screen point (plus a faint full-screen blink). */
+import { flasAzalt } from '../../engine/fx/flas';
 export function photoFlash(x: number, y: number): void {
   ensureStyle();
   if (typeof document === 'undefined') return;
   const root = (document.querySelector('#app') as HTMLElement | null) || document.body;
   const f = document.createElement('div'); f.className = 'sb-photo'; f.style.left = x + 'px'; f.style.top = y + 'px';
+  // 2026-11-27 "Flaşı azalt": tam ekran beyaz titreme yok, nokta da yumuşak ve soluk kalır
+  if (flasAzalt()) { f.classList.add('soft'); root.appendChild(f); setTimeout(() => f.remove(), 1100); return; }
   const g = document.createElement('div'); g.className = 'sb-photo-full';
   root.appendChild(g); root.appendChild(f);
   setTimeout(() => { f.remove(); g.remove(); }, 700);

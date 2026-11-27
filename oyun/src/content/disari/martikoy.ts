@@ -13,11 +13,9 @@ export interface Region {
   id: RegionId; zone: string; name: string; short: string; x0: number; x1: number; level: number;
   color: string; blurb: string; lockLine: string;
   stop: { name: string; x: number; z: number };
-  /** Ferry pier on this region (vapur travel); null = dolmuş only. */
-  vapur?: boolean;
   /** 2026-10-24 açık dünya: where the district sits on the illustrated İstanbul map (0..100 both ways). */
   map: [number, number];
-  /** reachable only by vapur (no street link), e.g. Adalar */
+  /** reachable only by your own boat (no street link), e.g. Adalar */
   island?: boolean;
   /** 16:52 user: reachable only by the city bus from the stop across the büfe (Belgrad Ormanı) */
   bus?: boolean;
@@ -26,7 +24,7 @@ export const BAND = { z0: 4.85, z1: 13.3, mid: 9 } as const;
 
 export const REGIONS: Region[] = [
   { id: 'iskele', zone: 'iskele', name: 'Martıköy İskelesi', short: 'İskele', x0: -62, x1: 62, level: 1, color: '#7cc4e4',
-    blurb: 'Büfenin evi. Deniz, martı, çay.', lockLine: '', map: [30, 58], stop: { name: 'İskele Durağı', x: 48, z: 11.8 }, vapur: true },
+    blurb: 'Büfenin evi. Deniz, martı, çay.', lockLine: '', map: [30, 58], stop: { name: 'İskele Durağı', x: 48, z: 11.8 } },
   { id: 'carsi', zone: 'test-sokak', name: 'Çarşı Sokağı', short: 'Çarşı', x0: 62, x1: 132, level: 1, color: '#f0b45a',
     blurb: 'Fırın, manav, berber ve dedikodu merkezi.', lockLine: '', map: [40, 46], stop: { name: 'Çarşı Başı', x: 68, z: 12.2 } },
   { id: 'sahil', zone: 'sahil', name: 'Sahil Yolu ve Park', short: 'Sahil', x0: 132, x1: 196, level: 1, color: '#8fd06b',
@@ -40,7 +38,7 @@ export const REGIONS: Region[] = [
     map: [64, 50], stop: { name: 'Meydan Çeşmesi', x: 248, z: 12.2 } },
   { id: 'barinak', zone: 'barinak', name: 'Balıkçı Barınağı', short: 'Barınak', x0: 292, x1: 344, level: 1, color: '#5aa0c8',
     blurb: 'Kayıklar, ağlar, balık hali ve martıların başkenti.', lockLine: 'Balıkçılar ağ seriyor, basma! Biraz sonra.',
-    map: [77, 62], stop: { name: 'Barınak Son Durak', x: 296, z: 12.0 }, vapur: true },
+    map: [77, 62], stop: { name: 'Barınak Son Durak', x: 296, z: 12.0 } },
   // 2026-10-24 açık dünya anketi (bölgeler): the rest of the imaginary İstanbul, one seamless strip east of the barınak
   { id: 'gece', zone: 'gece', name: 'Gece Pazarı', short: 'Gece Pazarı', x0: 344, x1: 392, level: 1, color: '#9b7fe0',
     blurb: 'Fenerler, çerçiler, közde mısır. Akşam başlar, sabaha kadar sürer.', lockLine: 'Tezgahlar kuruluyor!', map: [80, 50],
@@ -50,7 +48,7 @@ export const REGIONS: Region[] = [
     stop: { name: 'Stadyum Kapısı', x: 396, z: 12.2 } },
   { id: 'tersane', zone: 'tersane', name: 'Liman ve Tersane', short: 'Tersane', x0: 452, x1: 508, level: 1, color: '#d9a05b',
     blurb: 'Vinçler, konteynerler, kızakta bekleyen tekne. Tamirciler burada.', lockLine: 'Vinç yük indiriyor!', map: [62, 79],
-    stop: { name: 'Tersane Kapısı', x: 456, z: 12.2 }, vapur: true },
+    stop: { name: 'Tersane Kapısı', x: 456, z: 12.2 } },
   { id: 'metro', zone: 'metro', name: 'Metro Altı', short: 'Metro', x0: 508, x1: 548, level: 1, color: '#7a8ca6',
     blurb: 'Çini duvarlar, sokak müzisyenleri, yeraltı çarşısı.', lockLine: 'Yürüyen merdiven bakımda!', map: [46, 28],
     stop: { name: 'Metro Girişi', x: 512, z: 12.2 } },
@@ -58,8 +56,8 @@ export const REGIONS: Region[] = [
     blurb: 'Çam korusu, seyir terası ve bütün şehrin manzarası.', lockLine: 'Koruda piknik var!', map: [30, 20],
     stop: { name: 'Koru Girişi', x: 552, z: 12.2 } },
   { id: 'adalar', zone: 'adalar', name: 'Adalar', short: 'Adalar', x0: 700, x1: 760, level: 1, color: '#e6b45a',
-    blurb: 'Faytonsuz sokaklar, bisikletler, köşkler ve çam kokusu. Sadece deniz taksisiyle.', lockLine: 'Deniz taksisi kalkmak üzere!', map: [58, 90],
-    stop: { name: 'Ada İskelesi', x: 714, z: 3.2 }, vapur: true, island: true },
+    blurb: 'Faytonsuz sokaklar, bisikletler, köşkler ve çam kokusu. Sadece kendi kayığınla.', lockLine: 'Kayığını hazırla, yakında!', map: [58, 90],
+    stop: { name: 'Ada İskelesi', x: 714, z: 3.2 }, island: true },
   // 16:52 user: a bus from the stop across the büfe to Belgrad Ormanı: mushrooms, mangal, the fountain
   { id: 'orman', zone: 'orman', name: 'Belgrad Ormanı', short: 'Orman', x0: 800, x1: 880, level: 1, color: '#3f8a4a',
     blurb: 'Meşeler, çamlar, mangal dumanı ve buz gibi çeşme suyu. Sepetini al, mantar ara!', lockLine: 'Orman yolu kapalı!', map: [24, 8],
@@ -163,7 +161,7 @@ export const VEHICLES: Vehicle[] = [
   { id: 'motor', name: 'Vızvız sepetli motor', blurb: 'Sepette çay ocağı. Vızvız gider, pıtpıt durur.', price: 2800, level: 6, icon: '🛵', speed: 2.2 },
   { id: 'kayik', name: 'Sabri\'nin kayığı "Tuzlu Hamsi"', blurb: 'İskele ile barınak arası kürekle. Kollar kaslanır.', price: 2000, level: 5, icon: '🚣', speed: 1.4, sea: true },
 ];
-export const FARES = { dolmus: 10, vapur: 15 };
+export const FARES = { dolmus: 10 };
 export const DOLMUS = { name: 'Martıköy Dolmuşu', driver: 'Şoför Rıza', plate: '34 MRT 07' };
 export const TRAVEL_SEC = 2.6;
 /** 16:52 user: the 42B city bus. Stop across the büfe on the iskele street; the ride is a short cutscene. */
@@ -231,7 +229,7 @@ export const SIGNS: { x: number; z: number; west: string; east: string }[] = [
 export const PIER_PROPS = {
   babalar: [[-10.25, -8.6], [-10.25, -1.2], [8.2, -9.2], [8.2, 0.8]] as [number, number][],
   canSimidi: [[8.35, -5.6], [-10.4, -6.2]] as [number, number][],
-  gise: { x: 18.9, z: -13.3 },   // 2026-11-21: büfe yanındaki "Yakında" tabelasının üstünden canlı tarife tahtasının (21, -10.6) yanına, vapur tarafına
+  gise: { x: 18.9, z: -13.3 },   // 2026-11-21: büfe yanındaki "Yakında" tabelasının üstünden (21, -10.6) yanına, iskele tarafına
   oltaci: { x: 18.5, z: 4.6 },
   tarti: { x: 15.2, z: 13.9 },
   bayii: { x: 31.0, z: 14.1 },

@@ -33,7 +33,7 @@ export function installBoard(K: Kernel) {
         K.logEv('hire', { name: w.name, role: w.role, price: card ? card.price : 0 });
         // "Pencere elemanı al": the next hire is posted at the ferry window straight away
         const z = S.zones as Record<string, { wid?: number; want?: number } | undefined>;
-        if (z.pencere?.want) { z.pencere = { wid: w.id }; K.toast(w.name + ' artık vapur penceresinde çalışacak.', 'good'); rt.boardOpen = false; }
+        if (z.pencere?.want) { z.pencere = { wid: w.id }; K.toast(w.name + ' artık pencerede çalışacak.', 'good'); rt.boardOpen = false; }
         K.saveNow();
       }
       return !!w;

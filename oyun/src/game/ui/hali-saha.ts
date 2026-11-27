@@ -11,6 +11,7 @@
 import { createHaliSaha3D, type HS3 } from './hali-saha-3d';
 import { createMatch, FORMATIONS } from '../sim/macmotor';
 import { ADIM, createGirdi, dugmeBul, dugmeYerlesimi, nisanYazi, pasHedefi, sabitAdim, yardimSatirlari, type PadBenzeri } from './hali-saha-girdi';
+import { flasAzalt } from '../../engine/fx/flas';
 import { olayBanner, restartBanner, restartIpucu, sesler, type MacOlay } from './hali-saha-olay';
 
 type Cmd = { kind: string; [k: string]: unknown };
@@ -189,7 +190,7 @@ export function createHaliSaha(deps: HaliSahaDeps): HaliSahaView {
       layout();
       const pls = rp, ball = rb;   // çizim interpolasyonlu görünümü okur
       g.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const sh = shake > 0 && !reduceMotion ? (Math.random() - 0.5) * shake * 18 : 0;
+      const sh = shake > 0 && !reduceMotion && !flasAzalt() ? (Math.random() - 0.5) * shake * 18 : 0;
       g.translate(sh, sh * 0.6);
       if (hs3) { g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, cv.width, cv.height); hs3.render({ score: M.score, pls, ball, ctrl: iz ? -1 : M.ctrl, portrait, shake, dt: lastDt, ref }); }
       else {

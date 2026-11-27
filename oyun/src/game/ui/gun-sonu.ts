@@ -25,6 +25,9 @@ const CSS = `
 .gs-wrap.on{background:rgba(6,8,22,.92)}
 .gs-card{opacity:0;transform:translateY(18px) scale(.97);transition:opacity .8s ease 1.1s,transform .8s ease 1.1s;background:#fdf3e1;color:#3b2a20;border-radius:22px;border:4px solid #3b2a20;box-shadow:0 10px 0 #3b2a20;padding:22px 24px 20px;width:min(400px,calc(100vw - 32px));max-height:calc(100dvh - 24px);overflow-y:auto;text-align:center;font-family:var(--body)}
 .gs-wrap.on .gs-card{opacity:1;transform:none}
+/* 2026-11-27 ışığa duyarlılık: kapanış da açılış gibi yumuşak (kart .4 sn'de solar, karartı 1.3 sn'de açılır); tek karede %92 -> gündüz yok */
+.gs-wrap.off{pointer-events:none;background:rgba(6,8,22,0);transition:background 1.3s ease}
+.gs-wrap.off .gs-card{opacity:0;transform:none;transition:opacity .4s ease 0s}
 .gs-moon{font-size:40px;line-height:1;margin-bottom:4px}
 .gs-h{font:900 26px/1.1 var(--disp);margin:2px 0 2px}
 .gs-sub{font:700 15px/1.3 var(--body);color:#5a4636;margin-bottom:12px}
@@ -44,7 +47,12 @@ const CSS = `
 export function createGunSonu(deps: { root: HTMLElement; rules: () => Rules | null; command: (c: { kind: string }) => unknown; sfx?: (id: string) => void }): GunSonuView {
   const st = document.createElement('style'); st.textContent = CSS; deps.root.appendChild(st);
   let wrap: HTMLDivElement | null = null, shownDay = -1;
-  const close = () => { if (wrap) { wrap.remove(); wrap = null; } shownDay = -1; };
+  const close = (yumusak = false) => {
+    const w = wrap; wrap = null; shownDay = -1;
+    if (!w) return;
+    if (!yumusak) { w.remove(); return; }
+    w.classList.remove('on'); w.classList.add('off'); setTimeout(() => w.remove(), 1400);
+  };
   const ISL_AD: Record<string, string> = {};
   for (const i of Object.values(ISLETME)) for (const y of i.menu) ISL_AD[y.id] = y.ad;
   /** satış anahtarı -> okunur ad: ürün, yemek ya da işletme menüsü ('k:<menü id>') */
@@ -103,18 +111,18 @@ export function createGunSonu(deps: { root: HTMLElement; rules: () => Rules | nu
       if (h.marti !== undefined) parts.push(row('Martı yıldızı', `<b>${'★'.repeat(Math.max(0, Math.min(5, Math.round(h.marti))))}${'☆'.repeat(5 - Math.max(0, Math.min(5, Math.round(h.marti))))}</b>`));
     }
     wrap = document.createElement('div'); wrap.className = 'gs-wrap';
-    wrap.innerHTML = `<div class="gs-card"><div class="gs-moon">🌙</div><div class="gs-h">Kepenkler indi</div><div class="gs-sub">${m.day}. gün bitti. Saat 03:00, iskele sessiz.</div>
+    wrap.innerHTML = `<div class="gs-card"><div class="gs-moon">🌙</div><div class="gs-h">Kepenkler indi</div><div class="gs-sub">${m.day}. gün bitti. Saat 08:00, iskele sessiz.</div>
       ${parts.join('\n')}
       <button class="gs-btn" type="button">Yeni güne başla ☀️</button></div>`;
     deps.root.appendChild(wrap);
     requestAnimationFrame(() => requestAnimationFrame(() => wrap?.classList.add('on')));
-    wrap.querySelector('.gs-btn')!.addEventListener('click', () => { deps.sfx?.('pop'); deps.command({ kind: 'yeniGun' }); close(); });
+    wrap.querySelector('.gs-btn')!.addEventListener('click', () => { deps.sfx?.('pop'); deps.command({ kind: 'yeniGun' }); close(true); });
   }
   return {
     update() {
       const r = deps.rules(); const m = r?.rt.uiLast.gunSonu as GunSonuModel | undefined;
       if (m && m.day !== shownDay) show(m);
-      else if (!m && wrap) close();
+      else if (!m && wrap) close(true);
     },
     dispose() { close(); st.remove(); },
   };

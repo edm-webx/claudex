@@ -17,6 +17,7 @@
 import type { Ui, UiDeps, HudPatch, WorldLabel, CenterCard, Notice, Vec3, ScreenPt, UiSettings } from '../api';
 import { CSS, ICONS } from './v2-style';
 import { YENI_CSS } from './yeni-hud';
+import { flasAzalt } from '../fx/flas';
 
 export const esc = (s: unknown): string => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string));
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
@@ -44,6 +45,7 @@ const EXTRA_CSS = `
 .sb-kep::after{content:"";position:absolute;left:50%;bottom:18px;width:64px;height:12px;margin-left:-32px;border-radius:5px;background:var(--ink)}
 .sb-spring{position:absolute;inset:0;z-index:80;pointer-events:none;background:var(--cream);opacity:0;transition:opacity .18s}
 .sb-spring.on{opacity:.55}
+.sb-spring.soft{transition:opacity .5s ease-in-out}.sb-spring.soft.on{opacity:.2}
 #sbui.m-parity>:not(.sb-hud){display:none!important}
 #sbui.m-hidden{display:none!important}
 `;
@@ -300,9 +302,10 @@ export function createUi(deps: UiDeps): Ui {
   function transition(kind: 'kepenk' | 'spring'): Promise<void> {
     return new Promise(res => {
       if (kind === 'spring') {
-        const f = root.appendChild(mk('div', 'sb-spring'));
+        const soft = flasAzalt();   // 2026-11-27 "Flaşı azalt": 0.18 sn'lik %55 krem flaş yerine 0.5 sn'de açılıp kapanan %20 örtü
+        const f = root.appendChild(mk('div', soft ? 'sb-spring soft' : 'sb-spring'));
         requestAnimationFrame(() => f.classList.add('on'));
-        setTimeout(() => { f.classList.remove('on'); setTimeout(() => { f.remove(); res(); }, 200); }, 180);
+        setTimeout(() => { f.classList.remove('on'); setTimeout(() => { f.remove(); res(); }, soft ? 520 : 200); }, soft ? 500 : 180);
         return;
       }
       const k = root.appendChild(mk('div', 'sb-kep'));

@@ -58,6 +58,7 @@ import { createAudio } from '../engine/audio';
 import { createChars, type MotorChars, type MotorCrowd } from './view/chars';
 import { createAgentsView, type AgentsView } from './view/chars/agents-view';
 import { avmYukleme } from './ui/avm-yukleme';
+import { setFlasAzalt, flasVarsayilan } from '../engine/fx/flas';
 import { createAvmEglence } from './view/world/avm-eglence';
 import { createMakineGorunum, type MakineVeri } from './view/world/makine-gorunum';
 import { createMisirKoku } from './view/world/misir-koku';
@@ -113,7 +114,6 @@ import { createKayitDurum } from './net/kayit-durum';
 import { createKayitRozet } from './ui/kayit-rozet';
 import { panelModel, panelActions } from './sim/panels';
 import type { AgentsHandle } from './sim/agents';
-import { createFerryLook, type FerryLookView } from './view/world/ferry-look';
 import { createYolLook, type YolLookView } from './view/world/yol-look';
 import { ugY, onUg } from '../content/ustgecit';
 import { createKarsiLook, type KarsiLookView } from './view/world/karsi-look';
@@ -343,11 +343,17 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const tutorial: Tutorial | null = playMode ? make('tutorial', () => installTutorial(sim.rules)) : null;
 
   const pose: { x: number; z: number; rot: number; y?: number; kat?: number } = { x: 0, z: 0, rot: 0 };
-  let lastPoseX = 0, lastPoseZ = 0, perdeEl: HTMLDivElement | null = null;
+  let lastPoseX = 0, lastPoseZ = 0, perdeEl: HTMLDivElement | null = null, perdeAnim: Animation | null = null;
   const perde = () => {
     try {
       if (!perdeEl) { perdeEl = document.createElement('div'); perdeEl.style.cssText = 'position:fixed;inset:0;background:#0b0d12;pointer-events:none;z-index:40;opacity:0;transition:opacity .45s ease-out'; document.body.appendChild(perdeEl); }
-      const el = perdeEl; el.style.transition = 'none'; el.style.opacity = '1'; void el.offsetWidth; el.style.transition = 'opacity .45s ease-out'; el.style.opacity = '0';
+      const el = perdeEl;
+      // 2026-11-27 ışığa duyarlılık: perde tek karede siyaha atlamaz. Kararma 0.35 sn ease-in, kısa bekleme, 0.7 sn açılış (toplam ~1.15 sn);
+      // süren perde varken yeni ışınlanma onu yeniden başlatmaz (art arda siyah/açık sıçraması olmasın).
+      if (perdeAnim && perdeAnim.playState === 'running') return;
+      if (typeof el.animate === 'function') {
+        perdeAnim = el.animate([{ opacity: 0, easing: 'ease-in' }, { opacity: 1, offset: 0.3 }, { opacity: 1, offset: 0.4, easing: 'ease-out' }, { opacity: 0 }], { duration: 1150, fill: 'none' });
+      } else { el.style.transition = 'opacity .45s ease-out'; el.style.opacity = '0'; }
     } catch { /* */ }
   };
   const pos: Vec2 = pose; // same object: pos.x/pos.z are the interpolated ground position
@@ -361,9 +367,6 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
       return true;
     });
   }
-  // ferry kinds + tarife tahtası (ferry-look.ts)
-  const ferryLook = null as FerryLookView | null;   // 2026-11-25: vapur ve tarife tahtası kalktı
-  void createFerryLook;
 
   const karsiLook: KarsiLookView | null = playMode && zones ? make('karsiLook', () => createKarsiLook({ root: () => zones.root('iskele') ?? null })) : null;
   const karsiBina: BinaView | null = playMode && zones ? make('karsiBina', () => createKarsiBina({ root: () => zones.root('iskele') ?? null, night: () => nightK, camera: () => cam.camera, hero: () => walk.pos })) : null;
@@ -484,6 +487,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     else if (key === 'hand') { const h = value === 'left' ? 'left' : 'right'; U.settings.hand = h; input.setHand(h); }
     else if (key === 'haptics') U.settings.haptics = !!value;
     else if (key === 'textScale') { const v = Math.min(1.6, Math.max(0.8, Number(value) || 1)); U.settings.textScale = v; U.root.style.setProperty('--ts', String(v)); }
+    else if (key === 'flasAzalt') setFlasAzalt(flasVarsayilan(value));
     else if (key === 'colorBlindIcons') { U.settings.colorBlindIcons = !!value; U.root.classList.toggle('sb-cb', !!value); }
   };
   const copyReport = () => { void platform.copyText(P.dump().kayit ? JSON.stringify(P.dump()) : P.report()).then(ok => U.toast(ok ? 'Rapor kopyalandı.' : 'Kopyalanamadı, hız ölçerden dene.', ok ? 'good' : 'info')); };
@@ -749,6 +753,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   if (sim.state.settings.hand === 'left') extraSettings('hand', 'left');
   if ((sim.state.settings.textScale || 1) !== 1) extraSettings('textScale', sim.state.settings.textScale);
   if (sim.state.settings.colorBlindIcons) extraSettings('colorBlindIcons', true);
+  setFlasAzalt(flasVarsayilan(sim.state.settings.flasAzalt));   // varsayılan AÇIK; eski kayıtta alan yoksa da açık
 
   // ── tier changes
   const applyTier = (t: TierDef) => {
@@ -847,7 +852,6 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     guard('camera.follow', () => cam.follow((t => onUg(t.x, t.z) ? { x: t.x, z: t.z, y: ugY(t.x, t.z) } : t === pos && pose.y ? { x: t.x, z: t.z, y: pose.y } : t)(acilis?.kamera() ?? egitici?.kamera() ?? (df && sim.state.playT <= df.until ? df : camHold ?? (inBufe ? { x: pos.x + (bufeFocus.x - pos.x) * 0.25, z: pos.z + (bufeFocus.z - pos.z) * 0.25 } : pos))), fdt));
     if (playMode) guard('sign', syncSign);
     guard('world', () => W.update(sim.state, fdt, alpha));
-    if (ferryLook) guard('ferryLook', () => ferryLook.update(fdt));
     if (yolLook) guard('yolLook', () => yolLook.update(fdt));
     if (karsiLook) guard('karsiLook', () => karsiLook.update(fdt));
     if (karsiBina) guard('karsiBina', () => karsiBina.update(fdt));
@@ -1270,7 +1274,6 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   if (hileAcik) for (const what of ['ferry', 'gull', 'kapkac', 'regular', 'vip', 'endDay', 'money', 'gold', 'stars', 'sleep', 'offline', 'unlock']) {
     reg(`force.${what}`, (value?: number | string) => cmd('force', { what, value }));
   }
-  reg('ferryBoard', () => ({ board: ferryLook?.board() ?? null, info: rt().ferryInfo ?? null, view: ferryLook?.debug() ?? null }));
 
   // admin: the scene editor on demand (drag props with the mouse/finger, "Kaydet" keeps the layout on this device)
   if (prefab && zones && dress) {

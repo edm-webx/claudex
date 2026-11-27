@@ -33,6 +33,8 @@ function textSprite(text: string, w = 2.4): T.Sprite {
   const s = new T.Sprite(new T.SpriteMaterial({ map: t, transparent: true, depthWrite: false })); s.scale.set(w, w / 4, 1); return s;
 }
 
+/** morg lambası parlaklığı (0.76..1.0, 0.25 Hz): çok yavaş nefes, asla yanıp sönme değil (ışığa duyarlılık; test eder) */
+export const MORG_PARLAKLIK = (tt: number): number => 0.88 + 0.12 * Math.sin(tt * Math.PI * 0.5);
 export function createKarsiYasam(d: YasamDeps): YasamView {
   const holder = new T.Group(); holder.name = 'karsiYasam';
   const actors: Actor[] = [];
@@ -242,7 +244,7 @@ export function createKarsiYasam(d: YasamDeps): YasamView {
     });
     ballMesh.position.set(P.x + (m.ball.x - ML / 2) * sx, 0.15, P.z + (m.ball.y - MW / 2) * sz);
   }
-  let morgT = 6;
+  let morgT = 6, glowK = 0;
   const morgCanta = new Canta(MORG.sesler.map(v => ({ v, w: 1 })), Math.random);
   return {
     update(dt) {
@@ -254,9 +256,13 @@ export function createKarsiYasam(d: YasamDeps): YasamView {
       // 2026-11-23: içerideyken o dükkânın cephe süsü (tente, lamba kolları, ampul dizisi) gizlenir; kabuk gibi. Yoksa tente odanın üstünde havada asılı kalıyordu
       for (const [id, c] of cephe) { const m = IC_MEKANLAR.find(x => x.arsa === id), ic = !!m && icIcinde(m, h, 0.5); if (c.g.visible === ic) c.g.visible = !ic; }
       dt = Math.min(dt, 0.1); tt += dt;
-      (glowPts.material as T.PointsMaterial).opacity = night ? 0.85 : 0;
+      // 2026-11-27 ışığa duyarlılık: çarşı lamba parıltısı 19:30'da/06:00'da tek karede açılıp kapanmaz, ~3 sn'de yumuşak açılır (üstel yaklaşma)
+      glowK += ((night ? 0.85 : 0) - glowK) * (1 - Math.exp(-dt / 1.2));
+      (glowPts.material as T.PointsMaterial).opacity = glowK < 0.004 ? 0 : glowK;
       // morg
-      { if (night && (hour % 24 >= 22 || hour % 24 < 5.5)) { morgLight.visible = Math.sin(tt * 23) * Math.sin(tt * 7.3) > -0.15; (morgLight.material as T.MeshLambertMaterial).color.set(Math.random() < 0.08 ? '#ffffff' : '#ff2a1a');
+      { if (night && (hour % 24 >= 22 || hour % 24 < 5.5)) {
+          // 2026-11-27 ışığa duyarlılık: morg lambası ARTIK YANIP SÖNMEZ (eski: ~3.9 Hz kapanıp açılma + rastgele beyaz). Sabit kırmızı, 0.25 Hz'lik çok hafif nefes, beyaza hiç atlamaz.
+          morgLight.visible = true; (morgLight.material as T.MeshLambertMaterial).color.setRGB(1, 0.165, 0.1).multiplyScalar(MORG_PARLAKLIK(tt));
           morgT -= dt; if (morgT <= 0 && Math.hypot(h.x - MORG.at.x, h.z - MORG.at.z) < MORG.r) { morgT = rnd(MORG.aralik[0], MORG.aralik[1]); morgShadow.visible = true; const ici = Math.abs(h.x - MORG.at.x) < 1.65 && Math.abs(h.z - MORG.at.z) < 1.6; d.sfx(morgCanta.next() ?? 'moan', ici ? { x: h.x + 1.5, z: h.z } : MORG.at); setTimeout(() => { morgShadow.visible = false; }, 1400); }
           if (morgShadow.visible) morgShadow.position.z = 55.5 + Math.sin(tt * 3) * 0.5; } else { morgLight.visible = false; morgShadow.visible = false; } }
       if ((isciT -= dt) <= 0) { isciT = 1.0; syncIsci(); }

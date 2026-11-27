@@ -36,6 +36,7 @@ export interface SettingsSave {
   music: number; sfx: number; voice: number;
   textScale: number; hand: 'left' | 'right'; colorBlindIcons: boolean; haptics: boolean; batterySaver: boolean;
   perfMeter: boolean; ownMusic: boolean;
+  /** Flaşı azalt (ışığa duyarlılık): varsayılan AÇIK, eski kayıtta yoksa AÇIK sayılır */ flasAzalt: boolean;
 }
 
 export interface GameState {
@@ -77,7 +78,7 @@ export function newToday(): TodaySave {
 export function defaultSettings(): SettingsSave {
   return {
     muted: false, quality: 'auto', autoTier: null, music: 0.8, sfx: 1, voice: 1,
-    textScale: 1, hand: 'right', colorBlindIcons: false, haptics: true, batterySaver: false, perfMeter: false, ownMusic: false,
+    textScale: 1, hand: 'right', colorBlindIcons: false, haptics: true, batterySaver: false, perfMeter: false, ownMusic: false, flasAzalt: true,
   };
 }
 
