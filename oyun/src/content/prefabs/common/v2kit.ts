@@ -181,7 +181,7 @@ function buildAtlas(): void {
   region('fridgeAyran', 128, 32, '#2f6fdb', (g, w, h) => txt(g, 'AYRANBEY', w / 2, h / 2 + 1, 19, '#ffffff', { w: 900 }));
   region('fridgeKolaz', 128, 32, '#d8433a', (g, w, h) => txt(g, 'Kolaz', w / 2, h / 2 + 1, 20, '#ffffff', { w: 900, fam: 'Georgia, serif' }));
   region('timetable', 128, 96, '#1d5fa8', (g, w, h) => {
-    g.fillStyle = '#fff6e6'; g.fillRect(6, 26, w - 12, h - 32); txt(g, 'VAPUR SAATLERİ', w / 2, 14, 13, '#fff6e6', { w: 900, max: w - 12 });
+    g.fillStyle = '#fff6e6'; g.fillRect(6, 26, w - 12, h - 32); txt(g, 'DOLMUŞ SAATLERİ', w / 2, 14, 13, '#fff6e6', { w: 900, max: w - 12 });
     ['08:15', '09:40', '11:10', '13:30', '16:45', '19:20'].forEach((s, i) => txt(g, s, 30 + (i % 2) * 64, 40 + Math.floor(i / 2) * 18, 13, '#2b3a55', { w: 800 }));
   });
   region('marble', 64, 64, '#f2efe8', (g, w, h) => { g.strokeStyle = 'rgba(150,150,160,.35)'; g.lineWidth = 1.2; for (let i = 0; i < 6; i++) { g.beginPath(); let x = rnd.next() * w, y = 0; g.moveTo(x, y); while (y < h) { x += rnd.range(-6, 6); y += rnd.range(4, 10); g.lineTo(x, y); } g.stroke(); } });
@@ -201,7 +201,7 @@ function buildAtlas(): void {
     g.fillStyle = '#c8361e'; g.beginPath(); g.moveTo(22, 16); g.quadraticCurveTo(36, 30, 26, 44); g.lineTo(40, 44); g.quadraticCurveTo(30, 30, 44, 16); g.fill(); g.fillStyle = '#f6ead2'; g.fillRect(18, 44, 30, 4);
   });
   region('gazeteSign', 128, 24, '#1d3d6b', (g, w, h) => txt(g, 'GAZETE', w / 2, h / 2 + 1, 17, '#fff6e6', { w: 900 }));
-  region('pencere', 256, 48, '#1d5fa8', (g, w, h) => { g.strokeStyle = '#fff6e6'; g.lineWidth = 3; rrect(g, 4, 4, w - 8, h - 8, 8); g.stroke(); txt(g, 'VAPUR PENCERESİ', w / 2, h / 2 + 1, 24, '#fff6e6', { w: 900, max: w - 24 }); });
+  region('pencere', 256, 48, '#1d5fa8', (g, w, h) => { g.strokeStyle = '#fff6e6'; g.lineWidth = 3; rrect(g, 4, 4, w - 8, h - 8, 8); g.stroke(); txt(g, 'PENCERE', w / 2, h / 2 + 1, 24, '#fff6e6', { w: 900, max: w - 24 }); });
   region('gurur', 128, 24, '#7d5638', (g, w, h) => txt(g, 'GURUR RAFI', w / 2, h / 2 + 1, 16, '#ffd23f', { w: 900 }));
 }
 function drawCini(g: G, w: number, h: number, big: boolean): void {

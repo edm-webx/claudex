@@ -1,5 +1,5 @@
 /**
- * Vapur Penceresi (v2 window): opens for 20 s when the ferry docks (if the pad was bought); only the player serves it,
+ * Pencere (v2 window): opens for 20 s when a crowd wave arrives (if the pad was bought); only the player serves it,
  * carrying exactly what the window customers want. Dwell rule: `window` interactable (radius 1.25, dwell 0.25 s,
  * one item per 0.25 s). Owner: Builder A. Pure. Faz 2: an assigned worker can serve it from the counter.
  */
@@ -107,7 +107,7 @@ export function installWindow(K: Kernel, cu: ReturnType<typeof installCustomers>
           }
           break;
         }
-        // 2026-10-30 user: "vapur tezgahına bişey koyamadım". A customer waiting for something else used to make the
+        // 2026-10-30 user: "pencere tezgahına bişey koyamadım". A customer waiting for something else used to make the
         // window ignore everything else in Sabri's hands (canAct true, act did nothing). Whatever he cannot hand over now is stocked.
         if (rt.carry.length && shelf().length < SHELF_N && !Object.keys(left).some(p => rt.carry.some(it => it.type === p))) { const it = rt.carry.pop()!; shelf().push(it.type as ProductId); }
         return 'continue';

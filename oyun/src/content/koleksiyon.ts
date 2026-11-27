@@ -63,10 +63,10 @@ export const STICKER_PAGES: CollPage[] = [
     { id: 'karamel_nobet', name: 'Karamel nöbette', color: '#c98b4a' },
     { id: 'kedi_toplanti', name: 'Gece kedi toplantısı', color: '#5a5f7a' },
   ] },
-  { id: 'st_vapur', name: 'Vapurlar ve Deniz', reward: { kind: 'decor', ids: ['denizci_can_simidi', 'denizci_halat'] }, items: [
-    { id: 'sabah_vapuru', name: 'Sabah vapuru', color: '#fff6e6' },
-    { id: 'gunbatimi_vapuru', name: 'Gün batımı vapuru', color: '#f2a65a' },
-    { id: 'kovalayan_vapur', name: 'Martı kovalayan vapur', color: '#e9eef2' },
+  { id: 'st_vapur', name: 'Tekneler ve Deniz', reward: { kind: 'decor', ids: ['denizci_can_simidi', 'denizci_halat'] }, items: [
+    { id: 'sabah_vapuru', name: 'Sabah teknesi', color: '#fff6e6' },
+    { id: 'gunbatimi_vapuru', name: 'Gün batımı teknesi', color: '#f2a65a' },
+    { id: 'kovalayan_vapur', name: 'Martı kovalayan tekne', color: '#e9eef2' },
     { id: 'kayikci', name: 'Kayıkçı Dursun', color: '#7d5638' },
     { id: 'samandira', name: 'Kırmızı şamandıra', color: '#e0533c' },
     { id: 'yunus_selam', name: 'Yunus selamı', color: '#6fbde2', rare: true },
@@ -90,7 +90,7 @@ export const STICKER_PAGES: CollPage[] = [
   { id: 'st_gece', name: 'Gece Martıları', reward: { kind: 'gold', n: PAGE_GOLD * 2 }, hidden: { hint: 'Üç parıltılı çıkartma bul ya da dört sayfayı bitir. Sonra gece paketlerine bak.' }, items: [
     { id: 'fenerli_marti', name: 'Fenerli Martı', color: '#ffd23f', night: true },
     { id: 'aya_bakan_kedi', name: 'Ay\'a bakan kedi', color: '#5a5f7a', night: true },
-    { id: 'gece_vapuru', name: 'Son vapur', color: '#2b3a55', night: true },
+    { id: 'gece_vapuru', name: 'Son tekne', color: '#2b3a55', night: true },
     { id: 'kayan_simit', name: 'Yıldız kayan simit', color: '#f6bd3a', night: true, rare: true },
     { id: 'uykusuz_sabri', name: 'Uykusuz Sabri', color: '#9fb4c4', night: true },
     { id: 'bekci_marti', name: 'Gece bekçisi martı', color: '#33373b', night: true },
@@ -124,7 +124,7 @@ export const FISH_PAGES: CollPage[] = [
     { id: 'sisede_mektup', name: 'Şişede mektup', color: '#7bd389', note: '"Kim bulursa bir simit ısmarlasın." İmza: bir martı.' },
     { id: 'kayip_gozluk', name: 'Kayıp gözlük', color: '#33373b', note: 'Gözlüklü Martı\'nın yedeği olabilir.' },
     { id: 'tek_corap', name: 'Tek çorap', color: '#c86fa0', note: 'Çamaşır makinesinden kaçmış, denize ulaşmış.' },
-    { id: 'vapur_jetonu', name: 'Eski vapur jetonu', color: '#c9a227', note: 'Necati Amca bunu görünce ağladı.' },
+    { id: 'vapur_jetonu', name: 'Eski dolmuş jetonu', color: '#c9a227', note: 'Necati Amca bunu görünce ağladı.' },
   ] },
   { id: 'fi_efsane', name: 'Efsaneler', reward: { kind: 'bonus' }, items: [
     { id: 'altin_hamsi', name: 'Altın Hamsi', color: '#f6bd3a', rare: true, note: 'Parlıyor! Gözünü kamaştırıyor, karnını doyurmuyor.' },
@@ -147,7 +147,7 @@ export const CAP_BRANDS: CapBrand[] = [
   { id: 'buzdagi', name: 'Buzdağı Limonata', color: '#f4e04d', ink: '#33373b', decor: 'nostalji_sandalye' },
   { id: 'salgamzade', name: 'Şalgamzade', color: '#6c2a5a', ink: '#fff', decor: 'kedi_evi' },
   { id: 'demlikhan', name: 'Demlikhan Çay', color: '#a0401c', ink: '#fff', decor: 'lale_semaver' },
-  { id: 'vapurcu', name: 'Vapurcu Kahve', color: '#4a2f22', ink: '#f6bd3a', decor: 'nostalji_radyo' },
+  { id: 'vapurcu', name: 'Kaptan Kahve', color: '#4a2f22', ink: '#f6bd3a', decor: 'nostalji_radyo' },
   { id: 'aybozasi', name: 'Ay Bozası', color: '#e8d9a8', ink: '#4a2f22', decor: 'lale_minder' },
   { id: 'kopuk', name: 'Köpük Kulesi', color: '#f29e4c', ink: '#fff', decor: 'tavla_masasi' },
 ];
@@ -191,7 +191,7 @@ export const FIRIN_SHELF: FirinItem[] = [
 /** rotating pool (altin-6): 4 a day picked by the day number */
 export const FIRIN_POOL: FirinItem[] = [
   { id: 'yaldiz_onluk', name: 'Yaldızlı önlük', kind: 'kiyafet', gold: 60, color: '#f6bd3a', text: 'Önlükte yazı yine aynı, sadece biraz parlıyor.' },
-  { id: 'kaptan_sapka', name: 'Lacivert kaptan şapkası', kind: 'kiyafet', gold: 45, color: '#2b3a55', text: 'Vapur kaptanları selam vermeye başladı.' },
+  { id: 'kaptan_sapka', name: 'Lacivert kaptan şapkası', kind: 'kiyafet', gold: 45, color: '#2b3a55', text: 'Tekne kaptanları selam vermeye başladı.' },
   { id: 'marti_yelek', name: 'Martı desenli yelek', kind: 'kiyafet', gold: 40, color: '#e9eef2', text: 'Martılar akraba sanıp yanaşıyor.' },
   { id: 'cizgili_bere', name: 'Çizgili denizci beresi', kind: 'kiyafet', gold: 30, color: '#2f7fb3', text: 'Lodosta uçmayan tek bere.' },
   { id: 'altin_zil', name: 'Bisiklete altın zil', kind: 'arac', gold: 35, color: '#f6bd3a', text: '"Çın çın" diyor, kibarca.' },

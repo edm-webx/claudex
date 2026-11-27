@@ -1,5 +1,5 @@
 // Martıköy HUD pieces (survey disari-1..9, kontrol-3): the corner minimap (only away from the pier, tap = open map),
-// the travel overlay (dolmuş / vapur / own vehicle crossing the screen while the sim teleports Sabri underneath) and
+// the travel overlay (dolmuş / own vehicle crossing the screen while the sim teleports Sabri underneath) and
 // the "ask a citizen" direction banner. DOM only; reads disariApi(rules).view(), writes nothing but commands.
 import { disariApi, type DisariView } from '../sim/disari';
 import { REGIONS } from '../../content/disari/martikoy';
@@ -28,8 +28,8 @@ const CSS = `
 @keyframes mk-nudge{50%{transform:translateX(6px)}}
 .mk-arrow.w i{animation-name:mk-nudgew}@keyframes mk-nudgew{50%{transform:translateX(-6px)}}
 `;
-const ICON: Record<string, string> = { dolmus: '🚐', vapur: '🚤', bisiklet: '🚲', motor: '🛵', kayik: '🚣', yaya: '🚶' };
-const SAY: Record<string, string> = { dolmus: 'Martıköy Dolmuşu', vapur: 'Deniz taksisi', bisiklet: 'Zırr zırr!', motor: 'Vızvız!', kayik: 'Kürek, kürek!', yaya: 'Yürüyoruz' };
+const ICON: Record<string, string> = { dolmus: '🚐', bisiklet: '🚲', motor: '🛵', kayik: '🚣', yaya: '🚶' };
+const SAY: Record<string, string> = { dolmus: 'Martıköy Dolmuşu', bisiklet: 'Zırr zırr!', motor: 'Vızvız!', kayik: 'Kürek, kürek!', yaya: 'Yürüyoruz' };
 const X0 = -62, X1 = 344;
 
 export function createHaritaHud(d: HaritaHudDeps): HaritaHud {
@@ -90,14 +90,14 @@ export function createHaritaHud(d: HaritaHudDeps): HaritaHud {
       if (t) {
         const key = t.mode + t.to;
         if (key !== travKey) {
-          travKey = key; trav.style.display = ''; trav.classList.toggle('sea', t.mode === 'vapur' || t.mode === 'kayik');
+          travKey = key; trav.style.display = ''; trav.classList.toggle('sea', t.mode === 'kayik');
           veh.textContent = ICON[t.mode] || '🚐';
           cap.innerHTML = `${SAY[t.mode] || ''}<small>${t.from ? t.from + ' → ' : ''}${t.to}</small>`;
           requestAnimationFrame(() => trav.classList.add('on'));
           try { d.sfx?.('pick'); } catch { /* */ }
         }
         const k = Math.min(1, t.t / t.dur), w = d.root.clientWidth || 390;
-        const bob = Math.sin(t.t * (t.mode === 'vapur' ? 4 : 14)) * (t.mode === 'vapur' ? 5 : 3);
+        const bob = Math.sin(t.t * (t.mode === 'kayik' ? 4 : 14)) * (t.mode === 'kayik' ? 5 : 3);
         // vehicles face left in the emoji set: travel right-to-left
         veh.style.transform = `translate(${(1 - k) * (w + 120) - 110}px, ${bob}px)`;
         if (k > 0.85) trav.classList.remove('on');

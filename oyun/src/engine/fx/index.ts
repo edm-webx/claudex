@@ -13,6 +13,7 @@
  * - `wind` pushes +x by scale * gust(t); per-zone wind can be set with `setWind(x, z)`.
  * - Headless (no canvas): a 1x1 white texture; everything else still runs (unit-testable in Node).
  */
+import { flasAzalt } from './flas';
 import * as T from 'three';
 import type { EffectDef, Fx, FxDeps, FxHandle, TierDef, Vec3, ModuleBlock, EmitterBlock } from '../api';
 
@@ -212,7 +213,7 @@ export function createFx(deps: FxDeps): MotorFx {
     return true;
   }
   function flashP(c: Compiled, inst: Inst) {
-    if (!c.flash || n >= cap) return;
+    if (!c.flash || n >= cap || flasAzalt()) return;   // 2026-11-27 Flaşı azalt: ışık sıçratan fx flaşları çizilmez
     if (c.amb) nAmb++;
     const i = n++;
     px[i] = inst.at.x; py[i] = inst.at.y; pz[i] = inst.at.z; vx[i] = vy[i] = vz[i] = 0; age[i] = 0; life[i] = c.flash.dur; rot[i] = 0; spin[i] = 0; frame[i] = 11; sizeK[i] = -c.flash.intensity * inst.scale; owner[i] = c;

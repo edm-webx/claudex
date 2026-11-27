@@ -385,7 +385,7 @@ export function createRules(d: RulesDeps): RulesFull {
       case 'setSetting': applySetting(S.settings, c.key as never, c.value); K.dirty(); return true;
       case 'force': {
         const what = String(c.what), v = c.value;
-        if (what === 'ferry') fe.force(v);
+        if (what === 'ferry') fe.force();
         else if (what === 'endDay') S.dayT = P.GAME_DAY_S - 0.05;
         else if (what === 'day') S.day = Math.max(S.day, Number(v) || 1);
         else if (what === 'money') K.cashIn!(Number(v) || 0);   // yönetici: gelir değil, cep girişi

@@ -1,7 +1,7 @@
 // Martıköy Haritası sheet ('harita' panel) and its small card in the Görevler panel (survey disari-1..9, mekan-1..9).
 // Pure HTML string renderers in the v2ui style; data-a names map to panelActions('harita') / ('gorevler').
 // Decisions: the map is a folding paper SVG (fold creases are gradients, it unfolds on first open only, since the
-// sheet re-renders twice a second); every pin and row is one tap: "Git" travels (dolmuş/vapur/own vehicle) to the
+// sheet re-renders twice a second); every pin and row is one tap: "Git" travels (dolmuş/own vehicle) to the
 // region's stop and hands the last metres to Fındık the guide cat. Text 15px+.
 import { ICONS } from '../../engine/ui/v2-style';
 
@@ -44,7 +44,7 @@ if (typeof document !== 'undefined') document.addEventListener('click', e => {
 }, true);
 
 // 2026-10-24 açık dünya anketi (harita ESO / WoW gibi): an illustrated map of the imaginary İstanbul. Every district
-// sits where its `map` coordinates say (0..100), roads join neighbours in walking order, dotted vapur lines join the
+// sits where its `map` coordinates say (0..100), roads join neighbours in walking order, the
 // piers, Adalar floats in the Marmara. Tap a district to travel there.
 const ICON: Record<string, string> = { iskele: '⚓', carsi: '🧺', sahil: '🎡', yokus: '🪜', meydan: '⛲', barinak: '🐟', gece: '🏮', stadyum: '⚽', tersane: '🏗', metro: 'Ⓜ', tepe: '🌲', adalar: '🏝' };
 const MW = 640, MH = 430;
@@ -61,15 +61,12 @@ function mapSvg(m: any): string {
   // islands (Adalar) and little hills / trees for texture
   for (const [x, y, r] of [[56, 92, 5.5], [64, 95, 3], [49, 96, 2.4], [70, 92, 2]] as number[][]) s += `<ellipse cx="${mx(x)}" cy="${my(y)}" rx="${r * 6}" ry="${r * 3.6}" fill="#efdcae" stroke="#8a6a3a" stroke-width="2.4"/>`;
   for (const [x, y] of [[22, 14], [36, 12], [26, 30], [12, 40], [88, 18], [74, 26], [14, 60], [62, 16]] as number[][]) s += `<path d="M${mx(x)} ${my(y)} l7 -12 l7 12 z" fill="#8fb36a" stroke="#5f7d44" stroke-width="1.5"/>`;
-  // roads in walking order, vapur lines between piers
+  // roads in walking order
   const by: Record<string, any> = {}; for (const r of regs) by[r.id] = r;
   const order = ['iskele', 'carsi', 'sahil', 'yokus', 'meydan', 'barinak', 'gece', 'stadyum', 'tersane', 'metro', 'tepe'];
   let road = '';
   for (let i = 0; i < order.length - 1; i++) { const a = by[order[i]], b = by[order[i + 1]]; if (a && b) road += `M${mx(a.map[0])} ${my(a.map[1])} Q ${(mx(a.map[0]) + mx(b.map[0])) / 2 + 12} ${(my(a.map[1]) + my(b.map[1])) / 2 - 10} ${mx(b.map[0])} ${my(b.map[1])} `; }
   s += `<path d="${road}" fill="none" stroke="#a0784a" stroke-width="6" stroke-linecap="round" opacity=".55"/><path d="${road}" fill="none" stroke="#fff6e0" stroke-width="2" stroke-dasharray="8 7"/>`;
-  const piers = regs.filter((r: any) => r.vapur);
-  for (let i = 0; i < piers.length; i++) for (let j = i + 1; j < piers.length; j++) { const a = piers[i], b = piers[j]; if (!(a.island || b.island) && j !== i + 1) continue;
-    s += `<path d="M${mx(a.map[0])} ${my(a.map[1])} L ${mx(b.map[0])} ${my(b.map[1])}" stroke="#2f6f9a" stroke-width="2.4" stroke-dasharray="3 6" fill="none" opacity=".7"/>`; }
   // districts
   for (const r of regs) {
     const x = mx(r.map[0]), y = my(r.map[1]), here = m.here === r.id;
@@ -79,7 +76,6 @@ function mapSvg(m: any): string {
     s += `<circle cx="${x}" cy="${y}" r="24" fill="${r.open ? esc(r.color) : '#cfc6b6'}" stroke="#3b2a20" stroke-width="3"/><text x="${x}" y="${y + 8}" text-anchor="middle" font-size="22">${ICON[r.id] || '🏘'}</text>`;
     const w = Math.max(54, String(r.short).length * 8.4 + 14);
     s += `<rect x="${x - w / 2}" y="${y + 27}" width="${w}" height="20" rx="10" fill="#fff6e6" stroke="#3b2a20" stroke-width="2"/><text class="s" x="${x}" y="${y + 41}" text-anchor="middle">${esc(r.short)}</text>`;
-    if (r.vapur) s += `<text x="${x + 22}" y="${y - 16}" font-size="15">⚓</text>`;
     if (here) s += `<text class="s" x="${x}" y="${y - 30}" text-anchor="middle" fill="#e0533c">Buradasın</text>`;
     s += `</g>`;
   }
@@ -99,7 +95,7 @@ export function renderHarita(m: any): string {
   if (sr) {
     const here = m.here === sr.id, places = (m.places || []).filter((p: any) => p.region === sr.id || p.regionName === sr.name);
     const go = !sr.open ? btn('Kilitli', 'mkGo', sr.id, 'cream', sr.lockLine || 'Henüz açılmadı.', true, sr.lockLine || 'Henüz açılmadı.')
-      : here ? `<span class="sb-chip ok" style="justify-content:center;width:100%">${I('check')} Buradasın</span>` : btn(sr.name + '\'a git ▶', 'mkGo', sr.id, 'green', sr.bus ? 'Önce 42B durağına' : sr.vapur ? 'Deniz taksisi ya da dolmuşla' : 'Dolmuşla');
+      : here ? `<span class="sb-chip ok" style="justify-content:center;width:100%">${I('check')} Buradasın</span>` : btn(sr.name + '\'a git ▶', 'mkGo', sr.id, 'green', sr.bus ? 'Önce 42B durağına' : 'Dolmuşla');
     s += `<div class="sb-card" style="border-color:${esc(sr.color)};border-width:4px"><div style="display:flex;justify-content:space-between;align-items:center"><h3 style="font:900 20px var(--disp);margin:0">${ICON[sr.id] || '🏘'} ${esc(sr.name)}</h3><button class="sb-btn cream sm" data-mksel-x="1">✕</button></div>
       <p style="font:700 15px/1.35 var(--body);margin:4px 0 6px">${esc(sr.open ? sr.blurb : sr.lockLine)}</p>
       ${places.length ? `<div class="sb-muted" style="font-size:14px;margin-bottom:6px">Burada: ${places.map((p: any) => esc(p.icon + ' ' + p.name)).join(' · ')}</div>` : ''}${go}</div>`;
@@ -110,7 +106,7 @@ export function renderHarita(m: any): string {
   for (const r of m.regions) {
     const here = m.here === r.id;
     const st = !r.open ? `<span class="mk-st lock">${r.realm ? r.level + '. seviye' : 'Yakında'}</span>` : here ? `<span class="mk-st on">Buradasın</span>` : '';
-    const how = r.bus ? '42B durağına götürür' : r.vapur ? 'Deniz taksisi ya da dolmuş' : 'Dolmuş';
+    const how = r.bus ? '42B durağına götürür' : 'Dolmuş';
     const action = !r.open ? btn('Kilitli', 'mkGo', r.id, 'cream sm', '', true, r.lockLine || 'Henüz açılmadı.')
       : r.bus ? btn('🚌 42B', 'mkGo', r.id, 'blue sm', how) : r.stopKnown ? btn('Git', 'mkGo', r.id, 'blue sm', how) : btn('Yürü', 'mkGuide', r.id, 'cream sm', 'Fındık götürür');
     s += `<div class="sb-card mk-row"><div class="ic" style="background:${esc(r.color)}">${r.open ? '🏘' : '🔒'}</div><div><h3>${esc(r.name)}${st}</h3><p>${esc(r.open ? r.blurb : r.lockLine)}<small>${r.stopKnown ? '🚐 ' + esc(r.stop) : 'Durak: henüz bulunmadı, yürüyerek keşfet'}</small></p></div>${action}</div>`;
@@ -144,7 +140,7 @@ export function renderHarita(m: any): string {
       : btn('Al', 'mkBuyVeh', v.id, 'green sm', tl(v.price), m.level < v.level || m.money < v.price, m.level < v.level ? v.level + '. seviyede açılır.' : 'Kasada ' + tl(v.price) + ' olmalı.');
     s += `<div class="sb-card mk-row"><div class="ic">${esc(v.icon)}</div><div><h3>${esc(v.name)}</h3><p>${esc(v.blurb)}</p></div>${right}</div>`;
   }
-  s += `<div class="sb-card" style="font:700 14px/1.35 var(--body)">🚐 ${esc(m.dolmus?.name || 'Dolmuş')} ${tl(m.fares?.dolmus || 0)} · 🚤 Deniz taksisi ${tl(m.fares?.vapur || 0)} (İskele ile Barınak arası). Paran yetmezse şoför idare eder.</div>`;
+  s += `<div class="sb-card" style="font:700 14px/1.35 var(--body)">🚐 ${esc(m.dolmus?.name || 'Dolmuş')} ${tl(m.fares?.dolmus || 0)} Paran yetmezse şoför idare eder.</div>`;
   // finds
   const f = m.finds || {};
   s += `<div class="sb-sec">${I('cat')}Buluntular<span>${(f.cats || 0) + (f.photos || 0) + (f.returned || 0)} / ${(f.catsN || 0) + (f.photosN || 0) + (f.lostN || 0)}</span></div><div class="sb-card">`;

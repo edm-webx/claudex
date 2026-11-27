@@ -22,6 +22,7 @@ import { UMBRELLA, MARKET } from '../../../content/hava';
 import type { HtmlLabels, HtmlLabel } from '../../ui/labels';
 import { crowdWeather } from '../chars/weather-pose';
 import { BULUT_TEMEL } from '../../../engine/render/sky';
+import { flasAzalt } from '../../../engine/fx/flas';
 import { setZeminWet } from '../../../engine/render/zemin-islak';
 
 export interface HavaLookDeps {
@@ -52,12 +53,17 @@ const hash = (n: number) => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453
 
 /** GRS-02 (owner H-053/H-054: lightning random, rare, soft): flash ramp 0.06 s, fade 0.55 s; hemisphere add at most +0.35 */
 export const YILDIRIM_TEPE = 0.35;
-export function yildirimEk(age: number): number {
+export function yildirimEk(age: number, azalt = false): number {
   if (!(age >= 0)) return 0;
+  if (azalt) {   // 2026-11-27 "Flaşı azalt": yumuşak kabarıp 2 sn'de sönen tek parıltı, tepe +0.10 (en çok ~%18, ışığa duyarlı güvenli)
+    const k = age < YILDIRIM_YUK ? age / YILDIRIM_YUK : Math.max(0, 1 - (age - YILDIRIM_YUK) / YILDIRIM_SON);
+    return k * k * (3 - 2 * k) * YILDIRIM_TEPE_AZ;
+  }
   let k = age < 0.06 ? age / 0.06 : Math.max(0, 1 - (age - 0.06) / 0.55);
   k = k * k * (3 - 2 * k);
   return k * YILDIRIM_TEPE;
 }
+export const YILDIRIM_TEPE_AZ = 0.10, YILDIRIM_YUK = 0.5, YILDIRIM_SON = 2.0;
 /** seconds until the next flash: fırtına 20..50 s, sağanak 40..100 s (r = 0..1) */
 export function yildirimAra(kd: string, r: number): number { return kd === 'firtina' ? 20 + 30 * r : 40 + 60 * r; }
 
@@ -254,8 +260,8 @@ export function createHavaLook(d: HavaLookDeps): HavaLookView {
       if (flashT <= 0) { flashT = yildirimAra(kd, Math.random()); flashAge = 0; try { globalThis.dispatchEvent?.(new Event('sb:simsek')); } catch { /* ses isteğe bağlı */ } }   // gök gürültüsü şimşeği izler (audio-map)
     }
     flashAge += dt;
-    flashK = yildirimEk(flashAge);
-    if (R.hemi) R.hemi.intensity = baseHemi * (R.hemiMul ?? 1) + flashK;
+    flashK = yildirimEk(flashAge, flasAzalt());
+    if (R.hemi) R.hemi.intensity = (baseHemi + flashK) * (R.hemiMul ?? 1);
   }
 
   function light(v: HavaView): void {
@@ -266,7 +272,7 @@ export function createHavaLook(d: HavaLookDeps): HavaLookView {
     R.sun.color.copy(C1); R.sun.intensity = tod.si * (1 - dark * 0.5) * (heatK > 0 ? 1 + heatK * 0.08 : 1);
     R.hemi.color.copy(tod.hs).lerp(GREY, dark * 0.4);
     const lt = R.lightTint; if (lt) { R.sun.color.r *= lt[0]; R.sun.color.g *= lt[1]; R.sun.color.b *= lt[2]; R.hemi.color.r *= lt[0]; R.hemi.color.g *= lt[1]; R.hemi.color.b *= lt[2]; }
-    baseHemi = tod.hi * (1 - dark * 0.15); R.hemi.intensity = baseHemi * (R.hemiMul ?? 1);
+    baseHemi = tod.hi * (1 - dark * 0.15); R.hemi.intensity = (baseHemi + flashK) * (R.hemiMul ?? 1);   // flashK burada da eklenir: 0.2 sn'lik relight şimşeği kesip titretmesin
     const su = (R.sky?.material as T.ShaderMaterial | undefined)?.uniforms;
     // GRS-02: grey weather washes the colours a little (at most -21 % saturation) and fills the sky with clouds
     if (R.weatherSat !== undefined) R.weatherSat = 1 - dark * 0.3;

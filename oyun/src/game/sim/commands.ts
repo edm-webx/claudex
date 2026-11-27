@@ -16,7 +16,7 @@ export type PanelId = 'isciler' | 'menu' | 'dekor' | 'gorevler' | 'kedi' | 'karn
 export type OverlayId = 'jobBoard' | 'welcomeBack' | 'dayCard' | 'kasaSayimi' | 'solution';
 export type ModelId = PanelId | OverlayId;
 
-export type SettingKey = 'muted' | 'quality' | 'music' | 'sfx' | 'voice' | 'textScale' | 'hand' | 'colorBlindIcons' | 'haptics' | 'batterySaver' | 'perfMeter' | 'ownMusic';
+export type SettingKey = 'muted' | 'quality' | 'music' | 'sfx' | 'voice' | 'textScale' | 'hand' | 'colorBlindIcons' | 'haptics' | 'batterySaver' | 'perfMeter' | 'ownMusic' | 'flasAzalt';
 
 export type ForceKind = 'unlock' | 'ferry' | 'gull' | 'kapkac' | 'regular' | 'vip' | 'endDay' | 'money' | 'gold' | 'stars' | 'sleep' | 'offline' | 'serbest';
 
