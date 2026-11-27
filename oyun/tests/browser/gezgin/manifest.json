@@ -1400,7 +1400,7 @@
      "z": 52
     }
    ],
-   "ebeveyn": "hastane"
+   "ebeveyn": null
   },
   {
    "id": "morg",
@@ -1441,7 +1441,7 @@
      "z": 55.5
     }
    ],
-   "ebeveyn": "hastane"
+   "ebeveyn": null
   },
   {
    "id": "salonW",
@@ -1926,7 +1926,7 @@
  ],
  "ozet": {
   "bina": 25,
-  "ic_ice": 2,
+  "ic_ice": 0,
   "canli": 18,
   "arsa": 23,
   "icNokta": 174
