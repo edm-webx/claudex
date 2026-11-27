@@ -1,6 +1,6 @@
 /**
  * Sinema perdesine animasyon dizisi çizimi (2026-11-22 sahip: "sinemalar gerçek uzun animasyon, hikâyesi olsun, dizi gibi").
- * Veri content/sinema-dizi.ts; bu dosya yalnız 2B canvas'a çizer (three yok). Arka planlar (iskele, vapur güvertesi, gece köprü,
+ * Veri content/sinema-dizi.ts; bu dosya yalnız 2B canvas'a çizer (three yok). Arka planlar (iskele, rıhtım, gece köprü,
  * çarşı, açık deniz, fırtına, ev içi, Kız Kulesi, gün batımı), karakterler (martılar, kedi, insanlar, konuşan midye), hareketler
  * (yürü, koş, uç, zıpla, konuş, üzgün, gül, dans), altyazı (daktilo), sahne geçişleri ve açılış / son kartları.
  * f: bölüm ilerlemesi (0..1, oyun saatinden), t: gerçek saniye (kanat çırpma, dalga, yağmur gibi canlılık).
@@ -44,11 +44,11 @@ function arka(g: G, a: Arka, W: number, H: number, t: number, kay: number) {
       g.fillStyle = '#3a2a20'; for (const x of [W * 0.08, W * 0.92]) { g.fillRect(x - 6, H * 0.72, 12, 22); g.fillRect(x - 9, H * 0.72, 18, 5); }
       break;
     }
-    case 'vapur': {
+    case 'rihtim': {
       gok(g, W, H, '#86c8f0', '#e2f4ff', 0.55); silu(g, W, H * 0.5, '#8aa0b4', kay * 30); deniz(g, W, H, H * 0.5, '#2c76a8', t);
       g.fillStyle = '#e9e4da'; g.fillRect(0, H * 0.74, W, H * 0.26); g.fillStyle = '#c7c0b2'; g.fillRect(0, H * 0.74, W, 4);
       g.fillStyle = '#ffffff'; for (let x = 10; x < W; x += 34) g.fillRect(x, H * 0.62, 4, H * 0.12); g.fillRect(0, H * 0.62, W, 4); g.fillRect(0, H * 0.68, W, 3);
-      g.fillStyle = '#c0392b'; g.fillRect(W * 0.88, H * 0.3, 26, H * 0.32); g.fillStyle = '#1d1d22'; g.fillRect(W * 0.88, H * 0.3, 26, 8);
+      g.fillStyle = '#c0392b'; g.fillRect(W * 0.88, H * 0.42, 14, H * 0.2); g.fillStyle = '#1d1d22'; g.fillRect(W * 0.88, H * 0.42, 14, 6);   // fener direği
       break;
     }
     case 'gece': case 'gunbatimi': {
@@ -85,7 +85,8 @@ function arka(g: G, a: Arka, W: number, H: number, t: number, kay: number) {
     }
     case 'firtina': {
       gok(g, W, H, '#2a2f3a', '#56606e', 0.55); deniz(g, W, H, H * 0.55, '#1f3a4f', t, 3);
-      if (Math.sin(t * 0.9) > 0.97) { g.fillStyle = 'rgba(255,255,255,.55)'; g.fillRect(0, 0, W, H); }
+      // 2026-11-27 ışığa duyarlılık: fırtına filmindeki beyaz ekran flaşı (%55, ani) KALDIRILDI; yerine ağır, yavaş bir bulut kararması (en çok %12, 0.1 Hz)
+      g.fillStyle = `rgba(20,24,34,${(0.06 + 0.06 * Math.sin(t * 0.63)).toFixed(3)})`; g.fillRect(0, 0, W, H);
       g.strokeStyle = 'rgba(200,220,255,.5)'; g.lineWidth = 1.5; g.beginPath(); for (let i = 0; i < 70; i++) { const x = (i * 41 + t * 260) % W, y = (i * 67 + t * 420) % H; g.moveTo(x, y); g.lineTo(x - 6, y + 16); } g.stroke();
       g.fillStyle = '#e9e4da'; g.fillRect(0, H * 0.76, W, H * 0.24); g.fillStyle = '#ffffff'; g.fillRect(0, H * 0.64, W, 4); for (let x = 10; x < W; x += 34) g.fillRect(x, H * 0.64, 4, H * 0.12);
       break;
@@ -188,7 +189,7 @@ export function perdeCiz(g: G, W: number, H: number, d: Dizi, no: number, b: Bol
   } else {
     const sahne = b.sahneler[an.i], kay = an.ls;
     arka(g, sahne.arka, W, H, t, kay);
-    const yer = sahne.arka === 'iskele' ? H * 0.84 : sahne.arka === 'vapur' || sahne.arka === 'firtina' ? H * 0.82 : sahne.arka === 'carsi' || sahne.arka === 'ev' ? H * 0.84 : H * 0.86;
+    const yer = sahne.arka === 'iskele' ? H * 0.84 : sahne.arka === 'rihtim' || sahne.arka === 'firtina' ? H * 0.82 : sahne.arka === 'carsi' || sahne.arka === 'ev' ? H * 0.84 : H * 0.86;
     const s = H / 260;
     for (const rol of sahne.roller) {
       const x = (rol.x + ((rol.x2 ?? rol.x) - rol.x) * ease(an.ls * 1.15)) * W, uc = rol.a === 'uc' && sahne.arka !== 'iskele' && sahne.arka !== 'carsi';

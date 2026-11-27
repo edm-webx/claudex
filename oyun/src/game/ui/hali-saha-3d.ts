@@ -13,6 +13,7 @@ import { esnafHeroOpts } from '../sim/esnafim';
 import { createLookRenderer, LOOK_POZ } from '../../engine/render/look';
 import { zeminDetay } from '../../engine/render/zemin-detay';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { flasAzalt } from '../../engine/fx/flas';
 import { createKit, tierNow, type Tier, buildStand, buildSeats, createCrowd, buildMast, panoDoku, ledDoku, flagaDoku, formaRengi, REKLAM, type FanSeat, type Seat } from '../view/stadyum/ortak';
 
 interface HeroLike { object: T.Object3D; setPose(p: { x: number; z: number }, r: number): void; setInput(i: Record<string, unknown>): void; update(dt: number, a: number): void; dispose(): void }
@@ -373,7 +374,7 @@ export function createHaliSaha3D(o: {
         else { camPos.lerp(camT.set(cx, 15, WD + 15), 0.08); camLook.lerp(camT.set(cx, 0, WD / 2 + 0.5), 0.08); cam.fov = 40; }
       }
       cam.updateProjectionMatrix();
-      const sh = s.shake > 0 ? (Math.random() - 0.5) * s.shake * 2 : 0;
+      const sh = s.shake > 0 && !flasAzalt() ? (Math.random() - 0.5) * s.shake * 2 : 0;
       cam.position.set(camPos.x + sh, camPos.y + sh * 0.5, camPos.z); cam.lookAt(camLook);
       ren.render(scene, cam);
     },

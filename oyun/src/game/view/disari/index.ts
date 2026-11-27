@@ -73,9 +73,9 @@ export function createDisariLook(d: DisariViewDeps): DisariLookView {
   // cinema film (canvas texture on the screen, night only)
   const filmC = document.createElement('canvas'); filmC.width = 256; filmC.height = 112;
   const filmTex = new T.CanvasTexture(filmC); filmTex.colorSpace = T.SRGBColorSpace; texs.push(filmTex);
-  const filmM = new T.MeshBasicMaterial({ map: filmTex }); mats.push(filmM);
+  const filmM = new T.MeshBasicMaterial({ map: filmTex, transparent: true, opacity: 0 }); mats.push(filmM);
   const film = new T.Mesh(G(new T.PlaneGeometry(8.0, 3.3)), filmM); film.position.set(158, 3.0, 21.2 + 1.4 - 0.08); film.rotation.y = Math.PI; film.visible = false; d.scene.add(film);
-  let filmT = 0;
+  let filmT = 0, filmK = 0, bulbK = 0;   // 2026-11-27 ışığa duyarlılık: perde ve lamba çarkı 19:00'da/gündüzde anlık değil, ~3 sn'de yumuşak açılır/kapanır
   function drawFilm(t: number) {
     const g = filmC.getContext('2d'); if (!g) return;
     g.fillStyle = '#1d2b4a'; g.fillRect(0, 0, 256, 112);
@@ -173,11 +173,14 @@ export function createDisariLook(d: DisariViewDeps): DisariLookView {
       if (sahilLive) {
         wheel.rotation.x += dt * 0.22;
         for (const gp of gondolas) gp.rotation.x = -wheel.rotation.x;
-        bulbM.emissive.set(night ? '#ffcf5a' : '#000000');
+        const ka = 1 - Math.exp(-dt / 1.2);
+        bulbK += ((night ? 1 : 0) - bulbK) * ka;
+        bulbM.emissive.set('#ffcf5a').multiplyScalar(bulbK < 0.004 ? 0 : bulbK);
         const show = night && near(h, 158, 18, 30);
-        film.visible = show;
-        if (show && (filmT -= dt) <= 0) { filmT = 0.08; drawFilm(clock); }
-      } else film.visible = false;
+        filmK += ((show ? 1 : 0) - filmK) * ka;
+        film.visible = filmK > 0.01; filmM.opacity = filmK;
+        if (film.visible && (filmT -= dt) <= 0) { filmT = 0.08; drawFilm(clock); }
+      } else { film.visible = false; filmK = 0; }
       // barrier
       const lk = v?.locked;
       barrier.visible = !!lk && Math.abs(h.x - lk.x) < 45;

@@ -662,7 +662,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
     const post = host.windowPost?.() ?? null;
     if (post && post.wid === w.id && rt.state !== 'arrive' && rt.state !== 'watch') {
       if (rt.state === 'sleep') wake(rt, S, false);
-      if (!posted.has(w.id)) { posted.add(w.id); host.isBirak?.(w.id); rt.a.carry.length = 0; rt.job = null; rt.a.info.tasi = ''; rt.wk.goTo(post.at); say(rt, 'Vapur geldi, pencereye!', 2); }
+      if (!posted.has(w.id)) { posted.add(w.id); host.isBirak?.(w.id); rt.a.carry.length = 0; rt.job = null; rt.a.info.tasi = ''; rt.wk.goTo(post.at); say(rt, 'Kalabalık geldi, pencereye!', 2); }
       if (rt.wk.walk(dt, 2.6)) { a.act = 'walk'; host.setPencereAt?.(false); }
       else { a.act = 'idle'; a.speed = 0; host.setPencereAt?.(true); }
       return;

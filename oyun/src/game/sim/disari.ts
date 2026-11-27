@@ -4,7 +4,7 @@
  * - Regions open by level (content REGIONS[].level). A locked region pushes Sabri back at its west edge with a
  *   toast (the view draws the barrier). Opening is announced once.
  * - Dolmuş stops: İskele and Çarşı known from the start, the others once Sabri walks past them. The map travels to
- *   any known stop of an open region (dolmuş, or vapur between İskele and Barınak, or your own vehicle). Travel is a
+ *   any known stop of an open region (dolmuş, or your own vehicle). Travel is a
  *   short timed moment (rt.disari.travel) and the teleport happens halfway, under the overlay.
  * - Guide cat Fındık: a walk target (place / stop / lost-item owner); the view draws the cat walking ahead.
  * - Ask a citizen: a toast with a direction line and a short arrow hint (rt.disari.view().arrow).
@@ -31,7 +31,7 @@ interface DSave {
   /** karar paketi J1: the realm Sabri is in (walking never changes it, only the 42B) */
   realm?: RealmId;
 }
-export type TravelMode = 'dolmus' | 'vapur' | 'yaya' | 'bisiklet' | 'motor' | 'kayik' | 'otobus';
+export type TravelMode = 'dolmus' | 'yaya' | 'bisiklet' | 'motor' | 'kayik' | 'otobus';
 /** 42B city bus at a stop: coming (drives in), waiting (doors open), leaving */
 export interface BusView { phase: 'geliyor' | 'durakta' | 'gidiyor'; t: number; dur: number; x: number; z: number; to: string;
   /** DNY-11: the bus that just dropped Sabri at the destination stop and pulls away (cannot be boarded) */
@@ -155,13 +155,13 @@ export function installDisari(K: Kernel, teleport: (x: number, z: number) => voi
       K.toast('Zaten buradasın! ' + toRegion.stop.name + '.', 'info'); return false;
     }
     const v = VEHICLES.find(x => x.id === d.veh && d.vehicles.includes(x.id));
-    const seaPair = !!(from && from.vapur && toRegion.vapur) || !!toRegion.island || !!(from && from.island);
-    let mode: TravelMode = seaPair ? 'vapur' : 'dolmus';
-    const isl = !!toRegion.island || !!(from && from.island);   // no road to the islands: only the vapur or your own boat
-    if (v && v.id !== 'yaya' && (!v.sea || seaPair) && !(isl && !v.sea)) mode = v.id as TravelMode;
-    if (mode === 'dolmus' || mode === 'vapur') {
-      const fare = FARES[mode];
-      if (S.money >= fare) { K.spend(fare); K.toast((mode === 'vapur' ? 'Deniz taksisi ' : DOLMUS.name + ': ') + fmtMoney(fare) + (mode === 'dolmus' ? '. "Arkaya uzatır mısın?"' : '. Düüüt!'), 'info'); }
+    const isl = !!toRegion.island || !!(from && from.island);   // no road to the islands: only your own boat
+    if (isl && !(v && v.sea)) { K.toast('Adalara yol yok. Önce kendi kayığın olmalı!', 'info'); return false; }
+    let mode: TravelMode = 'dolmus';
+    if (v && v.id !== 'yaya' && (!v.sea || isl)) mode = v.id as TravelMode;
+    if (mode === 'dolmus') {
+      const fare = FARES.dolmus;
+      if (S.money >= fare) { K.spend(fare); K.toast(DOLMUS.name + ': ' + fmtMoney(fare) + '. "Arkaya uzatır mısın?"', 'info'); }
       else K.toast(DOLMUS.driver + ': "Bu seferlik benden, sonra ödersin!"', 'good');
     } else K.toast(v!.name + ' ile yola çıktın!', 'good');
     const speed = v && mode === v.id ? v.speed : 1;
@@ -409,7 +409,7 @@ export function installDisari(K: Kernel, teleport: (x: number, z: number) => voi
       realm: curRealm(), realms: BUS_REALMS.map(r => ({ id: r.id, name: r.name, stop: r.stop.name, here: r.id === curRealm() })),
       regions: REGIONS.filter(r => realmOfRegion(r.id)).map(r => ({ id: r.id, name: r.name, short: r.short, x0: r.x0, x1: r.x1, color: r.color, blurb: r.blurb, level: r.level, open: isOpen(r) && !!realmOfRegion(r.id), seen: d.seen.includes(r.id),
         realm: realmOfRegion(r.id)?.id || null, bus: (realmOfRegion(r.id)?.id || null) !== curRealm(),
-        stop: r.stop.name, stopKnown: knownStop(d, r.id), vapur: !!r.vapur, map: r.map, island: !!r.island, lockLine: realmOfRegion(r.id) ? r.lockLine : 'Şimdilik kapalı. Yakında açılacak!' })),
+        stop: r.stop.name, stopKnown: knownStop(d, r.id), map: r.map, island: !!r.island, lockLine: realmOfRegion(r.id) ? r.lockLine : 'Şimdilik kapalı. Yakında açılacak!' })),
       places: PLACES.map(pl => {
         const op = h >= pl.open && h < pl.close, night = h % 24 >= 19 || h % 24 < 6;
         return { id: pl.id, name: pl.name, icon: pl.icon, kind: pl.kind, region: pl.region, regionName: REGION_BY_ID[pl.region].short, x: pl.x, open: op, hours: pl.open + ':00-' + (pl.close === 24 ? '24:00' : pl.close + ':00'),
