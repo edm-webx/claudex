@@ -55,6 +55,22 @@ const CSS = `
 .gr-kim b{display:block;font:800 14px/1.1 'SB Govde',system-ui,sans-serif;letter-spacing:.32em;color:#ffe2ac}.gr-kim small{display:block;font:500 12.5px/1.3 'SB Govde',system-ui,sans-serif;color:rgba(255,230,200,.62);margin-top:2px;letter-spacing:.03em}
 .gr-ic{font-size:26px;line-height:1;margin-right:4px;vertical-align:-2px}
 @media (max-height:760px){.gr-kim{margin-bottom:12px}.gr-card .gr-h{font-size:27px}.gr-sub{margin-bottom:12px}.gr-l{margin:11px 0 6px}.gr-in{min-height:46px}.gr-go{min-height:50px;margin-top:16px}.gr-guest{margin-top:10px;padding-top:10px}.gr-note{margin-top:8px}}
+/* QA 2026-11-27: telefon yatay (844x390) giriş kartı: Giriş ve Misafir düğmeleri ekran dışında kalıyordu. Kısa ekranda kart genişler,
+   başlık altı yazılar gizlenir, iki alan ve iki düğme yan yana dizilir: hepsi kaydırmadan görünür. */
+@media (max-height:520px) and (min-aspect-ratio:1/1){
+ .gr-login.mn-panel{top:8px;bottom:auto;transform:none;max-height:calc(100% - 16px);height:auto;width:min(620px,calc(100vw - 32px));padding:14px 18px 12px;display:flex;flex-wrap:wrap;column-gap:10px;align-content:flex-start;animation:none}
+ .gr-login>*{flex:1 1 100%;min-width:0}
+ .gr-login .gr-kim,.gr-login .gr-sub,.gr-login .gr-l,.gr-login .gr-hint{display:none}
+ .gr-login .gr-h{font-size:21px;margin:0 0 8px;flex:1 1 auto}
+ .gr-login .gr-tabs{flex:0 1 250px;margin:0 0 8px}
+ .gr-login>.gr-in{flex:1 1 calc(50% - 5px);min-height:42px}
+ .gr-login .gr-key{flex:1 1 100%;margin-top:8px}
+ .gr-login .gr-go{flex:1 1 calc(50% - 5px);order:1;min-height:46px;margin-top:10px}
+ .gr-login .gr-guest{flex:1 1 calc(50% - 5px);order:1;margin-top:10px;padding:6px 0 0;border-top:0;border-radius:14px;box-shadow:inset 0 0 0 1px rgba(255,214,160,.3);min-height:46px;display:grid;place-content:center}
+ .gr-login .gr-adm,.gr-login .gr-unut,.gr-login .gr-err,.gr-login .gr-note{order:2}
+ .gr-login .gr-adm{flex:0 0 auto;margin-top:8px}
+ .gr-login .gr-note{margin-top:6px;font-size:12px}
+}
 `;
 
 export function createGiris(deps: { root: HTMLElement; afterLogin: (isNew: boolean) => Promise<void>; sfx?: (id: string) => void }): GirisView {
@@ -118,7 +134,7 @@ export function createGiris(deps: { root: HTMLElement; afterLogin: (isNew: boole
       // Martı Kimlik: oyunun hesap sistemi. E-posta yok, sıfırlama bağlantısı da yok: şifreyi unutan admine yazar.
       const unutKutu = () => `<div class="gr-unut"><b>🔐 Şifreni mi unuttun?</b><br>Martı Kimlik e-posta istemediği için sıfırlama bağlantısı gönderemiyoruz. Oyunu oynadığın sayfadaki iletişim yolundan <b>admine yaz</b>, kullanıcı adını söyle. Hesabın doğrulanınca yeni şifre verilir; karakterlerin ve bankan bu sırada güvende.</div>`;
       const paint = (err = '') => {
-        host.innerHTML = `<div class="gr-card mn-panel"><div class="gr-kim"><span class="gr-seal">${MARTI_SVG}</span><div><b>MARTI KİMLİK</b><small>Martıköy'ün tek hesabı</small></div></div><div class="gr-h">Martıköy'e hoş geldin</div><div class="gr-sub">Tek kimlik, her cihazda aynı dükkan ve aynı esnaf.</div>
+        host.innerHTML = `<div class="gr-card gr-login mn-panel"><div class="gr-kim"><span class="gr-seal">${MARTI_SVG}</span><div><b>MARTI KİMLİK</b><small>Martıköy'ün tek hesabı</small></div></div><div class="gr-h">Martıköy'e hoş geldin</div><div class="gr-sub">Tek kimlik, her cihazda aynı dükkan ve aynı esnaf.</div>
 <div class="gr-tabs"><button class="gr-t${mode === 'giris' ? ' on' : ''}" data-m="giris">Giriş yap</button><button class="gr-t${mode === 'kayit' ? ' on' : ''}" data-m="kayit">Kayıt ol</button></div>
 <div class="gr-l">Kullanıcı adı</div><input class="gr-in" name="ad" maxlength="16" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="ör. simitci_ali">${mode === 'kayit' ? '<div class="gr-hint">3-16 karakter: küçük harf, rakam ya da _. Sonradan değişmez, herkes seni bu adla görür.</div>' : ''}
 <div class="gr-l">Şifre</div><input class="gr-in" name="sifre" type="password" maxlength="64" autocomplete="${mode === 'kayit' ? 'new-password' : 'current-password'}" placeholder="en az 6 karakter">

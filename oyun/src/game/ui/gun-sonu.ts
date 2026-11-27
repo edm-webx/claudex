@@ -80,7 +80,8 @@ export function createGunSonu(deps: { root: HTMLElement; rules: () => Rules | nu
       // Kasada para yetmediyse kesinti eksik: önce kira, kalanı fatura (gider.ts ile aynı sıra); kalan ertelenir.
       const kiraOd = Math.min(g.kira, g.odenen), faturaOd = g.odenen - kiraOd;
       parts.push('<div class="gs-h2">Kira ve fatura</div>');
-      parts.push(row('Kira', eksi(kiraOd)), row('Faturalar (elektrik, su, tüp)', eksi(faturaOd)));
+      if (g.kira > 0) parts.push(row('Kira', eksi(kiraOd)));   // QA 2026-11-27: kirasız günde "Kira −0" satırı çıkmasın
+      parts.push(row('Faturalar (elektrik, su, tüp)', eksi(faturaOd)));
       if (g.ertelendi > 0) parts.push(`<div class="gs-not">Kasa yetmedi: ${fmtMoney(g.ertelendi)} ertelendi (kira ${fmtMoney(g.kira)}, fatura ${fmtMoney(g.fatura)}).</div>`);
     }
     if (m.isletme) {
@@ -103,7 +104,7 @@ export function createGunSonu(deps: { root: HTMLElement; rules: () => Rules | nu
       if (h.marti !== undefined) parts.push(row('Martı yıldızı', `<b>${'★'.repeat(Math.max(0, Math.min(5, Math.round(h.marti))))}${'☆'.repeat(5 - Math.max(0, Math.min(5, Math.round(h.marti))))}</b>`));
     }
     wrap = document.createElement('div'); wrap.className = 'gs-wrap';
-    wrap.innerHTML = `<div class="gs-card"><div class="gs-moon">🌙</div><div class="gs-h">Kepenkler indi</div><div class="gs-sub">${m.day}. gün bitti. Saat 03:00, iskele sessiz.</div>
+    wrap.innerHTML = `<div class="gs-card"><div class="gs-moon">🌅</div><div class="gs-h">Gün kapandı</div><div class="gs-sub">${m.day}. gün bitti. Saat 08:00, iskelede yeni sabah.</div>
       ${parts.join('\n')}
       <button class="gs-btn" type="button">Yeni güne başla ☀️</button></div>`;
     deps.root.appendChild(wrap);

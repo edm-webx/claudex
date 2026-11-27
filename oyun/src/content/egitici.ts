@@ -99,8 +99,8 @@ export const EGITICI: readonly EgtKart[] = [
   { id: 'tasima', grup: 'baslangic', baslik: 'Elin doldu', etiket: 'Taşıma sınırı',
     metin: c => `Bir seferde en çok ${c.v.cap} ürün taşıyabilirsin. Sarı karelerdeki Büyük Tepsi ve Dev Tepsi bu sınırı artırır.`,
     kosul: c => c.v.cap > 0 && (c.v.carry || []).length >= c.v.cap, hedef: c => c.pos },
-  { id: 'masa', grup: 'baslangic', baslik: 'Oturan müşteri bahşiş bırakır', etiket: 'Tabure',
-    metin: 'Müşteri oturup yer, kalkarken masaya bahşiş bırakır. Bahşişi almak ve masayı temizlemek için üstünden yürü.',
+  { id: 'masa', grup: 'baslangic', baslik: 'Oturacak yer açıldı', etiket: 'Tabure',
+    metin: 'Bazı müşteriler tezgâhtan aldığını oturup yemek ister. Tabure ve masa çoğaldıkça daha çok müşteri oturur, kimse ayakta kalıp gitmez.',
     kosul: c => own(c, 'tabure1'), hedef: c => c.v.anchors?.tables?.[0] },
   { id: 'kirli_masa', grup: 'baslangic', baslik: 'Kirli masa müşteri kaçırır', etiket: 'Kirli masa',
     metin: 'Yeni gelen kirli masaya oturmaz. Masanın yanına yürü, kendiliğinden temizlenir. İşçin varsa o da siler.',
@@ -144,7 +144,7 @@ export const EGITICI: readonly EgtKart[] = [
     metin: 'Her gün sonunda karne gelir: hız, lezzet, temizlik ve güler yüz notların. Toplanan yıldızlar yeni dükkânların kilidini açar.',
     kosul: c => c.S.day >= 2 },
   { id: 'gece', grup: 'buyume', onem: 'yan', baslik: 'Akşam oldu',
-    metin: 'Gece de müşteri gelir. Daha az gelirler ama bahşişleri bol. Sabah 08.00’de gün biter, karne gelir.',
+    metin: 'Gece de müşteri gelir, ama daha az. Sabah 08.00’de gün biter, karne gelir.',
     kosul: c => c.saat >= 20 && c.saat < 30, hedef: c => c.pos },
 
   // Mülk ve şehir
