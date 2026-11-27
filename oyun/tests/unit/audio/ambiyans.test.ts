@@ -137,7 +137,7 @@ describe('morg ve canlı müzik', () => {
 });
 
 describe('MUZ-ic: iç mekan oda tonları (kafede kafe, mutfakta mutfak, dış ses yok)', () => {
-  const KOK = ['iskele', 'deniz', 'gull', 'horn'];
+  const KOK = ['iskele', 'deniz', 'gull'];
   it('her iç mekan kimliğinin bir oda tonu var ve döngü ses-db içinde', async () => {
     const { IC_MEKANLAR } = await import('../../../src/content/ic-mekan');
     const { IC_ODA } = await import('../../../src/content/ses/ambiyans');

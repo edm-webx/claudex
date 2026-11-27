@@ -90,7 +90,7 @@ export function createTelefon(d: Deps): Telefon {
   const cv = document.createElement('canvas'); cv.width = 264; cv.height = 264; mini.appendChild(cv);
   const lbl = document.createElement('b'); lbl.textContent = 'HARİTA'; mini.appendChild(lbl);
   d.root.appendChild(mini);
-  mini.onclick = () => { try { d.sfx?.('pick'); } catch { /* */ } emit('harita'); };
+  mini.onclick = () => { try { d.sfx?.('tik'); } catch { /* */ } emit('harita'); };
   const B = ISKELE_ZONE.bounds!, PX = 3;   // 3 px per metre in the baked map
   let bake: HTMLCanvasElement | null = null, bakeKey = '', bakeT = 0;
   function doBake() {
@@ -125,7 +125,7 @@ export function createTelefon(d: Deps): Telefon {
   /* ---------- Büfem context pill ---------- */
   const ctx = document.createElement('div'); ctx.className = 'tf-ctx'; d.root.appendChild(ctx);
   let ctxKey = '';
-  ctx.addEventListener('click', e => { const b = (e.target as HTMLElement).closest('button'); if (b?.dataset.p) { try { d.sfx?.('pick'); } catch { /* */ } emit(b.dataset.p); } });
+  ctx.addEventListener('click', e => { const b = (e.target as HTMLElement).closest('button'); if (b?.dataset.p) { try { d.sfx?.('tik'); } catch { /* */ } emit(b.dataset.p); } });
   function drawCtx() {
     const s = S(), p = d.heroPos(), rt = d.rules()?.rt;
     const near = !!s && p.x >= PIER.x0 - 2 && p.x <= PIER.x1 + 2 && p.z >= PIER.z0 - 2 && p.z <= PIER.z1 + 3;
@@ -175,7 +175,7 @@ ${gl.length ? `<div class="tf-w"><b>AJANDA · BUGÜN</b>${gl.map((h: any) => `${
   bg.addEventListener('click', e => {
     if (e.target === bg) { api.close(); return; }
     const el = (e.target as HTMLElement).closest('button') as HTMLButtonElement | null; if (!el) return;
-    try { d.sfx?.('pick'); } catch { /* */ }
+    try { d.sfx?.('tik'); } catch { /* */ }
     if (el.dataset.back) { scr = 'home'; key = ''; paint(); return; }
     const a = el.dataset.app; if (!a) return;
     if (a === 'kasa') { scr = a; key = ''; paint(); return; }

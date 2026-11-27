@@ -69,7 +69,7 @@ export const AMBIYANS: Record<string, AmbBolge> = {
     katman: [
       { loop: 'karsi_sokak', vol: 0.3, evre: [0.8, 1, 0.9, 0.3] },
       { loop: 'fiskiye', vol: 0.32, evre: [1, 1, 1, 0.7], at: { x: -3.9, z: 45 }, r: 16 },
-      { loop: 'kalabalik', vol: 0.22, evre: [0.4, 0.8, 0.8, 0.15], at: { x: -39.4, z: 45.4 }, r: 26 },
+      { loop: 'kalabalik', vol: 0.5, evre: [0.4, 0.8, 0.8, 0.15], at: { x: -39.4, z: 45.4 }, r: 26 },
     ],
     olay: [
       { id: 'spoon', vol: 0.32, evre: [0.8, 1, 1, 0.3], at: { x: -3.9, z: 45 }, r: 22 },
@@ -95,9 +95,9 @@ export const AMBIYANS: Record<string, AmbBolge> = {
     aralik: [5, 11], yogunluk: [1, 1, 0.8, 0.5],
   },
   // Stadyum ve halı sahalar: kalabalık yatağı (SNT-09 tribün olaylarıyla aynı aileden)
-  stadyum: { katman: [{ loop: 'kalabalik', vol: 0.26, evre: [0.6, 1, 1, 0.35] }], olay: TRIBUN_OLAY, aralik: [6, 12], yogunluk: [0.6, 1, 1, 0.4] },
+  stadyum: { katman: [{ loop: 'kalabalik', vol: 0.6, evre: [0.6, 1, 1, 0.35] }], olay: TRIBUN_OLAY, aralik: [6, 12], yogunluk: [0.6, 1, 1, 0.4] },
   // halı saha maç ekranı açık: aynı tribün, daha sık
-  halisaha: { katman: [{ loop: 'kalabalik', vol: 0.32, evre: [1, 1, 1, 1] }], olay: TRIBUN_OLAY, aralik: [4, 8], yogunluk: [1, 1, 1, 1] },
+  halisaha: { katman: [{ loop: 'kalabalik', vol: 0.6, evre: [1, 1, 1, 1] }], olay: TRIBUN_OLAY, aralik: [4, 8], yogunluk: [1, 1, 1, 1] },
   // deniz kıyısı ama paket kapsamı dışı: yalnız mevcut deniz döngüsü (yatırım yok)
   sahil: SAHIL_BENZERI, barinak: SAHIL_BENZERI, tersane: SAHIL_BENZERI, adalar: SAHIL_BENZERI,
   // kapsam dışı bölgeler: yanlışlıkla deniz çalmasın diye nötr (yalnız hava)
@@ -112,10 +112,16 @@ export function ambBolge(zone: string): AmbBolge {
   return AMBIYANS[zone] || AMBIYANS[zone.split('.')[0]] || SESSIZ;
 }
 
+/** Yağmur döngüsü kazancı: yagmur.opus -12 LUFS (diğer döngüler -23..-37), bu yüzden düşük. Tek yer (index.ts de bunu kullanır). */
+export const YAGMUR_VOL = { saganak: 0.22, firtina: 0.3 } as const;
+/** Yağmurda / fırtınada / karda duyulmayacak dış olaylar (kuru hava sesleri): martı, kuş, simitçi, kaşık, çocuk, köpek, mevsim çağrısı. */
+export const KURU_OLAY = new Set(['gull', 'birdTrill', 'birdCall', 'woodpecker', 'simitci', 'spoon', 'cocuk', 'kopek', 'mevsim', 'seasonCall']);
+export const ISLAK_HAVA = new Set(['saganak', 'firtina', 'kar']);
+
 /** Hava döngüsü ve tepe kazancı (yoksa null). */
 export function havaKatman(weather: string): { loop: string; vol: number } | null {
-  if (weather === 'firtina') return { loop: 'yagmur', vol: 0.75 };
-  if (weather === 'saganak') return { loop: 'yagmur', vol: 0.55 };
+  if (weather === 'firtina') return { loop: 'yagmur', vol: YAGMUR_VOL.firtina };
+  if (weather === 'saganak') return { loop: 'yagmur', vol: YAGMUR_VOL.saganak };
   if (weather === 'lodos') return { loop: 'ruzgar', vol: 0.4 };
   return null;
 }
@@ -215,6 +221,7 @@ export class Canta<T> {
       const i = b.findIndex(x => x !== prev);
       if (i >= 0) { prev = b.splice(i, 1)[0]; seq.push(prev); continue; }
       const v = b.pop() as T;
+      if (new Set(this.items.filter(x => x.w > 0).map(x => x.v)).size <= 1) { seq.push(v); continue; }   // tek öğeli havuz: tekrar kaçınılmaz, öğeyi atma (eskiden her 2. çekiliş boş kalıyordu)
       for (let k = 1; k < seq.length; k++) if (seq[k - 1] !== v && seq[k] !== v) { seq.splice(k, 0, v); break; }
     }
     this.bag = seq.reverse();

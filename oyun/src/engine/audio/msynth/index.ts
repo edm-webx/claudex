@@ -96,6 +96,17 @@ export function createBank(ac: BaseAudioContext, db: SesDb, budget = STREAM_BUDG
     if (front && queue.length) queue.unshift(job); else queue.push(job);
     pump();
   }
+  /** Döngü dikişi tıkı (ölçüm: ic_mutfak 3.7x, ic_avm 4.7x, orman 3.1x medyan adım): başı ve sonu 12 ms'lik yumuşak kenarla bağla. */
+  function sealSeam(b: AudioBuffer) {
+    try {
+      const n = Math.min(Math.floor(b.sampleRate * 0.012), Math.floor(b.length / 4));
+      if (n < 8) return;
+      for (let c = 0; c < b.numberOfChannels; c++) {
+        const d = b.getChannelData(c);
+        for (let i = 0; i < n; i++) { const k = i / n; d[i] *= k; d[d.length - 1 - i] *= k; }
+      }
+    } catch { /* read-only buffer: leave as is */ }
+  }
   /** Gerçek kayıt: fetch + decodeAudioData (stereo, 48 kHz kalır); başarısızsa false -> sentez yedek. Aynı anahtar tek indirme. */
   function fromFile(key: string, cache: Map<string, AudioBuffer>, file: string, cb: (b: AudioBuffer) => void, fallback: (cb: (b: AudioBuffer) => void) => void) {
     const hit = cache.get(key); if (hit) { use.set(hit, ++tick); cb(hit); return; }
@@ -106,7 +117,7 @@ export function createBank(ac: BaseAudioContext, db: SesDb, budget = STREAM_BUDG
     if (!f) { fail(); return; }
     f('ses/' + file).then(r => { if (!r.ok) throw new Error('http'); return r.arrayBuffer(); })
       .then(ab => ac.decodeAudioData(ab))
-      .then(b => { cache.set(key, b); use.set(b, ++tick); evict(b); const cbs = waiting.get(key) || []; waiting.delete(key); for (const c of cbs) { try { c(b); } catch { /* listener */ } } })
+      .then(b => { sealSeam(b); cache.set(key, b); use.set(b, ++tick); evict(b); const cbs = waiting.get(key) || []; waiting.delete(key); for (const c of cbs) { try { c(b); } catch { /* listener */ } } })
       .catch(fail);
   }
   const bank: Bank = {

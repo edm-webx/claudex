@@ -55,6 +55,8 @@ DEFAULT_TABLE.avmHol = [{ id: 'ic_mirilti', loop: 'ic_mirilti', gain: 0.75, shot
 for (const id of ['avm_moda', 'avm_tekno', 'avm_oyuncak']) DEFAULT_TABLE[id] = [{ id: 'ic_mirilti', loop: 'ic_mirilti', gain: 0.45 }];
 DEFAULT_TABLE.stadyum = DEFAULT_TABLE.halisaha;
 
+import { KURU_OLAY, ISLAK_HAVA } from '../../content/ses/ambiyans';
+
 export interface Atmosphere {
   setTable(t: AmbienceTable): void;
   setZone(z: string): void;
@@ -114,6 +116,7 @@ export function createAtmosphere(host: AtmoHost, o: { fadeS?: number; table?: Am
           l.next.set(s, now + (s.minS + rand() * (s.maxS - s.minS)) * 1000);
           if (s.when && (s.when === 'day') !== (ctx.phase === 'morning' || ctx.phase === 'noon')) continue;
           if (s.weather && !s.weather.includes(ctx.weather)) continue;
+          if (ISLAK_HAVA.has(ctx.weather) && KURU_OLAY.has(s.id)) continue;   // yağmurda dış kuru sesler yok
           host.shoot(l.def, s);
         }
       }

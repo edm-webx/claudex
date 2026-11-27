@@ -190,7 +190,7 @@ export function createJuice(d: JuiceDeps): JuiceView {
     const key = String(p?.key ?? '');
     const a = anchor('pads.' + key) || anchor('stations.' + key);
     const q = a ? at3(a.x, 0.6, a.z) : heroAt(1.2);
-    play('confetti', q); play('coinSparkle', at3(q.x, 1.2, q.z), 1.4); d.sfx('confetti'); buzz(35);
+    play('confetti', q); play('coinSparkle', at3(q.x, 1.2, q.z), 1.4); buzz(35);   // ses: EVENT_SFX 'unlock' -> buy zaten çalar (çift ses + müzik kısma yok)
     popText(at3(q.x, 2.2, q.z), 'Açıldı!');
     if (a && d.pan) { try { d.pan({ x: a.x, z: a.z }); } catch { /* */ } }
     const zr = d.zoneRoot();

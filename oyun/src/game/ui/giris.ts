@@ -151,7 +151,7 @@ ${mode === 'giris' ? (unut ? unutKutu() : '<button class="gr-adm" data-unut="1">
       bg.addEventListener('click', e => {
         const el = (e.target as HTMLElement).closest('button') as HTMLButtonElement | null; if (!el) return;
         if (el.dataset.retry) { el.disabled = true; el.textContent = 'Bekle...'; void slotlariYukle().then(ok => { if (ok) slotsScreen(); else { try { deps.sfx?.('error'); } catch { /* */ } okumaHatasi(); } }); return; }
-        if (el.dataset.no) { try { deps.sfx?.('pick'); } catch { /* */ } slotsScreen(); return; }
+        if (el.dataset.no) { try { deps.sfx?.('tik'); } catch { /* */ } slotsScreen(); return; }
         if (el.dataset.del) { delScreen(Number(el.dataset.del), 1); return; }
         if (el.dataset.d1) { delScreen(Number(el.dataset.d1), 2); return; }
         if (el.dataset.d2) {
@@ -160,7 +160,7 @@ ${mode === 'giris' ? (unut ? unutKutu() : '<button class="gr-adm" data-unut="1">
           void slotSil(i).then(ok => { if (ok) { try { deps.sfx?.('ok'); } catch { /* */ } slotsScreen(); } else { try { deps.sfx?.('error'); } catch { /* */ } delScreen(i, 2, 'Silinemedi, bağlantını kontrol edip tekrar dene. Hiçbir şey silinmedi.'); } });
           return;
         }
-        if (el.dataset.slot) { slotSec(Number(el.dataset.slot)); try { deps.sfx?.('pick'); } catch { /* */ } void enter(); return; }
+        if (el.dataset.slot) { slotSec(Number(el.dataset.slot)); try { deps.sfx?.('tik'); } catch { /* */ } void enter(); return; }
         if (el.dataset.enter) { void enter(); return; }
         if (el.dataset.unut) { unut = true; const keepAd = (bg.querySelector('input[name="ad"]') as HTMLInputElement).value; paint(); (bg.querySelector('input[name="ad"]') as HTMLInputElement).value = keepAd; return; }
         if (el.dataset.m) { mode = el.dataset.m as 'giris' | 'kayit'; paint(); return; }

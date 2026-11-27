@@ -4,7 +4,7 @@ import { SFX_DB, sesOlc } from './olcum';
 
 const SOFT_PARA = ['coin', 'cash', 'buy', 'hesap', 'error'];
 // kategori başına tepe tavanı
-const TAVAN: Record<string, number> = { horn: 0.5, thunder: 0.4, bad: 0.35, purr: 0.4 };
+const TAVAN: Record<string, number> = { thunder: 0.4, bad: 0.35, purr: 0.4 };
 describe('ses-db bütçe tablosu', () => {
   it('hiçbir ses kırpılmaz ve genel tepe tavanı 0.6', () => {
     for (const id of Object.keys(SFX_DB)) expect(sesOlc(id).tepe, id).toBeLessThan(TAVAN[id] ?? 0.6);
@@ -12,8 +12,8 @@ describe('ses-db bütçe tablosu', () => {
   it('para sesleri yumuşak: merkez < 1500 Hz, tepe < 0.25 (gerçekte ~0.1)', () => {
     for (const id of SOFT_PARA) { const o = sesOlc(id); expect(o.merkez, id).toBeLessThan(1500); expect(o.tepe, id).toBeLessThan(0.25); }
   });
-  it("korna ve gök gürültüsü alçak ve kısık: merkez < 800 Hz", () => {
-    for (const id of ['horn', 'thunder', 'bad']) expect(sesOlc(id).merkez, id).toBeLessThan(800);
+  it("gök gürültüsü alçak ve kısık: merkez < 800 Hz", () => {
+    for (const id of ['thunder', 'bad']) expect(sesOlc(id).merkez, id).toBeLessThan(800);
   });
   it('tiz sürtünme sesleri (fizz, buhar) 6 kHz merkez altında', () => {
     for (const id of ['fizz', 'steamHiss']) expect(sesOlc(id).merkez, id).toBeLessThan(7000);

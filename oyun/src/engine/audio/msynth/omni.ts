@@ -4,10 +4,10 @@
 // - Omni is one monophonic Tone.js voice (3 osc + 2 noise -> one lowpass -> amp env -> fx chain). Good for drones,
 //   engines and lasers; weak for natural sounds (sea, rain, splash, coins) that need several independent noise and
 //   tone events with their own envelopes and filters.
-// - Its applyMacros() overwrites cutoff / decay / release / drive on every update, so presets like "korna" never
+// - Its applyMacros() overwrites cutoff / decay / release / drive on every update, so presets like the old ones never
 //   sound as written there. Here macros only apply when the patch itself sets macroSpeed / macroIntensity.
 // - Tone.js from cdnjs may be blocked inside the game's sandbox. So: layered recipes in ses-db.json are the main
-//   path, Omni patches are a supported layer type ({ k: 'omni', patch: 'korna' }).
+//   path, Omni patches are a supported layer type ({ k: 'omni', patch: 'drone' }).
 // Not ported (no audible use in game sounds): chorus, phaser, glide, arpeggiator.
 import { Rng, Svf, osc, noiseSrc, env, reverb, echo, drive, dbToLin, type Wave } from './dsp';
 

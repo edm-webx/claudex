@@ -2,7 +2,7 @@
  * Hava view (survey motor-7, yasam-5, etkinlik-1, iskele-8, etkinlik-5/6): everything the weather, the seasons and the
  * events show in the world. View only: reads `havaApi(rules).view()`, writes nothing to the sim.
  * - Rain streaks + wet shiny deck + puddles with ripples; snow flakes + white deck/roof/lamp caps + snowballs; fog
- *   (scene fog pulled in, horn from far away); lodos: faster sea, whitecaps, flying hats, crowd leans while walking;
+ *   (scene fog pulled in); lodos: faster sea, whitecaps, flying hats, crowd leans while walking;
  *   rainbow arcs after a sağanak; light tint per season and weather (sun/hemi/sky/fog from render.tod()).
  * - Seasons: tree crowns re-coloured (spring blossom, autumn orange, winter snow), citizen accessories (winter beanie +
  *   scarf, summer straw hat, umbrellas/newspapers in rain, fans in heat, paper party hats on 23 Nisan).
@@ -214,7 +214,7 @@ export function createHavaLook(d: HavaLookDeps): HavaLookView {
   };
 
   // ───────── state ─────────
-  let t = 0, bulutK = 0, wetK = 0, snowK = 0, fogK = 0, rainK = 0, flakeK = 0, lodosK = 0, heatK = 0, rainbowK = 0, lightT = 0, hornT = 15, seaOff = 0;
+  let t = 0, bulutK = 0, wetK = 0, snowK = 0, fogK = 0, rainK = 0, flakeK = 0, lodosK = 0, heatK = 0, rainbowK = 0, lightT = 0, seaOff = 0;
   let sea: T.Mesh | null = null, seaParent: T.Object3D | null = null;
   const C1 = new T.Color(), C2 = new T.Color(), GREY = new T.Color('#8f9ba6'), FOGC = new T.Color('#c9d1d8');
   const TINT: Record<string, T.Color> = { ilkbahar: new T.Color('#fff2f5'), yaz: new T.Color('#fff6df'), sonbahar: new T.Color('#ffe7c9'), kis: new T.Color('#e4edff') };
@@ -490,8 +490,6 @@ export function createHavaLook(d: HavaLookDeps): HavaLookView {
       // sea: faster waves in lodos / storm
       const U = (sea?.material as T.ShaderMaterial | undefined)?.uniforms;
       if (U && U.uTime) { seaOff += dt * lodosK * 1.6; U.uTime.value = (U.uTime.value as number) + seaOff; }
-      // fog horn from far away
-      if (fogK > 0.5) { hornT -= dt; if (hornT <= 0) { hornT = 22 + Math.random() * 18; d.sfx?.('horn'); } }
       const f = d.focus();
       particles(dt, f);
       pierLook(v, dt);

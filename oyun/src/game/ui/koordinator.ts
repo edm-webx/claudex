@@ -77,7 +77,7 @@ export function createKoordinator(d: Deps): Koordinator {
   const bg = document.createElement('div'); bg.className = 'kd-bg'; d.root.appendChild(bg);
   let sayfa: KoordinatorSayfa = 'mac', key = '', acik = false, t = 0, basa = false;
   const club = { ad: '', c1: COL[0], c2: COL[1], arma: ARMA[0] }, bet = { k: '1', n: 500 };
-  const cmd = (c: Record<string, unknown>) => { d.command({ kind: 'mulk', ...c }); try { d.sfx?.('pick'); } catch { /* */ } key = ''; t = 0; };
+  const cmd = (c: Record<string, unknown>) => { d.command({ kind: 'mulk', ...c }); try { d.sfx?.('tik'); } catch { /* */ } key = ''; t = 0; };
 
   const lbl = (ok: boolean) => (ok ? '' : ' disabled');
   const konus = (m: M): string => {

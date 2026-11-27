@@ -40,7 +40,7 @@ export function createDenizUi(d: DenizUiDeps): DenizUiView {
   const st = document.createElement('style'); st.textContent = CSS; d.root.appendChild(st);
   const box = document.createElement('div'); box.className = 'dz-ui'; d.root.appendChild(box);
   let key = '', t = 0;
-  const cmd = (op: string, id?: string | number) => { try { d.sfx?.('tap'); } catch { /* */ } d.command({ kind: 'deniz', op, id: id == null ? undefined : String(id) }); };
+  const cmd = (op: string, id?: string | number) => { try { d.sfx?.('tik'); } catch { /* */ } d.command({ kind: 'deniz', op, id: id == null ? undefined : String(id) }); };
   box.addEventListener('click', e => { const b = (e.target as HTMLElement).closest('[data-op]') as HTMLElement | null; if (b) cmd(b.dataset.op!, b.dataset.id); });
 
   function cards(v: DenizView, carry: number): string {
