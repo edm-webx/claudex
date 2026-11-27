@@ -11,6 +11,7 @@
  * - Chat text is filtered (survey: "serbest yazı, filtreli"): a small Turkish/English swear list becomes ***.
  * - Names travel as typed nicknames in presence (display data, untrusted), set with textContent only.
  */
+import { kabukKur, telefonaDon, EV_BTN } from './ui/telefon-kabuk';
 import { hesap } from './net/supa';
 import { MISAFIR_MAAS } from './net/misafir';
 import { susturuldu, benSusturuldum, adlar } from './net/admin';
@@ -121,6 +122,7 @@ const CSS = `
 .on-code{width:100%;box-sizing:border-box;min-height:56px;border:4px solid #3b2a20;border-radius:14px;text-align:center;font:900 30px var(--disp);letter-spacing:5px;text-transform:uppercase;background:#fff;color:#3b2a20}
 .on-srv{display:grid;grid-template-columns:1fr 1fr;gap:6px}.on-s{min-height:42px;border:3px solid #3b2a20;border-radius:12px;background:#fff6e6;font:900 15px var(--disp);color:#3b2a20;cursor:pointer;text-align:left;padding:2px 8px;display:flex;align-items:center;gap:6px}.on-s.on{background:#ffd23f}.on-s i{width:14px;height:14px;border-radius:50%;border:2px solid #3b2a20;flex:none}
 .on-card{max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);overflow:auto}
+.on-x{position:sticky;top:0;float:right;margin:-4px -6px 0 6px;width:44px;height:44px;border-radius:50%;border:3px solid #3b2a20;background:#fff6e6;font:900 18px/1 var(--disp);color:#3b2a20;cursor:pointer;z-index:2}
 .on-err{min-height:18px;color:#b3261e;font:800 13px var(--body);text-align:center;margin-top:6px}
 `;
 
@@ -266,17 +268,18 @@ export function createOnline(d: OnlineDeps): OnlineView {
     if (odaBtn) odaBtn.textContent = code ? '🔑 Oyun kodu: ' + code : '🔑 Arkadaşını çağır';
   }
   function odaPanel() {
+    kabukKur(d.root);
     const bg = document.createElement('div'); bg.className = 'on-bg';
     const close = () => bg.remove();
     const main = (err = '') => {
-      bg.innerHTML = `<div class="on-card"><h3>🔑 Oyun kodu</h3><p>Oyunun sadece senin. Arkadaşın gelsin istersen kod oluştur, kodu ona söyle. O da "Katıl"a yazsın, aynı Martıköy'de buluşun.</p>
+      bg.innerHTML = `<div class="on-card"><button class="on-x" data-a="kapat" aria-label="Kapat">✕</button><h3>🔑 Oyun kodu</h3><p>Oyunun sadece senin. Arkadaşın gelsin istersen kod oluştur, kodu ona söyle. O da "Katıl"a yazsın, aynı Martıköy'de buluşun.</p>
 ${code ? `<div class="on-big">${code}</div><p>Şu an bu odadasın.</p>` : ''}
 <button class="on-b g" data-a="kur">Yeni oda kur</button><p style="margin:6px 0 0;font-size:12px">Odayı kuran ev sahibi olur: girenler senin büfende çalışır. Sattıkları senin kasana gelir, onlara maaşı oyun öder; kimsenin parası ve seviyesi karışmaz.</p>
 <div style="margin-top:12px;font:900 15px var(--disp)">Odaya katıl</div>
 <input class="on-code" maxlength="6" placeholder="KOD" autocomplete="off" spellcheck="false">
 <button class="on-b y" data-a="katil">Katıl</button><div class="on-err">${err}</div>
 
-<button class="on-b" data-a="kapat">Kapat</button></div>`;
+<button class="on-b" data-a="kapat">Kapat</button>${EV_BTN}</div>`;
     };
     bg.addEventListener('click', e => {
       if (e.target === bg) { close(); return; }
@@ -285,6 +288,7 @@ ${code ? `<div class="on-big">${code}</div><p>Şu an bu odadasın.</p>` : ''}
       if (a === 'kur') { const c = yeniKod(); connect(c, true); main(); d.toast('Oda kuruldu: ' + c + '. Kodu arkadaşına söyle!'); return; }
       if (a === 'katil') { const c = kodTemiz((bg.querySelector('.on-code') as HTMLInputElement).value); if (c.length !== 6) { main('Kod 6 harf olmalı.'); return; } connect(c); close(); d.toast(c + ' odasına girdin.'); return; }
       if (a === 'genel') { connect(''); close(); return; }
+      if (btn?.dataset.tfEv) { close(); telefonaDon(d.root); return; }   // telefon kabuğu: ana ekrana dön
       close();
     });
     bg.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') ((bg.querySelector('[data-a="katil"]') as HTMLButtonElement | null)?.click()); });

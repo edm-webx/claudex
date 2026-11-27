@@ -126,6 +126,7 @@ position:fixed;inset:0;pointer-events:none;z-index:10;overflow:hidden;font-famil
 @keyframes sb-glow{50%{filter:brightness(1.12);box-shadow:0 4px 0 var(--ink),0 0 0 5px rgba(255,210,63,.55)}}
 .sb-x{pointer-events:auto;cursor:pointer;width:46px;height:46px;flex:none;border-radius:50%;border:2.5px solid var(--ink);background:var(--cream);display:grid;place-items:center;padding:0;box-shadow:0 3px 0 var(--ink)}
 .sb-x svg{width:20px;height:20px}
+.tf-ev,.tf-geri{display:none}   /* telefon kabuğu (game/ui/telefon-kabuk.ts) yalnız oyunda gösterir */
 .sb-x:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
 .sb-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 8px 4px;border-radius:999px;background:var(--cream2);border:2px solid var(--ink);font:800 13px/1.1 var(--body);white-space:nowrap}
 .sb-chip svg{width:16px;height:16px}

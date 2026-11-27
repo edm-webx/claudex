@@ -545,7 +545,7 @@ function openSheet(id, title, sub, icon, acc, bodyHTML, footHTML, extraCls) {
   if (!same) {
     sheet = mk('section', 'sb-sheet' + (extraCls ? ' ' + extraCls : ''));
     sheet.dataset.id = id; sheet.setAttribute('role', 'dialog'); sheet.setAttribute('aria-label', title);
-    sheet.innerHTML = `<div class="sb-awn"></div><div class="sb-shh"><span class="hi"></span><h2></h2><button class="sb-x" data-a="__close" aria-label="Kapat">${ICONS.close}</button></div><div class="sb-shb"></div><div class="sb-shf" hidden></div>`;
+    sheet.innerHTML = `<div class="sb-awn"></div><div class="sb-shh"><button class="tf-geri" data-a="__tel" aria-label="Telefona dön">‹</button><span class="hi"></span><h2></h2><button class="sb-x" data-a="__close" aria-label="Kapat">${ICONS.close}</button></div><div class="sb-shb"></div><div class="sb-shf" hidden></div><button class="tf-ev" data-a="__tel" aria-label="Telefonun ana ekranı"></button>`;
     sheet.addEventListener('click', onSheetClick);
     sheet.addEventListener('input', onSheetClick);
     sheet.addEventListener('pointerdown', () => { pressing = true; }, true);
@@ -586,6 +586,7 @@ function onSheetClick(e) {
   const idv = id != null && id !== '' && !isNaN(+id) && String(+id) === id ? +id : id;
   switch (a) {
     case '__close': userClose(); return;
+    case '__tel': userClose(); emit('ui:open', 'telefon'); return;   // telefon kabuğu: uygulamadan telefonun ana ekranına
     case 'fire': {
       const w = (sheetModel.workers || []).find(x => String(x.id) === String(id));
       U.confirm({ title: (w ? w.name : 'İşçi') + ' işten ayrılsın mı?', text: 'Rütbesi ve tecrübesi de gider. Yerine yeni birini panodan bulman gerekir.', yes: 'Evet, ayrılsın', no: 'Vazgeç' })

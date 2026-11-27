@@ -102,6 +102,7 @@ const CSS = `
 .mn-foot .sag{display:flex;gap:18px;align-items:center}
 .mn-panelde .mn-foot .sag{visibility:hidden}
 @media (max-width:760px),(max-aspect-ratio:1/1){.mn-panelde .mn-foot,.mn-panelde .mn-menu{visibility:hidden}}
+
 .mn-ayar-satir{margin:16px 0 0}.mn-ayar-satir label{display:flex;justify-content:space-between;font:700 11.5px/1 'SB Govde',system-ui,sans-serif;letter-spacing:.2em;color:rgba(255,220,170,.75);text-transform:uppercase;margin-bottom:10px}
 .mn-ayar-satir label output{letter-spacing:.04em;color:#ffe1a8}
 .mn-ayar-satir input[type=range]{width:100%;height:28px;margin:0;accent-color:#f6a640;cursor:pointer}
@@ -124,6 +125,19 @@ const CSS = `
  .mn-basla{bottom:calc(clamp(14px,5.2vh,40px) + 90px);letter-spacing:.24em}
 }
 @media (max-height:760px){.mn-panel{padding:22px 24px 18px}.mn-panel h2,.mn-h{font-size:28px}.mn-sub{margin-bottom:12px}.mn-btn{min-height:48px;margin-top:14px}.mn-krediler div{padding:8px 0}}
+/* QA 2026-11-27: telefon yatay (844x390, 932x430, 667x375) masaüstü yerleşimini alıyordu, Ayarlar/Yapımcılar ekran dışında, Oyna "Müzik" ile üst üste.
+   Kısa ekranda menü alt bilgi satırının üstüne oturur, satırlar sıkışır; panel açıkken menü ve alt satır gizlenir */
+@media (max-height:520px) and (orientation:landscape){
+ .mn-grade{background:linear-gradient(90deg,rgba(20,8,4,.78) 0%,rgba(20,8,4,.35) 42%,rgba(0,0,0,0) 62%)}
+ .mn-logo{left:clamp(20px,6vw,92px);right:auto;top:clamp(14px,5vh,40px);text-align:left}.mn-logo .k{margin-left:0}.mn-logo .b{font-size:clamp(46px,8.4vw,80px)}.mn-logo .s{justify-content:flex-start}.mn-logo .s i.sag{display:none}
+ .mn-menu{left:clamp(20px,6vw,92px);right:auto;top:auto;bottom:calc(clamp(14px,5.2vh,40px) + 44px);align-items:flex-start;gap:0}
+ .mn-mi{justify-content:flex-start}.mn-mi:before{display:block}.mn-mi small{display:inline}.mn-mi.ana{color:rgba(255,236,210,.6);text-shadow:0 2px 10px rgba(0,0,0,.45)}.mn-mi.on{color:#fff6e4;transform:translateX(6px)}
+ .mn-foot{left:clamp(20px,6vw,92px);right:clamp(20px,6vw,92px)}.mn-basla{bottom:calc(clamp(14px,5.2vh,40px) + 30px)}
+ .mn-mi{min-height:38px;padding:3px 12px 3px 0;font-size:20px}.mn-mi.ana{font-size:27px}.mn-mi small{font-size:11px}
+ .mn-foot{bottom:clamp(8px,3vh,18px)}.mn-ses{padding:10px 0;min-height:24px}
+ .mn-panelde .mn-foot,.mn-panelde .mn-menu{visibility:hidden}
+ .mn-panel{top:10px;bottom:10px;transform:none;max-height:none;right:clamp(12px,4vw,48px);width:min(420px,calc(100vw - 24px));padding:16px 20px 14px}
+}
 @media (prefers-reduced-motion:reduce){.mn-gull,.mn-mote,.mn-logo .b:after{animation:none!important;display:none}}
 `;
 
