@@ -89,6 +89,8 @@ const CSS = `
 .mn-mi.on:before{width:36px;height:3px;background:linear-gradient(90deg,#ffd27a,#ff8a3d);box-shadow:0 0 14px #ffb04a}
 .mn-mi:focus-visible{outline:2px solid rgba(255,206,140,.6);outline-offset:4px;border-radius:8px}
 .mn-mi.ana{font-size:clamp(28px,3.2vw,40px);font-family:'SB Baslik','SB Govde',system-ui,sans-serif;font-weight:800}
+.mn-mi.mn-yeni{color:rgba(196,236,226,.78)}.mn-mi.mn-yeni:after{content:"YENİ";flex:none;font:800 10px/1 'SB Govde',system-ui,sans-serif;letter-spacing:.18em;padding:5px 8px 4px;border-radius:999px;background:linear-gradient(90deg,#ffd27a,#ff8a3d);color:#2a1606;box-shadow:0 0 12px rgba(255,160,70,.45)}
+.mn-menu .mn-mi:nth-child(5){animation-delay:.32s}
 .mn-bekle .mn-menu,.mn-bekle .mn-foot{visibility:hidden}
 .mn-title:not(.mn-bekle) .mn-menu .mn-mi{animation:mn-sol .7s cubic-bezier(.2,.8,.2,1) both}
 .mn-menu .mn-mi:nth-child(2){animation-delay:.08s}.mn-menu .mn-mi:nth-child(3){animation-delay:.16s}.mn-menu .mn-mi:nth-child(4){animation-delay:.24s}
