@@ -1,6 +1,7 @@
 // Maç Koordinatörü kartı (FUT-11/12/13/14/17): halı sahanın önündeki koordinatörle konuşunca açılan diegetic kart.
 // Futbol işleri (bilet, kulüp kur, sahaya çık, lig, çetele, kadro/formasyon, tribünden izle) envanter/mülk panelinde DEĞİL, burada.
 // View only: reads rt.mulk model (sim/mulk.ts; .lig comes from sim/lig.ts) and sends { kind: 'mulk', op: bilet | takim | biletFiyat | formasyon | izle }.
+import { kabukKur, telefonaDon, EV_BTN } from './telefon-kabuk';
 import { FORMATIONS } from '../sim/macmotor';
 import { mulkApi } from '../sim/mulk';
 import { BAHIS, BAHIS_ARALIK, ODULLU_MAC_GUNLUK } from '../sim/halisaha';
@@ -73,7 +74,7 @@ function minisaha(f: string, c1: string): string {
 }
 
 export function createKoordinator(d: Deps): Koordinator {
-  const st = document.createElement('style'); st.textContent = CSS; d.root.appendChild(st);
+  const st = document.createElement('style'); st.textContent = CSS; d.root.appendChild(st); kabukKur(d.root);
   const bg = document.createElement('div'); bg.className = 'kd-bg'; d.root.appendChild(bg);
   let sayfa: KoordinatorSayfa = 'mac', key = '', acik = false, t = 0, basa = false;
   const club = { ad: '', c1: COL[0], c2: COL[1], arma: ARMA[0] }, bet = { k: '1', n: 500 };
@@ -179,7 +180,7 @@ export function createKoordinator(d: Deps): Koordinator {
     const girdi = bg.querySelector('input[data-f="takim"]') as HTMLInputElement | null, odak = !!girdi && document.activeElement === girdi, imlec = girdi?.selectionStart ?? null;
     const sc = basa ? 0 : (bg.querySelector('.kd-body') as HTMLElement | null)?.scrollTop || 0, tsc = (bg.querySelector('.kd-tabs') as HTMLElement | null)?.scrollLeft || 0;
     bg.innerHTML = `<div class="kd-card" role="dialog" aria-label="Maç Koordinatörü"><div class="kd-top"><span class="kd-av">🧢</span><h2>Maç Koordinatörü</h2><span class="kd-chip">${tl(m.money)}</span><button class="kd-x" data-a="close" aria-label="Kapat">✕</button></div>
-<div class="kd-say">“${esc(konus(m))}”</div><div class="kd-tabs">${TABS.map(([k, l]) => `<button class="kd-t${sayfa === k ? ' on' : ''}" data-tab="${k}">${l}</button>`).join('')}</div><div class="kd-body">${body}</div></div>`;
+<div class="kd-say">“${esc(konus(m))}”</div><div class="kd-tabs">${TABS.map(([k, l]) => `<button class="kd-t${sayfa === k ? ' on' : ''}" data-tab="${k}">${l}</button>`).join('')}</div><div class="kd-body">${body}</div>${EV_BTN}</div>`;
     const i = bg.querySelector('input[data-f="takim"]') as HTMLInputElement | null;
     if (i) { i.value = club.ad; if (odak) { i.focus(); if (imlec != null) i.setSelectionRange(imlec, imlec); } }
     (bg.querySelector('.kd-body') as HTMLElement).scrollTop = sc; (bg.querySelector('.kd-tabs') as HTMLElement).scrollLeft = tsc; basa = false;
@@ -192,6 +193,7 @@ export function createKoordinator(d: Deps): Koordinator {
   bg.addEventListener('click', e => {
     if (e.target === bg) { api.close(); return; }
     const el = (e.target as HTMLElement).closest('button') as HTMLButtonElement | null; if (!el || el.disabled) return;
+    if (el.dataset.tfEv) { api.close(); telefonaDon(d.root); return; }   // telefon kabuğu: ana ekrana dön
     if (el.dataset.tab) { sayfa = el.dataset.tab as KoordinatorSayfa; basa = true; key = ''; t = 0; return; }
     const a = el.dataset.a, n = Number(el.dataset.n) || 0;
     if (a === 'close') { api.close(); return; }

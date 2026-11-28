@@ -11,6 +11,7 @@
  * - Chat text is filtered (survey: "serbest yazı, filtreli"): a small Turkish/English swear list becomes ***.
  * - Names travel as typed nicknames in presence (display data, untrusted), set with textContent only.
  */
+import { kabukKur, telefonaDon, EV_BTN } from './ui/telefon-kabuk';
 import { hesap } from './net/supa';
 import { MISAFIR_MAAS } from './net/misafir';
 import { susturuldu, benSusturuldum, adlar } from './net/admin';
@@ -124,6 +125,7 @@ const CSS = `
 .on-card{position:relative}.on-x{position:absolute;top:8px;right:8px;width:44px;height:44px;border-radius:50%;border:3px solid #3b2a20;background:#fff6e6;font:900 16px var(--disp);color:#3b2a20;cursor:pointer}
 @media (max-height:480px){.on-bg{padding:8px}.on-card{padding:10px 14px;width:min(520px,100%)}.on-card h3{font-size:19px;margin-right:44px}.on-card p{margin:2px 0 6px;font-size:12.5px}.on-big{font-size:30px;padding:4px;margin:4px 0}.on-b{min-height:42px;margin-top:6px;font-size:16px}.on-code{min-height:44px;font-size:24px}}
 .on-card{max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);overflow:auto}
+.on-x{position:sticky;top:0;float:right;margin:-4px -6px 0 6px;width:44px;height:44px;border-radius:50%;border:3px solid #3b2a20;background:#fff6e6;font:900 18px/1 var(--disp);color:#3b2a20;cursor:pointer;z-index:2}
 .on-err{min-height:18px;color:#b3261e;font:800 13px var(--body);text-align:center;margin-top:6px}
 `;
 
@@ -284,6 +286,7 @@ export function createOnline(d: OnlineDeps): OnlineView {
     if (odaBtn) odaBtn.textContent = code ? '🔑 Oyun kodu: ' + code : '🔑 Arkadaşını çağır';
   }
   function odaPanel() {
+    kabukKur(d.root);
     const bg = document.createElement('div'); bg.className = 'on-bg';
     const close = () => bg.remove();
     let yeniSor = false;
@@ -295,7 +298,7 @@ ${code ? `<div class="on-big">${code}</div><button class="on-b y" data-a="kopya"
 <input class="on-code" maxlength="6" placeholder="KOD" autocomplete="off" spellcheck="false">
 <button class="on-b y" data-a="katil">Katıl</button><div class="on-err">${err}</div>
 
-<button class="on-b" data-a="kapat">Kapat</button></div>`;
+<button class="on-b" data-a="kapat">Kapat</button>${EV_BTN}</div>`;
     };
     bg.addEventListener('click', e => {
       if (e.target === bg) { close(); return; }
@@ -305,6 +308,7 @@ ${code ? `<div class="on-big">${code}</div><button class="on-b y" data-a="kopya"
       if (a === 'katil') { const c = kodTemiz((bg.querySelector('.on-code') as HTMLInputElement).value); if (c.length !== 6) { main('Kod 6 harf olmalı.'); return; } connect(c); close(); d.toast(c + ' odasına girdin.'); return; }
       if (a === 'kopya') { try { void navigator.clipboard?.writeText(code); d.toast('Kod kopyalandı: ' + code); } catch { d.toast('Kopyalanamadı. Kodu elle yaz: ' + code); } return; }
       if (a === 'genel') { connect(''); close(); return; }
+      if (btn?.dataset.tfEv) { close(); telefonaDon(d.root); return; }   // telefon kabuğu: ana ekrana dön
       close();
     });
     bg.addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') ((bg.querySelector('[data-a="katil"]') as HTMLButtonElement | null)?.click()); });

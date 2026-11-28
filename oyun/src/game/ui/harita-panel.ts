@@ -18,7 +18,7 @@ const CSS = `<style>
 @keyframes mk-unfold{0%{transform:perspective(600px) rotateX(-80deg) scaleY(.3);opacity:.2}60%{transform:perspective(600px) rotateX(8deg) scaleY(1.02);opacity:1}100%{transform:none}}
 .mk-paper:after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,transparent 32.8%,rgba(90,60,20,.16) 33.3%,transparent 33.8%,transparent 66.2%,rgba(90,60,20,.16) 66.7%,transparent 67.2%),linear-gradient(0deg,transparent 49.5%,rgba(90,60,20,.12) 50%,transparent 50.5%)}
 .mk-paper svg{display:block;width:100%;height:auto}
-.mk-paper .t{font:900 15px var(--disp,system-ui);fill:#3b2a20}.mk-paper .s{font:800 11px var(--body,system-ui);fill:#3b2a20}
+.mk-paper .t{font:900 18px var(--disp,system-ui);fill:#3b2a20}.mk-paper .s{font:800 15px var(--body,system-ui);fill:#3b2a20}   /* telefonda harita ~0.6x küçülür: 11px etiketler 7px kalıyordu (QA 04) */
 .mk-pin{cursor:pointer}.mk-pin circle{stroke:#3b2a20;stroke-width:2}
 .mk-title{position:absolute;left:10px;top:6px;font:900 16px/1 var(--disp);color:#7a4a12;letter-spacing:.04em;pointer-events:none}
 .mk-row{display:grid;grid-template-columns:44px 1fr auto;gap:8px;align-items:center;margin:6px 0}
@@ -74,8 +74,9 @@ function mapSvg(m: any): string {
     if (here) s += `<circle cx="${x}" cy="${y}" r="31" fill="none" stroke="#e0533c" stroke-width="3" stroke-dasharray="5 4"><animateTransform attributeName="transform" type="rotate" from="0 ${x} ${y}" to="360 ${x} ${y}" dur="8s" repeatCount="indefinite"/></circle>`;
     if (sel === r.id) s += `<circle cx="${x}" cy="${y}" r="33" fill="#ffd23f" opacity=".55"/>`;
     s += `<circle cx="${x}" cy="${y}" r="24" fill="${r.open ? esc(r.color) : '#cfc6b6'}" stroke="#3b2a20" stroke-width="3"/><text x="${x}" y="${y + 8}" text-anchor="middle" font-size="22">${ICON[r.id] || '🏘'}</text>`;
-    const w = Math.max(54, String(r.short).length * 8.4 + 14);
-    s += `<rect x="${x - w / 2}" y="${y + 27}" width="${w}" height="20" rx="10" fill="#fff6e6" stroke="#3b2a20" stroke-width="2"/><text class="s" x="${x}" y="${y + 41}" text-anchor="middle">${esc(r.short)}</text>`;
+    const w = Math.max(60, String(r.short).length * 10.6 + 16);
+    s += `<rect x="${x - w / 2}" y="${y + 26}" width="${w}" height="24" rx="12" fill="#fff6e6" stroke="#3b2a20" stroke-width="2"/><text class="s" x="${x}" y="${y + 43}" text-anchor="middle">${esc(r.short)}</text>`;
+    if (r.vapur) s += `<text x="${x + 22}" y="${y - 16}" font-size="15">⚓</text>`;
     if (here) s += `<text class="s" x="${x}" y="${y - 30}" text-anchor="middle" fill="#e0533c">Buradasın</text>`;
     s += `</g>`;
   }

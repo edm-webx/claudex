@@ -25,6 +25,9 @@ import {
 } from '../../content/deniz';
 import { havaApi } from './hava';
 import { fmtMoney, clamp } from './util';
+/** 2026-11-27 kullanıcı: vapur gelip gidebilir, yolcu indirir (potansiyel müşteri) ama oyuncunun vapurla HİÇ etkileşimi yok:
+ *  güverte koşusu, "güvertede sat" ipucu ve Vapur Büfesi seferi kapalı. Vapur kedisi yalnız bir ortam notu olarak kalır. */
+const OYUNCU_VAPUR = false;
 
 export const DENIZ_KEY = 'deniz';
 const DOOR = { x: 22.4, z: -7.1 };
@@ -137,7 +140,8 @@ export function installDeniz(K: Kernel, cu?: CuLike): DenizApi {
   function onDock(): void {
     runDone = false;
     const h = D();
-    if (h.bufe) { const v = Math.round(VAPUR_BUFE.perDock * S().stage * Math.sqrt(scale())); K.earn(v, DOOR); K.toast('Güverte Büfesi sattı: +' + fmtMoney(v), 'good'); }
+    if (!OYUNCU_VAPUR) { if (rng.chance(SHIP_CAT.chance)) { shipCat = { t: 0 }; seeAnimal('vapurkedisi'); K.toast(rng.pick(SHIP_CAT.line), 'info'); } return; }
+    if (h.bufe) { const v = Math.round(VAPUR_BUFE.perDock * S().stage * Math.sqrt(scale())); K.earn(v, DOOR); K.toast('Vapur Büfesi seferde sattı: +' + fmtMoney(v), 'good'); }
     if (hintN < 2 && h.runs < 3) { hintN++; K.toast(DECK_RUN.lines.hint, 'info'); }
     if (rng.chance(SHIP_CAT.chance)) { shipCat = { t: 0 }; seeAnimal('vapurkedisi'); K.toast(rng.pick(SHIP_CAT.line), 'info'); }
   }
@@ -185,7 +189,7 @@ export function installDeniz(K: Kernel, cu?: CuLike): DenizApi {
       // ferry transitions
       const fs = rt.ferry.state;
       if (fs !== lastFerry) { if (fs === 'docked') onDock(); else if (lastFerry === 'docked') onLeave(); lastFerry = fs; }
-      if (fs === 'docked' && !run && !runDone && rt.carry.length && S().stage >= DECK_RUN.minStage && near(DOOR, DECK_RUN.radius)) startRun();
+      if (OYUNCU_VAPUR && fs === 'docked' && !run && !runDone && rt.carry.length && S().stage >= DECK_RUN.minStage && near(DOOR, DECK_RUN.radius)) startRun();
       stepRun(dt);
       if (shipCat) shipCat.t += dt;
       // sea life
@@ -251,7 +255,7 @@ export function installDeniz(K: Kernel, cu?: CuLike): DenizApi {
     return {
       run, sight, duel, shipCat, ext: h.ext, seats: h.seats, tez: h.tez, pier: h.pier, bufe: h.bufe,
       chicks: clamp(1 + Math.floor(age / 2), 1, 3), nestAge: age,
-      docked: rt.ferry.state === 'docked', canRun: rt.ferry.state === 'docked' && !run && !runDone && S().stage >= DECK_RUN.minStage,
+      docked: rt.ferry.state === 'docked', canRun: OYUNCU_VAPUR && rt.ferry.state === 'docked' && !run && !runDone && S().stage >= DECK_RUN.minStage,
       season: season(),
     };
   }
