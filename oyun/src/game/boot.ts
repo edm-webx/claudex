@@ -1169,7 +1169,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     const r = sim.rules.rt as unknown as { customers: { kind?: string; state: string; seat?: { table: number } | null; x: number; z: number }[]; queue: unknown[]; agents?: { workers?: { rows(): { role: string; state: string; x: number; z: number }[] } } };
     const rv = restoranApi(sim.rules)?.view();
     return { stage: sim.state.stage, cust: r.customers.map(c => ({ k: c.kind || 'q', s: c.state, t: c.seat ? c.seat.table : -1, x: +c.x.toFixed(2), z: +c.z.toFixed(2) })), q: r.queue.length,
-      w: (r.agents?.workers?.rows() || []).map(w => ({ r: w.role, s: w.state, x: +w.x.toFixed(2), z: +w.z.toFixed(2) })), passYer: rv?.passYer ?? null, bilet: rv?.tickets.length ?? 0 };
+      w: (r.agents?.workers?.rows() || []).map(w => ({ r: w.role, s: w.state, x: +w.x.toFixed(2), z: +w.z.toFixed(2) })), passYer: rv?.passYer ?? null, bilet: rv?.tickets.length ?? 0, masalar: rv?.masalar ?? [] };
   });
   // 2026-11-23 dükkân tepsisi denetimi (tests/browser/meydan-kafe.mjs): tepsi, siparişler, uygun servis noktaları (yalnız okuma)
   if (hileAcik) reg('dukkan', (room: string) => {

@@ -21,8 +21,9 @@ import { isProduct } from '../../../content/yemek-menu';
 import { BULASIK, MUTFAK_MIN_STAGE, mutfakEsya, pisirIstasyonu } from '../../../content/mutfak';
 import { createRoller, type ValeCar } from './roller';
 import { kasaDurus } from '../../../content/musteri';
-import { kanatOf, masaCati, catiAyak, catiYukari, catiAsagi, catiIc, catiTaraf, katY } from '../../../content/kanat';
+import { kanatOf, masaCati, catiAyak, catiYukari, catiAsagi, catiIc, catiTaraf, katY, postCati, type KanatBolge } from '../../../content/kanat';
 import { BUFE, parkYer } from '../../../content/prefabs/iskele/layout';
+import { zeminY } from '../../../content/ustgecit';
 /** BUF-05: masa biletindeki yiyecek (FoodId) mutfakta kendi tabağıyla pişer ve garsonla taşınır (taşıyıcı ürün köprüsü yok). */
 export type { DishId, FoodId } from '../../../content/yemek-menu';
 
@@ -73,7 +74,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
     if (rt.st) return book.stationStand(rt.st);
     if (rt.w.role === 'garson') {
       const post = host.garsonPost?.(rt.w.id);   // BUF-19: bölgesi kanat / salon olan garson orada bekler (çay bahçesi: çay ocağında çaycı)
-      if (post) return { x: post.x, z: post.z };
+      if (post) { const c = postCati(post.bolge as KanatBolge); return c ? { x: post.x, z: post.z, cati: c } as Vec2 : { x: post.x, z: post.z }; }
       const i = rows.filter((x) => x.w.role === 'garson').indexOf(rt);
       // masasız büfe: garsonlar tezgâhın iki ucuna dağılır (eskiden 0.7 m arayla yan yana diziliyorlardı)
       const uc = i % 2 ? -1 : 1, sira = Math.floor(i / 2);
@@ -100,6 +101,12 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
     if (!l || l.lookType == null) return l;
     const { lookType: _t, lookSeed: _s, apron: _a, ...rest } = l; void _t; void _s; void _a; return rest;
   };
+  /** 2026-11-27 QA-1: çatı/Şef katındaki işçi yürürken y ezilip "yerdeyim" sanıyordu (catiIc kısa yolu hiç çalışmıyordu); katY yürüyüşte de uygulanır */
+  function katliWalker(a: Actor, S: GameState): Walker {
+    const wk = new Walker(a, env.nav);
+    wk.yAt = (x, z, y) => katY(S.stage || 1, x, z, y > 0.5) || zeminY(x, z);
+    return wk;
+  }
   function spawn(w: WorkerSave, S: GameState, instant: boolean): WRt {
     const role = ROLES[w.role];
     const st = (role && role.station ? role.station : null) as ProductId | null;
@@ -108,7 +115,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
     const a = reg.add('worker', String(w.id), { kind: 'worker', role: w.role, look: rolGorunumu((w as { look?: Record<string, unknown> }).look), seed }, start,
       { role: w.role, trait: traitId(w), name: w.name, rank: rankOf(w.xp || 0), rarity: w.rarity });
     const rt: WRt = {
-      w, a, wk: new Walker(a, env.nav), st, state: 'arrive', t: 0, boostT: 0, boostX: 1, made: 0, pauseT: 0, dv: 0,
+      w, a, wk: katliWalker(a, S), st, state: 'arrive', t: 0, boostT: 0, boostX: 1, made: 0, pauseT: 0, dv: 0,
       job: null, loadT: 0, isT: 0, nextSleep: 0, selfieNext: S.playT + 100, songNext: S.playT + 70, chatNext: S.playT + 25, sleepFor: 0, selfieFor: 0, jobKey: '',
     };
     const fx = traitFx(w);
@@ -117,6 +124,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
     if (km) { rt.state = 'kArrive'; if (instant) { const [u, v] = kIdlePost(rt), q = icWorld(IC_BY_ID.mutfak, u, v); a.x = a.px = q.x; a.z = a.pz = q.z; rt.state = 'kBack'; } return rt; }
     if (instant) {
       const h = home(rt, S); a.x = a.px = h.x; a.z = a.pz = h.z;
+      if ((h as { cati?: string }).cati) a.y = katY(S.stage || 1, h.x, h.z, true);   // üst kat postunda doğar
       rt.state = role?.on ? 'front' : st ? 'work' : 'idle';
     } else {
       const h = home(rt, S);
@@ -217,7 +225,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
     const a = rt.a, wid = rt.w.id;
     if ((host.tepsi?.(wid) || []).length) { rt.isT = 0; garsonDevam(rt); return true; }   // elde masa tabağı var: işine devam
     if (a.carry.length) { rt.state = 'toCounter'; goVia(rt, side(book.get('counter.standAt'), 0.5, 0)); return true; }
-    const is = host.isAl?.(wid, { cap: garsonTasima(rankOf(rt.w.xp || 0), fx.carry || 0), at: { x: a.x, z: a.z } });
+    const is = host.isAl?.(wid, { cap: garsonTasima(rankOf(rt.w.xp || 0), fx.carry || 0), at: { x: a.x, z: a.z, kat: (a.y || 0) > 0.5 ? catiTaraf(a) : null } });
     if (is) {
       rt.isT = 0; rt.t = 0; rt.jobKey = is.tur; rt.job = { index: is.id };
       if (is.tur === 'tabak') { rt.state = 'toPass'; goVia(rt, host.passDurak?.(wid) ?? { x: is.x, z: is.z }); }
@@ -363,7 +371,15 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
     a.y = katY(S.stage || 1, a.x, a.z, (a.y || 0) > 0.5);   // 2026-11-21: temizlikçi de çatı terasına çıkar (garsonla aynı merdiven rotası)
     if (rt.state === 'idle') {
       if (rt.wk.walk(dt, speed)) { a.act = 'walk'; return; }
-      const d = host.dirtyTables().filter((t) => !claimed(t.index, rt));
+      // 2026-11-27 QA-1: çatı / Şef katı masasını önce o katın garsonu siler (orada bekliyor); temizlikçi merdiveni yalnız 30 sn'i geçen çatı masası için çıkar
+      // 2026-11-27: uzaktan (çatıdan, öbür kanattan) yürüyen temizlikçinin aldığı yer masasını, çok daha yakındaki boş temizlikçi devralır
+      if ((a.y || 0) < 0.5) for (const o of rows) {
+        if (o === rt || o.w.role !== 'temizlik' || o.state !== 'toClean' || !o.job || masaCati(o.job.index)) continue;
+        const t = host.dirtyTables().find((q) => q.index === o.job!.index); if (!t) continue;
+        let kalan = 0, px = o.a.x, pz = o.a.z; for (const q of o.wk.path) { kalan += Math.hypot(q.x - px, q.z - pz); px = q.x; pz = q.z; }
+        if (Math.hypot(t.x - a.x, t.z - a.z) * 1.4 + 8 < kalan) { o.job = null; o.state = 'idle'; o.wk.stop(); }
+      }
+      const d = host.dirtyTables().filter((t) => !claimed(t.index, rt) && (!masaCati(t.index) || (t.age || 0) > 30));
       if (d.length) {
         // BUF-28: eskiden hep ilk (en düşük index) masa seçiliyordu: yüksek index'li kanat masaları yoğunlukta 200 sn+ kirli kalıyordu. Şimdi 45 sn'i geçen en eski masa, yoksa en yakın masa.
         const eski = d.filter((t) => (t.age || 0) > 45).sort((p, q) => (q.age || 0) - (p.age || 0))[0];
@@ -474,7 +490,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
   /** garson: walk to a target, through the kitchen door when either end is inside the kitchen room */
   function goVia(rt: WRt, target: Vec2, table = -1) {
     // BUF-20: çatı terası: merdivenin ayağına kadar yerden (mutfak kapısı dahil), basamaklar, çatı koridoru; çatıdaki garson önce iner
-    const up = (rt.a.y || 0) > 0.5 ? catiTaraf(rt.a) : null, tc = table >= 0 ? masaCati(table) : null;
+    const up = (rt.a.y || 0) > 0.5 ? catiTaraf(rt.a) : null, tc = table >= 0 ? masaCati(table) : (target as { cati?: 'W' | 'E' }).cati ?? null;   // hedef üst kat postu da olabilir
     if (up || tc) {
       if (up && tc === up) { rt.wk.path = catiIc(rt.a, target); rt.wk.goal = { x: target.x, z: target.z }; return; }
       const pre = up ? catiAsagi(up, rt.a) : [], from = up ? catiAyak(up) : { x: rt.a.x, z: rt.a.z }, g = tc ? catiAyak(tc) : target;
@@ -510,7 +526,11 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
   };
   function kTake(rt: WRt, opt: { kendi?: boolean; yas?: number }): boolean {   // carry duty: reserve a tray plate, walk to its station
     const j = host.kitchenTasi?.(rt.w.id, opt); if (!j) return false;
-    rt.jobKey = j.ist; const [u, v] = kStand(j.ist); kGo(rt, u, v); rt.state = 'kTasiAl'; rt.t = 0; return true;
+    rt.jobKey = j.ist; const [u0, v] = kStand(j.ist);
+    // 2026-11-27 QA-6: tabağı alan (komi / aşçı) istasyondaki aşçının / baristanın tam üstüne değil, yanına durur (0.4 m altı üst üste binme)
+    const dolu = (u: number) => rows.some((o) => o !== rt && ROLES[o.w.role]?.mutfak && near2(o.wk.goal && o.wk.path.length ? o.wk.goal : o.a, kw(u, v), 0.5));
+    let u = u0; if (dolu(u0)) { const st = env.rules.state.stage || 1; for (const d of [0.65, -0.65, 1.3, -1.3]) { const q = mutfakIcine([u0 + d, v], st); if (!dolu(q[0])) { u = q[0]; break; } } }
+    kGo(rt, u, v); rt.state = 'kTasiAl'; rt.t = 0; return true;
   }
   /** 2026-11-21: tabak masasının tarafındaki pass penceresine: sokak pass'ı ya da servis koridorunun ucundaki salon pass'ı */
   function kToPass(rt: WRt) { const [u, v] = passAsciUV(host.kitchenPassYer?.(rt.w.id) || 'on'); kGo(rt, u, v); rt.state = 'kPass'; rt.t = 0; }

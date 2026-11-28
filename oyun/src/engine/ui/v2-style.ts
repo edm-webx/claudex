@@ -28,7 +28,6 @@ export const ICONS: Record<string, string> = {
   starOff: svg(`<path d="M24 4.5l5.8 12.2 13.2 1.8-9.7 9.2 2.4 13.2L24 34.5l-11.7 6.4 2.4-13.2L5 18.5l13.2-1.8z" fill="#e9dfcf" stroke="#b9ab98" stroke-width="3" stroke-linejoin="round"/>`),
   cat: svg(`<path d="M9 21L8 6l11 8h10l11-8-1 15c3 4 3 16-15 20C6 37 6 25 9 21z" fill="#f4f1ea" ${K}/><circle cx="18" cy="24" r="2.2" fill="${INK}"/><circle cx="30" cy="24" r="2.2" fill="${INK}"/><path d="M22 29h4l-2 2.4z" fill="#ef7d8d" stroke="${INK}" stroke-width="1.6" stroke-linejoin="round"/><path d="M24 31.5q-2 3-5 1.5M24 31.5q2 3 5 1.5" fill="none" stroke="${INK}" stroke-width="1.8" stroke-linecap="round"/>`),
   camera: svg(`<rect x="5" y="14" width="38" height="26" rx="6" fill="#5aa9d6" ${K}/><path d="M16 14l3-6h10l3 6" fill="#5aa9d6" ${K}/><circle cx="24" cy="27" r="8" fill="#fff6e6" ${K}/><circle cx="24" cy="27" r="3.5" fill="${INK}"/>`),
-  ferry: svg(`<path d="M3 29h42l-5 10H8z" fill="#fff" ${K}/><rect x="11" y="19" width="26" height="10" rx="2" fill="#fff6e6" ${K}/><rect x="21" y="9" width="6" height="10" fill="#e0533c" ${K2}/><path d="M15 24h3M21 24h3M27 24h3M33 24h1" stroke="#2f7fb3" stroke-width="3" stroke-linecap="round"/><path d="M3 44q5-3 10 0t10 0 10 0 10 0" fill="none" stroke="#5aa9d6" stroke-width="2.6" stroke-linecap="round"/>`),
   map: svg(`<path d="M5 11l12-4 14 4 12-4v30l-12 4-14-4-12 4z" fill="#f6ead2" ${K}/><path d="M17 7v30M31 11v30" stroke="${INK}" stroke-width="2.4"/><path d="M9 26q5-6 10-1t12-4" fill="none" stroke="#e0533c" stroke-width="2.6" stroke-dasharray="3 3" stroke-linecap="round"/>`),
   taxi: svg(`<path d="M7 27l4-10h26l4 10v9H7z" fill="#ffd23f" ${K}/><path d="M14 17l2-6h16l2 6" fill="#ffd23f" ${K2}/><circle cx="15" cy="37" r="4.5" fill="${INK}"/><circle cx="33" cy="37" r="4.5" fill="${INK}"/><rect x="19" y="24" width="10" height="4" fill="${INK}"/>`),
   scarf: svg(`<path d="M8 12q16 8 32 0l-3 9q-13 6-26 0z" fill="#3fb5b0" ${K}/><path d="M28 19l4 22-7-2-3-19" fill="#e9853b" ${K}/><path d="M28 30l5-1M29.5 36l4.5-1" stroke="${INK}" stroke-width="2"/>`),
@@ -82,7 +81,7 @@ export const ICONS: Record<string, string> = {
 ICONS.ekip = ICONS.people; ICONS.isciler = ICONS.people; ICONS.gorevler = ICONS.gorev; ICONS.kedi = ICONS.cat;
 ICONS.tadilat = ICONS.hammer; ICONS.ayarlar = ICONS.gear; ICONS.ayar = ICONS.gear; ICONS.istasyon = ICONS.menu;
 ICONS.garson = ICONS.tray; ICONS.temizlik = ICONS.broom; ICONS.kurye = ICONS.stopwatch; ICONS.para = ICONS.coin;
-ICONS.sandalye = ICONS.chair; ICONS.saat = ICONS.clock; ICONS.kalp = ICONS.heart; ICONS.yildiz = ICONS.star; ICONS.vapur = ICONS.ferry;
+ICONS.sandalye = ICONS.chair; ICONS.saat = ICONS.clock; ICONS.kalp = ICONS.heart; ICONS.yildiz = ICONS.star;
 ICONS.harita = ICONS.map; ICONS.taksi = ICONS.taxi; ICONS.atki = ICONS.scarf; ICONS.yuzuk = ICONS.ring; ICONS.kamera = ICONS.camera;
 ICONS.nota = ICONS.note; ICONS.semsiye = ICONS.umbrella; ICONS.kronometre = ICONS.stopwatch; ICONS.dekorlar = ICONS.dekor;
 ICONS.durum = ICONS.doner; ICONS.dürüm = ICONS.doner; ICONS['döner'] = ICONS.doner; ICONS['çay'] = ICONS.cay; ICONS.marti = ICONS.gull;
@@ -179,6 +178,7 @@ position:fixed;inset:0;pointer-events:none;z-index:10;overflow:hidden;font-famil
 .sb-lab .bubble::after{width:7px;height:7px;left:calc(50% - 13px - var(--dx,0px));bottom:-21px}
 .sb-lab .bubble .bi{display:flex;align-items:center;gap:4px}
 .sb-lab .bubble .bi svg{width:26px;height:26px}
+.sb-lab .bubble .bi img.yk-bi{width:30px;height:30px;margin:-2px 0!important;filter:drop-shadow(0 1px 0 rgba(0,0,0,.25))}
 .sb-lab .bubble .bi .n{font:900 13px/1 var(--disp);margin-left:-2px}
 .sb-lab .bubble .bi .d{opacity:.3}
 .sb-lab .bubble .bt{max-width:134px;text-wrap:balance}
@@ -533,8 +533,6 @@ position:fixed;inset:0;pointer-events:none;z-index:10;overflow:hidden;font-famil
 .sb-full{position:absolute;inset:0;pointer-events:auto;z-index:70;overflow:hidden;background:#9fd3f5;animation:sb-fade .3s}
 .sb-full.out{animation:sb-fadeout .35s ease-in forwards}
 .sb-scene{position:absolute;inset:0;width:100%;height:100%}
-.sb-scene .fer{animation:sb-ferry 26s linear infinite}
-@keyframes sb-ferry{0%{transform:translateX(-200px)}100%{transform:translateX(560px)}}
 .sb-scene .gl{animation:sb-glide 5s ease-in-out infinite}
 .sb-scene .gl2{animation:sb-glide 6.5s ease-in-out -2s infinite}
 @keyframes sb-glide{50%{transform:translate(14px,-10px)}}

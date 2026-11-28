@@ -573,12 +573,13 @@ function buildRoom(m: IcMekan, own: { lv: number; isci: number; esya: string[]; 
   // 2026-11-25 (sahibi: "hepsini aldım ama nerde oldu bu güncelleme, anlaşılmıyor"): alınmamış alet yerinde soluk gölgesiyle durur,
   // alınınca aynı yerde gerçek olur ve üstünde adı ile ne işe yaradığı yazar
   const gb = new Batch();
+  const MUTFAK_KISA: Record<string, string> = { icecek_dolap: 'İçecek', cay_bar: 'Çay bar' };   // QA-18: yan yana iki dar istasyonun uzun adları üst üste biniyordu
   const gitan = (id: string) => (m.salon ? (SALON_ESYA_BY_ID[id]?.asama ?? 99) <= stage : m.mutfak ? mutfakAcik(stage).includes(id) : false);
   const etiket: { it: IcItem; ad: string; is: string }[] = [], etiketli = new Set<string>();
   for (const it of items) {
     if (it.esya && (m.salon || m.mutfak) && !etiketli.has(it.esya) && has.has(it.esya) && (it.asama ?? 0) <= stage) {
       const s = SALON_ESYA_BY_ID[it.esya], k = MUTFAK_IST_BY_ID[it.esya];
-      if (m.salon && s) { etiketli.add(it.esya); etiket.push({ it, ad: s.ad, is: SALON_ALET[it.esya]?.is || '' }); } else if (m.mutfak && k && MUTFAK_YER[it.esya]?.k === it.k) { etiketli.add(it.esya); etiket.push({ it, ad: k.ad.split(' (')[0], is: '' }); }
+      if (m.salon && s) { etiketli.add(it.esya); etiket.push({ it, ad: s.ad, is: SALON_ALET[it.esya]?.is || '' }); } else if (m.mutfak && k && MUTFAK_YER[it.esya]?.k === it.k) { etiketli.add(it.esya); etiket.push({ it, ad: MUTFAK_KISA[it.esya] || k.ad.split(' (')[0], is: '' }); }
     }
     if (it.esya && !has.has(it.esya) && gitan(it.esya) && F[it.k] && it.k !== 'davlumbaz') {
       const tut = [grp.userData.cur, grp.userData.curItem]; grp.userData.cur = new T.Group(); grp.userData.curItem = grp.userData.cur;

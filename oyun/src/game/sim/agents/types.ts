@@ -100,7 +100,7 @@ export interface AgentHost {
    * there, `isTamam` finishes a task at the table (plate: 'tasi' = carry it to another table, 'geri' = bring it back to the rack),
    * `tabakGeri` puts returned plates back, `isBirak` releases everything (timeout, fired, window post).
    */
-  isAl?(wid: number, o: { cap: number; at?: Vec2 }): { id: number; tur: 'tabak' | 'siparis' | 'menu' | 'hesap' | 'sil'; table: number; x: number; z: number; n?: number; bekle?: number } | null;
+  isAl?(wid: number, o: { cap: number; at?: Vec2 & { kat?: 'W' | 'E' | null } }): { id: number; tur: 'tabak' | 'siparis' | 'menu' | 'hesap' | 'sil'; table: number; x: number; z: number; n?: number; bekle?: number } | null;
   tabakAl?(wid: number): GarsonTabak[];
   tepsi?(wid: number): GarsonTabak[];
   isTamam?(wid: number, id: number, at: Vec2): { durum: 'tamam' | 'tasi' | 'geri' | 'yok'; table?: number; x?: number; z?: number };
@@ -109,7 +109,7 @@ export interface AgentHost {
   /** BUF-05: where the garson picks his claimed plates up: the kitchen pass (world point) or null (front counter) */
   passDurak?(wid: number): Vec2 | null;
   /** BUF-19: boştaki garsonun bölge postu (kanat / salon bölgesi; yoksa null: tezgâh yanı) */
-  garsonPost?(wid: number): Vec2 | null;
+  garsonPost?(wid: number): (Vec2 & { bolge?: string }) | null;
   /** boştaki garsonun bölge devriye noktaları (restoran.ts garsonDevriye) */
   garsonDevriye?(wid: number): Vec2[];
   /** kitchen line (sim/mutfak-hat.ts): claim the oldest ticket item + a free station for it (nearest to `from`) */

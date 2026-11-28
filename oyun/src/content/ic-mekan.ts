@@ -467,8 +467,14 @@ export function icColliders(m: IcMekan, stage = 99, sahip?: readonly string[]): 
     o.push(rectW(m, u0, u1, -D / 2, D / 2));
   }
   if (!m.acik && !acikPlan) o.push(rectW(m, -W / 2, -g, D / 2 - t, D / 2), rectW(m, g, W / 2, D / 2 - t, D / 2));
-  for (const i of icLayout(m, Math.min(10, stage))) if ((i.solid || restoranKati(oda, i, stage, sahip)) && (i.asama ?? 0) <= stage && icMasaKurulu(i, stage)) { const sw = (i.ry || 0) % 2 ? i.d : i.w, sd = (i.ry || 0) % 2 ? i.w : i.d; o.push(rectW(m, i.u - sw / 2, i.u + sw / 2, i.v - sd / 2, i.v + sd / 2)); }
+  for (const e of icKatiEsya(oda, stage, sahip)) o.push(e.r);
   return o;
+}
+/** odanın katı eşyaları (masa, tezgâh, istasyon) dünya kutularıyla: icColliders ve çarpışma botunun hedef listesi aynı kaynaktan */
+export function icKatiEsya(oda: IcMekan, stage = 99, sahip?: readonly string[]): { k: string; r: Rect }[] {
+  const m = oda.mutfak ? mutfakOda(stage) : oda, out: { k: string; r: Rect }[] = [];
+  for (const i of icLayout(m, Math.min(10, stage))) if ((i.solid || restoranKati(oda, i, stage, sahip)) && (i.asama ?? 0) <= stage && icMasaKurulu(i, stage)) { const sw = (i.ry || 0) % 2 ? i.d : i.w, sd = (i.ry || 0) % 2 ? i.w : i.d; out.push({ k: i.k, r: rectW(m, i.u - sw / 2, i.u + sw / 2, i.v - sd / 2, i.v + sd / 2) }); }
+  return out;
 }
 /** Same, relative to the building centre (prefab-local colliders for an unrotated placement). */
 export const icCollidersLocal = (m: IcMekan, cx = m.x, cz = m.z): Rect[] => icColliders(m).map(r => ({ x0: r.x0 - cx, x1: r.x1 - cx, z0: r.z0 - cz, z1: r.z1 - cz }));
