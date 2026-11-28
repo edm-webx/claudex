@@ -36,6 +36,8 @@ export function installEconomy(K: Kernel, addMoneyTo: (pile: MoneyStack[], v: nu
     S.today!.earned += v; S.week.earned += v; S.totalEarned += v; if (duzenli.has(k)) rt.incomeWin.push([S.playT, v]);
     const src = (t.src ||= {}); src[k] = (src[k] || 0) + v;
     S.stats['kaynak_' + k] = (S.stats['kaynak_' + k] || 0) + v;
+    // QA 2026-11-27: ev sahibine bildirilen yalnız misafirin ev sahibinin büfesindeki SATIŞI (MISAFIR_IS); maç / bahis gibi kendi kazancı değil (eskiden totalEarned farkı yollanıyordu: çift sayım)
+    if (misafir() && MISAFIR_IS.has(k)) { const r = rt as unknown as { misafirSatis?: number }; r.misafirSatis = (r.misafirSatis || 0) + v; }
   };
   // odada misafir (sim/misafir-kural.ts): ev sahibinin büfesindeki satış ev sahibinindir, misafirin cebine oyunun bastığı maaş girer
   const misafir = () => !!(rt as unknown as { misafir?: boolean }).misafir;

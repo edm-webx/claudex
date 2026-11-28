@@ -136,7 +136,8 @@ export function createSave<S>(o: SaveOpts<S>): SaveStore<S> {
   /** Parse + migrate + validate. Throws on unusable data. */
   const adopt = async (json: string, notes: string[]): Promise<S> => {
     let data = JSON.parse(json) as any;
-    if (!data || typeof data !== 'object') throw new Error('not an object');
+    // QA 2026-11-27: checksum'u doğru ama şekli bozuk kayıt (dizi / ilkel) boot'ta TypeError ile oyunu kalıcı açılmaz yapıyordu
+    if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error('not an object');
     // a string version ("1") is still that version; a missing one is v0 (the game's v0 -> v1 migration adopts it)
     let v = Number.isFinite(Number(data.version)) && data.version !== null && data.version !== '' ? Math.floor(Number(data.version)) : 0;
     if (data.version !== v) data.version = v;
@@ -148,13 +149,15 @@ export function createSave<S>(o: SaveOpts<S>): SaveStore<S> {
         if (!m) throw new Error(`no migration from v${v}`);
         data = m.up(data);
         v = m.to;
-        if (data && typeof data === 'object') data.version = v;
+        if (!data || typeof data !== 'object' || Array.isArray(data)) throw new Error(`migration v${m.from} -> v${m.to}: not an object`);
+        data.version = v;
         notes.push(`migrated v${m.from} -> v${m.to}`);
       }
     }
     const base = o.defaults() as any;
     for (const k of Object.keys(base)) if (!(k in data)) { data[k] = base[k]; notes.push(`missing field ${k} filled`); }
-    try { notes.push(...o.validate(data as S)); } catch (e) { notes.push(`validate failed: ${(e as Error).message}`); }
+    // onaramayan doğrulama = kullanılamaz kayıt: load() sıradaki slota / günlük yedeğe geçer (son iyi kayıt)
+    try { notes.push(...o.validate(data as S)); } catch (e) { throw new Error(`validate failed: ${(e as Error).message}`); }
     return data as S;
   };
 

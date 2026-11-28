@@ -3,8 +3,8 @@
  * düdüğünü çalar, iskeleye yanaşır ve yalnız vatandaş indirir; inenler potansiyel müşteridir. Oyuncunun vapurla HİÇBİR
  * etkileşimi yoktur: vapur görevi, binme, bilet, tarife tahtası, vapur penceresi, güverte satışı, duyuru yok.
  * Evreler sim'de (away -> arriving 10 sn -> docked 25 sn -> leaving 16 sn -> away); görünüm yalnız `rt.ferry`'yi canlandırır.
- * Ekonomi: dalga anı (yanaşma = eski kalabalık dalgasıyla aynı `next` anı), dalga büyüklüğü (KALABALIK_PAY) ve rng akışları
- * kalabalık dalgasıyla birebir aynı; yalnız yolcular promenat yerine vapur kapısından iner. Gece (00:30-06:00) seyrek gelir. Pure.
+ * Ekonomi: dalga büyüklüğü (KALABALIK_PAY) ve rng akışları kalabalık dalgasıyla aynı; yolcular promenat yerine vapur kapısından iner,
+ * uzun yolu VAPUR_TELAFI dengeler (erken yanaşma + hızlı adım). Gece (00:30-06:00) seyrek gelir. Pure.
  */
 import { CITIZENS } from '../../content/citizens';
 import { P } from '../../content/economy';
@@ -21,6 +21,10 @@ export const FERRY_T = { arriving: 10, docked: 25, leaving: 16 } as const;
 export const FERRY_DOOR = { x: 22.4, z: -7.1 };
 /** dalga büyüklüğü oranı (gelir dengesi, first-session parity; kalabalık dalgasıyla aynı) */
 export const KALABALIK_PAY = 0.4;
+/** Kapı telafisi (2026-11-28, ekonomi paritesi): vapur kapısından kuyruğa yol ~26 m (eski dalga 13-17 m). Yolcular kuyruk yerini uzun süre
+ *  tutup gelir %2-4 düşüyordu. Vapur eski dalga anından ONDE sn önce yanaşır, yolcular hızlı adım (HIZ m/sn) yürür; 12 tohum ortalaması
+ *  gün 1/3/5 tabana göre +6.6 / +1.0 / +1.3 % (tohum 1: 6767 / 23358 / 50703). */
+export const VAPUR_TELAFI = { onde: 6, hiz: 2.4 } as const;
 /** gece seyrek: düdük bu saat aralığına düşerse (oyun saati, 24 = gece yarısı) bir sonraki aralık bu kadar uzar */
 export const GECE_SEYREK = { from: 24.5, to: 30, gapX: 1.8 } as const;
 
@@ -44,7 +48,7 @@ export function installFerry(K: Kernel, cu: ReturnType<typeof installCustomers>,
         const pid = ferryPassenger(frng, info.cur, info.curLit);
         const type = pid && pid !== 'vapuryolcusu' ? citizen(pid) : undefined;
         const sleepy = info.curLit && frng.chance(NIGHT_FERRY.sleepyChance) ? frng.pick(NIGHT_FERRY.sleepy) : undefined;
-        cu.spawnCustomer({ type, from: FERRY_DOOR, n: 1, patienceX: 1.4, say: sleepy });
+        cu.spawnCustomer({ type, from: FERRY_DOOR, hiz: VAPUR_TELAFI.hiz, n: 1, patienceX: 1.4, say: sleepy });
       }
     });
     waveT = 0;
@@ -52,8 +56,8 @@ export function installFerry(K: Kernel, cu: ReturnType<typeof installCustomers>,
   function update(dt: number) {
     f.t += dt;
     if (f.state === 'away') {
-      // düdük yanaşmadan 10 sn önce; fırtına bir seferi atlatır (hava.ts)
-      if (f.arriveAt < 0 && S.playT >= f.next - FERRY_T.arriving) {
+      // düdük yanaşmadan 10 sn önce (yanaşma = next - onde); fırtına bir seferi atlatır (hava.ts)
+      if (f.arriveAt < 0 && S.playT >= f.next - FERRY_T.arriving - VAPUR_TELAFI.onde) {
         if (havaOf(rt)?.skipFerry()) f.next = S.playT + ferryGap(S.stage)[0] + FERRY_T.arriving;
         else { f.arriveAt = S.playT + FERRY_T.arriving; f.state = 'arriving'; f.t = 0; f.docked = false; advanceFerry(info, frng, K.hour()); K.logEv('ferryHorn'); }
       }

@@ -247,12 +247,16 @@ export function createSim(o: SimOpts, extra: SimExtra = {}): SimFull {
     },
     inputLog: () => log,
     load(s) {
-      const copy = JSON.parse(JSON.stringify(s)) as GameState;
-      for (const k of Object.keys(state)) delete (state as unknown as Record<string, unknown>)[k];
-      Object.assign(state, copy);
-      applyRngState(state);
-      rules.restore();
-      walk.teleport(state.player.x, state.player.z, state.player.kat || 0);
+      const put = (copy: GameState) => {
+        for (const k of Object.keys(state)) delete (state as unknown as Record<string, unknown>)[k];
+        Object.assign(state, copy);
+        applyRngState(state);
+        rules.restore();
+        walk.teleport(state.player.x, state.player.z, state.player.kat || 0);
+      };
+      // QA 2026-11-27: şekli bozuk durum yarıda patlarsa eski durum geri gelir (oyun yarım yüklenmiş dünyada kalmasın), hata çağırana gider
+      const copy = JSON.parse(JSON.stringify(s)) as GameState, prev = JSON.stringify(state);
+      try { put(copy); } catch (e) { try { put(JSON.parse(prev) as GameState); } catch { /* */ } throw e; }
     },
   };
   return sim;

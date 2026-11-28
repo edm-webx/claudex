@@ -272,6 +272,8 @@ export function installDisari(K: Kernel, teleport: (x: number, z: number) => voi
     return clamp(dh, 0, 1);
   }
 
+  // 2026-11-27: ara sahne (42B yolculuğu) sürerken yürüyüş girdisi yok sayılır; kahraman durağın yanında kalır
+  K.addSystem({ id: 'disari-kilit', order: 5, phase: 'sim', step(ctx) { if (travel) { ctx.input.move.x = 0; ctx.input.move.z = 0; } } });
   K.addSystem({
     id: 'disari', order: 48, phase: 'sim',
     step(ctx) {

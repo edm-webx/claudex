@@ -7,6 +7,9 @@ import { join } from 'node:path';
 const dist = process.env.MARTI_DIST || 'dist';
 if (!existsSync(join(dist, 'game.js'))) { console.error('build-artifact: dist/game.js missing (run vite build first)'); process.exit(1); }
 
+// QA 2026-11-27: game.js inmezse / eski tarayıcı çözemezse yükleme ekranı sonsuza dek "Yükleniyor" kalıyordu. Bekçi: game.js
+// hata verirse hemen, 45 sn içinde başlamazsa (main.ts window.__martiBasladi) #fail "Tekrar dene" düğmesiyle açılır.
+const BEKCI = `(function(){var g=0;function f(m){if(window.__martiBasladi||g)return;g=1;var e=document.getElementById('fail');if(!e)return;e.innerHTML='<div><div>'+m+'</div><button onclick="location.reload()" style="margin-top:14px;font:800 17px system-ui,sans-serif;padding:10px 22px;border:3px solid #4a3524;border-radius:12px;background:#ffd23f;color:#4a3524;cursor:pointer">Tekrar dene</button></div>';e.style.display='flex'}window.addEventListener('error',function(ev){var t=ev.target,s=(t&&t.src)||ev.filename||'';if(/game\\.js/.test(s))f(t&&t.src?'Oyun dosyası indirilemedi. İnternetini kontrol edip tekrar dene.':'Tarayıcın bu oyunu açamadı. Tarayıcını güncelleyip tekrar dene.')},true);setTimeout(function(){f('Oyun çok yavaş yükleniyor. İnternetini kontrol edip tekrar dene.')},45000)})();`;
 const html = `<title>Sabri'nin Büfesi</title>
 <meta charset="utf-8">
 <link rel="icon" href="data:,">
@@ -31,6 +34,7 @@ html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;backgrou
 <div id="app"><canvas id="c"></canvas></div>
 <div id="yukle"><div class="yk-kart"><div class="yk-k">SABRİ'NİN</div><div class="yk-ad">Büfesi</div><div class="yk-cubuk"><i></i></div><div class="yk-yazi">Yükleniyor</div></div><div class="yk-st">EDMX STUDIOS</div></div>
 <div id="fail">Bu cihazda 3B görüntü açılamadı. Tarayıcını güncelleyip tekrar dene.</div>
+<script>${BEKCI}</script>
 <script src="game.js"></script>
 `;
 writeFileSync(join(dist, 'index.html'), html);

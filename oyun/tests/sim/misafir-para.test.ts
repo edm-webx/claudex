@@ -100,3 +100,18 @@ it('oda rozetinde ev sahibinin adı doğru ekle yazılır', async () => {
   const { tamlayan } = await import('../../src/game/online');
   expect(['Sabri', 'Can', 'Ayşe', 'Oğuz', 'Gül', 'Ahmet'].map(tamlayan)).toEqual(["Sabri'nin", "Can'ın", "Ayşe'nin", "Oğuz'un", "Gül'ün", "Ahmet'in"]);
 });
+
+// QA 2026-11-27 teknik rapor 06 bulgu 3: misafirin kendi bahis / maç kazancı ev sahibinin kasasına da yazılıyordu (çift sayım).
+// Ev sahibine bildirilen yalnız MISAFIR_IS satışı (rt.misafirSatis, boot.ts world.earned).
+it('misafirin maç / bahis kazancı ev sahibine bildirilmez; yalnız büfedeki satış bildirilir', () => {
+  const sim = misafirSim(), S = sim.rules.state, rt = sim.rules.rt; S.money = 0;
+  const satis = () => Number(rt.misafirSatis) || 0;
+  sim.rules.credit('bahis', 4000); sim.rules.credit('mac', 1000);
+  expect(S.money).toBe(5000);          // kendi parası tam kendisinin
+  expect(satis()).toBe(0);             // ev sahibine giden yok (eskiden +5000)
+  sim.rules.credit('tezgah', 400); sim.rules.credit('adisyon', 100); sim.rules.credit('salon', 100); sim.rules.credit('bahsis', 20);
+  expect(satis()).toBe(620);
+  expect(S.money).toBe(5000 + 620 * MISAFIR_MAAS);
+  sim.rules.rt.misafir = false;        // kendi oyununda sayaç işlemez
+  sim.rules.credit('tezgah', 400); expect(satis()).toBe(620);
+});

@@ -201,3 +201,48 @@ describe('save: version alanı (tarama KAYIT [2])', async () => {
     expect(await t.save.importCode(kod({ ...defaultState(1), version: SAVE_VERSION + 1 }))).toBe(false);
   });
 });
+
+// QA 2026-11-27 teknik rapor 04 bulgu 1: checksum'u geçerli ama şekli bozuk (dizi) kayıt boot'ta oyunu kalıcı açılmaz yapıyordu
+describe('save: şekli bozuk kayıt (QA 2026-11-27)', async () => {
+  const { kayitKurtar, BOZUK_ANAHTAR } = await import('../../../src/game/sim/kayit-kurtar');
+  const rec = (seq: number, json: string) => JSON.stringify({ seq, at: 1, v: SAVE_VERSION, sum: checksum(json), json });
+  it('checksum doğru dizi / ilkel kayıt atlanır, önceki sağlam slot açılır', async () => {
+    for (const bozuk of ['[1,2,3]', '42', '"x"', 'true']) {
+      const t = mk(); await t.save.load();
+      t.set(withMoney(10)); await t.save.save('manual');
+      t.db.m.set('tst:s1', rec(99, bozuk)); t.ls.m.set('tst:1', rec(99, bozuk));
+      const r = await t.save.load();
+      expect(r.from).not.toBe('fresh'); expect(Array.isArray(r.data)).toBe(false); expect(r.data.money).toBe(10);
+      expect(r.repaired.some(n => /slot unusable: not an object/.test(n))).toBe(true);
+    }
+  });
+  it('dizi kod içe alınmaz', async () => {
+    const t = mk(); const json = '[1,2,3]';
+    expect(await t.save.importCode('MB1.' + btoa(JSON.stringify({ v: 1, sum: checksum(json), json })))).toBe(false);
+  });
+  it('onaramayan doğrulama kaydı kullanılamaz sayar, önceki slota geçer', async () => {
+    const t = mk(); await t.save.load();
+    t.set(withMoney(10)); await t.save.save('manual');
+    t.set(withMoney(13)); await t.save.save('manual');
+    const ls = fakeLs(), db = fakeIdb(); for (const [k, v] of t.db.m) db.m.set(k, v); for (const [k, v] of t.ls.m) ls.m.set(k, v);
+    const s2 = createSave<GameState>({ key: 'tst', version: SAVE_VERSION, defaults: () => defaultState(1), migrations: [],
+      validate: d => { if (d.money === 13) throw new Error('zones bozuk'); return []; }, get: () => defaultState(1),
+      platform: { storage: ls.storage, idb: db.idb, clock: { now: () => 0, wall: () => Date.UTC(2026, 9, 17, 12) } } });
+    const r = await s2.load();
+    expect(r.data.money).toBe(10); expect(r.repaired.some(n => /validate failed: zones bozuk/.test(n))).toBe(true);
+  });
+  it('açılışta kurulamayan kayıt: bozuk kayıt yedeklenir, son sağlam kayıttan devam edilir', async () => {
+    const t = mk(); await t.save.load();
+    t.set(withMoney(10)); await t.save.save('manual');
+    t.set(withMoney(666)); await t.save.save('manual');
+    const loaded = (await t.save.load()).data; expect(loaded.money).toBe(666);
+    const depo = new Map<string, string>();
+    const kur = (sv: GameState | undefined) => { if (sv?.money === 666) throw new TypeError("Cannot read properties of undefined (reading 'x')"); return { money: sv?.money ?? 0 }; };
+    const k = await kayitKurtar(t.save, loaded, kur, undefined, { setItem: (a: string, b: string) => { depo.set(a, b); } });
+    expect(k.kaynak).toBe('yedek'); expect(k.sim.money).toBe(10); expect(k.loaded?.money).toBe(10);
+    expect(JSON.parse(JSON.parse(depo.get(BOZUK_ANAHTAR)!).json).money).toBe(666);
+    // hiçbiri kurulamazsa yeni oyun (çökme yok)
+    const k2 = await kayitKurtar(t.save, loaded, (sv: GameState | undefined) => { if (sv) throw new Error('x'); return { money: 0 }; }, undefined, null);
+    expect(k2.kaynak).toBe('yeni'); expect(k2.loaded).toBe(undefined);
+  });
+});

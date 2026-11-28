@@ -35,7 +35,7 @@ const HUNGRY_M = 45;
 /** 2026-11-25: 8-10. aşamanın müşterisi farklı (sahibi: "8 9 10 hiç fark yok") */
 const TURIST = { kruvaziyer: 2.5, gezgin: 2.5, turgrubu: 2.5, balayi: 3 }, IS = { isinsani: 3, plaza: 2.5 };
 const ASAMA_MUSTERI: Record<number, Record<string, number>> = { 8: TURIST, 9: { ...TURIST, ...IS }, 10: { ...TURIST, ...IS, vlogcu: 4, balayi: 4 } };
-export interface SpawnOpts { type?: CitizenTypeDef; n?: number; order?: Order; set?: string | null; from?: Vec2; near?: Vec2; kind?: 'q' | 'win' | 'masa'; patienceX?: number; say?: string; follower?: boolean; tag?: string; body?: number }
+export interface SpawnOpts { type?: CitizenTypeDef; n?: number; order?: Order; set?: string | null; from?: Vec2; near?: Vec2; kind?: 'q' | 'win' | 'masa'; patienceX?: number; /** yürüme hızı m/sn (vapurdan inen yolcu hızlı adım) */ hiz?: number; say?: string; follower?: boolean; tag?: string; body?: number }
 
 export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (p: { value: number }[], v: number) => void, settle: (c: Customer, items: import('./state').Plate[]) => number) {
   const rt = K.rt, S = K.state;
@@ -217,6 +217,7 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
       agent: -1, members: [], items: [], seat: null, say: '', sayT: 0, calm: false, follower: !!o.follower, tag: o.tag || null, qi: -1,
     };
     if (pn.ad) c.grupAd = pn.ad;
+    if (o.hiz) c.hiz = o.hiz;
     c.agent = o.body !== undefined && o.body >= 0 ? o.body : recruitBody(type, from);
     for (let i = 1; i < Math.min(n, GRUP.max); i++) { const m = recruitBody(type, from); if (m < 0) break; c.members.push(m); }   // BUF-24: gövde sayısı grup kadar (en çok 6)
     rt.customers.push(c);
@@ -435,7 +436,7 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
       const c = rt.customers[k];
       c.sayT -= dt; c.t += dt; c.speed = 0;
       switch (c.state) {
-        case 'walk': if (!walkPath(c, dt, 1.6)) c.state = c.kind === 'win' ? 'wqueue' : 'queue'; break;
+        case 'walk': if (!walkPath(c, dt, c.hiz || 1.6)) c.state = c.kind === 'win' ? 'wqueue' : 'queue'; break;
         case 'queue': {
           faceTo(c, c.kasa ? kasaPos() : L.counter.pos, dt);
           c.patience -= dt * patienceRate(c);

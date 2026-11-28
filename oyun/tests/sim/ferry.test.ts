@@ -5,14 +5,14 @@ import { describe, it, expect } from 'vitest';
 import { played, events } from './m1-helpers';
 import { denizApi } from '../../src/game/sim/deniz';
 import { hourOf } from '../../src/game/sim/util';
-import { FERRY_DOOR, FERRY_T, GECE_SEYREK, ferryGap } from '../../src/game/sim/ferry';
+import { FERRY_DOOR, FERRY_T, GECE_SEYREK, VAPUR_TELAFI, ferryGap } from '../../src/game/sim/ferry';
 
 describe('vapur gelip gider, vatandaş indirir', () => {
-  it('ilk düdük 110. sn, yanaşma 120. sn; evreler sırayla döner ve inenler vapur kapısından yürür', () => {
+  it('ilk düdük 104. sn, yanaşma 114. sn (eski dalga anından 6 sn önce); evreler sırayla döner ve inenler vapur kapısından yürür', () => {
     const sim = played(1);
     sim.state.tut.firstCustomer = 1;
     const f = () => sim.rules.rt.ferry;
-    sim.step(109);
+    sim.step(103);
     expect(f().state).toBe('away');
     expect(events(sim, 'ferryHorn').length).toBe(0);
     sim.step(2);
@@ -23,7 +23,7 @@ describe('vapur gelip gider, vatandaş indirir', () => {
     expect(f().state).toBe('docked');
     expect(events(sim, 'ferryDock').length).toBe(1);
     sim.step(0.2);
-    const yeni = sim.rules.rt.customers.slice(c0);
+    const yeni = sim.rules.rt.customers.slice(c0).filter(c => c.hiz === VAPUR_TELAFI.hiz);   // vapur yolcuları (aynı anda gelen yürüyenler hariç)
     expect(yeni.length).toBeGreaterThan(0);
     // ilk yolcu kapıdan iner (birkaç adım yürümüş olabilir)
     expect(Math.hypot(yeni[0].x - FERRY_DOOR.x, yeni[0].z - FERRY_DOOR.z)).toBeLessThan(4);

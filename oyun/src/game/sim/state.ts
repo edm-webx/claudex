@@ -24,6 +24,7 @@ export interface FloorMoney { value: number; x: number; z: number; }
 
 export type CustomerState = 'walk' | 'queue' | 'wqueue' | 'toSeat' | 'wait' | 'eat' | 'leave';   // wait: table guest waiting for the adisyon (Faz 2)
 export interface Customer {
+  /** yürüme hızı (m/sn, yoksa 1.6): vapurdan inen yolcular hızlı adım */ hiz?: number;
   id: number;
   typeId: string; typeIdx: number;
   kind: 'q' | 'win' | 'masa';
