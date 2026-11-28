@@ -11,7 +11,7 @@ const rows = (sb: Sandbox, oda?: string) => sb.h.icSakin.rows().filter(r => !oda
 it('approaching a room spawns its residents under the cap, leaving removes them all', () => {
   const sb = makeSandbox(1); sb.host.hour_ = 10.5;
   far(sb); sb.step(2); expect(sb.h.icSakin.count()).toBe(0);
-  for (const id of ['banka', 'okul', 'hastane', 'acil', 'morg']) {
+  for (const id of ['banka', 'okul', 'acil', 'morg']) {
     near(sb, id); sb.step(3);
     expect(rows(sb, id).length, id).toBeGreaterThan(0); expect(sb.h.icSakin.count()).toBeLessThanOrEqual(25);
     far(sb); sb.step(1); expect(sb.h.icSakin.count(), id + ' gone').toBe(0);
@@ -20,12 +20,10 @@ it('approaching a room spawns its residents under the cap, leaving removes them 
 
 it('residents are real actors: they move, and the bank clerk is named', () => {
   const sb = makeSandbox(2); sb.host.hour_ = 10.5;
-  near(sb, 'hastane'); sb.step(2);
-  const at = (id: string) => rows(sb, 'hastane').find(r => r.id === id)!;
-  const n0 = { ...at('hemsire') }, d0 = { ...at('doktor') }; sb.step(60);
-  const n1 = at('hemsire'), d1 = at('doktor');
-  expect(Math.hypot(n1.x - n0.x, n1.z - n0.z) + Math.hypot(d1.x - d0.x, d1.z - d0.z)).toBeGreaterThan(0.5);
-  const acts = new Set<string>(); for (let i = 0; i < 40; i++) { sb.step(2); for (const r of rows(sb, 'hastane')) acts.add(r.act); }
+  near(sb, 'acil'); sb.step(2);   // 2026-11-28: hastane kendi diyarında (sim/agents/hastane-yasam.ts, tests/sim/hastane.test.ts)
+  const pos0 = rows(sb).map(r => ({ ...r })); sb.step(60);
+  expect(rows(sb).some(r => { const q = pos0.find(o => o.id === r.id && o.oda === r.oda); return q && Math.hypot(r.x - q.x, r.z - q.z) > 0.5; })).toBe(true);
+  const acts = new Set<string>(); for (let i = 0; i < 40; i++) { sb.step(2); for (const r of rows(sb)) acts.add(r.act); }
   expect(acts.has('walk')).toBe(true);
   far(sb); sb.step(1); near(sb, 'banka'); sb.step(3);
   expect(sb.h.registry.list.some(a => a.kind === 'sakin' && a.info.name === 'Selim')).toBe(true);

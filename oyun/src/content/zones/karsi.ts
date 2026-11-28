@@ -86,7 +86,7 @@ export function karsiPrefabs(): PrefabDef[] {
   defs.push(bld('kr.okul', 18.3, 7.5, 8.0, '#e9c98f', '#a2472f', '-z', [], true, 'okul'));
   defs.push(bld('kr.kantin', 3.7, 2.8, 3.0, '#f6efe1', '#e0533c', '-x', [box(3.6, 0.15, 1.2, 0, 2.4, 1.9, '#e0533c')], true));
   defs.push(bld('kr.avm', 16.9, 10.6, 9.5, '#cfd6e6', '#3f4a6b', '-z', [], true));   // 2026-11-21 owner: the inside is its own map (content/avm-kat.ts, sim/avm-gecis.ts): here a closed shell, the door at its front moves you in
-  defs.push(bld('kr.hastane', 16.9, 6.7, 12.0, '#f2f4f6', '#d93a3a', '-z', [...redCross(0, 10.0, 3.5)], true, 'hastane'));
+  defs.push(bld('kr.hastane', 16.9, 6.7, 12.0, '#f2f4f6', '#d93a3a', '-z', [...redCross(0, 10.0, 3.5)], true));   // 2026-11-28: kapalı kabuk, içi kendi diyarı (content/hastane-kat.ts, sim/hastane-gecis.ts)
   defs.push(bld('kr.acil', 3.3, 3.2, 3.6, '#f2f4f6', '#d93a3a', '+x', [], true, 'acil'));     // walls: view/world/karsi-bina.ts
   defs.push(bld('kr.morg', 3.3, 3.2, 3.2, '#c9ced6', '#5b6068', '+x', [], true, 'morg'));
   // metro exit: the model (glass canopy, stairs, totem) is view/world/karsi-bina.ts; colliders stay

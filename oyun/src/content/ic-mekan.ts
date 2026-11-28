@@ -31,7 +31,7 @@ export const IC_MEKANLAR: IcMekan[] = [
   ...avmOdalar(),
   { id: 'tesis', ad: 'Halı Saha Tesisleri', tur: 'kafeterya', x: -54.1, z: 45.4, wx: 3.7, wz: 17.8, kapi: '+x', arsa: 'k6', bina: 'tesis', h: 2.8 },
   { id: 'banka', ad: 'Martı Kasası Bankası', tur: 'banka', x: 11.7, z: 36.8, wx: 10, wz: 8.4, kapi: '+z', bina: 'banka', h: 3.3 },
-  { id: 'hastane', ad: 'Devlet Hastanesi', tur: 'hastane', x: 46.95, z: 53.55, wx: 16.9, wz: 6.7, kapi: '-z', bina: 'hastane', h: 3.0 },
+  // 2026-11-28 sahip: "hastanenin içi de AVM gibi açılsın": hastane artık kendi diyarı (content/hastane-kat.ts); burada oda yok
   { id: 'acil', ad: 'Acil', tur: 'acil', x: 57.3, z: 52.0, wx: 3.3, wz: 3.2, kapi: '+x', bina: 'acil', h: 3.3 },
   { id: 'morg', ad: 'Morg', tur: 'morg', x: 57.3, z: 55.5, wx: 3.3, wz: 3.2, kapi: '+x', bina: 'morg', h: 3.1 },
   // büfe salonları on the pier (view/world/bufe-buyume.ts WB / EB), door on the promenade side
@@ -288,13 +288,6 @@ function bankaLayout(W: number, D: number): IcItem[] {
     it('menuPano', -2.4, -D / 2 + 0.17, 3.0, 0.05, { y: 2.5, txt: 'MARTI KASASI' }),
   ];
 }
-function hastaneLayout(W: number, D: number): IcItem[] {
-  const o: IcItem[] = [it('lamba', 0, 0, W, D), it('zemin', 0, 0, W, D, { c: 'hastane' }), it('resepsiyon', 0, -0.9, 3.4, 0.8, { solid: true }),
-    it('sira', -3.6, 1.9, 3.0, 0.5, { solid: true }), it('sira', 3.6, 1.9, 3.0, 0.5, { solid: true }), it('ilac', 0, -D / 2 + 0.3, 1.6, 0.45, { solid: true }),
-    it('menuPano', 0, -D / 2 + 0.17, 3.2, 0.05, { y: 2.4, txt: 'POLİKLİNİK' })];
-  for (const u of [-7.2, -5.4, -3.6, 3.6, 5.4, 7.2]) o.push(it('yatak', u, -D / 2 + 1.25, 1.0, 2.0, { solid: true }), it('perde', u + 0.9, -D / 2 + 1.25, 0.06, 2.0));
-  return o;
-}
 /** 2026-11-25 ters U: kanat odası bütün kanattır (arka duvar hattı + masalar + ön bahçe). 5'in U tezgâhı: aletler arka duvarda ve avluya
  *  bakan iç kenarda (U'nun kolları); ön bahçe masaları kanat.ts'te (bufe-buyume çizer). */
 function kahvaltiLayout(W: number, D: number): IcItem[] {
@@ -431,7 +424,7 @@ export function icLayout(m: IcMekan, stage = 10): IcItem[] {
   let o = cache.get(key); if (o) return o;
   const { W, D } = icDim(m);
   o = m.tur === 'kafe' ? kafeLayout(W, D, false) : m.tur === 'bistro' ? kafeLayout(W, D, true) : m.tur === 'kirtasiye' ? kirtasiyeLayout(W, D) : m.tur === 'okul' ? okulLayout(W, D)
-    : m.bina === 'avm' ? avmOdaLayout(W, D, m.tur) : m.tur === 'kafeterya' ? kafeteryaLayout(W, D) : m.tur === 'banka' ? bankaLayout(W, D) : m.tur === 'hastane' ? hastaneLayout(W, D)
+    : m.bina === 'avm' ? avmOdaLayout(W, D, m.tur) : m.tur === 'kafeterya' ? kafeteryaLayout(W, D) : m.tur === 'banka' ? bankaLayout(W, D)
     : m.tur === 'mutfak' ? mutfakLayout(W, D, stage) : m.tur === 'kahvalti' ? kahvaltiLayout(W, D) : m.tur === 'balik' ? balikLayout(W, D) : m.tur === 'acil' ? acilLayout(W, D) : morgLayout(W, D);
   o = o.map(i => duvaraOturt(i, W, D));
   cache.set(key, o); return o;

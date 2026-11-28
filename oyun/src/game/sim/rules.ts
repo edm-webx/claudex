@@ -62,6 +62,7 @@ import { installYiyecek } from './yiyecek';
 import { installHava } from './hava';
 import { installKoleksiyon } from './koleksiyon';
 import { installAvmGecis } from './avm-gecis';
+import { installHastaneGecis } from './hastane-gecis';
 import { installDisari } from './disari';
 import { installDeniz } from './deniz';
 import { installHikaye } from './hikaye';
@@ -198,7 +199,8 @@ export function createRules(d: RulesDeps): RulesFull {
   installKurye(K); installHijyen(K);   // BUF-15 paket servis (kurye, telefon siparişi) + BUF-16 hijyen, müfettiş sonucu, Martı yıldızı
   const kolM = installKoleksiyon(K); // koleksiyonlar, Altın Simit, Altın Fırın
   const disariM = installDisari(K, (x, z) => d.walk.teleport(x, z));
-  const avmGecis = installAvmGecis(K, (x, z, kat) => d.walk.teleport(x, z, kat));   // Martı AVM: kapıdan ayrı haritaya (avm-gecis.ts) // Martıköy haritası, mahalleler, dolmuş, buluntular (disari.ts)
+  const avmGecis = installAvmGecis(K, (x, z, kat) => d.walk.teleport(x, z, kat));
+  const hstGecis = installHastaneGecis(K, (x, z, kat) => d.walk.teleport(x, z, kat));   // Devlet Hastanesi: kapıdan ayrı haritaya, asansörler (hastane-gecis.ts)   // Martı AVM: kapıdan ayrı haritaya (avm-gecis.ts) // Martıköy haritası, mahalleler, dolmuş, buluntular (disari.ts)
   const denizM = installDeniz(K, cu as never); // deniz canlıları, tekneler, güverte koşusu, iskele büyümesi (deniz.ts)
   const hikayeM = installHikaye(K); // hikaye bölümleri, rakipler, karakterli öğreticiler (hikaye.ts)
   const calisanM = installCalisan(K); // Kurs Merkezi, bekleyenler (calisan.ts)
@@ -278,6 +280,7 @@ export function createRules(d: RulesDeps): RulesFull {
       slow.update(dt);
       padsM.update(dt);
       avmGecis.update(dt);
+      hstGecis.update(dt);
       if ((tT -= dt) <= 0) { tT = 0.2; tut.update(); }
       if ((t1 -= dt) <= 0) { t1 = 1; ord.notify(); }
       if ((t5 -= dt) <= 0) { t5 = 5; rt.rate = ec.incomePerMin(); }

@@ -65,7 +65,7 @@ const BINA_IPUCU: Record<string, string> = {
   banka: 'Banka içindesin. Para ve eşya işleri alttaki Mülk düğmesinde, Banka sekmesinde.',
   kirtasiye: 'Kırtasiye bir işletme. Sahibiysen tezgaha geçip kendin satabilirsin.',
   okul: 'Martıköy İlkokulu: dersler ve sınavlar burada.',
-  hastane: 'Devlet Hastanesi: gezilebilir bir şehir binası, işletme değil.',
+  hastane: 'Devlet Hastanesi: hasta kabule uğra, katları merdiven ya da asansörle gez. Muayene, kan bağışı, kafeterya burada.',
   acil: 'Acil: gezilebilir bir şehir binası, işletme değil.',
   morg: 'Morg: gezilebilir bir şehir binası, işletme değil.',
 };

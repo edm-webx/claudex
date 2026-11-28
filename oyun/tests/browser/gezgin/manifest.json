@@ -1321,47 +1321,6 @@
    "ebeveyn": null
   },
   {
-   "id": "hastane",
-   "ad": "Devlet Hastanesi",
-   "tur": "hastane",
-   "canli": false,
-   "arsa": null,
-   "bina": "hastane",
-   "merkez": {
-    "x": 46.95,
-    "z": 53.55
-   },
-   "boy": {
-    "wx": 16.9,
-    "wz": 6.7
-   },
-   "kapiDis": {
-    "x": 46.95,
-    "z": 48.6
-   },
-   "kapi": {
-    "x": 46.95,
-    "z": 50.2
-   },
-   "kapiIc": {
-    "x": 46.95,
-    "z": 51.5
-   },
-   "noktalar": [
-    {
-     "ad": "kapı içi",
-     "x": 46.95,
-     "z": 51.5
-    },
-    {
-     "ad": "orta",
-     "x": 46.95,
-     "z": 53.55
-    }
-   ],
-   "ebeveyn": null
-  },
-  {
    "id": "acil",
    "ad": "Acil",
    "tur": "acil",
@@ -1925,10 +1884,10 @@
   }
  ],
  "ozet": {
-  "bina": 25,
+  "bina": 24,
   "ic_ice": 0,
   "canli": 18,
   "arsa": 23,
-  "icNokta": 174
+  "icNokta": 172
  }
 }

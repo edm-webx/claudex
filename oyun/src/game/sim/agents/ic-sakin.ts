@@ -1,5 +1,5 @@
 /**
- * DKN-18 iç mekân sakinleri: banka, okul, hastane, acil ve morgda kıpırdamayan insan heykelleri yerine gerçek aktörler.
+ * DKN-18 iç mekân sakinleri: banka, okul, acil ve morgda kıpırdamayan insan heykelleri yerine gerçek aktörler.
  * Oyuncu odaya yaklaşınca sakinler doğar, uzaklaşınca kaldırılır (hepsi birden en çok CAP aktör). Koordinatlar oda kapı
  * çerçevesindedir (content/ic-mekan.ts icWorld: u kapı duvarı boyunca, v içeri doğru, kapı v=+D/2).
  * Ekonomiyle ilişkisi yok: para, kasa, sayaç yazmaz. Okul ders saatleri (DKN-08): 09:00 zil, her saat 40 dk ders + 10 dk teneffüs,
@@ -67,28 +67,9 @@ const BANKA: Oda = {
   },
 };
 
-/* ---------- hastane (W=16.9, D=6.7): resepsiyon (0,-0.9), ilaç dolabı (0,-3.05), yataklar v=-2.1 ---------- */
+/* hastane 2026-11-28'den beri kendi diyarı: sakinleri sim/agents/hastane-yasam.ts */
 const yatakta = (id: string, u: number, v: number, seed: number, look: string): Tanim => ({ id, rig: reg(look, seed), ne: dongu([
   { p: [u, v], act: 'sit', sn: [20, 30], f: S, y: 0.25 }, { p: [u, v], act: 'phone', sn: [8, 12], f: S, y: 0.25 }, { p: [u, v], act: 'sit', sn: [10, 14], f: S, y: 0.25 }]) });
-const vizit = (u: number): Step => ({ p: [u, -0.7], act: 'idle', sn: [5, 7], f: N });
-const HASTANE: Oda = {
-  id: 'hastane', faz: () => 'acik', acik: () => true, giris: [[0, 2.6]],
-  kalici: [
-    { id: 'hemsire', rig: worker('hemsire', 21), ad: 'Ayşe Hemşire', ne: dongu([
-      { p: [0.3, -1.9], act: 'serve', sn: [15, 22], f: S }, w(2.3, -1.9), w(2.3, 0.3), { p: [3.6, -0.7], act: 'idle', sn: [5, 5], f: N }, w(2.3, 0.3), w(2.3, -1.9), { p: [0.9, -2.4], act: 'carry', sn: [6, 6], f: N }]) },
-    { id: 'doktor', rig: worker('doktor', 22, 'DR. KEMAL'), ad: 'Dr. Kemal', ne: dongu([
-      vizit(-7.2), vizit(-5.4), vizit(-3.6), w(-2.2, 0.2), w(2.2, 0.2), vizit(3.6), vizit(5.4), vizit(7.2), w(5.4, -0.2), w(2.2, 0.2), w(-2.2, 0.2), w(-5.4, -0.2)]) },
-    yatakta('yatak1', -5.4, -2.35, 610, 'emekli'), yatakta('yatak2', 3.6, -2.35, 611, 'teyze'), yatakta('yatak3', 7.2, -2.35, 612, 'plaza'),
-  ],
-  gelen: {
-    enCok: 2, aralik: [25, 50], acik: () => true,
-    yap: (rng, k) => ({
-      rig: reg(['emekli', 'teyze', 'plaza'][Math.floor(rng.next() * 3)], 700 + k),
-      steps: [w(0, 2.6), { p: [[-4.6, 2.35], [-2.6, 2.35], [2.6, 2.35], [4.6, 2.35]], act: 'sit', sn: [40, 70], f: N }, w(0, 2.6), { p: [0, 0.2], kilit: true, act: 'idle', sn: [5, 5], f: N }, w(0, 2.6)],
-    }),
-  },
-};
-
 /* ---------- acil / morg (3.3 x 3.2) ---------- */
 const ACIL: Oda = {
   id: 'acil', faz: () => 'acik', acik: () => true,
@@ -102,7 +83,7 @@ const MORG: Oda = {
   kalici: [{ id: 'gorevli', rig: worker('gorevli', 31), ad: 'Cemal', ne: dongu([
     { p: [-0.7, 0.2], act: 'idle', sn: [10, 10], f: N }, { p: [-0.7, -0.7], act: 'serve', sn: [6, 6], f: N }, { p: [0, 1.0], act: 'idle', sn: [8, 8], f: [1, 0] }]) }],
 };
-const ODALAR = [BANKA, OKUL, HASTANE, ACIL, MORG];
+const ODALAR = [BANKA, OKUL, ACIL, MORG];
 
 export interface SakinRow { oda: string; id: string; x: number; z: number; act: string }
 export interface IcSakinSystem extends System { rows(): SakinRow[]; count(): number }

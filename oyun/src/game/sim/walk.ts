@@ -10,11 +10,12 @@
 import type { PlayerWalk, Nav, InteractionRegistry, Entity, SimCtx, Vec2 } from '../../engine/api';
 import { angLerp } from '../../engine/core';
 import { binis, katY, avmIcinde, type Yolculuk } from '../../content/avm-kat';
+import { hstBinis, hstIcinde } from '../../content/hastane-kat';
 const SOLID = { solids: true };
 type GameStatePlayer = { x: number; z: number; rot: number; kat?: number };
 
 /** katNav: Martı AVM katlarının çarpışması (yalnız dikdörtgen, content/avm-kat.ts); AVM dışında = nav */
-export interface WalkDeps { nav: Nav; start: { x: number; z: number; kat?: number }; speed?: number; interactions?: InteractionRegistry; actor?: Entity; radius?: number; katNav?: (kat: number) => Nav | null; }
+export interface WalkDeps { nav: Nav; start: { x: number; z: number; kat?: number }; speed?: number; interactions?: InteractionRegistry; actor?: Entity; radius?: number; katNav?: (kat: number, p?: Vec2) => Nav | null; }
 
 /** PlayerWalk plus the previous yaw, so the render side can interpolate rotation like position (v2 angLerp(prevRot, rot, a)).
  *  kat / y / prevY: AVM katı ve yürüyen merdivende yükseklik (pos.kat da aynı katı taşır: iç mekân / arsa kontrolleri onu okur). */
@@ -73,10 +74,10 @@ export function createWalk(deps: WalkDeps): WalkFull {
       vx += (tvx - vx) * kv; vz += (tvz - vz) * kv;
       if (Math.abs(vx) + Math.abs(vz) > 0.04) {
         to.x = pos.x + vx * ctx.dt; to.z = pos.z + vz * ctx.dt;
-        const nav = (avmIcinde(pos, 4) && deps.katNav?.(kat)) || deps.nav;   // Martı AVM diyarı: her katın kendi çarpışması
+        const nav = ((avmIcinde(pos, 4) || hstIcinde(pos, 4)) && deps.katNav?.(kat, pos)) || deps.nav;   // Martı AVM diyarı: her katın kendi çarpışması
         const r = nav.move(pos, to, radius, out, SOLID);
         pos.x = r.x; pos.z = r.z;
-        if (rideCd <= 0 && m > 0.12) { const b = binis(pos, kat, vx, vz); if (b) { ride = { y: b, i: 0 }; } }
+        if (rideCd <= 0 && m > 0.12) { const b = binis(pos, kat, vx, vz) || hstBinis(pos, kat, vx, vz); if (b) { ride = { y: b, i: 0 }; } }
       } else { vx = 0; vz = 0; }
       const dx = pos.x - prev.x, dz = pos.z - prev.z;
       speed = ctx.dt > 0 ? Math.sqrt(dx * dx + dz * dz) / ctx.dt : 0;
