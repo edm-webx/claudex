@@ -83,7 +83,7 @@ export function karsiPrefabs(): PrefabDef[] {
   defs.push(bld('kr.kafe1', 7, 9.4, 3.8, '#f1d9b4', '#c2551f', '+x', [], true, 'kafe1'), bld('kr.kafe2', 7, 9.4, 3.8, '#f1d9b4', '#c2551f', '+x', [], true, 'kafe2'));
   defs.push(bld('kr.banka', 10, 8.4, 6.6, '#e9dfc8', '#fbf6ea', '+z', [], true, 'banka'));
   defs.push(bld('kr.kirtasiye', 5.0, 3.6, 3.0, '#bfd8e8', '#2b6fb8', '+z', [], true, 'kirtasiye'));
-  defs.push(bld('kr.okul', 18.3, 7.5, 8.0, '#e9c98f', '#a2472f', '-z', [], true, 'okul'));
+  defs.push(bld('kr.okul', 18.3, 7.5, 8.0, '#e9c98f', '#a2472f', '-z', [], true));   // 2026-11-28: içi kendi diyarında (content/okul-ic.ts, sim/okul-gecis.ts): burada kapalı kabuk, kapısına yürüyen okula geçer
   defs.push(bld('kr.kantin', 3.7, 2.8, 3.0, '#f6efe1', '#e0533c', '-x', [box(3.6, 0.15, 1.2, 0, 2.4, 1.9, '#e0533c')], true));
   defs.push(bld('kr.avm', 16.9, 10.6, 9.5, '#cfd6e6', '#3f4a6b', '-z', [], true));   // 2026-11-21 owner: the inside is its own map (content/avm-kat.ts, sim/avm-gecis.ts): here a closed shell, the door at its front moves you in
   defs.push(bld('kr.hastane', 16.9, 6.7, 12.0, '#f2f4f6', '#d93a3a', '-z', [...redCross(0, 10.0, 3.5)], true));   // 2026-11-28: kapalı kabuk, içi kendi diyarı (content/hastane-kat.ts, sim/hastane-gecis.ts)

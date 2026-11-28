@@ -14,7 +14,7 @@ import type { ProductId } from '../game/sim/schema';
 export type MarkaKat = 'gazoz' | 'cay' | 'ayran' | 'su' | 'kahve' | 'firin' | 'et' | 'atistirmalik' | 'dukkan' | 'uygulama' | 'arac' | 'medya';
 export const KAT_NAMES: Record<MarkaKat, string> = {
   gazoz: 'Gazoz ve soda', cay: 'Çay', ayran: 'Ayran ve şalgam', su: 'Su', kahve: 'Kahve', firin: 'Fırın ve börek', et: 'Et ve tavuk',
-  atistirmalik: 'Atıştırmalık', dukkan: 'Dükkan', uygulama: 'Uygulama', arac: 'Araç ve vapur hattı', medya: 'Medya',
+  atistirmalik: 'Atıştırmalık', dukkan: 'Dükkan', uygulama: 'Uygulama', arac: 'Araç ve ulaşım hattı', medya: 'Medya',
 };
 
 export interface MaskotDef { id: string; name: string; desc: string; kind: 'balon' | 'inek' | 'damla' | 'nar' | 'kurye' | 'robot'; color: string; }
@@ -55,7 +55,7 @@ export const MARKALAR: MarkaDef[] = [
   { id: 'marti_su', name: 'Martı Su', kat: 'su', color: '#6fbde2', ink: '#ffffff', slogan: 'Damlacık\'tan selam, şıpır şıpır!', pct: 0.02, maskot: 'damlacik', ad: true },
   { id: 'kaynakca', name: 'Kaynakça Su', kat: 'su', color: '#9fd8e8', ink: '#1d4f6e', slogan: 'Dağdan indi, iskeleye geldi.', pct: 0.02 },
   // kahve
-  { id: 'vapurcu_kahve', name: 'Vapurcu Kahve', kat: 'kahve', color: '#4a2f22', ink: '#f6bd3a', slogan: 'Köpüğü kaçırmayan kaptanların kahvesi.', pct: 0.03, ad: true },
+  { id: 'vapurcu_kahve', name: 'Kaptan Kahve', kat: 'kahve', color: '#4a2f22', ink: '#f6bd3a', slogan: 'Köpüğü kaçırmayan kaptanların kahvesi.', pct: 0.03, ad: true },
   { id: 'kopuk_kulesi', name: 'Köpük Kulesi', kat: 'kahve', color: '#f29e4c', ink: '#ffffff', slogan: 'Bardak uzun, köpük kule!', pct: 0.04 },
   { id: 'cezve_dede', name: 'Cezve Dede', kat: 'kahve', color: '#7a4b2e', ink: '#fff3c4', slogan: 'Kırk yıllık hatır, bir fincanda.', pct: 0.04 },
   // fırın ve börek
@@ -77,17 +77,17 @@ export const MARKALAR: MarkaDef[] = [
   { id: 'kalemtras', name: 'Kalemtraş Kırtasiye', kat: 'dukkan', color: '#7d6bb0', ink: '#ffffff', slogan: 'Sınav haftasının sırdaşı.' },
   // uygulamalar
   { id: 'paketmarti', name: 'PaketMartı', kat: 'uygulama', color: '#ffd23f', ink: '#3b2a20', slogan: 'Vızır vızır kapında!', maskot: 'vizir', ad: true },
-  { id: 'martikart', name: 'Martıkart', kat: 'uygulama', color: '#2f7fb3', ink: '#ffffff', slogan: 'Bas geç, vapura yetiş.' },
+  { id: 'martikart', name: 'Martıkart', kat: 'uygulama', color: '#2f7fb3', ink: '#ffffff', slogan: 'Bas geç, dolmuşa yetiş.' },
   { id: 'uclu_paket', name: 'Uçan Paket', kat: 'uygulama', color: '#e0533c', ink: '#ffffff', slogan: 'Paketin kanatlı, kuryen güleryüzlü.' },
   // araç ve vapur hattı
   { id: 'pedalcan', name: 'Pedalcan Bisiklet', kat: 'arac', color: '#3fb5b0', ink: '#ffffff', slogan: 'Zili çalışır, freni de çoğu zaman.' },
   { id: 'vin_motor', name: 'Vınvın Motor', kat: 'arac', color: '#e0533c', ink: '#ffffff', slogan: 'Vın vın, yokuşa meydan okur.' },
-  { id: 'martikoy_hatti', name: 'Martıköy Vapur Hattı', kat: 'arac', color: '#1d5fa8', ink: '#ffffff', slogan: 'Düdüğü kalın, çayı demli.', ad: true },
+  { id: 'martikoy_hatti', name: 'Martıköy Dolmuş Hattı', kat: 'arac', color: '#1d5fa8', ink: '#ffffff', slogan: 'Kornası kalın, çayı demli.', ad: true },
   // medya
   { id: 'gunaydin_postasi', name: 'Günaydın Postası', kat: 'medya', color: '#fbfaf6', ink: '#c0392b', slogan: 'Haberin en sabahçısı.', pct: 0.02 },
   { id: 'bogaz_haber', name: 'Boğaz Haber', kat: 'medya', color: '#14243d', ink: '#ffffff', slogan: 'İki yakanın haberi, tek kanalda.', pct: 0.02 },
   { id: 'spor_marti', name: 'Spor Martı', kat: 'medya', color: '#27ae60', ink: '#ffffff', slogan: 'Gol sesi iskeleden duyulur.', pct: 0.02 },
-  { id: 'iskele_fm', name: 'İskele FM', kat: 'medya', color: '#c94f6d', ink: '#ffffff', slogan: 'Vapur düdüğü eşliğinde en güzel şarkılar.', pct: 0.02, ad: true },
+  { id: 'iskele_fm', name: 'İskele FM', kat: 'medya', color: '#c94f6d', ink: '#ffffff', slogan: 'Martı çığlıkları eşliğinde en güzel şarkılar.', pct: 0.02, ad: true },
   // Ay (marka-1: en üst kademede absürt), later
   { id: 'kraterkola', name: 'Kraterkola', kat: 'gazoz', color: '#3b2f6b', ink: '#ffe9a0', slogan: 'Kabarcıklar aşağı akar, sen yukarı uçarsın.' },
 ];

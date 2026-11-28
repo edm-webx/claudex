@@ -15,6 +15,7 @@ import { createKafe, type KafeSystem } from './kafe';
 import { createInsaat } from './isletme-insaat';
 import { createBelediye } from './belediye';
 import { createIcSakin, type IcSakinSystem } from './ic-sakin';
+import { createOkulYasam, type OkulYasamSystem } from './okul-yasam';
 import { createWorkers, type WorkersSystem } from './workers';
 import { createVip, type VipSystem } from './vip';
 import { createMufettis, type MufettisSystem } from './mufettis';
@@ -31,7 +32,7 @@ export interface AgentsHandle {
   registry: ActorRegistry;
   /** far-shore business rooms (DKN): queue orders etc. */
   kafe: KafeSystem;
-  workers: WorkersSystem; icSakin: IcSakinSystem; vip: VipSystem; mufettis: MufettisSystem; /** BUF-21: tadilat ustaları */ ustalar: UstalarSystem; /** Martı AVM ziyaretçileri + konser müzisyenleri */ avmYasam: AvmYasamSystem; /** Devlet Hastanesi personeli + hastalar */ hastaneYasam: HastaneYasamSystem; cats: CatsSystem; gulls: GullsSystem;
+  workers: WorkersSystem; icSakin: IcSakinSystem; vip: VipSystem; mufettis: MufettisSystem; /** BUF-21: tadilat ustaları */ ustalar: UstalarSystem; /** Martı AVM ziyaretçileri + konser müzisyenleri */ avmYasam: AvmYasamSystem; /** Devlet Hastanesi personeli + hastalar */ hastaneYasam: HastaneYasamSystem; /** Martıköy İlkokulu: öğrenciler, öğretmenler, müdür */ okulYasam: OkulYasamSystem; cats: CatsSystem; gulls: GullsSystem;
   dog: ReturnType<typeof createDog>;
   /** Pigeon / flock home area for the view. */
   pigeons(): PigeonArea;
@@ -63,9 +64,9 @@ export function createAgents(rules: Rules, opts: InstallOpts = {}): AgentsHandle
     emit: (name, data) => { rules.bus.emit(name, data as never); },
     shared: { followers: 0, tipBoostT: 0, dogDuty: false, dogBark: 0, dogPos: null, force: { reg: null, vip: false, kap: false, gull: false, sleep: false } },
   };
-  const workers = createWorkers(env), vip = createVip(env), mufettis = createMufettis(env), ustalar = createUstalar(env), cats = createCats(env), dog = createDog(env), parrot = createParrot(env), gulls = createGulls(env), kafe = createKafe(env, rules.rt as unknown as Record<string, unknown>), insaat = createInsaat(env, rules.rt as unknown as Record<string, unknown>), icSakin = createIcSakin(env), belediye = createBelediye(env), avmYasam = createAvmYasam(env), hastaneYasam = createHastaneYasam(env);  // NPC Erim removed 2026-10-24 (user: sinir bozucu, tamamen sil)
+  const workers = createWorkers(env), vip = createVip(env), mufettis = createMufettis(env), ustalar = createUstalar(env), cats = createCats(env), dog = createDog(env), parrot = createParrot(env), gulls = createGulls(env), kafe = createKafe(env, rules.rt as unknown as Record<string, unknown>), insaat = createInsaat(env, rules.rt as unknown as Record<string, unknown>), icSakin = createIcSakin(env), belediye = createBelediye(env), avmYasam = createAvmYasam(env), hastaneYasam = createHastaneYasam(env), okulYasam = createOkulYasam(env);  // NPC Erim removed 2026-10-24 (user: sinir bozucu, tamamen sil)
   const handle: AgentsHandle = {
-    registry: reg, workers, icSakin, vip, mufettis, ustalar, avmYasam, hastaneYasam, cats, gulls, dog, env,
+    registry: reg, workers, icSakin, vip, mufettis, ustalar, avmYasam, hastaneYasam, okulYasam, cats, gulls, dog, env,
     kafe,
     pigeons: () => pigeonArea(book),
     force(what, value) {
@@ -81,7 +82,7 @@ export function createAgents(rules: Rules, opts: InstallOpts = {}): AgentsHandle
   cats.prime(rules.state);
   // registry tick bookkeeping runs first, then the systems (orders 40..46)
   rules.addSystem({ id: 'agents.begin', order: 39, phase: 'sim', step: () => reg.beginTick() });
-  for (const s of [workers, vip, mufettis, ustalar, cats, dog, parrot, gulls, kafe, insaat, icSakin, belediye, avmYasam, hastaneYasam]) rules.addSystem(s);
+  for (const s of [workers, vip, mufettis, ustalar, cats, dog, parrot, gulls, kafe, insaat, icSakin, belediye, avmYasam, hastaneYasam, okulYasam]) rules.addSystem(s);
   rules.addStateView(() => {
     const v = vip.current(), pam = cats.rows().find((c) => c.id === 'pamuk');
     const stareG = gulls.stare();

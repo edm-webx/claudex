@@ -3,7 +3,7 @@
  * changes realm). Districts outside the three (tersane, metro, tepe, adalar) stay closed for now.
  * Pure data: no three, no DOM.
  */
-export type RealmId = 'iskele' | 'mahalle' | 'stadyum' | 'belgrad' | 'avm' | 'hastane';
+export type RealmId = 'iskele' | 'mahalle' | 'stadyum' | 'belgrad' | 'avm' | 'okul' | 'hastane';
 export interface Realm {
   id: RealmId; name: string; x0: number; x1: number;
   /** the 42B stop of the realm; the spawn is next to the bus door */
@@ -23,6 +23,8 @@ export const REALMS: Realm[] = [
   { id: 'avm', name: 'Martı AVM', x0: 1150, x1: 1250, stop: { x: 1200.15, z: 44.8, name: 'AVM Girişi' }, regions: [], bus: false },
   // 2026-11-28 sahip: "hastanenin içi de AVM gibi açılsın" (content/hastane-kat.ts HST_OX, sim/hastane-gecis.ts)
   { id: 'hastane', name: 'Devlet Hastanesi', x0: 1450, x1: 1550, stop: { x: 1500, z: 44.9, name: 'Hastane Girişi' }, regions: [], bus: false },
+  // 2026-11-28 sahip: "okul da içine girilebilecek AVM gibi": karşı yakadaki okulun kapısından girilir (content/okul-ic.ts, sim/okul-gecis.ts)
+  { id: 'okul', name: 'Martıköy İlkokulu', x0: 1300, x1: 1400, stop: { x: 1350, z: 29.4, name: 'Okul Bahçesi' }, regions: [], bus: false },
 ];
 /** realms the 42B bus serves */
 export const BUS_REALMS = REALMS.filter(r => r.bus !== false);

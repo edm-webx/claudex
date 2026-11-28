@@ -11,7 +11,7 @@ const rows = (sb: Sandbox, oda?: string) => sb.h.icSakin.rows().filter(r => !oda
 it('approaching a room spawns its residents under the cap, leaving removes them all', () => {
   const sb = makeSandbox(1); sb.host.hour_ = 10.5;
   far(sb); sb.step(2); expect(sb.h.icSakin.count()).toBe(0);
-  for (const id of ['banka', 'okul', 'acil', 'morg']) {
+  for (const id of ['banka', 'acil', 'morg']) {
     near(sb, id); sb.step(3);
     expect(rows(sb, id).length, id).toBeGreaterThan(0); expect(sb.h.icSakin.count()).toBeLessThanOrEqual(25);
     far(sb); sb.step(1); expect(sb.h.icSakin.count(), id + ' gone').toBe(0);
@@ -20,24 +20,16 @@ it('approaching a room spawns its residents under the cap, leaving removes them 
 
 it('residents are real actors: they move, and the bank clerk is named', () => {
   const sb = makeSandbox(2); sb.host.hour_ = 10.5;
-  near(sb, 'acil'); sb.step(2);   // 2026-11-28: hastane kendi diyarında (sim/agents/hastane-yasam.ts, tests/sim/hastane.test.ts)
-  const pos0 = rows(sb).map(r => ({ ...r })); sb.step(60);
-  expect(rows(sb).some(r => { const q = pos0.find(o => o.id === r.id && o.oda === r.oda); return q && Math.hypot(r.x - q.x, r.z - q.z) > 0.5; })).toBe(true);
-  const acts = new Set<string>(); for (let i = 0; i < 40; i++) { sb.step(2); for (const r of rows(sb)) acts.add(r.act); }
+  near(sb, 'banka'); sb.step(2);   // 2026-11-28: hastane ve okul kendi diyarlarında (hastane-yasam.ts, okul-yasam.ts)
+  const pos0 = rows(sb).map(r => ({ ...r })); let enUzak = 0; const acts = new Set<string>();
+  for (let i = 0; i < 60; i++) { sb.step(2); for (const r of rows(sb)) { acts.add(r.act); const q = pos0.find(o => o.id === r.id && o.oda === r.oda); if (q) enUzak = Math.max(enUzak, Math.hypot(r.x - q.x, r.z - q.z)); } }
+  expect(enUzak).toBeGreaterThan(0.5);
   expect(acts.has('walk')).toBe(true);
   far(sb); sb.step(1); near(sb, 'banka'); sb.step(3);
   expect(sb.h.registry.list.some(a => a.kind === 'sakin' && a.info.name === 'Selim')).toBe(true);
 });
 
-it('school: 09:00 bell, 12 students + teacher in class, empty when closed (lunch, evening)', () => {
-  const sb = makeSandbox(3);
-  for (const [h, n] of [[8.5, 0], [10, 13], [12.5, 0], [14, 13], [16, 0]] as const) {
-    sb.host.hour_ = h; near(sb, 'okul'); sb.step(60); sb.step(60);
-    expect(rows(sb, 'okul').length, 'hour ' + h).toBe(n);
-  }
-  sb.host.hour_ = 10.8; sb.step(20);   // recess: students stand up and walk
-  expect(rows(sb, 'okul').some(r => r.act === 'walk' || r.act === 'talk' || r.act === 'idle')).toBe(true);
-});
+// okul 2026-11-28'den beri kendi diyarında: tests/sim/okul-yasam.test.ts
 
 it('no static human props left in the room view (only the büfe halls\' allowed ones)', () => {
   const src = readFileSync('src/game/view/world/ic-mekan-look.ts', 'utf8');

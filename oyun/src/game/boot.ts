@@ -58,6 +58,7 @@ import { createAudio } from '../engine/audio';
 import { createChars, type MotorChars, type MotorCrowd } from './view/chars';
 import { createAgentsView, type AgentsView } from './view/chars/agents-view';
 import { avmYukleme } from './ui/avm-yukleme';
+import { setFlasAzalt, flasVarsayilan } from '../engine/fx/flas';
 import { createAvmEglence } from './view/world/avm-eglence';
 import { createMakineGorunum, type MakineVeri } from './view/world/makine-gorunum';
 import { createMisirKoku } from './view/world/misir-koku';
@@ -115,7 +116,6 @@ import { createKayitDurum } from './net/kayit-durum';
 import { createKayitRozet } from './ui/kayit-rozet';
 import { panelModel, panelActions } from './sim/panels';
 import type { AgentsHandle } from './sim/agents';
-import { createFerryLook, type FerryLookView } from './view/world/ferry-look';
 import { createYolLook, type YolLookView } from './view/world/yol-look';
 import { ugY, onUg } from '../content/ustgecit';
 import { createKarsiLook, type KarsiLookView } from './view/world/karsi-look';
@@ -132,6 +132,8 @@ import { ARSALAR, ISLETME, ARSA_ISLETME } from '../content/esya';
 import { createKarsiYasam, type YasamView } from './view/world/karsi-yasam';
 import { createAvmIc, type AvmIcView } from './view/world/avm-ic';
 import { createHastaneIc, type HastaneIcView } from './view/world/hastane-ic';
+import { createOkulIc, type OkulIcView } from './view/world/okul-ic';
+import { okulBinada } from '../content/okul-ic';
 import { createIcMekan, type IcView } from './view/world/ic-mekan-look';
 import { restoranApi } from './sim/restoran';
 import { MUTFAK_ROL_BY_ID } from '../content/mutfak';
@@ -354,11 +356,17 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const tutorial: Tutorial | null = playMode ? make('tutorial', () => installTutorial(sim.rules)) : null;
 
   const pose: { x: number; z: number; rot: number; y?: number; kat?: number } = { x: 0, z: 0, rot: 0 };
-  let lastPoseX = 0, lastPoseZ = 0, perdeEl: HTMLDivElement | null = null;
+  let lastPoseX = 0, lastPoseZ = 0, perdeEl: HTMLDivElement | null = null, perdeAnim: Animation | null = null;
   const perde = () => {
     try {
       if (!perdeEl) { perdeEl = document.createElement('div'); perdeEl.style.cssText = 'position:fixed;inset:0;background:#0b0d12;pointer-events:none;z-index:40;opacity:0;transition:opacity .45s ease-out'; document.body.appendChild(perdeEl); }
-      const el = perdeEl; el.style.transition = 'none'; el.style.opacity = '1'; void el.offsetWidth; el.style.transition = 'opacity .45s ease-out'; el.style.opacity = '0';
+      const el = perdeEl;
+      // 2026-11-27 ışığa duyarlılık: perde tek karede siyaha atlamaz. Kararma 0.35 sn ease-in, kısa bekleme, 0.7 sn açılış (toplam ~1.15 sn);
+      // süren perde varken yeni ışınlanma onu yeniden başlatmaz (art arda siyah/açık sıçraması olmasın).
+      if (perdeAnim && perdeAnim.playState === 'running') return;
+      if (typeof el.animate === 'function') {
+        perdeAnim = el.animate([{ opacity: 0, easing: 'ease-in' }, { opacity: 1, offset: 0.3 }, { opacity: 1, offset: 0.4, easing: 'ease-out' }, { opacity: 0 }], { duration: 1150, fill: 'none' });
+      } else { el.style.transition = 'opacity .45s ease-out'; el.style.opacity = '0'; }
     } catch { /* */ }
   };
   const pos: Vec2 = pose; // same object: pos.x/pos.z are the interpolated ground position
@@ -372,9 +380,6 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
       return true;
     });
   }
-  // ferry kinds + tarife tahtası (ferry-look.ts)
-  const ferryLook = null as FerryLookView | null;   // 2026-11-25: vapur ve tarife tahtası kalktı
-  void createFerryLook;
 
   const karsiLook: KarsiLookView | null = playMode && zones ? make('karsiLook', () => createKarsiLook({ root: () => zones.root('iskele') ?? null })) : null;
   const karsiBina: BinaView | null = playMode && zones ? make('karsiBina', () => createKarsiBina({ root: () => zones.root('iskele') ?? null, night: () => nightK, camera: () => cam.camera, hero: () => walk.pos })) : null;
@@ -394,6 +399,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const avmEglence = playMode && zones ? make('avmEglence', () => createAvmEglence({ root: () => scene, hero: () => walk.pos, saat: () => sim.rules.hour() })) : null;   // AVM eğlence katı: sinema + sahne
   const avmIc: AvmIcView | null = playMode && zones ? make('avmIc', () => createAvmIc({ root: () => scene, hero: () => walk.pos, night: () => nightK })) : null;   // Martı AVM içi (ayrı diyar)
   const hastaneIc: HastaneIcView | null = playMode && zones ? make('hastaneIc', () => createHastaneIc({ root: () => scene, hero: () => walk.pos })) : null;   // Devlet Hastanesi içi (ayrı diyar)
+  const okulIc: OkulIcView | null = playMode && zones ? make('okulIc', () => createOkulIc({ root: () => scene, hero: () => walk.pos, saat: () => sim.clock.hour, night: () => nightK, camera: () => cam.camera })) : null;   // Martıköy İlkokulu (ayrı diyar)
   const icMekan: IcView | null = playMode && zones ? make('icMekan', () => createIcMekan({ root: () => zones.root('iskele') ?? null, sahne: () => scene, hero: () => walk.pos, night: () => nightK,
     isletme: () => { const m = mulkApi(sim.rules), o: Record<string, { lv: number; isci: number; esya: string[]; tema?: string }> = {}; if (m) for (const p of m.view().plots) if (p.sabit && p.owned) o[p.id] = { lv: p.lv, isci: p.isci, esya: (p as { esya?: string[] }).esya || [], tema: (p as { tema?: string }).tema || '' }; return o; },
     salon: () => ({ stage: sim.state.stage || 1, esya: ((sim.state.zones as { salon?: { esya?: string[] } }).salon?.esya) || [] }),
@@ -496,6 +502,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     else if (key === 'hand') { const h = value === 'left' ? 'left' : 'right'; U.settings.hand = h; input.setHand(h); }
     else if (key === 'haptics') U.settings.haptics = !!value;
     else if (key === 'textScale') { const v = Math.min(1.6, Math.max(0.8, Number(value) || 1)); U.settings.textScale = v; U.root.style.setProperty('--ts', String(v)); }
+    else if (key === 'flasAzalt') setFlasAzalt(flasVarsayilan(value));
     else if (key === 'colorBlindIcons') { U.settings.colorBlindIcons = !!value; U.root.classList.toggle('sb-cb', !!value); }
   };
   const copyReport = () => { void platform.copyText(P.dump().kayit ? JSON.stringify(P.dump()) : P.report()).then(ok => U.toast(ok ? 'Rapor kopyalandı.' : 'Kopyalanamadı, hız ölçerden dene.', ok ? 'good' : 'info')); };
@@ -710,7 +717,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   const mulkPanel = playMode && uiReal ? make('mulkPanel', () => createMulkPanel({ root: U.root, rules: () => sim.rules, command, sfx: id => { try { audio?.sfx(id); } catch { /* */ } } })) : null;
   if (mulkPanel) U.root.addEventListener('ui:open', e => { const id = (e as CustomEvent).detail as string; if (id === 'envanter') mulkPanel.open('envanter'); else if (id === 'holding') mulkPanel.open('holding'); else if (id === 'mulk') mulkPanel.open('mulk'); });
   // 2026-11-26 Esnaf telefonu HUD: phone sheet, mini map, Büfem context pill (ui/telefon.ts)
-  const telefon = playMode && uiReal ? make('telefon', () => createTelefon({ root: U.root, rules: () => sim.rules as never, heroPos: () => pos, walkable: p => nav.walkable(p), command, sfx: id => { try { audio?.sfx(id); } catch { /* */ } } })) : null;
+  const telefon = playMode && uiReal ? make('telefon', () => createTelefon({ root: U.root, rules: () => sim.rules as never, heroPos: () => pos, walkable: p => nav.walkable(p), command, sfx: id => { try { audio?.sfx(id); } catch { /* */ } }, toast: t => U.toast(t, 'info') })) : null;
   if (telefon) U.root.addEventListener('ui:open', e => { if ((e as CustomEvent).detail === 'telefon') telefon.toggle(); });
   const mulkView = ACIK_DUNYA && playMode && labels ? make('mulkView', () => createMulkView({ scene, labels, project, rules: () => sim.rules, hero: () => pos, setSolid: r => nav.setSolids('mulk', r) })) : null;
   const mahalleView = ACIK_DUNYA && playMode ? make('mahalleView', () => createMahalle({ scene, hero: () => pos, hour: () => sim.clock.hour, night: () => nightK, chars: chars as never, insaatlar: () => { const m = mulkApi(sim.rules); return m ? m.view().plots.filter(p => !p.sabit && p.insa != null).map(p => ({ id: p.id, x: p.x, z: p.z, rotY: p.rotY, p: p.insa as number })) : []; }, setSolid: r => nav.setSolids('mahalle', r) })) : null;   // 2026-11-26 Martı Konutları (arsaların mahallesi)
@@ -727,7 +734,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     // ses-1 place signature: Sabri'nin evi overlay, Çarşı Sokağı by position, else the pier
     // 16:52 user: music + ambience follow the place: every region has its own (orman, gece pazarı, sahil...), the halı saha match its stand
     zone: () => { if (evRoom?.isOpen()) return 'ev'; if (document.querySelector('.hs-game')) return 'halisaha'; return sesBolgesi(pos); },   // DNY-17: ses bölgesi (iç mekan, karşı yaka alt bölgeleri, şerit)
-    interior: () => icMekan?.icinde() ?? (avmIcinde(pos, 2) ? 'avmHol' : hstIcinde(pos, 2) ? 'hastane' : null),
+    interior: () => icMekan?.icinde() ?? (avmIcinde(pos, 2) ? 'avmHol' : hstIcinde(pos, 2) ? 'hastane' : okulBinada(pos) ? 'okulKoridor' : null),
     crowd: () => Math.min(1, (sim.agents.count || 0) / 45),
     weather: () => havaApi(sim.rules)?.view().kind ?? 'acik',
     season: () => havaApi(sim.rules)?.view().season ?? 'sonbahar',
@@ -766,6 +773,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   if (sim.state.settings.hand === 'left') extraSettings('hand', 'left');
   if ((sim.state.settings.textScale || 1) !== 1) extraSettings('textScale', sim.state.settings.textScale);
   if (sim.state.settings.colorBlindIcons) extraSettings('colorBlindIcons', true);
+  setFlasAzalt(flasVarsayilan(sim.state.settings.flasAzalt));   // varsayılan AÇIK; eski kayıtta alan yoksa da açık
 
   // ── tier changes
   const applyTier = (t: TierDef) => {
@@ -864,7 +872,6 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     guard('camera.follow', () => cam.follow((t => onUg(t.x, t.z) ? { x: t.x, z: t.z, y: ugY(t.x, t.z) } : t === pos && pose.y ? { x: t.x, z: t.z, y: pose.y } : t)(acilis?.kamera() ?? egitici?.kamera() ?? (df && sim.state.playT <= df.until ? df : camHold ?? (inBufe ? { x: pos.x + (bufeFocus.x - pos.x) * 0.25, z: pos.z + (bufeFocus.z - pos.z) * 0.25 } : pos))), fdt));
     if (playMode) guard('sign', syncSign);
     guard('world', () => W.update(sim.state, fdt, alpha));
-    if (ferryLook) guard('ferryLook', () => ferryLook.update(fdt));
     if (yolLook) guard('yolLook', () => yolLook.update(fdt));
     if (karsiLook) guard('karsiLook', () => karsiLook.update(fdt));
     if (karsiBina) guard('karsiBina', () => karsiBina.update(fdt));
@@ -878,6 +885,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (icMekan) guard('icMekan', () => icMekan.update(fdt));
     if (avmIc) guard('avmIc', () => avmIc.update(fdt));
     if (hastaneIc) guard('hastaneIc', () => hastaneIc.update(fdt));
+    if (okulIc) guard('okulIc', () => okulIc.update(fdt));
     if (avmEglence) guard('avmEglence', () => avmEglence.update(fdt));
     if (makineView) guard('makineView', () => makineView.update(fdt));
     if (misirKoku) guard('misirKoku', () => misirKoku.update(fdt));
@@ -1007,6 +1015,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
 
   // ── pause reasons: visibility + context loss
   const pauses = new Set<string>();
+  let morgAcik = false;   // "Morgdan Kaçış" ana menüden açıkken ana oyun durur, sesi askıda kalır
   const pause = (why: string) => { pauses.add(why); loop.pause([...pauses].join('+')); };
   const resume = (why: string) => { pauses.delete(why); if (!pauses.size) loop.resume(); else loop.pause([...pauses].join('+')); };
   platform.visibility.onChange(hidden => {
@@ -1019,7 +1028,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     } else {
       resume('hidden');
       kayitD.baglandi();
-      if (audio) make('audio.suspend', () => { audio.suspend(false); return true; });
+      if (audio && !morgAcik) make('audio.suspend', () => { audio.suspend(false); return true; });
     }
   });
   // PRF-03: otomatik kademe değişimi oyun sırasında uygulanmaz (her materyal yeniden derlenir); sekme gizlenince ya da
@@ -1082,6 +1091,13 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     pnl.v2.title({
       onPlay: () => oyna(false),
       onFriends: () => oyna(true),
+      // 2026-11-28: ana menüde "Yeni oyunumuzu deneyin!" → Morgdan Kaçış kendi canvas'ında açılır; çıkınca menüye dönülür
+      onMorg: (bitti: () => void) => {
+        if (morgAcik) return; morgAcik = true; pause('morg');
+        if (audio) make('audio.suspend', () => { audio.suspend(true); return true; });
+        const kapat = () => { morgAcik = false; resume('morg'); if (audio && !document.hidden) make('audio.suspend', () => { audio.suspend(false); return true; }); bitti(); };
+        import('../morg/morg-oyun').then(m => m.morgBaslat({ onExit: kapat })).catch(e => { log.error('morg', e); kapat(); });
+      },
       // ana menü ayarları: canlı değerler ses kanallarından (komut bir sonraki adımda işlenir)
       ayar: { acts: pnl.ayarEylem(), get: () => { const st = sim.state.settings; return { music: audio ? audio.buses.music.volume : st.music, sfx: audio ? audio.buses.sfx.volume : st.sfx, muted: audio ? audio.buses.music.muted : st.muted, quality: st.quality }; } },
     });
@@ -1143,7 +1159,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   if (import.meta.env.MODE !== 'production') reg('ajanlar', () => (agentsOf()?.registry.list ?? []).filter(a => !a.dead).map(a => ({ id: a.id, kind: a.kind as string, key: a.key, role: (a.rig as { role?: string }).role ?? null, x: +a.x.toFixed(2), z: +a.z.toFixed(2), y: +(a.y || 0).toFixed(2), act: a.act, state: a.state as string }))
     .concat(((sim.rules.rt as unknown as { customers?: { id: number; kind: string; x: number; z: number; state: string; n: number }[] }).customers ?? []).map(c => ({ id: -c.id, kind: 'musteri', key: 'c' + c.id, role: c.kind + (c.n > 1 ? ':' + c.n : ''), x: +c.x.toFixed(2), z: +c.z.toFixed(2), y: 0, act: c.state, state: c.state }))));   // dev: sahne ağacını sayfadan kurcalamak için (orman teşhisi)
   // 2026-11-23 yürüyüş turu (tests/browser/yuruyus-turu.mjs): oyuncunun durduğu yer (ya da verilen x, z, kat) yürünebilir mi, bir solid'in içinde mi (hayalet geçiş)
-  if (import.meta.env.MODE !== 'production') reg('carpisma', (rad = -0.05, x?: number, z?: number, kat?: number) => { const w = sim.walk, p = x === undefined ? w.pos : { x, z: z ?? 0 }, k = kat ?? w.kat, n = ((avmIcinde(p, 4) || hstIcinde(p, 4)) && sim.katNav(k, p)) || sim.nav; return { x: +p.x.toFixed(3), z: +p.z.toFixed(3), kat: k, y: +w.y.toFixed(2), binik: w.binik, yol: n.walkable(p), solid: n.solidAt?.(p, rad) ?? null }; });
+  if (import.meta.env.MODE !== 'production') reg('carpisma', (rad = -0.05, x?: number, z?: number, kat?: number) => { const w = sim.walk, p = x === undefined ? w.pos : { x, z: z ?? 0 }, k = kat ?? w.kat, n = ((avmIcinde(p, 4) || hstIcinde(p, 4)) && sim.katNav(k, p)) || sim.bolgeNav(p) || sim.nav; return { x: +p.x.toFixed(3), z: +p.z.toFixed(3), kat: k, y: +w.y.toFixed(2), binik: w.binik, yol: n.walkable(p), solid: n.solidAt?.(p, rad) ?? null }; });
   if (import.meta.env.MODE !== 'production') reg('heroPoz',() => { const o = H.object.position; return { x: +o.x.toFixed(3), y: +o.y.toFixed(3), z: +o.z.toFixed(3), camY: +cam.camera.position.y.toFixed(3), near: cam.camera.near }; });
   if (import.meta.env.MODE !== 'production') reg('yagmur', (k?: number, islak?: number) => { if (k !== undefined) HAVA_ZORLA.yagmur = k === null ? -1 : +k; if (islak !== undefined) HAVA_ZORLA.islak = +islak; return HAVA_ZORLA.yagmur; });   // GRS-05 ıslak zemin çekimi
   // GRS-06 A/B in one frame: ground AO uniform and contact planes on/off (measurement builds only)
@@ -1169,7 +1185,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     const r = sim.rules.rt as unknown as { customers: { kind?: string; state: string; seat?: { table: number } | null; x: number; z: number }[]; queue: unknown[]; agents?: { workers?: { rows(): { role: string; state: string; x: number; z: number }[] } } };
     const rv = restoranApi(sim.rules)?.view();
     return { stage: sim.state.stage, cust: r.customers.map(c => ({ k: c.kind || 'q', s: c.state, t: c.seat ? c.seat.table : -1, x: +c.x.toFixed(2), z: +c.z.toFixed(2) })), q: r.queue.length,
-      w: (r.agents?.workers?.rows() || []).map(w => ({ r: w.role, s: w.state, x: +w.x.toFixed(2), z: +w.z.toFixed(2) })), passYer: rv?.passYer ?? null, bilet: rv?.tickets.length ?? 0 };
+      w: (r.agents?.workers?.rows() || []).map(w => ({ r: w.role, s: w.state, x: +w.x.toFixed(2), z: +w.z.toFixed(2) })), passYer: rv?.passYer ?? null, bilet: rv?.tickets.length ?? 0, masalar: rv?.masalar ?? [] };
   });
   // 2026-11-23 dükkân tepsisi denetimi (tests/browser/meydan-kafe.mjs): tepsi, siparişler, uygun servis noktaları (yalnız okuma)
   if (hileAcik) reg('dukkan', (room: string) => {
@@ -1290,7 +1306,6 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   if (hileAcik) for (const what of ['ferry', 'gull', 'kapkac', 'regular', 'vip', 'endDay', 'money', 'gold', 'stars', 'sleep', 'offline', 'unlock']) {
     reg(`force.${what}`, (value?: number | string) => cmd('force', { what, value }));
   }
-  reg('ferryBoard', () => ({ board: ferryLook?.board() ?? null, info: rt().ferryInfo ?? null, view: ferryLook?.debug() ?? null }));
 
   // admin: the scene editor on demand (drag props with the mouse/finger, "Kaydet" keeps the layout on this device)
   if (prefab && zones && dress) {

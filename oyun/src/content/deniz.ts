@@ -27,24 +27,24 @@ export const DECK_RUN = {
   minStage: 1,
   lines: {
     start: ['Tepsiyle güverteye! 10 saniye, koş Sabri koş!', 'Güverte satışı başladı, yolcular el kaldırıyor!', 'Kaptan göz kırptı: hadi çabuk!'],
-    sale: ['Güvertede kapış kapış!', 'Bir çay da arka sıraya!', 'Yolcu: "Vapurda simit, hayatın anlamı!"', 'Teyze: "Oğlum üstü kalsın!"'],
+    sale: ['Güvertede kapış kapış!', 'Bir çay da arka sıraya!', 'Yolcu: "İskelede simit, hayatın anlamı!"', 'Teyze: "Oğlum üstü kalsın!"'],
     end: 'Düdük çaldı! Güverte koşusu bitti: {n} satış, {money}.',
     empty: 'Tepsi bitti! Güverteden alkış geldi.',
-    hint: 'Vapur yanaştı! Elin doluyken iskele kapısına koş, güvertede sat.',
+    hint: 'Kalabalık geldi! Elin doluyken iskele kapısına koş, güvertede sat.',
   },
 };
 export const VAPUR_BUFE = {
-  name: 'Vapur Büfesi',
+  name: 'Güverte Büfesi',
   cost: 250000,
   minStage: 3,
   /** passive deck sales per docking, × stage */
   perDock: 180,
-  blurb: 'Vapurun salonuna küçük bir tezgah. Her seferde güvertede kendi kendine satar, koşu süresi uzar, vapura binip gezebilirsin.',
+  blurb: 'İskele güvertesine küçük bir tezgah. Kendi kendine satar, koşu süresi uzar.',
   decks: [
     { id: 'alt', name: 'Alt salon', text: 'Ahşap sıralar, cam kenarında uyuklayan amcalar. Çaycı tepsisi tıngırdıyor.' },
     { id: 'ust', name: 'Üst güverte', text: 'Martılar simit peşinde, rüzgar saçları dağıtıyor. Herkes selfie çekiyor.' },
     { id: 'kaptan', name: 'Kaptan köşkü', text: 'Kaptan Nazmi dümende, demli çayı hep sağ elinde. "Lodos mu? Lodos bizim kanka."' },
-    { id: 'bufe', name: 'Vapur Büfesi', text: 'Senin tezgahın! Tost makinesi vapurla birlikte hafif hafif sallanıyor.' },
+    { id: 'bufe', name: 'Güverte Büfesi', text: 'Senin tezgahın! Tost makinesi dalgayla birlikte hafif hafif sallanıyor.' },
   ],
   passengers: [
     { id: 'p1', name: 'Gazete okuyan amca', want: 'Bir çay, açık olsun.', tip: 1 },
@@ -87,7 +87,7 @@ export const DUEL = {
   start: ['Bakışma düellosu başladı! Pamuk ve martı Cemil göz göze...', 'Sessizlik... Kedi ile martı bakışıyor. İskele nefesini tuttu.'],
   win: { kedi: 'Martı ilk göz kırptı! Pamuk kazandı, simit kırıntısı onun.', marti: 'Pamuk esnedi! Martı Cemil kazandı, gururla bağırdı.' },
 };
-export const SHIP_CAT = { chance: 0.3, line: ['Vapur kedisi Kaptan iskeleye atladı, bir tur atacak.', 'Kaptan (kedi) vapurdan indi, tezgahı teftiş ediyor.'], back: 'Vapur kedisi son anda vapura geri atladı. Profesyonel!' };
+export const SHIP_CAT = { chance: 0.3, line: ['Kedi Kaptan iskeleye atladı, bir tur atacak.', 'Kaptan (kedi) tekneden indi, tezgahı teftiş ediyor.'], back: 'Kedi Kaptan son anda tekneye geri atladı. Profesyonel!' };
 
 /* ───────── iskele-3: büfenin dışı ───────── */
 export interface ExteriorDef { id: string; name: string; icon: string; cost: number; minStage: number; bonus: number; text: string; line: string }
@@ -97,7 +97,7 @@ export const EXTERIOR: ExteriorDef[] = [
   { id: 'teras', name: 'Çatıya küçük teras', icon: '🌇', cost: 140000, minStage: 3, bonus: 0.05, text: 'Çatıda iki sandalye, bir şemsiye ve ışık zinciri. Gün batımı manzarası bedava.', line: 'Çatı terası açıldı! Martılar komşu oldu.' },
 ];
 /** Vapur Penceresi (iskele-3 option 2) is the existing 'pencere' pad; shown in the list only. */
-export const WINDOW_NOTE = { name: 'Vapur Penceresi (iskele tarafı)', icon: '🪟', text: 'İskele tarafına bakan pencere. Vapur yanaşınca yolculara hızlı satış. Pencere pedinden açılır.' };
+export const WINDOW_NOTE = { name: 'Pencere (iskele tarafı)', icon: '🪟', text: 'İskele tarafına bakan pencere. Kalabalık gelince yolculara hızlı satış. Pencere pedinden açılır.' };
 
 /* ───────── iskele-5: masa ve oturak çeşitleri ───────── */
 export type SeatKind = 'standart' | 'hasir' | 'ortak' | 'tavla';
@@ -114,7 +114,7 @@ export const TEZGAH = { name: 'Korkuluğa asılı ayakta tezgah', icon: '🍹', 
 export interface PierExpDef { id: string; name: string; icon: string; cost: number; minStage: number; bonus: number; text: string; perk: string; line: string }
 export const PIER_EXP: PierExpDef[] = [
   { id: 'yan', name: 'Yan iskele', icon: '🌉', cost: 60000, minStage: 2, bonus: 0.05, text: 'Batı tarafına ahşap bir yan iskele. Sandallar ve yatlar bağlanır.', perk: 'Gösterişli yatlar ve VIP müşteriler gelir, balıkçı sandalı daha sık uğrar.', line: 'Yan iskele açıldı! İlk bağlanan bir kayık oldu, adı "Umut Etmek".' },
-  { id: 'mendirek', name: 'Uzun mendirek', icon: '🗼', cost: 450000, minStage: 3, bonus: 0.06, text: 'Açıkta taş bir mendirek ve ucunda kırmızı fener. Dalgayı keser, karabatakları toplar.', perk: 'Lüfer ve istavrit sürüleri daha sık gelir, karabataklar çoğalır.', line: 'Mendirek bitti! Fener ilk kez yandı, vapurlar selam verdi.' },
+  { id: 'mendirek', name: 'Uzun mendirek', icon: '🗼', cost: 450000, minStage: 3, bonus: 0.06, text: 'Açıkta taş bir mendirek ve ucunda kırmızı fener. Dalgayı keser, karabatakları toplar.', perk: 'Lüfer ve istavrit sürüleri daha sık gelir, karabataklar çoğalır.', line: 'Mendirek bitti! Fener ilk kez yandı, tekneler selam verdi.' },
   { id: 'platform', name: 'Yüzer platform', icon: '🛟', cost: 2200000, minStage: 4, bonus: 0.08, text: 'Fenerli yüzer bir platform. Gece ışıl ışıl, gündüz güneşlenen martılarla dolu.', perk: 'Gece deniz canlıları daha sık görünür, yat VIP\'leri daha cömert.', line: 'Yüzer platform suya indi! Fenerler yandı, Martıköy bayram etti.' },
 ];
 

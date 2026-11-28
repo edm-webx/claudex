@@ -25,12 +25,14 @@ import { createAmbient } from './sim/ambient';
 import { createWalk, type WalkFull } from './sim/walk';
 import { holEngel, AVM } from '../content/avm-kat';
 import { hstEngel, hstIcinde, HST } from '../content/hastane-kat';
+import { okulEngel, okulIcinde } from '../content/okul-ic';
 import { icBina, icColliders } from '../content/ic-mekan';
 import { defaultState, AGENTS, AGENT_CAP, AGENT_SCHEMA, type GameState } from './sim/schema';
 import type { SimEvents, EventName } from './events';
 import { createRules, type RulesFull } from './sim/rules';
 import { installAgents } from './sim/agents';
 import { oyunTakvim } from './sim/hava';
+const PROTO_ID = /(^|\|)(__proto__|constructor|prototype)(\||$)/;
 
 export const SIM_HZ = 30;
 
@@ -58,6 +60,8 @@ export interface SimFull extends Sim {
   readonly nav: Nav;
   /** Martı AVM katının kendi çarpışma nav'ı (AVM dışında / geçersiz katta null) */
   readonly katNav: (kat: number, p?: Vec2) => Nav | null;
+  /** okul diyarının nav'ı (diyar dışında null) */
+  readonly bolgeNav: (p: Vec2) => Nav | null;
   readonly ctx: SimCtx;
   /** M1 rules (A): state, runtime, commands, v2State. */
   readonly rules: RulesFull;
@@ -162,7 +166,14 @@ export function createSim(o: SimOpts, extra: SimExtra = {}): SimFull {
     }
     return katNavs[k];
   };
-  const walk = createWalk({ nav, start: { ...start, kat: o.save && !extra.startPos ? state.player.kat : 0 }, interactions, actor: player, katNav });
+  // okul diyarı (content/okul-ic.ts): ızgarasız, yalnız dikdörtgen engelli kendi nav'ı (odaların duvarları + eşyaları, koridor, çit, dekor)
+  let okulNavR: Nav | null | undefined;
+  const okulNav = (): Nav | null => {
+    if (okulNavR === undefined) { try { const n = createNav({ log: extra.log }); n.setSolids('okul', [...okulEngel(), ...icBina('okulIc').flatMap(m => icColliders(m))]); okulNavR = n; } catch { okulNavR = null; } }
+    return okulNavR;
+  };
+  const bolgeNav = (p: Vec2): Nav | null => (okulIcinde(p, 2) ? okulNav() : null);
+  const walk = createWalk({ nav, start: { ...start, kat: o.save && !extra.startPos ? state.player.kat : 0 }, interactions, actor: player, katNav, bolgeNav });
   scheduler.add(walk);
   state.player.x = start.x; state.player.z = start.z;
 
@@ -212,7 +223,7 @@ export function createSim(o: SimOpts, extra: SimExtra = {}): SimFull {
     get state() { return state; },
     world, bus, clock,
     get tick() { return tick; },
-    walk, scheduler, rng, agents, player, interactions, nav, katNav, ctx, rules,
+    walk, scheduler, rng, agents, player, interactions, nav, katNav, bolgeNav, ctx, rules,
     get timeFrozen() { return timeFrozen; },
     tickOnce,
     step(sec) {
@@ -222,7 +233,11 @@ export function createSim(o: SimOpts, extra: SimExtra = {}): SimFull {
     },
     input(move) { pendingMove.x = move.x; pendingMove.z = move.z; },
     command(c: SimCommand) {
-      if (rules.handle(c)) return;
+      // QA 2026-11-27 (fuzz): '__proto__' / 'constructor' gibi kimlikler tablo aramalarında prototipe düşüp istisna ya da NaN para üretiyordu.
+      // Komutlar asla fırlatmaz: böyle kimlikli komut reddedilir; komut sonrası para sayı değilse eski değere döner.
+      for (const v of Object.values(c as Record<string, unknown>)) if (typeof v === 'string' && PROTO_ID.test(v)) { extra.log?.warn('refused command id', c.kind); return; }
+      const para0 = state.money;
+      try { if (rules.handle(c)) return; } finally { if (!Number.isFinite(state.money)) { extra.log?.warn('money NaN after', c.kind); state.money = Number.isFinite(para0) ? para0 : 0; } }
       switch (c.kind) {
         case 'setTime': {
           const h = Math.min(DAY_END_H - 0.02, Math.max(DAY_START_H, Number(c.hour)));   // GRS-02: hooks can show the 24..27 deep night (27 itself would end the day)

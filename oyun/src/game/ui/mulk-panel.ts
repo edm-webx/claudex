@@ -7,6 +7,7 @@ import { SIRA } from '../../content/acilis';
 import { mulkApi } from '../sim/mulk';
 import { ESYALAR, ESYA_BY_ID, SANDIKLAR, DUKKAN_TIPLERI, DUKKAN_BY_ID, dukkanMusteri, BANKA } from '../../content/esya';
 import { yemekIkonImg } from '../view/yemek-ikon';
+import { kabukKur, telefonaDon, EV_BTN, GERI_BTN } from './telefon-kabuk';
 
 interface Deps { root: HTMLElement; rules: () => { rt: unknown } | null; command(c: { kind: string; [k: string]: unknown }): void; sfx?(id: string): void }
 const mmss = (sec: number) => { const t = Math.max(0, Math.ceil(sec)); return Math.floor(t / 60) + ':' + String(t % 60).padStart(2, '0'); };
@@ -47,7 +48,7 @@ const tl = (n: number) => Math.round(n || 0).toLocaleString('tr') + ' ₺';
 type M = Record<string, any>;
 
 export function createMulkPanel(d: Deps): MulkPanel {
-  const st = document.createElement('style'); st.textContent = CSS; d.root.appendChild(st);
+  const st = document.createElement('style'); st.textContent = CSS; d.root.appendChild(st); kabukKur(d.root);
   const bg = document.createElement('div'); bg.className = 'mp-bg'; d.root.appendChild(bg);
   const hint = document.createElement('button'); hint.className = 'mp-hint'; d.root.appendChild(hint);
   const kd = createKoordinator(d);
@@ -188,8 +189,8 @@ ${a.isci < a.isciMax ? `<div class="mp-sec" style="margin:8px 0 4px">İlan panos
   function paint(m: M) {
     const body = tab === 'envanter' ? envanter(m) : tab === 'holding' ? holding(m) : tab === 'banka' ? banka(m) : tab === 'gunluk' ? gunluk(m) : tab === 'mulk' ? mulk(m) : tab === 'defter' ? defter(m) : tab === 'salon' ? salon(m) : tab === 'okul' ? okul(m) : avm(m);
     const sc = (bg.querySelector('.mp-body') as HTMLElement | null)?.scrollTop || 0, tsc = (bg.querySelector('.mp-tabs') as HTMLElement | null)?.scrollLeft || 0;
-    bg.innerHTML = `<div class="mp-card"><div class="mp-top"><h2>${tab === 'banka' && m.banka?.atm ? '🏧 ATM' : TABS.find(x => x[0] === tab)![1]}</h2><span class="mp-chip">${tl(m.money)}</span><span class="mp-chip">🥨 ${m.gold}</span><button class="mp-x" data-a="close">✕</button></div>
-<div class="mp-body">${body}</div></div>`;   // 2026-11-26 owner: no tab strip; each place opens only its own screen (Çanta, gişe/ATM, dükkân kapısı, ofis...)
+    bg.innerHTML = `<div class="mp-card" role="dialog"><div class="mp-top">${GERI_BTN}<h2>${tab === 'banka' && m.banka?.atm ? '🏧 ATM' : TABS.find(x => x[0] === tab)![1]}</h2><span class="mp-chip">${tl(m.money)}</span><span class="mp-chip">🥨 ${m.gold}</span><button class="mp-x" data-a="close">✕</button></div>
+<div class="mp-body">${body}</div>${EV_BTN}</div>`;   // 2026-11-26 owner: no tab strip; each place opens only its own screen (Çanta, gişe/ATM, dükkân kapısı, ofis...)
     (bg.querySelector('.mp-body') as HTMLElement).scrollTop = sc;
     // etkin sekme şeritte görünür kalsın, taşma ipucu (solma) çıksın
     void tsc;
@@ -197,10 +198,11 @@ ${a.isci < a.isciMax ? `<div class="mp-sec" style="margin:8px 0 4px">İlan panos
 
   bg.addEventListener('pointerdown', e => e.stopPropagation());
   bg.addEventListener('wheel', e => e.stopPropagation(), { passive: true });
-  for (const ev of ['keydown', 'keyup'] as const) bg.addEventListener(ev, e => e.stopPropagation());
+  for (const ev of ['keydown', 'keyup'] as const) bg.addEventListener(ev, e => { e.stopPropagation(); if (ev === 'keydown' && (e as KeyboardEvent).key === 'Escape' && (e.target as HTMLElement)?.tagName !== 'INPUT') api.close(); });
   bg.addEventListener('click', e => {
     if (e.target === bg) { api.close(); return; }
     const el = (e.target as HTMLElement).closest('button') as HTMLButtonElement | null; if (!el || el.disabled) return;
+    if (el.dataset.tfEv) { api.close(); telefonaDon(d.root); return; }   // telefon kabuğu: ana ekrana dön
     if (el.dataset.tab) { tab = el.dataset.tab as Tab; key = ''; t = 0; return; }
     const a = el.dataset.a, id = el.dataset.id, n = Number(el.dataset.n) || 0;
     if (a === 'close') { api.close(); return; }
@@ -220,7 +222,7 @@ ${a.isci < a.isciMax ? `<div class="mp-sec" style="margin:8px 0 4px">İlan panos
   });
 
   const api: MulkPanel = {
-    open(t0) { if (t0 === 'stadyum' || t0 === 'lig') { kd.open(t0 === 'lig' ? 'lig' : 'mac'); return; } if (t0) tab = t0; openNow = true; bg.classList.add('on'); key = ''; },
+    open(t0) { if (t0 === 'stadyum' || t0 === 'lig') { kd.open(t0 === 'lig' ? 'lig' : 'mac'); return; } if (t0) tab = t0; openNow = true; bg.classList.add('on'); key = ''; bg.tabIndex = -1; try { bg.focus({ preventScroll: true }); } catch { /* */ } },
     close() { openNow = false; bg.classList.remove('on'); kd.close(); },
     update(dt) {
       kd.update(dt);

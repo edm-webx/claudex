@@ -63,6 +63,7 @@ import { installHava } from './hava';
 import { installKoleksiyon } from './koleksiyon';
 import { installAvmGecis } from './avm-gecis';
 import { installHastaneGecis } from './hastane-gecis';
+import { installOkulGecis } from './okul-gecis';
 import { installDisari } from './disari';
 import { installDeniz } from './deniz';
 import { installHikaye } from './hikaye';
@@ -201,6 +202,7 @@ export function createRules(d: RulesDeps): RulesFull {
   const disariM = installDisari(K, (x, z) => d.walk.teleport(x, z));
   const avmGecis = installAvmGecis(K, (x, z, kat) => d.walk.teleport(x, z, kat));
   const hstGecis = installHastaneGecis(K, (x, z, kat) => d.walk.teleport(x, z, kat));   // Devlet Hastanesi: kapıdan ayrı haritaya, asansörler (hastane-gecis.ts)   // Martı AVM: kapıdan ayrı haritaya (avm-gecis.ts) // Martıköy haritası, mahalleler, dolmuş, buluntular (disari.ts)
+  const okulGecis = installOkulGecis(K, (x, z, kat) => d.walk.teleport(x, z, kat));   // okul: kapıdan kendi diyarına (okul-gecis.ts)   // Martı AVM: kapıdan ayrı haritaya (avm-gecis.ts) // Martıköy haritası, mahalleler, dolmuş, buluntular (disari.ts)
   const denizM = installDeniz(K, cu as never); // deniz canlıları, tekneler, güverte koşusu, iskele büyümesi (deniz.ts)
   const hikayeM = installHikaye(K); // hikaye bölümleri, rakipler, karakterli öğreticiler (hikaye.ts)
   const calisanM = installCalisan(K); // Kurs Merkezi, bekleyenler (calisan.ts)
@@ -279,7 +281,7 @@ export function createRules(d: RulesDeps): RulesFull {
       haliSahaM.update();
       slow.update(dt);
       padsM.update(dt);
-      avmGecis.update(dt);
+      avmGecis.update(dt); okulGecis.update(dt);
       hstGecis.update(dt);
       if ((tT -= dt) <= 0) { tT = 0.2; tut.update(); }
       if ((t1 -= dt) <= 0) { t1 = 1; ord.notify(); }
@@ -388,7 +390,7 @@ export function createRules(d: RulesDeps): RulesFull {
       case 'setSetting': applySetting(S.settings, c.key as never, c.value); K.dirty(); return true;
       case 'force': {
         const what = String(c.what), v = c.value;
-        if (what === 'ferry') fe.force(v);
+        if (what === 'ferry') fe.force();
         else if (what === 'endDay') S.dayT = P.GAME_DAY_S - 0.05;
         else if (what === 'day') S.day = Math.max(S.day, Number(v) || 1);
         else if (what === 'money') K.cashIn!(Number(v) || 0);   // yönetici: gelir değil, cep girişi

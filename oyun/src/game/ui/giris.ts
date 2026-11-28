@@ -55,6 +55,7 @@ const CSS = `
 .gr-kim b{display:block;font:800 14px/1.1 'SB Govde',system-ui,sans-serif;letter-spacing:.32em;color:#ffe2ac}.gr-kim small{display:block;font:500 12.5px/1.3 'SB Govde',system-ui,sans-serif;color:rgba(255,230,200,.62);margin-top:2px;letter-spacing:.03em}
 .gr-ic{font-size:26px;line-height:1;margin-right:4px;vertical-align:-2px}
 @media (max-height:760px){.gr-kim{margin-bottom:12px}.gr-card .gr-h{font-size:27px}.gr-sub{margin-bottom:12px}.gr-l{margin:11px 0 6px}.gr-in{min-height:46px}.gr-go{min-height:50px;margin-top:16px}.gr-guest{margin-top:10px;padding-top:10px}.gr-note{margin-top:8px}}
+@media (max-height:480px) and (min-aspect-ratio:1/1){.gr-kim{display:none}.gr-card .gr-h{font-size:22px}.gr-sub{display:none}.gr-card .gr-h{margin-bottom:8px}.gr-l{margin:7px 0 3px}.gr-in{min-height:38px}.gr-go{min-height:42px;margin-top:8px}.gr-guest{margin-top:6px;padding-top:6px}.gr-guest small{display:none}.gr-tabs{margin-bottom:2px}.gr-t{min-height:34px;line-height:34px}.gr-err{margin-top:6px;min-height:0}.gr-adm{margin-top:8px}.gr-note{margin-top:6px}}
 `;
 
 export function createGiris(deps: { root: HTMLElement; afterLogin: (isNew: boolean) => Promise<void>; sfx?: (id: string) => void }): GirisView {
@@ -117,7 +118,7 @@ export function createGiris(deps: { root: HTMLElement; afterLogin: (isNew: boole
       // Martı Kimlik: oyunun hesap sistemi. E-posta yok, sıfırlama bağlantısı da yok: şifreyi unutan admine yazar.
       const unutKutu = () => `<div class="gr-unut"><b>🔐 Şifreni mi unuttun?</b><br>Martı Kimlik e-posta istemediği için sıfırlama bağlantısı gönderemiyoruz. Oyunu oynadığın sayfadaki iletişim yolundan <b>admine yaz</b>, kullanıcı adını söyle. Hesabın doğrulanınca yeni şifre verilir; karakterlerin ve bankan bu sırada güvende.</div>`;
       const paint = (err = '') => {
-        host.innerHTML = `<div class="gr-card mn-panel"><div class="gr-kim"><span class="gr-seal">${MARTI_SVG}</span><div><b>MARTI KİMLİK</b><small>Martıköy'ün tek hesabı</small></div></div><div class="gr-h">Martıköy'e hoş geldin</div><div class="gr-sub">Tek kimlik, her cihazda aynı dükkan ve aynı esnaf.</div>
+        host.innerHTML = `<div class="gr-card gr-login mn-panel"><div class="gr-kim"><span class="gr-seal">${MARTI_SVG}</span><div><b>MARTI KİMLİK</b><small>Martıköy'ün tek hesabı</small></div></div><div class="gr-h">Martıköy'e hoş geldin</div><div class="gr-sub">Tek kimlik, her cihazda aynı dükkan ve aynı esnaf.</div>
 <div class="gr-tabs"><button class="gr-t${mode === 'giris' ? ' on' : ''}" data-m="giris">Giriş yap</button><button class="gr-t${mode === 'kayit' ? ' on' : ''}" data-m="kayit">Kayıt ol</button></div>
 <div class="gr-l">Kullanıcı adı</div><input class="gr-in" name="ad" maxlength="16" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="ör. simitci_ali">${mode === 'kayit' ? '<div class="gr-hint">3-16 karakter: küçük harf, rakam ya da _. Sonradan değişmez, herkes seni bu adla görür.</div>' : ''}
 <div class="gr-l">Şifre</div><input class="gr-in" name="sifre" type="password" maxlength="64" autocomplete="${mode === 'kayit' ? 'new-password' : 'current-password'}" placeholder="en az 6 karakter">

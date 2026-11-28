@@ -3,6 +3,8 @@ import type { ProductId } from '../game/sim/schema';
 import type { ProductDef, SetDef, StationDef } from './types';
 import { TIER_PRICE_X, TIER_COST_F } from './ekonomi2';
 
+/** tezgâhta bir üründen en çok kaç tane durur (oyuncu, işçi, iade hepsi aynı sınır; 2026-11-27 QA-11: restoran rafaKoy 8 diyordu) */
+export const TEZGAH_SINIR = 12;
 export const PRODUCT_IDS: readonly ProductId[] = ['doner', 'cay', 'ayran', 'simit', 'tost', 'gazoz'];
 export const PRODUCTS: Record<ProductId, ProductDef> = {
   doner: { id: 'doner', name: 'Döner dürüm', short: 'Döner', base: 160, prep: 1.6, ritual: 'cut', station: 'doner', icon: 'doner', h: 0.2,
@@ -32,7 +34,7 @@ export const PRODUCTS: Record<ProductId, ProductDef> = {
   tost: { id: 'tost', name: 'Kaşarlı-sucuklu tost', short: 'Tost', base: 110, prep: 2.0, ritual: 'press', station: 'tost', icon: 'tost', h: 0.08,
     tiers: [
       { name: 'Kaşarlı-sucuklu tost', desc: 'Tost ekmeğinde kaşar ve sucuk' },
-      { name: 'Vapur tostu', desc: 'İnce, tereyağında çıtır, bol kaşar' },
+      { name: 'İskele tostu', desc: 'İnce, tereyağında çıtır, bol kaşar' },
       { name: 'Dolu tost', desc: 'Kaşar, sucuk, salam, turşu, domates, sos' },
       { name: 'Lav Tost', desc: 'Kaşarı bir metre uzar, Sabri ip gibi sarar' }] },
   gazoz: { id: 'gazoz', name: 'Gazoz', short: 'Gazoz', base: 40, prep: 0.6, ritual: 'fizz', station: 'gazoz', icon: 'gazoz', h: 0.22,
@@ -53,10 +55,10 @@ export const tierCost = (product: ProductId, toTier: number): number => { const 
 export const SETS: SetDef[] = [
   { id: 'doner_ayran', items: ['doner', 'ayran'], x: 1.1, name: 'Döner + ayran' },
   { id: 'cay_simit', items: ['cay', 'simit'], x: 1.08, name: 'Simit + çay ikilisi' },
-  { id: 'tost_cay', items: ['tost', 'cay'], x: 1.08, name: 'Vapur kahvaltısı' },
+  { id: 'tost_cay', items: ['tost', 'cay'], x: 1.08, name: 'İskele kahvaltısı' },
   { id: 'tost_gazoz', items: ['tost', 'gazoz'], x: 1.08, name: 'Gece tostu' },
   // survey tarif-2 combos: Vapur Menüsü (hızlı paket), Öğrenci Menüsü (ucuz ve doyurucu)
-  { id: 'vapur_menu', items: ['doner', 'gazoz'], x: 1.085, name: 'Vapur Menüsü' },
+  { id: 'vapur_menu', items: ['doner', 'gazoz'], x: 1.085, name: 'İskele Menüsü' },
   { id: 'ogrenci_menu', items: ['simit', 'ayran'], x: 1.08, name: 'Öğrenci Menüsü' }
 ];
 export const STATIONS: Record<ProductId, StationDef & { grab: boolean }> = {

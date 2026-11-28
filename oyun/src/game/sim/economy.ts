@@ -94,7 +94,7 @@ export function installEconomy(K: Kernel, addMoneyTo: (pile: MoneyStack[], v: nu
     if (hit) { K.stat('sets'); S.today!.sets++; K.logEv('set', { set: hit.id }); }
     if (rt.streak >= 2 && !S.tut.firstStreak) { S.tut.firstStreak = 1; K.logEv('firstStreak'); K.toast('Seri! Art arda satış, fazladan para.', 'good'); }
     if (rt.streak >= 4) K.statMax('streak5', 1);
-    if (siftah) { K.toast('Siftah! Bereketli olsun. ×2', 'good'); K.logEv('siftah', { value }); }
+    if (siftah) { K.toast('Siftah! Bereketli olsun. ×' + String(P.SIFTAH_X).replace('.', ','), 'good'); K.logEv('siftah', { value }); }
     if (c && c.calm) K.stat('chatCalm');
     if (c && c.typeId === 'emekli' && (c.order.cay || 0) >= 3) K.statMax('emekli3', 1);
     K.addXP(1);

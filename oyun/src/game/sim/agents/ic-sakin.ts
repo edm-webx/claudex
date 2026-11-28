@@ -1,5 +1,5 @@
 /**
- * DKN-18 iç mekân sakinleri: banka, okul, acil ve morgda kıpırdamayan insan heykelleri yerine gerçek aktörler.
+ * DKN-18 iç mekân sakinleri: banka, acil ve morgda kıpırdamayan insan heykelleri yerine gerçek aktörler.
  * Oyuncu odaya yaklaşınca sakinler doğar, uzaklaşınca kaldırılır (hepsi birden en çok CAP aktör). Koordinatlar oda kapı
  * çerçevesindedir (content/ic-mekan.ts icWorld: u kapı duvarı boyunca, v içeri doğru, kapı v=+D/2).
  * Ekonomiyle ilişkisi yok: para, kasa, sayaç yazmaz. Okul ders saatleri (DKN-08): 09:00 zil, her saat 40 dk ders + 10 dk teneffüs,
@@ -27,31 +27,7 @@ const bir = (steps: Step[]): Ne => (s) => steps[s.i++] ?? null;
 const worker = (role: string, seed: number, apron?: string) => ({ kind: 'worker', role, seed, look: { lookSeed: seed, ...(apron ? { apronText: apron } : {}) } });
 const reg = (lookType: string, seed: number) => ({ kind: 'regular', look: { lookType, lookSeed: seed }, seed });
 
-/* ---------- okul (W=18.3, D=7.5): tahta u -6.7..-2.5, sıralar u=-7.6+1.55c, v=-1.3+1.4r ---------- */
-const OKUL_ARA: P[] = [[-2.0, -0.6], [-2.0, 0.9], [-1.2, 2.2], [-1.0, -1.8], [-3.2, -2.3], [-6.4, -2.3], [-7.6, -2.3], [-1.9, 2.8]];
-function ogrenci(k: number): Tanim {
-  const r = Math.floor(k / 4), c = k % 4, u = -7.6 + c * 1.55 + ((r + c) % 2 ? 0.275 : -0.275), v = -1.3 + r * 1.4 + 0.45, lane = v + 0.45;
-  const koltuk: Step = { p: [u, v], act: 'sit', sn: [10, 25], f: N, via: [[-1.9, lane], [u, lane]] };
-  const ne: Ne = (s, faz) => {
-    const i = s.i++;
-    if (faz === 'teneffus') return i % 2 ? { p: OKUL_ARA, act: i % 4 === 1 ? 'talk' : 'idle', sn: [4, 9], via: [[-1.9, lane]] } : { ...koltuk, sn: [1, 1] };
-    return i % 4 === 3 ? { ...koltuk, act: 'wave', sn: [3, 3] } : koltuk;
-  };
-  return { id: 'ogrenci' + k, rig: reg('okul', 300 + k * 17), ne };
-}
-const OKUL: Oda = {
-  id: 'okul', giris: [[0, 2.9], [-1.9, 2.9]],
-  faz: (h) => (h < 9 || h >= 15 || (h >= 12 && h < 13) ? 'kapali' : (h % 1) * 60 < 40 ? 'ders' : 'teneffus'), acik: (f) => f !== 'kapali',
-  kalici: [
-    { id: 'ogretmen', rig: worker('ogretmen', 11), ad: 'Zeynep Öğretmen', ne: (s, faz) => {
-      const i = s.i++;
-      if (faz === 'teneffus') return i % 2 ? w(-3.0, -2.0) : { p: [-4.6, -1.7], act: 'idle', sn: [5, 9], f: S };
-      const ders: Step[] = [{ p: [-6.2, -3.05], act: 'perform', sn: [10, 14], f: S }, w(-2.9, -3.05), { p: [-2.9, -3.05], act: 'perform', sn: [6, 9], f: S }, w(-2.0, -2.2), { p: [-2.0, 0.9], act: 'idle', sn: [5, 8], f: WW }, w(-2.0, -2.2)];
-      return ders[i % 6];
-    } },
-    ...Array.from({ length: 12 }, (_, k) => ogrenci(k)),
-  ],
-};
+// okul: 2026-11-28'den beri kendi diyarında (sim/agents/okul-yasam.ts)
 
 /* ---------- banka (W=10, D=8.4): gişe v=-2.5, ortadaki pencere açık, kasa kapısı u=3.6 ---------- */
 const BANKA: Oda = {
@@ -83,7 +59,7 @@ const MORG: Oda = {
   kalici: [{ id: 'gorevli', rig: worker('gorevli', 31), ad: 'Cemal', ne: dongu([
     { p: [-0.7, 0.2], act: 'idle', sn: [10, 10], f: N }, { p: [-0.7, -0.7], act: 'serve', sn: [6, 6], f: N }, { p: [0, 1.0], act: 'idle', sn: [8, 8], f: [1, 0] }]) }],
 };
-const ODALAR = [BANKA, OKUL, ACIL, MORG];
+const ODALAR = [BANKA, ACIL, MORG];
 
 export interface SakinRow { oda: string; id: string; x: number; z: number; act: string }
 export interface IcSakinSystem extends System { rows(): SakinRow[]; count(): number }

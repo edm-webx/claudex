@@ -39,6 +39,7 @@ export const EVENT_SFX: Record<string, SfxRule> = {
   // ses denetimi 2026-11-26: sesi olmayan olaylar. Gurme sinavi, isletme asamasi, selfie, egitim adimi.
   gurmePass: 'streak', gurmePartial: 'ok', isletmeAsama: 'buy', selfie: 'shutter', tutDone: 'ok',
   // BUF-08 mutfak sesleri: servis zili (pass), tava çarpması, bulaşık şıngırtısı (olayı henüz üretilmez, tetik hazır)
+  okulZil: 'zil',
   passBell: 'passBell', tavaCarpma: 'tavaCarpma', bulasikSes: 'bulasikSes',
 };
 

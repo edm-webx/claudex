@@ -25,6 +25,9 @@ const CSS = `
 .gs-wrap.on{background:rgba(6,8,22,.92)}
 .gs-card{opacity:0;transform:translateY(18px) scale(.97);transition:opacity .8s ease 1.1s,transform .8s ease 1.1s;background:#fdf3e1;color:#3b2a20;border-radius:22px;border:4px solid #3b2a20;box-shadow:0 10px 0 #3b2a20;padding:22px 24px 20px;width:min(400px,calc(100vw - 32px));max-height:calc(100dvh - 24px);overflow-y:auto;text-align:center;font-family:var(--body)}
 .gs-wrap.on .gs-card{opacity:1;transform:none}
+/* 2026-11-27 ışığa duyarlılık: kapanış da açılış gibi yumuşak (kart .4 sn'de solar, karartı 1.3 sn'de açılır); tek karede %92 -> gündüz yok */
+.gs-wrap.off{pointer-events:none;background:rgba(6,8,22,0);transition:background 1.3s ease}
+.gs-wrap.off .gs-card{opacity:0;transform:none;transition:opacity .4s ease 0s}
 .gs-moon{font-size:40px;line-height:1;margin-bottom:4px}
 .gs-h{font:900 26px/1.1 var(--disp);margin:2px 0 2px}
 .gs-sub{font:700 15px/1.3 var(--body);color:#5a4636;margin-bottom:12px}
@@ -38,13 +41,20 @@ const CSS = `
 .gs-h2{font:900 15px/1.2 var(--disp);text-align:left;margin:12px 0 2px;color:#5a4636;text-transform:uppercase;letter-spacing:.04em}
 .gs-not{font:700 14px/1.3 var(--body);color:#5a4636;text-align:left;padding:2px 2px 6px}
 .gs-btn{margin-top:14px;width:100%;min-height:58px;border-radius:16px;border:4px solid #3b2a20;background:#ffd23f;box-shadow:0 5px 0 #3b2a20;font:900 21px/1 var(--disp);color:#3b2a20;cursor:pointer}
+.gs-foot{position:sticky;bottom:-20px;margin:0 -24px -20px;padding:2px 24px 20px;background:linear-gradient(180deg,rgba(253,243,225,0),#fdf3e1 14px)}.gs-foot .gs-btn{margin-top:8px}
+@media (max-height:480px){.gs-card{padding:12px 18px 12px;width:min(460px,calc(100vw - 24px))}.gs-foot{bottom:-12px;margin:0 -18px -12px;padding:2px 18px 12px}.gs-moon{display:none}.gs-h{font-size:21px}.gs-sub{margin-bottom:6px;font-size:13.5px}.gs-ciro{font-size:30px;margin:2px 0}.gs-row{padding:4px 2px;font-size:14.5px}.gs-h2{margin:8px 0 0}.gs-btn{min-height:46px;font-size:18px}}
 .gs-btn:active{transform:translateY(4px);box-shadow:0 1px 0 #3b2a20}
 `;
 
 export function createGunSonu(deps: { root: HTMLElement; rules: () => Rules | null; command: (c: { kind: string }) => unknown; sfx?: (id: string) => void }): GunSonuView {
   const st = document.createElement('style'); st.textContent = CSS; deps.root.appendChild(st);
   let wrap: HTMLDivElement | null = null, shownDay = -1;
-  const close = () => { if (wrap) { wrap.remove(); wrap = null; } shownDay = -1; };
+  const close = (yumusak = false) => {
+    const w = wrap; wrap = null; shownDay = -1;
+    if (!w) return;
+    if (!yumusak) { w.remove(); return; }
+    w.classList.remove('on'); w.classList.add('off'); setTimeout(() => w.remove(), 1400);
+  };
   const ISL_AD: Record<string, string> = {};
   for (const i of Object.values(ISLETME)) for (const y of i.menu) ISL_AD[y.id] = y.ad;
   /** satış anahtarı -> okunur ad: ürün, yemek ya da işletme menüsü ('k:<menü id>') */
@@ -80,7 +90,8 @@ export function createGunSonu(deps: { root: HTMLElement; rules: () => Rules | nu
       // Kasada para yetmediyse kesinti eksik: önce kira, kalanı fatura (gider.ts ile aynı sıra); kalan ertelenir.
       const kiraOd = Math.min(g.kira, g.odenen), faturaOd = g.odenen - kiraOd;
       parts.push('<div class="gs-h2">Kira ve fatura</div>');
-      parts.push(row('Kira', eksi(kiraOd)), row('Faturalar (elektrik, su, tüp)', eksi(faturaOd)));
+      if (g.kira > 0) parts.push(row('Kira', eksi(kiraOd)));   // QA 2026-11-27: kirasız günde "Kira −0" satırı çıkmasın
+      parts.push(row('Faturalar (elektrik, su, tüp)', eksi(faturaOd)));
       if (g.ertelendi > 0) parts.push(`<div class="gs-not">Kasa yetmedi: ${fmtMoney(g.ertelendi)} ertelendi (kira ${fmtMoney(g.kira)}, fatura ${fmtMoney(g.fatura)}).</div>`);
     }
     if (m.isletme) {
@@ -103,18 +114,18 @@ export function createGunSonu(deps: { root: HTMLElement; rules: () => Rules | nu
       if (h.marti !== undefined) parts.push(row('Martı yıldızı', `<b>${'★'.repeat(Math.max(0, Math.min(5, Math.round(h.marti))))}${'☆'.repeat(5 - Math.max(0, Math.min(5, Math.round(h.marti))))}</b>`));
     }
     wrap = document.createElement('div'); wrap.className = 'gs-wrap';
-    wrap.innerHTML = `<div class="gs-card"><div class="gs-moon">🌙</div><div class="gs-h">Kepenkler indi</div><div class="gs-sub">${m.day}. gün bitti. Saat 03:00, iskele sessiz.</div>
+    wrap.innerHTML = `<div class="gs-card"><div class="gs-moon">🌅</div><div class="gs-h">Gün kapandı</div><div class="gs-sub">${m.day}. gün bitti. Saat 08:00, iskelede yeni sabah.</div>
       ${parts.join('\n')}
-      <button class="gs-btn" type="button">Yeni güne başla ☀️</button></div>`;
+      <div class="gs-foot"><button class="gs-btn" type="button">Yeni güne başla ☀️</button></div></div>`;
     deps.root.appendChild(wrap);
     requestAnimationFrame(() => requestAnimationFrame(() => wrap?.classList.add('on')));
-    wrap.querySelector('.gs-btn')!.addEventListener('click', () => { deps.sfx?.('pop'); deps.command({ kind: 'yeniGun' }); close(); });
+    wrap.querySelector('.gs-btn')!.addEventListener('click', () => { deps.sfx?.('pop'); deps.command({ kind: 'yeniGun' }); close(true); });
   }
   return {
     update() {
       const r = deps.rules(); const m = r?.rt.uiLast.gunSonu as GunSonuModel | undefined;
       if (m && m.day !== shownDay) show(m);
-      else if (!m && wrap) close();
+      else if (!m && wrap) close(true);
     },
     dispose() { close(); st.remove(); },
   };

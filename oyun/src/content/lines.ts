@@ -192,8 +192,8 @@ export const LINES = {
     "shout": "Kapkaççı! Yakala onu!"
   },
   "ferry": {
-    "horn": "Vapur geliyor!",
-    "open": "Vapur Penceresi açıldı!",
+    "horn": "Kalabalık geliyor!",
+    "open": "Pencere açıldı!",
     "close": "Pencere kapandı."
   },
   "tadilat": {

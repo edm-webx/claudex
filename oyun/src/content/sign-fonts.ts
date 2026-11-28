@@ -3,7 +3,7 @@ import type { HeroId } from '../game/sim/schema';
 export interface SignFont { id: string; name: string; family: string; weight: number; style: string; color: string; neon?: boolean; }
 export const SIGN_FONTS: SignFont[] = [
   { id: 'yesilcam', name: 'Yeşilçam El Yazısı', family: '"Brush Script MT", "Segoe Script", cursive', weight: 700, style: 'italic', color: '#f6ead2' },
-  { id: 'vapur', name: 'Vapur Şablonu', family: '"Arial Black", Impact, sans-serif', weight: 900, style: 'normal', color: '#f2b632' },
+  { id: 'vapur', name: 'İskele Şablonu', family: '"Arial Black", Impact, sans-serif', weight: 900, style: 'normal', color: '#f2b632' },
   { id: 'neon', name: 'Neon', family: '"Trebuchet MS", "Segoe UI", sans-serif', weight: 800, style: 'normal', color: '#ff5fa2', neon: true },
   { id: 'lale', name: 'Lale Süslü', family: 'Georgia, "Times New Roman", serif', weight: 700, style: 'italic', color: '#f2a2b3' },
   { id: 'plaza', name: 'Plaza Düz', family: 'Helvetica, Arial, sans-serif', weight: 600, style: 'normal', color: '#ffffff' },
