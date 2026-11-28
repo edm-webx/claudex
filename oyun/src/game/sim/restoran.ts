@@ -33,7 +33,7 @@ import { DWELL_DEFAULTS, type Vec2 } from '../../engine/api';
 import type { ProductId } from './schema';
 import type { Kernel, Customer, Item, Order, Plate } from './state';
 import { clamp } from './util';
-import { kanatOf, masaCati, kanatYanı, kanatFiyatX, kanatKurulu, KANAT_POST, type KanatBolge } from '../../content/kanat';
+import { catiAyak, kanatOf, masaCati, kanatYanı, kanatFiyatX, kanatKurulu, KANAT_POST, type KanatBolge } from '../../content/kanat';
 import { salonKatYan } from './salon';
 
 export const RESTORAN_KEY = 'restoran';
@@ -599,7 +599,18 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
   /** 2026-11-26: Şef salonu / deniz köşkü uzak; 20 sn'dir yolda olan garsonun masa işi boştaki yetkili garsona geçer (aşama botu aşama 9, masa 59 menü) */
   const DEVIR_S = 20;
   const GARSON_HIZ = 2.6;   // m/sn, workers.ts garsonWork temel yürüyüş hızı
-  const claimDOf = (table: number, at?: Vec2) => { if (!at) return undefined; const q = masaYan(table); return Math.hypot(q.x - at.x, q.z - at.z); };
+  /** 2026-11-28: kat değişiyorsa (çatıdaki garson yerdeki masaya / tersi) mesafe merdiven ayağından ölçülür; kuş uçuşu 17 m, gerçek yol 60 m+ idi
+   *  (aşama botu aşama 10, masa 77 hesap: çatıdan inen garson 24 sn yürürken masanın 8 m yanındaki garson boş bekliyordu, yakinDevir tetiklenmiyordu) */
+  const KAT_EK = 10;   // m: basamaklar + çatı koridoru (iz: inişte kuş uçuşu 16 m, yürünen ~30 m)
+  const claimDOf = (table: number, at?: Vec2 & { kat?: 'W' | 'E' | null }) => {
+    if (!at) return undefined;
+    const q = masaYan(table), tc = masaCati(table) ?? null, up = at.kat ?? null, d = (a: Vec2, b: Vec2) => Math.hypot(a.x - b.x, a.z - b.z);
+    if (up === tc) return d(at, q);
+    let s = 0, p: Vec2 = at;
+    if (up) { const f = catiAyak(up); s += d(p, f) + KAT_EK; p = f; }
+    if (tc) { const f = catiAyak(tc); s += d(p, f) + KAT_EK; p = f; }
+    return s + d(p, q);
+  };
   const katSon = new Map<number, 'W' | 'E' | null>();   // garsonun son isAl anındaki katı (üst kat tarafı ya da yer)
   function isAl(wid: number, o: { cap: number; at?: Vec2 & { kat?: 'W' | 'E' | null } }): IsAlSonuc | null {
     katSon.set(wid, o.at?.kat ?? null);
