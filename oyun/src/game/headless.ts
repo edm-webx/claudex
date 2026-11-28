@@ -24,6 +24,7 @@ import { createNav } from '../engine/nav';
 import { createAmbient } from './sim/ambient';
 import { createWalk, type WalkFull } from './sim/walk';
 import { holEngel, AVM } from '../content/avm-kat';
+import { okulEngel, okulIcinde } from '../content/okul-ic';
 import { icBina, icColliders } from '../content/ic-mekan';
 import { defaultState, AGENTS, AGENT_CAP, AGENT_SCHEMA, type GameState } from './sim/schema';
 import type { SimEvents, EventName } from './events';
@@ -58,6 +59,8 @@ export interface SimFull extends Sim {
   readonly nav: Nav;
   /** Martı AVM katının kendi çarpışma nav'ı (AVM dışında / geçersiz katta null) */
   readonly katNav: (kat: number) => Nav | null;
+  /** okul diyarının nav'ı (diyar dışında null) */
+  readonly bolgeNav: (p: Vec2) => Nav | null;
   readonly ctx: SimCtx;
   /** M1 rules (A): state, runtime, commands, v2State. */
   readonly rules: RulesFull;
@@ -154,7 +157,14 @@ export function createSim(o: SimOpts, extra: SimExtra = {}): SimFull {
     }
     return katNavs[k];
   };
-  const walk = createWalk({ nav, start: { ...start, kat: o.save && !extra.startPos ? state.player.kat : 0 }, interactions, actor: player, katNav });
+  // okul diyarı (content/okul-ic.ts): ızgarasız, yalnız dikdörtgen engelli kendi nav'ı (odaların duvarları + eşyaları, koridor, çit, dekor)
+  let okulNavR: Nav | null | undefined;
+  const okulNav = (): Nav | null => {
+    if (okulNavR === undefined) { try { const n = createNav({ log: extra.log }); n.setSolids('okul', [...okulEngel(), ...icBina('okulIc').flatMap(m => icColliders(m))]); okulNavR = n; } catch { okulNavR = null; } }
+    return okulNavR;
+  };
+  const bolgeNav = (p: Vec2): Nav | null => (okulIcinde(p, 2) ? okulNav() : null);
+  const walk = createWalk({ nav, start: { ...start, kat: o.save && !extra.startPos ? state.player.kat : 0 }, interactions, actor: player, katNav, bolgeNav });
   scheduler.add(walk);
   state.player.x = start.x; state.player.z = start.z;
 
@@ -204,7 +214,7 @@ export function createSim(o: SimOpts, extra: SimExtra = {}): SimFull {
     get state() { return state; },
     world, bus, clock,
     get tick() { return tick; },
-    walk, scheduler, rng, agents, player, interactions, nav, katNav, ctx, rules,
+    walk, scheduler, rng, agents, player, interactions, nav, katNav, bolgeNav, ctx, rules,
     get timeFrozen() { return timeFrozen; },
     tickOnce,
     step(sec) {

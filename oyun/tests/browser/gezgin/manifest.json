@@ -215,72 +215,523 @@
    "ebeveyn": null
   },
   {
-   "id": "okul",
-   "ad": "Martıköy İlkokulu",
-   "tur": "okul",
-   "canli": true,
-   "arsa": "k4",
-   "bina": "okul",
+   "id": "okul_mudur",
+   "ad": "Müdür Odası",
+   "tur": "mudurOda",
+   "canli": false,
+   "arsa": null,
+   "bina": "okulIc",
    "merkez": {
-    "x": 48.85,
-    "z": 37.25
+    "x": 1330,
+    "z": 43.25
    },
    "boy": {
-    "wx": 18.3,
-    "wz": 7.5
+    "wx": 8,
+    "wz": 6.5
    },
    "kapiDis": {
-    "x": 48.85,
-    "z": 31.9
+    "x": 1330,
+    "z": 48.1
    },
    "kapi": {
-    "x": 48.85,
-    "z": 33.5
+    "x": 1330,
+    "z": 46.5
    },
    "kapiIc": {
-    "x": 48.85,
-    "z": 34.8
+    "x": 1330,
+    "z": 45.2
    },
    "noktalar": [
     {
      "ad": "kapı içi",
-     "x": 48.85,
-     "z": 34.8
+     "x": 1330,
+     "z": 45.2
     },
     {
      "ad": "orta",
-     "x": 48.85,
-     "z": 37.25
+     "x": 1330,
+     "z": 43.25
+    }
+   ],
+   "ebeveyn": null
+  },
+  {
+   "id": "okul_sekreter",
+   "ad": "Müdür Yardımcısı & Sekreterlik",
+   "tur": "sekreterlik",
+   "canli": false,
+   "arsa": null,
+   "bina": "okulIc",
+   "merkez": {
+    "x": 1337,
+    "z": 43.25
+   },
+   "boy": {
+    "wx": 6,
+    "wz": 6.5
+   },
+   "kapiDis": {
+    "x": 1337,
+    "z": 48.1
+   },
+   "kapi": {
+    "x": 1337,
+    "z": 46.5
+   },
+   "kapiIc": {
+    "x": 1337,
+    "z": 45.2
+   },
+   "noktalar": [
+    {
+     "ad": "kapı içi",
+     "x": 1337,
+     "z": 45.2
+    },
+    {
+     "ad": "orta",
+     "x": 1337,
+     "z": 43.25
+    }
+   ],
+   "ebeveyn": null
+  },
+  {
+   "id": "okul_ogretmen",
+   "ad": "Öğretmenler Odası",
+   "tur": "ogretmenOda",
+   "canli": false,
+   "arsa": null,
+   "bina": "okulIc",
+   "merkez": {
+    "x": 1343.5,
+    "z": 43.25
+   },
+   "boy": {
+    "wx": 7,
+    "wz": 6.5
+   },
+   "kapiDis": {
+    "x": 1343.5,
+    "z": 48.1
+   },
+   "kapi": {
+    "x": 1343.5,
+    "z": 46.5
+   },
+   "kapiIc": {
+    "x": 1343.5,
+    "z": 45.2
+   },
+   "noktalar": [
+    {
+     "ad": "kapı içi",
+     "x": 1343.5,
+     "z": 45.2
+    },
+    {
+     "ad": "orta",
+     "x": 1343.5,
+     "z": 43.25
+    }
+   ],
+   "ebeveyn": null
+  },
+  {
+   "id": "okul_revir",
+   "ad": "Revir",
+   "tur": "revir",
+   "canli": false,
+   "arsa": null,
+   "bina": "okulIc",
+   "merkez": {
+    "x": 1355.5,
+    "z": 43.25
+   },
+   "boy": {
+    "wx": 5,
+    "wz": 6.5
+   },
+   "kapiDis": {
+    "x": 1355.5,
+    "z": 48.1
+   },
+   "kapi": {
+    "x": 1355.5,
+    "z": 46.5
+   },
+   "kapiIc": {
+    "x": 1355.5,
+    "z": 45.2
+   },
+   "noktalar": [
+    {
+     "ad": "kapı içi",
+     "x": 1355.5,
+     "z": 45.2
+    },
+    {
+     "ad": "orta",
+     "x": 1355.5,
+     "z": 43.25
+    }
+   ],
+   "ebeveyn": null
+  },
+  {
+   "id": "okul_fen",
+   "ad": "Fen Laboratuvarı",
+   "tur": "fenLab",
+   "canli": false,
+   "arsa": null,
+   "bina": "okulIc",
+   "merkez": {
+    "x": 1362,
+    "z": 43.25
+   },
+   "boy": {
+    "wx": 8,
+    "wz": 6.5
+   },
+   "kapiDis": {
+    "x": 1362,
+    "z": 48.1
+   },
+   "kapi": {
+    "x": 1362,
+    "z": 46.5
+   },
+   "kapiIc": {
+    "x": 1362,
+    "z": 45.2
+   },
+   "noktalar": [
+    {
+     "ad": "kapı içi",
+     "x": 1362,
+     "z": 45.2
+    },
+    {
+     "ad": "orta",
+     "x": 1362,
+     "z": 43.25
+    }
+   ],
+   "ebeveyn": null
+  },
+  {
+   "id": "okul_kutuphane",
+   "ad": "Kütüphane",
+   "tur": "kutuphane",
+   "canli": false,
+   "arsa": null,
+   "bina": "okulIc",
+   "merkez": {
+    "x": 1370,
+    "z": 43.25
+   },
+   "boy": {
+    "wx": 8,
+    "wz": 6.5
+   },
+   "kapiDis": {
+    "x": 1370,
+    "z": 48.1
+   },
+   "kapi": {
+    "x": 1370,
+    "z": 46.5
+   },
+   "kapiIc": {
+    "x": 1370,
+    "z": 45.2
+   },
+   "noktalar": [
+    {
+     "ad": "kapı içi",
+     "x": 1370,
+     "z": 45.2
+    },
+    {
+     "ad": "orta",
+     "x": 1370,
+     "z": 43.25
+    }
+   ],
+   "ebeveyn": null
+  },
+  {
+   "id": "okul_1a",
+   "ad": "1-A Sınıfı",
+   "tur": "sinif",
+   "canli": false,
+   "arsa": null,
+   "bina": "okulIc",
+   "merkez": {
+    "x": 1330,
+    "z": 54.5
+   },
+   "boy": {
+    "wx": 8,
+    "wz": 9
+   },
+   "kapiDis": {
+    "x": 1330,
+    "z": 48.4
+   },
+   "kapi": {
+    "x": 1330,
+    "z": 50
+   },
+   "kapiIc": {
+    "x": 1330,
+    "z": 51.3
+   },
+   "noktalar": [
+    {
+     "ad": "kapı içi",
+     "x": 1330,
+     "z": 51.3
+    },
+    {
+     "ad": "orta",
+     "x": 1330,
+     "z": 54.5
+    }
+   ],
+   "ebeveyn": null
+  },
+  {
+   "id": "okul_2a",
+   "ad": "2-A Sınıfı",
+   "tur": "sinif",
+   "canli": false,
+   "arsa": null,
+   "bina": "okulIc",
+   "merkez": {
+    "x": 1338,
+    "z": 54.5
+   },
+   "boy": {
+    "wx": 8,
+    "wz": 9
+   },
+   "kapiDis": {
+    "x": 1338,
+    "z": 48.4
+   },
+   "kapi": {
+    "x": 1338,
+    "z": 50
+   },
+   "kapiIc": {
+    "x": 1338,
+    "z": 51.3
+   },
+   "noktalar": [
+    {
+     "ad": "kapı içi",
+     "x": 1338,
+     "z": 51.3
+    },
+    {
+     "ad": "orta",
+     "x": 1338,
+     "z": 54.5
+    }
+   ],
+   "ebeveyn": null
+  },
+  {
+   "id": "okul",
+   "ad": "3-A · İngilizce Dersliği",
+   "tur": "okul",
+   "canli": false,
+   "arsa": null,
+   "bina": "okulIc",
+   "merkez": {
+    "x": 1345.2,
+    "z": 54.5
+   },
+   "boy": {
+    "wx": 6.400000000000091,
+    "wz": 9
+   },
+   "kapiDis": {
+    "x": 1345.2,
+    "z": 48.4
+   },
+   "kapi": {
+    "x": 1345.2,
+    "z": 50
+   },
+   "kapiIc": {
+    "x": 1345.2,
+    "z": 51.3
+   },
+   "noktalar": [
+    {
+     "ad": "kapı içi",
+     "x": 1345.2,
+     "z": 51.3
+    },
+    {
+     "ad": "orta",
+     "x": 1345.2,
+     "z": 54.5
+    }
+   ],
+   "ebeveyn": null
+  },
+  {
+   "id": "okul_4a",
+   "ad": "4-A Sınıfı",
+   "tur": "sinif",
+   "canli": false,
+   "arsa": null,
+   "bina": "okulIc",
+   "merkez": {
+    "x": 1354.8,
+    "z": 54.5
+   },
+   "boy": {
+    "wx": 6.400000000000091,
+    "wz": 9
+   },
+   "kapiDis": {
+    "x": 1354.8,
+    "z": 48.4
+   },
+   "kapi": {
+    "x": 1354.8,
+    "z": 50
+   },
+   "kapiIc": {
+    "x": 1354.8,
+    "z": 51.3
+   },
+   "noktalar": [
+    {
+     "ad": "kapı içi",
+     "x": 1354.8,
+     "z": 51.3
+    },
+    {
+     "ad": "orta",
+     "x": 1354.8,
+     "z": 54.5
+    }
+   ],
+   "ebeveyn": null
+  },
+  {
+   "id": "okul_muzik",
+   "ad": "Müzik & Resim Atölyesi",
+   "tur": "muzikOda",
+   "canli": false,
+   "arsa": null,
+   "bina": "okulIc",
+   "merkez": {
+    "x": 1362,
+    "z": 54.5
+   },
+   "boy": {
+    "wx": 8,
+    "wz": 9
+   },
+   "kapiDis": {
+    "x": 1362,
+    "z": 48.4
+   },
+   "kapi": {
+    "x": 1362,
+    "z": 50
+   },
+   "kapiIc": {
+    "x": 1362,
+    "z": 51.3
+   },
+   "noktalar": [
+    {
+     "ad": "kapı içi",
+     "x": 1362,
+     "z": 51.3
+    },
+    {
+     "ad": "orta",
+     "x": 1362,
+     "z": 54.5
+    }
+   ],
+   "ebeveyn": null
+  },
+  {
+   "id": "okul_kantin",
+   "ad": "Okul Kantini",
+   "tur": "kantin",
+   "canli": true,
+   "arsa": "k4",
+   "bina": "okulIc",
+   "merkez": {
+    "x": 1370,
+    "z": 54.5
+   },
+   "boy": {
+    "wx": 8,
+    "wz": 9
+   },
+   "kapiDis": {
+    "x": 1370,
+    "z": 48.4
+   },
+   "kapi": {
+    "x": 1370,
+    "z": 50
+   },
+   "kapiIc": {
+    "x": 1370,
+    "z": 51.3
+   },
+   "noktalar": [
+    {
+     "ad": "kapı içi",
+     "x": 1370,
+     "z": 51.3
+    },
+    {
+     "ad": "orta",
+     "x": 1370,
+     "z": 54.5
     },
     {
      "ad": "tezgah",
-     "x": 43.65,
-     "z": 38.05
+     "x": 1370.2,
+     "z": 56.05
     },
     {
      "ad": "kasa",
-     "x": 41.95,
-     "z": 38.05
+     "x": 1368.5,
+     "z": 56.05
     },
     {
      "ad": "tostMak:tost_mak",
-     "x": 44.85,
-     "z": 38.05
+     "x": 1371.4,
+     "z": 56.05
     },
     {
      "ad": "buzdolap:buzdolap",
-     "x": 40.4,
-     "z": 39.4
+     "x": 1366.9,
+     "z": 57.4
     },
     {
      "ad": "semaver:semaver_k",
-     "x": 43.45,
-     "z": 38.05
+     "x": 1370,
+     "z": 56.05
     },
     {
      "ad": "firinK:mikrodalga",
-     "x": 46.45,
-     "z": 39.4
+     "x": 1373,
+     "z": 57.4
     }
    ],
    "ebeveyn": null
@@ -1725,11 +2176,11 @@
    "id": "k4",
    "ad": "Okul Kantini",
    "sabit": "kafe",
-   "x": 48.85,
-   "z": 37.25,
+   "x": 1370,
+   "z": 54.5,
    "kapi": {
-    "x": 48.85,
-    "z": 32.6
+    "x": 1370,
+    "z": 49.3
    }
   },
   {
@@ -1925,10 +2376,10 @@
   }
  ],
  "ozet": {
-  "bina": 25,
+  "bina": 36,
   "ic_ice": 0,
   "canli": 18,
   "arsa": 23,
-  "icNokta": 174
+  "icNokta": 196
  }
 }

@@ -81,6 +81,16 @@ export const AMBIYANS: Record<string, AmbBolge> = {
     ],
     aralik: [9, 18], yogunluk: [1, 1, 0.8, 0.45],
   },
+  // Martıköy İlkokulu bahçesi / meydanı (okul diyarı ve karşı yakadaki okulun önü): çocuk cıvıltısı, kuşlar; zil program olayıyla ('okulZil')
+  'karsi.okul': {
+    katman: [{ loop: 'karsi_sokak', vol: 0.16, evre: [0.8, 1, 0.9, 0.3] }],
+    olay: [
+      { id: 'cocuk', vol: 0.34, evre: [1, 1, 0.2, 0] },
+      { id: 'birdTrill', vol: 0.3, evre: [1, 0.8, 0.3, 0] },
+      { id: 'kopek', vol: 0.18, evre: [0.1, 0.1, 0.4, 0.7] },
+    ],
+    aralik: [7, 14], yogunluk: [1, 1, 0.6, 0.3],
+  },
   // Orman: gündüz yaprak ve kuşlar, akşam mangal ve cırcır, gece baykuş ve rüzgar
   orman: {
     katman: [{ loop: 'orman_gunduz', vol: 0.34, evre: [1, 1, 0.5, 0] }, { loop: 'orman_gece', vol: 0.34, evre: [0, 0, 0.6, 1] }],
@@ -193,6 +203,10 @@ export const IC_ODA: Record<string, { loop: string; vol: number }> = {
   avmHol: { loop: 'ic_avm', vol: 0.5 }, avm_seker: { loop: 'ic_kafe', vol: 0.4 }, avm_kahve: { loop: 'ic_kafe', vol: 0.45 }, avm_baklava: { loop: 'ic_kafe', vol: 0.4 },
   avm_dondurma: { loop: 'ic_kafe', vol: 0.4 }, avm_kuruyemis: { loop: 'ic_avm', vol: 0.4 }, avm_doner: { loop: 'ic_lokanta', vol: 0.45 }, avm_kumpir: { loop: 'ic_lokanta', vol: 0.4 },
   avm_midye: { loop: 'ic_lokanta', vol: 0.4 }, avm_sinema: { loop: 'ic_avm', vol: 0.45 },
+  // Martıköy İlkokulu diyarı (2026-11-28): koridor + odalar
+  okulKoridor: { loop: 'ic_okul', vol: 0.55 }, okul_1a: { loop: 'ic_okul', vol: 0.4 }, okul_2a: { loop: 'ic_okul', vol: 0.4 }, okul_4a: { loop: 'ic_okul', vol: 0.4 },
+  okul_muzik: { loop: 'ic_okul', vol: 0.35 }, okul_fen: { loop: 'ic_okul', vol: 0.35 }, okul_kantin: { loop: 'ic_kafe', vol: 0.45 }, okul_kutuphane: { loop: 'ic_oda', vol: 0.25 },
+  okul_mudur: { loop: 'ic_oda', vol: 0.3 }, okul_sekreter: { loop: 'ic_oda', vol: 0.3 }, okul_ogretmen: { loop: 'ic_oda', vol: 0.35 }, okul_revir: { loop: 'ic_hastane', vol: 0.3 },
 };
 /** tablo imzası: değişmediyse kapıya yeniden verilmez */
 export const tabloImza = (t: Record<string, readonly KapiKatman[]>): string => Object.keys(t).sort().map(k => k + ':' + t[k].map(l => l.id).join(',')).join('|');

@@ -25,6 +25,7 @@ export const ENGINE_EVENT_NAMES = [
   'passBell',       // BUF-05 { no, p, x, z }: a plate landed on the kitchen pass (servis zili; ses SES-05)
   'tavaCarpma',     // BUF-08 { ist, x, z }: a pan dish finished on a tava station (mutfak-hat ready)
   'bulasikSes',     // BUF-08 { x, z }: dishwasher clink; emitter not yet wired (BUF-13 owns the dish pile trigger)
+  'okulZil',        // { faz, x?, z? }: Martıköy İlkokulu zili (sim/agents/okul-yasam.ts; konumsuzsa oyuncu okulda)
   'canliMuzik',     // BUF-14 { x, z }: the musician is playing (live music cue; the sound layer owns the audio)
   'zoneState',      // { id, state }
   'save',           // { reason, ok, mode }
