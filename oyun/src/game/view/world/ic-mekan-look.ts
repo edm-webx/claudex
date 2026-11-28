@@ -22,6 +22,8 @@ import { kanatKurulu } from '../../../content/kanat';
 import { IC_CANLI, IC_MEKANLAR, icLayout, icDim, icYaw, icIcinde, mutfakUst, mutfakOda, mutfakVitrin, KANAT_ODA_Z, MUTFAK_YER, type IcMekan, type IcItem } from '../../../content/ic-mekan';
 import { restoranAlani } from '../../../content/restoran-plan';
 import { useSkyEnv } from './glb';
+import { OKUL_F, OKUL_WALLY } from './okul-esya-look';
+import { okulIcinde } from '../../../content/okul-ic';
 import { createFx, fanlar, asiliTavalar, biletRayi, menuPanosu, tabakYigini, islakTabela, FX_GEOS, type MutfakFx, type BiletRayi, type TabakYigini, type BiletVeri } from './mutfak-canli';
 
 export interface IcDeps {
@@ -43,12 +45,17 @@ const FLOOR: Record<string, [string, string]> = { kafe: ['#9a6b45', '#7d5434'], 
   kafeterya: ['#8fb3a0', '#7aa08c'], banka: ['#efe9df', '#e2d9c4'], hastane: ['#e3eef2', '#cfdde3'], acil: ['#e3eef2', '#cfdde3'], morg: ['#9aa3a8', '#878f94'], kahvalti: ['#c8a27a', '#b08860'], balik: ['#d8e2e6', '#2f6f8f'], mutfak: ['#b9a78c', '#a59377'],
   giyim: ['#e9e4da', '#d6cec0'], elektronik: ['#dfe4ea', '#c9d0d8'], oyuncak: ['#f3e7c9', '#e6d4a8'],
   sekerci: ['#f3e3e6', '#e6c9cf'], kahveci: ['#8a5f3e', '#74492c'], dondurma: ['#f4f1ea', '#e8ddd0'], baklava: ['#e9dfc8', '#c9a23a'], kuruyemis: ['#c8a27a', '#b08860'],
-  donerci: ['#d9cfc0', '#a2472f'], kumpir: ['#efe3c4', '#d8c39a'], midye: ['#dfe9ec', '#2f6f8f'], avmLokanta: ['#e9e6e0', '#d4cfc6'], sinema: ['#2a1a22', '#3a2430'] };
+  donerci: ['#d9cfc0', '#a2472f'], kumpir: ['#efe3c4', '#d8c39a'], midye: ['#dfe9ec', '#2f6f8f'], avmLokanta: ['#e9e6e0', '#d4cfc6'], sinema: ['#2a1a22', '#3a2430'],
+  // okul odaları (content/okul-ic.ts, 2026-11-28)
+  mudurOda: ['#8a5f3e', '#74492c'], sekreterlik: ['#d8d2c4', '#c4bca9'], ogretmenOda: ['#c9b48a', '#b39e74'], revir: ['#e3eef2', '#cfdde3'], fenLab: ['#dfe4ea', '#c9d0d8'],
+  kutuphane: ['#9a6b45', '#7d5434'], sinif: ['#c9b48a', '#b39e74'], muzikOda: ['#b88a5a', '#9a7048'], kantin: ['#e9e4da', '#e0533c'] };
 const WALL: Record<string, [string, string]> = { kafe: ['#f3e3c8', '#7a4a2a'], bistro: ['#e9f1f4', '#1d4f86'], kirtasiye: ['#f6f6ee', '#2b6fb8'], okul: ['#f4ead2', '#5f8f6a'], lokanta: ['#f2efe9', '#a2472f'],
   kafeterya: ['#eef2f4', '#2f9e5a'], banka: ['#f4efe2', '#1f3a5f'], hastane: ['#f2f6f8', '#7fb4d8'], acil: ['#f2f6f8', '#d93a3a'], morg: ['#b9c0c4', '#5b6068'], kahvalti: ['#f3e3c8', '#7a4a2a'], balik: ['#e9f1f4', '#1d4f86'], mutfak: ['#f3ead6', '#3f7f64'],
   giyim: ['#f6f0ea', '#c94f6d'], elektronik: ['#eef2f6', '#2b6fb8'], oyuncak: ['#fff6e0', '#e8892b'],
   sekerci: ['#fff3f5', '#c94f6d'], kahveci: ['#efe2cf', '#5a3a22'], dondurma: ['#fbf7f0', '#e0533c'], baklava: ['#f6edd8', '#2f6b3a'], kuruyemis: ['#f3e6cf', '#8a5a3c'],
-  donerci: ['#f4ece0', '#a2472f'], kumpir: ['#fff4dc', '#e8892b'], midye: ['#eef5f7', '#1d4f86'], avmLokanta: ['#f2efe9', '#a2472f'], sinema: ['#f6ece6', '#b3122e'] };
+  donerci: ['#f4ece0', '#a2472f'], kumpir: ['#fff4dc', '#e8892b'], midye: ['#eef5f7', '#1d4f86'], avmLokanta: ['#f2efe9', '#a2472f'], sinema: ['#f6ece6', '#b3122e'],
+  mudurOda: ['#f1e6d0', '#5a3622'], sekreterlik: ['#f4efe2', '#1f3a5f'], ogretmenOda: ['#f4ead2', '#7a5a3a'], revir: ['#f2f6f8', '#7fb4d8'], fenLab: ['#eef4f2', '#2f9e8f'],
+  kutuphane: ['#f3e7cf', '#2f6f4a'], sinif: ['#f4ead2', '#5f8f6a'], muzikOda: ['#fff3e0', '#c94f6d'], kantin: ['#fbf3e4', '#e0533c'] };
 
 let solid: T.MeshStandardMaterial | null = null, glass: T.MeshStandardMaterial | null = null, glow: T.MeshBasicMaterial | null = null, wallM: T.MeshStandardMaterial | null = null, ghostM: T.MeshBasicMaterial | null = null;
 function mats() {
@@ -150,7 +157,7 @@ const shelfGoods = (c: Ctx, w: number, rows: number, y0: number, dz: number, pal
 
 type Fn = (c: Ctx, it: IcItem) => void;
 /** wall-mounted items place themselves at it.y */
-const WALLY = new Set(['menuPano', 'tahta', 'pano', 'ekran', 'formaDuvar', 'kds', 'davlumbaz', 'asiliTava', 'mutfakMenu', 'ledPano', 'tvDuvar']);
+const WALLY = new Set(['menuPano', 'tahta', 'pano', 'ekran', 'formaDuvar', 'kds', 'davlumbaz', 'asiliTava', 'mutfakMenu', 'ledPano', 'tvDuvar', ...OKUL_WALLY]);
 const F: Record<string, Fn> = {
   // ---- 2026-11-21 Martı AVM yemek / tatlı dükkânları (content/ic-mekan.ts avmOdaLayout) ----
   kavanoz: (c, it) => {   // floor shelf (y 0) of glass jars, or a small row of jars on a counter (y > 0)
@@ -509,6 +516,7 @@ const F: Record<string, Fn> = {
   maskot: (c) => { const { b } = c; b.cyl(0.25, 0.25, 0.08, '#2f6fdb', 0, 0.04, 0, { seg: 14 }); b.sph(0.3, '#f4f2ec', 0, 0.48, 0, { ws: 12, hs: 8, sy: 1.2 }); b.sph(0.2, '#f4f2ec', 0, 0.98, 0.04, { ws: 10, hs: 8 });
     b.cone(0.06, 0.2, '#e8892b', 0, 0.96, 0.27, { rx: HP, seg: 8 }); for (const s of [-1, 1]) { b.box(0.06, 0.4, 0.28, '#9aa5b0', s * 0.3, 0.55, -0.02, { rz: s * 0.3 }); b.sph(0.03, '#111', s * 0.08, 1.04, 0.18, { ws: 5, hs: 4 }); b.box(0.12, 0.03, 0.16, '#e8892b', s * 0.1, 0.1, 0.12); } },
   hediye: (c) => { const { b } = c; for (const [x, z, s, col] of [[-0.1, -0.05, 0.18, '#e0533c'], [0.1, 0.05, 0.14, '#2f6fdb'], [-0.05, 0.05, 0.1, '#ffd23f']] as [number, number, number, string][]) { const y = col === '#ffd23f' ? 0.23 : s / 2; b.box(s, s, s, col, x, y, z); b.box(s + 0.005, s + 0.005, 0.02, '#f4f2ec', x, y, z); b.box(0.02, s + 0.005, s + 0.005, '#f4f2ec', x, y, z); b.tor(0.03, 0.008, '#f4f2ec', x, y + s / 2 + 0.02, z, { ts: 8 }); } },
+  ...(OKUL_F as Record<string, Fn>),   // Martıköy İlkokulu eşyaları (view/world/okul-esya-look.ts)
 };
 
 function etiketTex(ad: string, is: string): T.CanvasTexture {
@@ -556,9 +564,14 @@ function buildRoom(m: IcMekan, own: { lv: number; isci: number; esya: string[]; 
     };
     const acikPlan = !!m.mutfak && stage >= 6;   // 2026-11-25 ters U: mutfağın duvarı yok (arka duvar restoranın)
     if (!acikPlan) wall(W, 0, -D / 2 + 0.25, 0); if (!m.acik && !acikPlan) { wall(D, -W / 2 + 0.25, 0, HP); wall(D, W / 2 - 0.25, 0, -HP); wall(W, 0, D / 2 - 0.25, Math.PI, 1.7); }   // açık stand: yalnız arka duvar
-    if (!m.mutfak) for (const [x, z, ry, len] of (m.bina === 'avm' ? [] : [[-W / 2 + 0.26, 0, HP, D], [W / 2 - 0.26, 0, -HP, D]]) as [number, number, number, number][]) {   // side-wall windows (none inside the mall: shared walls; BUF-22: none in the kitchen, the menu board hangs there)
+    if (!m.mutfak && m.bina !== 'okulIc') for (const [x, z, ry, len] of (m.bina === 'avm' ? [] : [[-W / 2 + 0.26, 0, HP, D], [W / 2 - 0.26, 0, -HP, D]]) as [number, number, number, number][]) {   // side-wall windows (none inside the mall: shared walls; BUF-22: none in the kitchen, the menu board hangs there)
       const n = Math.max(1, Math.floor((len - 1) / 2.4));
       for (let i = 0; i < n; i++) { const u = -len / 2 + (i + 0.5) * len / n, tr = trimOf(ry, x, z); tr.push(mtx(x, 0, z, 0, ry, 0)); tr.box(1.1, 1.2, 0.04, '#fbfaf6', u, 1.75, 0.02); tr.pop(); l.push(mtx(x, 0, z, 0, ry, 0)); l.plane(0.95, 1.05, '#bfe3f5', u, 1.75, 0.045); l.pop(); }
+    }
+    if (m.bina === 'okulIc') {   // okul: pencereler dış duvarda (ön sırada cephe, arka sırada bahçe); duvara asılı eşyaların (tahta, pano, raf) önüne gelmez
+      const dolu = icLayout(m).filter(i => i.v < -D / 2 + 0.7 && (i.k !== 'portre' || (i.y || 0) < 2.5)).map(i => [i.u - ((i.ry || 0) % 2 ? i.d : i.w) / 2 - 0.15, i.u + ((i.ry || 0) % 2 ? i.d : i.w) / 2 + 0.15]);
+      const n = Math.max(1, Math.floor((W - 0.8) / 1.9)), z0 = -D / 2 + 0.26;
+      for (let i = 0; i < n; i++) { const u = -W / 2 + (i + 0.5) * W / n; if (dolu.some(([a, c2]) => u + 0.6 > a && u - 0.6 < c2)) continue; const tr = trimOf(0, 0, z0); tr.push(mtx(0, 0, z0, 0, 0, 0)); tr.box(1.25, 1.35, 0.04, '#fbfaf6', u, 1.7, 0.02); tr.box(0.04, 1.3, 0.05, '#fbfaf6', u, 1.7, 0.03); tr.box(1.35, 0.06, 0.18, '#e9e4da', u, 1.0, 0.07); tr.pop(); l.push(mtx(0, 0, z0, 0, 0, 0)); l.plane(1.1, 1.2, '#cfe8f5', u, 1.7, 0.045); l.pop(); }
     }
     if (!m.acik && !acikPlan) { const kp = trimOf(Math.PI, 0, D / 2 - 0.25); for (const s of [-1, 1]) kp.box(0.12, 2.4, 0.3, w2, s * 0.92, 1.2, D / 2 - 0.15); kp.box(1.96, 0.16, 0.3, w2, 0, 2.45, D / 2 - 0.15); b.box(1.2, 0.02, 0.8, '#9a1f2a', 0, 0.003, D / 2 - 0.8); }   // door frame, door mat
   } else {
@@ -670,18 +683,20 @@ export function createIcMekan(d: IcDeps): IcView {
         const own = d.isletme(), sl = d.salon();
         for (const m0 of IC_MEKANLAR) {
           const m = odaOf(m0), dist = Math.hypot(hp.x - m.x, hp.z - m.z), R = Math.max(m.wx, m.wz) / 2, exists = m.salon ? sl.stage >= (m.salon === 'W' ? 6 : 7) : m.mutfak ? sl.stage >= 3 : true;
-          if (!exists || dist > R + 30) { kill(m.id); continue; }
-          if (dist > R + 18) continue;
+          const okulda = m.bina === 'okulIc' && okulIcinde(hp);   // okul diyarında bütün odalar kurulu (kamera uzak sınıfları da görür)
+          if (!exists || (dist > R + 30 && !okulda)) { kill(m.id); continue; }
+          if (dist > R + 18 && !okulda) continue;
           const o = m.arsa ? own[m.arsa] || null : null, fine = (!!m.salon || !!m.mutfak) && sl.stage >= 10, mk = m.mutfak ? d.mutfak() : null;
           const key = (o ? o.lv + ':' + o.isci + ':' + (o.tema || '') + ':' + [...o.esya].sort().join(',') : '-') + '|' + (m.salon ? sl.esya.filter(e => e).sort().join(',') + (fine ? 'F' : '') + ':' + kanatKurulu(sl.stage).join(',') : '') + (mk ? 'M' + sl.stage + ':' + mutfakEsya(sl.stage).join(',') + ':' + mk.ekip.map(e => e.rol + e.rank).join(',') : '');
           const r = rooms.get(m.id); if (r && r.key === key) continue;
-          kill(m.id); const nb = buildRoom(m, o, sl.esya, fine, sl.stage, mk ? mk.ekip : []); (m.bina === 'avm' ? avmHolder : holder).add(nb.g); rooms.set(m.id, { key, g: nb.g, an: nb.an });
+          kill(m.id); const nb = buildRoom(m, o, sl.esya, fine, sl.stage, mk ? mk.ekip : []); (m.bina === 'avm' || m.bina === 'okulIc' ? avmHolder : holder).add(nb.g); rooms.set(m.id, { key, g: nb.g, an: nb.an });
         }
       }
       const nk = d.night();
       for (const [id, r] of rooms) {
         const m = odaOf(IC_MEKANLAR.find(x => x.id === id)!);
         r.g.visible = m.bina === 'avm' ? avmIcinde(hp, 2) && (m.kat || 0) === ((hp as { kat?: number }).kat || 0)   // AVM: only the hero's floor (upper floors cut away, lower rooms sit under this floor's slab)
+          : m.bina === 'okulIc' ? okulIcinde(hp)   // okul diyarı: bütün okul görünür (koridordan, bahçeden pencereden bakılır)
           : !!m.salon || icIcinde(m, hp, 0.5) || (!!bina && m.bina === bina) || (!!m.mutfak && (mutfakVitrin(hp) || (st0 >= 6 && restoranAlani(hp))));   // AVM: whole mall shows inside; BUF-22: kitchen shows from the büfe / walkway
         if (!r.g.visible) continue;
         const a = r.an;

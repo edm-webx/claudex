@@ -250,7 +250,8 @@ export function installMulk(K: Kernel) {
   // ── okul: English lesson at the classroom (back half of the school room) ──
   type OkulSave = { soru: number; secenek: number[]; cevap: number; dogru: number; sinavlar: number[]; son: string; gunSinav?: number; gunN?: number; son5?: number[] };
   const okulZ = (): OkulSave => { const z = (S.zones ||= {}) as Record<string, unknown>; let o = z.okul as OkulSave | undefined; if (!o || !Array.isArray(o.sinavlar)) { o = { soru: -1, secenek: [], cevap: 0, dogru: 0, sinavlar: [], son: '' }; z.okul = o as never; } return o; };
-  const okulYakin = () => { const m = IC_BY_ID.okul; return !!m && icIcinde(m, K.playerPos, -0.2) && K.playerPos.z > m.z - 0.5; };
+  // 2026-11-28: okul kendi diyarında (content/okul-ic.ts); 'okul' odası artık yalnız 3-A İngilizce dersliği: içindeyken ders
+  const okulYakin = () => { const m = IC_BY_ID.okul; return !!m && icIcinde(m, K.playerPos, -0.2); };
   function okulSoru() {
     const o = okulZ(), n = OKUL_KELIME.length, yasak = o.son5 || [];
     let q = rng.int(0, n - 1); for (let i = 0; i < 20 && yasak.includes(q); i++) q = rng.int(0, n - 1);   // son 5 soruda aynı kelime gelmez

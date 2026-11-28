@@ -130,6 +130,8 @@ import { createAcilis, type AcilisView } from './view/world/acilis';
 import { ARSALAR, ISLETME, ARSA_ISLETME } from '../content/esya';
 import { createKarsiYasam, type YasamView } from './view/world/karsi-yasam';
 import { createAvmIc, type AvmIcView } from './view/world/avm-ic';
+import { createOkulIc, type OkulIcView } from './view/world/okul-ic';
+import { okulBinada } from '../content/okul-ic';
 import { createIcMekan, type IcView } from './view/world/ic-mekan-look';
 import { restoranApi } from './sim/restoran';
 import { MUTFAK_ROL_BY_ID } from '../content/mutfak';
@@ -391,6 +393,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     return createMisirKoku({ root: () => scene, hero: () => walk.pos, kaynak: () => { const pl = (sim.state.zones as { arsa?: { plots?: Record<string, { esya?: string[] }> } }).arsa?.plots?.k18; return p && m && pl?.esya?.includes('misir_mak') ? { ...p, kat: m.kat || 0 } : null; } }); }) : null;   // Sinema Büfesi mısır kokusu
   const avmEglence = playMode && zones ? make('avmEglence', () => createAvmEglence({ root: () => scene, hero: () => walk.pos, saat: () => sim.rules.hour() })) : null;   // AVM eğlence katı: sinema + sahne
   const avmIc: AvmIcView | null = playMode && zones ? make('avmIc', () => createAvmIc({ root: () => scene, hero: () => walk.pos, night: () => nightK })) : null;   // Martı AVM içi (ayrı diyar)
+  const okulIc: OkulIcView | null = playMode && zones ? make('okulIc', () => createOkulIc({ root: () => scene, hero: () => walk.pos, saat: () => sim.clock.hour, night: () => nightK, camera: () => cam.camera })) : null;   // Martıköy İlkokulu (ayrı diyar)
   const icMekan: IcView | null = playMode && zones ? make('icMekan', () => createIcMekan({ root: () => zones.root('iskele') ?? null, sahne: () => scene, hero: () => walk.pos, night: () => nightK,
     isletme: () => { const m = mulkApi(sim.rules), o: Record<string, { lv: number; isci: number; esya: string[]; tema?: string }> = {}; if (m) for (const p of m.view().plots) if (p.sabit && p.owned) o[p.id] = { lv: p.lv, isci: p.isci, esya: (p as { esya?: string[] }).esya || [], tema: (p as { tema?: string }).tema || '' }; return o; },
     salon: () => ({ stage: sim.state.stage || 1, esya: ((sim.state.zones as { salon?: { esya?: string[] } }).salon?.esya) || [] }),
@@ -724,7 +727,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     // ses-1 place signature: Sabri'nin evi overlay, Çarşı Sokağı by position, else the pier
     // 16:52 user: music + ambience follow the place: every region has its own (orman, gece pazarı, sahil...), the halı saha match its stand
     zone: () => { if (evRoom?.isOpen()) return 'ev'; if (document.querySelector('.hs-game')) return 'halisaha'; return sesBolgesi(pos); },   // DNY-17: ses bölgesi (iç mekan, karşı yaka alt bölgeleri, şerit)
-    interior: () => icMekan?.icinde() ?? (avmIcinde(pos, 2) ? 'avmHol' : null),
+    interior: () => icMekan?.icinde() ?? (avmIcinde(pos, 2) ? 'avmHol' : okulBinada(pos) ? 'okulKoridor' : null),
     crowd: () => Math.min(1, (sim.agents.count || 0) / 45),
     weather: () => havaApi(sim.rules)?.view().kind ?? 'acik',
     season: () => havaApi(sim.rules)?.view().season ?? 'sonbahar',
@@ -874,6 +877,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     if (karsiYasam) guard('karsiYasam', () => karsiYasam.update(fdt));
     if (icMekan) guard('icMekan', () => icMekan.update(fdt));
     if (avmIc) guard('avmIc', () => avmIc.update(fdt));
+    if (okulIc) guard('okulIc', () => okulIc.update(fdt));
     if (avmEglence) guard('avmEglence', () => avmEglence.update(fdt));
     if (makineView) guard('makineView', () => makineView.update(fdt));
     if (misirKoku) guard('misirKoku', () => misirKoku.update(fdt));
@@ -1139,7 +1143,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
   if (import.meta.env.MODE !== 'production') reg('ajanlar', () => (agentsOf()?.registry.list ?? []).filter(a => !a.dead).map(a => ({ id: a.id, kind: a.kind as string, key: a.key, role: (a.rig as { role?: string }).role ?? null, x: +a.x.toFixed(2), z: +a.z.toFixed(2), y: +(a.y || 0).toFixed(2), act: a.act, state: a.state as string }))
     .concat(((sim.rules.rt as unknown as { customers?: { id: number; kind: string; x: number; z: number; state: string; n: number }[] }).customers ?? []).map(c => ({ id: -c.id, kind: 'musteri', key: 'c' + c.id, role: c.kind + (c.n > 1 ? ':' + c.n : ''), x: +c.x.toFixed(2), z: +c.z.toFixed(2), y: 0, act: c.state, state: c.state }))));   // dev: sahne ağacını sayfadan kurcalamak için (orman teşhisi)
   // 2026-11-23 yürüyüş turu (tests/browser/yuruyus-turu.mjs): oyuncunun durduğu yer (ya da verilen x, z, kat) yürünebilir mi, bir solid'in içinde mi (hayalet geçiş)
-  if (import.meta.env.MODE !== 'production') reg('carpisma', (rad = -0.05, x?: number, z?: number, kat?: number) => { const w = sim.walk, p = x === undefined ? w.pos : { x, z: z ?? 0 }, k = kat ?? w.kat, n = (avmIcinde(p, 4) && sim.katNav(k)) || sim.nav; return { x: +p.x.toFixed(3), z: +p.z.toFixed(3), kat: k, y: +w.y.toFixed(2), binik: w.binik, yol: n.walkable(p), solid: n.solidAt?.(p, rad) ?? null }; });
+  if (import.meta.env.MODE !== 'production') reg('carpisma', (rad = -0.05, x?: number, z?: number, kat?: number) => { const w = sim.walk, p = x === undefined ? w.pos : { x, z: z ?? 0 }, k = kat ?? w.kat, n = (avmIcinde(p, 4) && sim.katNav(k)) || sim.bolgeNav(p) || sim.nav; return { x: +p.x.toFixed(3), z: +p.z.toFixed(3), kat: k, y: +w.y.toFixed(2), binik: w.binik, yol: n.walkable(p), solid: n.solidAt?.(p, rad) ?? null }; });
   if (import.meta.env.MODE !== 'production') reg('heroPoz',() => { const o = H.object.position; return { x: +o.x.toFixed(3), y: +o.y.toFixed(3), z: +o.z.toFixed(3), camY: +cam.camera.position.y.toFixed(3), near: cam.camera.near }; });
   if (import.meta.env.MODE !== 'production') reg('yagmur', (k?: number, islak?: number) => { if (k !== undefined) HAVA_ZORLA.yagmur = k === null ? -1 : +k; if (islak !== undefined) HAVA_ZORLA.islak = +islak; return HAVA_ZORLA.yagmur; });   // GRS-05 ıslak zemin çekimi
   // GRS-06 A/B in one frame: ground AO uniform and contact planes on/off (measurement builds only)

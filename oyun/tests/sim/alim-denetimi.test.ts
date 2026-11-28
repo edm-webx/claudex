@@ -26,7 +26,7 @@ function denetle(asama: number): Sat[] {
     gordu.add(kare.key);
     const kat = kare.kat || 0, m0 = S.money, snap0 = JSON.stringify([S.owned, S.zones]);
     let ulas = 'ok';
-    const yakin = (rt.pads as any[]).filter(q => q !== kare && (q.kat || 0) === kat && Math.hypot(q.pos.x - kare.pos.x, q.pos.z - kare.pos.z) < 1.6);
+    const yakin = (rt.pads as any[]).filter(q => q !== kare && (q.kat || 0) === kat && Math.hypot(q.pos.x - kare.pos.x, q.pos.z - kare.pos.z) < 1.6 - 1e-6);   // uzak diyarlarda (x ~1350) kayan nokta: tam 1.6 aralık 1.59999.. çıkar
     if (yakin.length) ulas = 'YAKIN:' + yakin.map(q => q.key + '@' + Math.hypot(q.pos.x - kare.pos.x, q.pos.z - kare.pos.z).toFixed(2)).join(',');
     if (!kat) { const a = { x: 0, z: 6 }, pth = sim.nav.path(a, kare.pos) as any[]; const son = pth && pth.length ? pth[pth.length - 1] : null;
       if (!son || Math.hypot(son.x - kare.pos.x, son.z - kare.pos.z) > 0.7 || !sim.nav.walkable(kare.pos)) ulas = 'ULASILAMAZ'; }

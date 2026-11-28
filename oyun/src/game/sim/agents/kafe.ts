@@ -9,6 +9,7 @@
 import type { System, SimCtx, Vec2 } from '../../../engine/api';
 import { IC_BY_ID, IC_MEKANLAR, icIcinde, icWorld, icDim, icLayout, icUV, icYol, personelGeo, personelDuraklari, icMagaza } from '../../../content/ic-mekan';
 import { AVM_GIRIS, AVM_DIS, avmGelis, avmGidis } from '../../../content/avm-kat';
+import { OKUL_GIRIS_IC, OKUL_DIS, okulGelis, okulGidis } from '../../../content/okul-ic';
 import { KAFE_ISCI_TAVAN, ARSA_ISLETME, kafeSatis, ARSALAR, arsaKapi } from '../../../content/esya';
 import { kalemOf, ISTASYON_LAYOUT_K, ISTASYON_SIRA, MAKINE, MAKINE_TEPSI, MAKINE_ON, makineAdi, type IstasyonId } from '../../../content/isletme-istasyon';
 import { ISLETME_ROL } from '../../../content/isletme-kadro';
@@ -20,7 +21,7 @@ interface KafeHostApi {
   info(id: string): { lv: number; isci: number; masa: number; kuyruk: number; kadro: { id: number; ad: string; rol: string; huy: string; look: { apronText: string; lookSeed: number; headscarf?: string }; rank: number }[]; tema: string; fiyat: number; menu: { id: string; ad: string; ikon: string }[] } | null;
   sell(id: string, kalem?: string, bonus?: number): number;
 }
-const ROOMS: { arsa: string; room: string; bistro: boolean }[] = [{ arsa: 'k1', room: 'kafe1', bistro: false }, { arsa: 'k2', room: 'kafe2', bistro: true }, { arsa: 'k4', room: 'okul', bistro: false }, { arsa: 'k6', room: 'tesis', bistro: false }, { arsa: 'k3', room: 'kirtasiye', bistro: false },
+const ROOMS: { arsa: string; room: string; bistro: boolean }[] = [{ arsa: 'k1', room: 'kafe1', bistro: false }, { arsa: 'k2', room: 'kafe2', bistro: true }, { arsa: 'k4', room: 'okul_kantin', bistro: false }, { arsa: 'k6', room: 'tesis', bistro: false }, { arsa: 'k3', room: 'kirtasiye', bistro: false },
   // 2026-11-21 Martı AVM: 3 floors x 4 shops (content/avm-kat.ts). Guests and workers come in through the mall entrance and
   // ride the escalators up to their floor; shops (icMagaza) first look around the racks, then take one item to the till
   ...IC_MEKANLAR.filter(m => m.bina === 'avm' && m.arsa).map(m => ({ arsa: m.arsa!, room: m.id, bistro: false }))];
@@ -65,9 +66,11 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
     const gez = icMagaza(m.tur) ? lay.filter(i => i.k === 'reyon' || i.k === 'teshir').flatMap(i => i.k === 'teshir' ? [{ u: i.u - i.w / 2 - 0.4, v: i.v, yaw: 1 }] : [-0.3, 0.3].map(f => ({ u: i.u + 0.6, v: i.v + f * i.w, yaw: -1 }))) : [];
     // AVM: actors appear at the mall entrance and walk / ride to the shop door on its floor (gel), and back out (git)
     const avm = m.bina === 'avm', kat = m.kat || 0, onKapi = w(0, D / 2 + 0.7);
-    const gel = (): Pt[] => avm ? avmGelis(kat, onKapi) : [];
-    const git = (): Pt[] => avm ? [onKapi, ...avmGidis(kat, onKapi)] : [];
-    return { m, D, W, bv: tz.v, cu, endU, arka, yol, w, P, vert, door: avm ? { x: AVM_GIRIS.x, z: AVM_GIRIS.z } : w(0, D / 2 + 2.6), inside: w(0, D / 2 - 1.0), avm, kat, gel, git, tables, sdv: D < 5 ? -0.6 : 0.7, wide: !vert && !(m.tur === 'kafe' || m.tur === 'bistro'), gap, post, maxQ: vert ? 3 : 5, gez, pg, narrow };
+    // okul kantini (k4, content/okul-ic.ts): okul diyarında; müşteri ve işçi çit kapısından girer, koridordan kantine yürür
+    const okul = m.bina === 'okulIc';
+    const gel = (): Pt[] => avm ? avmGelis(kat, onKapi) : okul ? okulGelis(onKapi) : [];
+    const git = (): Pt[] => avm ? [onKapi, ...avmGidis(kat, onKapi)] : okul ? [onKapi, ...okulGidis(onKapi)] : [];
+    return { m, D, W, bv: tz.v, cu, endU, arka, yol, w, P, vert, door: avm ? { x: AVM_GIRIS.x, z: AVM_GIRIS.z } : okul ? { x: OKUL_GIRIS_IC.x, z: OKUL_GIRIS_IC.z } : w(0, D / 2 + 2.6), inside: w(0, D / 2 - 1.0), avm: avm || okul, kat, gel, git, tables, sdv: D < 5 ? -0.6 : 0.7, wide: !vert && !(m.tur === 'kafe' || m.tur === 'bistro'), gap, post, maxQ: vert ? 3 : 5, gez, pg, narrow };
   };
   const gCache = new Map<string, ReturnType<typeof geom0>>();   // the room geometry is static: build it once per room
   const geom = (r: Room) => { let g = gCache.get(r.room); if (!g) { g = geom0(r); gCache.set(r.room, g); } return g; };
@@ -171,7 +174,7 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
       if (r.wk.some(w => w.cid === c.id)) return;
       const g = geom(r), idx = r.wk.length, role = c.rol === 'barista' || c.rol === 'garson' || c.rol === 'kasiyer' || c.rol === 'asci' ? c.rol : (ISLETME_ROL[ARSA_ISLETME[r.arsa]].find(x => x.rol === c.rol)?.gorunum || 'garson');
       const a = env.reg.add('worker', 'kafe-' + r.room + '-' + c.id, { kind: 'worker', role, look: c.look, seed: (c.id * 977) % 10007 }, g.w(0, g.D / 2 + 0.6), { role, name: c.ad, rank: c.rank, trait: c.huy });
-      if (g.avm) { a.x = a.px = AVM_GIRIS.x; a.z = a.pz = AVM_GIRIS.z; } a.y = a.py = 0;   // AVM crew walks in from the mall entrance and rides up
+      if (g.avm) { a.x = a.px = g.door.x; a.z = a.pz = g.door.z; } a.y = a.py = 0;   // AVM crew walks in from the mall entrance and rides up (okul: çit kapısından)
       r.wk.push({ a, cid: c.id, idx, st: 'post', t: 0, guest: null, path: [], item: '' });
       { const w = r.wk[r.wk.length - 1]; w.path = [...g.gel(), g.inside, ...g.yol(g.inside, postOf(r, idx))]; }
     });
@@ -189,7 +192,7 @@ export function createKafe(env: AgentEnv, rt: Record<string, unknown>): KafeSyst
     if ((h.pending[r.arsa] || 0) > 0 && open < Math.min(geom(r).maxQ, info.kuyruk)) {
       h.pending[r.arsa]--;
       // BUF-25: a hungry citizen of the street walks over by own will and becomes the guest at the door; none near = the guest appears as before
-      const ar = ARSALAR.find(x => x.id === r.arsa), vs = amb?.sendHungry && ar ? amb.sendHungry(geom(r).avm ? AVM_DIS : arsaKapi(ar), HUNGRY_M) : -1;
+      const ar = ARSALAR.find(x => x.id === r.arsa), vs = amb?.sendHungry && ar ? amb.sendHungry(geom(r).m.bina === 'okulIc' ? OKUL_DIS : geom(r).avm ? AVM_DIS : arsaKapi(ar), HUNGRY_M) : -1;
       if (vs >= 0) r.visitors.push({ slot: vs, t: 0 }); else spawnGuest(r);
     }
     for (let i = r.visitors.length - 1; i >= 0; i--) {

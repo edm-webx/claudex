@@ -23,7 +23,7 @@ it('sarı kareler kapıda: satın alma ve alet kareleri kapıya en çok 2.6 m (s
       expect(uz, q.key + ' kapıya uzaklık').toBeLessThanOrEqual(2.7);
       if (avm && q.key.split('.').length > 2) expect(ic, q.key + ' AVM aleti içeride').toBe(true);
     }
-    for (let i = 0; i < sonra.length; i++) for (let j = i + 1; j < sonra.length; j++) expect(Math.hypot(sonra[i].pos.x - sonra[j].pos.x, sonra[i].pos.z - sonra[j].pos.z), a.id).toBeGreaterThanOrEqual(1.6);
+    for (let i = 0; i < sonra.length; i++) for (let j = i + 1; j < sonra.length; j++) expect(Math.hypot(sonra[i].pos.x - sonra[j].pos.x, sonra[i].pos.z - sonra[j].pos.z), a.id).toBeGreaterThanOrEqual(1.6 - 1e-6);   // kayan nokta (okul diyarı x ~1370)
   }
   expect(tablo.length).toBeGreaterThan(40);
 });
