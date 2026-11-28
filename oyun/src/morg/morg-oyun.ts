@@ -314,6 +314,19 @@ function carsafliMesh(listener) {
   return g; }   // faces +x
 // ================= WORLD BUILD =================
 function disposeWorld() { world.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material && o.material.userData && o.material.userData.own) o.material.dispose(); }); S.remove(world); world = new THREE.Group(); S.add(world); }
+// Black-block fix (same root cause as the main game's staircase, 8927c81): a zero-length vertex normal becomes NaN after
+// normalize() on a real GPU and the bloom pass smears that NaN into screen-aligned black squares. SwiftShader hides it.
+// Sources here: rounded boxes whose radius reaches half a side, capsule poles, the sheet drape's collapsed top/bottom rings.
+const _fixedGeo = new WeakSet();
+function fixNormals(root) { let bad = 0; const c = new THREE.Vector3(), v = new THREE.Vector3();
+  root.traverse(o => { const g = o.geometry; if (!g || _fixedGeo.has(g)) return; _fixedGeo.add(g); const p = g.attributes.position, n = g.attributes.normal; if (!p) return;
+    for (let i = 0; i < p.count * p.itemSize; i++) if (!Number.isFinite(p.array[i])) { p.array[i] = 0; p.needsUpdate = true; }
+    if (!n) return; if (!g.boundingBox) g.computeBoundingBox(); g.boundingBox.getCenter(c);
+    for (let i = 0; i < n.count; i++) { const l = Math.hypot(n.getX(i), n.getY(i), n.getZ(i)); if (l > 0.5 && Number.isFinite(l)) continue;
+      v.fromBufferAttribute(p, i).sub(c); if (!(v.lengthSq() > 1e-12)) v.set(0, 1, 0); v.normalize(); n.setXYZ(i, v.x, v.y, v.z); bad++; }
+    if (bad) n.needsUpdate = true; });
+  return bad; }
+function countBadNormals(root) { let k = 0; root.traverse(o => { const n = o.geometry && o.geometry.attributes.normal; if (!n) return; for (let i = 0; i < n.count; i++) { const l = Math.hypot(n.getX(i), n.getY(i), n.getZ(i)); if (!(l > 0.5)) k++; } }); return k; }
 function buildLevel(i) {
   disposeWorld(); LVI = i; lv = LV[i]; MAP = lv.map; ROWS = MAP.length; COLS = MAP[0].length; seed = 11 + i * 97;
   items = []; for (let z = 0; z < ROWS; z++) for (let x = 0; x < COLS; x++) { const ch = MAP[z][x]; if ('SLlPKCFBTNWVoqEAYUGstrRXZ'.includes(ch)) items.push({ type: ch, cx: x, cz: z }); }
@@ -439,7 +452,7 @@ function buildLevel(i) {
   // dust motes in lit areas
   if (lamps.length) { const n = isTouch ? 400 : 1100, pos = new Float32Array(n * 3); for (let k = 0; k < n; k++) { const L = lamps[k % lamps.length]; pos[k * 3] = L.x + (rnd() - 0.5) * 2.4; pos[k * 3 + 1] = rnd() * H; pos[k * 3 + 2] = L.z + (rnd() - 0.5) * 2.4; }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); world.add(new THREE.Points(g, own(new THREE.PointsMaterial({ color: lv.env.lamp, size: 0.012, transparent: true, opacity: 0.45, depthWrite: false, blending: THREE.AdditiveBlending })))); }
-  dressLevel();
+  dressLevel(); window.__morgFixed = fixNormals(world);
   assignAudio();
 }
 function bottleMesh() { const g = new THREE.Group(); const b = add(new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.032, 0.13, 12), MAT.bottle), 0, 0, 0, g); add(new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.02, 0.05, 10), MAT.bottle), 0, 0.085, 0, g); return g; }
@@ -731,6 +744,9 @@ const slats = new THREE.Group(); slats.visible = false; cam.add(slats);
 
 // ================= POST =================
 const comp = new EffectComposer(R); comp.addPass(new RenderPass(S, cam));
+// safety net: any NaN/Inf pixel becomes black on its own instead of being spread by bloom into blocks
+comp.addPass(new ShaderPass({ uniforms: { tDiffuse: { value: null } }, vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+  fragmentShader: 'uniform sampler2D tDiffuse; varying vec2 vUv; void main(){ vec4 c = texture2D(tDiffuse, vUv); if (any(isnan(c)) || any(isinf(c))) c = vec4(0.0, 0.0, 0.0, 1.0); gl_FragColor = clamp(c, 0.0, 64.0); }' }));
 const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.5, 0.6, 0.82); comp.addPass(bloom);
 comp.addPass(new OutputPass());
 const grade = new ShaderPass({ uniforms: { tDiffuse: { value: null }, uT: { value: 0 }, uV: { value: 1.1 }, uDark: { value: 0 }, uTone: { value: new THREE.Vector3(0.86, 1, 0.98) } },
@@ -1135,7 +1151,7 @@ addEventListener('keydown', e => { if (e.code === 'Escape' && running && isTouch
 $('next').onclick = () => { if (!LV[LVI + 1] || lv.final) { $('end').hidden = true; showMenu(); return; } startChapter(LVI + 1, false); };
 $('rest').onclick = () => { $('end').hidden = true; showMenu(); };
 
-function frame(now) { if (typeof __dead !== 'undefined' && __dead) return; const dt = Math.min(0.05, (now - last) / 1000); last = now; if (running && !paused) update(dt); grade.uniforms.uT.value = (grade.uniforms.uT.value + 1) % 64; grade.uniforms.uDark.value = P.hidden ? 0.35 : 0; comp.render(); requestAnimationFrame(frame); }
+function frame(now) { if (typeof __dead !== 'undefined' && __dead) return; if (world.children.length !== frame.n) { frame.n = world.children.length; fixNormals(world); } const dt = Math.min(0.05, (now - last) / 1000); last = now; if (running && !paused) update(dt); grade.uniforms.uT.value = (grade.uniforms.uT.value + 1) % 64; grade.uniforms.uDark.value = P.hidden ? 0.35 : 0; comp.render(); requestAnimationFrame(frame); }
 
 // ================= MENU =================
 
@@ -1152,7 +1168,7 @@ $('cont').onclick = () => { const c = SAVE.cur; if (c) startChapter(c.lv, true);
 $('go').onclick = () => { $('start').hidden = true; audioInit(); SAVE.cur = null; writeSave(); playStory(INTRO, () => startChapter(0, false)); };
 if (!SAVE.unlocked) SAVE.unlocked = 0;
 loadChapter(SAVE.cur ? SAVE.cur.lv : 0, false, true);
-showMenu(); requestAnimationFrame(frame);
-window.__morg = { P, get enemies() { return enemies; }, get lamps() { return lamps; }, get lv() { return LVI; }, startChapter, loadChapter, interact: () => interact(), getFocus: () => focus, teleport: (cx, cz, yaw) => { P.x = C2W(cx); P.z = C2W(cz); if (yaw !== undefined) P.yaw = yaw; }, state: () => ({ lv: LVI, ended, caughtT, keys: P.keys, hidden: !!P.hidden, unlocked: door.unlocked, running }), save: () => SAVE, finish: () => finishChapter(), get map() { return MAP; }, get door() { return door; }, get exit() { return exitIt; }, get pickups() { return pickups; }, get valves() { return valves; }, get switches() { return switches; }, get bottles() { return bottlesW; }, get sedyes() { return sedyes; }, get containers() { return containers; }, get rooms() { return lv.rooms || []; }, hands: v => { handsRoot.visible = v; }, spawnFig: (l, x, z, yaw) => { const m = carsafliMesh(l); m.position.set(x, 0, z); m.rotation.y = yaw; world.add(m); return 1; }, get scares() { return scareState; }, get loopN() { return loopN; }, get peeks() { return peeks; }, get phones() { return phones; }, G: GAPI, openContainer, los, throwBottle: () => throwBottle(), litAt, tick: n => { for (let i = 0; i < n; i++) update(0.05); } };
+fixNormals(cam); showMenu(); requestAnimationFrame(frame);
+window.__morg = { P, get enemies() { return enemies; }, get lamps() { return lamps; }, get lv() { return LVI; }, startChapter, loadChapter, interact: () => interact(), getFocus: () => focus, teleport: (cx, cz, yaw) => { P.x = C2W(cx); P.z = C2W(cz); if (yaw !== undefined) P.yaw = yaw; }, state: () => ({ lv: LVI, ended, caughtT, keys: P.keys, hidden: !!P.hidden, unlocked: door.unlocked, running }), save: () => SAVE, finish: () => finishChapter(), get map() { return MAP; }, get door() { return door; }, get exit() { return exitIt; }, get pickups() { return pickups; }, get valves() { return valves; }, get switches() { return switches; }, get bottles() { return bottlesW; }, get sedyes() { return sedyes; }, get containers() { return containers; }, get rooms() { return lv.rooms || []; }, hands: v => { handsRoot.visible = v; }, spawnFig: (l, x, z, yaw) => { const m = carsafliMesh(l); m.position.set(x, 0, z); m.rotation.y = yaw; world.add(m); return 1; }, get scares() { return scareState; }, badNormals: () => countBadNormals(S), get loopN() { return loopN; }, get peeks() { return peeks; }, get phones() { return phones; }, G: GAPI, openContainer, los, throwBottle: () => throwBottle(), litAt, tick: n => { for (let i = 0; i < n; i++) update(0.05); } };
 
 }
