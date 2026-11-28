@@ -222,6 +222,13 @@ function buildSet(scene: T.Scene, lowGpu: boolean) {
 }
 
 /** body-specific starting points when a body is picked (keeps everything else the player already chose) */
+/** "Ali" -> "Ali'nin Büfesi", "Mehmet" -> "Mehmet'in Büfesi", "Can" -> "Can'ın Büfesi" (ünlü uyumu + kaynaştırma n) */
+export function otoDukkan(ad: string): string {
+  const a = ad.trim(); if (!a) return '';
+  const k = a.toLocaleLowerCase('tr'), v = [...k].reverse().find(c => 'aeıioöuü'.includes(c)) || 'e';
+  const u = 'aı'.includes(v) ? 'ı' : 'ei'.includes(v) ? 'i' : 'ou'.includes(v) ? 'u' : 'ü';
+  return a + "'" + ('aeıioöuü'.includes(k[k.length - 1]) ? 'n' + u + 'n' : u + 'n') + ' Büfesi';
+}
 function bedenBaslangic(m: EsnafimSave, tip: Beden): Partial<EsnafimSave> {
   const d: Record<string, unknown> = { tip };
   const sac = SAC.find(s => s.id === m.sac);
@@ -312,7 +319,7 @@ export function createKulis(deps: {
     const tip = e.tip as Beden;
     switch (cat) {
       case 'kimlik': return `${L('Adın', e.adKilit ? 'bir kez seçildi, değişmez' : 'bir kez seçilir, sonra değişmez')}<input class="ka-in" name="ad" maxlength="14" value="${esc(e.ad)}" placeholder="Adını yaz" autocomplete="off"${e.adKilit ? ' readonly' : ''}>
-${L('Dükkanının adı')}<input class="ka-in" name="dukkan" maxlength="22" value="${esc(e.dukkan)}" autocomplete="off">
+${L('Dükkânının adı')}<input class="ka-in" name="dukkan" maxlength="22" value="${esc(e.dukkan)}" autocomplete="off">
 ${L('Beden', tip === 'b' ? 'Kadın' : 'Erkek')}<div class="ka-row"><button class="ka-ch" data-beden="1">Bedeni değiştir</button></div>
 ${L('Sınıfın', 'her şeyi yaparsın, sınıfın en iyi olduğun iş')}
 <div class="ka-cls">${SINIFLAR.map(s => `<button class="ka-cl${s.id === e.sinif ? ' on' : ''}" data-sinif="${s.id}"><i>${s.icon}</i>${s.ad}<small>${s.desc}</small><b>${s.perk}</b><em>${YETENEK[s.id].icon} ${YETENEK[s.id].ad}</em>${s.id === e.sinif ? `<u data-kit="${s.id}">Sınıf kıyafetini giy</u>` : ''}</button>`).join('')}</div>`;
@@ -424,11 +431,16 @@ ${KIYAFET_ZINCIRLER.map(z => `${L(esc(z.name), esc(z.tagline))}<div class="ka-ro
     tools.innerHTML = `<button class="ka-tb wide" data-t="rnd" title="Rastgele (bedenine uygun)">${IC.rnd}<span>Rastgele</span></button><button class="ka-tb" data-t="undo" title="Geri al" aria-label="Geri al"${undo.length ? '' : ' disabled'}>${IC.undo}</button><button class="ka-tb" data-t="redo" title="Yinele" aria-label="Yinele"${redo.length ? '' : ' disabled'}>${IC.redo}</button><button class="ka-tb" data-t="cam" title="${near ? 'Tüm boy' : 'Yüze yakın'}" aria-label="${near ? 'Tüm boy' : 'Yüze yakın'}">${near ? IC.far : IC.near}</button>`;
   }
 
+  /** dükkân adı hâlâ otomatik mi: boş, varsayılan ya da adından türemiş */
+  const otoMu = (e: EsnafimSave) => !e.dukkan.trim() || e.dukkan === "Sabri'nin Büfesi" || e.dukkan === "Sabriye'nin Büfesi" || e.dukkan === otoDukkan(e.ad);
+  const varsayilanDukkan = (e: EsnafimSave) => (e.tip === 'b' ? "Sabriye'nin Büfesi" : "Sabri'nin Büfesi");
   function chooseBody(tip: Beden) {
     if (!m) return;
     const first = !m.done && step === 'beden' && !undo.length;
     step = 'edit'; duo.forEach(h => h.dispose()); duo = []; duoKey = '';
+    const oto = otoMu(m);
     set(bedenBaslangic(m, tip), { noUndo: first });
+    if (oto && !m.ad.trim()) { m.dukkan = varsayilanDukkan(m); deps.command({ kind: 'esnafim', op: 'set', data: { dukkan: m.dukkan } }); }
     cat = 'kimlik'; near = false; zoom = 1; spin = 0; paint();
   }
 
@@ -477,6 +489,8 @@ ${KIYAFET_ZINCIRLER.map(z => `${L(esc(z.name), esc(z.tagline))}<div class="ka-ro
     const tg = e.target as HTMLInputElement; if (!m) return;
     if (tg.name === 'boy') { const v = Math.round(Number(tg.value) * 100) / 100; set({ boy: v }, { noUndo: Math.abs(v - m.boy) < 0.02 && undo.length > 0 }); return; }
     if (tg.name === 'ad' || tg.name === 'dukkan') {
+      // QA 2026-11-27: dükkân adı oyuncu el ile yazmadıysa adla birlikte değişir (Sabriye seçince "Sabri'nin Büfesi" kalmasın)
+      if (tg.name === 'ad' && otoMu(m)) { const d = otoDukkan(tg.value) || varsayilanDukkan(m); m.dukkan = d; const f = panel?.querySelector('input[name="dukkan"]') as HTMLInputElement | null; if (f) f.value = d; deps.command({ kind: 'esnafim', op: 'set', data: { dukkan: d } }); }
       (m as unknown as Record<string, string>)[tg.name] = tg.value;
       if (nameErr && tg.name === 'ad' && tg.value.trim()) { nameErr = false; const f = panel!.querySelector('.ka-st'); if (f) { f.classList.remove('bad'); f.textContent = ''; } }
       deps.command({ kind: 'esnafim', op: 'set', data: { [tg.name]: tg.value } }); paintTag();

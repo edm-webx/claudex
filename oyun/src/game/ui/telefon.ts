@@ -12,6 +12,7 @@ import { PIER } from '../../content/prefabs/iskele/layout';
 import { BANKA, ATMLER } from '../../content/esya';
 import { mulkApi } from '../sim/mulk';
 import { realmAt } from '../../content/realm';
+import { kabukKur, DURUM_SVG } from './telefon-kabuk';
 
 type Cmd = { kind: string; [k: string]: unknown };
 interface Deps {
@@ -21,6 +22,7 @@ interface Deps {
   walkable?: (p: { x: number; z: number }) => boolean;
   command(c: Cmd): void;
   sfx?(id: string): void;
+  toast?(t: string): void;
 }
 export interface Telefon { update(dt: number): void; open(): void; close(): void; toggle(): void; isOpen(): boolean; badge(): number; dispose(): void }
 
@@ -33,19 +35,23 @@ const CSS = `
 #sbui .sb-bar .sb-bi{min-width:72px!important;min-height:60px!important;flex:none!important}
 .tf-mini{position:absolute;left:calc(var(--sl,0px) + 12px);bottom:calc(var(--sbm,0px) + 12px);z-index:34;width:132px;height:132px;border-radius:50%;padding:0;border:3px solid rgba(255,255,255,.88);background:#9ccde0;overflow:hidden;box-shadow:0 8px 20px rgba(4,10,24,.4);cursor:pointer;pointer-events:auto}
 .tf-mini canvas{display:block;width:100%;height:100%}
-.tf-mini b{position:absolute;left:50%;bottom:7px;transform:translateX(-50%);font:900 10px/1 var(--body);letter-spacing:.1em;color:#fff;background:rgba(11,19,38,.85);padding:3px 8px;border-radius:6px;pointer-events:none}
+.tf-mini b{position:absolute;left:50%;bottom:7px;transform:translateX(-50%);font:900 11px/1 var(--body);letter-spacing:.1em;color:#fff;background:rgba(11,19,38,.85);padding:3px 8px;border-radius:6px;pointer-events:none}
 .tf-mini.uzak canvas{display:none}.tf-mini.uzak:after{content:attr(data-yer);position:absolute;top:22%;left:8px;right:8px;text-align:center;font:800 12px/1.15 var(--disp,system-ui);color:#fff}.tf-mini.uzak{background:rgba(11,19,38,.85);display:grid;place-items:center}.tf-mini.uzak:before{content:"";width:46px;height:46px;background:currentColor;color:#fff;-webkit-mask:var(--ic) center/contain no-repeat;mask:var(--ic) center/contain no-repeat}
 .tf-ctx{position:absolute;left:50%;bottom:calc(var(--sbm,0px) + 14px);transform:translateX(-50%);z-index:34;display:none;align-items:center;gap:8px;padding:6px 8px 6px 12px;border-radius:999px;background:#fff6e6;color:#3b2a20;border:3px solid #3b2a20;box-shadow:0 4px 0 #3b2a20;font:900 15px var(--disp);pointer-events:auto;white-space:nowrap}
 .tf-ctx.on{display:flex}.tf-ctx svg{width:24px;height:24px}
 .tf-ctx button{min-height:44px;padding:0 14px;border-radius:999px;border:2.5px solid #3b2a20;background:#ffd23f;font:900 14px var(--disp);color:#3b2a20;cursor:pointer}
-.tf-bg{position:fixed;inset:0;z-index:61;display:none;pointer-events:auto;background:rgba(8,12,26,.28)}
+.tf-bg{position:fixed;inset:0;z-index:61;display:none;pointer-events:auto;background:transparent}
 .tf-bg.on{display:block}
-.tf-ph{position:absolute;right:calc(var(--sr,0px) + 18px);bottom:12px;top:12px;width:min(340px,calc(100vw - 32px));max-height:680px;margin-top:auto;border-radius:40px;background:#0d1020;border:3px solid #2c3352;box-shadow:0 20px 50px rgba(0,0,0,.5);padding:12px;animation:tf-in .22s cubic-bezier(.2,1.2,.4,1)}
-@keyframes tf-in{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+/* the handset uses the same geometry as every app screen (telefon-kabuk.ts), so opening an app never moves the frame */
+.tf-ph{position:absolute;right:var(--tf-r,18px);bottom:var(--tf-b,12px);top:var(--tf-t,12px);width:var(--tf-w,340px);max-height:var(--tf-hmax,680px);margin-top:auto;box-sizing:border-box;border-radius:calc(var(--tf-bz,9px) + 30px);background:#10131f;box-shadow:0 0 0 2px #3a4262,0 0 0 3.5px #07090f,0 22px 48px rgba(4,8,20,.45);padding:var(--tf-bz,9px);animation:tf-in .24s cubic-bezier(.2,.9,.3,1)}
+@keyframes tf-in{from{transform:translateY(26px);opacity:0}to{transform:none;opacity:1}}
+.tf-bg.kapan{pointer-events:none}.tf-bg.kapan .tf-ph{opacity:0;transition:opacity .18s ease-out .05s}
 @media (prefers-reduced-motion:reduce){.tf-ph{animation:none}}
 .tf-scr{position:relative;height:100%;border-radius:30px;overflow:hidden;background:linear-gradient(170deg,#ffe7b0 0%,#f6b37a 45%,#7c6bb0 100%);color:#3b2a20;display:flex;flex-direction:column}
-.tf-notch{position:absolute;top:7px;left:50%;transform:translateX(-50%);width:86px;height:20px;border-radius:12px;background:#0d1020;z-index:2}
-.tf-in{flex:1;overflow-y:auto;padding:36px 16px 16px;scrollbar-width:none}
+.tf-scr:after{content:"";position:absolute;top:calc(var(--tf-sb,26px) / 2 - 6px);right:22px;width:58px;height:12px;background:var(--tf-durum) center/contain no-repeat;opacity:.92;pointer-events:none}
+.tf-notch{position:absolute;top:5px;left:50%;transform:translateX(-50%);width:86px;height:calc(var(--tf-sb,26px) - 9px);border-radius:12px;background:#10131f;z-index:2}
+.tf-in{flex:1;overflow-y:auto;padding:calc(var(--tf-sb,26px) + 10px) 16px 6px;scrollbar-width:none}
+.tf-x{position:absolute;top:calc(var(--tf-sb,26px) + 6px);right:10px;z-index:2;min-width:40px!important;min-height:40px!important;border-radius:50%!important;background:rgba(255,255,255,.78)!important;font:900 17px/1 var(--disp)!important}
 .tf-clock{font:800 42px/1 var(--disp);text-align:center;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.2)}
 .tf-date{text-align:center;font:800 13px var(--body);color:#fff;margin:2px 0 12px}
 .tf-w{background:rgba(255,255,255,.88);border-radius:18px;padding:10px 12px;font:800 13px/1.35 var(--body);margin-bottom:14px}
@@ -65,11 +71,12 @@ const CSS = `
 @media (max-height:460px),(max-width:700px){
   .hd-card{width:min(190px,40vw)!important}.hd-card .hd-sm,.hd-card .hd-main .sb,.hd-card .hd-amt{display:none!important}.hd-card .hd-main{border-bottom:0!important;padding:5px 8px!important}
   .hv-chip{display:none!important}
-  #sbui .sb-bar .sb-bi{max-width:none!important;min-width:64px!important;height:56px!important;min-height:56px!important}#sbui .sb-bar .sb-bi span{display:block!important;font-size:10px!important}#sbui .sb-bar .sb-bi svg{width:26px!important;height:26px!important}
+  #sbui .sb-bar .sb-bi{max-width:none!important;min-width:64px!important;height:56px!important;min-height:56px!important}#sbui .sb-bar .sb-bi span{display:block!important;font-size:12px!important}#sbui .sb-bar .sb-bi svg{width:26px!important;height:26px!important}
   .f2-rail{top:calc(var(--hudb,100px) + 6px)!important;width:140px!important}.f2-rail .f2-top,.f2-rail .f2-note{display:none!important}
-  .tf-apps{grid-template-columns:repeat(4,1fr)}.tf-w{display:none}.tf-ph{width:min(380px,calc(100vw - 24px))!important}
+  .tf-apps{grid-template-columns:repeat(auto-fill,minmax(76px,1fr))}
 }
-@media (max-height:460px){.tf-mini{width:96px;height:96px}.tf-mini b{display:none}.tf-ph{width:min(300px,calc(100vw - 24px));border-radius:30px;padding:8px}.tf-scr{border-radius:24px}.tf-clock{font-size:30px}.tf-in{padding-top:30px}.tf-app i{width:50px;height:50px}.tf-apps{gap:8px 4px}.tf-w{margin-bottom:10px}}
+@media (max-height:460px){.tf-mini{width:96px;height:96px}.tf-mini b{display:none}.tf-scr{border-radius:24px}.tf-clock{font-size:30px}.tf-date{margin-bottom:8px}.tf-app i{width:50px;height:50px}.tf-apps{gap:8px 4px}
+  .tf-w{display:block;padding:6px 10px;margin-bottom:8px;font-size:12px}.tf-w b{display:inline;margin-right:6px}}
 `;
 
 type Screen = 'home' | 'kasa';
@@ -81,6 +88,7 @@ const APPS: { id: string; ad: string; ic: string; bg: string }[] = [
 
 export function createTelefon(d: Deps): Telefon {
   const st = document.createElement('style'); st.textContent = CSS; d.root.appendChild(st);
+  kabukKur(d.root); d.root.style.setProperty('--tf-durum', DURUM_SVG);
   const emit = (id: string) => d.root.dispatchEvent(new CustomEvent('ui:open', { detail: id, bubbles: true }));
   const S = () => d.rules()?.state;
 
@@ -170,23 +178,34 @@ ${gl.length ? `<div class="tf-w"><b>AJANDA · BUGÜN</b>${gl.map((h: any) => `${
   function paint() {
     const html = scr === 'kasa' ? kasaScr() : home();
     if (html === key) return; key = html;
-    bg.innerHTML = `<div class="tf-ph" role="dialog" aria-label="Telefon"><div class="tf-scr"><div class="tf-notch"></div><div class="tf-in">${html}</div></div></div>`;
+    bg.innerHTML = `<div class="tf-ph" role="dialog" aria-label="Telefon"><div class="tf-scr"><div class="tf-notch"></div>${scr === 'home' ? '<button class="tf-x" data-x="1" aria-label="Telefonu kapat">✕</button>' : ''}<div class="tf-in">${html}</div></div></div>`;
   }
   bg.addEventListener('click', e => {
     if (e.target === bg) { api.close(); return; }
     const el = (e.target as HTMLElement).closest('button') as HTMLButtonElement | null; if (!el) return;
     try { d.sfx?.('tik'); } catch { /* */ }
+    if (el.dataset.x) { api.close(); return; }
     if (el.dataset.back) { scr = 'home'; key = ''; paint(); return; }
     const a = el.dataset.app; if (!a) return;
     if (a === 'kasa') { scr = a; key = ''; paint(); return; }
-    api.close();
-    if (a === 'arkadas') { (document.querySelector('.on-oda') as HTMLElement | null)?.click(); return; }
+    gecis();
+    if (a === 'arkadas') { const b = document.querySelector('.on-oda') as HTMLElement | null; if (b) b.click(); else d.toast?.('Arkadaş odası şu an açılamıyor. Biraz sonra yeniden dene.'); return; }
     emit(a);
   });
 
+  // home screen -> app: the app screen opens in the same frame (telefon-kabuk.ts), the handset fades out on top of it, nothing jumps or flashes
+  let gT: ReturnType<typeof setTimeout> | null = null;
+  function gecis() {
+    open_ = false; d.root.classList.add('tf-gecis', 'tf-acik'); bg.classList.add('kapan');
+    if (gT) clearTimeout(gT);
+    gT = setTimeout(() => { bg.classList.remove('on', 'kapan'); gT = setTimeout(() => { d.root.classList.remove('tf-gecis'); gT = null; }, 200); }, 240);
+  }
+  const ACIK = '.sb-sheet:not(.out),.mp-bg.on,.on-bg,.kd-bg.on';
+  function acikMi() { const on = open_ || !!d.root.querySelector(ACIK); if (d.root.classList.contains('tf-acik') !== on) d.root.classList.toggle('tf-acik', on); }
+
   const api: Telefon = {
-    open() { open_ = true; scr = 'home'; key = ''; paint(); bg.classList.add('on'); bg.tabIndex = -1; bg.focus(); },
-    close() { open_ = false; bg.classList.remove('on'); },
+    open() { if (gT) { clearTimeout(gT); gT = null; d.root.classList.remove('tf-gecis'); } open_ = true; scr = 'home'; key = ''; paint(); bg.classList.remove('kapan'); bg.classList.add('on'); bg.tabIndex = -1; bg.focus(); acikMi(); },
+    close() { open_ = false; bg.classList.remove('on'); acikMi(); },
     toggle() { if (open_) api.close(); else api.open(); },
     isOpen: () => open_,
     badge: () => badges().ajanda,
@@ -196,7 +215,7 @@ ${gl.length ? `<div class="tf-w"><b>AJANDA · BUGÜN</b>${gl.map((h: any) => `${
       bakeT -= 0.1;
       const bk = (s.stage || 1) + '|' + (d.walkable ? 1 : 0);
       if ((bk !== bakeKey && bakeT <= 0) || !bake) { bakeKey = bk; bakeT = 2; try { doBake(); } catch { bake = null; } }
-      drawMini(); drawCtx();
+      drawMini(); drawCtx(); acikMi();
       if (open_) paint();
     },
     dispose() { st.remove(); mini.remove(); ctx.remove(); bg.remove(); },

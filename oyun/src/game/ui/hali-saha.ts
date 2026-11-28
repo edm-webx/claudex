@@ -11,8 +11,8 @@
 import { createHaliSaha3D, type HS3 } from './hali-saha-3d';
 import { createMatch, FORMATIONS } from '../sim/macmotor';
 import { ADIM, createGirdi, dugmeBul, dugmeYerlesimi, nisanYazi, pasHedefi, sabitAdim, yardimSatirlari, type PadBenzeri } from './hali-saha-girdi';
-import { flasAzalt } from '../../engine/fx/flas';
 import { tusAdi } from '../../engine/input';
+import { flasAzalt } from '../../engine/fx/flas';
 import { olayBanner, restartBanner, restartIpucu, sesler, type MacOlay } from './hali-saha-olay';
 
 type Cmd = { kind: string; [k: string]: unknown };

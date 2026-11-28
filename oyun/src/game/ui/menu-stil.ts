@@ -40,7 +40,7 @@ const CSS = `
 .mn-key{display:inline-grid;place-items:center;min-width:24px;height:22px;padding:0 6px;border:1px solid rgba(255,225,170,.45);border-radius:6px;color:#ffe9c4;font-weight:700;margin-right:6px}
 .mn-dokun{display:none}
 @media (hover:none),(max-width:760px){.mn-kb{display:none!important}.mn-dokun{display:inline}}
-@media (max-width:760px),(max-aspect-ratio:1/1){
+@media (max-width:760px),(max-aspect-ratio:1/1),(max-height:480px){
  .mn-grade{background:linear-gradient(180deg,rgba(20,8,4,.82) 0%,rgba(20,8,4,.25) 32%,rgba(0,0,0,0) 48%,rgba(14,6,3,.86) 78%)}
  .mn-logo{left:0;right:0;top:clamp(34px,7vh,64px);text-align:center}
  .mn-logo .k{margin-left:.52em}.mn-logo .b{font-size:clamp(58px,19vw,92px)}
@@ -68,10 +68,17 @@ const CSS = `
 .mn-btn.mn-ikinci{background:rgba(255,245,230,.08);color:#ffe1a8;box-shadow:inset 0 0 0 1px rgba(255,214,160,.3)}
 .mn-geri{position:absolute;top:16px;right:16px;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,214,160,.28);background:rgba(0,0,0,.25);color:#ffe1a8;font:700 18px/1 'SB Govde',system-ui,sans-serif;cursor:pointer;display:grid;place-items:center}
 .mn-geri:hover{background:rgba(255,214,160,.14)}
-@media (max-width:760px),(max-aspect-ratio:1/1){
+@media (max-width:760px),(max-aspect-ratio:1/1),(max-height:480px){
  .mn-panel{left:12px;right:12px;width:auto;top:auto;bottom:calc(clamp(14px,5.2vh,40px) + 10px);transform:none;max-height:calc(100% - 232px);padding:22px 20px 18px;border-radius:20px;animation-name:mn-panel-m}
  @keyframes mn-panel-m{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:none}}
  .mn-panel h2,.mn-h{font-size:27px}
+}
+/* telefon yatay (kısa ve geniş): panel sağda tam boy, içi kaydırılır; alt düğme kaydırmayla her zaman erişilir */
+@media (max-height:480px) and (min-aspect-ratio:1/1){
+ .mn-panel{left:auto;right:max(12px,env(safe-area-inset-right));top:10px;bottom:10px;width:min(440px,calc(100vw - 24px));max-height:none;padding:16px 18px 14px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+ .mn-panel h2,.mn-h{font-size:24px}.mn-sub{margin-bottom:8px;font-size:13px}.mn-pid{margin-bottom:8px}.mn-btn{min-height:44px;margin-top:10px}.mn-geri{top:10px;right:10px}
+ .mn-menu{bottom:calc(clamp(14px,5.2vh,40px) + 48px)}.mn-mi{min-height:40px;padding:2px 0}.mn-mi.ana{font-size:32px}.mn-basla{bottom:calc(clamp(14px,5.2vh,40px) + 58px)}
+ .mn-logo{top:clamp(14px,4vh,28px)}.mn-logo .b{font-size:clamp(44px,15vh,62px)}
 }
 .mn-title{background:transparent!important;animation:mn-in .9s ease both}
 @keyframes mn-in{from{opacity:0}to{opacity:1}}
@@ -89,6 +96,21 @@ const CSS = `
 .mn-mi.on:before{width:36px;height:3px;background:linear-gradient(90deg,#ffd27a,#ff8a3d);box-shadow:0 0 14px #ffb04a}
 .mn-mi:focus-visible{outline:2px solid rgba(255,206,140,.6);outline-offset:4px;border-radius:8px}
 .mn-mi.ana{font-size:clamp(28px,3.2vw,40px);font-family:'SB Baslik','SB Govde',system-ui,sans-serif;font-weight:800}
+.mn-polaroid{position:absolute;right:clamp(24px,5.5vw,84px);top:clamp(26px,7vh,70px);width:clamp(168px,16vw,224px);padding:9px 9px 0;border:0;border-radius:3px;background:linear-gradient(180deg,#f7f2e8,#ece4d4);box-shadow:0 18px 34px rgba(0,0,0,.45),0 3px 8px rgba(0,0,0,.35);transform:rotate(-4.5deg);transform-origin:50% 0;cursor:pointer;text-align:center;font-family:'SB Govde',system-ui,sans-serif;transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s;-webkit-tap-highlight-color:transparent}
+.mn-polaroid img{display:block;width:100%;aspect-ratio:1;object-fit:cover;border-radius:1px;background:#0c0f10;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25);filter:saturate(.9) contrast(1.04)}
+.mn-polaroid b{display:block;margin:9px 0 2px;font:800 clamp(13px,1.15vw,16px)/1.1 'SB Govde',system-ui,sans-serif;color:#2b2622;letter-spacing:-.01em}
+.mn-polaroid small{display:block;padding-bottom:12px;font:600 clamp(11px,.95vw,13px)/1.2 'SB Govde',system-ui,sans-serif;color:#7a6f63;letter-spacing:.14em;text-transform:uppercase}
+.mn-polaroid .bant{position:absolute;left:50%;top:-11px;width:74px;height:22px;margin-left:-37px;background:rgba(240,226,190,.72);box-shadow:0 1px 3px rgba(0,0,0,.18);transform:rotate(3deg)}
+.mn-polaroid em{position:absolute;right:-10px;top:-10px;font:800 10px/1 'SB Govde',system-ui,sans-serif;font-style:normal;letter-spacing:.18em;padding:6px 8px 5px;border-radius:999px;background:linear-gradient(90deg,#ffd27a,#ff8a3d);color:#2a1606;box-shadow:0 4px 12px rgba(0,0,0,.3);transform:rotate(6deg)}
+.mn-polaroid:hover,.mn-polaroid:focus-visible{transform:rotate(-1deg) translateY(-3px) scale(1.04);box-shadow:0 26px 44px rgba(0,0,0,.5),0 4px 10px rgba(0,0,0,.35);outline:none}
+.mn-polaroid:focus-visible{box-shadow:0 0 0 3px #ffcf7a,0 26px 44px rgba(0,0,0,.5)}
+.mn-polaroid:active{transform:rotate(-1deg) scale(.98)}
+.mn-bekle .mn-polaroid,.mn-panelde .mn-polaroid{visibility:hidden}
+.mn-title:not(.mn-bekle) .mn-polaroid{animation:mn-pol .9s cubic-bezier(.2,.9,.25,1.1) .25s backwards}
+@keyframes mn-pol{from{opacity:0;transform:rotate(-12deg) translateY(-24px)}to{opacity:1;transform:rotate(-4.5deg)}}
+@media (max-width:760px),(max-aspect-ratio:1/1){.mn-polaroid{width:104px;padding:6px 6px 0;right:14px;top:auto;bottom:calc(clamp(14px,5.2vh,40px) + 300px);transform:rotate(5deg)}.mn-polaroid b{font-size:10px;margin-top:6px}.mn-polaroid small{font-size:8.5px;padding-bottom:8px;letter-spacing:.08em}.mn-polaroid .bant{width:46px;height:14px;margin-left:-23px;top:-7px}.mn-polaroid em{font-size:8px;padding:4px 6px 3px;right:-8px;top:-8px}@keyframes mn-pol{from{opacity:0;transform:rotate(12deg) translateY(-16px)}to{opacity:1;transform:rotate(5deg)}}}
+@media (prefers-reduced-motion:reduce){.mn-polaroid{animation:none!important;transition:none}}
+.mn-menu .mn-mi:nth-child(5){animation-delay:.32s}
 .mn-bekle .mn-menu,.mn-bekle .mn-foot{visibility:hidden}
 .mn-title:not(.mn-bekle) .mn-menu .mn-mi{animation:mn-sol .7s cubic-bezier(.2,.8,.2,1) both}
 .mn-menu .mn-mi:nth-child(2){animation-delay:.08s}.mn-menu .mn-mi:nth-child(3){animation-delay:.16s}.mn-menu .mn-mi:nth-child(4){animation-delay:.24s}
@@ -101,7 +123,7 @@ const CSS = `
 @keyframes mn-eq{to{height:14px}}
 .mn-foot .sag{display:flex;gap:18px;align-items:center}
 .mn-panelde .mn-foot .sag{visibility:hidden}
-@media (max-width:760px),(max-aspect-ratio:1/1){.mn-panelde .mn-foot,.mn-panelde .mn-menu{visibility:hidden}}
+@media (max-width:760px),(max-aspect-ratio:1/1),(max-height:480px){.mn-panelde .mn-foot,.mn-panelde .mn-menu{visibility:hidden}}
 .mn-ayar-satir{margin:16px 0 0}.mn-ayar-satir label{display:flex;justify-content:space-between;font:700 11.5px/1 'SB Govde',system-ui,sans-serif;letter-spacing:.2em;color:rgba(255,220,170,.75);text-transform:uppercase;margin-bottom:10px}
 .mn-ayar-satir label output{letter-spacing:.04em;color:#ffe1a8}
 .mn-ayar-satir input[type=range]{width:100%;height:28px;margin:0;accent-color:#f6a640;cursor:pointer}
@@ -116,7 +138,7 @@ const CSS = `
 .mn-perde{position:fixed;inset:0;z-index:999;background:#0b0503;pointer-events:none;opacity:0;transition:opacity .35s ease}
 .mn-perde.on{opacity:1}
 .mn-menude>*:not(.mn-title):not(.gr-bg):not(style):not(.sb-toasts){visibility:hidden!important}
-@media (max-width:760px),(max-aspect-ratio:1/1){
+@media (max-width:760px),(max-aspect-ratio:1/1),(max-height:480px){
  .mn-menu{left:0;right:0;top:auto;bottom:calc(clamp(14px,5.2vh,40px) + 64px);align-items:center;gap:0}
  .mn-mi{justify-content:center;padding:6px 0;min-height:48px}.mn-mi:before{display:none}.mn-mi.on{transform:none}.mn-mi small{display:none}
  .mn-mi.ana{font-size:38px;color:#fff6e4;text-shadow:0 0 24px rgba(255,190,90,.6)}
@@ -124,6 +146,19 @@ const CSS = `
  .mn-basla{bottom:calc(clamp(14px,5.2vh,40px) + 90px);letter-spacing:.24em}
 }
 @media (max-height:760px){.mn-panel{padding:22px 24px 18px}.mn-panel h2,.mn-h{font-size:28px}.mn-sub{margin-bottom:12px}.mn-btn{min-height:48px;margin-top:14px}.mn-krediler div{padding:8px 0}}
+/* QA 2026-11-27: telefon yatay (844x390, 932x430, 667x375) masaüstü yerleşimini alıyordu, Ayarlar/Yapımcılar ekran dışında, Oyna "Müzik" ile üst üste.
+   Kısa ekranda menü alt bilgi satırının üstüne oturur, satırlar sıkışır; panel açıkken menü ve alt satır gizlenir */
+@media (max-height:520px) and (orientation:landscape){
+ .mn-grade{background:linear-gradient(90deg,rgba(20,8,4,.78) 0%,rgba(20,8,4,.35) 42%,rgba(0,0,0,0) 62%)}
+ .mn-logo{left:clamp(20px,6vw,92px);right:auto;top:clamp(14px,5vh,40px);text-align:left}.mn-logo .k{margin-left:0}.mn-logo .b{font-size:clamp(46px,8.4vw,80px)}.mn-logo .s{justify-content:flex-start}.mn-logo .s i.sag{display:none}
+ .mn-menu{left:clamp(20px,6vw,92px);right:auto;top:auto;bottom:calc(clamp(14px,5.2vh,40px) + 44px);align-items:flex-start;gap:0}
+ .mn-mi{justify-content:flex-start}.mn-mi:before{display:block}.mn-mi small{display:inline}.mn-mi.ana{color:rgba(255,236,210,.6);text-shadow:0 2px 10px rgba(0,0,0,.45)}.mn-mi.on{color:#fff6e4;transform:translateX(6px)}
+ .mn-foot{left:clamp(20px,6vw,92px);right:clamp(20px,6vw,92px)}.mn-basla{bottom:calc(clamp(14px,5.2vh,40px) + 30px)}
+ .mn-mi{min-height:38px;padding:3px 12px 3px 0;font-size:20px}.mn-mi.ana{font-size:27px}.mn-mi small{font-size:11px}
+ .mn-foot{bottom:clamp(8px,3vh,18px)}.mn-ses{padding:10px 0;min-height:24px}
+ .mn-panelde .mn-foot,.mn-panelde .mn-menu{visibility:hidden}
+ .mn-panel{top:10px;bottom:10px;transform:none;max-height:none;right:clamp(12px,4vw,48px);width:min(420px,calc(100vw - 24px));padding:16px 20px 14px}
+}
 @media (prefers-reduced-motion:reduce){.mn-gull,.mn-mote,.mn-logo .b:after{animation:none!important;display:none}}
 `;
 

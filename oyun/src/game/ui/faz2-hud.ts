@@ -72,9 +72,9 @@ export function createFaz2Hud(d: Faz2HudDeps): Faz2Hud {
     if (sig === railSig) return; railSig = sig;
     const head = `<div class="f2-ph" data-rail="1"><span>🧾 Sipariş paneli (${v.tickets.length})</span><span>${railOpen ? '▾' : '▸'}</span></div>`;
     if (!railOpen) { rail.innerHTML = head; return; }
-    const top = `<div class="f2-top">Servis: <b>${stars(v.servis)}</b></div><div class="f2-note">${v.tickets.length ? 'Garsonlar siparişleri halleder. Yetişmezlerse sen servis et.' : 'Bekleyen sipariş yok.'}</div>`;
+    const top = `<div class="f2-top">Servis: <b>${stars(v.servis)}</b></div><div class="f2-note">${!v.tickets.length ? 'Bekleyen sipariş yok.' : ((r as { state?: { workers?: { role: string }[] } } | null)?.state?.workers || []).some(w => w.role === 'garson') ? 'Garsonlar siparişleri halleder. Yetişmezlerse sen servis et.' : 'Garsonun yok: tabağı pass’tan sen al, masaya götür. İş panosundan garson tut.'}</div>`;
     rail.innerHTML = head + top + v.tickets.slice(0, 3).map(k => `<div class="f2-slip${k.frac > 0.7 ? ' late' : ''}"><div class="h"><span>Sipariş ${k.no}</span><i>Masa ${k.table + 1}</i></div>
-      ${k.items.map(i => (i.left ? '' : '<s>') + (ICONS[i.p] ? `<span style="display:inline-block;width:20px;height:20px;vertical-align:middle;margin:-3px 3px -3px 0">${ICONS[i.p]}</span>` : yemekIkonImg(i.p, 22)) + `${i.n}× ${esc(i.name)}` + (i.left ? '' : '</s>')).join('<br>')}
+      ${k.items.map(i => (i.left ? '' : '<s>') + (ICONS[i.p] ? `<span style="display:inline-block;width:20px;height:20px;vertical-align:middle;margin:-3px 3px -3px 0">${ICONS[i.p]}</span>` : yemekIkonImg(i.p, 28)) + `${i.n}× ${esc(i.name)}` + (i.left ? '' : '</s>')).join('<br>')}
       <div class="bar"><u style="width:${Math.round((1 - k.frac) * 100)}%"></u></div></div>`).join('') + (v.tickets.length > 3 ? `<div class="f2-note">+${v.tickets.length - 3} sipariş daha</div>` : '');
   }
   return {

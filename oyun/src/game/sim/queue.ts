@@ -47,6 +47,7 @@ export function installQueue(K: Kernel, orderLeft: (c: { order: Order; got: Orde
       return { title: pname(station) + ' yetişmiyor!', text: 'Müşteri ' + pname(station) + ' istiyor ama başında kimse yok. Git kendin yap; iş ilanı panosuna ' + (role && ROLES[role] ? ROLES[role].label.toLocaleLowerCase('tr') : 'usta') + ' düşünce onu tut.', cost: 0, info: true };
     }
     if (link === 'kasa' && S.magnet < 1) return { title: 'Kasada para birikti!', text: 'Mıknatıslı önlük alırsan para kendiliğinden gelir.', cost: P.MAGNET_COST[1], magnet: true };
+    if (link === 'seats' && rt.tables.some(t => t && t.built && t.dirty > 0)) return { title: 'Masalar kirli!', text: 'Müşteri kirli masaya oturmuyor, ayakta kalıp gidiyor. Masanın yanında bir an dur, silinsin. Garsonun ya da temizlikçin yetişmiyorsa bir tane daha tut.', cost: 0, info: true };
     if (link === 'seats') return { title: 'Oturacak yer yok!', text: 'Oturmak isteyenler ayakta kaldı. Sıradaki masa sarı karede seni bekliyor.', cost: 0, info: true };
     if (link === 'kasa') return { title: 'Kasada para birikti!', text: 'Kasaya uğra, parayı topla.', cost: 0, info: true };
     return { title: 'İş yavaşladı', text: 'Kırmızı işaretin olduğu yere git, orada bekleyen iş var.', cost: 0, info: true };
@@ -72,6 +73,9 @@ export function installQueue(K: Kernel, orderLeft: (c: { order: Order; got: Orde
     const inLine = rt.queue.filter(c => (c as { state?: string }).state === 'queue').length;
     if (tick('queue', late && inLine >= 7 && !!stuckOn() && K.hiredCount() >= 1, dt) && !found) found = { link: 'queue', at: rt.layout.queue[3] || rt.layout.queue[0] };
     if (tick('kasa', late && rt.kasa.length >= 24 && S.magnet < 1, dt) && !found) found = { link: 'kasa', at: rt.layout.kasa.pile };
+    // QA 2026-11-27: masaya oturamamanın baş nedeni kirli masa; kirli masa varken işaret o masayı gösterir (çözüm kartı "masalar kirli" der)
+    const kirli = rt.tables.findIndex(t => t && t.built && t.dirty > 0);
+    if (rt.slowSeat >= 6 && !found && late && kirli >= 0 && rt.layout.tables[kirli]) { const t = rt.layout.tables[kirli]; found = { link: 'seats', at: { x: t.x, z: t.z } }; }
     if (rt.slowSeat >= 6 && !found && late && K.tablesBuilt() >= 2 && K.tablesBuilt() < rt.layout.tables.length) { const t = rt.layout.tables[K.tablesBuilt()] || rt.layout.tables[0]; found = { link: 'seats', at: { x: t.x, z: t.z } }; }
     if (rt.slowSeat >= 6) rt.slowSeat = 0;
     if (found && (cool[found.link + (found.station || '')] || 0) > S.playT) found = null;

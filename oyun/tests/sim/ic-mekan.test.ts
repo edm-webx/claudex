@@ -36,7 +36,7 @@ it('every business type has its own menu and at least 8 tools; every tool of a p
 
 it('school canteen: locked below level 3, bought inside the school, own menu, a toaster raises prices, panel works inside', () => {
   const sim = played(1) as any; sim.rules.rt.acilisSerbest = true; sim.step(1); /* kurulum: sıralı açılma şartı yok (content/acilis.ts, kendi testi acilis.test.ts) */ const m = mulkApi(sim.rules)!, S = sim.state, c = (x: any) => sim.command({ kind: 'mulk', ...x });
-  const room = IC_BY_ID.okul, p = icWorld(room, 4, 0);
+  const room = IC_BY_ID.okul_kantin, p = icWorld(room, 0, 1.5);   // 2026-11-28: kantin okul diyarında kendi odası
   sim.command({ kind: 'teleport', x: p.x, z: p.z }); sim.step(0.3);
   expect(m.view().arsaYakin).toBe('k4');
   S.money = 1e6; S.level = 2; c({ op: 'arsaAl', id: 'k4' }); expect(S.zones.arsa.plots.k4).toBeUndefined();

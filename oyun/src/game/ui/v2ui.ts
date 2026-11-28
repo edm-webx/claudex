@@ -10,6 +10,7 @@ import { KIOSK_STAGES } from '../../content/stages';
 import { kaliteSatiri } from '../../content/kalite-metin';
 import type { Ui } from '../../engine/api';
 import { ICONS, INK } from '../../engine/ui/v2-style';
+import { yemekIkonImg } from '../view/yemek-ikon';
 import { renderEsnaf, renderKomsuSection } from './esnaf-panel';
 import { renderDekor2 } from './dekor-panel';
 import { renderMini, renderMiniSection } from './mini-panel';
@@ -22,6 +23,7 @@ import { renderHarita, renderHaritaSection } from './harita-panel';
 import { renderHikaye, renderHikayeSection } from './hikaye-panel';
 import { renderCalisanSel, renderCalisanSection } from './calisan-panel';
 import { menuStilKur, sahneKatmani, logoHtml, STUDYO, SURUM } from './menu-stil';
+import { MORG_POLAROID } from './morg-polaroid';
 
 export interface V2UiEnv { sfx(id: string): void; buzz(ms: number): void; unlock(): void; artApi?(): any; }
 
@@ -73,6 +75,7 @@ const I = name => {
   if (ICONS[name]) return ICONS[name];
   const k = String(name).toLowerCase();
   if (ICONS[k]) return ICONS[k];
+  const yk = yemekIkonImg(String(name), 28, 'yk-bi'); if (yk) return yk;   // QA-16: menü yemeği (demlik_cay, gazoz_cesit...) kendi modelinin ikonu; anahtar kelime eşlemesi yanlış ürüne düşüyordu
   for (const p of ['doner', 'cay', 'ayran', 'simit', 'tost', 'gazoz']) if (k.indexOf(p) >= 0) return ICONS[p];
   return ICONS.sparkle;
 };
@@ -545,7 +548,7 @@ function openSheet(id, title, sub, icon, acc, bodyHTML, footHTML, extraCls) {
   if (!same) {
     sheet = mk('section', 'sb-sheet' + (extraCls ? ' ' + extraCls : ''));
     sheet.dataset.id = id; sheet.setAttribute('role', 'dialog'); sheet.setAttribute('aria-label', title);
-    sheet.innerHTML = `<div class="sb-awn"></div><div class="sb-shh"><span class="hi"></span><h2></h2><button class="sb-x" data-a="__close" aria-label="Kapat">${ICONS.close}</button></div><div class="sb-shb"></div><div class="sb-shf" hidden></div>`;
+    sheet.innerHTML = `<div class="sb-awn"></div><div class="sb-shh"><button class="tf-geri" data-a="__tel" aria-label="Telefona dön">‹</button><span class="hi"></span><h2></h2><button class="sb-x" data-a="__close" aria-label="Kapat">${ICONS.close}</button></div><div class="sb-shb"></div><div class="sb-shf" hidden></div><button class="tf-ev" data-a="__tel" aria-label="Telefonun ana ekranı"></button>`;
     sheet.addEventListener('click', onSheetClick);
     sheet.addEventListener('input', onSheetClick);
     sheet.addEventListener('pointerdown', () => { pressing = true; }, true);
@@ -586,6 +589,7 @@ function onSheetClick(e) {
   const idv = id != null && id !== '' && !isNaN(+id) && String(+id) === id ? +id : id;
   switch (a) {
     case '__close': userClose(); return;
+    case '__tel': userClose(); emit('ui:open', 'telefon'); return;   // telefon kabuğu: uygulamadan telefonun ana ekranına
     case 'fire': {
       const w = (sheetModel.workers || []).find(x => String(x.id) === String(id));
       U.confirm({ title: (w ? w.name : 'İşçi') + ' işten ayrılsın mı?', text: 'Rütbesi ve tecrübesi de gider. Yerine yeni birini panodan bulman gerekir.', yes: 'Evet, ayrılsın', no: 'Vazgeç' })
@@ -836,7 +840,7 @@ const QUAL = [['auto', 'Otomatik'], ['akici', 'Akıcı'], ['dengeli', 'Dengeli']
 function renderAyarlar(m, A) {
   const q = (m.quality === 'otomatik' || m.quality == null) ? 'auto' : m.quality;
   const sound = !m.muted;
-  let s = `<div class="sb-card sb-set">${sound ? ICONS.sound : ICONS.mute}<div class="sb-grow"><h3>Ses</h3><p>Müzik, cızırtı ve martı çığlıkları</p></div><button class="sb-tog${sound ? ' on' : ''}" data-a="setMuted" data-v="${sound ? 1 : 0}" aria-label="Ses" aria-pressed="${sound}"></button></div>`;
+  let s = `<div class="sb-card sb-set">${sound ? ICONS.sound : ICONS.mute}<div class="sb-grow"><h3>Ses</h3><p>Müzik, cızırtı ve martı çığlıkları</p></div><button class="sb-tog${sound ? ' on' : ''}" data-a="setMuted" data-v="${sound ? 0 : 1}" aria-label="Ses" aria-pressed="${sound}"></button></div>`;
   if (A.setVol && m.vol) { // ses-5: separate sliders + own music mode
     const sl = (bus, label) => `<div class="sb-set" style="min-height:0;gap:10px;margin:4px 0"><span style="flex:0 0 78px;font-weight:800;font-size:16px">${label}</span><input type="range" min="0" max="100" step="5" value="${Math.round((m.vol[bus] ?? 1) * 100)}" data-a="setVol" data-id="${bus}" aria-label="${label}" style="flex:1;pointer-events:auto;height:30px;accent-color:var(--teal,#2fa39d)"></div>`;
     s += `<div class="sb-card">${sl('music', 'Müzik')}${sl('sfx', 'Efekt')}${sl('voice', 'Konuşma')}</div>`;
@@ -968,10 +972,10 @@ U.title = function (o) {
   const MENU = [['oyna', 'Oyna', ''], ['arkadas', 'Arkadaşınla oyna', 'Oda kur'], ['ayar', 'Ayarlar', ''], ['yapim', 'Yapımcılar', '']];
   t.innerHTML = sahneKatmani() + logoHtml() + `<div class="mn-basla"><span class="mn-dokun">Başlamak için dokun</span><span class="mn-kb">Başlamak için bir tuşa bas</span></div><div class="mn-yan"></div>`;
   root.appendChild(t);
-  t.insertAdjacentHTML('beforeend', `<nav class="mn-menu" aria-label="Ana menü">${MENU.map(([id, ad, alt], i) => `<button class="mn-mi${i === 0 ? ' ana on' : ''}" data-m="${id}"${i === 0 ? ' data-play' : ''}>${ad}${alt ? `<small>${alt}</small>` : ''}</button>`).join('')}</nav><div class="mn-foot"></div>`);
+  t.insertAdjacentHTML('beforeend', `<nav class="mn-menu" aria-label="Ana menü">${MENU.map(([id, ad, alt], i) => `<button class="mn-mi${i === 0 ? ' ana on' : ''}" data-m="${id}"${i === 0 ? ' data-play' : ''}>${ad}${alt ? `<small>${alt}</small>` : ''}</button>`).join('')}</nav>${o.onMorg ? `<button class="mn-polaroid" data-pol aria-label="Yeni oyunumuzu deneyin: Morgdan Kaçış"><i class="bant"></i><img src="${MORG_POLAROID}" alt="" draggable="false"><b>Yeni oyunumuzu deneyin!</b><small>Morgdan Kaçış</small><em>YENİ</em></button>` : ''}<div class="mn-foot"></div>`);
   requestAnimationFrame(() => requestAnimationFrame(() => t.classList.add('mn-acik')));
   const yan = t.querySelector('.mn-yan');
-  let faz = 'basla', sec = 0, bitti = false, panel = '';
+  let faz = 'basla', sec = 0, bitti = false, panel = '', morgda = false;
   let sonMuzik = 0.8;   // menüden kapatılınca eski müzik seviyesi hatırlanır (açınca 0.8'e dönmez)
   const sesAcik = () => { try { const g = o.ayar && o.ayar.get(); return !(g && (g.muted || g.music <= 0)); } catch (e) { return true; } };
   const ayak = () => `<button class="mn-ses${sesAcik() ? '' : ' kapali'}" data-ses aria-label="Müziği aç ya da kapat"><span class="mn-eq"><i></i><i></i><i></i><i></i></span>Müzik: <b>${sesAcik() ? 'açık' : 'kapalı'}</b></button><div class="sag"><span class="mn-kb"><span class="mn-key">↑↓</span>Seç &nbsp; <span class="mn-key">↵</span>Onayla</span><span>${SURUM} · ${STUDYO}</span></div>`;
@@ -1007,6 +1011,12 @@ ${sl('music', 'Müzik')}${sl('sfx', 'Efekt sesleri')}
   };
   const sec_ = id => {
     if (bitti) return;
+    if (id === 'morg') {
+      if (morgda || !o.onMorg) return; morgda = true; sfx('buy');
+      t.style.visibility = 'hidden';
+      safe(o.onMorg, () => { morgda = false; t.style.visibility = ''; });
+      return;
+    }
     if (id === 'oyna' || id === 'arkadas') {
       bitti = true; sfx('buy');
       try { if (C.audioOn) C.audioOn(); } catch (e) {}
@@ -1022,6 +1032,7 @@ ${sl('music', 'Müzik')}${sl('sfx', 'Efekt sesleri')}
   t.addEventListener('pointerdown', () => menuyuAc());
   t.addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.pol !== undefined) { if (!panel) sec_('morg'); return; }
     if (b.dataset.m) { isaretle(MENU.findIndex(x => x[0] === b.dataset.m), false); sec_(b.dataset.m); return; }
     if (b.dataset.geri !== undefined) { kapatPanel(); return; }
     if (b.dataset.kal) { safe(o.ayar && o.ayar.acts.setQuality, b.dataset.kal); yan.querySelectorAll('[data-kal]').forEach(x => x.classList.toggle('on', x === b)); sfx('tik'); return; }
@@ -1042,6 +1053,7 @@ ${sl('music', 'Müzik')}${sl('sfx', 'Efekt sesleri')}
   t.addEventListener('pointerover', e => { const b = e.target.closest('.mn-mi'); if (!b || panel) return; const i = [...t.querySelectorAll('.mn-mi')].indexOf(b); if (i >= 0 && i !== sec) isaretle(i, true); });
   const tus = e => {
     if (!t.isConnected) { removeEventListener('keydown', tus, true); return; }
+    if (morgda) return;   // morg oyunu açıkken tuşlar ona aittir
     if (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName) && e.target.type !== 'range') return;
     if (faz === 'basla') { e.preventDefault(); menuyuAc(); return; }
     if (panel) { if (e.key === 'Escape' || e.key === 'Backspace') { e.preventDefault(); kapatPanel(); } return; }

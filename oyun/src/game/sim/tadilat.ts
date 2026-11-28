@@ -1,7 +1,7 @@
 /** Tadilat (renovation), tier upgrades, plaque, kepenk, magnet (v2 startTadilat..buyMagnet). Owner: Builder A. Pure. */
 import { KIOSK_STAGES } from '../../content/stages';
 import { STAGE_TABLES } from '../../content/pads';
-import { kanatKurulu, KANAT_BASE } from '../../content/kanat';
+import { kanatKurulu, kanatYeni, KANAT_BASE } from '../../content/kanat';
 import { P, tadilatSkipGold } from '../../content/economy';
 import { PRODUCT_IDS, PRODUCTS, TIER_NAMES, tierCost } from '../../content/products';
 import { TRAITS } from '../../content/traits';
@@ -25,7 +25,9 @@ export function installTadilat(K: Kernel) {
     S.stage = to; S.renewed = [];
     { const on = new Set(kanatKurulu(to)); (STAGE_TABLES[to] || []).forEach(i => { if (i < KANAT_BASE || on.has(i)) K.setTableBuilt(i, true); }); }   // 2026-11-22: kanat masaları sarı kareyle (hediye olan kurulur)
     K.stat('tadilat'); K.addXP(P.XP.tadilat); S.gold += P.AS_TAD; K.credit!('tadilat', 3000 * to);
-    K.toast(LINES.tadilat.done + ' Artık: ' + KIOSK_STAGES[to - 1].short + '! Gelir ×' + P.TAD_TOTAL[to - 1] + (t.self ? ' (kendin kurdun, emeğin kazandı)' : ''), 'good');
+    // 2026-11-27 QA-12: "Gelir ×1.2" yanıltıyordu (gerçek artış yeni masalardan, ×2 civarı): ne açıldığını söyler
+    const yeni = kanatYeni(to).length + (STAGE_TABLES[to] || []).filter(i => i < KANAT_BASE).length;
+    K.toast(LINES.tadilat.done + ' Artık: ' + KIOSK_STAGES[to - 1].short + '!' + (yeni ? ` ${yeni} yeni masa yeri açıldı.` : '') + (to === 6 ? ' Garson tut, mutfağı kur.' : '') + (t.self ? ' (kendin kurdun, emeğin kazandı)' : ''), 'good');
     K.logEv('tadilatDone', { stage: to });
     K.bus.emit('stage', { stage: to });
     K.onLayout(); K.refreshSiklik(); K.saveNow();

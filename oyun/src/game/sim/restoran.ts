@@ -17,6 +17,7 @@
  * BUF-10: masalar konuma göre bölgelere ayrılır (sim/garson-bolge.ts), garson başına bölge, boştaki garson komşu bölgeye yardım eder;
  * bahşiş ortak kumbarada birikir (oyuncuya gelir değil), gün sonunda (karne.ts) garsonlara eşit paylaşılır.
  */
+import { TEZGAH_SINIR } from '../../content/products';
 import { RESTORAN_ASAMA } from '../../content/prefabs/iskele/layout';
 import { mutfakEtki, sefHizi, mutfakEsya, MUTFAK_IST_BY_ID, passKap } from '../../content/mutfak';
 import { ADISYON, ADISYON_LINES, SERVIS, FAZ2_UI, type GarsonTur } from '../../content/restoran';
@@ -60,7 +61,7 @@ export interface RestoranView {
   masalar: MasaView[];
 }
 /** BUF-09: masa durumu (sabır çubuğu BUF-23 bundan çizer): frac = bekleme sabrı / bilet süresi / hesap beklemesi doluluğu 0..1 */
-export interface MasaView { table: number; durum: 'bos' | 'menu' | 'siparis' | 'tabak' | 'yemek' | 'hesap' | 'kirli'; frac: number }
+export interface MasaView { table: number; durum: 'bos' | 'menu' | 'siparis' | 'tabak' | 'yemek' | 'hesap' | 'kirli'; frac: number; /** 2026-11-27 QA-16: 'tabak' iken masanın beklediği kalemler (balonda ürünün kendi ikonu) */ yemek?: FoodId[] }
 export type GorevTur = GarsonTur;
 /** isAl sonucu: tabak için x,z pass/tezgâh durağı, masa işleri için masanın garson tarafı (yan) */
 export interface IsAlSonuc { id: number; tur: GorevTur; table: number; x: number; z: number; n?: number; /** sipariş: misafir menüye bakarken garsonun masada bekleyeceği sn */ bekle?: number }
@@ -296,7 +297,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
   }
   /** raftan tabak bırakma: tezgâh ürünü tezgâha, yemek pass rafına; yer yoksa düşer (yoktan var etme yok) */
   function rafaKoy(it: Plate, yer: PassYer = 'on'): void {
-    if (isProduct(it.type)) { const b = (rt.counter[it.type] ||= []); if (b.length < 8) { b.push(it as Item); return; } }
+    if (isProduct(it.type)) { const b = (rt.counter[it.type] ||= []); if (b.length < TEZGAH_SINIR) { b.push(it as Item); return; } }
     else if (hat.geriKoy(it, yer)) return;
     K.stat('tabakDustu');
   }
@@ -480,7 +481,8 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
     const gz = masaBolgesi(table); if (!gz || gz === z) return { ok: true, ic: true };
     const sahip = garsonlar().some(w => w.id !== wid && atama.get(w.id) === gz);
     if (!sahip) return { ok: true, ic: false };
-    const komsu = bolgeList.find(b => b.id === z)?.komsu.includes(gz) ?? false;
+    // 2026-11-27 QA-1: üst katta (çatı / Şef salonu) duran garson aynı kattaki her masaya komşu gibi yardım eder (merdiven inip çıkan bölge sahibini beklemesin)
+    const ust = masaCati(table), komsu = (bolgeList.find(b => b.id === z)?.komsu.includes(gz) ?? false) || (!!ust && katSon.get(wid) === ust);
     // 2026-11-22: komşu olmasa da uzun bekleyen masaya boştaki garson gider (park büfenin arkasına taşınınca bölgeler uzaklaştı, boştaki garson 60 sn+ bekleyen menülere bakmıyordu)
     return { ok: (komsu && yas >= ADISYON.yardimBekleS) || (uzak && yas >= ADISYON.yardimUzakS), ic: false };
   }
@@ -598,7 +600,9 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
   const DEVIR_S = 20;
   const GARSON_HIZ = 2.6;   // m/sn, workers.ts garsonWork temel yürüyüş hızı
   const claimDOf = (table: number, at?: Vec2) => { if (!at) return undefined; const q = masaYan(table); return Math.hypot(q.x - at.x, q.z - at.z); };
-  function isAl(wid: number, o: { cap: number; at?: Vec2 }): IsAlSonuc | null {
+  const katSon = new Map<number, 'W' | 'E' | null>();   // garsonun son isAl anındaki katı (üst kat tarafı ya da yer)
+  function isAl(wid: number, o: { cap: number; at?: Vec2 & { kat?: 'W' | 'E' | null } }): IsAlSonuc | null {
+    katSon.set(wid, o.at?.kat ?? null);
     const mine = gorevler.find(g => g.wid === wid); if (mine) return sonuc(mine);
     if (!garsonlar().some(w => w.id === wid)) return null;
     bolgeYenile();
@@ -780,7 +784,7 @@ export function installRestoran(K: Kernel, cu: Cu, settle: (c: Customer, items: 
       const c = rt.customers.find(k => k.kind === 'masa' && k.seat?.table === i && k.state !== 'leave');
       if (!c) { out.push({ table: i, durum: tb.dirty > 0 ? 'kirli' : 'bos', frac: 0 }); return; }
       const f = c as unknown as CF, t = tickets.find(k => k.cid === c.id);
-      if (t) out.push({ table: i, durum: 'tabak', frac: clamp(t.t / t.max, 0, 1) });
+      if (t) out.push({ table: i, durum: 'tabak', frac: clamp(t.t / t.max, 0, 1), yemek: t.lines.filter(l => !l.done).map(l => l.food) });
       else if (c.state === 'eat') out.push({ table: i, durum: f.hesapBekle && c.t >= c.eatT ? 'hesap' : 'yemek', frac: f.hesapBekle && c.t >= c.eatT ? clamp((f.hb || 0) / ADISYON.hesapBekleMaxS, 0, 1) : 0 });
       else out.push({ table: i, durum: f.menuOk ? 'siparis' : 'menu', frac: clamp((f.bekleT || 0) / ADISYON.bekleSabirS, 0, 1) });
     });

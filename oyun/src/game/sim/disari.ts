@@ -314,7 +314,7 @@ export function installDisari(K: Kernel, teleport: (x: number, z: number) => voi
       }
       // lock push-back: the first locked region blocks everything east of it
       const lockR = REGIONS.find(r => !isOpen(r));
-      if (lockR && p.x > lockR.x0 - 0.3 && !travel && realmAt(p.x)?.id !== 'avm') {
+      if (lockR && p.x > lockR.x0 - 0.3 && !travel && realmAt(p.x)?.bus !== false) {
         teleport(lockR.x0 - 1.0, walkZ(regionAt(lockR.x0 - 1.0)?.id, p.z));
         if (lockToastT <= 0) { lockToastT = 4; K.toast(lockR.lockLine + ' (' + lockR.name + ', ' + lockR.level + '. seviye)', 'info'); }
       }

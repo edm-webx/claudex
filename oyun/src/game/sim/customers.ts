@@ -8,7 +8,7 @@ import { RESTORAN_ASAMA } from '../../content/prefabs/iskele/layout';
 import type { Vec2 } from '../../engine/api';
 import { angLerp } from '../../engine/core';
 import { CITIZENS } from '../../content/citizens';
-import { PRODUCT_IDS } from '../../content/products';
+import { PRODUCT_IDS, TEZGAH_SINIR } from '../../content/products';
 import { P, PATIENCE_S, decorKeyif } from '../../content/economy';
 import { LINES } from '../../content/lines';
 import { ISKELE_ZONE } from '../../content/zones/iskele';
@@ -35,7 +35,7 @@ const HUNGRY_M = 45;
 /** 2026-11-25: 8-10. aşamanın müşterisi farklı (sahibi: "8 9 10 hiç fark yok") */
 const TURIST = { kruvaziyer: 2.5, gezgin: 2.5, turgrubu: 2.5, balayi: 3 }, IS = { isinsani: 3, plaza: 2.5 };
 const ASAMA_MUSTERI: Record<number, Record<string, number>> = { 8: TURIST, 9: { ...TURIST, ...IS }, 10: { ...TURIST, ...IS, vlogcu: 4, balayi: 4 } };
-export interface SpawnOpts { type?: CitizenTypeDef; n?: number; order?: Order; set?: string | null; from?: Vec2; near?: Vec2; kind?: 'q' | 'win' | 'masa'; patienceX?: number; /** yürüme hızı m/sn (vapurdan inen yolcu hızlı adım) */ hiz?: number; say?: string; follower?: boolean; tag?: string; body?: number }
+export interface SpawnOpts { type?: CitizenTypeDef; n?: number; order?: Order; set?: string | null; from?: Vec2; near?: Vec2; kind?: 'q' | 'win' | 'masa'; patienceX?: number; /** vapur iskelesi: müşteri her şeyiyle normal doğar (aynı rng, aynı varış anı) ama bu noktadan iner; yolu uzun olduğu için o kadar hızlı yürür */ inis?: Vec2; say?: string; follower?: boolean; tag?: string; body?: number }
 
 export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (p: { value: number }[], v: number) => void, settle: (c: Customer, items: import('./state').Plate[]) => number) {
   const rt = K.rt, S = K.state;
@@ -126,6 +126,16 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
     if ((c.y || 0) > 0.5) { const s = catiTaraf(c); c.path = [...catiAsagi(s, c), ...pathTo(catiAyak(s), to)]; return; }   // BUF-20: çatıdan önce merdivenden iner
     c.path = pathTo({ x: c.x, z: c.z }, to);
   }
+  /** QA 2026-11-27: sıranın ucuna gelen müşteri dolu sıranın içinden yürümesin; sıraya paralel yan şeritten gelip yerine yanaşır */
+  function goQueue(c: Customer, i: number): void {
+    const to = queueSpot(i);
+    if (i < 2 || (c.y || 0) > 0.5) { goTo(c, to); return; }
+    const on = queueSpot(i - 1), dx = to.x - on.x, dz = to.z - on.z, d = Math.hypot(dx, dz) || 1, px = -dz / d * 0.85, pz = dx / d * 0.85;
+    const yan = [{ x: to.x + px, z: to.z + pz }, { x: to.x - px, z: to.z - pz }].filter(p => K.nav.walkable(p))
+      .sort((a, b) => Math.hypot(a.x - c.x, a.z - c.z) - Math.hypot(b.x - c.x, b.z - c.z))[0];
+    if (!yan || Math.hypot(to.x - c.x, to.z - c.z) < 1.2) { goTo(c, to); return; }
+    c.path = [...pathTo({ x: c.x, z: c.z }, yan), { x: to.x, z: to.z }];
+  }
   /** masaya yürü: çatı terası masasına merdivenin ayağına kadar yerden, sonra basamaklar ve çatı koridoru (content/kanat.ts) */
   function goSeat(c: Customer, table: number, to: Vec2): void {
     const s = masaCati(table);
@@ -206,7 +216,11 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
     let from = o.from || (o.near ? nearestSpawn(o.near) : spawnPoint());
     if (!o.from && kind === 'q') {
       const spot = queueSpot(rt.queue.length);
-      from = pointBack([from, ...pathTo(from, spot)], rng.range(P.ENTRY_M[0], P.ENTRY_M[1]));
+      const yol = [from, ...pathTo(from, spot)];
+      let m = rng.range(P.ENTRY_M[0], P.ENTRY_M[1]);
+      from = pointBack(yol, m);
+      // QA 2026-11-27: kalabalık dalgasında art arda doğan iki müşteri aynı noktadan aynı yola çıkıp iç içe yürümesin (en az bir adım ara)
+      for (let k = 0; k < 4 && rt.customers.some(o2 => o2.state === 'walk' && Math.hypot(o2.x - from.x, o2.z - from.z) < 0.75); k++) from = pointBack(yol, (m += 0.9));
     }
     const decorPat = clamp(decorKeyif(K.placedDecor()) * P.DECOR_PATIENCE_PER_KEYIF, 0, P.DECOR_PATIENCE_CAP);
     const dv = davranisOf(type.id), grupPay = 1 + Math.min(GRUP.sabirUst, GRUP.sabirKisi * Math.max(0, n - 2));   // BUF-23 tip sabrı, BUF-24 büyük grubun sabır payı
@@ -217,7 +231,6 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
       agent: -1, members: [], items: [], seat: null, say: '', sayT: 0, calm: false, follower: !!o.follower, tag: o.tag || null, qi: -1,
     };
     if (pn.ad) c.grupAd = pn.ad;
-    if (o.hiz) c.hiz = o.hiz;
     c.agent = o.body !== undefined && o.body >= 0 ? o.body : recruitBody(type, from);
     for (let i = 1; i < Math.min(n, GRUP.max); i++) { const m = recruitBody(type, from); if (m < 0) break; c.members.push(m); }   // BUF-24: gövde sayısı grup kadar (en çok 6)
     rt.customers.push(c);
@@ -225,7 +238,16 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
       seatCluster(c, kume); c.state = 'toSeat'; c.sit = true;
       const tb = rt.layout.tables[kume[0]];
       goSeat(c, kume[0], seatPos(kume[0], 0) ?? { x: tb.x, z: tb.z });
-    } else if (kind === 'q') { rt.queue.push(c); goTo(c, queueSpot(rt.queue.length - 1)); }
+    } else if (kind === 'q') {
+      rt.queue.push(c); goTo(c, queueSpot(rt.queue.length - 1));
+      // 2026-11-28 vapur yolcusu: varış anı promenattan doğan müşteriyle birebir aynı kalsın (ekonomi paritesi): kapıdan yürür, yol oranında hızlı adım
+      if (o.inis && !o.from) {
+        const uz = (a: Vec2, p: Vec2[]) => { let L = 0, x = a.x, z = a.z; for (const q of p) { L += Math.hypot(q.x - x, q.z - z); x = q.x; z = q.z; } return L; };
+        const Lb = uz(from, c.path);
+        c.x = o.inis.x; c.z = o.inis.z; goTo(c, queueSpot(rt.queue.length - 1));
+        c.hiz = clamp(1.6 * uz(o.inis, c.path) / Math.max(1, Lb), 1.6, 3.6);
+      }
+    }
     else { rt.winq.push(c); goTo(c, winSpot(rt.winq.length - 1)); }
     if (o.say) say(c, o.say, 3);
     return c;
@@ -252,7 +274,7 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
     goTo(c, angry ? nearestSpawn({ x: c.x, z: c.z }) : spawnPoint());
   }
   const returnItemsToCounter = (c: Customer) => {
-    c.items.splice(0).forEach(it => { if (!isProduct(it.type)) return; const b = rt.counter[it.type]; if (b && b.length < 12) b.push(it as Item); });   // tezgâh sınırı counter.ts ile aynı (12); mutfak tabağı tezgâha stok olarak dönmez (BUF-05)
+    c.items.splice(0).forEach(it => { if (!isProduct(it.type)) return; const b = rt.counter[it.type]; if (b && b.length < TEZGAH_SINIR) b.push(it as Item); });   // tezgâh sınırı counter.ts ile aynı (12); mutfak tabağı tezgâha stok olarak dönmez (BUF-05)
     c.got = {};
   };
   function freeSeat(n: number): { t: number; seat: number } | null {
@@ -414,7 +436,7 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
 
   function update(dt: number) {
     const L = rt.layout;
-    rt.queue.forEach((c, i) => { if (c.state !== 'leave' && c.qi !== i) { c.qi = i; if (c.state === 'queue' || c.state === 'walk') { c.state = 'walk'; goTo(c, queueSpot(i)); } } });
+    rt.queue.forEach((c, i) => { if (c.state !== 'leave' && c.qi !== i) { c.qi = i; if (c.state === 'queue') { c.state = 'walk'; goTo(c, queueSpot(i)); } else if (c.state === 'walk') goQueue(c, i); } });
     rt.winq.forEach((c, i) => { if (c.state !== 'leave' && c.qi !== i) { c.qi = i; if (c.state === 'wqueue' || c.state === 'walk') { c.state = 'walk'; goTo(c, winSpot(i)); } } });
     // the first three in line buy from the counter
     for (let i = 0; i < Math.min(3, rt.queue.length); i++) {

@@ -22,12 +22,16 @@ describe('vapur gelip gider, vatandaş indirir', () => {
     sim.step(10);
     expect(f().state).toBe('docked');
     expect(events(sim, 'ferryDock').length).toBe(1);
-    sim.step(0.2);
-    const yeni = sim.rules.rt.customers.slice(c0).filter(c => c.hiz === VAPUR_TELAFI.hiz);   // vapur yolcuları (aynı anda gelen yürüyenler hariç)
+    const c1 = sim.rules.rt.customers.length;
+    sim.step(4.5);   // dalga anı (120. sn) gelmeden yolcu inmez
+    expect(sim.rules.rt.customers.slice(c1).filter(c => (c.hiz ?? 0) > 0).length).toBe(0);
+    sim.step(0.7);
+    const yeni = sim.rules.rt.customers.slice(c0).filter(c => (c.hiz ?? 0) > 0);   // vapur yolcuları (aynı anda gelen yürüyenler hariç)
     expect(yeni.length).toBeGreaterThan(0);
     // ilk yolcu kapıdan iner (birkaç adım yürümüş olabilir)
-    expect(Math.hypot(yeni[0].x - FERRY_DOOR.x, yeni[0].z - FERRY_DOOR.z)).toBeLessThan(4);
-    sim.step(FERRY_T.docked + 1.3);
+    expect(Math.hypot(yeni[0].x - FERRY_DOOR.x, yeni[0].z - FERRY_DOOR.z)).toBeLessThan(3);
+    expect(yeni[0].hiz).toBeGreaterThan(1.6);
+    sim.step(FERRY_T.docked - 5.2 + 0.5);
     expect(f().state).toBe('leaving');
     expect(events(sim, 'ferryLeave').length).toBe(1);
     sim.step(FERRY_T.leaving + 0.5);
@@ -74,15 +78,16 @@ describe('oyuncu etkileşimi yok', () => {
 });
 
 describe('gece seyrek', () => {
-  it('00:30-06:00 arası yanaşmada bir sonraki aralık uzar; gündüz aralığı bant içinde', () => {
+  it('00:30-06:00 arası seferde bir sonraki aralık uzar; gündüz aralığı bant içinde', () => {
     const sim = played(5);
     sim.state.tut.firstCustomer = 1;
     const docks: { t: number; h: number; gap: number }[] = [];
-    let last = events(sim, 'ferryDock').length;
-    for (let i = 0; i < 480 * 3 / 2; i++) {
-      sim.step(2);
-      const n = events(sim, 'ferryDock').length;
-      if (n > last) { last = n; docks.push({ t: sim.state.playT, h: hourOf(sim.state.dayT), gap: sim.rules.rt.ferry.next - sim.state.playT }); }
+    let last = sim.rules.rt.ferry.next;
+    for (let i = 0; i < 480 * 3 * 2; i++) {
+      const h = hourOf(sim.state.dayT);
+      sim.step(0.5);
+      const nx = sim.rules.rt.ferry.next;   // dalga anında bir sonraki sefer kurulur
+      if (nx !== last) { last = nx; docks.push({ t: sim.state.playT, h, gap: nx - sim.state.playT }); }
     }
     const [lo, hi] = ferryGap(sim.state.stage);
     for (const d of docks) {

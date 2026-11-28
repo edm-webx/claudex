@@ -4,6 +4,8 @@
  * Character inventory vs account bank is a hard split: inventory = S.zones.envanter, bank = rt.banka (cloud, shared).
  */
 import { HOL, ODA_X, ODA_Z, SINEMA_BUFE } from './avm-kat';
+import { OKUL_ODA_BY_ID, okulOdaGeo, odaKapiOnu } from './okul-ic';
+const KANTIN_GEO = okulOdaGeo(OKUL_ODA_BY_ID.okul_kantin);
 export type EsyaTur = 'tuketim' | 'malzeme' | 'kozmetik' | 'anahtar';
 export interface Esya { id: string; ad: string; ikon: string; tur: EsyaTur; nadir: 0 | 1 | 2; blurb: string }
 export const ESYALAR: Esya[] = [
@@ -80,7 +82,8 @@ export const ARSALAR: Arsa[] = [
   { id: 'k2', x: -17.5, z: 51.5, fiyat: 120000, seviye: 3, rotY: Math.PI / 2, sabit: 'kafe', kapi: { x: -11.8, z: 51.5 }, ad: 'Sahil Bistro' },
   // 2026-11-09: every business building can be bought from a level and run (interiors: content/ic-mekan.ts)
   { id: 'k3', x: 29.7, z: 35.2, fiyat: 140000, seviye: 4, rotY: Math.PI, sabit: 'kafe', kapi: { x: 29.7, z: 32.6 }, ad: 'Martı Kırtasiye' },
-  { id: 'k4', x: 48.85, z: 37.25, fiyat: 110000, seviye: 3, rotY: Math.PI, sabit: 'kafe', kapi: { x: 48.85, z: 32.6 }, ad: 'Okul Kantini' },
+  // 2026-11-28: okul kendi diyarında (content/okul-ic.ts); kantin kendi odası, kapısı koridorda
+  { id: 'k4', x: KANTIN_GEO.x, z: KANTIN_GEO.z, fiyat: 110000, seviye: 3, rotY: Math.PI, sabit: 'kafe', kapi: odaKapiOnu(OKUL_ODA_BY_ID.okul_kantin), ad: 'Okul Kantini' },
   { id: 'k6', x: -54.1, z: 45.4, fiyat: 260000, seviye: 5, rotY: Math.PI / 2, sabit: 'kafe', kapi: { x: -51.0, z: 45.4 }, ad: 'Tesis Kafeteryası' },
   // 2026-11-20 owner: Martı AVM is split into separate businesses. 2026-11-21 owner: "her katında mağaza olsun, satın alıp işletelim, zamanla her
   // yere hâkim olalım": 3 floors x 4 shops (content/ic-mekan.ts avmOdalar, content/avm-kat.ts). x / z = room centre, kapi = in front of the room's

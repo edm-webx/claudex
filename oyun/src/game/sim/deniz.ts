@@ -25,6 +25,9 @@ import {
 } from '../../content/deniz';
 import { havaApi } from './hava';
 import { fmtMoney, clamp } from './util';
+/** 2026-11-27 kullanıcı: vapur gelip gidebilir, yolcu indirir (potansiyel müşteri) ama oyuncunun vapurla HİÇ etkileşimi yok:
+ *  güverte koşusu, "güvertede sat" ipucu ve Vapur Büfesi seferi kapalı. Vapur kedisi yalnız bir ortam notu olarak kalır. */
+const OYUNCU_VAPUR = false;
 
 export const DENIZ_KEY = 'deniz';
 const DOOR = { x: 22.4, z: -7.1 };
