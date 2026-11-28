@@ -28,6 +28,10 @@ const SPOTS = {
   servis: [C - 4.6, 54.5, 2, C - 10, 54.5, 2.6, 0, 0.9], yenidogan: [C + 4.6, 54.5, 2, C + 10, 54.5, 2.6, 0, 0.9], fizik: [C + 4.6, 63.5, 2, C + 10, 63.5, 2.6, 0, 0.9],
   ameliyat: [C - 2.4, 54.5, 3, C - 9, 54.5, 2.6, 0, 0.9], yogun: [C - 4.6, 63.5, 3, C - 10, 63.5, 2.6, 0, 0.9], bashekim: [C + 4.6, 54.5, 3, C + 10, 54.5, 2.6, 0, 0.9], nobet: [C + 4.6, 63.5, 3, C + 10, 63.5, 2.6, 0, 0.9],
   oyun0: [C - 4.6, 55.2, 0, 0], oyun1: [C + 6, 47.2, 0, 0], oyun2: [C - 4.6, 55.2, 2, 0], oyunDis: [46.95, 47.0, 0, 0],
+  r_lobi: [C - 6, 47.5, 0, C - 4, 49, 1.5, 0, 0], r_acil: [C - 4.6, 54.5, 0, C - 9, 55, 1.5, 0, 0], r_kafe: [C + 4.6, 63.5, 0, C + 9, 63.5, 1.5, 0, 0],
+  r_eczane: [C + 4.6, 54.5, 0, C + 9, 55, 1.5, 0, 0], r_dahiliye: [C - 4.6, 54.5, 1, C - 9, 55, 1.5, 0, 0], r_lab: [C + 4.6, 63.5, 1, C + 9, 63.5, 1.5, 0, 0],
+  r_servis: [C - 4.6, 54.5, 2, C - 9, 55, 1.5, 0, 0], r_yenidogan: [C + 4.6, 54.5, 2, C + 9, 55, 1.5, 0, 0], r_ameliyat: [C - 2.4, 54.5, 3, C - 9, 55, 1.5, 0, 0],
+  r_bashekim: [C + 4.6, 54.5, 3, C + 9, 55, 1.5, 0, 0], r_cocuk: [C - 4.6, 63.5, 1, C - 9, 63.5, 1.5, 0, 0],
   genel0: [C, 48.5, 0, C, 56, 5.0, 0, 1.05], genel2: [C, 48.5, 2, C, 56, 5.0, 0, 1.05],
 };
 const ids = (process.argv[3] || Object.keys(SPOTS).join(',')).split(',');
@@ -35,10 +39,11 @@ for (const id of ids) {
   const s = SPOTS[id]; if (!s) { console.log('?', id); continue; }
   const [x, z, kat, cx, cz, zr, yi, tilt, saat] = s;
   try {
-    await p.evaluate(([x, z, kat, cx, cz, zr, yi, tilt, saat]) => { const M = window.__marti; if (saat) M.setTime(saat); M.teleport(x, z, kat); M.closePanel?.(); document.querySelectorAll('.sb-modal,.sb-full').forEach(e => e.remove()); for (let k = 0; k < 8; k++) { M.step(0.5); M.renderFrames(3, 0.1); } if (cx) M.camera({ x: cx, z: cz, zoomRaw: zr, yaw: yi * Math.PI / 2, tilt }); for (let k = 0; k < 16; k++) { M.step(0.1); M.renderFrames(2, 0.1); } }, [x, z, kat, cx, cz, zr, yi, tilt, saat]);
+    await p.evaluate(([x, z, kat, cx, cz, zr, yi, tilt, saat]) => { const M = window.__marti; if (saat) M.setTime(saat); M.teleport(x, z, kat); M.closePanel?.(); document.querySelectorAll('.sb-modal,.sb-full').forEach(e => e.remove()); for (let k = 0; k < 8; k++) { M.step(0.5); M.renderFrames(3, 0.1); } if (cx) M.camera({ x: cx, z: cz, zoomRaw: zr, yaw: yi * Math.PI / 2, ...(tilt ? { tilt } : {}) }); for (let k = 0; k < 16; k++) { M.step(0.1); M.renderFrames(2, 0.1); } }, [x, z, kat, cx, cz, zr, yi, tilt, saat]);
     await p.waitForTimeout(500); await p.screenshot({ path: join(out, `hst-${id}.png`), timeout: 300000 }); console.log('ok', id);
   } catch (e) { console.log('ERR', id, e.message.slice(0, 200)); }
 }
+const dom = await p.evaluate(() => [...document.querySelectorAll('body *')].filter(e => { const r = e.getBoundingClientRect(), cs = getComputedStyle(e); return r.width > 900 && r.height > 500 && cs.visibility !== 'hidden' && cs.display !== 'none' && (cs.backgroundColor !== 'rgba(0, 0, 0, 0)' || +cs.opacity < 1); }).map(e => e.tagName + '#' + e.id + '.' + e.className + ' bg=' + getComputedStyle(e).backgroundColor + ' op=' + getComputedStyle(e).opacity).slice(0, 12)).catch(e => [e.message]); console.log('DOM', JSON.stringify(dom));
 const info = await p.evaluate(() => { const M = window.__marti; return { ajan: M.ajanlar?.()?.length ?? null, poz: M.heroPoz?.() ?? null, cizim: M.drawCost?.() ?? null }; }).catch(e => ({ e: e.message }));
 writeFileSync(join(out, 'hst-hatalar.txt'), errs.join('\n') + '\n' + JSON.stringify(info)); console.log('hata', errs.length, JSON.stringify(info).slice(0, 400));
 await b.close(); srv.close(); process.exit(0);

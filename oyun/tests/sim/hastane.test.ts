@@ -6,7 +6,7 @@ import { katY } from '../../src/content/avm-kat';
 import { realmAt } from '../../src/content/realm';
 
 const mk = () => { const sim = played(1) as any; sim.step(1); return { sim, S: sim.state, y: sim.rules.rt.agents.hastaneYasam }; };
-const gir = (sim: any, kat = 0, x = HST.cx, z = 47) => { sim.command({ kind: 'teleport', x, z, kat }); sim.step(0.25); };
+const gir = (sim: any, kat = 0, x: number = HST.cx, z = 47) => { sim.command({ kind: 'teleport', x, z, kat }); sim.step(0.25); };
 const yap = (sim: any, id: string) => { const it = sim.interactions.get(id); expect(it, id).toBeTruthy(); expect(it.canAct(sim.state.player), id).toBe(true); it.act(sim.state.player); };
 const ic = (r: { x0: number; x1: number; z0: number; z1: number }[], p: { x: number; z: number }) => r.some(q => p.x > q.x0 && p.x < q.x1 && p.z > q.z0 && p.z < q.z1);
 

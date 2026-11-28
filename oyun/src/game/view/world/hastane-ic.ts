@@ -114,14 +114,14 @@ const CIZ: Record<string, Ciz> = {
   sehpa: (k, W, D) => { k.gl.box(W, 0.03, D, '#cfe8f2', 0, 0.42, 0, Z0); for (const sx of [-1, 1]) for (const sz of [-1, 1]) k.b.cyl(0.02, 0.02, 0.42, '#c9a23a', sx * (W / 2 - 0.06), 0.21, sz * (D / 2 - 0.06), { seg: 6 }); k.b.box(0.24, 0.04, 0.3, '#e0533c', 0.15, 0.455, 0, Z0); },
   kitaplik: (k, W, D) => { kutuRaf(k.b, W, D, 2.1, 5, ['#7a2b2b', '#1d4f86', '#2f6f5a', '#c9a23a', '#3a2416', '#e9e4da'], 3); },
   ilacRaf: (k, W, D) => { kutuRaf(k.b, W, D, 2.1, 6, ILAC, 1); },
-  eczTezgah: (k, W, D) => { k.b.box(W, 1.0, D, '#fbfaf6', 0, 0.5, 0, { r: 0.04 }); k.b.box(W + 0.05, 0.05, D + 0.08, '#2f9e5a', 0, 1.02, 0); k.b.box(W, 0.14, 0.01, '#2f9e5a', 0, 0.78, D / 2 + 0.005, Z0); k.gl.box(W - 0.2, 0.5, 0.01, '#dff5e6', 0, 1.3, D / 2 - 0.05, Z0); for (let i = 0; i < 5; i++) k.b.box(0.14, 0.08, 0.1, ILAC[i + 1], -W / 2 + 0.6 + i * 0.35, 1.08, -0.15, Z0); },
+  eczTezgah: (k, W, D) => { k.b.box(W, 1.0, D, '#fbfaf6', 0, 0.5, 0, { r: 0.04 }); k.b.box(W + 0.05, 0.05, D + 0.08, '#eef3ee', 0, 1.02, 0); k.b.box(W + 0.06, 0.02, 0.04, '#2f9e5a', 0, 1.0, D / 2 + 0.04, Z0); k.b.box(W, 0.14, 0.01, '#2f9e5a', 0, 0.78, D / 2 + 0.005, Z0); k.gl.box(W - 0.2, 0.5, 0.01, '#dff5e6', 0, 1.3, D / 2 - 0.05, Z0); for (let i = 0; i < 5; i++) k.b.box(0.14, 0.08, 0.1, ILAC[i + 1], -W / 2 + 0.6 + i * 0.35, 1.08, -0.15, Z0); },
   eczDolap: (k, W, D) => { k.b.box(W, 1.9, D, '#e9eef2', 0, 0.95, 0, { r: 0.03 }); k.gl.box(W - 0.12, 1.6, 0.01, '#d8f0ff', 0, 1.0, D / 2 + 0.005, Z0); for (let r = 0; r < 4; r++) for (let i = 0; i < 4; i++) k.b.box(0.14, 0.12, 0.2, ILAC[(i + r) % ILAC.length], -W / 2 + 0.2 + i * 0.2, 0.35 + r * 0.4, 0, Z0); k.l.box(0.12, 0.05, 0.005, '#5fd6ff', W / 2 - 0.15, 1.8, D / 2 + 0.006, Z0); },
   eczHaci: (k) => { k.l.box(0.3, 0.9, 0.04, '#5fd68a', 0, 2.3, 0.03, Z0); k.l.box(0.9, 0.3, 0.04, '#5fd68a', 0, 2.3, 0.03, Z0); },
   poset: (k) => { k.b.box(0.22, 0.26, 0.12, '#fbfaf6', 0, 1.18, 0, { r: 0.02 }); k.b.box(0.1, 0.08, 0.005, '#2f9e5a', 0, 1.2, 0.063, Z0); },
   siraMak: (k) => { k.b.box(0.36, 1.2, 0.3, '#2f9e5a', 0, 0.6, 0, { r: 0.04 }); k.l.box(0.22, 0.14, 0.005, '#dff5e6', 0, 1.0, 0.152, Z0); k.b.box(0.1, 0.02, 0.03, '#fbfaf6', 0, 0.82, 0.16, Z0); },
   bank: (k, W, D) => { k.b.box(W, 0.06, D, '#b8875a', 0, 0.45, 0); k.b.box(W, 0.36, 0.05, '#b8875a', 0, 0.72, -D / 2 + 0.03); for (const sx of [-1, 1]) k.b.box(0.05, 0.45, D, koyu, sx * (W / 2 - 0.1), 0.22, 0); },
   baskul: (k) => { k.b.box(0.45, 0.06, 0.4, '#e9eef2', 0, 0.03, 0); k.b.cyl(0.025, 0.025, 1.1, metal, 0, 0.6, -0.16, { seg: 6 }); k.b.box(0.24, 0.18, 0.05, '#e9eef2', 0, 1.2, -0.16); k.l.box(0.14, 0.06, 0.005, '#ffd27a', 0, 1.22, -0.134, Z0); },
-  kafeTezgah: (k, W, D) => { k.b.box(W, 1.0, D, '#c8693e', 0, 0.5, 0, { r: 0.04 }); for (let i = 0; i < Math.round(W / 0.3); i++) k.b.box(0.012, 0.85, 0.01, '#a4532e', -W / 2 + (i + 0.5) * 0.3, 0.48, D / 2 + 0.003, Z0); k.b.box(W + 0.06, 0.05, D + 0.1, '#3a2416', 0, 1.02, 0); },
+  kafeTezgah: (k, W, D) => { k.b.box(W, 1.0, D, '#c8693e', 0, 0.5, 0, { r: 0.04 }); for (let i = 0; i < Math.round(W / 0.3); i++) k.b.box(0.012, 0.85, 0.01, '#a4532e', -W / 2 + (i + 0.5) * 0.3, 0.48, D / 2 + 0.003, Z0); k.b.box(W + 0.06, 0.05, D + 0.1, '#a0703f', 0, 1.02, 0); },
   arkaTezgah: (k, W, D) => { k.b.box(W, 0.9, D, '#e9e4da', 0, 0.45, 0, { r: 0.03 }); k.b.box(W, 0.04, D + 0.04, '#7d8a96', 0, 0.92, 0); k.b.box(W, 0.03, 0.3, '#e9e4da', 0, 1.7, -D / 2 + 0.15, Z0); for (let i = 0; i < 8; i++) k.gl.cyl(0.03, 0.025, 0.07, '#e8a868', -W / 2 + 0.4 + i * 0.12, 1.75, -D / 2 + 0.15, { seg: 8 }); },
   vitrin: (k, W, D) => { k.gl.box(W, 0.4, D, '#e9f6ff', 0, 1.25, 0, { r: 0.03 }); k.b.box(W, 0.02, D, '#3a2416', 0, 1.05, 0, Z0);
     for (let i = 0; i < 4; i++) { const x = -W / 2 + 0.2 + i * (W - 0.4) / 3; k.b.tor(0.07, 0.03, '#c98a3a', x, 1.1, -0.15, { rx: HP, ts: 12 }); k.b.box(0.15, 0.05, 0.12, '#e8b468', x, 1.09, 0.12, { r: 0.02 }); k.b.box(0.13, 0.02, 0.1, '#f2d27a', x, 1.12, 0.12, Z0); } },
@@ -403,7 +403,7 @@ function odaCiz(k: Kit, o: HOda, kesit: Kesit[], odaHol: { g: T.Object3D; o: HOd
   hg.add(levha(o.ad, o.renk, '#ffffff', Math.min(3.4, 0.9 + o.ad.length * 0.13), 0.36, holX + s * 0.13, top + 2.85, zm, o.blok === 'W' ? HP : -HP));
   if (o.kapali) hg.add(levha(['STERİL ALAN', 'GİRİLMEZ'], '#2f8f6f', '#ffffff', 1.0, 0.5, holX + s * 0.14, top + 2.25, zm, o.blok === 'W' ? HP : -HP));
   k.g.add(hg); odaHol.push({ g: hg, o });
-  if (!o.kapali) b.box(1.2, 0.02, 0.8, '#3a4652', kp.dis.x - s * 0.1, top + 0.003, zm, Z0);
+  if (!o.kapali) { b.box(0.8, 0.012, 1.6, '#c9d8d3', kp.dis.x - s * 0.1, top + 0.003, zm, Z0); b.box(0.12, 0.004, 1.4, o.renk, kp.dis.x - s * 0.1, top + 0.011, zm, Z0); }
   for (const e of o.esya) esyaCiz(k, o, e);
 }
 function shadeHex(c: string, kk: number): string { const n = parseInt(c.slice(1), 16), f = (v: number) => Math.max(0, Math.min(255, Math.round(v * (1 + kk)))); return '#' + [(n >> 16) & 255, (n >> 8) & 255, n & 255].map(v => f(v).toString(16).padStart(2, '0')).join(''); }
