@@ -1,0 +1,25 @@
+{
+ "schema": 1,
+ "mod": "hizli",
+ "gecti": false,
+ "adimlar": [
+  {
+   "ad": "tip kontrolü",
+   "ok": true,
+   "sn": 8.8,
+   "son": ""
+  },
+  {
+   "ad": "sim kuralları",
+   "ok": true,
+   "sn": 0.1,
+   "son": ""
+  },
+  {
+   "ad": "birim ve sim testleri",
+   "ok": false,
+   "sn": 174.6,
+   "son": "     35|     expect(eski, 'kodda olmayan bayrak etiketi silinmeli').toEqual([]);\n       |                                                            ^\n     36|   });\n     37| });\n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯\n\n FAIL  tests/sim/ekonomi-egri.test.ts > ekonomi eğrisi: bugünkü denge (gerileme bandı) > toplam kazanç 30/60/90. dakikada bantın içinde\nAssertionError: 30. dk toplam 119556: expected 119556 to be less than or equal to 107000\n ❯ tests/sim/ekonomi-egri.test.ts:33:105\n     31|       if (+dk > SAAT * 60) continue;\n     32|       const v = toplamDk(sonuc.normal, +dk);\n     33|       expect(v, dk + '. dk toplam ' + v).toBeGreaterThanOrEqual(lo); e…\n       |                                                                                                         ^\n     34|     }\n     35|   });\n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯\n\n FAIL  tests/sim/faz2-ekonomi.test.ts > Faz 2 ekonomi > 45 dakikada para makul kalır\nAssertionError: 30. dk toplam: expected 120097 to be less than or equal to 107000\n ❯ tests/sim/faz2-ekonomi.test.ts:41:182\n\n\n⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯"
+  }
+ ]
+}

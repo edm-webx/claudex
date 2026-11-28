@@ -1,0 +1,12 @@
+# İlerleme (AVM katları)
+- 18:14 başladı. Kod okundu, ilk ekran görüntüleri alındı (scratchpad), tasarım yazıldı.
+- 18:46 sahip yönü değiştirdi: AVM ayrı harita (diyar x 1150..1250), dükkânlara içeriden girilir, gelişim büfe gibi sarı karelerle.
+- 19:xx sim: avm-gecis (kapı geçişi), kat bazlı nav, avm-kareler (satın alma + alet kareleri), işçi/müşteri katlar arası yol. 14 AVM testi.
+- 20:xx görünüm: avm-ic.ts (hol, lobi, galeri, cam cephe, yürüyen merdiven basamak animasyonu, kayar kapı), 17 alet modeli, kararma geçişi.
+- 21:00 düzeltmeler: AVM görünümleri sahneye bağlı (iskele kökü boşalınca kayboluyordu); üst/alt kattaki karakterler gizli; yalnız kahramanın katındaki dükkânlar çizilir.
+  Ölçüm (akıcı kademe, bütün dükkânlar 5. seviye, 3 işçi): kat2 425k -> 182k üçgen, 326 -> 167 çağrı. perf-gate rotasında avm-ici noktası yeni diyara taşındı.
+- Kalan: AVM tadilatında görünür usta yok (yalnız süre); panelden dükkân satın alma yedek yol olarak duruyor.
+- 21:07 sahip: AVM yükleme ekranı + ayrı âlem: kalabalık, konser, sinema. Eklenenler: 4. kat eğlence katı (content/avm-eglence.ts: 2 salon x 15 koltuk, seans takvimi, sahne + günde 3 konser), sim/agents/avm-yasam.ts (ziyaretçiler, sinema seyircisi, konser izleyicisi, 3 müzisyen; yalnız oyuncu AVM'deyken), view/world/avm-eglence.ts, ui/avm-yukleme.ts. 5 yeni test. Akıcı kademede eğlence katı ~222k üçgen (kalabalık dahil).
+- 2026-11-22 (thread f3xv11) sahip: "içeriyi büyüt, güzelleştir; her dükkânda büfedeki gibi istasyon: çalışan kullanır, biz de kullanırız, tost makinesi gibi bekledikçe ürün gelir".
+  Makine istasyonları (content/isletme-istasyon.ts MAKINE; sim/agents/kafe.ts): kahve/çay/blender/ocak/fırın/ızgara/fotokopi/test/dikiş. Ürün koyulur, makine kendi yapar, hazır tepside bekler (en çok 3, stok değil). Çalışan koyar, başında bekler, tepsiden alıp götürür; boşta önceden koyar (en çok 2). Oyuncu: makinenin önünde dur = koy; git başka işe bak; dönünce hazırsa sıradaki müşteriye ver. Giyimde gömlek/elbise/takım artık dikiş makinesinde. Görünüm view/world/makine-gorunum.ts (halka + kalan sn + tezgâhta hazır ürün). Testler tests/sim/makine.test.ts.
+  AVM büyüdü: hol 8 -> 11 m, dükkân 5.95x5.3 -> 7.0x6.8, lobi 3.5 m (content/avm-kat.ts ODA_OLCU, ADA, CESME, HOL_SAKSI, YOL). Merdivenler holün ortasında; ada (saksı + bank) her katta, zeminde arkada çeşme + dikey bahçe, sarkıt lambalar. Bellek: AVM GPU 131 MB (tools/bellek-olc.mjs rotasına AVM diyarı eklendi). Perf kapısı yeşil, 1012 test yeşil.

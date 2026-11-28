@@ -1,0 +1,215 @@
+{
+  "_aciklama": "KAL-15: sahibin 'hayır' dediği şeylerin kod taraması. Yeni yasak = kurallar dizisine bir satır. tur: metin (kullanıcıya görünebilecek yazı sabiti, boşluklu), kimlik (tanımlayıcı adı), dosya (var olmaması gereken yol). bilinen: {dosya: adet} bilinen ihlal; yenisi kırmızı, bilinen sıfıra indirilmeli. siddet 'uyari' ise yalnız raporlanır (sahibin sözleri çelişiyor ya da karar bekliyor).",
+  "kurallar": [
+    {
+      "id": "stok-metin",
+      "alinti": "ben stok hiçbir zaman istemedim hiçbir mağazada",
+      "tarih": "2026-11-10",
+      "tur": "metin",
+      "desen": "\\bstok(u|a|tan|un|lar|ta)?\\b",
+      "istisna": [
+        {
+          "dosya": "sim/(save|zones-norm|schema|migrate-v2)\\.ts$",
+          "neden": "eski kayıt göçü stok alanını siler"
+        }
+      ],
+      "bilinen": {
+        "src/content/hava.ts": 1,
+        "src/game/sim/restoran.ts": 1,
+        "src/game/ui/hava-panel.ts": 1
+      },
+      "not": "hava.ts/hava-panel.ts: Cumartesi Gece Pazarı 'stoku önceden koy' sahibe sorulacak (uzman-paketleri KAL-15 sahibeKarar 1). restoran.ts: 'Stok bitince...' kuruluş metni."
+    },
+    {
+      "id": "stok-kimlik",
+      "alinti": "ben stok hiçbir zaman istemedim hiçbir mağazada",
+      "tarih": "2026-11-10",
+      "tur": "kimlik",
+      "desen": "^(stok|stokMax|DUKKAN_STOK_MAX|maxStock)$",
+      "bayrak": "",
+      "istisna": [
+        {
+          "dosya": "sim/(save|zones-norm|schema|migrate-v2)\\.ts$",
+          "neden": "eski kayıt göçü stok alanını siler"
+        }
+      ],
+      "bilinen": {
+        "src/content/esya.ts": 1,
+        "src/content/hava.ts": 1,
+        "src/game/sim/agents/kafe.ts": 1,
+        "src/game/sim/hava.ts": 2,
+        "src/game/sim/mulk.ts": 9,
+        "src/game/ui/mulk-panel.ts": 2,
+        "src/game/view/mulk/index.ts": 5
+      },
+      "not": "Plot.stok / DUKKAN_STOK_MAX mekanik olarak ölü (mulk.ts info stok: 1e9); büfe/işletme kolu silecek."
+    },
+    {
+      "id": "zincir-dosya",
+      "alinti": "dükkan zinciri saçmalığını kaldır",
+      "tarih": "2026-11-09",
+      "tur": "dosya",
+      "desen": "^src/(game/sim/zincir|content/dukkanlar|content/zincir)\\.ts$",
+      "bilinen": {}
+    },
+    {
+      "id": "zincir-kimlik",
+      "alinti": "dükkan zinciri saçmalığını kaldır",
+      "tarih": "2026-11-09",
+      "tur": "kimlik",
+      "desen": "^(zincirM|ZINCIR_SCHEMA|dukkanZinciri\\w*|DUKKAN_ZINCIR\\w*)$",
+      "bayrak": "",
+      "bilinen": {}
+    },
+    {
+      "id": "mudavim",
+      "alinti": "müdavimleri tamamen kaldır sadece bug oluşturuyorlar",
+      "tarih": "2026-11-02",
+      "tur": "kimlik",
+      "desen": "^(MUDAVIMLER_KAPALI|YENI_MUDAVIMLER|REGULARS|mudavim\\w*)$",
+      "bayrak": "",
+      "bilinen": {
+        "src/content/musteri.ts": 1,
+        "src/content/regulars.ts": 4,
+        "src/game/sim/agents/regulars.ts": 5,
+        "src/game/sim/esnaf.ts": 3,
+        "src/game/sim/koleksiyon.ts": 4
+      },
+      "not": "Davranış kapalı (MUDAVIMLER_KAPALI=true) ama veri ve sistem dosyası duruyor: 'sil' etiketli, bkz. olu-bayrak. 'regular' müşteri tipi 2026-11-09 anketiyle çelişiyor (kirmizi-cizgiler.txt)."
+    },
+    {
+      "id": "mudavim-metin",
+      "alinti": "müdavimleri tamamen kaldır",
+      "tarih": "2026-11-02",
+      "tur": "metin",
+      "desen": "m[üu]davim",
+      "bilinen": {
+        "src/content/achievements.ts": 1,
+        "src/content/daily.ts": 1,
+        "src/content/goals.ts": 2,
+        "src/content/hikaye.ts": 1,
+        "src/content/traits.ts": 1,
+        "src/game/sim/dekor-ev.ts": 1,
+        "src/game/ui/dekor-panel.ts": 3,
+        "src/game/ui/koleksiyon-panel.ts": 2
+      }
+    },
+    {
+      "id": "kestane-misir-araba",
+      "alinti": "kestane ve mısır arabasını komple kaldır",
+      "tarih": "2026-11-08",
+      "tur": "metin",
+      "desen": "(kestane|m[ıi]s[ıi]r)\\s+araba",
+      "bilinen": {}
+    },
+    {
+      "id": "kestane-misir-kimlik",
+      "alinti": "kestane ve mısır arabasını komple kaldır",
+      "tarih": "2026-11-08",
+      "tur": "kimlik",
+      "desen": "^(kestane|misir)(Araba|Arabasi|Cart)\\w*$",
+      "bayrak": "",
+      "bilinen": {}
+    },
+    {
+      "id": "genel-sunucu",
+      "alinti": "Oyunda onlarca sunucu var kadıköy balat cart curt bunlar olmasın",
+      "tarih": "2026-11-09",
+      "tur": "metin",
+      "desen": "(kad[ıi]k[öo]y|balat).{0,40}sunucu|sunucu.{0,40}(kad[ıi]k[öo]y|balat)|\\bcurt\\b|\\bcart\\b",
+      "bilinen": {}
+    },
+    {
+      "id": "tramvay",
+      "alinti": "üstten geçen tramvay mıdır nedir onu kaldır",
+      "tarih": "2026-11-04",
+      "tur": "kimlik",
+      "desen": "tramvay|tramway",
+      "bilinen": {}
+    },
+    {
+      "id": "ay-iskelesi",
+      "alinti": "no Ay İskelesi",
+      "tarih": "2026-10-24",
+      "tur": "metin",
+      "desen": "ay\\s+[iİı]skelesi",
+      "bosluksuz": true,
+      "bilinen": {
+        "src/content/calisan.ts": 1,
+        "src/content/koleksiyon.ts": 2
+      }
+    },
+    {
+      "id": "cevrimdisi-kazanc",
+      "alinti": "no offline income",
+      "tarih": "2026-10-24",
+      "tur": "metin",
+      "desen": "(çevrimdışı|cevrimdisi|offline)\\s+(kazanç|kazanc|gelir)",
+      "bilinen": {}
+    },
+    {
+      "id": "enflasyon",
+      "alinti": "no inflation",
+      "tarih": "2026-10-24",
+      "tur": "metin",
+      "desen": "enflasyon",
+      "bilinen": {}
+    },
+    {
+      "id": "rakip-isletme",
+      "alinti": "no rivals",
+      "tarih": "2026-10-24",
+      "tur": "metin",
+      "desen": "\\brakip",
+      "bayrak": "i",
+      "bilinen": {
+        "src/content/hikaye.ts": 7,
+        "src/game/sim/hikaye.ts": 1,
+        "src/game/ui/hikaye-panel.ts": 2,
+        "src/game/ui/hikaye-scene.ts": 2,
+        "src/game/ui/v2ui.ts": 1
+      },
+      "not": "Hikâye paneli HIKAYE_ON=false ile kapalı; 'Rakipler' sekmesi ölü (olu-bayrak: sil).",
+      "sadece": "(content/hikaye|sim/hikaye|ui/hikaye|ui/v2ui)"
+    },
+    {
+      "id": "bahsis",
+      "alinti": "no tips",
+      "tarih": "2026-10-24",
+      "tur": "metin",
+      "desen": "bah[şs]i[şs]",
+      "siddet": "uyari",
+      "bilinen": {},
+      "not": "2026-11-09 anketi garsonlar için ortak bahşiş kavanozu istiyor, 10-24 anketi 'bahşiş yok' diyor: sahibe sorulmadan yasak sayılmaz."
+    },
+    {
+      "id": "yer-tutucu",
+      "alinti": "yer tutucu (placeholder) görsel yok",
+      "tarih": "2026-10-27",
+      "tur": "metin",
+      "desen": "\\b(lorem ipsum|TODO|FIXME)\\b",
+      "bayrak": "",
+      "siddet": "uyari",
+      "bilinen": {}
+    }
+  ],
+  "olu_bayrak": {
+    "_aciklama": "Kod içindeki *_ON/*_KAPALI/*_OFF bayrakları (tools/baglilik.mjs). Her biri 'sil' (kod ve veri silinmeli) ya da 'bilincli-kapali' (sahibin kararıyla kapalı, geri açılması istenebilir) etiketli; etiketsiz yeni bayrak testi kırar.",
+    "src/game/sim/hikaye.ts:HIKAYE_ON": {
+      "etiket": "sil",
+      "neden": "hikâye, rakip ve komşu görevleri yok (2026-10-23)"
+    },
+    "src/game/sim/koleksiyon.ts:KOLEKSIYON_ON": {
+      "etiket": "sil",
+      "neden": "koleksiyon sahibin istemediği mekanik; kapalı"
+    },
+    "src/game/sim/offline.ts:OFFLINE_ON": {
+      "etiket": "sil",
+      "neden": "çevrimdışı kazanç yok (2026-10-24)"
+    },
+    "src/game/sim/yiyecek.ts:YIYECEK_ON": {
+      "etiket": "bilincli-kapali",
+      "neden": "yiyecek hazırlığı mekaniği kapalı; mutfak kolu karar verecek"
+    }
+  }
+}

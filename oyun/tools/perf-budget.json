@@ -1,0 +1,176 @@
+{
+  "_not": "PRF-02/PRF-14 performans bütçesi. 'sim' bölümü Node'da ölçülür (donanımdan bağımsız). Diğer bölümler perf-gate.mjs ölçümünden sonra yazılır.",
+  "sim": {
+    "tickP95Ms": 8,
+    "tickMaxMs": 25,
+    "pathCallsPerTickMax": 24
+  },
+  "kademe": {
+    "akici": {
+      "calls": 217.35,
+      "tris": 485720.9,
+      "programs": 116.15,
+      "geos": 402.5,
+      "texs": 157.55,
+      "heapMB": 145.04
+    },
+    "dengeli": {
+      "calls": 272.55,
+      "tris": 616980.75,
+      "programs": 129.95,
+      "geos": 457.7,
+      "texs": 171.35,
+      "heapMB": 145.32
+    },
+    "sahane": {
+      "calls": 272.55,
+      "tris": 624750.15,
+      "programs": 129.95,
+      "geos": 456.55,
+      "texs": 171.35,
+      "heapMB": 145.59
+    }
+  },
+  "boyut": {
+    "_not": "2026-11-26 sahip kararı: game.js için gerçek bir boyut tavanı yok (yaklaşık 1 GB yer var). gameJsMB yalnız kaçak büyümeyi (yanlışlıkla paketlenen büyük veri) yakalayan geniş bir emniyet sınırıdır; yeni özellik eklemeyi engellemez, gerekirse yükseltilir. distMB (tüm dist) için de aynı mantık: 60 MB emniyet sınırı. Asıl ölçüler kare süresi, üçgen sayısı, çağrı sayısı ve bellektir.",
+    "gameJsMB": 8,
+    "distMB": 60
+  },
+  "sahibinGpu": {
+    "_not": "PRF-01 perfRecord kayıtlarından sahibin PC/telefonunda doldurulur. SwiftShader süresinden ASLA türetilmez.",
+    "akici": {
+      "kareP95Ms": null
+    },
+    "dengeli": {
+      "kareP95Ms": null
+    },
+    "sahane": {
+      "kareP95Ms": null
+    }
+  },
+  "_temel": {
+    "tarih": "2026-11-21",
+    "pay": "%15 (heapMB %15x1.2: GC dalgalanması)",
+    "olculen": {
+      "akici": {
+        "calls": 189,
+        "_calls": "karsi-yaka",
+        "tris": 422366,
+        "_tris": "avm-ici",
+        "programs": 101,
+        "_programs": "avm-ici",
+        "geos": 350,
+        "_geos": "avm-ici",
+        "texs": 137,
+        "_texs": "avm-ici",
+        "heapMB": 105.1,
+        "_heapMB": "avm-ici"
+      },
+      "dengeli": {
+        "calls": 237,
+        "_calls": "avm-ici",
+        "tris": 536505,
+        "_tris": "avm-ici",
+        "programs": 113,
+        "_programs": "avm-ici",
+        "geos": 398,
+        "_geos": "avm-ici",
+        "texs": 149,
+        "_texs": "avm-ici",
+        "heapMB": 105.3,
+        "_heapMB": "avm-ici"
+      },
+      "sahane": {
+        "calls": 237,
+        "_calls": "avm-ici",
+        "tris": 543261,
+        "_tris": "avm-ici",
+        "programs": 113,
+        "_programs": "avm-ici",
+        "geos": 397,
+        "_geos": "avm-ici",
+        "texs": 149,
+        "_texs": "avm-ici",
+        "heapMB": 105.5,
+        "_heapMB": "avm-ici"
+      }
+    },
+    "boyut": {
+      "gameJsMB": 2.796,
+      "distMB": 5.131,
+      "dosya": 31
+    }
+  },
+  "bellek": {
+    "_not": "PRF-11/PRF-15 bellek ve varlık bütçesi. Hedef (sahip): 'GTA5 PS3'te 512 MB ile çalıştıysa bizimki de o dengede' (PS3: 256 MB sistem + 256 MB görüntü belleği). Ölçüm: node tools/bellek-olc.mjs (GPU baytı WebGL çağrılarından sayılır, tools/gpu-bellek-kanca.mjs; heap gc sonrası), varlık kuralları tests/unit/render/varlik-butce.test.ts ile her testte denetlenir. Tavanlar ölçülen en büyük değer x1.15 (heap x1.15x1.2).",
+    "varlik": {
+      "dokuKenarMax": 2048,
+      "dokuHucre": 512,
+      "_doku": "2026-11-26 sahip kararı: boyut tavanları (dokuToplamMB dahil) geniş emniyet sınırıdır, yeni içeriği engellemez; kenar kuralı (2 üstel/512 katı) ve mipmap şartı durur. Kenar 2 üstel ya da 512'lik atlas hücresinin katı (zemin atlası 3x2 hücre = 1536x1024): mip zinciri temiz iner. Her yüklenen dokuda mipmap + LinearMipmapLinear. KTX2/Basis yok: Basis çözücüsü WebAssembly ister, check-dist WebAssembly'yi yasaklar; çizim dokuları (karakter, tabela) zaten çalışma anında tuvalde üretilir.",
+      "dokuToplamMB": 40,
+      "glbToplamMB": 40,
+      "glbTekMB": 2,
+      "_glb": "2026-11-26 sahip kararı: GLB boyut tavanları (toplam 40 MB, tek dosya 2 MB) kaçak büyümeyi yakalayan geniş emniyet sınırıdır, yeni model eklemeyi engellemez; nicemleme (KHR_mesh_quantization) zorunluluğu aynen durur. Tüm GLB'ler tools/glb-sikistir.mjs ile KHR_mesh_quantization (normal int8, uv uint16, teğet atılır; three yerleşik okur, çözücü yok). Draco/meshopt yok: ikisi de WebAssembly çözücü ister. Yeni model eklenince: node tools/glb-sikistir.mjs, sonra node tests/browser/glb-ab.mjs önce sonra (piksel farkı)."
+    },
+    "calisma": {
+      "_olcum": "2026-11-21, headless Chromium SwiftShader 1280x720 (devicePixelRatio 1), kademe dengeli, ?stage=10, rota iskele, büfe içi, halı saha, orman, karşı yaka, AVM içi, iki tur (ikinci tur birincinin aynısıysa sızıntı yok).",
+      "dengeli": {
+        "gpuMB": 194,
+        "dokuMB": 103,
+        "tamponMB": 27,
+        "heapMB": 108
+      },
+      "_olculen": {
+        "dengeli": {
+          "gpuMB": 168.7,
+          "_gpuMB": "bufe-ici (2. tur)",
+          "dokuMB": 89,
+          "_dokuMB": "karsi-yaka",
+          "tamponMB": 20.03,
+          "heapMB": 78.3,
+          "_heapMB": "karsi-yaka (2. tur)",
+          "renderbufferMB": 55.92,
+          "_renderbufferMB": "MSAA x4 yarım float sahne hedefi + derinlik (bloom zinciri), çözünürlükle orantılı"
+        }
+      },
+      "_once": {
+        "dengeli": {
+          "gpuMB": 206.88,
+          "dokuMB": 129.84,
+          "heapMB": 79.2,
+          "_not": "GLB nicemleme ve doku akışı merdiveninden önce (aynı rota)"
+        }
+      }
+    },
+    "yukleme": {
+      "_not": "node tools/yukleme-olc.mjs --build: index.html -> ilk boya / game.js / oynanabilir kare; html ve js gzip ile gider (itch.io gibi). Hedef: kablolu < 3 sn ağ, 4G < 8 sn ağ (hazır süresindeki JS/shader payı SwiftShader'da gerçeğinden uzun, bilgi amaçlı).",
+      "indirilenMB": {
+        "once": 5.4,
+        "sonra": 4.39,
+        "_not": "oyunun ilk dakikasında inen tüm dosyalar (game.js gzip'siz sayıldı)"
+      },
+      "olculen": {
+        "_tarih": "2026-11-21, tools/yukleme-olc.mjs --build (üretim derlemesi, gzip, önbellek kapalı)",
+        "kablolu": {
+          "ilkBoyaMs": 56,
+          "gameJsMs": 270,
+          "hazirMs": 4878,
+          "tumVarlikMs": 4964
+        },
+        "4g": {
+          "ilkBoyaMs": 88,
+          "gameJsMs": 972,
+          "hazirMs": 4742,
+          "tumVarlikMs": 5592
+        },
+        "3g": {
+          "ilkBoyaMs": 172,
+          "gameJsMs": 4817,
+          "hazirMs": 7999,
+          "tumVarlikMs": 16589
+        },
+        "_not": "Yükleme ekranı her profilde ilk boyada görünür (siyah ekran yok). hazirMs'in ağ dışı payı SwiftShader'da JS + shader ısıtmasıdır; gerçek GPU'da kısalır."
+      }
+    }
+  }
+}

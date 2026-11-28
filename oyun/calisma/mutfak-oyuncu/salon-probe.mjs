@@ -1,0 +1,31 @@
+// probe: salon/mutfak geliştirmeleri sahnede görünüyor mu. STAGE=7 node calisma/mutfak-oyuncu/salon-probe.mjs <out>
+import { createServer } from 'node:http'; import { readFileSync, existsSync, statSync, mkdirSync } from 'node:fs'; import { join, resolve } from 'node:path'; import { createRequire } from 'node:module';
+import { kulisKapat } from '../../tests/browser/kulis-kapat.mjs';
+const require = createRequire(import.meta.url); const { chromium } = require('playwright'); const DIST = resolve('dist');
+const out = process.argv[2]; mkdirSync(out, { recursive: true });
+const TYPES = { png: 'image/png', jpg: 'image/jpeg', glb: 'model/gltf-binary', webp: 'image/webp', json: 'application/json', ktx2: 'image/ktx2', wasm: 'application/wasm' };
+const srv = createServer((req, res) => { const p = decodeURIComponent(new URL(req.url, 'http://x').pathname); if (p === '/') { res.writeHead(200, { 'content-type': 'text/html' }); return res.end(`<!doctype html><html><head><meta charset="utf-8"></head><body>${readFileSync(join(DIST, 'index.html'), 'utf8')}</body></html>`); } const f = join(DIST, p); if (!existsSync(f) || statSync(f).isDirectory()) { res.writeHead(404); return res.end(); } res.writeHead(200, { 'content-type': TYPES[f.split('.').pop()] || 'text/javascript' }); res.end(readFileSync(f)); });
+await new Promise(r => srv.listen(0, '127.0.0.1', r));
+const ST = Number(process.env.STAGE || 7);
+const b = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
+const p = await (await b.newContext({ viewport: { width: 1280, height: 720 } })).newPage();
+p.on('console', m => { if (m.type() === 'error') console.log('[err]', m.text().slice(0, 200)); });
+await p.goto(`http://127.0.0.1:${srv.address().port}/?fresh=1&noloop&tier=dengeli&seed=3&stage=${ST}`);
+await p.waitForFunction(() => window.__marti?.ready?.(), null, { timeout: 120000 });
+await p.evaluate(() => window.__marti.play('sabri')); await p.evaluate(() => window.__marti.renderFrames(2, 0.1));
+await kulisKapat(p, 'Probe');
+await p.evaluate((ST) => { const M = window.__marti; try { M.command({ kind: 'esnafim', op: 'done' }); } catch {} M.step(1); M.skipCeremony?.(); M.collectWelcome?.(); M.setTime(13); M.step(2); M.izgara(false); M.simCmd('money', 9e9); M.simCmd('level', 40); M.simCmd('unlock', 'isbul'); M.simCmd('cmd', { kind: 'setStage', stage: ST }); M.closeJobBoard?.(); M.closePanel?.();
+  const st = document.createElement('style'); st.textContent = '#sbui{visibility:hidden!important}'; document.head.appendChild(st); }, ST);
+const shot = async (name, x, z, cx, cz, zr, tilt = 1.0) => { await p.evaluate(([x, z, cx, cz, zr, tilt]) => { const M = window.__marti; M.setTime(12); M.teleport(x, z); for (let k = 0; k < 6; k++) { M.step(0.4); M.renderFrames(3, 0.1); } M.camera({ x: cx, z: cz, zoomRaw: zr, yaw: 0, tilt }); for (let k = 0; k < 4; k++) M.renderFrames(3, 0.1); }, [x, z, cx, cz, zr, tilt]); await p.waitForTimeout(200); await p.screenshot({ path: join(out, name + '.png'), timeout: 300000 }); };
+await shot('E-once', 15.6, -12.0, 14.4, -14.4, 1.35);
+await shot('mutfak-once', 0, -14.6, 0, -15, 1.25);
+const info = await p.evaluate(() => { const M = window.__marti; const S = M.state(); return { zones: JSON.stringify(S.zones ?? null).slice(0, 400), keys: Object.keys(M).join(',') }; });
+console.log(info.keys.slice(0, 1500)); console.log(info.zones);
+// satın al
+await p.evaluate(() => { const M = window.__marti; for (const e of ['semaver_dev','tas_firin','gozleme','bal_kaymak','sarkuteri','buz_tezgah','mangal_e','akvaryum_e','meze_dolap','piyano_s']) M.command({ kind: 'mulk', op: 'salonEsya', e }); for (const i of ['izgara','fritoz','doner','salata','meze','tatli','tas_firin','ocak2','izgara2','sef_masa','cay_bar','icecek_dolap']) M.command({ kind: 'mulk', op: 'mutfakAl', e: i }); M.step(1); });
+await shot('E-sonra', 15.6, -12.0, 14.4, -14.4, 1.35);
+await shot('mutfak-sonra', 0, -14.6, 0, -15, 1.25);
+await shot('E-disaridan', 15.6, -6.0, 15.6, -9.5, 2.4, 0.95);
+await shot('E-disaridan-cok', 15.6, 4.0, 12, -4, 3.2, 0.95);
+console.log(await p.evaluate(() => JSON.stringify(window.__marti.S?.zones?.salon) + JSON.stringify(window.__marti.S?.zones?.mutfak) + ' stage=' + window.__marti.S?.stage + ' money=' + window.__marti.S?.money));
+await b.close(); srv.close(); process.exit(0);

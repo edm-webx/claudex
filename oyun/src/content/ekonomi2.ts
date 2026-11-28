@@ -1,0 +1,66 @@
+/**
+ * Faz 2 ekonomi (MMORPG mantığı): para zor kazanılır, değeri vardır. Pure data, every number in one place.
+ * Why the old economy inflated (46 milyar ₺ in 90 min): price × tier (×10) × tadilat (×12) × plaket (×2 per plaque)
+ * × streak (×1.5) × set × siftah all multiplied together, and every side system (ferry, kurye, deniz, goals, hava)
+ * paid "minutes of income", so income fed income. Now:
+ * - Prices are 2026 İstanbul büfe prices (products.ts); a kademe adds a small premium (TIER_X), not ×10.
+ * - Venue multipliers are flat and capped (VENUE_CAP). A büfe grows by capacity (more customers, stands, tables),
+ *   not by multiplying prices.
+ * - Every sale pays its ingredients (MALIYET): what you see is net profit.
+ * - Side income (everything that isn't a sale or a tip) is a "faucet" capped per game day (BONUS_*).
+ * - Day end costs (GIDER): kira + elektrik/su/tüp grow with the venue: the sink that keeps money valuable.
+ *   Never pushes money below zero (no losing, survey).
+ * - Kepenk (offline): almost nothing (owner: "pasif gelir olmamalı veya çok cüzi").
+ */
+import type { ProductId } from '../game/sim/schema';
+
+/** Ingredient cost share of the sell price, per product (net margin = 1 - this). */
+// 2026-10-24 user: "para kazanma düzeldi ama aşırı yavaş, biraz açabiliriz": ingredients ~10 points cheaper (net margin up ~25 %)
+export const MALIYET: Record<ProductId, number> = { doner: 0.35, cay: 0.15, ayran: 0.27, simit: 0.3, tost: 0.3, gazoz: 0.45 };
+/** Kademe price premium (K1..K4). Better product = a bit dearer, mostly more demand and patience. */
+export const TIER_PRICE_X = [1, 1.15, 1.35, 1.6];
+/** Kademe upgrade cost as base price × factor (K2, K3, K4). */
+export const TIER_COST_F = [0, 60, 250, 900];
+/** Venue multiplier pieces (all additive), and the hard cap. */
+export const VENUE = { perStage: 0.04, perPlaque: 0.05, perStar: 0.02, siklikMax: 0.08, cap: 1.45 };
+export const STREAK = { step: 0.025, max: 4 };          // Sıcak Tezgah: at most +10 %
+export const SIFTAH_X = 1.5;
+/**
+ * EKO-02: yalnız rastgele küçük bonuslar (bozuk para, kedi, şemsiye, dekor bahşişi) günlük tavana tabidir:
+ * tavan = max(BONUS_MIN, BONUS_FRAC x günlük hedef geliri). Günlük hedef geliri = dünkü kazanç ile bugünkü satışın büyüğü,
+ * yani gün başında (satış 0) tavan 250'ye düşmez. Dünden kullanılmayan pay (en çok bir günün tavanı kadar) devreder.
+ * Emek ödülleri (sandık, günlük tahta, hedef, hafta bonusu, hikaye, mini oyun, sınav) tavana girmez.
+ */
+export const BONUS_MIN = 600, BONUS_FRAC = 0.1;
+/** EKO-02: gelir defterinin sabit kaynak kimlikleri (S.today.src ve S.stats.kaynak_<id>). */
+export const KAYNAKLAR = ['tezgah', 'adisyon', 'bahsis', 'salon', 'isletme', 'mac', 'bahis', 'sinav', 'sandik', 'gorev', 'hedef', 'basarim', 'yildiz', 'tadilat', 'orman', 'faiz', 'diger'] as const;
+export type Kaynak = typeof KAYNAKLAR[number];
+export const KAYNAK_AD: Record<Kaynak, string> = {
+  tezgah: 'Tezgah satışı', adisyon: 'Adisyon', bahsis: 'Bahşiş', salon: 'Salon', isletme: 'İşletme kasası', mac: 'Maç', bahis: 'Bahis', sinav: 'Sınav', sandik: 'Sandık',
+  gorev: 'Görev ve sipariş', hedef: 'Hedef', basarim: 'Başarım', yildiz: 'Yıldız', tadilat: 'Tadilat', orman: 'Orman', faiz: 'Mevduat faizi', diger: 'Diğer',
+};
+/** Day end costs per kiosk stage (index = stage-1): rent, and utilities as a share of the day's sales. */
+export const GIDER = { kira: [0, 150, 550, 1900, 5600, 9000, 14000, 21000, 30000, 42000], fatura: 0.03, minSales: 1 };
+/** Offline: hours cap and rate per kepenk level (rate × idle income/min). */
+export const KEPENK2: [number, number][] = [[1, 0.02], [2, 0.03], [3, 0.04], [4, 0.05]];
+/** Tadilat costs (stage 2..5) and crew seconds: rarer, dearer, real change. */
+// 2026-11-24 sahip "dengele, sıkılınmasın ama uzun oynansın": tam oyun botuyla ölçüldü, aşama 3/4/6/8/9 ucuzladı (180k/900k/12M/70M/150M ->
+// 120k/650k/6M/60M/110M). Etkin bot 61 sa -> 52,5 sa, aşama varışları HEDEF_ASAMA_DK +-%35 içinde; ara dükkân görevleri content/acilis.ts
+// 2026-11-27 erken oyun QA: aşama 4'te k6 (5★) alındıktan sonra 4,5M'ye ~120 dk yalnız para biriktiriliyordu (ölü bölge sınırı 90 dk,
+// OLU_BOLGE_DK). Aşama 5: 4,5M -> 3,4M. Tam oyun botu (★5 pads>=15 ile) tohum 3/11: aşama 5 609 -> 568 dk (hedef 600 +-%35),
+// k6'dan tadilata boşluk ~120 -> ~74 dk. Aşama 2/3/4 varışı değişmedi (34/93/322 dk). Bant değişmedi.
+export const STAGE_COST = [0, 25000, 120000, 650000, 3400000, 6000000, 30000000, 60000000, 110000000, 300000000];
+export const STAGE_TIME_S = [0, 90, 300, 900, 1800, 2400, 3000, 3600, 4200, 4800];
+/** Stage income multiplier shown on the tadilat card (flat now, the growth is capacity). */
+export const STAGE_MULT = [1, 1.04, 1.08, 1.12, 1.16, 1.2, 1.24, 1.28, 1.32, 1.36];
+/** Arrival rate bonus per stage (customers / min) - the real reward of a tadilat. */
+export const STAGE_ARRIVAL = [0, 2.6, 5.5, 9, 13, 15.5, 18, 25, 32, 40];
+
+export const fmtTL = (v: number): string => Math.round(v).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' ₺';
+
+/**
+ * Yemek menüsü (content/yemek-menu.ts, BUF-04): masa biletinde bir kalemin yemek (DishId) olma payı, aşama başına (index = aşama-1).
+ * Kalan kalemler eski tezgâh ürünü olarak kalır (simit, çay, ayran...). Fiyatlar yemek-menu.ts'de; ortalama adisyon
+ * SALON.adisyon'a yakın tutulur (tests/sim/menu-asama.test.ts bandı korur). Gelir çok kayarsa önce bu payı kıs.
+ */
+export const YEMEK = { pay: [0, 0, 0.3, 0.4, 0.45, 0.5, 0.55, 0.6, 0.6, 0.65], /** tadım menüsünde ekstra servis başına bilet sabrı (sn) */ kursSabir: 22 };

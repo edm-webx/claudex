@@ -1,0 +1,179 @@
+/**
+ * Individual-rig view of the agents layer (Builder C, M1): turns the sim's ActorRegistry (workers, regulars, VIP,
+ * kapkaççı, cats, Karamel, gulls) into v2 rigs, plus the pigeons and the far gull flock. Never writes sim state.
+ *
+ * - Diff by actor id each frame: new actor -> rig, dead actor -> rig disposed. Pose = prev -> cur lerped by alpha.
+ * - Candidate looks are data (`{ lookType, lookSeed, ...overrides }`), expanded here with randomLook.
+ * - People: setInput({ speed, act, mood }) + setCarry(types) when the carried list changes. Animals get the v2 act /
+ *   mode names straight through setState (cat: sleep walk rub purr meow, dog: sleep sit wag bark, gull: stand walk
+ *   fly glide scream stare). Gulls above the tier's gullsNear are hidden (the sim keeps a fixed count).
+ * - Pigeons scatter from the player's footsteps (v2: every 6th frame while moving).
+ * - Speech bubbles are D's: read `actor.say` / `actor.sayT` from the registry (screen label per actor, head via rig).
+ */
+import * as T from 'three';
+import type { GameView, Quality, HeroHandle, Vec3 } from '../../../engine/api';
+import type { GameState } from '../../sim/schema';
+import type { AgentsHandle } from '../../sim/agents';
+import type { Actor } from '../../sim/agents/types';
+import { FLOCK } from '../../sim/agents/pigeons';
+import type { MotorChars } from './index';
+import * as K from './v2/kit';
+import { avmIcinde, katY, HOL } from '../../../content/avm-kat';
+import { hstIcinde, MERD as HST_MERD } from '../../../content/hastane-kat';
+
+export interface AgentsViewDeps {
+  chars: MotorChars;
+  quality: Quality;
+  /** Live agents handle (rules.rt.agents); null before the sim exists. */
+  agents: () => AgentsHandle | null;
+  player: () => { x: number; z: number; moving: boolean; kat?: number };
+  /** 2026-11-21 denetim: kameranın dibinden geçen martı ekranda büfeden büyük görünüyordu; havadaki martı kameraya 8 m'den yakınsa gizlenir */
+  camera?: () => { position: { x: number; y: number; z: number } };
+  /** 2026-11-21: optional: hide a raised actor (y > 0.5) at x, z (roof terrace over a salon the player is inside: its roof is cut away) */
+  hideUp?: (x: number, z: number) => boolean;
+  /** Optional: B's item meshes are wired through chars.setItemFactory by boot. */
+}
+export interface AgentsView extends GameView {
+  /** Head world position of an actor's rig (for bubbles / labels); false when not drawn. */
+  headPos(actorId: number, out: Vec3): boolean;
+  rigOf(actorId: number): HeroHandle | null;
+  stats(): { rigs: number };
+}
+
+interface Row { a: Actor; h: HeroHandle; animal: boolean; carryKey: string; gull: number; props?: Record<string, T.Object3D> }
+
+/** BUF-14/15: hafif rol aksesuarları (a.fx): kurye bisikleti, müzisyen sazı, vale arabası (sürerken), müfettiş klipsi; tek kutu/silindir, gölge yok */
+function rolProps(): Record<string, T.Object3D> {
+  const L = (c: string) => new T.MeshLambertMaterial({ color: c });
+  const box = (w: number, h: number, d: number, c: string, x = 0, y = 0, z = 0) => { const m = new T.Mesh(new T.BoxGeometry(w, h, d), L(c)); m.position.set(x, y, z); return m; };
+  const wheel = (x: number, z: number) => { const m = new T.Mesh(new T.TorusGeometry(0.3, 0.035, 5, 12), L('#222')); m.rotation.y = Math.PI / 2; m.position.set(x, 0.3, z); return m; };
+  const bike = new T.Group(); bike.add(wheel(0, 0.55), wheel(0, -0.55), box(0.05, 0.05, 1.1, '#3fb5b0', 0, 0.45, 0), box(0.4, 0.04, 0.04, '#222', 0, 0.85, 0.5));
+  const saz = new T.Group(); saz.add(box(0.22, 0.26, 0.07, '#8a5a2b', 0.1, 0.95, 0.25), box(0.05, 0.5, 0.04, '#5a3a1c', 0.1, 1.3, 0.25)); saz.rotation.z = -0.5;
+  const araba = new T.Group(); araba.add(box(1.0, 0.35, 2.2, '#c0392b', 0, 0.35, 0), box(0.9, 0.3, 1.1, '#8fb8d8', 0, 0.65, -0.1), wheel(0.5, 0.7), wheel(-0.5, 0.7), wheel(0.5, -0.7), wheel(-0.5, -0.7));
+  const klips = new T.Group(); klips.add(box(0.2, 0.28, 0.02, '#a0764a', -0.2, 1.0, 0.3));
+  // BUF-21 tadilat ustası: omuzda kalas, elde çekiç
+  const kalas = new T.Group(); kalas.add(box(0.14, 0.06, 2.0, '#c8955a', 0.24, 1.52, 0.1)); kalas.rotation.y = 0.15;
+  const cekic = new T.Group(); cekic.add(box(0.04, 0.32, 0.04, '#7a4a2a', 0.3, 0.95, 0.28), box(0.16, 0.07, 0.07, '#5b6068', 0.3, 1.1, 0.28));
+  // AVM sahnesi: vokalin el mikrofonu, davulcunun bagetleri
+  const mik = new T.Group(); mik.add(box(0.035, 0.18, 0.035, '#1a1a1f', 0.12, 1.42, 0.22), box(0.06, 0.06, 0.06, '#6b6f78', 0.12, 1.53, 0.22));
+  const davul = new T.Group(); davul.add(box(0.025, 0.025, 0.38, '#e8d2a0', 0.22, 0.98, 0.3), box(0.025, 0.025, 0.38, '#e8d2a0', -0.22, 0.98, 0.3));
+  // belediye işçileri (kilitli inşaat sahaları): elde kürek, bayrakçının kırmızı bayrağı
+  const kurek = new T.Group(); kurek.add(box(0.04, 1.1, 0.04, '#8a5a2b', 0.3, 0.75, 0.3), box(0.24, 0.3, 0.03, '#5b6068', 0.3, 0.18, 0.34)); kurek.rotation.x = 0.35;
+  const bayrak = new T.Group(); bayrak.add(box(0.03, 0.9, 0.03, '#d9d2bd', 0.32, 1.25, 0.2), box(0.02, 0.32, 0.42, '#e0322b', 0.32, 1.52, 0.42));
+  for (const g of [bike, saz, araba, klips, kalas, cekic, kurek, bayrak, mik, davul]) g.visible = false;
+  return { bike, saz, araba, klips, kalas, cekic, kurek, bayrak, mik, davul };
+}
+
+export function resolveLook(chars: MotorChars, look: Record<string, unknown> | undefined): Record<string, unknown> | undefined {
+  if (!look) return look;
+  if (look.lookType == null) return look;
+  const { lookType, lookSeed, ...rest } = look as { lookType: string; lookSeed?: number; [k: string]: unknown };
+  const base = chars.v2.randomLook(lookType, K.rng(Number(lookSeed ?? 1)));
+  return { ...base, ...rest };
+}
+
+export function createAgentsView(deps: AgentsViewDeps): AgentsView {
+  const { chars } = deps;
+  const rows = new Map<number, Row>();
+  let flock: ReturnType<MotorChars['makeFlock']> | null = null;
+  let pigeons: (ReturnType<MotorChars['makePigeons']> & { scatter?: (x: number, z: number, r?: number) => void }) | null = null;
+  let frame = 0;
+  let tierKey = '';
+
+  function build(a: Actor): Row | null {
+    const rig = { ...a.rig } as Record<string, unknown>;
+    let h: HeroHandle, animal = false;
+    try {
+      if (a.kind === 'cat') { h = chars.makeCat(rig); animal = true; }
+      else if (a.kind === 'dog') { h = chars.makeDog(rig); animal = true; }
+      else if (a.kind === 'gull' || a.kind === 'parrot') { h = chars.makeGull(rig); animal = true; }
+      else {
+        let lk = resolveLook(chars, rig.look as Record<string, unknown> | undefined);
+        if (a.kind === 'worker' && lk) { const o = { ...lk }; for (const k of ['top', 'topStyle', 'sleeves', 'vest', 'bowtie', 'bottom', 'bottomStyle', 'hat', 'hatColor', 'apron', 'back', 'props', 'accent']) delete o[k]; lk = o; }   // hired staff wear their ROLE uniform, only the person (face, hair, skin) comes from the candidate
+        rig.look = lk; h = chars.makeHero(rig as never);
+      }
+    } catch (e) { return null; }
+    h.object.position.set(a.x, a.y, a.z);
+    // 2026-11-21 kullanıcı: "torbacının torbasını kaldır": Torbacı'nın yerde sürüklenen çöp torbası (ip + çuval) artık çizilmiyor
+    let props: Record<string, T.Object3D> | undefined;
+    if (!animal && (a.kind === 'worker' || a.key === 'mufettis' || a.key.startsWith('usta-'))) { props = rolProps(); for (const o of Object.values(props)) h.object.add(o); }
+    return { a, h, animal, props, carryKey: '', gull: a.kind === 'gull' ? Number(a.key.split('-')[1]) : -1 };
+  }
+  function ensure(agents: AgentsHandle | null) {
+    if (!agents) return;
+    const list = agents.registry.list;
+    const alive = new Set<number>();
+    for (const a of list) {
+      if (a.dead) continue;
+      alive.add(a.id);
+      if (!rows.has(a.id)) { const r = build(a); if (r) rows.set(a.id, r); }
+    }
+    for (const [id, r] of rows) if (!alive.has(id)) { r.h.dispose(); rows.delete(id); }
+  }
+  function lerpAngle(a: number, b: number, t: number) { let d = b - a; while (d > Math.PI) d -= Math.PI * 2; while (d < -Math.PI) d += Math.PI * 2; return a + d * t; }
+
+  const view: AgentsView = {
+    update(_state: GameState, dt: number, alpha: number) {
+      const agents = deps.agents();
+      // GRS-17: the far flock / pigeons take their counts from the tier when built: rebuild them on a tier change
+      const tn = deps.quality.current().name;
+      if (tierKey && tn !== tierKey) { flock?.dispose(); pigeons?.dispose(); flock = null; pigeons = null; }
+      tierKey = tn;
+      if (!flock) {
+        try { flock = chars.makeFlock({ center: { x: 0, y: FLOCK.y, z: FLOCK.z }, radius: FLOCK.radius }); } catch { flock = null; }
+      }
+      if (!pigeons && agents) {
+        try { const p = agents.pigeons(); pigeons = chars.makePigeons({ area: { x0: p.x0, x1: p.x1, z0: p.z0, z1: p.z1, center: { x: p.cx, y: 0, z: p.cz }, radius: p.radius } }) as unknown as typeof pigeons; } catch { pigeons = null; }
+      }
+      ensure(agents);
+      const gullsNear = deps.quality.current().gullsNear;
+      // AVM: kahraman hangi kattaysa üst katlar kesik çizilir; o katlardaki işçi/müşteri de gizlenir (yoksa bina dışında havada görünürler)
+      const pl = deps.player(), avmIc = avmIcinde(pl, 2), avmUst = avmIc ? katY(pl.kat || 0) + 1 : 0, avmAlt = avmIc ? katY(pl.kat || 0) - 1 : 0;
+      const hstIc = hstIcinde(pl, 2), hstY = hstIc ? katY(pl.kat || 0) : 0;   // Devlet Hastanesi: yalnız kahramanın katı (+ merdiven boşluğundan bir alt kat)
+      for (const r of rows.values()) {
+        const a = r.a, h = r.h;
+        const x = a.px + (a.x - a.px) * alpha, z = a.pz + (a.z - a.pz) * alpha, y = a.py + (a.y - a.py) * alpha;
+        const rot = lerpAngle(a.prot, a.rot, alpha);
+        h.setPose({ x, z }, rot);
+        h.object.position.y = y;
+        if (r.props) for (const k in r.props) r.props[k].visible = a.fx === k;
+        if (r.gull >= 0) {
+          h.object.visible = r.gull < gullsNear || a.act === 'stare' || a.act === 'snatch' || a.carry.length > 0;
+          const cp = y > 1.5 ? deps.camera?.()?.position : undefined;
+          if (cp && h.object.visible && (cp.x - x) ** 2 + (cp.y - y) ** 2 + (cp.z - z) ** 2 < 64) h.object.visible = false;
+        }
+        if (r.gull < 0) h.object.visible = !(y > 0.5 && deps.hideUp?.(x, z)) && !(avmUst && y > avmUst) && !(avmIc && y < avmAlt && (x < HOL.x0 || x > HOL.x1));   // alt kat dükkânları bu katın döşemesi altında
+        if (r.gull >= 0) h.object.visible = r.gull < gullsNear || a.act === 'stare' || a.act === 'snatch' || a.carry.length > 0;
+        if (hstIc && r.gull < 0 && (y > hstY + 1 || (y < hstY - 1 && !(x > HST_MERD.kx0 && x < HST_MERD.kx1 && z > HST_MERD.on && z < HST_MERD.arka)))) h.object.visible = false;
+        if (r.animal) {
+          (h as unknown as { setState(s: Record<string, unknown>): void }).setState(r.a.kind === 'gull' || r.a.kind === 'parrot' ? { mode: a.act, speed: Math.min(1, a.speed / 1.2) } : { act: a.act, speed: Math.min(1, a.speed / 1.2) });
+        } else {
+          const key = a.carry.map((c) => c.type).join(',');
+          if (key !== r.carryKey) { r.carryKey = key; h.setCarry(a.carry.map((c) => c.type)); }
+          h.setInput({ speed: a.speed, act: a.act as never, mood: a.mood });
+        }
+        h.update(dt, alpha);
+      }
+      if (flock) flock.update(dt);
+      if (pigeons) {
+        pigeons.update(dt);
+        const p = deps.player();
+        if (p.moving && frame++ % 6 === 0 && pigeons.scatter) pigeons.scatter(p.x, p.z);
+      }
+    },
+    headPos(id, out) {
+      const r = rows.get(id); if (!r) return false;
+      const head = (r.h as unknown as { rig?: { head?: T.Object3D } }).rig?.head;
+      if (head) { const v = new T.Vector3(); head.getWorldPosition(v); out.x = v.x; out.y = v.y; out.z = v.z; return true; }
+      out.x = r.h.object.position.x; out.y = r.h.object.position.y + (r.animal ? 0.6 : 1.85); out.z = r.h.object.position.z; return true;
+    },
+    rigOf: (id) => rows.get(id)?.h ?? null,
+    stats: () => ({ rigs: rows.size }),
+    dispose() {
+      for (const r of rows.values()) r.h.dispose();
+      rows.clear();
+      flock?.dispose(); pigeons?.dispose(); flock = null; pigeons = null;
+    },
+  };
+  return view;
+}

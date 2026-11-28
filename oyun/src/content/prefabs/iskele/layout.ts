@@ -1,0 +1,235 @@
+import { UG } from '../../ustgecit';
+import { KANAT_MASALAR, type KanatBolge } from '../../kanat';
+import { KOSK_KAPI, KOSK_KAPI_W } from '../../restoran-plan';
+/**
+ * İskele geography and per-stage layout (pure data, no three, no DOM): v2 world.js constants, stageLayout(),
+ * staticObstacles(), WALKABLE, benches, lamp posts, trophy spots. Ported 1:1 (numbers kept).
+ * Vectors are plain {x, y, z} objects here (v2 used THREE.Vector3); views convert.
+ */
+export interface P3v { x: number; y: number; z: number; }
+export interface Obstacle { x0: number; x1: number; z0: number; z1: number; tag?: string; }
+export interface StageLayout {
+  stations: Record<string, { x: number; z?: number; rotY: number }>;
+  /** span: x range of the drawn counter top that Sabri can drop onto from behind (the drop zone runs along it) */
+  counter: { pos: P3v; drop: P3v; standAt: P3v; span: [number, number] };
+  queue: P3v[];
+  kasa: { pos: P3v; pile: P3v };
+  /** 0..7 büfe masaları; 8+ kanat / salon / çatı masaları (content/kanat.ts, kurulu olanı aşama belirler) */
+  tables: { x: number; z: number; ax: 'x' | 'z'; bolge?: KanatBolge; cati?: 'W' | 'E' }[];
+  window: { standAt: P3v; serve: P3v; queue: P3v[] };
+  job: { board: [number, number, number]; pos: P3v };
+  extraPads: Record<string, P3v>;
+  cat: Record<string, P3v>;
+  perch: [number, number, number, number][];
+  dog: P3v;
+  playerStart: P3v;
+  door: { outside: P3v; inside: P3v } | null;
+  slots: { pos: P3v; rotY: number; size: string }[];
+  walkways: P3v[][];
+}
+const PI = Math.PI, HP = PI / 2;
+export const WATER_Y = -1.0, SEAT_H = 0.45;
+export const PIER = { x0: -24, x1: 22.7, z0: -18, z1: 4.4 };
+/** 2026-11-22 (sahibi: "büfe mutfağa çok yakın, yürüme yoluna yakın olsun"): the whole büfe (kiosk, counter, queue, stations, ferry
+ *  window, front tables) sits BUFE_DZ m closer to the promenade than the v2 numbers. The kiosk prefab keeps its v2 local coordinates
+ *  (BUFE_YEREL, WIN_Z_YEREL, COUNTER_BOARD_YEREL) and is placed at z = BUFE_DZ (zones/iskele.ts); everything else uses the world values. */
+export const BUFE_DZ = 8.4;   // front at z 4.0, right on the promenade edge (owner 2026-11-22: "yürüme yoluna paralel, yolun üstü")
+export const BUFE_YEREL = { x0: -4.2, x1: 4.2, z0: -10.6, z1: -4.4 };
+export const BUFE = { x0: -4.2, x1: 4.2, z0: -10.6 + BUFE_DZ, z1: -4.4 + BUFE_DZ };
+export const GANG = { z0: -8.0, z1: -6.2 };
+/** 2026-11-22 the pier between the büfe back and the kitchen front is a little park: lawns, a cross of paths, the Atatürk monument in
+ *  the middle with pigeons (view/world/park-look.ts). The büfe's own tables sit at its corners. */
+export const PARK = { x0: -4.4, x1: 4.4, z0: -12.4, z1: BUFE.z0 - 0.3 };
+export const HEYKEL = { x: 0, z: (PARK.z0 + PARK.z1) / 2, r: 0.85 };
+export const PARK_AGAC: [number, number][] = [[-3.7, PARK.z1 - 0.5], [3.7, PARK.z1 - 0.5], [-3.7, PARK.z0 + 0.4], [3.7, PARK.z0 + 0.4]];
+/** 2026-11-22 (sahibi: "büfe 5. seviyeden sonra kalksın tamamen restoran olsun ... arkamızdaki park ön tarafta güzel bir mimari ile
+ *  dursun"): from RESTORAN_ASAMA the büfe is no separate shop any more. Its service section (counter, stations, register, ferry
+ *  window) is part of the restaurant: it stands at the v2 spot against the kitchen (dz 0, the kiosk prefab drawn as the restaurant's
+ *  open front hall, prefabs/iskele/kiosk.ts `restoran`), and the park with the monument moves to the pier mouth (PARK_ON) behind a
+ *  stone entrance arch. Stages 1-5 keep the büfe at the pier mouth (BUFE_DZ) and the park behind it. */
+export const RESTORAN_ASAMA = 6;
+export const bufeDz = (stage: number): number => (stage >= RESTORAN_ASAMA ? 0 : BUFE_DZ);
+export const bufeKutu = (stage: number) => { const d = bufeDz(stage); return { x0: BUFE_YEREL.x0, x1: BUFE_YEREL.x1, z0: BUFE_YEREL.z0 + d, z1: BUFE_YEREL.z1 + d }; };
+export const PARK_ON = { x0: -4.4, x1: 4.4, z0: -3.9, z1: 4.15 };
+export interface ParkYer { park: { x0: number; x1: number; z0: number; z1: number }; heykel: { x: number; z: number; r: number }; agac: [number, number][]; masa: [number, number][]; ped: [number, number][]; bank: { pos: P3v; rotY: number }[]; on: boolean }
+/** where the park, its monument, trees, benches, café tables and floor pads are at this stage */
+export function parkYer(stage: number): ParkYer {
+  const on = stage >= RESTORAN_ASAMA, P = on ? PARK_ON : PARK, hz = (P.z0 + P.z1) / 2 + (on ? -0.35 : 0), H = { x: 0, z: hz, r: 0.85 };
+  return {
+    park: P, heykel: H, on,
+    // at the pier mouth the front corners belong to the entrance arch and the back ones would hide the restaurant's bar: two trees beside the benches
+    agac: on ? [[-3.7, hz], [3.7, hz]] : [[-3.7, P.z1 - 0.5], [3.7, P.z1 - 0.5], [-3.7, P.z0 + 0.4], [3.7, P.z0 + 0.4]],
+    masa: [[-2.7, P.z1 - (on ? 1.5 : 1.4)], [2.7, P.z1 - (on ? 1.5 : 1.4)], [-2.7, P.z0 + 1.2], [2.7, P.z0 + 1.2]],
+    ped: on ? [[-3.6, hz + 1.9], [3.6, hz + 1.9]] : [[-3.5, hz - 2.3], [3.5, hz - 2.3]],
+    bank: [{ pos: { x: -2.55, y: 0, z: hz }, rotY: HP }, { pos: { x: 2.55, y: 0, z: hz }, rotY: -HP }],   // facing the monument
+  };
+}
+/** park colliders (monument pedestal, trees, benches; at the pier mouth also the entrance arch's piers) */
+export function parkEngel(stage: number): Obstacle[] {
+  const Y = parkYer(stage), o: Obstacle[] = [], H = Y.heykel;
+  o.push({ x0: H.x - H.r, x1: H.x + H.r, z0: H.z - H.r, z1: H.z + H.r, tag: 'heykel' });
+  Y.agac.forEach(([x, z]) => o.push({ x0: x - 0.3, x1: x + 0.3, z0: z - 0.3, z1: z + 0.3, tag: 'agac' }));   // 0.6 m: the walk-grid paths no longer clip the trunk
+  Y.bank.forEach(b => o.push(benchBox(b)));
+  if (Y.on) for (const [x, z] of parkFener(Y.park)) o.push({ x0: x - 0.12, x1: x + 0.12, z0: z - 0.12, z1: z + 0.12, tag: 'fener' });
+  if (Y.on) for (const x of PARK_KEMER.ayak) o.push({ x0: x - 0.32, x1: x + 0.32, z0: PARK_ON.z1 - 0.32, z1: PARK_ON.z1 + 0.22, tag: 'kemer' });
+  return o;
+}
+/** stone entrance arch on the promenade side of the front park: four piers (the middle opening is the walkway, the outer two are
+ *  side gates), an entablature with the name plate */
+export const PARK_KEMER = { ayak: [-4.1, -1.15, 1.15, 4.1] };
+/** bronze lanterns flanking the walkway behind the arch and in front of the restaurant's bar (front park only) */
+export const parkFener = (P: { z0: number; z1: number }): [number, number][] => [[-0.85, P.z1 - 0.9], [0.85, P.z1 - 0.9], [-0.85, P.z0 + 0.6], [0.85, P.z0 + 0.6]];
+function benchBox(b: { pos: P3v; rotY: number }): Obstacle { const c = Math.cos(b.rotY), s = Math.sin(b.rotY), bx = b.pos.x - 0.28 * s, bz = b.pos.z - 0.28 * c, hx = Math.abs(c) * 0.95 + Math.abs(s) * 0.12, hz = Math.abs(s) * 0.95 + Math.abs(c) * 0.12; return { x0: bx - hx, x1: bx + hx, z0: bz - hz, z1: bz + hz, tag: 'bench' }; }
+export const WIN_Z_YEREL = -7.1, WIN_Z = WIN_Z_YEREL + BUFE_DZ;
+/** Stage 2+ büfe counter: the walnut serving board on the top (kiosk.ts) and the six product stack slots on it (rtview.ts). */
+export const COUNTER_BOARD_YEREL = { x0: -1.62, x1: 0.5, z0: -4.98, z1: -4.5 };
+export const COUNTER_BOARD = { ...COUNTER_BOARD_YEREL, z0: COUNTER_BOARD_YEREL.z0 + BUFE_DZ, z1: COUNTER_BOARD_YEREL.z1 + BUFE_DZ };
+/** product stack slot on the counter (index = product order): one even row on the board, a 2nd column behind it */
+export function counterSlot(L: StageLayout, pi: number, col: number): { x: number; z: number } {
+  const d = L.counter.drop;
+  if (L.counter.span[0] === L.counter.span[1]) return { x: d.x + (pi - 2.5) * 0.24, z: d.z + (col ? -0.14 : 0.06) };   // stage 1 crate counter
+  const w = (COUNTER_BOARD.x1 - COUNTER_BOARD.x0) / 6;
+  return { x: COUNTER_BOARD.x0 + w * (pi + 0.5), z: d.z + (col ? -0.16 : 0.08) };   // drop z -4.7 in the kiosk frame (the büfe moves at stage 6)
+}
+/** where the brand plaque / medal case stand: stage 2+ off the serving area (glass case lid / east low wall), stage 1 on the crates */
+export function counterExtra(L: StageLayout, which: 'plaque' | 'vitrin'): { x: number; y: number; z: number } {
+  const c = L.counter;
+  if (c.span[0] === c.span[1]) return { x: c.pos.x + 0.62, y: c.drop.y, z: c.pos.z + (which === 'plaque' ? 0.1 : 0.08) };
+  return which === 'plaque' ? { x: 1.9, y: 1.375, z: c.pos.z - 0.02 } : { x: 2.5, y: 1.1, z: c.pos.z + 0.18 };   // counter z -4.7 in the kiosk frame   // plaque: standing card on the glass case's lid (east end); medals: low wall west of the register
+}
+export const NEXT_SIGN = { x: 6.3, z: -12.3, ry: 0.4 };
+export const STATION_KINDS = ['doner', 'cay', 'ayran', 'simit', 'tost', 'gazoz'] as const;
+export type StationKind = typeof STATION_KINDS[number];
+export const PARTS = ['kepenk', 'tabela', 'fayans', 'floresan', 'tezgah', 'boya'];
+export const TABLE_PADS: Record<string, number> = { tabure1: 0, tabure2: 1, masa1: 2, masa2: 3, masa3: 4, masa4: 5 };
+export const PAD_KEYS_FALLBACK = ['cay', 'ayran', 'simit', 'tabure1', 'tabure2', 'isbul', 'tepsi1', 'masa1', 'gazoz', 'miknatis', 'masa2', 'tost', 'tepsi2', 'tadilat', 'masa3', 'masa4'];
+const V3 = (x = 0, y = 0, z = 0): P3v => ({ x, y, z });
+const P3 = (x: number, z: number, y = 0): P3v => V3(x, y, z);
+export const BENCHES: { pos: P3v; rotY: number }[] = [
+  { pos: V3(-7.2, 0, -12.5), rotY: PI }, { pos: V3(1.2, 0, -12.55), rotY: PI }, { pos: V3(-9.85, 0, 2.4), rotY: -HP },   // 2026-11-21: z 3.0 iken iskele adı tabelasının ayağına giriyordu
+  // 2026-11-22: the two park benches facing the monument follow the park (parkYer().bank, drawn by view/world/park-look.ts)
+  { pos: V3(-30, 0, 5.95), rotY: PI }, { pos: V3(-12, 0, 5.95), rotY: PI }, { pos: V3(21, 0, 5.95), rotY: PI }, { pos: V3(41, 0, 5.95), rotY: PI }
+];
+export function benchSeats(bn: { pos: P3v; rotY: number }): P3v[] { const c = Math.cos(bn.rotY), s = Math.sin(bn.rotY); return [-0.55, 0, 0.55].map(lx => V3(bn.pos.x + lx * c + 0.05 * s, 0, bn.pos.z - lx * s + 0.05 * c)); }
+/** Pier lamp posts (x, z). */
+export const PIER_LAMPS: [number, number][] = [[-10.05, -10.6], [-10.05, -4.2], [-10.05, 2.2], [8.0, -11.4], [8.0, -3.4], [8.0, 2.4], [-23.5, -15], [-23.5, -8], [-23.5, -1], [-23.5, 3.6], [22.2, -15], [22.2, -3.4], [22.2, 3.6], [-16, -17.5], [15, -17.5]];   // 2026-11-09: the two lamps at x -5 / 6 stand inside the büfe mutfağı wall
+export const local2world = (x: number, z: number, ry: number, lx: number, lz: number, y = 0): P3v => V3(x + lx * Math.cos(ry) + lz * Math.sin(ry), y, z - lx * Math.sin(ry) + lz * Math.cos(ry));
+export function rectAABB(x: number, z: number, w: number, d: number, ry: number, tag?: string): Obstacle { const c = Math.abs(Math.cos(ry)), s = Math.abs(Math.sin(ry)), hx = (w * c + d * s) / 2, hz = (w * s + d * c) / 2; return { x0: x - hx, x1: x + hx, z0: z - hz, z1: z + hz, tag }; }
+export function trophySpots(stage: number): { x: number; y: number; z: number; s: number }[] {
+  if (stage === 1) return Array.from({ length: 12 }, (_, i) => ({ x: -3.3 + i * 0.6, y: 2.52, z: -4.28 + BUFE_DZ, s: 1.5 }));
+  return Array.from({ length: 12 }, (_, i) => ({ x: -1.6 + i * 0.36, y: 1.98, z: -10.25 + bufeDz(stage), s: 1.15 }));
+}
+
+export function stageLayout(stage: number): StageLayout {
+  const L = kioskLayout(Math.min(5, stage), stage);   // stages 6-10 grow around the kiosk (view/world/bufe-buyume.ts), the kiosk itself stays at 5
+  // BUF-19/20: wing / hall / roof tables are sim tables at fixed indices 8+ (always listed; which are built follows the stage)
+  L.tables = L.tables.concat(KANAT_MASALAR.map(m => ({ x: m.x, z: m.z, ax: m.ax, bolge: m.bolge, cati: m.cati })));
+  return L;
+}
+/** v2 kiosk layout moved BUFE_DZ towards the promenade: everything that belongs to the büfe (stations, counter, queue, till, ferry
+ *  window, trays, cat/dog spots, door, player start and the tables in front of it) moves; the pier furniture (wing tables, slots,
+ *  walkways, perches on the rails) stays. */
+function kioskLayout(stage: number, real = stage): StageLayout {
+  const L = kioskLayout0(stage), d = bufeDz(real), Y = parkYer(real), B = bufeKutu(real), m = (p: P3v): P3v => ({ x: p.x, y: p.y, z: p.z + d });
+  for (const k of Object.keys(L.stations)) { const st = L.stations[k]; if (st.z != null) st.z += d; }
+  L.counter = { pos: m(L.counter.pos), drop: m(L.counter.drop), standAt: m(L.counter.standAt), span: L.counter.span };
+  L.queue = L.queue.map(m); L.kasa = { pos: m(L.kasa.pos), pile: m(L.kasa.pile) };
+  L.window = { standAt: m(L.window.standAt), serve: m(L.window.serve), queue: L.window.queue.map(m) };
+  for (const k of ['tepsi1', 'tepsi2', 'pencere']) if (L.extraPads[k]) L.extraPads[k] = m(L.extraPads[k]);
+  if (!d && L.extraPads.pencere) L.extraPads.pencere = P3(5.6, -3.4);   // stage 6+: the job board (fixed in the world) stands on the v2 pad spot
+  for (const k of Object.keys(L.cat)) L.cat[k] = m(L.cat[k]);
+  L.dog = m(L.dog); L.playerStart = m(L.playerStart); if (L.door) L.door = { outside: m(L.door.outside), inside: m(L.door.inside) };
+  L.perch = L.perch.map(p => Math.abs(p[0]) < 4.5 ? [p[0], p[1], p[2] + d, p[3]] as [number, number, number, number] : p);   // on the kiosk (rails stay)
+  // the queue: straight out of the counter onto the promenade edge, then along it (west), off the walking lanes (z 7.6 / 10.0)
+  const bend = stage === 1 ? 2 : 3, q0 = L.queue[bend - 1];
+  L.queue = L.queue.map((q, i) => i < bend ? q : { x: q0.x - (i - bend + 1) * 0.8, y: 0, z: q0.z });
+  // the tables that stood in front of the büfe now stand in the park behind it
+  let pm = 0; L.tables = L.tables.map(t => Math.abs(t.x) < 5 && t.z > -4.5 ? { x: Y.masa[pm][0], z: Y.masa[pm++][1], ax: t.ax } : t);
+  // floor pads that would now be under the büfe or on the queue go to the park
+  let pp = 0; const icinde = (p: P3v) => p.x > B.x0 - 0.6 && p.x < B.x1 + 0.6 && p.z > B.z0 - 0.6 && p.z < B.z1 + 3.0;
+  for (const k of Object.keys(L.extraPads)) if (k !== 'tepsi1' && k !== 'tepsi2' && k !== 'pencere' && icinde(L.extraPads[k]) && pp < Y.ped.length) L.extraPads[k] = P3(Y.ped[pp][0], Y.ped[pp++][1]);
+  return L;
+}
+function kioskLayout0(stage: number): StageLayout {   // stages 6-10 grow around the kiosk (view/world/bufe-buyume.ts), the kiosk itself stays at 5
+  const s1 = stage === 1, s3 = stage >= 3;
+  const L = {} as StageLayout;
+  L.stations = s1 ? {
+    gazoz: { x: -5.25, rotY: 0 }, simit: { x: -3.55, rotY: 0 }, cay: { x: -1.85, rotY: 0 }, doner: { x: 0.2, rotY: 0 }, ayran: { x: 2.35, rotY: 0 }, tost: { x: 3.95, rotY: 0 }
+  } : {
+    doner: { x: -2.75, z: -10.0, rotY: 0 }, cay: { x: -0.85, z: -10.0, rotY: 0 }, simit: { x: 1.05, z: -10.0, rotY: 0 }, tost: { x: 2.85, z: -10.0, rotY: 0 },
+    ayran: { x: -3.61, z: -7.75, rotY: HP }, gazoz: { x: -3.61, z: -6.15, rotY: HP }
+  };
+  if (s1) {
+    L.counter = { pos: P3(1.0, -1.35), drop: P3(1.0, -1.35, 0.91), standAt: P3(1.0, -2.05), span: [1.0, 1.0] };   // seyyar crate counter: the v2 circle (stations sit right behind it)
+    L.queue = Array.from({ length: 8 }, (_, i) => P3(1.0, -0.45 + i * 0.8));
+    L.kasa = { pos: P3(-0.2, -1.35, 0.98), pile: P3(-0.95, -2.2, 0.02) };
+    L.tables = [[-2.4, 0.5], [-2.4, 2.7], [4.2, 0.5], [4.2, 2.7], [-6.0, 0.5], [-6.0, 2.7], [-8.4, -1.6], [-6.0, -1.6]].map(([x, z]) => ({ x, z, ax: 'x' as 'x' | 'z' }));
+    L.window = { standAt: P3(4.95, WIN_Z_YEREL), serve: P3(5.75, WIN_Z_YEREL, 1.04), queue: [[6.5, WIN_Z_YEREL], [7.2, WIN_Z_YEREL], [7.05, -6.3], [7.05, -5.5], [7.05, -4.7], [7.05, -3.9]].map(([x, z]) => P3(x, z)) };
+    L.job = { board: [-7.6, -3.5, 0], pos: P3(-7.6, -2.65) };
+    L.extraPads = { tepsi1: P3(-4.4, -0.9), tepsi2: P3(6.0, -1.6), miknatis: P3(-0.55, 1.7), tadilat: P3(-7.2, -6.4), pencere: P3(5.75, -5.3) };
+    L.cat = { awning: P3(-1.9, -3.75, 2.5), basket: P3(-4.85, -5.0, 0.2), stool: P3(2.95, -0.95, 0.48), roof: P3(2.8, -6.2, 2.85) };
+    L.perch = [[-1.4, 4.22, -4.62, 0.2], [4.05, 2.86, -4.65, 0.6], [2.4, 0.91, -1.15, -0.5]];
+    L.dog = P3(-1.35, -0.95);
+    L.playerStart = P3(0.2, -2.6);
+    L.door = null;
+  } else {
+    L.counter = { pos: P3(-0.25, -4.7), drop: P3(-0.25, -4.7, 1.06), standAt: P3(-0.25, -5.45), span: [-2.0, 2.0] };
+    L.queue = Array.from({ length: 8 }, (_, i) => P3(-0.25, -3.75 + i * 0.8));
+    L.kasa = { pos: P3(3.2, -4.55, 1.12), pile: P3(3.0, -5.35, 0.02) };
+    L.tables = s3
+      ? [[-2.0, -1.5, 'x'], [1.6, -1.5, 'x'], [-6.3, -8.8, 'z'], [-8.7, -8.8, 'z'], [-6.3, -5.9, 'z'], [-8.7, -5.9, 'z'], [-6.3, -3.0, 'z'], [-8.7, -3.0, 'z']].map(([x, z, ax]) => ({ x: x as number, z: z as number, ax: ax as 'x' | 'z' }))
+      : [[-2.0, -1.5], [1.6, -1.5], [-3.0, 0.9], [2.6, 0.9], [-6.6, -1.4], [6.1, -0.9], [-6.6, 1.4], [-6.6, 3.5]].map(([x, z]) => ({ x, z, ax: 'x' as 'x' | 'z' }));
+    L.window = { standAt: P3(3.45, WIN_Z_YEREL), serve: P3(4.32, WIN_Z_YEREL, 1.12), queue: [[4.95, WIN_Z_YEREL], [5.75, WIN_Z_YEREL], [6.55, WIN_Z_YEREL], [6.6, -6.3], [6.6, -5.5], [6.6, -4.7]].map(([x, z]) => P3(x, z)) };
+    // 2026-11-25 (sahibi: "işçi bulma panosu yürüyüş yoluna çıkarılmalı"): aşama 3+ pano promenatta, iskele ağzının doğusunda, yürüyüş şeridinin (z 7.6) önünde
+    L.job = s3 ? { board: [6.6, 5.5, 0], pos: P3(6.6, 6.4) } : { board: [-7.4, -4.6, 0], pos: P3(-7.4, -3.75) };
+    L.extraPads = { tepsi1: P3(-0.9, -7.6), tepsi2: P3(1.1, -7.6), miknatis: P3(-1.4, 2.8), tadilat: s3 ? P3(3.0, 1.2) : P3(-7.4, -6.6), pencere: P3(5.6, -5.2) };
+    L.cat = { awning: P3(-3.3, -4.0, 3.18), basket: P3(-4.85, -5.3, 0.2), stool: P3(-5.0, -3.55, 0.49), roof: P3(-3.4, -10.5, 2.7) };
+    L.perch = [[1.5, 4.04, -10.56, 0.2], [4.1, 2.72, -10.5, 0.5], [2.1, 1.07, -4.45, -0.4], [-3.7, 3.31, -4.47, 0.3]];
+    L.dog = P3(3.3, -3.75);
+    L.playerStart = P3(0, -7.5);
+    L.door = { outside: P3(-3.3, -3.7), inside: P3(-3.3, -5.2) };
+  }
+  L.perch.push([7.75, 0.58, -8.55, -HP], [7.75, 0.58, -5.65, -HP], [-10.4, 1.06, -6.0, HP], [-5.0, 1.06, -13.3, 0.3], [-10.4, 1.06, 1.0, HP]);
+  // 2026-11-22: yuva 9 (5.9, 3.8) büfeyle öne gelen vapur penceresi padının (5.6, 3.2) üstüne düşüyordu; yuva 7-8 sırasına (x 7.75, pencere kuyruğunun doğusu) alındı
+  // 2026-11-21 mantık denetimi: yuva 4 iskele adı tabelasının altındaydı (-8.1, 3.6), aşama 3+ yuva 2 lambanın içindeydi (-9.75, -4.45)
+  const slots: [number, number, number, string][] = [
+    [-9.6, -11.6, 0.6, 'm'], [-9.75, -8.0, HP, 'm'], [-9.75, -5.4, HP, 's'], [-9.75, -0.6, HP, 'm'], [-4.9, 3.7, 0.3, 's'], [-5.6, -6.2, 0, 's'],
+    [6.4, -9.8, 0, 'm'], [7.75, -2.4, -HP, 's'], [7.75, 0.9, -HP, 'm'], [7.75, 3.9, -HP, 's'], [-4.2, 3.7, 0, 's'], [-4.6, -12.2, 0, 'l']
+  ];
+  if (s3) { slots[1] = [-9.75, -7.35, HP, 's']; slots[2] = [-9.85, -4.8, HP, 's']; slots[3] = [-9.75, -1.4, HP, 'm']; slots[5] = [-5.2, -1.2, 0, 's']; }
+  L.slots = slots.map(([x, z, r, s]) => ({ pos: P3(x as number, z as number), rotY: r as number, size: s as string }));
+  L.walkways = [
+    [P3(-49.5, 7.6), P3(49.5, 7.6)], [P3(49.5, 10.0), P3(-49.5, 10.0)],   // the ends are the locked construction sites (kilitli-bolge.ts)
+    s3 ? [P3(2.5, 6.6), P3(6.6, 2.4), P3(7.0, -3.0), P3(7.0, -11.8), P3(-9.4, -11.95)]
+       : [P3(2.5, 6.6), P3(6.6, 2.4), P3(7.0, -3.0), P3(7.0, -11.6), P3(-9.2, -11.8), P3(-9.3, -1.0), P3(-6.5, 3.4), P3(-3.0, 6.6)],
+    s3 ? [P3(-3.0, 6.6), P3(-5.8, 2.8), P3(-5.8, -0.6)] : [P3(-5.0, 7.6), P3(-5.0, 3.6), P3(-5.6, 1.4)]   // 2026-11-22: clear of the büfe on the pier mouth
+  ];
+  return L;
+}
+
+export function staticObstacles(): Obstacle[] {
+  const o: Obstacle[] = [];
+  const add = (x0: number, x1: number, z0: number, z1: number, tag: string) => o.push({ x0, x1, z0, z1, tag });
+  add(PIER.x0 - 0.4, PIER.x0 + 0.2, PIER.z0 - 0.4, PIER.z1, 'rail');
+  // 2026-11-25: deniz köşkünün iki kapısı (aşama 10); öncesinde buyumeEngel kapatır
+  { let x = PIER.x0 - 0.4; for (const d of KOSK_KAPI) { add(x, d - KOSK_KAPI_W / 2, PIER.z0 - 0.4, PIER.z0 + 0.2, 'rail'); x = d + KOSK_KAPI_W / 2; } add(x, PIER.x1 + 0.4, PIER.z0 - 0.4, PIER.z0 + 0.2, 'rail'); }
+  add(PIER.x1 - 0.2, PIER.x1 + 0.4, PIER.z0 - 0.4, PIER.z1, 'rail');   // vapur kalktı: doğu korkuluğu kesintisiz
+  add(-80, PIER.x0, PIER.z1 - 0.4, PIER.z1 + 0.45, 'rail'); add(PIER.x1, 80, PIER.z1 - 0.4, PIER.z1 + 0.45, 'rail');
+  // road-side rail along the promenade; the footbridge stairs interrupt it
+  add(-80, UG.x - UG.hw, 13.3, 14.2, 'rail'); add(UG.x + UG.hw, 80, 13.3, 14.2, 'rail');
+  // stair side walls: the flights are entered only from their foot (south foot on the promenade, north foot on the far pavement)
+  for (const sg of [-1, 1]) { const x0 = UG.x + sg * (UG.hw + 0.05), x1 = UG.x + sg * (UG.hw + 0.45); add(Math.min(x0, x1), Math.max(x0, x1), UG.zA + 0.6, 14.2, 'rail'); add(Math.min(x0, x1), Math.max(x0, x1), 28.4, UG.zD - 0.6, 'rail'); }
+  PIER_LAMPS.forEach(([x, z]) => add(x - 0.22, x + 0.22, z - 0.22, z + 0.22, 'lamp'));
+  for (let x = -48; x <= 48; x += 10) if (x < PIER.x0 - 1 || x > PIER.x1 + 1) add(x - 0.22, x + 0.22, 4.83, 5.27, 'lamp');
+  [[22.05, -8.55], [22.05, -5.65], [21.9, -12.85], [-23.45, -17.5]].forEach(([x, z]) => add(x - 0.25, x + 0.25, z - 0.25, z + 0.25, 'bollard'));
+  BENCHES.forEach(b => o.push(benchBox(b)));
+  [[-12.4, 3.75], [20.4, 3.75]].forEach(([x, z]) => add(x - 0.58, x + 0.58, z - 0.3, z + 0.3, 'prop'));
+  [[-14, 9.6], [12.5, 9.6]].forEach(([x, z]) => add(x - 1.12, x + 1.12, z - 0.52, z + 0.52, 'prop'));
+  add(-10.0, -7.7, 3.6, 3.95, 'prop');
+  // bilet gişesi + iki turnike (view/disari PIER_PROPS.gise = 18.9, -13.3): eskiden çarpışması yoktu, insanlar içinden geçiyordu
+  add(18.2, 19.6, -13.85, -12.75, 'prop'); add(19.85, 21.0, -13.35, -12.95, 'prop');
+  add(-1.85, -1.35, -13.15, -12.65, 'prop');
+  // park (monument, trees, its benches) moves at stage 6: parkEngel(stage), added by the view's dynamic colliders
+  return o;
+}
+export const WALKABLE: Obstacle[] = [{ x0: PIER.x0 + 0.25, x1: PIER.x1 - 0.25, z0: PIER.z0 + 0.25, z1: PIER.z1 + 0.5 }, { x0: -62, x1: 62, z0: PIER.z1 + 0.45, z1: 13.3 }];

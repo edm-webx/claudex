@@ -1,0 +1,32 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#9fc4dc}canvas{display:block}</style></head>
+<body><script type="module">
+import * as T from 'three';
+import { santiyeKur } from '/src/game/view/world/santiye-kit.ts';
+import { SETLER } from '/src/content/santiye.ts';
+const q = new URLSearchParams(location.search), sahne = q.get('s') || 'kucuk', W = 1280, H = 720;
+const r = new T.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); r.setSize(W, H); r.shadowMap.enabled = true; r.shadowMap.type = T.PCFSoftShadowMap; r.outputColorSpace = T.SRGBColorSpace; r.toneMapping = T.ACESFilmicToneMapping; r.toneMappingExposure = 1.05; document.body.appendChild(r.domElement);
+const mk = () => { const s = new T.Scene(); s.background = new T.Color('#a9cde3'); s.fog = new T.Fog('#a9cde3', 60, 140);
+  s.add(new T.HemisphereLight('#dfefff', '#8a7a5a', 1.1)); const sun = new T.DirectionalLight('#fff1d6', 2.4); sun.position.set(18, 30, 14); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -30, right: 30, top: 30, bottom: -30, far: 90 }); s.add(sun);
+  const g = new T.Mesh(new T.PlaneGeometry(200, 200), new T.MeshStandardMaterial({ color: '#cfc4a8', roughness: 1 })); g.rotation.x = -Math.PI / 2; g.receiveShadow = true; s.add(g); return s; };
+const enable = o => o.traverse(m => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
+const usta = (s, x, z, ry = 0, act = 0) => { const g = new T.Group(); const M = c => new T.MeshStandardMaterial({ color: c, roughness: .8 });
+  const leg = new T.Mesh(new T.BoxGeometry(.34, .7, .22), M('#2f4f7a')); leg.position.y = .35; const bod = new T.Mesh(new T.BoxGeometry(.46, .6, .28), M('#ff7a1a')); bod.position.y = 1.0;
+  const str = new T.Mesh(new T.BoxGeometry(.47, .07, .29), M('#e8f06a')); str.position.y = 1.05; const head = new T.Mesh(new T.SphereGeometry(.2, 12, 8), M('#e2b48c')); head.position.y = 1.5;
+  const hat = new T.Mesh(new T.SphereGeometry(.23, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), M('#ffd23f')); hat.position.y = 1.58; const brim = new T.Mesh(new T.CylinderGeometry(.27, .27, .03, 12), M('#ffd23f')); brim.position.y = 1.58;
+  const arm = new T.Mesh(new T.BoxGeometry(.12, .55, .12), M('#ff7a1a')); arm.position.set(.3, 1.1 + act * .25, act * .15); arm.rotation.x = -act * 1.2;
+  g.add(leg, bod, str, head, hat, brim, arm); g.position.set(x, 0, z); g.rotation.y = ry; enable(g); s.add(g); };
+const shopFacade = (s) => { const b = new T.Mesh(new T.BoxGeometry(9.4, 4, 6), new T.MeshStandardMaterial({ color: '#e8d6b8', roughness: .9 })); b.position.set(0, 2, -3.2); const d = new T.Mesh(new T.BoxGeometry(1.4, 2.2, .1), new T.MeshStandardMaterial({ color: '#5a3b2a' })); d.position.set(0, 1.1, -.15);
+  const w1 = new T.Mesh(new T.BoxGeometry(2.6, 1.6, .1), new T.MeshStandardMaterial({ color: '#2b4a6a' })); w1.position.set(-2.8, 1.6, -.15); const w2 = w1.clone(); w2.position.x = 2.8; const roof = new T.Mesh(new T.BoxGeometry(9.8, .3, 6.4), new T.MeshStandardMaterial({ color: '#8a5a40' })); roof.position.set(0, 4.15, -3.2);
+  const g = new T.Group(); g.add(b, d, w1, w2, roof); enable(g); s.add(g); };
+let s = mk(), cam = new T.PerspectiveCamera(38, W / H, .3, 300), site, p = 0.5, sets = [];
+if (sahne === 'kucuk') { shopFacade(s); site = santiyeKur({ w: 9.4, d: 1.2, plan: SETLER.kucuk, iskeleYer: 'on' }); site.g.position.z = -0.7; s.add(site.g); usta(s, -2.6, 1.3, Math.PI, 1); usta(s, 1.6, 0.6, Math.PI, 0.5); cam.position.set(9, 6.5, 13); cam.lookAt(0, 1.4, 0); }
+if (sahne === 'orta') { site = santiyeKur({ w: 6.2, d: 5.0, plan: SETLER.orta, kabuk: { w: 6.2, d: 5.0, h: 2.9, cati: 'kirma' }, pano: { baslik: 'EV YAPIMI', alt: 'Arsa A1 · Sabri Yapı' } }); s.add(site.g); p = Number(q.get('p') || 0.62); usta(s, -1.4, 3.3, Math.PI, 1); usta(s, -4.6, 1.2, 1.2, 0); usta(s, 4.3, -2.0, -1.5, 1); cam.position.set(14, 11, 17); cam.lookAt(0, 1.2, 0); }
+if (sahne === 'dev') { site = santiyeKur({ w: 12, d: 8, plan: SETLER.dev, kabuk: { w: 12, d: 8, h: 4.2, cati: 'duz', duvar: '#f4f2ec' }, pano: { baslik: 'RESTORAN KANADI', alt: 'Aşama 9 · Cam çatı' } }); s.add(site.g); p = Number(q.get('p') || 0.4); for (const [x, z, a] of [[-3, 4.6, 1], [2, 4.6, 0], [-7.5, 1, 1], [7.4, -3, 1], [0, -5.6, 0]]) usta(s, x, z, Math.PI, a); cam.position.set(30, 22, 32); cam.lookAt(0, 3, 0); }
+if (sahne === 'buyuk') { site = santiyeKur({ w: 10, d: 7, plan: SETLER.buyuk, kabuk: { w: 10, d: 7, h: 3.6, cati: 'duz', duvar: '#f4f2ec' } }); s.add(site.g); p = Number(q.get('p') || 0.3); for (const [x, z, a] of [[-2, 4, 1], [2, 4, 0], [-6.5, 1, 1], [6.4, -3, 1]]) usta(s, x, z, Math.PI, a); cam.position.set(26, 18, 28); cam.lookAt(0, 2, 0); }
+if (sahne === 'asama') { // 4 aşama yan yana: aynı ev
+  const ps = [0.12, 0.36, 0.66, 1.0]; ps.forEach((pp, i) => { const st = santiyeKur({ w: 6.2, d: 5, plan: { ...SETLER.orta, toz: 0, betoniyer: i < 3, elArabasi: i < 3, cit: false }, kabuk: { w: 6.2, d: 5, h: 2.9, cati: 'kirma' }, iskeleYer: i === 3 ? 'yok' : 'cevre' }); st.g.position.x = (i - 1.5) * 15; s.add(st.g); sets.push([st, pp]); });
+  cam = new T.OrthographicCamera(-32, 32, 18, -18, .1, 300); cam.position.set(20, 28, 34); cam.lookAt(0, 0, 0); }
+s.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+let t = 0; for (let i = 0; i < 60; i++) { t += 0.05; site?.update(0.05, p, 0); for (const [st, pp] of sets) st.update(0.05, pp, 0); }
+r.render(s, cam); window.done = true;
+</script></body></html>

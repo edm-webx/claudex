@@ -1,0 +1,7 @@
+{
+  "_aciklama": "Gezgin botun bulduğu, henüz düzeltilmemiş sorunlar. Burada olan yeni kırmızı vermez; olmayan her girilemeyen/çıkılamayan bina yapıyı kırar. Düzelince listeden sil (bot 'bilinen artık geçiyor' der). Kaynak: KAL-13 tam koşu, 2026-11-21.",
+  "girilemeyen": {},
+  "cikamayan": {
+    "salonW": "Batı büfe salonunda masa4 noktasından sonra kapıya geri yürünemedi; müşteri kalabalığı mı çarpıştırıcı mı belirlenmedi."
+  }
+}

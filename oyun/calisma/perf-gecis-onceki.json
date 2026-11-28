@@ -1,0 +1,357 @@
+{
+ "etiket": "onceki",
+ "gecis": {
+  "2": {
+   "tabanMs": 8.9,
+   "gecisKaresiMs": 260,
+   "sonraMs": 9.4,
+   "buyumeYenidenInsaMs": 3,
+   "icMekanMs": 0,
+   "enPahaliGuardMs": {
+    "render": 243.8,
+    "world": 9.3,
+    "bufeBuyume": 3,
+    "panels": 2.4,
+    "mulkView": 0.3,
+    "agents": 0.2
+   },
+   "geos": [
+    180,
+    195
+   ],
+   "calls": [
+    217,
+    209
+   ],
+   "tris": [
+    96286,
+    101131
+   ],
+   "texs": [
+    44,
+    48
+   ],
+   "programs": [
+    160,
+    164
+   ],
+   "heapMB": [
+    68.9,
+    68.9
+   ]
+  },
+  "3": {
+   "tabanMs": 3.9,
+   "gecisKaresiMs": 371,
+   "sonraMs": 10.5,
+   "buyumeYenidenInsaMs": 14.8,
+   "icMekanMs": 0,
+   "enPahaliGuardMs": {
+    "render": 353,
+    "bufeBuyume": 14.8,
+    "world": 2.3,
+    "disariLook": 0.2,
+    "yetenekBtn": 0.1,
+    "stadyumView": 0.1
+   },
+   "geos": [
+    198,
+    215
+   ],
+   "calls": [
+    185,
+    199
+   ],
+   "tris": [
+    100201,
+    140607
+   ],
+   "texs": [
+    49,
+    54
+   ],
+   "programs": [
+    164,
+    166
+   ],
+   "heapMB": [
+    68.9,
+    68.9
+   ]
+  },
+  "4": {
+   "tabanMs": 6,
+   "gecisKaresiMs": 41.5,
+   "sonraMs": 4.9,
+   "buyumeYenidenInsaMs": 13.1,
+   "icMekanMs": 10.6,
+   "enPahaliGuardMs": {
+    "render": 14.9,
+    "bufeBuyume": 13.1,
+    "icMekan": 10.6,
+    "world": 1.6,
+    "mulkView": 0.2,
+    "carsi": 0.2
+   },
+   "geos": [
+    215,
+    224
+   ],
+   "calls": [
+    207,
+    192
+   ],
+   "tris": [
+    140554,
+    142649
+   ],
+   "texs": [
+    54,
+    56
+   ],
+   "programs": [
+    166,
+    166
+   ],
+   "heapMB": [
+    68.9,
+    68.9
+   ]
+  },
+  "5": {
+   "tabanMs": 5,
+   "gecisKaresiMs": 33.9,
+   "sonraMs": 7.5,
+   "buyumeYenidenInsaMs": 12.2,
+   "icMekanMs": 0,
+   "enPahaliGuardMs": {
+    "render": 19.6,
+    "bufeBuyume": 12.2,
+    "world": 1.2,
+    "mulkView": 0.2,
+    "disariLook": 0.1,
+    "hero": 0.1
+   },
+   "geos": [
+    224,
+    232
+   ],
+   "calls": [
+    187,
+    187
+   ],
+   "tris": [
+    142557,
+    157253
+   ],
+   "texs": [
+    56,
+    57
+   ],
+   "programs": [
+    166,
+    166
+   ],
+   "heapMB": [
+    68.9,
+    68.9
+   ]
+  },
+  "6": {
+   "tabanMs": 4,
+   "gecisKaresiMs": 32.5,
+   "sonraMs": 9.2,
+   "buyumeYenidenInsaMs": 20.5,
+   "icMekanMs": 0.1,
+   "enPahaliGuardMs": {
+    "bufeBuyume": 20.5,
+    "render": 8.7,
+    "world": 1.4,
+    "agents": 0.6,
+    "playView": 0.2,
+    "ferryLook": 0.1
+   },
+   "geos": [
+    232,
+    233
+   ],
+   "calls": [
+    184,
+    188
+   ],
+   "tris": [
+    157055,
+    160587
+   ],
+   "texs": [
+    57,
+    57
+   ],
+   "programs": [
+    166,
+    166
+   ],
+   "heapMB": [
+    68.9,
+    68.9
+   ]
+  },
+  "7": {
+   "tabanMs": 4.6,
+   "gecisKaresiMs": 53.8,
+   "sonraMs": 5.2,
+   "buyumeYenidenInsaMs": 28.6,
+   "icMekanMs": 14.2,
+   "enPahaliGuardMs": {
+    "bufeBuyume": 28.6,
+    "icMekan": 14.2,
+    "render": 7.9,
+    "world": 1.8,
+    "mulkView": 0.3,
+    "hero": 0.2
+   },
+   "geos": [
+    235,
+    236
+   ],
+   "calls": [
+    186,
+    189
+   ],
+   "tris": [
+    172337,
+    188163
+   ],
+   "texs": [
+    57,
+    56
+   ],
+   "programs": [
+    166,
+    166
+   ],
+   "heapMB": [
+    68.9,
+    68.9
+   ]
+  },
+  "8": {
+   "tabanMs": 4.5,
+   "gecisKaresiMs": 59.1,
+   "sonraMs": 6.1,
+   "buyumeYenidenInsaMs": 38.6,
+   "icMekanMs": 0.1,
+   "enPahaliGuardMs": {
+    "bufeBuyume": 38.6,
+    "render": 16.6,
+    "world": 3,
+    "zones": 0.1,
+    "icMekan": 0.1,
+    "yetenekBtn": 0.1
+   },
+   "geos": [
+    236,
+    240
+   ],
+   "calls": [
+    186,
+    190
+   ],
+   "tris": [
+    187943,
+    215143
+   ],
+   "texs": [
+    56,
+    56
+   ],
+   "programs": [
+    166,
+    167
+   ],
+   "heapMB": [
+    68.9,
+    68.9
+   ]
+  },
+  "9": {
+   "tabanMs": 4.4,
+   "gecisKaresiMs": 47.2,
+   "sonraMs": 6.5,
+   "buyumeYenidenInsaMs": 34.9,
+   "icMekanMs": 0,
+   "enPahaliGuardMs": {
+    "bufeBuyume": 34.9,
+    "render": 10.2,
+    "world": 1.1,
+    "hero": 0.2,
+    "yetenekBtn": 0.1,
+    "havaLook": 0.1
+   },
+   "geos": [
+    240,
+    241
+   ],
+   "calls": [
+    190,
+    191
+   ],
+   "tris": [
+    215143,
+    221085
+   ],
+   "texs": [
+    56,
+    57
+   ],
+   "programs": [
+    167,
+    167
+   ],
+   "heapMB": [
+    68.9,
+    68.9
+   ]
+  },
+  "10": {
+   "tabanMs": 6.3,
+   "gecisKaresiMs": 152.8,
+   "sonraMs": 5.2,
+   "buyumeYenidenInsaMs": 34.2,
+   "icMekanMs": 92.2,
+   "enPahaliGuardMs": {
+    "icMekan": 92.2,
+    "bufeBuyume": 34.2,
+    "render": 22.6,
+    "world": 1.5,
+    "mulkView": 0.3,
+    "agents": 0.3
+   },
+   "geos": [
+    241,
+    244
+   ],
+   "calls": [
+    191,
+    195
+   ],
+   "tris": [
+    221085,
+    242103
+   ],
+   "texs": [
+    57,
+    58
+   ],
+   "programs": [
+    167,
+    167
+   ],
+   "heapMB": [
+    68.9,
+    68.9
+   ]
+  }
+ },
+ "hata": []
+}

@@ -1,0 +1,35 @@
+/**
+ * DKN-03: roles of the far-shore businesses (kafe, bistro, kırtasiye, kantin, lokanta, kafeterya). Their staff lives in
+ * Plot.kadro (NOT in S.workers: the büfe crew has its own ROLES/ROLE_SLOTS and must never mix with these).
+ * `huyRol` borrows the personality pool of a büfe role; `gorunum` is the uniform (a ROLE_LOOK key of the character view).
+ */
+import { ISCI_SAAT_UCRET, type IsletmeId } from './esya';
+
+export interface IsletmeRol { rol: string; ad: string; huyRol: string; gorunum: string; minLv: number }
+export const ISLETME_ROL: Record<IsletmeId, IsletmeRol[]> = {
+  kafe: [{ rol: 'barista', ad: 'Barista', huyRol: 'cay', gorunum: 'barista', minLv: 1 }, { rol: 'garson', ad: 'Garson', huyRol: 'garson', gorunum: 'garson', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }],
+  bistro: [{ rol: 'barista', ad: 'Barista', huyRol: 'cay', gorunum: 'barista', minLv: 1 }, { rol: 'garson', ad: 'Garson', huyRol: 'garson', gorunum: 'garson', minLv: 1 }, { rol: 'asci', ad: 'Aşçı', huyRol: 'asci', gorunum: 'asci', minLv: 1 }],
+  kirtasiye: [{ rol: 'tezgahci', ad: 'Tezgâhtar', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }, { rol: 'fotokopici', ad: 'Fotokopici', huyRol: 'komi', gorunum: 'komi', minLv: 2 }],
+  kantin: [{ rol: 'kantinci', ad: 'Kantinci', huyRol: 'tost', gorunum: 'tost', minLv: 1 }, { rol: 'garson', ad: 'Garson', huyRol: 'garson', gorunum: 'garson', minLv: 1 }],
+  lokanta: [{ rol: 'asci', ad: 'Aşçı', huyRol: 'asci', gorunum: 'asci', minLv: 1 }, { rol: 'garson', ad: 'Garson', huyRol: 'garson', gorunum: 'garson', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }],
+  kafeterya: [{ rol: 'kantinci', ad: 'Kantinci', huyRol: 'tost', gorunum: 'tost', minLv: 1 }, { rol: 'garson', ad: 'Garson', huyRol: 'garson', gorunum: 'garson', minLv: 1 }],
+  // 2026-11-20 AVM shops: a sales consultant fetches the goods, the cashier rings them up
+  giyim: [{ rol: 'danisman', ad: 'Satış danışmanı', huyRol: 'garson', gorunum: 'hostes', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }, { rol: 'vitrinci', ad: 'Vitrin sorumlusu', huyRol: 'komi', gorunum: 'gorevli', minLv: 3 }],
+  elektronik: [{ rol: 'danisman', ad: 'Satış danışmanı', huyRol: 'garson', gorunum: 'hostes', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }, { rol: 'teknisyen', ad: 'Teknisyen', huyRol: 'komi', gorunum: 'gorevli', minLv: 2 }],
+  oyuncak: [{ rol: 'danisman', ad: 'Satış danışmanı', huyRol: 'garson', gorunum: 'hostes', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }],
+  // 2026-11-21 AVM katları: her dükkânın kendi ustası + kasiyeri/garsonu
+  sekerci: [{ rol: 'sekerci', ad: 'Şekerci ustası', huyRol: 'tost', gorunum: 'tost', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }, { rol: 'paketci', ad: 'Paketçi', huyRol: 'komi', gorunum: 'komi', minLv: 3 }],
+  kahveci: [{ rol: 'barista', ad: 'Barista', huyRol: 'cay', gorunum: 'barista', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }, { rol: 'kavurmaci', ad: 'Kavurmacı', huyRol: 'komi', gorunum: 'komi', minLv: 3 }],
+  dondurma: [{ rol: 'dondurmaci', ad: 'Maraşlı dondurmacı', huyRol: 'garson', gorunum: 'tost', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }],
+  baklava: [{ rol: 'tatlici', ad: 'Tatlı ustası', huyRol: 'asci', gorunum: 'asci', minLv: 1 }, { rol: 'garson', ad: 'Garson', huyRol: 'garson', gorunum: 'garson', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 2 }],
+  kuruyemis: [{ rol: 'tezgahci', ad: 'Tezgâhtar', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }, { rol: 'kavurmaci', ad: 'Kavurmacı', huyRol: 'tost', gorunum: 'tost', minLv: 1 }],
+  donerci: [{ rol: 'donerci', ad: 'Döner ustası', huyRol: 'asci', gorunum: 'asci', minLv: 1 }, { rol: 'garson', ad: 'Garson', huyRol: 'garson', gorunum: 'garson', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 2 }],
+  kumpir: [{ rol: 'kumpirci', ad: 'Kumpir ustası', huyRol: 'tost', gorunum: 'tost', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }, { rol: 'garson', ad: 'Garson', huyRol: 'garson', gorunum: 'garson', minLv: 2 }],
+  sinema: [{ rol: 'misirci', ad: 'Mısırcı', huyRol: 'tost', gorunum: 'tost', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 1 }, { rol: 'garson', ad: 'Fuaye görevlisi', huyRol: 'garson', gorunum: 'garson', minLv: 2 }],
+  midye: [{ rol: 'midyeci', ad: 'Midyeci', huyRol: 'asci', gorunum: 'asci', minLv: 1 }, { rol: 'garson', ad: 'Garson', huyRol: 'garson', gorunum: 'garson', minLv: 1 }, { rol: 'kasiyer', ad: 'Kasiyer', huyRol: 'kasiyer', gorunum: 'kasiyer', minLv: 2 }],
+};
+/** wage is paid once at day end: same total as the old hourly cut (24 game hours) */
+/** oyun günü 08:00-03:00 = 19 saat; maaş yalnız çalışılan saat için işler (panelde 24 saat gösteriliyordu) */
+export const ISCI_GUN_SAAT = 19;
+export const ISCI_GUN_UCRET = ISCI_SAAT_UCRET * ISCI_GUN_SAAT;
+export const ILAN_YENILE_UCRET = 2000;

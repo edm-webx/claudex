@@ -1,0 +1,6 @@
+- Başlık: src/game/ui/v2ui.ts U.title (SVG SCENE içinde VAPUR var -> kaldırılacak, kullanıcı vapur yasağı). Giriş: src/game/ui/giris.ts (CSS sabit + paint()). Akış: boot.ts startFlow ~982.
+- Başlık arkasında oyun dünyası zaten render ediliyor (giriş kartı arkası tepeden görünüm). Kamera: engine/camera cam.fp({x,y,z,yaw,pitch}) her kareyi override eder -> menü sinematiği için kullanılabilir.
+- Dev kancaları: __marti.setTime(h), camera({zoomRaw,yaw,tilt,x,z}). Güzel kare: saat 18.3, zoomRaw 2.6, yaw .5, tilt -.85, x -2 z -2. Gece 20.5 de güzel.
+- 25 Kasım = karlı zemin; menüde hava açık zorlanmalı (havaZorla).
+- Dünyada ambiyans vapuru denizde görünüyor; menü kamerası onu kadraja almamalı.
+- Font gömülü değil (sistem fontu). Google Fonts OFL woff2 buluttan inebiliyor (Baloo 2, Rubik, Lilita One, Fraunces, Bebas Neue, Yellowtail ~10-35KB/dosya).

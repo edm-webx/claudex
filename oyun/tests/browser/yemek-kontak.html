@@ -1,0 +1,45 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Ürün kontağı</title>
+<style>body{margin:0;background:#f3ead8;font:600 12px system-ui}#c{display:block}.l{position:absolute;width:150px;text-align:center;color:#3b2f2a}h2{position:absolute;margin:0;font:800 18px system-ui;color:#7d5638}</style></head>
+<body><canvas id="c"></canvas>
+<script type="module">
+import * as T from 'three';
+import { YEMEK_IDS, yemekGeo } from '/src/content/prefabs/yemek/yemek-geo.ts';
+import { MAT, ensureKit } from '/src/content/prefabs/common/v2kit.ts';
+import { makeUrunAile } from '/src/game/view/chars/urun-model.ts';
+import { DISHES, DISH_BY_ID, yemekRenk } from '/src/content/yemek-menu.ts';
+import { KALEM } from '/src/content/isletme-istasyon.ts';
+import { ISLETME } from '/src/content/esya.ts';
+ensureKit();
+const q = new URLSearchParams(location.search), ONCE = q.has('once'), GRUP = q.get('grup') || 'hepsi';
+const AD = {}; for (const d of DISHES) AD[d.id] = d.ad;
+for (const k in ISLETME) { const i = ISLETME[k]; for (const y of [...i.menu, ...(i.dolap || [])]) AD[y.id] = AD[y.id] || y.ad; }
+// sıra: mutfak yemekleri, sonra dükkân kalemleri (tanım sırasıyla); yiyecek / eşya ayrımı istasyon türünden
+const ESYA = new Set(['raf', 'depo', 'paket', 'test', 'dikis', 'kopya']);
+const yemekKalem = Object.keys(KALEM).filter(id => !DISH_BY_ID[id] && !ESYA.has(KALEM[id].ist) || ['akide','lokum','pismaniye','macun','kestane_sekeri','cikolata_el','fistikli_lokum','lokum_kutu','leblebi','ay_cekirdek','kabak_cekirdek','kuru_kayisi','karisik_cerez','cerez_sepet','cekirdek','baklava_tepsi'].includes(id));
+const esya = Object.keys(KALEM).filter(id => !DISH_BY_ID[id] && !yemekKalem.includes(id));
+const gruplar = { mutfak: DISHES.map(d => d.id), dukkan: yemekKalem, esya };
+const ids = GRUP === 'hepsi' ? [...gruplar.mutfak, ...gruplar.dukkan, ...gruplar.esya] : gruplar[GRUP];
+const COLS = +(q.get('cols') || 10), CW = 150, CH = 150, LH = 30, rows = Math.ceil(ids.length / COLS);
+const W = COLS * CW, H = rows * (CH + LH) + 40;
+const R = new T.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true, preserveDrawingBuffer: true });
+R.setPixelRatio(1); R.setSize(W, H); R.setClearColor('#f3ead8'); R.setScissorTest(true);
+R.outputColorSpace = T.SRGBColorSpace;
+const sc = new T.Scene(); sc.add(new T.HemisphereLight('#fff6e6', '#9a8a70', 1.6)); const dl = new T.DirectionalLight('#ffffff', 2.2); dl.position.set(2, 4, 3); sc.add(dl);
+const cam = new T.PerspectiveCamera(30, CW / CH, 0.01, 10);
+const plate = new T.CylinderGeometry(0.14, 0.12, 0.025, 14), blob = new T.SphereGeometry(1, 8, 6);
+const h2 = document.createElement('h2'); h2.style.left = '12px'; h2.style.top = '8px'; h2.textContent = (ONCE ? 'ÖNCE' : 'SONRA') + ' · ' + ids.length + ' ürün'; document.body.appendChild(h2);
+ids.forEach((id, i) => {
+  let o;
+  if (!ONCE) o = new T.Mesh(yemekGeo(id), MAT.atlas);
+  else if (DISH_BY_ID[id]) { o = new T.Group(); o.add(new T.Mesh(plate, new T.MeshLambertMaterial({ color: '#fbfaf6' }))); const f = new T.Mesh(blob, new T.MeshLambertMaterial({ color: yemekRenk(id) })); f.scale.set(0.085, 0.04, 0.085); f.position.y = 0.035; o.add(f); }
+  else o = makeUrunAile(id);
+  sc.add(o);
+  const bx = new T.Box3().setFromObject(o), s = bx.getBoundingSphere(new T.Sphere());
+  const d = Math.max(0.12, s.radius) / Math.sin(15 * Math.PI / 180) * 1.05;
+  cam.position.copy(s.center).add(new T.Vector3(0.55, 0.7, 1).normalize().multiplyScalar(d)); cam.lookAt(s.center);
+  const cx = (i % COLS) * CW, cy = Math.floor(i / COLS) * (CH + LH) + 40;
+  R.setViewport(cx, H - cy - CH, CW, CH); R.setScissor(cx, H - cy - CH, CW, CH); R.render(sc, cam); sc.remove(o);
+  const l = document.createElement('div'); l.className = 'l'; l.style.left = cx + 'px'; l.style.top = (cy + CH) + 'px'; l.textContent = AD[id] || id; document.body.appendChild(l);
+});
+window.__bitti = { n: ids.length, W, H };
+</script></body></html>
