@@ -96,6 +96,21 @@ const CSS = `
 .mn-mi.on:before{width:36px;height:3px;background:linear-gradient(90deg,#ffd27a,#ff8a3d);box-shadow:0 0 14px #ffb04a}
 .mn-mi:focus-visible{outline:2px solid rgba(255,206,140,.6);outline-offset:4px;border-radius:8px}
 .mn-mi.ana{font-size:clamp(28px,3.2vw,40px);font-family:'SB Baslik','SB Govde',system-ui,sans-serif;font-weight:800}
+.mn-polaroid{position:absolute;right:clamp(24px,5.5vw,84px);top:clamp(26px,7vh,70px);width:clamp(168px,16vw,224px);padding:9px 9px 0;border:0;border-radius:3px;background:linear-gradient(180deg,#f7f2e8,#ece4d4);box-shadow:0 18px 34px rgba(0,0,0,.45),0 3px 8px rgba(0,0,0,.35);transform:rotate(-4.5deg);transform-origin:50% 0;cursor:pointer;text-align:center;font-family:'SB Govde',system-ui,sans-serif;transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s;-webkit-tap-highlight-color:transparent}
+.mn-polaroid img{display:block;width:100%;aspect-ratio:1;object-fit:cover;border-radius:1px;background:#0c0f10;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25);filter:saturate(.9) contrast(1.04)}
+.mn-polaroid b{display:block;margin:9px 0 2px;font:800 clamp(13px,1.15vw,16px)/1.1 'SB Govde',system-ui,sans-serif;color:#2b2622;letter-spacing:-.01em}
+.mn-polaroid small{display:block;padding-bottom:12px;font:600 clamp(11px,.95vw,13px)/1.2 'SB Govde',system-ui,sans-serif;color:#7a6f63;letter-spacing:.14em;text-transform:uppercase}
+.mn-polaroid .bant{position:absolute;left:50%;top:-11px;width:74px;height:22px;margin-left:-37px;background:rgba(240,226,190,.72);box-shadow:0 1px 3px rgba(0,0,0,.18);transform:rotate(3deg)}
+.mn-polaroid em{position:absolute;right:-10px;top:-10px;font:800 10px/1 'SB Govde',system-ui,sans-serif;font-style:normal;letter-spacing:.18em;padding:6px 8px 5px;border-radius:999px;background:linear-gradient(90deg,#ffd27a,#ff8a3d);color:#2a1606;box-shadow:0 4px 12px rgba(0,0,0,.3);transform:rotate(6deg)}
+.mn-polaroid:hover,.mn-polaroid:focus-visible{transform:rotate(-1deg) translateY(-3px) scale(1.04);box-shadow:0 26px 44px rgba(0,0,0,.5),0 4px 10px rgba(0,0,0,.35);outline:none}
+.mn-polaroid:focus-visible{box-shadow:0 0 0 3px #ffcf7a,0 26px 44px rgba(0,0,0,.5)}
+.mn-polaroid:active{transform:rotate(-1deg) scale(.98)}
+.mn-bekle .mn-polaroid,.mn-panelde .mn-polaroid{visibility:hidden}
+.mn-title:not(.mn-bekle) .mn-polaroid{animation:mn-pol .9s cubic-bezier(.2,.9,.25,1.1) .25s backwards}
+@keyframes mn-pol{from{opacity:0;transform:rotate(-12deg) translateY(-24px)}to{opacity:1;transform:rotate(-4.5deg)}}
+@media (max-width:760px),(max-aspect-ratio:1/1){.mn-polaroid{width:104px;padding:6px 6px 0;right:14px;top:auto;bottom:calc(clamp(14px,5.2vh,40px) + 300px);transform:rotate(5deg)}.mn-polaroid b{font-size:10px;margin-top:6px}.mn-polaroid small{font-size:8.5px;padding-bottom:8px;letter-spacing:.08em}.mn-polaroid .bant{width:46px;height:14px;margin-left:-23px;top:-7px}.mn-polaroid em{font-size:8px;padding:4px 6px 3px;right:-8px;top:-8px}@keyframes mn-pol{from{opacity:0;transform:rotate(12deg) translateY(-16px)}to{opacity:1;transform:rotate(5deg)}}}
+@media (prefers-reduced-motion:reduce){.mn-polaroid{animation:none!important;transition:none}}
+.mn-menu .mn-mi:nth-child(5){animation-delay:.32s}
 .mn-bekle .mn-menu,.mn-bekle .mn-foot{visibility:hidden}
 .mn-title:not(.mn-bekle) .mn-menu .mn-mi{animation:mn-sol .7s cubic-bezier(.2,.8,.2,1) both}
 .mn-menu .mn-mi:nth-child(2){animation-delay:.08s}.mn-menu .mn-mi:nth-child(3){animation-delay:.16s}.mn-menu .mn-mi:nth-child(4){animation-delay:.24s}

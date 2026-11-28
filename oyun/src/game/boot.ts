@@ -1007,6 +1007,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
 
   // ── pause reasons: visibility + context loss
   const pauses = new Set<string>();
+  let morgAcik = false;   // "Morgdan Kaçış" ana menüden açıkken ana oyun durur, sesi askıda kalır
   const pause = (why: string) => { pauses.add(why); loop.pause([...pauses].join('+')); };
   const resume = (why: string) => { pauses.delete(why); if (!pauses.size) loop.resume(); else loop.pause([...pauses].join('+')); };
   platform.visibility.onChange(hidden => {
@@ -1019,7 +1020,7 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     } else {
       resume('hidden');
       kayitD.baglandi();
-      if (audio) make('audio.suspend', () => { audio.suspend(false); return true; });
+      if (audio && !morgAcik) make('audio.suspend', () => { audio.suspend(false); return true; });
     }
   });
   // PRF-03: otomatik kademe değişimi oyun sırasında uygulanmaz (her materyal yeniden derlenir); sekme gizlenince ya da
@@ -1082,6 +1083,13 @@ export async function boot(canvas: HTMLCanvasElement | null): Promise<void> {
     pnl.v2.title({
       onPlay: () => oyna(false),
       onFriends: () => oyna(true),
+      // 2026-11-28: ana menüde "Yeni oyunumuzu deneyin!" → Morgdan Kaçış kendi canvas'ında açılır; çıkınca menüye dönülür
+      onMorg: (bitti: () => void) => {
+        if (morgAcik) return; morgAcik = true; pause('morg');
+        if (audio) make('audio.suspend', () => { audio.suspend(true); return true; });
+        const kapat = () => { morgAcik = false; resume('morg'); if (audio && !document.hidden) make('audio.suspend', () => { audio.suspend(false); return true; }); bitti(); };
+        import('../morg/morg-oyun').then(m => m.morgBaslat({ onExit: kapat })).catch(e => { log.error('morg', e); kapat(); });
+      },
       // ana menü ayarları: canlı değerler ses kanallarından (komut bir sonraki adımda işlenir)
       ayar: { acts: pnl.ayarEylem(), get: () => { const st = sim.state.settings; return { music: audio ? audio.buses.music.volume : st.music, sfx: audio ? audio.buses.sfx.volume : st.sfx, muted: audio ? audio.buses.music.muted : st.muted, quality: st.quality }; } },
     });

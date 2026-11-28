@@ -23,6 +23,7 @@ import { renderHarita, renderHaritaSection } from './harita-panel';
 import { renderHikaye, renderHikayeSection } from './hikaye-panel';
 import { renderCalisanSel, renderCalisanSection } from './calisan-panel';
 import { menuStilKur, sahneKatmani, logoHtml, STUDYO, SURUM } from './menu-stil';
+import { MORG_POLAROID } from './morg-polaroid';
 
 export interface V2UiEnv { sfx(id: string): void; buzz(ms: number): void; unlock(): void; artApi?(): any; }
 
@@ -971,10 +972,10 @@ U.title = function (o) {
   const MENU = [['oyna', 'Oyna', ''], ['arkadas', 'Arkadaşınla oyna', 'Oda kur'], ['ayar', 'Ayarlar', ''], ['yapim', 'Yapımcılar', '']];
   t.innerHTML = sahneKatmani() + logoHtml() + `<div class="mn-basla"><span class="mn-dokun">Başlamak için dokun</span><span class="mn-kb">Başlamak için bir tuşa bas</span></div><div class="mn-yan"></div>`;
   root.appendChild(t);
-  t.insertAdjacentHTML('beforeend', `<nav class="mn-menu" aria-label="Ana menü">${MENU.map(([id, ad, alt], i) => `<button class="mn-mi${i === 0 ? ' ana on' : ''}" data-m="${id}"${i === 0 ? ' data-play' : ''}>${ad}${alt ? `<small>${alt}</small>` : ''}</button>`).join('')}</nav><div class="mn-foot"></div>`);
+  t.insertAdjacentHTML('beforeend', `<nav class="mn-menu" aria-label="Ana menü">${MENU.map(([id, ad, alt], i) => `<button class="mn-mi${i === 0 ? ' ana on' : ''}" data-m="${id}"${i === 0 ? ' data-play' : ''}>${ad}${alt ? `<small>${alt}</small>` : ''}</button>`).join('')}</nav>${o.onMorg ? `<button class="mn-polaroid" data-pol aria-label="Yeni oyunumuzu deneyin: Morgdan Kaçış"><i class="bant"></i><img src="${MORG_POLAROID}" alt="" draggable="false"><b>Yeni oyunumuzu deneyin!</b><small>Morgdan Kaçış</small><em>YENİ</em></button>` : ''}<div class="mn-foot"></div>`);
   requestAnimationFrame(() => requestAnimationFrame(() => t.classList.add('mn-acik')));
   const yan = t.querySelector('.mn-yan');
-  let faz = 'basla', sec = 0, bitti = false, panel = '';
+  let faz = 'basla', sec = 0, bitti = false, panel = '', morgda = false;
   let sonMuzik = 0.8;   // menüden kapatılınca eski müzik seviyesi hatırlanır (açınca 0.8'e dönmez)
   const sesAcik = () => { try { const g = o.ayar && o.ayar.get(); return !(g && (g.muted || g.music <= 0)); } catch (e) { return true; } };
   const ayak = () => `<button class="mn-ses${sesAcik() ? '' : ' kapali'}" data-ses aria-label="Müziği aç ya da kapat"><span class="mn-eq"><i></i><i></i><i></i><i></i></span>Müzik: <b>${sesAcik() ? 'açık' : 'kapalı'}</b></button><div class="sag"><span class="mn-kb"><span class="mn-key">↑↓</span>Seç &nbsp; <span class="mn-key">↵</span>Onayla</span><span>${SURUM} · ${STUDYO}</span></div>`;
@@ -1010,6 +1011,12 @@ ${sl('music', 'Müzik')}${sl('sfx', 'Efekt sesleri')}
   };
   const sec_ = id => {
     if (bitti) return;
+    if (id === 'morg') {
+      if (morgda || !o.onMorg) return; morgda = true; sfx('buy');
+      t.style.visibility = 'hidden';
+      safe(o.onMorg, () => { morgda = false; t.style.visibility = ''; });
+      return;
+    }
     if (id === 'oyna' || id === 'arkadas') {
       bitti = true; sfx('buy');
       try { if (C.audioOn) C.audioOn(); } catch (e) {}
@@ -1025,6 +1032,7 @@ ${sl('music', 'Müzik')}${sl('sfx', 'Efekt sesleri')}
   t.addEventListener('pointerdown', () => menuyuAc());
   t.addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.pol !== undefined) { if (!panel) sec_('morg'); return; }
     if (b.dataset.m) { isaretle(MENU.findIndex(x => x[0] === b.dataset.m), false); sec_(b.dataset.m); return; }
     if (b.dataset.geri !== undefined) { kapatPanel(); return; }
     if (b.dataset.kal) { safe(o.ayar && o.ayar.acts.setQuality, b.dataset.kal); yan.querySelectorAll('[data-kal]').forEach(x => x.classList.toggle('on', x === b)); sfx('tik'); return; }
@@ -1045,6 +1053,7 @@ ${sl('music', 'Müzik')}${sl('sfx', 'Efekt sesleri')}
   t.addEventListener('pointerover', e => { const b = e.target.closest('.mn-mi'); if (!b || panel) return; const i = [...t.querySelectorAll('.mn-mi')].indexOf(b); if (i >= 0 && i !== sec) isaretle(i, true); });
   const tus = e => {
     if (!t.isConnected) { removeEventListener('keydown', tus, true); return; }
+    if (morgda) return;   // morg oyunu açıkken tuşlar ona aittir
     if (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName) && e.target.type !== 'range') return;
     if (faz === 'basla') { e.preventDefault(); menuyuAc(); return; }
     if (panel) { if (e.key === 'Escape' || e.key === 'Backspace') { e.preventDefault(); kapatPanel(); } return; }
