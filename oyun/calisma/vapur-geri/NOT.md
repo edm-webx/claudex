@@ -19,3 +19,9 @@ Oyuncunun vapurla HİÇBİR etkileşimi yok.
 
 ## Açık
 - vapur.opus (liman uğultusu kaydı) geri getirilmedi: kodda hiç bağlı değildi.
+
+## 2026-11-28: ekonomi paritesi (jo0q11 c1583a5 / 12d üstünde)
+- Sebep: kapıdan inen yolcu 26 m yürüyordu (promenattan 15 m), kuyruk yerini uzun tutuyordu; `from` verilince bir rng çekimi de atlanıyordu.
+- Çözüm: yolcu ekonomisi eski kalabalık dalgasıyla birebir (aynı an, aynı sayı, aynı rng). Vapur dalgadan 6 sn önce yanaşır, yolcu kapıda doğar (customers.ts `inis`) ve yol oranında hızlı adım atar (1.6-3.6 m/sn).
+- Birleşmenin ortaya çıkardığı restoran hatası: çatıdan inen garsonun mesafesi kuş uçuşu ölçülüyordu (17 m, gerçekte 60 m+), yakındaki boş garson işi devralamıyordu. claimDOf artık merdiven ayağından ölçüyor.
+- Sonuç: 1288 test yeşil (first-session gün 1/3/5 dahil, bant gevşetilmedi), perf kapısı yeşil. lint:sim'deki kayit-kurtar.ts Date.now hatası jo0q11'den geliyor.
