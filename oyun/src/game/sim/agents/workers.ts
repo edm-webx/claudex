@@ -70,6 +70,11 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
   const say = (rt: WRt, text: string, t = 2.2) => { rt.a.say = text; rt.a.sayT = t; };
   const emit = env.emit;
 
+  /** QA 2026-11-27: tezgâha mal bırakan garsonlar aynı noktaya gidip iç içe giriyordu: her garson tezgâh boyunca kendi yerine (0,7 m ara) */
+  function tezgahNokta(rt: WRt): Vec2 {
+    const i = Math.max(0, rows.filter((x) => x.w.role === 'garson').indexOf(rt)), uc = i % 2 ? -1 : 1;
+    return side(book.get('counter.standAt'), uc * (0.5 + Math.floor(i / 2) * 0.7), 0);
+  }
   function home(rt: WRt, S: GameState): Vec2 {
     if (rt.st) return book.stationStand(rt.st);
     if (rt.w.role === 'garson') {
@@ -224,7 +229,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
   function garsonIsBul(rt: WRt, fx: ReturnType<typeof traitFx>): boolean {
     const a = rt.a, wid = rt.w.id;
     if ((host.tepsi?.(wid) || []).length) { rt.isT = 0; garsonDevam(rt); return true; }   // elde masa tabağı var: işine devam
-    if (a.carry.length) { rt.state = 'toCounter'; goVia(rt, side(book.get('counter.standAt'), 0.5, 0)); return true; }
+    if (a.carry.length) { rt.state = 'toCounter'; goVia(rt, tezgahNokta(rt)); return true; }
     const is = host.isAl?.(wid, { cap: garsonTasima(rankOf(rt.w.xp || 0), fx.carry || 0), at: { x: a.x, z: a.z, kat: (a.y || 0) > 0.5 ? catiTaraf(a) : null } });
     if (is) {
       rt.isT = 0; rt.t = 0; rt.jobKey = is.tur; rt.job = { index: is.id };
@@ -297,7 +302,7 @@ export function createWorkers(env: AgentEnv): WorkersSystem {
         }
         const need = garsonPick(rt);
         if (full || (a.carry.length && (rt.t > 1.6 || (need !== p && rt.t > 0.6))) || rt.t > 5) {
-          if (a.carry.length) { rt.state = 'toCounter'; rt.wk.goTo(side(book.get('counter.standAt'), 0.5, 0)); }
+          if (a.carry.length) { rt.state = 'toCounter'; rt.wk.goTo(tezgahNokta(rt)); }
           else { rt.state = 'idle'; rt.loadT = 0.3; }   // 2026-11-27: loadT tezgâhta bekledikçe büyüyordu (~5 sn); boş dönen garson idle'da 5 sn donup bekleyen menüyü görmüyordu (aşama botu aşama 9, masa 45)
         }
         return;

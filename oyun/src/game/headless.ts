@@ -30,6 +30,7 @@ import type { SimEvents, EventName } from './events';
 import { createRules, type RulesFull } from './sim/rules';
 import { installAgents } from './sim/agents';
 import { oyunTakvim } from './sim/hava';
+const PROTO_ID = /(^|\|)(__proto__|constructor|prototype)(\||$)/;
 
 export const SIM_HZ = 30;
 
@@ -213,7 +214,11 @@ export function createSim(o: SimOpts, extra: SimExtra = {}): SimFull {
     },
     input(move) { pendingMove.x = move.x; pendingMove.z = move.z; },
     command(c: SimCommand) {
-      if (rules.handle(c)) return;
+      // QA 2026-11-27 (fuzz): '__proto__' / 'constructor' gibi kimlikler tablo aramalarında prototipe düşüp istisna ya da NaN para üretiyordu.
+      // Komutlar asla fırlatmaz: böyle kimlikli komut reddedilir; komut sonrası para sayı değilse eski değere döner.
+      for (const v of Object.values(c as Record<string, unknown>)) if (typeof v === 'string' && PROTO_ID.test(v)) { extra.log?.warn('refused command id', c.kind); return; }
+      const para0 = state.money;
+      try { if (rules.handle(c)) return; } finally { if (!Number.isFinite(state.money)) { extra.log?.warn('money NaN after', c.kind); state.money = Number.isFinite(para0) ? para0 : 0; } }
       switch (c.kind) {
         case 'setTime': {
           const h = Math.min(DAY_END_H - 0.02, Math.max(DAY_START_H, Number(c.hour)));   // GRS-02: hooks can show the 24..27 deep night (27 itself would end the day)

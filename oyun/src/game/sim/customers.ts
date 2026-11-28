@@ -126,6 +126,16 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
     if ((c.y || 0) > 0.5) { const s = catiTaraf(c); c.path = [...catiAsagi(s, c), ...pathTo(catiAyak(s), to)]; return; }   // BUF-20: çatıdan önce merdivenden iner
     c.path = pathTo({ x: c.x, z: c.z }, to);
   }
+  /** QA 2026-11-27: sıranın ucuna gelen müşteri dolu sıranın içinden yürümesin; sıraya paralel yan şeritten gelip yerine yanaşır */
+  function goQueue(c: Customer, i: number): void {
+    const to = queueSpot(i);
+    if (i < 2 || (c.y || 0) > 0.5) { goTo(c, to); return; }
+    const on = queueSpot(i - 1), dx = to.x - on.x, dz = to.z - on.z, d = Math.hypot(dx, dz) || 1, px = -dz / d * 0.85, pz = dx / d * 0.85;
+    const yan = [{ x: to.x + px, z: to.z + pz }, { x: to.x - px, z: to.z - pz }].filter(p => K.nav.walkable(p))
+      .sort((a, b) => Math.hypot(a.x - c.x, a.z - c.z) - Math.hypot(b.x - c.x, b.z - c.z))[0];
+    if (!yan || Math.hypot(to.x - c.x, to.z - c.z) < 1.2) { goTo(c, to); return; }
+    c.path = [...pathTo({ x: c.x, z: c.z }, yan), { x: to.x, z: to.z }];
+  }
   /** masaya yürü: çatı terası masasına merdivenin ayağına kadar yerden, sonra basamaklar ve çatı koridoru (content/kanat.ts) */
   function goSeat(c: Customer, table: number, to: Vec2): void {
     const s = masaCati(table);
@@ -206,7 +216,11 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
     let from = o.from || (o.near ? nearestSpawn(o.near) : spawnPoint());
     if (!o.from && kind === 'q') {
       const spot = queueSpot(rt.queue.length);
-      from = pointBack([from, ...pathTo(from, spot)], rng.range(P.ENTRY_M[0], P.ENTRY_M[1]));
+      const yol = [from, ...pathTo(from, spot)];
+      let m = rng.range(P.ENTRY_M[0], P.ENTRY_M[1]);
+      from = pointBack(yol, m);
+      // QA 2026-11-27: kalabalık dalgasında art arda doğan iki müşteri aynı noktadan aynı yola çıkıp iç içe yürümesin (en az bir adım ara)
+      for (let k = 0; k < 4 && rt.customers.some(o2 => o2.state === 'walk' && Math.hypot(o2.x - from.x, o2.z - from.z) < 0.75); k++) from = pointBack(yol, (m += 0.9));
     }
     const decorPat = clamp(decorKeyif(K.placedDecor()) * P.DECOR_PATIENCE_PER_KEYIF, 0, P.DECOR_PATIENCE_CAP);
     const dv = davranisOf(type.id), grupPay = 1 + Math.min(GRUP.sabirUst, GRUP.sabirKisi * Math.max(0, n - 2));   // BUF-23 tip sabrı, BUF-24 büyük grubun sabır payı
@@ -413,7 +427,7 @@ export function installCustomers(K: Kernel, tipMult: () => number, addMoneyTo: (
 
   function update(dt: number) {
     const L = rt.layout;
-    rt.queue.forEach((c, i) => { if (c.state !== 'leave' && c.qi !== i) { c.qi = i; if (c.state === 'queue' || c.state === 'walk') { c.state = 'walk'; goTo(c, queueSpot(i)); } } });
+    rt.queue.forEach((c, i) => { if (c.state !== 'leave' && c.qi !== i) { c.qi = i; if (c.state === 'queue') { c.state = 'walk'; goTo(c, queueSpot(i)); } else if (c.state === 'walk') goQueue(c, i); } });
     rt.winq.forEach((c, i) => { if (c.state !== 'leave' && c.qi !== i) { c.qi = i; if (c.state === 'wqueue' || c.state === 'walk') { c.state = 'walk'; goTo(c, winSpot(i)); } } });
     // the first three in line buy from the counter
     for (let i = 0; i < Math.min(3, rt.queue.length); i++) {
