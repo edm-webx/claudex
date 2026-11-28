@@ -19,6 +19,7 @@ import { FLOCK } from '../../sim/agents/pigeons';
 import type { MotorChars } from './index';
 import * as K from './v2/kit';
 import { avmIcinde, katY, HOL } from '../../../content/avm-kat';
+import { hstIcinde, MERD as HST_MERD } from '../../../content/hastane-kat';
 
 export interface AgentsViewDeps {
   chars: MotorChars;
@@ -128,6 +129,7 @@ export function createAgentsView(deps: AgentsViewDeps): AgentsView {
       const gullsNear = deps.quality.current().gullsNear;
       // AVM: kahraman hangi kattaysa üst katlar kesik çizilir; o katlardaki işçi/müşteri de gizlenir (yoksa bina dışında havada görünürler)
       const pl = deps.player(), avmIc = avmIcinde(pl, 2), avmUst = avmIc ? katY(pl.kat || 0) + 1 : 0, avmAlt = avmIc ? katY(pl.kat || 0) - 1 : 0;
+      const hstIc = hstIcinde(pl, 2), hstY = hstIc ? katY(pl.kat || 0) : 0;   // Devlet Hastanesi: yalnız kahramanın katı (+ merdiven boşluğundan bir alt kat)
       for (const r of rows.values()) {
         const a = r.a, h = r.h;
         const x = a.px + (a.x - a.px) * alpha, z = a.pz + (a.z - a.pz) * alpha, y = a.py + (a.y - a.py) * alpha;
@@ -142,6 +144,7 @@ export function createAgentsView(deps: AgentsViewDeps): AgentsView {
         }
         if (r.gull < 0) h.object.visible = !(y > 0.5 && deps.hideUp?.(x, z)) && !(avmUst && y > avmUst) && !(avmIc && y < avmAlt && (x < HOL.x0 || x > HOL.x1));   // alt kat dükkânları bu katın döşemesi altında
         if (r.gull >= 0) h.object.visible = r.gull < gullsNear || a.act === 'stare' || a.act === 'snatch' || a.carry.length > 0;
+        if (hstIc && r.gull < 0 && (y > hstY + 1 || (y < hstY - 1 && !(x > HST_MERD.kx0 && x < HST_MERD.kx1 && z > HST_MERD.on && z < HST_MERD.arka)))) h.object.visible = false;
         if (r.animal) {
           (h as unknown as { setState(s: Record<string, unknown>): void }).setState(r.a.kind === 'gull' || r.a.kind === 'parrot' ? { mode: a.act, speed: Math.min(1, a.speed / 1.2) } : { act: a.act, speed: Math.min(1, a.speed / 1.2) });
         } else {

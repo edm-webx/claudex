@@ -9,6 +9,7 @@
  * Never writes sim state. No Math.random (plates use a hash).
  */
 import { avmIcinde, katY } from '../../../content/avm-kat';
+import { hstIcinde } from '../../../content/hastane-kat';
 import * as T from 'three';
 import type { Rules, Item, MoneyStack } from '../../sim/state';
 import type { AnchorDef } from '../../../engine/api';
@@ -312,7 +313,7 @@ export function createRtView(env: RtEnv): RtView {
     const it = ds ? rules.interactions.get(ds.id) : null;
     // ring only while filling, and green while a real (filled) dwell transfers; a primed resume (progress 0) shows none
     if (ds && it && it.dwell > 0 && (ds.transferring ? ds.progress >= 0.999 : ds.progress > 0.02)) {
-      const pk = rules.playerPos as { x: number; z: number; kat?: number }, avm = avmIcinde(pk, 3);   // AVM diyarı
+      const pk = rules.playerPos as { x: number; z: number; kat?: number }, avm = avmIcinde(pk, 3) || hstIcinde(pk, 3);   // AVM / hastane diyarı
       const dp = avm ? avmGrp : group; if (dwell.g.parent !== dp) dp.add(dwell.g);
       dwell.g.visible = true; dwell.g.position.set(it.pos.x, avm ? katY(pk.kat || 0) : 0, it.pos.z);
       const step = ds.transferring ? 48 : Math.max(1, Math.round(ds.progress * 48));

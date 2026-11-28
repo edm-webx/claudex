@@ -74,7 +74,7 @@ const BINA_IPUCU: Record<string, string> = {
   okul_1a: '1-A sınıfı: ders saatinde çocuklar sıralarında.', okul_2a: '2-A sınıfı: ders saatinde çocuklar sıralarında.', okul_4a: '4-A sınıfı: ders saatinde çocuklar sıralarında.',
   okul_muzik: 'Müzik ve resim atölyesi: sınıflar sırayla şarkı söylemeye ve resim yapmaya gelir.',
   okul_kantin: 'Okul kantini bir işletme (Esnaf Seviyesi 3). Sahibiysen aletleri ve işçiyi Mülk düğmesinden yönet.',
-  hastane: 'Devlet Hastanesi: gezilebilir bir şehir binası, işletme değil.',
+  hastane: 'Devlet Hastanesi: hasta kabule uğra, katları merdiven ya da asansörle gez. Muayene, kan bağışı, kafeterya burada.',
   acil: 'Acil: gezilebilir bir şehir binası, işletme değil.',
   morg: 'Morg: gezilebilir bir şehir binası, işletme değil.',
 };

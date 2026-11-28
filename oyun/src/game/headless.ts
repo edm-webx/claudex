@@ -24,6 +24,7 @@ import { createNav } from '../engine/nav';
 import { createAmbient } from './sim/ambient';
 import { createWalk, type WalkFull } from './sim/walk';
 import { holEngel, AVM } from '../content/avm-kat';
+import { hstEngel, hstIcinde, HST } from '../content/hastane-kat';
 import { okulEngel, okulIcinde } from '../content/okul-ic';
 import { icBina, icColliders } from '../content/ic-mekan';
 import { defaultState, AGENTS, AGENT_CAP, AGENT_SCHEMA, type GameState } from './sim/schema';
@@ -58,7 +59,7 @@ export interface SimFull extends Sim {
   readonly interactions: InteractionRegistry;
   readonly nav: Nav;
   /** Martı AVM katının kendi çarpışma nav'ı (AVM dışında / geçersiz katta null) */
-  readonly katNav: (kat: number) => Nav | null;
+  readonly katNav: (kat: number, p?: Vec2) => Nav | null;
   /** okul diyarının nav'ı (diyar dışında null) */
   readonly bolgeNav: (p: Vec2) => Nav | null;
   readonly ctx: SimCtx;
@@ -149,7 +150,15 @@ export function createSim(o: SimOpts, extra: SimExtra = {}): SimFull {
   const start: Vec2 = extra.startPos ?? (o.save ? { x: state.player.x, z: state.player.z } : zp ? { x: zp.x, z: zp.z } : { x: 0.2, z: -2.6 });
   // Martı AVM diyarı: her kat için yalnız dikdörtgen çarpışmalı ayrı nav (hol + o kattaki odalar)
   const katNavs: (Nav | null)[] = [];
-  const katNav = (k: number): Nav | null => {
+  // Devlet Hastanesi diyarı (content/hastane-kat.ts): aynı kural, kendi katları
+  const hstNavs: (Nav | null)[] = [];
+  const hstNav = (k: number): Nav | null => {
+    if (k < 0 || k >= HST.KAT) return null;
+    if (hstNavs[k] === undefined) { try { const n = createNav({ log: extra.log }); n.setSolids('hastane-kat', hstEngel(k)); hstNavs[k] = n; } catch { hstNavs[k] = null; } }
+    return hstNavs[k];
+  };
+  const katNav = (k: number, p?: Vec2): Nav | null => {
+    if (p && hstIcinde(p, 4)) return hstNav(k);
     if (k < 0 || k >= AVM.KAT) return null;
     if (katNavs[k] === undefined) {
       try { const n = createNav({ log: extra.log }); n.setSolids('avm-kat', [...holEngel(k), ...icBina('avm').filter(m => (m.kat || 0) === k).flatMap(m => icColliders(m)), ...(k === EGLENCE_KAT ? eglenceEngel() : [])]); katNavs[k] = n; }
